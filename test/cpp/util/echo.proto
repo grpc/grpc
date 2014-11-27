@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package grpc.cpp.test.util;
+
+message EchoRequest {
+  optional string message = 1;
+}
+
+message EchoResponse {
+  optional string message = 1;
+}
+
+service TestService {
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
+}

@@ -1,0 +1,411 @@
+# GRPC global makefile
+# This currently builds C and C++ code.
+<%!
+  from copy import deepcopy
+  import re
+
+  def excluded(filename, exclude_res):
+    for r in exclude_res:
+      if r.match(filename):
+        return True
+    return False
+%>
+
+<%
+  altlibs = []
+  for lib in libs:
+    for alt in lib.get('alternates', []):
+      new = deepcopy(lib)
+      new.name = alt.name
+      new.alternates = []
+      exclude_res = [re.compile(str) for str in alt.get('exclude_res', [])]
+
+      src = [file for file in new.get('src', []) if not excluded(file, exclude_res)]
+      src.extend(alt.get('include_src', []))
+      new.src = src
+
+      headers = [file for file in new.get('headers', []) if not excluded(file, exclude_res)]
+      headers.extend(alt.get('include_headers', []))
+      new.headers = headers
+
+      public_headers = [file for file in new.get('public_headers', []) if not excluded(file, exclude_res)]
+      public_headers.extend(alt.get('include_public_headers', []))
+      new.public_headers = public_headers
+
+      for prop in alt.properties:
+        new[prop.name] = prop.value
+
+      altlibs.append(new)
+  libs.extend(altlibs)
+
+  protos_dict = {}
+  proto_re = re.compile('\.proto$')
+  for lib in libs:
+    for src in lib.src:
+      if proto_re.match(src):
+        protos_dict[src] = True
+  for tgt in targets:
+    for src in tgt.src:
+      if proto_re.match(src):
+        protos_dict[src] = True
+
+  protos = []
+  for k, v in protos_dict:
+    protos.append(k)
+%>
+
+# General settings.
+# You may want to change these depending on your system.
+
+prefix ?= /usr/local
+
+PROTOC = protoc
+CC = gcc
+CXX = g++
+LD = gcc
+LDXX = g++
+AR = ar
+STRIP = strip --strip-unneeded
+INSTALL = install -D
+RM = rm -f
+
+ifeq ($(DEBUG),)
+CPPFLAGS += -O2
+DEFINES += NDEBUG
+else
+CPPFLAGS += -O0
+DEFINES += _DEBUG DEBUG
+endif
+
+CFLAGS += -std=c89 -pedantic
+CXXFLAGS += -std=c++11
+CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
+LDFLAGS += -g -pthread -fPIC
+
+INCLUDES = . include gens
+LIBS = rt m z event event_pthreads pthread
+LIBSXX = protobuf
+LIBS_SECURE = ssl crypto dl
+
+ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
+GTEST_LIB = /usr/src/gtest/src/gtest-all.cc -I/usr/src/gtest
+else
+GTEST_LIB = -lgtest
+endif
+
+ifeq ($(V),1)
+E = @:
+Q =
+else
+E = @echo
+Q = @
+endif
+
+VERSION = ${settings.version.major}.${settings.version.minor}.${settings.version.micro}.${settings.version.build}
+
+CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
+CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
+
+LDFLAGS += $(ARCH_FLAGS)
+LDLIBS += $(addprefix -l, $(LIBS))
+LDLIBSXX += $(addprefix -l, $(LIBSXX))
+LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+
+.SECONDARY = %.pb.h %.pb.cc
+
+all: static shared\
+% for tgt in targets:
+% if tgt.build == 'all':
+ bins/${tgt.name}\
+% endif
+% endfor
+
+
+static: make_dirs dep\
+% for lib in libs:
+% if lib.build == 'all':
+ libs/lib${lib.name}.a\
+% endif
+% endfor
+
+
+shared: make_dirs dep\
+% for lib in libs:
+% if lib.build == 'all':
+ libs/lib${lib.name}.so.$(VERSION)\
+% endif
+% endfor
+
+
+privatelibs: make_dirs dep\
+% for lib in libs:
+% if lib.build == 'private':
+ libs/lib${lib.name}.a\
+% endif
+% endfor
+
+
+buildtests: privatelibs\
+% for tgt in targets:
+% if tgt.build == 'test':
+ bins/${tgt.name}\
+% endif
+% endfor
+
+
+buildtests_c: privatelibs\
+% for tgt in targets:
+% if tgt.build == 'test' and not tgt.get('c++', False):
+ bins/${tgt.name}\
+% endif
+% endfor
+
+
+tests: buildtests
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) ./bins/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+
+tools: privatelibs\
+% for tgt in targets:
+% if tgt.build == 'tool':
+ bins/${tgt.name}\
+% endif
+% endfor
+
+
+buildbenchmarks: privatelibs\
+% for tgt in targets:
+% if tgt.build == 'benchmark':
+ bins/${tgt.name}\
+% endif
+% endfor
+
+
+benchmarks: buildbenchmarks
+
+make_dirs:
+	$(Q) mkdir -p libs
+	$(Q) mkdir -p bins
+	$(Q) mkdir -p gens
+
+strip: strip-static strip-shared
+
+strip-static: static
+% for lib in libs:
+% if lib.build == "all":
+	$(E) "[STRIP]   Stripping lib${lib.name}.a"
+	$(Q) $(STRIP) libs/lib${lib.name}.a
+% endif
+% endfor
+
+strip-shared: shared
+% for lib in libs:
+% if lib.build == "all":
+	$(E) "[STRIP]   Stripping lib${lib.name}.so"
+	$(Q) $(STRIP) libs/lib${lib.name}.so.$(VERSION)
+% endif
+% endfor
+
+gens/%.pb.cc : %.proto
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens $<
+
+deps/%.dep : %.c
+	$(E) "[DEP]     Generating dependencies for $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
+
+deps/%.dep : gens/%.pb.cc
+	$(E) "[DEP]     Generating dependencies for $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
+
+deps/%.dep : %.cc
+	$(E) "[DEP]     Generating dependencies for $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
+
+objs/%.o : %.c
+	$(E) "[C]       Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+objs/%.o : gens/%.pb.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+objs/%.o : %.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+dep:\
+% for lib in libs:
+ deps_lib${lib.name}\
+% endfor
+% for tgt in targets:
+ deps_${tgt.name}\
+% endfor
+
+
+install: install-headers install-static install-shared
+
+install-headers:
+	$(E) "[INSTALL] Installing public headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+
+install-static: static strip-static
+% for lib in libs:
+% if lib.build == "all":
+	$(E) "[INSTALL] Installing lib${lib.name}.a"
+	$(Q) $(INSTALL) libs/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+% endif
+% endfor
+
+install-shared: shared strip-shared
+% for lib in libs:
+% if lib.build == "all":
+	$(E) "[INSTALL] Installing lib${lib.name}.so"
+	$(Q) $(INSTALL) libs/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
+% endif
+% endfor
+
+clean:\
+% for lib in libs:
+ clean_lib${lib.name}\
+% endfor
+% for tgt in targets:
+ clean_${tgt.name}\
+% endfor
+
+	$(Q) $(RM) -r deps objs libs bins gens
+
+
+# The various libraries
+
+% for lib in libs:
+${makelib(lib)}
+% endfor
+
+
+# All of the test targets
+
+% for tgt in targets:
+${maketarget(tgt)}
+% endfor
+
+<%def name="makelib(lib)">
+LIB${lib.name.upper()}_SRC = \\
+
+% for src in lib.src:
+    ${src} \\
+
+% endfor
+
+% if "public_headers" in lib:
+PUBLIC_HEADERS += \\
+
+% for hdr in lib.public_headers:
+    ${hdr} \\
+
+% endfor
+% endif
+
+LIB${lib.name.upper()}_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
+LIB${lib.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
+
+libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
+
+% if lib.build == "all":
+libs/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
+	$(E) "[LD]      Linking $@"
+% if lib.get('c++', False):
+	$(Q) $(LDXX) $(LDFLAGS) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} \
+% else:
+	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} \
+% endif
+-o libs/lib${lib.name}.so.$(VERSION) $(LIB${lib.name.upper()}_OBJS) $(LDLIBS)\
+% if lib.secure:
+ $(LDLIBS_SECURE)
+% endif
+% endif
+
+
+deps_lib${lib.name}: $(LIB${lib.name.upper()}_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIB${lib.name.upper()}_DEPS)
+endif
+
+clean_lib${lib.name}:
+	$(E) "[CLEAN]   Cleaning lib${lib.name} files"
+	$(Q) $(RM) $(LIB${lib.name.upper()}_OBJS)
+	$(Q) $(RM) $(LIB${lib.name.upper()}_DEPS)
+	$(Q) $(RM) libs/lib${lib.name}.a
+	$(Q) $(RM) libs/lib${lib.name}.so.$(VERSION)
+</%def>
+
+<%def name="maketarget(tgt)">
+${tgt.name.upper()}_SRC = \\
+
+% for src in tgt.src:
+    ${src} \\
+
+% endfor
+
+${tgt.name.upper()}_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
+${tgt.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(${tgt.name.upper()}_SRC))))
+
+bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
+% for dep in tgt.deps:
+ libs/lib${dep}.a\
+% endfor
+
+	$(E) "[LD]      Linking $@"
+% if tgt.get("c++", False):
+	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) $(GTEST_LIB) -Llibs\
+% else:
+	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) -Llibs\
+% endif
+% for dep in tgt.deps:
+ -l${dep}\
+% endfor
+% if tgt.get("c++", False):
+ $(LDLIBSXX)\
+% endif
+ $(LDLIBS)\
+% if tgt.get('secure', True):
+ $(LDLIBS_SECURE)\
+% endif
+ -o bins/${tgt.name}
+
+deps_${tgt.name}: $(${tgt.name.upper()}_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(${tgt.name.upper()}_DEPS)
+endif
+
+clean_${tgt.name}:
+	$(E) "[CLEAN]   Cleaning ${tgt.name} files"
+	$(Q) $(RM) $(${tgt.name.upper()}_OBJS)
+	$(Q) $(RM) $(${tgt.name.upper()}_DEPS)
+	$(Q) $(RM) bins/${tgt.name}
+</%def>
+
+.PHONY: all strip tools buildtests tests make_dirs install clean\
+% for lib in libs:
+ deps_lib${lib.name} clean_lib${lib.name}\
+% endfor
+% for tgt in targets:
+ deps_${tgt.name} clean_${tgt.name}\
+% endfor
+

@@ -1,0 +1,4656 @@
+# GRPC global makefile
+# This currently builds C and C++ code.
+
+
+
+
+# General settings.
+# You may want to change these depending on your system.
+
+prefix ?= /usr/local
+
+PROTOC = protoc
+CC = gcc
+CXX = g++
+LD = gcc
+LDXX = g++
+AR = ar
+STRIP = strip --strip-unneeded
+INSTALL = install -D
+RM = rm -f
+
+ifeq ($(DEBUG),)
+CPPFLAGS += -O2
+DEFINES += NDEBUG
+else
+CPPFLAGS += -O0
+DEFINES += _DEBUG DEBUG
+endif
+
+CFLAGS += -std=c89 -pedantic
+CXXFLAGS += -std=c++11
+CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
+LDFLAGS += -g -pthread -fPIC
+
+INCLUDES = . include gens
+LIBS = rt m z event event_pthreads pthread
+LIBSXX = protobuf
+LIBS_SECURE = ssl crypto dl
+
+ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
+GTEST_LIB = /usr/src/gtest/src/gtest-all.cc -I/usr/src/gtest
+else
+GTEST_LIB = -lgtest
+endif
+
+ifeq ($(V),1)
+E = @:
+Q =
+else
+E = @echo
+Q = @
+endif
+
+VERSION = 0.8.0.0
+
+CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
+CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
+
+LDFLAGS += $(ARCH_FLAGS)
+LDLIBS += $(addprefix -l, $(LIBS))
+LDLIBSXX += $(addprefix -l, $(LIBSXX))
+LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+
+.SECONDARY = %.pb.h %.pb.cc
+
+all: static shared
+
+static: make_dirs dep libs/libgpr.a libs/libgrpc.a libs/libgrpc++.a libs/libgrpc_unsecure.a
+
+shared: make_dirs dep libs/libgpr.so.$(VERSION) libs/libgrpc.so.$(VERSION) libs/libgrpc++.so.$(VERSION) libs/libgrpc_unsecure.so.$(VERSION)
+
+privatelibs: make_dirs dep libs/libgrpc_test_util.a libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_cancel_after_accept.a libs/libend2end_test_cancel_after_accept_and_writes_closed.a libs/libend2end_test_cancel_after_invoke.a libs/libend2end_test_cancel_before_invoke.a libs/libend2end_test_cancel_in_a_vacuum.a libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/libend2end_test_early_server_shutdown_finishes_tags.a libs/libend2end_test_invoke_large_request.a libs/libend2end_test_max_concurrent_streams.a libs/libend2end_test_no_op.a libs/libend2end_test_ping_pong_streaming.a libs/libend2end_test_request_response_with_metadata_and_payload.a libs/libend2end_test_request_response_with_payload.a libs/libend2end_test_simple_delayed_request.a libs/libend2end_test_simple_request.a libs/libend2end_test_thread_stress_test.a libs/libend2end_test_writes_done_hangs_with_pending_read.a libs/libend2end_certs.a
+
+buildtests: privatelibs bins/grpc_byte_buffer_reader_test bins/gpr_cancellable_test bins/gpr_log_test bins/gpr_cmdline_test bins/gpr_histogram_test bins/gpr_host_port_test bins/gpr_slice_buffer_test bins/gpr_slice_test bins/gpr_string_test bins/gpr_sync_test bins/gpr_thd_test bins/gpr_time_test bins/murmur_hash_test bins/grpc_em_test bins/grpc_em_pipe_test bins/grpc_stream_op_test bins/chttp2_stream_encoder_test bins/hpack_table_test bins/chttp2_stream_map_test bins/hpack_parser_test bins/transport_metadata_test bins/chttp2_status_conversion_test bins/chttp2_transport_end2end_test bins/grpc_tcp_test bins/resolve_address_test bins/tcp_server_test bins/tcp_client_test bins/grpc_channel_stack_test bins/metadata_buffer_test bins/grpc_completion_queue_test bins/census_window_stats_test bins/census_statistics_quick_test bins/census_statistics_performance_test bins/census_statistics_multiple_writers_test bins/census_statistics_multiple_writers_circular_buffer_test bins/census_stub_test bins/census_hash_table_test bins/fling_server bins/fling_client bins/fling_test bins/echo_server bins/echo_client bins/echo_test bins/message_compress_test bins/secure_endpoint_test bins/httpcli_format_request_test bins/httpcli_parser_test bins/httpcli_test bins/grpc_credentials_test bins/fling_stream_test bins/lame_client_test bins/thread_pool_test bins/status_test bins/chttp2_fake_security_cancel_after_accept_test bins/chttp2_fake_security_cancel_after_accept_and_writes_closed_test bins/chttp2_fake_security_cancel_after_invoke_test bins/chttp2_fake_security_cancel_before_invoke_test bins/chttp2_fake_security_cancel_in_a_vacuum_test bins/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_fake_security_early_server_shutdown_finishes_tags_test bins/chttp2_fake_security_invoke_large_request_test bins/chttp2_fake_security_max_concurrent_streams_test bins/chttp2_fake_security_no_op_test bins/chttp2_fake_security_ping_pong_streaming_test bins/chttp2_fake_security_request_response_with_metadata_and_payload_test bins/chttp2_fake_security_request_response_with_payload_test bins/chttp2_fake_security_simple_delayed_request_test bins/chttp2_fake_security_simple_request_test bins/chttp2_fake_security_thread_stress_test_test bins/chttp2_fake_security_writes_done_hangs_with_pending_read_test bins/chttp2_fullstack_cancel_after_accept_test bins/chttp2_fullstack_cancel_after_accept_and_writes_closed_test bins/chttp2_fullstack_cancel_after_invoke_test bins/chttp2_fullstack_cancel_before_invoke_test bins/chttp2_fullstack_cancel_in_a_vacuum_test bins/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_fullstack_early_server_shutdown_finishes_tags_test bins/chttp2_fullstack_invoke_large_request_test bins/chttp2_fullstack_max_concurrent_streams_test bins/chttp2_fullstack_no_op_test bins/chttp2_fullstack_ping_pong_streaming_test bins/chttp2_fullstack_request_response_with_metadata_and_payload_test bins/chttp2_fullstack_request_response_with_payload_test bins/chttp2_fullstack_simple_delayed_request_test bins/chttp2_fullstack_simple_request_test bins/chttp2_fullstack_thread_stress_test_test bins/chttp2_fullstack_writes_done_hangs_with_pending_read_test bins/chttp2_simple_ssl_fullstack_cancel_after_accept_test bins/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test bins/chttp2_simple_ssl_fullstack_cancel_after_invoke_test bins/chttp2_simple_ssl_fullstack_cancel_before_invoke_test bins/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test bins/chttp2_simple_ssl_fullstack_invoke_large_request_test bins/chttp2_simple_ssl_fullstack_max_concurrent_streams_test bins/chttp2_simple_ssl_fullstack_no_op_test bins/chttp2_simple_ssl_fullstack_ping_pong_streaming_test bins/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test bins/chttp2_simple_ssl_fullstack_request_response_with_payload_test bins/chttp2_simple_ssl_fullstack_simple_delayed_request_test bins/chttp2_simple_ssl_fullstack_simple_request_test bins/chttp2_simple_ssl_fullstack_thread_stress_test_test bins/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test bins/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test bins/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test bins/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test bins/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test bins/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test bins/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test bins/chttp2_socket_pair_cancel_after_accept_test bins/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test bins/chttp2_socket_pair_cancel_after_invoke_test bins/chttp2_socket_pair_cancel_before_invoke_test bins/chttp2_socket_pair_cancel_in_a_vacuum_test bins/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_socket_pair_early_server_shutdown_finishes_tags_test bins/chttp2_socket_pair_invoke_large_request_test bins/chttp2_socket_pair_max_concurrent_streams_test bins/chttp2_socket_pair_no_op_test bins/chttp2_socket_pair_ping_pong_streaming_test bins/chttp2_socket_pair_request_response_with_metadata_and_payload_test bins/chttp2_socket_pair_request_response_with_payload_test bins/chttp2_socket_pair_simple_delayed_request_test bins/chttp2_socket_pair_simple_request_test bins/chttp2_socket_pair_thread_stress_test_test bins/chttp2_socket_pair_writes_done_hangs_with_pending_read_test
+
+buildtests_c: privatelibs bins/grpc_byte_buffer_reader_test bins/gpr_cancellable_test bins/gpr_log_test bins/gpr_cmdline_test bins/gpr_histogram_test bins/gpr_host_port_test bins/gpr_slice_buffer_test bins/gpr_slice_test bins/gpr_string_test bins/gpr_sync_test bins/gpr_thd_test bins/gpr_time_test bins/murmur_hash_test bins/grpc_em_test bins/grpc_em_pipe_test bins/grpc_stream_op_test bins/chttp2_stream_encoder_test bins/hpack_table_test bins/chttp2_stream_map_test bins/hpack_parser_test bins/transport_metadata_test bins/chttp2_status_conversion_test bins/chttp2_transport_end2end_test bins/grpc_tcp_test bins/resolve_address_test bins/tcp_server_test bins/tcp_client_test bins/grpc_channel_stack_test bins/metadata_buffer_test bins/grpc_completion_queue_test bins/census_window_stats_test bins/census_statistics_quick_test bins/census_statistics_performance_test bins/census_statistics_multiple_writers_test bins/census_statistics_multiple_writers_circular_buffer_test bins/census_stub_test bins/census_hash_table_test bins/fling_server bins/fling_client bins/fling_test bins/echo_server bins/echo_client bins/echo_test bins/message_compress_test bins/secure_endpoint_test bins/httpcli_format_request_test bins/httpcli_parser_test bins/httpcli_test bins/grpc_credentials_test bins/fling_stream_test bins/lame_client_test bins/chttp2_fake_security_cancel_after_accept_test bins/chttp2_fake_security_cancel_after_accept_and_writes_closed_test bins/chttp2_fake_security_cancel_after_invoke_test bins/chttp2_fake_security_cancel_before_invoke_test bins/chttp2_fake_security_cancel_in_a_vacuum_test bins/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_fake_security_early_server_shutdown_finishes_tags_test bins/chttp2_fake_security_invoke_large_request_test bins/chttp2_fake_security_max_concurrent_streams_test bins/chttp2_fake_security_no_op_test bins/chttp2_fake_security_ping_pong_streaming_test bins/chttp2_fake_security_request_response_with_metadata_and_payload_test bins/chttp2_fake_security_request_response_with_payload_test bins/chttp2_fake_security_simple_delayed_request_test bins/chttp2_fake_security_simple_request_test bins/chttp2_fake_security_thread_stress_test_test bins/chttp2_fake_security_writes_done_hangs_with_pending_read_test bins/chttp2_fullstack_cancel_after_accept_test bins/chttp2_fullstack_cancel_after_accept_and_writes_closed_test bins/chttp2_fullstack_cancel_after_invoke_test bins/chttp2_fullstack_cancel_before_invoke_test bins/chttp2_fullstack_cancel_in_a_vacuum_test bins/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_fullstack_early_server_shutdown_finishes_tags_test bins/chttp2_fullstack_invoke_large_request_test bins/chttp2_fullstack_max_concurrent_streams_test bins/chttp2_fullstack_no_op_test bins/chttp2_fullstack_ping_pong_streaming_test bins/chttp2_fullstack_request_response_with_metadata_and_payload_test bins/chttp2_fullstack_request_response_with_payload_test bins/chttp2_fullstack_simple_delayed_request_test bins/chttp2_fullstack_simple_request_test bins/chttp2_fullstack_thread_stress_test_test bins/chttp2_fullstack_writes_done_hangs_with_pending_read_test bins/chttp2_simple_ssl_fullstack_cancel_after_accept_test bins/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test bins/chttp2_simple_ssl_fullstack_cancel_after_invoke_test bins/chttp2_simple_ssl_fullstack_cancel_before_invoke_test bins/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test bins/chttp2_simple_ssl_fullstack_invoke_large_request_test bins/chttp2_simple_ssl_fullstack_max_concurrent_streams_test bins/chttp2_simple_ssl_fullstack_no_op_test bins/chttp2_simple_ssl_fullstack_ping_pong_streaming_test bins/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test bins/chttp2_simple_ssl_fullstack_request_response_with_payload_test bins/chttp2_simple_ssl_fullstack_simple_delayed_request_test bins/chttp2_simple_ssl_fullstack_simple_request_test bins/chttp2_simple_ssl_fullstack_thread_stress_test_test bins/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test bins/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test bins/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test bins/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test bins/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test bins/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test bins/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test bins/chttp2_socket_pair_cancel_after_accept_test bins/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test bins/chttp2_socket_pair_cancel_after_invoke_test bins/chttp2_socket_pair_cancel_before_invoke_test bins/chttp2_socket_pair_cancel_in_a_vacuum_test bins/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test bins/chttp2_socket_pair_early_server_shutdown_finishes_tags_test bins/chttp2_socket_pair_invoke_large_request_test bins/chttp2_socket_pair_max_concurrent_streams_test bins/chttp2_socket_pair_no_op_test bins/chttp2_socket_pair_ping_pong_streaming_test bins/chttp2_socket_pair_request_response_with_metadata_and_payload_test bins/chttp2_socket_pair_request_response_with_payload_test bins/chttp2_socket_pair_simple_delayed_request_test bins/chttp2_socket_pair_simple_request_test bins/chttp2_socket_pair_thread_stress_test_test bins/chttp2_socket_pair_writes_done_hangs_with_pending_read_test
+
+tests: buildtests
+	$(E) "[RUN]     Testing grpc_byte_buffer_reader_test"
+	$(Q) ./bins/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_cancellable_test"
+	$(Q) ./bins/gpr_cancellable_test || ( echo test gpr_cancellable_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_log_test"
+	$(Q) ./bins/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_cmdline_test"
+	$(Q) ./bins/gpr_cmdline_test || ( echo test gpr_cmdline_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_histogram_test"
+	$(Q) ./bins/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_host_port_test"
+	$(Q) ./bins/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_slice_buffer_test"
+	$(Q) ./bins/gpr_slice_buffer_test || ( echo test gpr_slice_buffer_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_slice_test"
+	$(Q) ./bins/gpr_slice_test || ( echo test gpr_slice_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_string_test"
+	$(Q) ./bins/gpr_string_test || ( echo test gpr_string_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_sync_test"
+	$(Q) ./bins/gpr_sync_test || ( echo test gpr_sync_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_thd_test"
+	$(Q) ./bins/gpr_thd_test || ( echo test gpr_thd_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_time_test"
+	$(Q) ./bins/gpr_time_test || ( echo test gpr_time_test failed ; exit 1 )
+	$(E) "[RUN]     Testing murmur_hash_test"
+	$(Q) ./bins/murmur_hash_test || ( echo test murmur_hash_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_em_test"
+	$(Q) ./bins/grpc_em_test || ( echo test grpc_em_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_em_pipe_test"
+	$(Q) ./bins/grpc_em_pipe_test || ( echo test grpc_em_pipe_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_stream_op_test"
+	$(Q) ./bins/grpc_stream_op_test || ( echo test grpc_stream_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_stream_encoder_test"
+	$(Q) ./bins/chttp2_stream_encoder_test || ( echo test chttp2_stream_encoder_test failed ; exit 1 )
+	$(E) "[RUN]     Testing hpack_table_test"
+	$(Q) ./bins/hpack_table_test || ( echo test hpack_table_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_stream_map_test"
+	$(Q) ./bins/chttp2_stream_map_test || ( echo test chttp2_stream_map_test failed ; exit 1 )
+	$(E) "[RUN]     Testing hpack_parser_test"
+	$(Q) ./bins/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_metadata_test"
+	$(Q) ./bins/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_status_conversion_test"
+	$(Q) ./bins/chttp2_status_conversion_test || ( echo test chttp2_status_conversion_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_transport_end2end_test"
+	$(Q) ./bins/chttp2_transport_end2end_test || ( echo test chttp2_transport_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_tcp_test"
+	$(Q) ./bins/grpc_tcp_test || ( echo test grpc_tcp_test failed ; exit 1 )
+	$(E) "[RUN]     Testing resolve_address_test"
+	$(Q) ./bins/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
+	$(E) "[RUN]     Testing tcp_server_test"
+	$(Q) ./bins/tcp_server_test || ( echo test tcp_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing tcp_client_test"
+	$(Q) ./bins/tcp_client_test || ( echo test tcp_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_channel_stack_test"
+	$(Q) ./bins/grpc_channel_stack_test || ( echo test grpc_channel_stack_test failed ; exit 1 )
+	$(E) "[RUN]     Testing metadata_buffer_test"
+	$(Q) ./bins/metadata_buffer_test || ( echo test metadata_buffer_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_completion_queue_test"
+	$(Q) ./bins/grpc_completion_queue_test || ( echo test grpc_completion_queue_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_window_stats_test"
+	$(Q) ./bins/census_window_stats_test || ( echo test census_window_stats_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_quick_test"
+	$(Q) ./bins/census_statistics_quick_test || ( echo test census_statistics_quick_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_performance_test"
+	$(Q) ./bins/census_statistics_performance_test || ( echo test census_statistics_performance_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_multiple_writers_test"
+	$(Q) ./bins/census_statistics_multiple_writers_test || ( echo test census_statistics_multiple_writers_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_statistics_multiple_writers_circular_buffer_test"
+	$(Q) ./bins/census_statistics_multiple_writers_circular_buffer_test || ( echo test census_statistics_multiple_writers_circular_buffer_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_stub_test"
+	$(Q) ./bins/census_stub_test || ( echo test census_stub_test failed ; exit 1 )
+	$(E) "[RUN]     Testing census_hash_table_test"
+	$(Q) ./bins/census_hash_table_test || ( echo test census_hash_table_test failed ; exit 1 )
+	$(E) "[RUN]     Testing fling_test"
+	$(Q) ./bins/fling_test || ( echo test fling_test failed ; exit 1 )
+	$(E) "[RUN]     Testing echo_test"
+	$(Q) ./bins/echo_test || ( echo test echo_test failed ; exit 1 )
+	$(E) "[RUN]     Testing message_compress_test"
+	$(Q) ./bins/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing secure_endpoint_test"
+	$(Q) ./bins/secure_endpoint_test || ( echo test secure_endpoint_test failed ; exit 1 )
+	$(E) "[RUN]     Testing httpcli_format_request_test"
+	$(Q) ./bins/httpcli_format_request_test || ( echo test httpcli_format_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing httpcli_parser_test"
+	$(Q) ./bins/httpcli_parser_test || ( echo test httpcli_parser_test failed ; exit 1 )
+	$(E) "[RUN]     Testing httpcli_test"
+	$(Q) ./bins/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_credentials_test"
+	$(Q) ./bins/grpc_credentials_test || ( echo test grpc_credentials_test failed ; exit 1 )
+	$(E) "[RUN]     Testing fling_stream_test"
+	$(Q) ./bins/fling_stream_test || ( echo test fling_stream_test failed ; exit 1 )
+	$(E) "[RUN]     Testing lame_client_test"
+	$(Q) ./bins/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing thread_pool_test"
+	$(Q) ./bins/thread_pool_test || ( echo test thread_pool_test failed ; exit 1 )
+	$(E) "[RUN]     Testing status_test"
+	$(Q) ./bins/status_test || ( echo test status_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_test"
+	$(Q) ./bins/chttp2_fake_security_cancel_after_accept_test || ( echo test chttp2_fake_security_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_and_writes_closed_test"
+	$(Q) ./bins/chttp2_fake_security_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_fake_security_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_invoke_test"
+	$(Q) ./bins/chttp2_fake_security_cancel_after_invoke_test || ( echo test chttp2_fake_security_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_cancel_before_invoke_test"
+	$(Q) ./bins/chttp2_fake_security_cancel_before_invoke_test || ( echo test chttp2_fake_security_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_cancel_in_a_vacuum_test"
+	$(Q) ./bins/chttp2_fake_security_cancel_in_a_vacuum_test || ( echo test chttp2_fake_security_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test"
+	$(Q) ./bins/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_early_server_shutdown_finishes_tags_test"
+	$(Q) ./bins/chttp2_fake_security_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_invoke_large_request_test"
+	$(Q) ./bins/chttp2_fake_security_invoke_large_request_test || ( echo test chttp2_fake_security_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_max_concurrent_streams_test"
+	$(Q) ./bins/chttp2_fake_security_max_concurrent_streams_test || ( echo test chttp2_fake_security_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_no_op_test"
+	$(Q) ./bins/chttp2_fake_security_no_op_test || ( echo test chttp2_fake_security_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_ping_pong_streaming_test"
+	$(Q) ./bins/chttp2_fake_security_ping_pong_streaming_test || ( echo test chttp2_fake_security_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_metadata_and_payload_test"
+	$(Q) ./bins/chttp2_fake_security_request_response_with_metadata_and_payload_test || ( echo test chttp2_fake_security_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_payload_test"
+	$(Q) ./bins/chttp2_fake_security_request_response_with_payload_test || ( echo test chttp2_fake_security_request_response_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_simple_delayed_request_test"
+	$(Q) ./bins/chttp2_fake_security_simple_delayed_request_test || ( echo test chttp2_fake_security_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_simple_request_test"
+	$(Q) ./bins/chttp2_fake_security_simple_request_test || ( echo test chttp2_fake_security_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_thread_stress_test_test"
+	$(Q) ./bins/chttp2_fake_security_thread_stress_test_test || ( echo test chttp2_fake_security_thread_stress_test_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_writes_done_hangs_with_pending_read_test"
+	$(Q) ./bins/chttp2_fake_security_writes_done_hangs_with_pending_read_test || ( echo test chttp2_fake_security_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_accept_test"
+	$(Q) ./bins/chttp2_fullstack_cancel_after_accept_test || ( echo test chttp2_fullstack_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_accept_and_writes_closed_test"
+	$(Q) ./bins/chttp2_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_invoke_test"
+	$(Q) ./bins/chttp2_fullstack_cancel_after_invoke_test || ( echo test chttp2_fullstack_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_cancel_before_invoke_test"
+	$(Q) ./bins/chttp2_fullstack_cancel_before_invoke_test || ( echo test chttp2_fullstack_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_cancel_in_a_vacuum_test"
+	$(Q) ./bins/chttp2_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test"
+	$(Q) ./bins/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_early_server_shutdown_finishes_tags_test"
+	$(Q) ./bins/chttp2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_invoke_large_request_test"
+	$(Q) ./bins/chttp2_fullstack_invoke_large_request_test || ( echo test chttp2_fullstack_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_max_concurrent_streams_test"
+	$(Q) ./bins/chttp2_fullstack_max_concurrent_streams_test || ( echo test chttp2_fullstack_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_no_op_test"
+	$(Q) ./bins/chttp2_fullstack_no_op_test || ( echo test chttp2_fullstack_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_ping_pong_streaming_test"
+	$(Q) ./bins/chttp2_fullstack_ping_pong_streaming_test || ( echo test chttp2_fullstack_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_metadata_and_payload_test"
+	$(Q) ./bins/chttp2_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_payload_test"
+	$(Q) ./bins/chttp2_fullstack_request_response_with_payload_test || ( echo test chttp2_fullstack_request_response_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_simple_delayed_request_test"
+	$(Q) ./bins/chttp2_fullstack_simple_delayed_request_test || ( echo test chttp2_fullstack_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_simple_request_test"
+	$(Q) ./bins/chttp2_fullstack_simple_request_test || ( echo test chttp2_fullstack_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_thread_stress_test_test"
+	$(Q) ./bins/chttp2_fullstack_thread_stress_test_test || ( echo test chttp2_fullstack_thread_stress_test_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_writes_done_hangs_with_pending_read_test"
+	$(Q) ./bins/chttp2_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_cancel_after_accept_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_invoke_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_cancel_after_invoke_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_before_invoke_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_cancel_before_invoke_test || ( echo test chttp2_simple_ssl_fullstack_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_invoke_large_request_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_fullstack_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_max_concurrent_streams_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_max_concurrent_streams_test || ( echo test chttp2_simple_ssl_fullstack_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_no_op_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_no_op_test || ( echo test chttp2_simple_ssl_fullstack_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_ping_pong_streaming_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_ping_pong_streaming_test || ( echo test chttp2_simple_ssl_fullstack_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_payload_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_request_response_with_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_simple_delayed_request_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_simple_delayed_request_test || ( echo test chttp2_simple_ssl_fullstack_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_simple_request_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_simple_request_test || ( echo test chttp2_simple_ssl_fullstack_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_thread_stress_test_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_thread_stress_test_test || ( echo test chttp2_simple_ssl_fullstack_thread_stress_test_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test"
+	$(Q) ./bins/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_no_op_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test"
+	$(Q) ./bins/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_accept_test"
+	$(Q) ./bins/chttp2_socket_pair_cancel_after_accept_test || ( echo test chttp2_socket_pair_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_accept_and_writes_closed_test"
+	$(Q) ./bins/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_socket_pair_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_invoke_test"
+	$(Q) ./bins/chttp2_socket_pair_cancel_after_invoke_test || ( echo test chttp2_socket_pair_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_before_invoke_test"
+	$(Q) ./bins/chttp2_socket_pair_cancel_before_invoke_test || ( echo test chttp2_socket_pair_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_in_a_vacuum_test"
+	$(Q) ./bins/chttp2_socket_pair_cancel_in_a_vacuum_test || ( echo test chttp2_socket_pair_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test"
+	$(Q) ./bins/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_early_server_shutdown_finishes_tags_test"
+	$(Q) ./bins/chttp2_socket_pair_early_server_shutdown_finishes_tags_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_invoke_large_request_test"
+	$(Q) ./bins/chttp2_socket_pair_invoke_large_request_test || ( echo test chttp2_socket_pair_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_max_concurrent_streams_test"
+	$(Q) ./bins/chttp2_socket_pair_max_concurrent_streams_test || ( echo test chttp2_socket_pair_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_no_op_test"
+	$(Q) ./bins/chttp2_socket_pair_no_op_test || ( echo test chttp2_socket_pair_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_ping_pong_streaming_test"
+	$(Q) ./bins/chttp2_socket_pair_ping_pong_streaming_test || ( echo test chttp2_socket_pair_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_metadata_and_payload_test"
+	$(Q) ./bins/chttp2_socket_pair_request_response_with_metadata_and_payload_test || ( echo test chttp2_socket_pair_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_payload_test"
+	$(Q) ./bins/chttp2_socket_pair_request_response_with_payload_test || ( echo test chttp2_socket_pair_request_response_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_simple_delayed_request_test"
+	$(Q) ./bins/chttp2_socket_pair_simple_delayed_request_test || ( echo test chttp2_socket_pair_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_simple_request_test"
+	$(Q) ./bins/chttp2_socket_pair_simple_request_test || ( echo test chttp2_socket_pair_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_thread_stress_test_test"
+	$(Q) ./bins/chttp2_socket_pair_thread_stress_test_test || ( echo test chttp2_socket_pair_thread_stress_test_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_writes_done_hangs_with_pending_read_test"
+	$(Q) ./bins/chttp2_socket_pair_writes_done_hangs_with_pending_read_test || ( echo test chttp2_socket_pair_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+
+
+tools: privatelibs bins/gen_hpack_tables
+
+buildbenchmarks: privatelibs bins/grpc_completion_queue_benchmark bins/low_level_ping_pong_benchmark
+
+benchmarks: buildbenchmarks
+
+make_dirs:
+	$(Q) mkdir -p libs
+	$(Q) mkdir -p bins
+	$(Q) mkdir -p gens
+
+strip: strip-static strip-shared
+
+strip-static: static
+	$(E) "[STRIP]   Stripping libgpr.a"
+	$(Q) $(STRIP) libs/libgpr.a
+	$(E) "[STRIP]   Stripping libgrpc.a"
+	$(Q) $(STRIP) libs/libgrpc.a
+	$(E) "[STRIP]   Stripping libgrpc++.a"
+	$(Q) $(STRIP) libs/libgrpc++.a
+	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
+	$(Q) $(STRIP) libs/libgrpc_unsecure.a
+
+strip-shared: shared
+	$(E) "[STRIP]   Stripping libgpr.so"
+	$(Q) $(STRIP) libs/libgpr.so.$(VERSION)
+	$(E) "[STRIP]   Stripping libgrpc.so"
+	$(Q) $(STRIP) libs/libgrpc.so.$(VERSION)
+	$(E) "[STRIP]   Stripping libgrpc++.so"
+	$(Q) $(STRIP) libs/libgrpc++.so.$(VERSION)
+	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
+	$(Q) $(STRIP) libs/libgrpc_unsecure.so.$(VERSION)
+
+gens/%.pb.cc : %.proto
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens $<
+
+deps/%.dep : %.c
+	$(E) "[DEP]     Generating dependencies for $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
+
+deps/%.dep : gens/%.pb.cc
+	$(E) "[DEP]     Generating dependencies for $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
+
+deps/%.dep : %.cc
+	$(E) "[DEP]     Generating dependencies for $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
+
+objs/%.o : %.c
+	$(E) "[C]       Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+objs/%.o : gens/%.pb.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+objs/%.o : %.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+dep: deps_libgpr deps_libgrpc deps_libgrpc_test_util deps_libgrpc++ deps_libgrpc++_test_util deps_libend2end_fixture_chttp2_fake_security deps_libend2end_fixture_chttp2_fullstack deps_libend2end_fixture_chttp2_simple_ssl_fullstack deps_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack deps_libend2end_fixture_chttp2_socket_pair deps_libend2end_test_cancel_after_accept deps_libend2end_test_cancel_after_accept_and_writes_closed deps_libend2end_test_cancel_after_invoke deps_libend2end_test_cancel_before_invoke deps_libend2end_test_cancel_in_a_vacuum deps_libend2end_test_early_server_shutdown_finishes_inflight_calls deps_libend2end_test_early_server_shutdown_finishes_tags deps_libend2end_test_invoke_large_request deps_libend2end_test_max_concurrent_streams deps_libend2end_test_no_op deps_libend2end_test_ping_pong_streaming deps_libend2end_test_request_response_with_metadata_and_payload deps_libend2end_test_request_response_with_payload deps_libend2end_test_simple_delayed_request deps_libend2end_test_simple_request deps_libend2end_test_thread_stress_test deps_libend2end_test_writes_done_hangs_with_pending_read deps_libend2end_certs deps_libgrpc_unsecure deps_gen_hpack_tables deps_grpc_byte_buffer_reader_test deps_gpr_cancellable_test deps_gpr_log_test deps_gpr_cmdline_test deps_gpr_histogram_test deps_gpr_host_port_test deps_gpr_slice_buffer_test deps_gpr_slice_test deps_gpr_string_test deps_gpr_sync_test deps_gpr_thd_test deps_gpr_time_test deps_murmur_hash_test deps_grpc_em_test deps_grpc_em_pipe_test deps_grpc_stream_op_test deps_chttp2_stream_encoder_test deps_hpack_table_test deps_chttp2_stream_map_test deps_hpack_parser_test deps_transport_metadata_test deps_chttp2_status_conversion_test deps_chttp2_transport_end2end_test deps_grpc_tcp_test deps_resolve_address_test deps_tcp_server_test deps_tcp_client_test deps_grpc_channel_stack_test deps_metadata_buffer_test deps_grpc_completion_queue_test deps_grpc_completion_queue_benchmark deps_census_window_stats_test deps_census_statistics_quick_test deps_census_statistics_performance_test deps_census_statistics_multiple_writers_test deps_census_statistics_multiple_writers_circular_buffer_test deps_census_stub_test deps_census_hash_table_test deps_fling_server deps_fling_client deps_fling_test deps_echo_server deps_echo_client deps_echo_test deps_low_level_ping_pong_benchmark deps_message_compress_test deps_secure_endpoint_test deps_httpcli_format_request_test deps_httpcli_parser_test deps_httpcli_test deps_grpc_credentials_test deps_fling_stream_test deps_lame_client_test deps_thread_pool_test deps_status_test deps_chttp2_fake_security_cancel_after_accept_test deps_chttp2_fake_security_cancel_after_accept_and_writes_closed_test deps_chttp2_fake_security_cancel_after_invoke_test deps_chttp2_fake_security_cancel_before_invoke_test deps_chttp2_fake_security_cancel_in_a_vacuum_test deps_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_fake_security_early_server_shutdown_finishes_tags_test deps_chttp2_fake_security_invoke_large_request_test deps_chttp2_fake_security_max_concurrent_streams_test deps_chttp2_fake_security_no_op_test deps_chttp2_fake_security_ping_pong_streaming_test deps_chttp2_fake_security_request_response_with_metadata_and_payload_test deps_chttp2_fake_security_request_response_with_payload_test deps_chttp2_fake_security_simple_delayed_request_test deps_chttp2_fake_security_simple_request_test deps_chttp2_fake_security_thread_stress_test_test deps_chttp2_fake_security_writes_done_hangs_with_pending_read_test deps_chttp2_fullstack_cancel_after_accept_test deps_chttp2_fullstack_cancel_after_accept_and_writes_closed_test deps_chttp2_fullstack_cancel_after_invoke_test deps_chttp2_fullstack_cancel_before_invoke_test deps_chttp2_fullstack_cancel_in_a_vacuum_test deps_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_fullstack_early_server_shutdown_finishes_tags_test deps_chttp2_fullstack_invoke_large_request_test deps_chttp2_fullstack_max_concurrent_streams_test deps_chttp2_fullstack_no_op_test deps_chttp2_fullstack_ping_pong_streaming_test deps_chttp2_fullstack_request_response_with_metadata_and_payload_test deps_chttp2_fullstack_request_response_with_payload_test deps_chttp2_fullstack_simple_delayed_request_test deps_chttp2_fullstack_simple_request_test deps_chttp2_fullstack_thread_stress_test_test deps_chttp2_fullstack_writes_done_hangs_with_pending_read_test deps_chttp2_simple_ssl_fullstack_cancel_after_accept_test deps_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test deps_chttp2_simple_ssl_fullstack_cancel_after_invoke_test deps_chttp2_simple_ssl_fullstack_cancel_before_invoke_test deps_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test deps_chttp2_simple_ssl_fullstack_invoke_large_request_test deps_chttp2_simple_ssl_fullstack_max_concurrent_streams_test deps_chttp2_simple_ssl_fullstack_no_op_test deps_chttp2_simple_ssl_fullstack_ping_pong_streaming_test deps_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test deps_chttp2_simple_ssl_fullstack_request_response_with_payload_test deps_chttp2_simple_ssl_fullstack_simple_delayed_request_test deps_chttp2_simple_ssl_fullstack_simple_request_test deps_chttp2_simple_ssl_fullstack_thread_stress_test_test deps_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test deps_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test deps_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test deps_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test deps_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test deps_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test deps_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test deps_chttp2_socket_pair_cancel_after_accept_test deps_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test deps_chttp2_socket_pair_cancel_after_invoke_test deps_chttp2_socket_pair_cancel_before_invoke_test deps_chttp2_socket_pair_cancel_in_a_vacuum_test deps_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_socket_pair_early_server_shutdown_finishes_tags_test deps_chttp2_socket_pair_invoke_large_request_test deps_chttp2_socket_pair_max_concurrent_streams_test deps_chttp2_socket_pair_no_op_test deps_chttp2_socket_pair_ping_pong_streaming_test deps_chttp2_socket_pair_request_response_with_metadata_and_payload_test deps_chttp2_socket_pair_request_response_with_payload_test deps_chttp2_socket_pair_simple_delayed_request_test deps_chttp2_socket_pair_simple_request_test deps_chttp2_socket_pair_thread_stress_test_test deps_chttp2_socket_pair_writes_done_hangs_with_pending_read_test
+
+install: install-headers install-static install-shared
+
+install-headers:
+	$(E) "[INSTALL] Installing public headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+
+install-static: static strip-static
+	$(E) "[INSTALL] Installing libgpr.a"
+	$(Q) $(INSTALL) libs/libgpr.a $(prefix)/lib/libgpr.a
+	$(E) "[INSTALL] Installing libgrpc.a"
+	$(Q) $(INSTALL) libs/libgrpc.a $(prefix)/lib/libgrpc.a
+	$(E) "[INSTALL] Installing libgrpc++.a"
+	$(Q) $(INSTALL) libs/libgrpc++.a $(prefix)/lib/libgrpc++.a
+	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
+	$(Q) $(INSTALL) libs/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
+
+install-shared: shared strip-shared
+	$(E) "[INSTALL] Installing libgpr.so"
+	$(Q) $(INSTALL) libs/libgpr.so.$(VERSION) $(prefix)/lib/libgpr.so.$(VERSION)
+	$(E) "[INSTALL] Installing libgrpc.so"
+	$(Q) $(INSTALL) libs/libgrpc.so.$(VERSION) $(prefix)/lib/libgrpc.so.$(VERSION)
+	$(E) "[INSTALL] Installing libgrpc++.so"
+	$(Q) $(INSTALL) libs/libgrpc++.so.$(VERSION) $(prefix)/lib/libgrpc++.so.$(VERSION)
+	$(E) "[INSTALL] Installing libgrpc_unsecure.so"
+	$(Q) $(INSTALL) libs/libgrpc_unsecure.so.$(VERSION) $(prefix)/lib/libgrpc_unsecure.so.$(VERSION)
+
+clean: clean_libgpr clean_libgrpc clean_libgrpc_test_util clean_libgrpc++ clean_libgrpc++_test_util clean_libend2end_fixture_chttp2_fake_security clean_libend2end_fixture_chttp2_fullstack clean_libend2end_fixture_chttp2_simple_ssl_fullstack clean_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack clean_libend2end_fixture_chttp2_socket_pair clean_libend2end_test_cancel_after_accept clean_libend2end_test_cancel_after_accept_and_writes_closed clean_libend2end_test_cancel_after_invoke clean_libend2end_test_cancel_before_invoke clean_libend2end_test_cancel_in_a_vacuum clean_libend2end_test_early_server_shutdown_finishes_inflight_calls clean_libend2end_test_early_server_shutdown_finishes_tags clean_libend2end_test_invoke_large_request clean_libend2end_test_max_concurrent_streams clean_libend2end_test_no_op clean_libend2end_test_ping_pong_streaming clean_libend2end_test_request_response_with_metadata_and_payload clean_libend2end_test_request_response_with_payload clean_libend2end_test_simple_delayed_request clean_libend2end_test_simple_request clean_libend2end_test_thread_stress_test clean_libend2end_test_writes_done_hangs_with_pending_read clean_libend2end_certs clean_libgrpc_unsecure clean_gen_hpack_tables clean_grpc_byte_buffer_reader_test clean_gpr_cancellable_test clean_gpr_log_test clean_gpr_cmdline_test clean_gpr_histogram_test clean_gpr_host_port_test clean_gpr_slice_buffer_test clean_gpr_slice_test clean_gpr_string_test clean_gpr_sync_test clean_gpr_thd_test clean_gpr_time_test clean_murmur_hash_test clean_grpc_em_test clean_grpc_em_pipe_test clean_grpc_stream_op_test clean_chttp2_stream_encoder_test clean_hpack_table_test clean_chttp2_stream_map_test clean_hpack_parser_test clean_transport_metadata_test clean_chttp2_status_conversion_test clean_chttp2_transport_end2end_test clean_grpc_tcp_test clean_resolve_address_test clean_tcp_server_test clean_tcp_client_test clean_grpc_channel_stack_test clean_metadata_buffer_test clean_grpc_completion_queue_test clean_grpc_completion_queue_benchmark clean_census_window_stats_test clean_census_statistics_quick_test clean_census_statistics_performance_test clean_census_statistics_multiple_writers_test clean_census_statistics_multiple_writers_circular_buffer_test clean_census_stub_test clean_census_hash_table_test clean_fling_server clean_fling_client clean_fling_test clean_echo_server clean_echo_client clean_echo_test clean_low_level_ping_pong_benchmark clean_message_compress_test clean_secure_endpoint_test clean_httpcli_format_request_test clean_httpcli_parser_test clean_httpcli_test clean_grpc_credentials_test clean_fling_stream_test clean_lame_client_test clean_thread_pool_test clean_status_test clean_chttp2_fake_security_cancel_after_accept_test clean_chttp2_fake_security_cancel_after_accept_and_writes_closed_test clean_chttp2_fake_security_cancel_after_invoke_test clean_chttp2_fake_security_cancel_before_invoke_test clean_chttp2_fake_security_cancel_in_a_vacuum_test clean_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_fake_security_early_server_shutdown_finishes_tags_test clean_chttp2_fake_security_invoke_large_request_test clean_chttp2_fake_security_max_concurrent_streams_test clean_chttp2_fake_security_no_op_test clean_chttp2_fake_security_ping_pong_streaming_test clean_chttp2_fake_security_request_response_with_metadata_and_payload_test clean_chttp2_fake_security_request_response_with_payload_test clean_chttp2_fake_security_simple_delayed_request_test clean_chttp2_fake_security_simple_request_test clean_chttp2_fake_security_thread_stress_test_test clean_chttp2_fake_security_writes_done_hangs_with_pending_read_test clean_chttp2_fullstack_cancel_after_accept_test clean_chttp2_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_fullstack_cancel_after_invoke_test clean_chttp2_fullstack_cancel_before_invoke_test clean_chttp2_fullstack_cancel_in_a_vacuum_test clean_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_fullstack_invoke_large_request_test clean_chttp2_fullstack_max_concurrent_streams_test clean_chttp2_fullstack_no_op_test clean_chttp2_fullstack_ping_pong_streaming_test clean_chttp2_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_fullstack_request_response_with_payload_test clean_chttp2_fullstack_simple_delayed_request_test clean_chttp2_fullstack_simple_request_test clean_chttp2_fullstack_thread_stress_test_test clean_chttp2_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_simple_ssl_fullstack_cancel_after_accept_test clean_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_simple_ssl_fullstack_cancel_after_invoke_test clean_chttp2_simple_ssl_fullstack_cancel_before_invoke_test clean_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_simple_ssl_fullstack_invoke_large_request_test clean_chttp2_simple_ssl_fullstack_max_concurrent_streams_test clean_chttp2_simple_ssl_fullstack_no_op_test clean_chttp2_simple_ssl_fullstack_ping_pong_streaming_test clean_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_simple_ssl_fullstack_request_response_with_payload_test clean_chttp2_simple_ssl_fullstack_simple_delayed_request_test clean_chttp2_simple_ssl_fullstack_simple_request_test clean_chttp2_simple_ssl_fullstack_thread_stress_test_test clean_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test clean_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test clean_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test clean_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_socket_pair_cancel_after_accept_test clean_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test clean_chttp2_socket_pair_cancel_after_invoke_test clean_chttp2_socket_pair_cancel_before_invoke_test clean_chttp2_socket_pair_cancel_in_a_vacuum_test clean_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_socket_pair_early_server_shutdown_finishes_tags_test clean_chttp2_socket_pair_invoke_large_request_test clean_chttp2_socket_pair_max_concurrent_streams_test clean_chttp2_socket_pair_no_op_test clean_chttp2_socket_pair_ping_pong_streaming_test clean_chttp2_socket_pair_request_response_with_metadata_and_payload_test clean_chttp2_socket_pair_request_response_with_payload_test clean_chttp2_socket_pair_simple_delayed_request_test clean_chttp2_socket_pair_simple_request_test clean_chttp2_socket_pair_thread_stress_test_test clean_chttp2_socket_pair_writes_done_hangs_with_pending_read_test
+	$(Q) $(RM) -r deps objs libs bins gens
+
+
+# The various libraries
+
+
+LIBGPR_SRC = \
+    src/core/support/alloc.c \
+    src/core/support/cancellable.c \
+    src/core/support/cmdline.c \
+    src/core/support/cpu_posix.c \
+    src/core/support/histogram.c \
+    src/core/support/host_port.c \
+    src/core/support/log.c \
+    src/core/support/log_posix.c \
+    src/core/support/log_linux.c \
+    src/core/support/log_android.c \
+    src/core/support/log_win32.c \
+    src/core/support/murmur_hash.c \
+    src/core/support/slice.c \
+    src/core/support/slice_buffer.c \
+    src/core/support/string.c \
+    src/core/support/string_posix.c \
+    src/core/support/sync.c \
+    src/core/support/sync_posix.c \
+    src/core/support/thd_posix.c \
+    src/core/support/thd_win32.c \
+    src/core/support/time.c \
+    src/core/support/time_posix.c \
+    src/core/support/time_win32.c \
+
+PUBLIC_HEADERS += \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_win32.h \
+    include/grpc/support/cancellable_platform.h \
+    include/grpc/support/cmdline.h \
+    include/grpc/support/histogram.h \
+    include/grpc/support/host_port.h \
+    include/grpc/support/log.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/slice_buffer.h \
+    include/grpc/support/slice.h \
+    include/grpc/support/string.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_win32.h \
+    include/grpc/support/thd.h \
+    include/grpc/support/thd_posix.h \
+    include/grpc/support/thd_win32.h \
+    include/grpc/support/time.h \
+    include/grpc/support/time_posix.h \
+    include/grpc/support/time_win32.h \
+    include/grpc/support/useful.h \
+
+LIBGPR_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
+LIBGPR_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGPR_SRC))))
+
+libs/libgpr.a: $(LIBGPR_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libgpr.a $(LIBGPR_OBJS)
+
+libs/libgpr.so.$(VERSION): $(LIBGPR_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,libgpr.so.0 -o libs/libgpr.so.$(VERSION) $(LIBGPR_OBJS) $(LDLIBS)
+
+deps_libgpr: $(LIBGPR_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBGPR_DEPS)
+endif
+
+clean_libgpr:
+	$(E) "[CLEAN]   Cleaning libgpr files"
+	$(Q) $(RM) $(LIBGPR_OBJS)
+	$(Q) $(RM) $(LIBGPR_DEPS)
+	$(Q) $(RM) libs/libgpr.a
+	$(Q) $(RM) libs/libgpr.so.$(VERSION)
+
+
+LIBGRPC_SRC = \
+    src/core/channel/call_op_string.c \
+    src/core/channel/census_filter.c \
+    src/core/channel/channel_args.c \
+    src/core/channel/channel_stack.c \
+    src/core/channel/client_channel.c \
+    src/core/channel/client_setup.c \
+    src/core/channel/connected_channel.c \
+    src/core/channel/http_client_filter.c \
+    src/core/channel/http_filter.c \
+    src/core/channel/http_server_filter.c \
+    src/core/channel/metadata_buffer.c \
+    src/core/channel/noop_filter.c \
+    src/core/compression/algorithm.c \
+    src/core/compression/message_compress.c \
+    src/core/endpoint/endpoint.c \
+    src/core/endpoint/resolve_address.c \
+    src/core/endpoint/socket_utils.c \
+    src/core/endpoint/socket_utils_linux.c \
+    src/core/endpoint/socket_utils_posix.c \
+    src/core/endpoint/tcp.c \
+    src/core/endpoint/tcp_client.c \
+    src/core/endpoint/tcp_server.c \
+    src/core/eventmanager/em.c \
+    src/core/eventmanager/em_posix.c \
+    src/core/surface/byte_buffer.c \
+    src/core/surface/byte_buffer_reader.c \
+    src/core/surface/call.c \
+    src/core/surface/channel.c \
+    src/core/surface/channel_create.c \
+    src/core/surface/client.c \
+    src/core/surface/lame_client.c \
+    src/core/surface/completion_queue.c \
+    src/core/surface/event_string.c \
+    src/core/surface/init.c \
+    src/core/surface/server.c \
+    src/core/surface/server_chttp2.c \
+    src/core/surface/server_create.c \
+    src/core/surface/surface_em.c \
+    src/core/transport/chttp2/frame_data.c \
+    src/core/transport/chttp2/frame_ping.c \
+    src/core/transport/chttp2/frame_rst_stream.c \
+    src/core/transport/chttp2/frame_settings.c \
+    src/core/transport/chttp2/frame_window_update.c \
+    src/core/transport/chttp2/hpack_parser.c \
+    src/core/transport/chttp2/hpack_table.c \
+    src/core/transport/chttp2/status_conversion.c \
+    src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_map.c \
+    src/core/transport/chttp2/timeout_encoding.c \
+    src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2_transport.c \
+    src/core/transport/metadata.c \
+    src/core/transport/stream_op.c \
+    src/core/transport/transport.c \
+    src/core/statistics/census_init.c \
+    src/core/statistics/census_rpc_stats.c \
+    src/core/statistics/census_tracing.c \
+    src/core/statistics/log.c \
+    src/core/statistics/window_stats.c \
+    src/core/statistics/hash_table.c \
+    src/core/httpcli/format_request.c \
+    src/core/httpcli/httpcli.c \
+    src/core/httpcli/httpcli_security_context.c \
+    src/core/httpcli/parser.c \
+    src/core/security/auth.c \
+    src/core/security/credentials.c \
+    src/core/security/google_root_certs.c \
+    src/core/security/secure_transport_setup.c \
+    src/core/security/security_context.c \
+    src/core/security/server_secure_chttp2.c \
+    src/core/surface/secure_channel_create.c \
+    src/core/surface/secure_server_create.c \
+    src/core/endpoint/secure_endpoint.c \
+    src/core/tsi/transport_security.c \
+    src/core/tsi/fake_transport_security.c \
+    src/core/tsi/ssl_transport_security.c \
+    third_party/cJSON/cJSON.c \
+
+PUBLIC_HEADERS += \
+    include/grpc/byte_buffer.h \
+    include/grpc/byte_buffer_reader.h \
+    include/grpc/grpc.h \
+    include/grpc/grpc_security.h \
+    include/grpc/status.h \
+
+LIBGRPC_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
+LIBGRPC_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC_SRC))))
+
+libs/libgrpc.a: $(LIBGRPC_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libgrpc.a $(LIBGRPC_OBJS)
+
+libs/libgrpc.so.$(VERSION): $(LIBGRPC_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,libgrpc.so.0 -o libs/libgrpc.so.$(VERSION) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE)
+
+
+deps_libgrpc: $(LIBGRPC_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBGRPC_DEPS)
+endif
+
+clean_libgrpc:
+	$(E) "[CLEAN]   Cleaning libgrpc files"
+	$(Q) $(RM) $(LIBGRPC_OBJS)
+	$(Q) $(RM) $(LIBGRPC_DEPS)
+	$(Q) $(RM) libs/libgrpc.a
+	$(Q) $(RM) libs/libgrpc.so.$(VERSION)
+
+
+LIBGRPC_TEST_UTIL_SRC = \
+    test/core/util/grpc_profiler.c \
+    test/core/util/parse_hexstring.c \
+    test/core/util/port.c \
+    test/core/util/slice_splitter.c \
+    test/core/util/test_config.c \
+    test/core/end2end/end2end_tests.c \
+    test/core/end2end/cq_verifier.c \
+    test/core/endpoint/endpoint_tests.c \
+    test/core/transport/transport_end2end_tests.c \
+    test/core/statistics/log_tests.c \
+
+
+LIBGRPC_TEST_UTIL_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
+LIBGRPC_TEST_UTIL_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
+
+libs/libgrpc_test_util.a: $(LIBGRPC_TEST_UTIL_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS)
+
+
+
+deps_libgrpc_test_util: $(LIBGRPC_TEST_UTIL_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBGRPC_TEST_UTIL_DEPS)
+endif
+
+clean_libgrpc_test_util:
+	$(E) "[CLEAN]   Cleaning libgrpc_test_util files"
+	$(Q) $(RM) $(LIBGRPC_TEST_UTIL_OBJS)
+	$(Q) $(RM) $(LIBGRPC_TEST_UTIL_DEPS)
+	$(Q) $(RM) libs/libgrpc_test_util.a
+	$(Q) $(RM) libs/libgrpc_test_util.so.$(VERSION)
+
+
+LIBGRPC++_SRC = \
+    src/cpp/server/server.cc \
+    src/cpp/server/server_rpc_handler.cc \
+    src/cpp/server/thread_pool.cc \
+    src/cpp/server/async_server_context.cc \
+    src/cpp/server/async_server.cc \
+    src/cpp/server/completion_queue.cc \
+    src/cpp/server/server_builder.cc \
+    src/cpp/stream/stream_context.cc \
+    src/cpp/client/create_channel.cc \
+    src/cpp/client/channel.cc \
+    src/cpp/client/client_context.cc \
+    src/cpp/client/internal_stub.cc \
+    src/cpp/util/time.cc \
+    src/cpp/util/status.cc \
+    src/cpp/proto/proto_utils.cc \
+    src/cpp/rpc_method.cc \
+
+PUBLIC_HEADERS += \
+    include/grpc++/channel_interface.h \
+    include/grpc++/async_server.h \
+    include/grpc++/create_channel.h \
+    include/grpc++/server_builder.h \
+    include/grpc++/thread_pool_interface.h \
+    include/grpc++/stream_context_interface.h \
+    include/grpc++/status.h \
+    include/grpc++/config.h \
+    include/grpc++/completion_queue.h \
+    include/grpc++/stream.h \
+    include/grpc++/async_server_context.h \
+    include/grpc++/server.h \
+    include/grpc++/client_context.h \
+
+LIBGRPC++_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
+LIBGRPC++_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC++_SRC))))
+
+libs/libgrpc++.a: $(LIBGRPC++_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libgrpc++.a $(LIBGRPC++_OBJS)
+
+libs/libgrpc++.so.$(VERSION): $(LIBGRPC++_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LDXX) $(LDFLAGS) -shared -Wl,-soname,libgrpc++.so.0 -o libs/libgrpc++.so.$(VERSION) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE)
+
+
+deps_libgrpc++: $(LIBGRPC++_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBGRPC++_DEPS)
+endif
+
+clean_libgrpc++:
+	$(E) "[CLEAN]   Cleaning libgrpc++ files"
+	$(Q) $(RM) $(LIBGRPC++_OBJS)
+	$(Q) $(RM) $(LIBGRPC++_DEPS)
+	$(Q) $(RM) libs/libgrpc++.a
+	$(Q) $(RM) libs/libgrpc++.so.$(VERSION)
+
+
+LIBGRPC++_TEST_UTIL_SRC = \
+    test/cpp/end2end/async_test_server.cc \
+    test/cpp/util/echo.proto \
+
+
+LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
+LIBGRPC++_TEST_UTIL_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
+
+libs/libgrpc++_test_util.a: $(LIBGRPC++_TEST_UTIL_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
+
+
+
+deps_libgrpc++_test_util: $(LIBGRPC++_TEST_UTIL_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBGRPC++_TEST_UTIL_DEPS)
+endif
+
+clean_libgrpc++_test_util:
+	$(E) "[CLEAN]   Cleaning libgrpc++_test_util files"
+	$(Q) $(RM) $(LIBGRPC++_TEST_UTIL_OBJS)
+	$(Q) $(RM) $(LIBGRPC++_TEST_UTIL_DEPS)
+	$(Q) $(RM) libs/libgrpc++_test_util.a
+	$(Q) $(RM) libs/libgrpc++_test_util.so.$(VERSION)
+
+
+LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
+    test/core/end2end/fixtures/chttp2_fake_security.c \
+
+
+LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC))))
+LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC))))
+
+libs/libend2end_fixture_chttp2_fake_security.a: $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_fake_security.a $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
+
+
+
+deps_libend2end_fixture_chttp2_fake_security: $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS)
+endif
+
+clean_libend2end_fixture_chttp2_fake_security:
+	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_fake_security files"
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS)
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_fake_security.a
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_fake_security.so.$(VERSION)
+
+
+LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC = \
+    test/core/end2end/fixtures/chttp2_fullstack.c \
+
+
+LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC))))
+LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC))))
+
+libs/libend2end_fixture_chttp2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
+
+
+
+deps_libend2end_fixture_chttp2_fullstack: $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS)
+endif
+
+clean_libend2end_fixture_chttp2_fullstack:
+	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_fullstack files"
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS)
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_fullstack.a
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_fullstack.so.$(VERSION)
+
+
+LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC = \
+    test/core/end2end/fixtures/chttp2_simple_ssl_fullstack.c \
+
+
+LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC))))
+LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC))))
+
+libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
+
+
+
+deps_libend2end_fixture_chttp2_simple_ssl_fullstack: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS)
+endif
+
+clean_libend2end_fixture_chttp2_simple_ssl_fullstack:
+	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_simple_ssl_fullstack files"
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS)
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.so.$(VERSION)
+
+
+LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC = \
+    test/core/end2end/fixtures/chttp2_simple_ssl_with_oauth2_fullstack.c \
+
+
+LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC))))
+LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC))))
+
+libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
+
+
+
+deps_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS)
+endif
+
+clean_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack:
+	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack files"
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS)
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.so.$(VERSION)
+
+
+LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC = \
+    test/core/end2end/fixtures/chttp2_socket_pair.c \
+
+
+LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC))))
+LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC))))
+
+libs/libend2end_fixture_chttp2_socket_pair.a: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_socket_pair.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
+
+
+
+deps_libend2end_fixture_chttp2_socket_pair: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS)
+endif
+
+clean_libend2end_fixture_chttp2_socket_pair:
+	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_socket_pair files"
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
+	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS)
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_socket_pair.a
+	$(Q) $(RM) libs/libend2end_fixture_chttp2_socket_pair.so.$(VERSION)
+
+
+LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC = \
+    test/core/end2end/tests/cancel_after_accept.c \
+
+
+LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC))))
+LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC))))
+
+libs/libend2end_test_cancel_after_accept.a: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_cancel_after_accept.a $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
+
+
+
+deps_libend2end_test_cancel_after_accept: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
+endif
+
+clean_libend2end_test_cancel_after_accept:
+	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_after_accept files"
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
+	$(Q) $(RM) libs/libend2end_test_cancel_after_accept.a
+	$(Q) $(RM) libs/libend2end_test_cancel_after_accept.so.$(VERSION)
+
+
+LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_SRC = \
+    test/core/end2end/tests/cancel_after_accept_and_writes_closed.c \
+
+
+LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_SRC))))
+LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_SRC))))
+
+libs/libend2end_test_cancel_after_accept_and_writes_closed.a: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_cancel_after_accept_and_writes_closed.a $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
+
+
+
+deps_libend2end_test_cancel_after_accept_and_writes_closed: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
+endif
+
+clean_libend2end_test_cancel_after_accept_and_writes_closed:
+	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_after_accept_and_writes_closed files"
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
+	$(Q) $(RM) libs/libend2end_test_cancel_after_accept_and_writes_closed.a
+	$(Q) $(RM) libs/libend2end_test_cancel_after_accept_and_writes_closed.so.$(VERSION)
+
+
+LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC = \
+    test/core/end2end/tests/cancel_after_invoke.c \
+
+
+LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC))))
+LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC))))
+
+libs/libend2end_test_cancel_after_invoke.a: $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_cancel_after_invoke.a $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
+
+
+
+deps_libend2end_test_cancel_after_invoke: $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
+endif
+
+clean_libend2end_test_cancel_after_invoke:
+	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_after_invoke files"
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
+	$(Q) $(RM) libs/libend2end_test_cancel_after_invoke.a
+	$(Q) $(RM) libs/libend2end_test_cancel_after_invoke.so.$(VERSION)
+
+
+LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC = \
+    test/core/end2end/tests/cancel_before_invoke.c \
+
+
+LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC))))
+LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC))))
+
+libs/libend2end_test_cancel_before_invoke.a: $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_cancel_before_invoke.a $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
+
+
+
+deps_libend2end_test_cancel_before_invoke: $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
+endif
+
+clean_libend2end_test_cancel_before_invoke:
+	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_before_invoke files"
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
+	$(Q) $(RM) libs/libend2end_test_cancel_before_invoke.a
+	$(Q) $(RM) libs/libend2end_test_cancel_before_invoke.so.$(VERSION)
+
+
+LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC = \
+    test/core/end2end/tests/cancel_in_a_vacuum.c \
+
+
+LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC))))
+LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC))))
+
+libs/libend2end_test_cancel_in_a_vacuum.a: $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_cancel_in_a_vacuum.a $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
+
+
+
+deps_libend2end_test_cancel_in_a_vacuum: $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
+endif
+
+clean_libend2end_test_cancel_in_a_vacuum:
+	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_in_a_vacuum files"
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
+	$(Q) $(RM) libs/libend2end_test_cancel_in_a_vacuum.a
+	$(Q) $(RM) libs/libend2end_test_cancel_in_a_vacuum.so.$(VERSION)
+
+
+LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_SRC = \
+    test/core/end2end/tests/early_server_shutdown_finishes_inflight_calls.c \
+
+
+LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_SRC))))
+LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_SRC))))
+
+libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
+
+
+
+deps_libend2end_test_early_server_shutdown_finishes_inflight_calls: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
+endif
+
+clean_libend2end_test_early_server_shutdown_finishes_inflight_calls:
+	$(E) "[CLEAN]   Cleaning libend2end_test_early_server_shutdown_finishes_inflight_calls files"
+	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
+	$(Q) $(RM) libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a
+	$(Q) $(RM) libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.so.$(VERSION)
+
+
+LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_SRC = \
+    test/core/end2end/tests/early_server_shutdown_finishes_tags.c \
+
+
+LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_SRC))))
+LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_SRC))))
+
+libs/libend2end_test_early_server_shutdown_finishes_tags.a: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_early_server_shutdown_finishes_tags.a $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
+
+
+
+deps_libend2end_test_early_server_shutdown_finishes_tags: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
+endif
+
+clean_libend2end_test_early_server_shutdown_finishes_tags:
+	$(E) "[CLEAN]   Cleaning libend2end_test_early_server_shutdown_finishes_tags files"
+	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
+	$(Q) $(RM) libs/libend2end_test_early_server_shutdown_finishes_tags.a
+	$(Q) $(RM) libs/libend2end_test_early_server_shutdown_finishes_tags.so.$(VERSION)
+
+
+LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC = \
+    test/core/end2end/tests/invoke_large_request.c \
+
+
+LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC))))
+LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC))))
+
+libs/libend2end_test_invoke_large_request.a: $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_invoke_large_request.a $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
+
+
+
+deps_libend2end_test_invoke_large_request: $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
+endif
+
+clean_libend2end_test_invoke_large_request:
+	$(E) "[CLEAN]   Cleaning libend2end_test_invoke_large_request files"
+	$(Q) $(RM) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
+	$(Q) $(RM) libs/libend2end_test_invoke_large_request.a
+	$(Q) $(RM) libs/libend2end_test_invoke_large_request.so.$(VERSION)
+
+
+LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC = \
+    test/core/end2end/tests/max_concurrent_streams.c \
+
+
+LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC))))
+LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC))))
+
+libs/libend2end_test_max_concurrent_streams.a: $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_max_concurrent_streams.a $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
+
+
+
+deps_libend2end_test_max_concurrent_streams: $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
+endif
+
+clean_libend2end_test_max_concurrent_streams:
+	$(E) "[CLEAN]   Cleaning libend2end_test_max_concurrent_streams files"
+	$(Q) $(RM) $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
+	$(Q) $(RM) libs/libend2end_test_max_concurrent_streams.a
+	$(Q) $(RM) libs/libend2end_test_max_concurrent_streams.so.$(VERSION)
+
+
+LIBEND2END_TEST_NO_OP_SRC = \
+    test/core/end2end/tests/no_op.c \
+
+
+LIBEND2END_TEST_NO_OP_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_NO_OP_SRC))))
+LIBEND2END_TEST_NO_OP_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_NO_OP_SRC))))
+
+libs/libend2end_test_no_op.a: $(LIBEND2END_TEST_NO_OP_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_no_op.a $(LIBEND2END_TEST_NO_OP_OBJS)
+
+
+
+deps_libend2end_test_no_op: $(LIBEND2END_TEST_NO_OP_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_NO_OP_DEPS)
+endif
+
+clean_libend2end_test_no_op:
+	$(E) "[CLEAN]   Cleaning libend2end_test_no_op files"
+	$(Q) $(RM) $(LIBEND2END_TEST_NO_OP_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_NO_OP_DEPS)
+	$(Q) $(RM) libs/libend2end_test_no_op.a
+	$(Q) $(RM) libs/libend2end_test_no_op.so.$(VERSION)
+
+
+LIBEND2END_TEST_PING_PONG_STREAMING_SRC = \
+    test/core/end2end/tests/ping_pong_streaming.c \
+
+
+LIBEND2END_TEST_PING_PONG_STREAMING_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_PING_PONG_STREAMING_SRC))))
+LIBEND2END_TEST_PING_PONG_STREAMING_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_PING_PONG_STREAMING_SRC))))
+
+libs/libend2end_test_ping_pong_streaming.a: $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_ping_pong_streaming.a $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
+
+
+
+deps_libend2end_test_ping_pong_streaming: $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
+endif
+
+clean_libend2end_test_ping_pong_streaming:
+	$(E) "[CLEAN]   Cleaning libend2end_test_ping_pong_streaming files"
+	$(Q) $(RM) $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
+	$(Q) $(RM) libs/libend2end_test_ping_pong_streaming.a
+	$(Q) $(RM) libs/libend2end_test_ping_pong_streaming.so.$(VERSION)
+
+
+LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_SRC = \
+    test/core/end2end/tests/request_response_with_metadata_and_payload.c \
+
+
+LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_SRC))))
+LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_SRC))))
+
+libs/libend2end_test_request_response_with_metadata_and_payload.a: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_request_response_with_metadata_and_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
+
+
+
+deps_libend2end_test_request_response_with_metadata_and_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
+endif
+
+clean_libend2end_test_request_response_with_metadata_and_payload:
+	$(E) "[CLEAN]   Cleaning libend2end_test_request_response_with_metadata_and_payload files"
+	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
+	$(Q) $(RM) libs/libend2end_test_request_response_with_metadata_and_payload.a
+	$(Q) $(RM) libs/libend2end_test_request_response_with_metadata_and_payload.so.$(VERSION)
+
+
+LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_SRC = \
+    test/core/end2end/tests/request_response_with_payload.c \
+
+
+LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_SRC))))
+LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_SRC))))
+
+libs/libend2end_test_request_response_with_payload.a: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_request_response_with_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
+
+
+
+deps_libend2end_test_request_response_with_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
+endif
+
+clean_libend2end_test_request_response_with_payload:
+	$(E) "[CLEAN]   Cleaning libend2end_test_request_response_with_payload files"
+	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
+	$(Q) $(RM) libs/libend2end_test_request_response_with_payload.a
+	$(Q) $(RM) libs/libend2end_test_request_response_with_payload.so.$(VERSION)
+
+
+LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC = \
+    test/core/end2end/tests/simple_delayed_request.c \
+
+
+LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC))))
+LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC))))
+
+libs/libend2end_test_simple_delayed_request.a: $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_simple_delayed_request.a $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
+
+
+
+deps_libend2end_test_simple_delayed_request: $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
+endif
+
+clean_libend2end_test_simple_delayed_request:
+	$(E) "[CLEAN]   Cleaning libend2end_test_simple_delayed_request files"
+	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
+	$(Q) $(RM) libs/libend2end_test_simple_delayed_request.a
+	$(Q) $(RM) libs/libend2end_test_simple_delayed_request.so.$(VERSION)
+
+
+LIBEND2END_TEST_SIMPLE_REQUEST_SRC = \
+    test/core/end2end/tests/simple_request.c \
+
+
+LIBEND2END_TEST_SIMPLE_REQUEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SIMPLE_REQUEST_SRC))))
+LIBEND2END_TEST_SIMPLE_REQUEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_SIMPLE_REQUEST_SRC))))
+
+libs/libend2end_test_simple_request.a: $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_simple_request.a $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
+
+
+
+deps_libend2end_test_simple_request: $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
+endif
+
+clean_libend2end_test_simple_request:
+	$(E) "[CLEAN]   Cleaning libend2end_test_simple_request files"
+	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
+	$(Q) $(RM) libs/libend2end_test_simple_request.a
+	$(Q) $(RM) libs/libend2end_test_simple_request.so.$(VERSION)
+
+
+LIBEND2END_TEST_THREAD_STRESS_TEST_SRC = \
+    test/core/end2end/tests/thread_stress_test.c \
+
+
+LIBEND2END_TEST_THREAD_STRESS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_THREAD_STRESS_TEST_SRC))))
+LIBEND2END_TEST_THREAD_STRESS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_THREAD_STRESS_TEST_SRC))))
+
+libs/libend2end_test_thread_stress_test.a: $(LIBEND2END_TEST_THREAD_STRESS_TEST_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_thread_stress_test.a $(LIBEND2END_TEST_THREAD_STRESS_TEST_OBJS)
+
+
+
+deps_libend2end_test_thread_stress_test: $(LIBEND2END_TEST_THREAD_STRESS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_THREAD_STRESS_TEST_DEPS)
+endif
+
+clean_libend2end_test_thread_stress_test:
+	$(E) "[CLEAN]   Cleaning libend2end_test_thread_stress_test files"
+	$(Q) $(RM) $(LIBEND2END_TEST_THREAD_STRESS_TEST_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_THREAD_STRESS_TEST_DEPS)
+	$(Q) $(RM) libs/libend2end_test_thread_stress_test.a
+	$(Q) $(RM) libs/libend2end_test_thread_stress_test.so.$(VERSION)
+
+
+LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_SRC = \
+    test/core/end2end/tests/writes_done_hangs_with_pending_read.c \
+
+
+LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_SRC))))
+LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_SRC))))
+
+libs/libend2end_test_writes_done_hangs_with_pending_read.a: $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_test_writes_done_hangs_with_pending_read.a $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
+
+
+
+deps_libend2end_test_writes_done_hangs_with_pending_read: $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
+endif
+
+clean_libend2end_test_writes_done_hangs_with_pending_read:
+	$(E) "[CLEAN]   Cleaning libend2end_test_writes_done_hangs_with_pending_read files"
+	$(Q) $(RM) $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
+	$(Q) $(RM) $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
+	$(Q) $(RM) libs/libend2end_test_writes_done_hangs_with_pending_read.a
+	$(Q) $(RM) libs/libend2end_test_writes_done_hangs_with_pending_read.so.$(VERSION)
+
+
+LIBEND2END_CERTS_SRC = \
+    test/core/end2end/data/ca_cert.c \
+    test/core/end2end/data/server1_cert.c \
+    test/core/end2end/data/server1_key.c \
+
+
+LIBEND2END_CERTS_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_CERTS_SRC))))
+LIBEND2END_CERTS_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_CERTS_SRC))))
+
+libs/libend2end_certs.a: $(LIBEND2END_CERTS_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libend2end_certs.a $(LIBEND2END_CERTS_OBJS)
+
+
+
+deps_libend2end_certs: $(LIBEND2END_CERTS_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBEND2END_CERTS_DEPS)
+endif
+
+clean_libend2end_certs:
+	$(E) "[CLEAN]   Cleaning libend2end_certs files"
+	$(Q) $(RM) $(LIBEND2END_CERTS_OBJS)
+	$(Q) $(RM) $(LIBEND2END_CERTS_DEPS)
+	$(Q) $(RM) libs/libend2end_certs.a
+	$(Q) $(RM) libs/libend2end_certs.so.$(VERSION)
+
+
+LIBGRPC_UNSECURE_SRC = \
+    src/core/channel/call_op_string.c \
+    src/core/channel/census_filter.c \
+    src/core/channel/channel_args.c \
+    src/core/channel/channel_stack.c \
+    src/core/channel/client_channel.c \
+    src/core/channel/client_setup.c \
+    src/core/channel/connected_channel.c \
+    src/core/channel/http_client_filter.c \
+    src/core/channel/http_filter.c \
+    src/core/channel/http_server_filter.c \
+    src/core/channel/metadata_buffer.c \
+    src/core/channel/noop_filter.c \
+    src/core/compression/algorithm.c \
+    src/core/compression/message_compress.c \
+    src/core/endpoint/endpoint.c \
+    src/core/endpoint/resolve_address.c \
+    src/core/endpoint/socket_utils.c \
+    src/core/endpoint/socket_utils_linux.c \
+    src/core/endpoint/socket_utils_posix.c \
+    src/core/endpoint/tcp.c \
+    src/core/endpoint/tcp_client.c \
+    src/core/endpoint/tcp_server.c \
+    src/core/eventmanager/em.c \
+    src/core/eventmanager/em_posix.c \
+    src/core/surface/byte_buffer.c \
+    src/core/surface/byte_buffer_reader.c \
+    src/core/surface/call.c \
+    src/core/surface/channel.c \
+    src/core/surface/channel_create.c \
+    src/core/surface/client.c \
+    src/core/surface/lame_client.c \
+    src/core/surface/completion_queue.c \
+    src/core/surface/event_string.c \
+    src/core/surface/init.c \
+    src/core/surface/server.c \
+    src/core/surface/server_chttp2.c \
+    src/core/surface/server_create.c \
+    src/core/surface/surface_em.c \
+    src/core/transport/chttp2/frame_data.c \
+    src/core/transport/chttp2/frame_ping.c \
+    src/core/transport/chttp2/frame_rst_stream.c \
+    src/core/transport/chttp2/frame_settings.c \
+    src/core/transport/chttp2/frame_window_update.c \
+    src/core/transport/chttp2/hpack_parser.c \
+    src/core/transport/chttp2/hpack_table.c \
+    src/core/transport/chttp2/status_conversion.c \
+    src/core/transport/chttp2/stream_encoder.c \
+    src/core/transport/chttp2/stream_map.c \
+    src/core/transport/chttp2/timeout_encoding.c \
+    src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2_transport.c \
+    src/core/transport/metadata.c \
+    src/core/transport/stream_op.c \
+    src/core/transport/transport.c \
+    src/core/statistics/census_init.c \
+    src/core/statistics/census_rpc_stats.c \
+    src/core/statistics/census_tracing.c \
+    src/core/statistics/log.c \
+    src/core/statistics/window_stats.c \
+    src/core/statistics/hash_table.c \
+    src/core/httpcli/format_request.c \
+    src/core/httpcli/httpcli.c \
+    src/core/httpcli/httpcli_security_context.c \
+    src/core/httpcli/parser.c \
+    src/core/surface/secure_channel_create.c \
+    src/core/surface/secure_server_create.c \
+    src/core/endpoint/secure_endpoint.c \
+    third_party/cJSON/cJSON.c \
+
+PUBLIC_HEADERS += \
+    include/grpc/byte_buffer.h \
+    include/grpc/byte_buffer_reader.h \
+    include/grpc/grpc.h \
+    include/grpc/grpc_security.h \
+    include/grpc/status.h \
+
+LIBGRPC_UNSECURE_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
+LIBGRPC_UNSECURE_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC_UNSECURE_SRC))))
+
+libs/libgrpc_unsecure.a: $(LIBGRPC_UNSECURE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) $(AR) rcs libs/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)
+
+libs/libgrpc_unsecure.so.$(VERSION): $(LIBGRPC_UNSECURE_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,libgrpc_unsecure.so.0 -o libs/libgrpc_unsecure.so.$(VERSION) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) $(LDLIBS_SECURE)
+
+
+deps_libgrpc_unsecure: $(LIBGRPC_UNSECURE_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LIBGRPC_UNSECURE_DEPS)
+endif
+
+clean_libgrpc_unsecure:
+	$(E) "[CLEAN]   Cleaning libgrpc_unsecure files"
+	$(Q) $(RM) $(LIBGRPC_UNSECURE_OBJS)
+	$(Q) $(RM) $(LIBGRPC_UNSECURE_DEPS)
+	$(Q) $(RM) libs/libgrpc_unsecure.a
+	$(Q) $(RM) libs/libgrpc_unsecure.so.$(VERSION)
+
+
+
+# All of the test targets
+
+
+GEN_HPACK_TABLES_SRC = \
+    src/core/transport/chttp2/gen_hpack_tables.c \
+
+GEN_HPACK_TABLES_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
+GEN_HPACK_TABLES_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GEN_HPACK_TABLES_SRC))))
+
+bins/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gen_hpack_tables
+
+deps_gen_hpack_tables: $(GEN_HPACK_TABLES_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GEN_HPACK_TABLES_DEPS)
+endif
+
+clean_gen_hpack_tables:
+	$(E) "[CLEAN]   Cleaning gen_hpack_tables files"
+	$(Q) $(RM) $(GEN_HPACK_TABLES_OBJS)
+	$(Q) $(RM) $(GEN_HPACK_TABLES_DEPS)
+	$(Q) $(RM) bins/gen_hpack_tables
+
+
+GRPC_BYTE_BUFFER_READER_TEST_SRC = \
+    test/core/surface/byte_buffer_reader_test.c \
+
+GRPC_BYTE_BUFFER_READER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_BYTE_BUFFER_READER_TEST_SRC))))
+GRPC_BYTE_BUFFER_READER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_BYTE_BUFFER_READER_TEST_SRC))))
+
+bins/grpc_byte_buffer_reader_test: $(GRPC_BYTE_BUFFER_READER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_BYTE_BUFFER_READER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_byte_buffer_reader_test
+
+deps_grpc_byte_buffer_reader_test: $(GRPC_BYTE_BUFFER_READER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_BYTE_BUFFER_READER_TEST_DEPS)
+endif
+
+clean_grpc_byte_buffer_reader_test:
+	$(E) "[CLEAN]   Cleaning grpc_byte_buffer_reader_test files"
+	$(Q) $(RM) $(GRPC_BYTE_BUFFER_READER_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_BYTE_BUFFER_READER_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_byte_buffer_reader_test
+
+
+GPR_CANCELLABLE_TEST_SRC = \
+    test/core/support/cancellable_test.c \
+
+GPR_CANCELLABLE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_CANCELLABLE_TEST_SRC))))
+GPR_CANCELLABLE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_CANCELLABLE_TEST_SRC))))
+
+bins/gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_CANCELLABLE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_cancellable_test
+
+deps_gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_CANCELLABLE_TEST_DEPS)
+endif
+
+clean_gpr_cancellable_test:
+	$(E) "[CLEAN]   Cleaning gpr_cancellable_test files"
+	$(Q) $(RM) $(GPR_CANCELLABLE_TEST_OBJS)
+	$(Q) $(RM) $(GPR_CANCELLABLE_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_cancellable_test
+
+
+GPR_LOG_TEST_SRC = \
+    test/core/support/log_test.c \
+
+GPR_LOG_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_LOG_TEST_SRC))))
+GPR_LOG_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_LOG_TEST_SRC))))
+
+bins/gpr_log_test: $(GPR_LOG_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_LOG_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_log_test
+
+deps_gpr_log_test: $(GPR_LOG_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_LOG_TEST_DEPS)
+endif
+
+clean_gpr_log_test:
+	$(E) "[CLEAN]   Cleaning gpr_log_test files"
+	$(Q) $(RM) $(GPR_LOG_TEST_OBJS)
+	$(Q) $(RM) $(GPR_LOG_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_log_test
+
+
+GPR_CMDLINE_TEST_SRC = \
+    test/core/support/cmdline_test.c \
+
+GPR_CMDLINE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_CMDLINE_TEST_SRC))))
+GPR_CMDLINE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_CMDLINE_TEST_SRC))))
+
+bins/gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_CMDLINE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_cmdline_test
+
+deps_gpr_cmdline_test: $(GPR_CMDLINE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_CMDLINE_TEST_DEPS)
+endif
+
+clean_gpr_cmdline_test:
+	$(E) "[CLEAN]   Cleaning gpr_cmdline_test files"
+	$(Q) $(RM) $(GPR_CMDLINE_TEST_OBJS)
+	$(Q) $(RM) $(GPR_CMDLINE_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_cmdline_test
+
+
+GPR_HISTOGRAM_TEST_SRC = \
+    test/core/support/histogram_test.c \
+
+GPR_HISTOGRAM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
+GPR_HISTOGRAM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
+
+bins/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_histogram_test
+
+deps_gpr_histogram_test: $(GPR_HISTOGRAM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_HISTOGRAM_TEST_DEPS)
+endif
+
+clean_gpr_histogram_test:
+	$(E) "[CLEAN]   Cleaning gpr_histogram_test files"
+	$(Q) $(RM) $(GPR_HISTOGRAM_TEST_OBJS)
+	$(Q) $(RM) $(GPR_HISTOGRAM_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_histogram_test
+
+
+GPR_HOST_PORT_TEST_SRC = \
+    test/core/support/host_port_test.c \
+
+GPR_HOST_PORT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_HOST_PORT_TEST_SRC))))
+GPR_HOST_PORT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_HOST_PORT_TEST_SRC))))
+
+bins/gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_HOST_PORT_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_host_port_test
+
+deps_gpr_host_port_test: $(GPR_HOST_PORT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_HOST_PORT_TEST_DEPS)
+endif
+
+clean_gpr_host_port_test:
+	$(E) "[CLEAN]   Cleaning gpr_host_port_test files"
+	$(Q) $(RM) $(GPR_HOST_PORT_TEST_OBJS)
+	$(Q) $(RM) $(GPR_HOST_PORT_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_host_port_test
+
+
+GPR_SLICE_BUFFER_TEST_SRC = \
+    test/core/support/slice_buffer_test.c \
+
+GPR_SLICE_BUFFER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
+GPR_SLICE_BUFFER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
+
+bins/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_slice_buffer_test
+
+deps_gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_SLICE_BUFFER_TEST_DEPS)
+endif
+
+clean_gpr_slice_buffer_test:
+	$(E) "[CLEAN]   Cleaning gpr_slice_buffer_test files"
+	$(Q) $(RM) $(GPR_SLICE_BUFFER_TEST_OBJS)
+	$(Q) $(RM) $(GPR_SLICE_BUFFER_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_slice_buffer_test
+
+
+GPR_SLICE_TEST_SRC = \
+    test/core/support/slice_test.c \
+
+GPR_SLICE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_SLICE_TEST_SRC))))
+GPR_SLICE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_SLICE_TEST_SRC))))
+
+bins/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_slice_test
+
+deps_gpr_slice_test: $(GPR_SLICE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_SLICE_TEST_DEPS)
+endif
+
+clean_gpr_slice_test:
+	$(E) "[CLEAN]   Cleaning gpr_slice_test files"
+	$(Q) $(RM) $(GPR_SLICE_TEST_OBJS)
+	$(Q) $(RM) $(GPR_SLICE_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_slice_test
+
+
+GPR_STRING_TEST_SRC = \
+    test/core/support/string_test.c \
+
+GPR_STRING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_STRING_TEST_SRC))))
+GPR_STRING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_STRING_TEST_SRC))))
+
+bins/gpr_string_test: $(GPR_STRING_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_STRING_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_string_test
+
+deps_gpr_string_test: $(GPR_STRING_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_STRING_TEST_DEPS)
+endif
+
+clean_gpr_string_test:
+	$(E) "[CLEAN]   Cleaning gpr_string_test files"
+	$(Q) $(RM) $(GPR_STRING_TEST_OBJS)
+	$(Q) $(RM) $(GPR_STRING_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_string_test
+
+
+GPR_SYNC_TEST_SRC = \
+    test/core/support/sync_test.c \
+
+GPR_SYNC_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_SYNC_TEST_SRC))))
+GPR_SYNC_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_SYNC_TEST_SRC))))
+
+bins/gpr_sync_test: $(GPR_SYNC_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SYNC_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_sync_test
+
+deps_gpr_sync_test: $(GPR_SYNC_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_SYNC_TEST_DEPS)
+endif
+
+clean_gpr_sync_test:
+	$(E) "[CLEAN]   Cleaning gpr_sync_test files"
+	$(Q) $(RM) $(GPR_SYNC_TEST_OBJS)
+	$(Q) $(RM) $(GPR_SYNC_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_sync_test
+
+
+GPR_THD_TEST_SRC = \
+    test/core/support/thd_test.c \
+
+GPR_THD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_THD_TEST_SRC))))
+GPR_THD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_THD_TEST_SRC))))
+
+bins/gpr_thd_test: $(GPR_THD_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_THD_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_thd_test
+
+deps_gpr_thd_test: $(GPR_THD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_THD_TEST_DEPS)
+endif
+
+clean_gpr_thd_test:
+	$(E) "[CLEAN]   Cleaning gpr_thd_test files"
+	$(Q) $(RM) $(GPR_THD_TEST_OBJS)
+	$(Q) $(RM) $(GPR_THD_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_thd_test
+
+
+GPR_TIME_TEST_SRC = \
+    test/core/support/time_test.c \
+
+GPR_TIME_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_TIME_TEST_SRC))))
+GPR_TIME_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_TIME_TEST_SRC))))
+
+bins/gpr_time_test: $(GPR_TIME_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GPR_TIME_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_time_test
+
+deps_gpr_time_test: $(GPR_TIME_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GPR_TIME_TEST_DEPS)
+endif
+
+clean_gpr_time_test:
+	$(E) "[CLEAN]   Cleaning gpr_time_test files"
+	$(Q) $(RM) $(GPR_TIME_TEST_OBJS)
+	$(Q) $(RM) $(GPR_TIME_TEST_DEPS)
+	$(Q) $(RM) bins/gpr_time_test
+
+
+MURMUR_HASH_TEST_SRC = \
+    test/core/support/murmur_hash_test.c \
+
+MURMUR_HASH_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(MURMUR_HASH_TEST_SRC))))
+MURMUR_HASH_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(MURMUR_HASH_TEST_SRC))))
+
+bins/murmur_hash_test: $(MURMUR_HASH_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(MURMUR_HASH_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/murmur_hash_test
+
+deps_murmur_hash_test: $(MURMUR_HASH_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(MURMUR_HASH_TEST_DEPS)
+endif
+
+clean_murmur_hash_test:
+	$(E) "[CLEAN]   Cleaning murmur_hash_test files"
+	$(Q) $(RM) $(MURMUR_HASH_TEST_OBJS)
+	$(Q) $(RM) $(MURMUR_HASH_TEST_DEPS)
+	$(Q) $(RM) bins/murmur_hash_test
+
+
+GRPC_EM_TEST_SRC = \
+    test/core/eventmanager/em_test.c \
+
+GRPC_EM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_EM_TEST_SRC))))
+GRPC_EM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_EM_TEST_SRC))))
+
+bins/grpc_em_test: $(GRPC_EM_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_EM_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_em_test
+
+deps_grpc_em_test: $(GRPC_EM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_EM_TEST_DEPS)
+endif
+
+clean_grpc_em_test:
+	$(E) "[CLEAN]   Cleaning grpc_em_test files"
+	$(Q) $(RM) $(GRPC_EM_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_EM_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_em_test
+
+
+GRPC_EM_PIPE_TEST_SRC = \
+    test/core/eventmanager/em_pipe_test.c \
+
+GRPC_EM_PIPE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_EM_PIPE_TEST_SRC))))
+GRPC_EM_PIPE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_EM_PIPE_TEST_SRC))))
+
+bins/grpc_em_pipe_test: $(GRPC_EM_PIPE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_EM_PIPE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_em_pipe_test
+
+deps_grpc_em_pipe_test: $(GRPC_EM_PIPE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_EM_PIPE_TEST_DEPS)
+endif
+
+clean_grpc_em_pipe_test:
+	$(E) "[CLEAN]   Cleaning grpc_em_pipe_test files"
+	$(Q) $(RM) $(GRPC_EM_PIPE_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_EM_PIPE_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_em_pipe_test
+
+
+GRPC_STREAM_OP_TEST_SRC = \
+    test/core/transport/stream_op_test.c \
+
+GRPC_STREAM_OP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_STREAM_OP_TEST_SRC))))
+GRPC_STREAM_OP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_STREAM_OP_TEST_SRC))))
+
+bins/grpc_stream_op_test: $(GRPC_STREAM_OP_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_STREAM_OP_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_stream_op_test
+
+deps_grpc_stream_op_test: $(GRPC_STREAM_OP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_STREAM_OP_TEST_DEPS)
+endif
+
+clean_grpc_stream_op_test:
+	$(E) "[CLEAN]   Cleaning grpc_stream_op_test files"
+	$(Q) $(RM) $(GRPC_STREAM_OP_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_STREAM_OP_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_stream_op_test
+
+
+CHTTP2_STREAM_ENCODER_TEST_SRC = \
+    test/core/transport/chttp2/stream_encoder_test.c \
+
+CHTTP2_STREAM_ENCODER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_STREAM_ENCODER_TEST_SRC))))
+CHTTP2_STREAM_ENCODER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_STREAM_ENCODER_TEST_SRC))))
+
+bins/chttp2_stream_encoder_test: $(CHTTP2_STREAM_ENCODER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STREAM_ENCODER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_stream_encoder_test
+
+deps_chttp2_stream_encoder_test: $(CHTTP2_STREAM_ENCODER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_STREAM_ENCODER_TEST_DEPS)
+endif
+
+clean_chttp2_stream_encoder_test:
+	$(E) "[CLEAN]   Cleaning chttp2_stream_encoder_test files"
+	$(Q) $(RM) $(CHTTP2_STREAM_ENCODER_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_STREAM_ENCODER_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_stream_encoder_test
+
+
+HPACK_TABLE_TEST_SRC = \
+    test/core/transport/chttp2/hpack_table_test.c \
+
+HPACK_TABLE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(HPACK_TABLE_TEST_SRC))))
+HPACK_TABLE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(HPACK_TABLE_TEST_SRC))))
+
+bins/hpack_table_test: $(HPACK_TABLE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(HPACK_TABLE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/hpack_table_test
+
+deps_hpack_table_test: $(HPACK_TABLE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(HPACK_TABLE_TEST_DEPS)
+endif
+
+clean_hpack_table_test:
+	$(E) "[CLEAN]   Cleaning hpack_table_test files"
+	$(Q) $(RM) $(HPACK_TABLE_TEST_OBJS)
+	$(Q) $(RM) $(HPACK_TABLE_TEST_DEPS)
+	$(Q) $(RM) bins/hpack_table_test
+
+
+CHTTP2_STREAM_MAP_TEST_SRC = \
+    test/core/transport/chttp2/stream_map_test.c \
+
+CHTTP2_STREAM_MAP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_STREAM_MAP_TEST_SRC))))
+CHTTP2_STREAM_MAP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_STREAM_MAP_TEST_SRC))))
+
+bins/chttp2_stream_map_test: $(CHTTP2_STREAM_MAP_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STREAM_MAP_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_stream_map_test
+
+deps_chttp2_stream_map_test: $(CHTTP2_STREAM_MAP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_STREAM_MAP_TEST_DEPS)
+endif
+
+clean_chttp2_stream_map_test:
+	$(E) "[CLEAN]   Cleaning chttp2_stream_map_test files"
+	$(Q) $(RM) $(CHTTP2_STREAM_MAP_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_STREAM_MAP_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_stream_map_test
+
+
+HPACK_PARSER_TEST_SRC = \
+    test/core/transport/chttp2/hpack_parser_test.c \
+
+HPACK_PARSER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(HPACK_PARSER_TEST_SRC))))
+HPACK_PARSER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(HPACK_PARSER_TEST_SRC))))
+
+bins/hpack_parser_test: $(HPACK_PARSER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(HPACK_PARSER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/hpack_parser_test
+
+deps_hpack_parser_test: $(HPACK_PARSER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(HPACK_PARSER_TEST_DEPS)
+endif
+
+clean_hpack_parser_test:
+	$(E) "[CLEAN]   Cleaning hpack_parser_test files"
+	$(Q) $(RM) $(HPACK_PARSER_TEST_OBJS)
+	$(Q) $(RM) $(HPACK_PARSER_TEST_DEPS)
+	$(Q) $(RM) bins/hpack_parser_test
+
+
+TRANSPORT_METADATA_TEST_SRC = \
+    test/core/transport/metadata_test.c \
+
+TRANSPORT_METADATA_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
+TRANSPORT_METADATA_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
+
+bins/transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_METADATA_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/transport_metadata_test
+
+deps_transport_metadata_test: $(TRANSPORT_METADATA_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(TRANSPORT_METADATA_TEST_DEPS)
+endif
+
+clean_transport_metadata_test:
+	$(E) "[CLEAN]   Cleaning transport_metadata_test files"
+	$(Q) $(RM) $(TRANSPORT_METADATA_TEST_OBJS)
+	$(Q) $(RM) $(TRANSPORT_METADATA_TEST_DEPS)
+	$(Q) $(RM) bins/transport_metadata_test
+
+
+CHTTP2_STATUS_CONVERSION_TEST_SRC = \
+    test/core/transport/chttp2/status_conversion_test.c \
+
+CHTTP2_STATUS_CONVERSION_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_STATUS_CONVERSION_TEST_SRC))))
+CHTTP2_STATUS_CONVERSION_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_STATUS_CONVERSION_TEST_SRC))))
+
+bins/chttp2_status_conversion_test: $(CHTTP2_STATUS_CONVERSION_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STATUS_CONVERSION_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_status_conversion_test
+
+deps_chttp2_status_conversion_test: $(CHTTP2_STATUS_CONVERSION_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_STATUS_CONVERSION_TEST_DEPS)
+endif
+
+clean_chttp2_status_conversion_test:
+	$(E) "[CLEAN]   Cleaning chttp2_status_conversion_test files"
+	$(Q) $(RM) $(CHTTP2_STATUS_CONVERSION_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_STATUS_CONVERSION_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_status_conversion_test
+
+
+CHTTP2_TRANSPORT_END2END_TEST_SRC = \
+    test/core/transport/chttp2_transport_end2end_test.c \
+
+CHTTP2_TRANSPORT_END2END_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_TRANSPORT_END2END_TEST_SRC))))
+CHTTP2_TRANSPORT_END2END_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_TRANSPORT_END2END_TEST_SRC))))
+
+bins/chttp2_transport_end2end_test: $(CHTTP2_TRANSPORT_END2END_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_TRANSPORT_END2END_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_transport_end2end_test
+
+deps_chttp2_transport_end2end_test: $(CHTTP2_TRANSPORT_END2END_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_TRANSPORT_END2END_TEST_DEPS)
+endif
+
+clean_chttp2_transport_end2end_test:
+	$(E) "[CLEAN]   Cleaning chttp2_transport_end2end_test files"
+	$(Q) $(RM) $(CHTTP2_TRANSPORT_END2END_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_TRANSPORT_END2END_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_transport_end2end_test
+
+
+GRPC_TCP_TEST_SRC = \
+    test/core/endpoint/tcp_test.c \
+
+GRPC_TCP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_TCP_TEST_SRC))))
+GRPC_TCP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_TCP_TEST_SRC))))
+
+bins/grpc_tcp_test: $(GRPC_TCP_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_TCP_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_tcp_test
+
+deps_grpc_tcp_test: $(GRPC_TCP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_TCP_TEST_DEPS)
+endif
+
+clean_grpc_tcp_test:
+	$(E) "[CLEAN]   Cleaning grpc_tcp_test files"
+	$(Q) $(RM) $(GRPC_TCP_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_TCP_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_tcp_test
+
+
+RESOLVE_ADDRESS_TEST_SRC = \
+    test/core/endpoint/resolve_address_test.c \
+
+RESOLVE_ADDRESS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(RESOLVE_ADDRESS_TEST_SRC))))
+RESOLVE_ADDRESS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(RESOLVE_ADDRESS_TEST_SRC))))
+
+bins/resolve_address_test: $(RESOLVE_ADDRESS_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(RESOLVE_ADDRESS_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/resolve_address_test
+
+deps_resolve_address_test: $(RESOLVE_ADDRESS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(RESOLVE_ADDRESS_TEST_DEPS)
+endif
+
+clean_resolve_address_test:
+	$(E) "[CLEAN]   Cleaning resolve_address_test files"
+	$(Q) $(RM) $(RESOLVE_ADDRESS_TEST_OBJS)
+	$(Q) $(RM) $(RESOLVE_ADDRESS_TEST_DEPS)
+	$(Q) $(RM) bins/resolve_address_test
+
+
+TCP_SERVER_TEST_SRC = \
+    test/core/endpoint/tcp_server_test.c \
+
+TCP_SERVER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(TCP_SERVER_TEST_SRC))))
+TCP_SERVER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(TCP_SERVER_TEST_SRC))))
+
+bins/tcp_server_test: $(TCP_SERVER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(TCP_SERVER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/tcp_server_test
+
+deps_tcp_server_test: $(TCP_SERVER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(TCP_SERVER_TEST_DEPS)
+endif
+
+clean_tcp_server_test:
+	$(E) "[CLEAN]   Cleaning tcp_server_test files"
+	$(Q) $(RM) $(TCP_SERVER_TEST_OBJS)
+	$(Q) $(RM) $(TCP_SERVER_TEST_DEPS)
+	$(Q) $(RM) bins/tcp_server_test
+
+
+TCP_CLIENT_TEST_SRC = \
+    test/core/endpoint/tcp_client_test.c \
+
+TCP_CLIENT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(TCP_CLIENT_TEST_SRC))))
+TCP_CLIENT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(TCP_CLIENT_TEST_SRC))))
+
+bins/tcp_client_test: $(TCP_CLIENT_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(TCP_CLIENT_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/tcp_client_test
+
+deps_tcp_client_test: $(TCP_CLIENT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(TCP_CLIENT_TEST_DEPS)
+endif
+
+clean_tcp_client_test:
+	$(E) "[CLEAN]   Cleaning tcp_client_test files"
+	$(Q) $(RM) $(TCP_CLIENT_TEST_OBJS)
+	$(Q) $(RM) $(TCP_CLIENT_TEST_DEPS)
+	$(Q) $(RM) bins/tcp_client_test
+
+
+GRPC_CHANNEL_STACK_TEST_SRC = \
+    test/core/channel/channel_stack_test.c \
+
+GRPC_CHANNEL_STACK_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_STACK_TEST_SRC))))
+GRPC_CHANNEL_STACK_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_CHANNEL_STACK_TEST_SRC))))
+
+bins/grpc_channel_stack_test: $(GRPC_CHANNEL_STACK_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CHANNEL_STACK_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_channel_stack_test
+
+deps_grpc_channel_stack_test: $(GRPC_CHANNEL_STACK_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_CHANNEL_STACK_TEST_DEPS)
+endif
+
+clean_grpc_channel_stack_test:
+	$(E) "[CLEAN]   Cleaning grpc_channel_stack_test files"
+	$(Q) $(RM) $(GRPC_CHANNEL_STACK_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_CHANNEL_STACK_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_channel_stack_test
+
+
+METADATA_BUFFER_TEST_SRC = \
+    test/core/channel/metadata_buffer_test.c \
+
+METADATA_BUFFER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(METADATA_BUFFER_TEST_SRC))))
+METADATA_BUFFER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(METADATA_BUFFER_TEST_SRC))))
+
+bins/metadata_buffer_test: $(METADATA_BUFFER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(METADATA_BUFFER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/metadata_buffer_test
+
+deps_metadata_buffer_test: $(METADATA_BUFFER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(METADATA_BUFFER_TEST_DEPS)
+endif
+
+clean_metadata_buffer_test:
+	$(E) "[CLEAN]   Cleaning metadata_buffer_test files"
+	$(Q) $(RM) $(METADATA_BUFFER_TEST_OBJS)
+	$(Q) $(RM) $(METADATA_BUFFER_TEST_DEPS)
+	$(Q) $(RM) bins/metadata_buffer_test
+
+
+GRPC_COMPLETION_QUEUE_TEST_SRC = \
+    test/core/surface/completion_queue_test.c \
+
+GRPC_COMPLETION_QUEUE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_TEST_SRC))))
+GRPC_COMPLETION_QUEUE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_COMPLETION_QUEUE_TEST_SRC))))
+
+bins/grpc_completion_queue_test: $(GRPC_COMPLETION_QUEUE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_COMPLETION_QUEUE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_completion_queue_test
+
+deps_grpc_completion_queue_test: $(GRPC_COMPLETION_QUEUE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_COMPLETION_QUEUE_TEST_DEPS)
+endif
+
+clean_grpc_completion_queue_test:
+	$(E) "[CLEAN]   Cleaning grpc_completion_queue_test files"
+	$(Q) $(RM) $(GRPC_COMPLETION_QUEUE_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_COMPLETION_QUEUE_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_completion_queue_test
+
+
+GRPC_COMPLETION_QUEUE_BENCHMARK_SRC = \
+    test/core/surface/completion_queue_benchmark.c \
+
+GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_BENCHMARK_SRC))))
+GRPC_COMPLETION_QUEUE_BENCHMARK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_COMPLETION_QUEUE_BENCHMARK_SRC))))
+
+bins/grpc_completion_queue_benchmark: $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_completion_queue_benchmark
+
+deps_grpc_completion_queue_benchmark: $(GRPC_COMPLETION_QUEUE_BENCHMARK_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_COMPLETION_QUEUE_BENCHMARK_DEPS)
+endif
+
+clean_grpc_completion_queue_benchmark:
+	$(E) "[CLEAN]   Cleaning grpc_completion_queue_benchmark files"
+	$(Q) $(RM) $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS)
+	$(Q) $(RM) $(GRPC_COMPLETION_QUEUE_BENCHMARK_DEPS)
+	$(Q) $(RM) bins/grpc_completion_queue_benchmark
+
+
+CENSUS_WINDOW_STATS_TEST_SRC = \
+    test/core/statistics/window_stats_test.c \
+
+CENSUS_WINDOW_STATS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CENSUS_WINDOW_STATS_TEST_SRC))))
+CENSUS_WINDOW_STATS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CENSUS_WINDOW_STATS_TEST_SRC))))
+
+bins/census_window_stats_test: $(CENSUS_WINDOW_STATS_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_WINDOW_STATS_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/census_window_stats_test
+
+deps_census_window_stats_test: $(CENSUS_WINDOW_STATS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CENSUS_WINDOW_STATS_TEST_DEPS)
+endif
+
+clean_census_window_stats_test:
+	$(E) "[CLEAN]   Cleaning census_window_stats_test files"
+	$(Q) $(RM) $(CENSUS_WINDOW_STATS_TEST_OBJS)
+	$(Q) $(RM) $(CENSUS_WINDOW_STATS_TEST_DEPS)
+	$(Q) $(RM) bins/census_window_stats_test
+
+
+CENSUS_STATISTICS_QUICK_TEST_SRC = \
+    test/core/statistics/quick_test.c \
+
+CENSUS_STATISTICS_QUICK_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_QUICK_TEST_SRC))))
+CENSUS_STATISTICS_QUICK_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_QUICK_TEST_SRC))))
+
+bins/census_statistics_quick_test: $(CENSUS_STATISTICS_QUICK_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_QUICK_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/census_statistics_quick_test
+
+deps_census_statistics_quick_test: $(CENSUS_STATISTICS_QUICK_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CENSUS_STATISTICS_QUICK_TEST_DEPS)
+endif
+
+clean_census_statistics_quick_test:
+	$(E) "[CLEAN]   Cleaning census_statistics_quick_test files"
+	$(Q) $(RM) $(CENSUS_STATISTICS_QUICK_TEST_OBJS)
+	$(Q) $(RM) $(CENSUS_STATISTICS_QUICK_TEST_DEPS)
+	$(Q) $(RM) bins/census_statistics_quick_test
+
+
+CENSUS_STATISTICS_PERFORMANCE_TEST_SRC = \
+    test/core/statistics/performance_test.c \
+
+CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_PERFORMANCE_TEST_SRC))))
+CENSUS_STATISTICS_PERFORMANCE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_PERFORMANCE_TEST_SRC))))
+
+bins/census_statistics_performance_test: $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/census_statistics_performance_test
+
+deps_census_statistics_performance_test: $(CENSUS_STATISTICS_PERFORMANCE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CENSUS_STATISTICS_PERFORMANCE_TEST_DEPS)
+endif
+
+clean_census_statistics_performance_test:
+	$(E) "[CLEAN]   Cleaning census_statistics_performance_test files"
+	$(Q) $(RM) $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS)
+	$(Q) $(RM) $(CENSUS_STATISTICS_PERFORMANCE_TEST_DEPS)
+	$(Q) $(RM) bins/census_statistics_performance_test
+
+
+CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC = \
+    test/core/statistics/multiple_writers_test.c \
+
+CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC))))
+CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC))))
+
+bins/census_statistics_multiple_writers_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/census_statistics_multiple_writers_test
+
+deps_census_statistics_multiple_writers_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_DEPS)
+endif
+
+clean_census_statistics_multiple_writers_test:
+	$(E) "[CLEAN]   Cleaning census_statistics_multiple_writers_test files"
+	$(Q) $(RM) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS)
+	$(Q) $(RM) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_DEPS)
+	$(Q) $(RM) bins/census_statistics_multiple_writers_test
+
+
+CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_SRC = \
+    test/core/statistics/multiple_writers_circular_buffer_test.c \
+
+CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_SRC))))
+CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_SRC))))
+
+bins/census_statistics_multiple_writers_circular_buffer_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/census_statistics_multiple_writers_circular_buffer_test
+
+deps_census_statistics_multiple_writers_circular_buffer_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_DEPS)
+endif
+
+clean_census_statistics_multiple_writers_circular_buffer_test:
+	$(E) "[CLEAN]   Cleaning census_statistics_multiple_writers_circular_buffer_test files"
+	$(Q) $(RM) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS)
+	$(Q) $(RM) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_DEPS)
+	$(Q) $(RM) bins/census_statistics_multiple_writers_circular_buffer_test
+
+
+CENSUS_STUB_TEST_SRC = \
+    test/core/statistics/census_stub_test.c \
+
+CENSUS_STUB_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CENSUS_STUB_TEST_SRC))))
+CENSUS_STUB_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CENSUS_STUB_TEST_SRC))))
+
+bins/census_stub_test: $(CENSUS_STUB_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STUB_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/census_stub_test
+
+deps_census_stub_test: $(CENSUS_STUB_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CENSUS_STUB_TEST_DEPS)
+endif
+
+clean_census_stub_test:
+	$(E) "[CLEAN]   Cleaning census_stub_test files"
+	$(Q) $(RM) $(CENSUS_STUB_TEST_OBJS)
+	$(Q) $(RM) $(CENSUS_STUB_TEST_DEPS)
+	$(Q) $(RM) bins/census_stub_test
+
+
+CENSUS_HASH_TABLE_TEST_SRC = \
+    test/core/statistics/hash_table_test.c \
+
+CENSUS_HASH_TABLE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CENSUS_HASH_TABLE_TEST_SRC))))
+CENSUS_HASH_TABLE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CENSUS_HASH_TABLE_TEST_SRC))))
+
+bins/census_hash_table_test: $(CENSUS_HASH_TABLE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_HASH_TABLE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/census_hash_table_test
+
+deps_census_hash_table_test: $(CENSUS_HASH_TABLE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CENSUS_HASH_TABLE_TEST_DEPS)
+endif
+
+clean_census_hash_table_test:
+	$(E) "[CLEAN]   Cleaning census_hash_table_test files"
+	$(Q) $(RM) $(CENSUS_HASH_TABLE_TEST_OBJS)
+	$(Q) $(RM) $(CENSUS_HASH_TABLE_TEST_DEPS)
+	$(Q) $(RM) bins/census_hash_table_test
+
+
+FLING_SERVER_SRC = \
+    test/core/fling/server.c \
+
+FLING_SERVER_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(FLING_SERVER_SRC))))
+FLING_SERVER_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(FLING_SERVER_SRC))))
+
+bins/fling_server: $(FLING_SERVER_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(FLING_SERVER_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/fling_server
+
+deps_fling_server: $(FLING_SERVER_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(FLING_SERVER_DEPS)
+endif
+
+clean_fling_server:
+	$(E) "[CLEAN]   Cleaning fling_server files"
+	$(Q) $(RM) $(FLING_SERVER_OBJS)
+	$(Q) $(RM) $(FLING_SERVER_DEPS)
+	$(Q) $(RM) bins/fling_server
+
+
+FLING_CLIENT_SRC = \
+    test/core/fling/client.c \
+
+FLING_CLIENT_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(FLING_CLIENT_SRC))))
+FLING_CLIENT_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(FLING_CLIENT_SRC))))
+
+bins/fling_client: $(FLING_CLIENT_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(FLING_CLIENT_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/fling_client
+
+deps_fling_client: $(FLING_CLIENT_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(FLING_CLIENT_DEPS)
+endif
+
+clean_fling_client:
+	$(E) "[CLEAN]   Cleaning fling_client files"
+	$(Q) $(RM) $(FLING_CLIENT_OBJS)
+	$(Q) $(RM) $(FLING_CLIENT_DEPS)
+	$(Q) $(RM) bins/fling_client
+
+
+FLING_TEST_SRC = \
+    test/core/fling/fling_test.c \
+
+FLING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(FLING_TEST_SRC))))
+FLING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(FLING_TEST_SRC))))
+
+bins/fling_test: $(FLING_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(FLING_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/fling_test
+
+deps_fling_test: $(FLING_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(FLING_TEST_DEPS)
+endif
+
+clean_fling_test:
+	$(E) "[CLEAN]   Cleaning fling_test files"
+	$(Q) $(RM) $(FLING_TEST_OBJS)
+	$(Q) $(RM) $(FLING_TEST_DEPS)
+	$(Q) $(RM) bins/fling_test
+
+
+ECHO_SERVER_SRC = \
+    test/core/echo/server.c \
+
+ECHO_SERVER_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(ECHO_SERVER_SRC))))
+ECHO_SERVER_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(ECHO_SERVER_SRC))))
+
+bins/echo_server: $(ECHO_SERVER_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(ECHO_SERVER_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/echo_server
+
+deps_echo_server: $(ECHO_SERVER_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(ECHO_SERVER_DEPS)
+endif
+
+clean_echo_server:
+	$(E) "[CLEAN]   Cleaning echo_server files"
+	$(Q) $(RM) $(ECHO_SERVER_OBJS)
+	$(Q) $(RM) $(ECHO_SERVER_DEPS)
+	$(Q) $(RM) bins/echo_server
+
+
+ECHO_CLIENT_SRC = \
+    test/core/echo/client.c \
+
+ECHO_CLIENT_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(ECHO_CLIENT_SRC))))
+ECHO_CLIENT_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(ECHO_CLIENT_SRC))))
+
+bins/echo_client: $(ECHO_CLIENT_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(ECHO_CLIENT_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/echo_client
+
+deps_echo_client: $(ECHO_CLIENT_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(ECHO_CLIENT_DEPS)
+endif
+
+clean_echo_client:
+	$(E) "[CLEAN]   Cleaning echo_client files"
+	$(Q) $(RM) $(ECHO_CLIENT_OBJS)
+	$(Q) $(RM) $(ECHO_CLIENT_DEPS)
+	$(Q) $(RM) bins/echo_client
+
+
+ECHO_TEST_SRC = \
+    test/core/echo/echo_test.c \
+
+ECHO_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(ECHO_TEST_SRC))))
+ECHO_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(ECHO_TEST_SRC))))
+
+bins/echo_test: $(ECHO_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(ECHO_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/echo_test
+
+deps_echo_test: $(ECHO_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(ECHO_TEST_DEPS)
+endif
+
+clean_echo_test:
+	$(E) "[CLEAN]   Cleaning echo_test files"
+	$(Q) $(RM) $(ECHO_TEST_OBJS)
+	$(Q) $(RM) $(ECHO_TEST_DEPS)
+	$(Q) $(RM) bins/echo_test
+
+
+LOW_LEVEL_PING_PONG_BENCHMARK_SRC = \
+    test/core/network_benchmarks/low_level_ping_pong.c \
+
+LOW_LEVEL_PING_PONG_BENCHMARK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LOW_LEVEL_PING_PONG_BENCHMARK_SRC))))
+LOW_LEVEL_PING_PONG_BENCHMARK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LOW_LEVEL_PING_PONG_BENCHMARK_SRC))))
+
+bins/low_level_ping_pong_benchmark: $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/low_level_ping_pong_benchmark
+
+deps_low_level_ping_pong_benchmark: $(LOW_LEVEL_PING_PONG_BENCHMARK_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LOW_LEVEL_PING_PONG_BENCHMARK_DEPS)
+endif
+
+clean_low_level_ping_pong_benchmark:
+	$(E) "[CLEAN]   Cleaning low_level_ping_pong_benchmark files"
+	$(Q) $(RM) $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS)
+	$(Q) $(RM) $(LOW_LEVEL_PING_PONG_BENCHMARK_DEPS)
+	$(Q) $(RM) bins/low_level_ping_pong_benchmark
+
+
+MESSAGE_COMPRESS_TEST_SRC = \
+    test/core/compression/message_compress_test.c \
+
+MESSAGE_COMPRESS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(MESSAGE_COMPRESS_TEST_SRC))))
+MESSAGE_COMPRESS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(MESSAGE_COMPRESS_TEST_SRC))))
+
+bins/message_compress_test: $(MESSAGE_COMPRESS_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(MESSAGE_COMPRESS_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/message_compress_test
+
+deps_message_compress_test: $(MESSAGE_COMPRESS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(MESSAGE_COMPRESS_TEST_DEPS)
+endif
+
+clean_message_compress_test:
+	$(E) "[CLEAN]   Cleaning message_compress_test files"
+	$(Q) $(RM) $(MESSAGE_COMPRESS_TEST_OBJS)
+	$(Q) $(RM) $(MESSAGE_COMPRESS_TEST_DEPS)
+	$(Q) $(RM) bins/message_compress_test
+
+
+SECURE_ENDPOINT_TEST_SRC = \
+    test/core/endpoint/secure_endpoint_test.c \
+
+SECURE_ENDPOINT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(SECURE_ENDPOINT_TEST_SRC))))
+SECURE_ENDPOINT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(SECURE_ENDPOINT_TEST_SRC))))
+
+bins/secure_endpoint_test: $(SECURE_ENDPOINT_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(SECURE_ENDPOINT_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/secure_endpoint_test
+
+deps_secure_endpoint_test: $(SECURE_ENDPOINT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(SECURE_ENDPOINT_TEST_DEPS)
+endif
+
+clean_secure_endpoint_test:
+	$(E) "[CLEAN]   Cleaning secure_endpoint_test files"
+	$(Q) $(RM) $(SECURE_ENDPOINT_TEST_OBJS)
+	$(Q) $(RM) $(SECURE_ENDPOINT_TEST_DEPS)
+	$(Q) $(RM) bins/secure_endpoint_test
+
+
+HTTPCLI_FORMAT_REQUEST_TEST_SRC = \
+    test/core/httpcli/format_request_test.c \
+
+HTTPCLI_FORMAT_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(HTTPCLI_FORMAT_REQUEST_TEST_SRC))))
+HTTPCLI_FORMAT_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(HTTPCLI_FORMAT_REQUEST_TEST_SRC))))
+
+bins/httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/httpcli_format_request_test
+
+deps_httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(HTTPCLI_FORMAT_REQUEST_TEST_DEPS)
+endif
+
+clean_httpcli_format_request_test:
+	$(E) "[CLEAN]   Cleaning httpcli_format_request_test files"
+	$(Q) $(RM) $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(HTTPCLI_FORMAT_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/httpcli_format_request_test
+
+
+HTTPCLI_PARSER_TEST_SRC = \
+    test/core/httpcli/parser_test.c \
+
+HTTPCLI_PARSER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(HTTPCLI_PARSER_TEST_SRC))))
+HTTPCLI_PARSER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(HTTPCLI_PARSER_TEST_SRC))))
+
+bins/httpcli_parser_test: $(HTTPCLI_PARSER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_PARSER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/httpcli_parser_test
+
+deps_httpcli_parser_test: $(HTTPCLI_PARSER_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(HTTPCLI_PARSER_TEST_DEPS)
+endif
+
+clean_httpcli_parser_test:
+	$(E) "[CLEAN]   Cleaning httpcli_parser_test files"
+	$(Q) $(RM) $(HTTPCLI_PARSER_TEST_OBJS)
+	$(Q) $(RM) $(HTTPCLI_PARSER_TEST_DEPS)
+	$(Q) $(RM) bins/httpcli_parser_test
+
+
+HTTPCLI_TEST_SRC = \
+    test/core/httpcli/httpcli_test.c \
+
+HTTPCLI_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(HTTPCLI_TEST_SRC))))
+HTTPCLI_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(HTTPCLI_TEST_SRC))))
+
+bins/httpcli_test: $(HTTPCLI_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/httpcli_test
+
+deps_httpcli_test: $(HTTPCLI_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(HTTPCLI_TEST_DEPS)
+endif
+
+clean_httpcli_test:
+	$(E) "[CLEAN]   Cleaning httpcli_test files"
+	$(Q) $(RM) $(HTTPCLI_TEST_OBJS)
+	$(Q) $(RM) $(HTTPCLI_TEST_DEPS)
+	$(Q) $(RM) bins/httpcli_test
+
+
+GRPC_CREDENTIALS_TEST_SRC = \
+    test/core/security/credentials_test.c \
+
+GRPC_CREDENTIALS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GRPC_CREDENTIALS_TEST_SRC))))
+GRPC_CREDENTIALS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GRPC_CREDENTIALS_TEST_SRC))))
+
+bins/grpc_credentials_test: $(GRPC_CREDENTIALS_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CREDENTIALS_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/grpc_credentials_test
+
+deps_grpc_credentials_test: $(GRPC_CREDENTIALS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(GRPC_CREDENTIALS_TEST_DEPS)
+endif
+
+clean_grpc_credentials_test:
+	$(E) "[CLEAN]   Cleaning grpc_credentials_test files"
+	$(Q) $(RM) $(GRPC_CREDENTIALS_TEST_OBJS)
+	$(Q) $(RM) $(GRPC_CREDENTIALS_TEST_DEPS)
+	$(Q) $(RM) bins/grpc_credentials_test
+
+
+FLING_STREAM_TEST_SRC = \
+    test/core/fling/fling_stream_test.c \
+
+FLING_STREAM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(FLING_STREAM_TEST_SRC))))
+FLING_STREAM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(FLING_STREAM_TEST_SRC))))
+
+bins/fling_stream_test: $(FLING_STREAM_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(FLING_STREAM_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/fling_stream_test
+
+deps_fling_stream_test: $(FLING_STREAM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(FLING_STREAM_TEST_DEPS)
+endif
+
+clean_fling_stream_test:
+	$(E) "[CLEAN]   Cleaning fling_stream_test files"
+	$(Q) $(RM) $(FLING_STREAM_TEST_OBJS)
+	$(Q) $(RM) $(FLING_STREAM_TEST_DEPS)
+	$(Q) $(RM) bins/fling_stream_test
+
+
+LAME_CLIENT_TEST_SRC = \
+    test/core/surface/lame_client_test.c \
+
+LAME_CLIENT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LAME_CLIENT_TEST_SRC))))
+LAME_CLIENT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LAME_CLIENT_TEST_SRC))))
+
+bins/lame_client_test: $(LAME_CLIENT_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(LAME_CLIENT_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/lame_client_test
+
+deps_lame_client_test: $(LAME_CLIENT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(LAME_CLIENT_TEST_DEPS)
+endif
+
+clean_lame_client_test:
+	$(E) "[CLEAN]   Cleaning lame_client_test files"
+	$(Q) $(RM) $(LAME_CLIENT_TEST_OBJS)
+	$(Q) $(RM) $(LAME_CLIENT_TEST_DEPS)
+	$(Q) $(RM) bins/lame_client_test
+
+
+THREAD_POOL_TEST_SRC = \
+    test/cpp/server/thread_pool_test.cc \
+
+THREAD_POOL_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(THREAD_POOL_TEST_SRC))))
+THREAD_POOL_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(THREAD_POOL_TEST_SRC))))
+
+bins/thread_pool_test: $(THREAD_POOL_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc++.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_POOL_TEST_OBJS) $(GTEST_LIB) -Llibs -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/thread_pool_test
+
+deps_thread_pool_test: $(THREAD_POOL_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(THREAD_POOL_TEST_DEPS)
+endif
+
+clean_thread_pool_test:
+	$(E) "[CLEAN]   Cleaning thread_pool_test files"
+	$(Q) $(RM) $(THREAD_POOL_TEST_OBJS)
+	$(Q) $(RM) $(THREAD_POOL_TEST_DEPS)
+	$(Q) $(RM) bins/thread_pool_test
+
+
+STATUS_TEST_SRC = \
+    test/cpp/util/status_test.cc \
+
+STATUS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(STATUS_TEST_SRC))))
+STATUS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(STATUS_TEST_SRC))))
+
+bins/status_test: $(STATUS_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc++.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_TEST_OBJS) $(GTEST_LIB) -Llibs -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/status_test
+
+deps_status_test: $(STATUS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(STATUS_TEST_DEPS)
+endif
+
+clean_status_test:
+	$(E) "[CLEAN]   Cleaning status_test files"
+	$(Q) $(RM) $(STATUS_TEST_OBJS)
+	$(Q) $(RM) $(STATUS_TEST_DEPS)
+	$(Q) $(RM) bins/status_test
+
+
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+
+bins/chttp2_fake_security_cancel_after_accept_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_cancel_after_accept.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_cancel_after_accept_test
+
+deps_chttp2_fake_security_cancel_after_accept_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_cancel_after_accept_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_cancel_after_accept_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_cancel_after_accept_test
+
+
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+
+bins/chttp2_fake_security_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_cancel_after_accept_and_writes_closed.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_cancel_after_accept_and_writes_closed_test
+
+deps_chttp2_fake_security_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_cancel_after_accept_and_writes_closed_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_cancel_after_accept_and_writes_closed_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_cancel_after_accept_and_writes_closed_test
+
+
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_SRC))))
+
+bins/chttp2_fake_security_cancel_after_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_cancel_after_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_cancel_after_invoke_test
+
+deps_chttp2_fake_security_cancel_after_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_cancel_after_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_cancel_after_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_cancel_after_invoke_test
+
+
+CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+
+bins/chttp2_fake_security_cancel_before_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_cancel_before_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_cancel_before_invoke_test
+
+deps_chttp2_fake_security_cancel_before_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_cancel_before_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_cancel_before_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_cancel_before_invoke_test
+
+
+CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_SRC))))
+
+bins/chttp2_fake_security_cancel_in_a_vacuum_test: $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_cancel_in_a_vacuum.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_cancel_in_a_vacuum_test
+
+deps_chttp2_fake_security_cancel_in_a_vacuum_test: $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_cancel_in_a_vacuum_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_cancel_in_a_vacuum_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_cancel_in_a_vacuum_test
+
+
+CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+
+bins/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test
+
+deps_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test
+
+
+CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+
+bins/chttp2_fake_security_early_server_shutdown_finishes_tags_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_early_server_shutdown_finishes_tags.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_early_server_shutdown_finishes_tags_test
+
+deps_chttp2_fake_security_early_server_shutdown_finishes_tags_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_early_server_shutdown_finishes_tags_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_early_server_shutdown_finishes_tags_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_early_server_shutdown_finishes_tags_test
+
+
+CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC))))
+
+bins/chttp2_fake_security_invoke_large_request_test: $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_invoke_large_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_invoke_large_request_test
+
+deps_chttp2_fake_security_invoke_large_request_test: $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_invoke_large_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_invoke_large_request_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_invoke_large_request_test
+
+
+CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+
+bins/chttp2_fake_security_max_concurrent_streams_test: $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_max_concurrent_streams.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_max_concurrent_streams_test
+
+deps_chttp2_fake_security_max_concurrent_streams_test: $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_max_concurrent_streams_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_max_concurrent_streams_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_max_concurrent_streams_test
+
+
+CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_NO_OP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC))))
+
+bins/chttp2_fake_security_no_op_test: $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_no_op.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_no_op_test
+
+deps_chttp2_fake_security_no_op_test: $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_no_op_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_no_op_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_no_op_test
+
+
+CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_SRC))))
+
+bins/chttp2_fake_security_ping_pong_streaming_test: $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_ping_pong_streaming.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_ping_pong_streaming_test
+
+deps_chttp2_fake_security_ping_pong_streaming_test: $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_ping_pong_streaming_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_ping_pong_streaming_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_ping_pong_streaming_test
+
+
+CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_fake_security_request_response_with_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_request_response_with_metadata_and_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_request_response_with_metadata_and_payload_test
+
+deps_chttp2_fake_security_request_response_with_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_request_response_with_metadata_and_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_request_response_with_metadata_and_payload_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_request_response_with_metadata_and_payload_test
+
+
+CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_fake_security_request_response_with_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_request_response_with_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_request_response_with_payload_test
+
+deps_chttp2_fake_security_request_response_with_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_request_response_with_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_request_response_with_payload_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_request_response_with_payload_test
+
+
+CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+
+bins/chttp2_fake_security_simple_delayed_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_simple_delayed_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_simple_delayed_request_test
+
+deps_chttp2_fake_security_simple_delayed_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_simple_delayed_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_simple_delayed_request_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_simple_delayed_request_test
+
+
+CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_SRC))))
+
+bins/chttp2_fake_security_simple_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_simple_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_simple_request_test
+
+deps_chttp2_fake_security_simple_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_simple_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_simple_request_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_simple_request_test
+
+
+CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_SRC))))
+
+bins/chttp2_fake_security_thread_stress_test_test: $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_thread_stress_test.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_thread_stress_test -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_thread_stress_test_test
+
+deps_chttp2_fake_security_thread_stress_test_test: $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_thread_stress_test_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_thread_stress_test_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_thread_stress_test_test
+
+
+CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+
+bins/chttp2_fake_security_writes_done_hangs_with_pending_read_test: $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/libend2end_fixture_chttp2_fake_security.a libs/libend2end_test_writes_done_hangs_with_pending_read.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fake_security -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fake_security_writes_done_hangs_with_pending_read_test
+
+deps_chttp2_fake_security_writes_done_hangs_with_pending_read_test: $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+endif
+
+clean_chttp2_fake_security_writes_done_hangs_with_pending_read_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fake_security_writes_done_hangs_with_pending_read_test files"
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fake_security_writes_done_hangs_with_pending_read_test
+
+
+CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
+
+CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+
+bins/chttp2_fullstack_cancel_after_accept_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_cancel_after_accept.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_cancel_after_accept_test
+
+deps_chttp2_fullstack_cancel_after_accept_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_cancel_after_accept_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_cancel_after_accept_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_cancel_after_accept_test
+
+
+CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
+
+CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+
+bins/chttp2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_cancel_after_accept_and_writes_closed.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_cancel_after_accept_and_writes_closed_test
+
+deps_chttp2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_cancel_after_accept_and_writes_closed_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_cancel_after_accept_and_writes_closed_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_cancel_after_accept_and_writes_closed_test
+
+
+CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
+
+CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
+CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
+
+bins/chttp2_fullstack_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_cancel_after_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_cancel_after_invoke_test
+
+deps_chttp2_fullstack_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_cancel_after_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_cancel_after_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_cancel_after_invoke_test
+
+
+CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC = \
+
+CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+
+bins/chttp2_fullstack_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_cancel_before_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_cancel_before_invoke_test
+
+deps_chttp2_fullstack_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_cancel_before_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_cancel_before_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_cancel_before_invoke_test
+
+
+CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
+
+CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
+CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
+
+bins/chttp2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_cancel_in_a_vacuum.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_cancel_in_a_vacuum_test
+
+deps_chttp2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_cancel_in_a_vacuum_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_cancel_in_a_vacuum_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_cancel_in_a_vacuum_test
+
+
+CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
+
+CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+
+bins/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test
+
+deps_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test
+
+
+CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
+
+CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+
+bins/chttp2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_early_server_shutdown_finishes_tags.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_early_server_shutdown_finishes_tags_test
+
+deps_chttp2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_early_server_shutdown_finishes_tags_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_early_server_shutdown_finishes_tags_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_early_server_shutdown_finishes_tags_test
+
+
+CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
+CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
+
+bins/chttp2_fullstack_invoke_large_request_test: $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_invoke_large_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_invoke_large_request_test
+
+deps_chttp2_fullstack_invoke_large_request_test: $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_invoke_large_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_invoke_large_request_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_invoke_large_request_test
+
+
+CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC = \
+
+CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+
+bins/chttp2_fullstack_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_max_concurrent_streams.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_max_concurrent_streams_test
+
+deps_chttp2_fullstack_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_max_concurrent_streams_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_max_concurrent_streams_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_max_concurrent_streams_test
+
+
+CHTTP2_FULLSTACK_NO_OP_TEST_SRC = \
+
+CHTTP2_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_NO_OP_TEST_SRC))))
+CHTTP2_FULLSTACK_NO_OP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_NO_OP_TEST_SRC))))
+
+bins/chttp2_fullstack_no_op_test: $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_no_op.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_no_op_test
+
+deps_chttp2_fullstack_no_op_test: $(CHTTP2_FULLSTACK_NO_OP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_NO_OP_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_no_op_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_no_op_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_NO_OP_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_no_op_test
+
+
+CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC = \
+
+CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
+CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
+
+bins/chttp2_fullstack_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_ping_pong_streaming.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_ping_pong_streaming_test
+
+deps_chttp2_fullstack_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_ping_pong_streaming_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_ping_pong_streaming_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_ping_pong_streaming_test
+
+
+CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_request_response_with_metadata_and_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_request_response_with_metadata_and_payload_test
+
+deps_chttp2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_request_response_with_metadata_and_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_request_response_with_metadata_and_payload_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_request_response_with_metadata_and_payload_test
+
+
+CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_fullstack_request_response_with_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_request_response_with_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_request_response_with_payload_test
+
+deps_chttp2_fullstack_request_response_with_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_request_response_with_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_request_response_with_payload_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_request_response_with_payload_test
+
+
+CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+
+bins/chttp2_fullstack_simple_delayed_request_test: $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_simple_delayed_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_simple_delayed_request_test
+
+deps_chttp2_fullstack_simple_delayed_request_test: $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_simple_delayed_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_simple_delayed_request_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_simple_delayed_request_test
+
+
+CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
+CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
+
+bins/chttp2_fullstack_simple_request_test: $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_simple_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_simple_request_test
+
+deps_chttp2_fullstack_simple_request_test: $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_simple_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_simple_request_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_simple_request_test
+
+
+CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC))))
+CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC))))
+
+bins/chttp2_fullstack_thread_stress_test_test: $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_thread_stress_test.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_thread_stress_test -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_thread_stress_test_test
+
+deps_chttp2_fullstack_thread_stress_test_test: $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_thread_stress_test_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_thread_stress_test_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_thread_stress_test_test
+
+
+CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
+
+CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+
+bins/chttp2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/libend2end_fixture_chttp2_fullstack.a libs/libend2end_test_writes_done_hangs_with_pending_read.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_fullstack -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_fullstack_writes_done_hangs_with_pending_read_test
+
+deps_chttp2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+endif
+
+clean_chttp2_fullstack_writes_done_hangs_with_pending_read_test:
+	$(E) "[CLEAN]   Cleaning chttp2_fullstack_writes_done_hangs_with_pending_read_test files"
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_fullstack_writes_done_hangs_with_pending_read_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_cancel_after_accept.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_cancel_after_accept_test
+
+deps_chttp2_simple_ssl_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_cancel_after_accept_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_cancel_after_accept_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_cancel_after_accept_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_cancel_after_accept_and_writes_closed.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test
+
+deps_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_cancel_after_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_cancel_after_invoke_test
+
+deps_chttp2_simple_ssl_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_cancel_after_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_cancel_after_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_cancel_after_invoke_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_cancel_before_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_cancel_before_invoke_test
+
+deps_chttp2_simple_ssl_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_cancel_before_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_cancel_before_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_cancel_before_invoke_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_cancel_in_a_vacuum.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test
+
+deps_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test
+
+deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_early_server_shutdown_finishes_tags.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test
+
+deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_invoke_large_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_invoke_large_request_test
+
+deps_chttp2_simple_ssl_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_invoke_large_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_invoke_large_request_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_invoke_large_request_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_max_concurrent_streams.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_max_concurrent_streams_test
+
+deps_chttp2_simple_ssl_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_max_concurrent_streams_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_max_concurrent_streams_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_max_concurrent_streams_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_no_op.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_no_op_test
+
+deps_chttp2_simple_ssl_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_no_op_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_no_op_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_no_op_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_ping_pong_streaming.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_ping_pong_streaming_test
+
+deps_chttp2_simple_ssl_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_ping_pong_streaming_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_ping_pong_streaming_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_ping_pong_streaming_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_request_response_with_metadata_and_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test
+
+deps_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_request_response_with_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_request_response_with_payload_test
+
+deps_chttp2_simple_ssl_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_request_response_with_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_request_response_with_payload_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_request_response_with_payload_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_simple_delayed_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_simple_delayed_request_test
+
+deps_chttp2_simple_ssl_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_simple_delayed_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_simple_delayed_request_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_simple_delayed_request_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_simple_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_simple_request_test
+
+deps_chttp2_simple_ssl_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_simple_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_simple_request_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_simple_request_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_thread_stress_test_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_thread_stress_test.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_thread_stress_test -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_thread_stress_test_test
+
+deps_chttp2_simple_ssl_fullstack_thread_stress_test_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_thread_stress_test_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_thread_stress_test_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_thread_stress_test_test
+
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+
+bins/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/libend2end_test_writes_done_hangs_with_pending_read.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test
+
+deps_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_cancel_after_accept.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_cancel_after_accept_and_writes_closed.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_cancel_after_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_cancel_before_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_cancel_in_a_vacuum.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_early_server_shutdown_finishes_tags.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_invoke_large_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_max_concurrent_streams.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_no_op.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_no_op_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_ping_pong_streaming.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_request_response_with_metadata_and_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_request_response_with_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_simple_delayed_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_simple_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_thread_stress_test.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_thread_stress_test -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test
+
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+
+bins/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/libend2end_test_writes_done_hangs_with_pending_read.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+endif
+
+clean_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test:
+	$(E) "[CLEAN]   Cleaning chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test files"
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test
+
+
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+
+bins/chttp2_socket_pair_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_cancel_after_accept.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_cancel_after_accept_test
+
+deps_chttp2_socket_pair_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_cancel_after_accept_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_cancel_after_accept_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_cancel_after_accept_test
+
+
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+
+bins/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_cancel_after_accept_and_writes_closed.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test
+
+deps_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_cancel_after_accept_and_writes_closed_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test
+
+
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC))))
+
+bins/chttp2_socket_pair_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_cancel_after_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_cancel_after_invoke_test
+
+deps_chttp2_socket_pair_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_cancel_after_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_cancel_after_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_cancel_after_invoke_test
+
+
+CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+
+bins/chttp2_socket_pair_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_cancel_before_invoke.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_cancel_before_invoke_test
+
+deps_chttp2_socket_pair_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_cancel_before_invoke_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_cancel_before_invoke_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_cancel_before_invoke_test
+
+
+CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC))))
+
+bins/chttp2_socket_pair_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_cancel_in_a_vacuum.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_cancel_in_a_vacuum_test
+
+deps_chttp2_socket_pair_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_cancel_in_a_vacuum_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_cancel_in_a_vacuum_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_cancel_in_a_vacuum_test
+
+
+CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+
+bins/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test
+
+deps_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test
+
+
+CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+
+bins/chttp2_socket_pair_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_early_server_shutdown_finishes_tags.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_early_server_shutdown_finishes_tags_test
+
+deps_chttp2_socket_pair_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_early_server_shutdown_finishes_tags_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_early_server_shutdown_finishes_tags_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_early_server_shutdown_finishes_tags_test
+
+
+CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC))))
+
+bins/chttp2_socket_pair_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_invoke_large_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_invoke_large_request_test
+
+deps_chttp2_socket_pair_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_invoke_large_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_invoke_large_request_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_invoke_large_request_test
+
+
+CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+
+bins/chttp2_socket_pair_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_max_concurrent_streams.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_max_concurrent_streams_test
+
+deps_chttp2_socket_pair_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_max_concurrent_streams_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_max_concurrent_streams_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_max_concurrent_streams_test
+
+
+CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_NO_OP_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC))))
+
+bins/chttp2_socket_pair_no_op_test: $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_no_op.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_no_op_test
+
+deps_chttp2_socket_pair_no_op_test: $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_no_op_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_no_op_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_no_op_test
+
+
+CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_SRC))))
+
+bins/chttp2_socket_pair_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_ping_pong_streaming.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_ping_pong_streaming_test
+
+deps_chttp2_socket_pair_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_ping_pong_streaming_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_ping_pong_streaming_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_ping_pong_streaming_test
+
+
+CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_socket_pair_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_request_response_with_metadata_and_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_request_response_with_metadata_and_payload_test
+
+deps_chttp2_socket_pair_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_request_response_with_metadata_and_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_request_response_with_metadata_and_payload_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_request_response_with_metadata_and_payload_test
+
+
+CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+
+bins/chttp2_socket_pair_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_request_response_with_payload.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_request_response_with_payload_test
+
+deps_chttp2_socket_pair_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_request_response_with_payload_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_request_response_with_payload_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_request_response_with_payload_test
+
+
+CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+
+bins/chttp2_socket_pair_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_simple_delayed_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_simple_delayed_request_test
+
+deps_chttp2_socket_pair_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_simple_delayed_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_simple_delayed_request_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_simple_delayed_request_test
+
+
+CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_SRC))))
+
+bins/chttp2_socket_pair_simple_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_simple_request.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_simple_request_test
+
+deps_chttp2_socket_pair_simple_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_simple_request_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_simple_request_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_simple_request_test
+
+
+CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_SRC))))
+
+bins/chttp2_socket_pair_thread_stress_test_test: $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_thread_stress_test.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_thread_stress_test -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_thread_stress_test_test
+
+deps_chttp2_socket_pair_thread_stress_test_test: $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_thread_stress_test_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_thread_stress_test_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_thread_stress_test_test
+
+
+CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+
+bins/chttp2_socket_pair_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/libend2end_fixture_chttp2_socket_pair.a libs/libend2end_test_writes_done_hangs_with_pending_read.a libs/libend2end_certs.a libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs -lend2end_fixture_chttp2_socket_pair -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/chttp2_socket_pair_writes_done_hangs_with_pending_read_test
+
+deps_chttp2_socket_pair_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+endif
+
+clean_chttp2_socket_pair_writes_done_hangs_with_pending_read_test:
+	$(E) "[CLEAN]   Cleaning chttp2_socket_pair_writes_done_hangs_with_pending_read_test files"
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS)
+	$(Q) $(RM) $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+	$(Q) $(RM) bins/chttp2_socket_pair_writes_done_hangs_with_pending_read_test
+
+
+
+
+
+
+.PHONY: all strip tools buildtests tests make_dirs install clean deps_libgpr clean_libgpr deps_libgrpc clean_libgrpc deps_libgrpc_test_util clean_libgrpc_test_util deps_libgrpc++ clean_libgrpc++ deps_libgrpc++_test_util clean_libgrpc++_test_util deps_libend2end_fixture_chttp2_fake_security clean_libend2end_fixture_chttp2_fake_security deps_libend2end_fixture_chttp2_fullstack clean_libend2end_fixture_chttp2_fullstack deps_libend2end_fixture_chttp2_simple_ssl_fullstack clean_libend2end_fixture_chttp2_simple_ssl_fullstack deps_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack clean_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack deps_libend2end_fixture_chttp2_socket_pair clean_libend2end_fixture_chttp2_socket_pair deps_libend2end_test_cancel_after_accept clean_libend2end_test_cancel_after_accept deps_libend2end_test_cancel_after_accept_and_writes_closed clean_libend2end_test_cancel_after_accept_and_writes_closed deps_libend2end_test_cancel_after_invoke clean_libend2end_test_cancel_after_invoke deps_libend2end_test_cancel_before_invoke clean_libend2end_test_cancel_before_invoke deps_libend2end_test_cancel_in_a_vacuum clean_libend2end_test_cancel_in_a_vacuum deps_libend2end_test_early_server_shutdown_finishes_inflight_calls clean_libend2end_test_early_server_shutdown_finishes_inflight_calls deps_libend2end_test_early_server_shutdown_finishes_tags clean_libend2end_test_early_server_shutdown_finishes_tags deps_libend2end_test_invoke_large_request clean_libend2end_test_invoke_large_request deps_libend2end_test_max_concurrent_streams clean_libend2end_test_max_concurrent_streams deps_libend2end_test_no_op clean_libend2end_test_no_op deps_libend2end_test_ping_pong_streaming clean_libend2end_test_ping_pong_streaming deps_libend2end_test_request_response_with_metadata_and_payload clean_libend2end_test_request_response_with_metadata_and_payload deps_libend2end_test_request_response_with_payload clean_libend2end_test_request_response_with_payload deps_libend2end_test_simple_delayed_request clean_libend2end_test_simple_delayed_request deps_libend2end_test_simple_request clean_libend2end_test_simple_request deps_libend2end_test_thread_stress_test clean_libend2end_test_thread_stress_test deps_libend2end_test_writes_done_hangs_with_pending_read clean_libend2end_test_writes_done_hangs_with_pending_read deps_libend2end_certs clean_libend2end_certs deps_libgrpc_unsecure clean_libgrpc_unsecure deps_gen_hpack_tables clean_gen_hpack_tables deps_grpc_byte_buffer_reader_test clean_grpc_byte_buffer_reader_test deps_gpr_cancellable_test clean_gpr_cancellable_test deps_gpr_log_test clean_gpr_log_test deps_gpr_cmdline_test clean_gpr_cmdline_test deps_gpr_histogram_test clean_gpr_histogram_test deps_gpr_host_port_test clean_gpr_host_port_test deps_gpr_slice_buffer_test clean_gpr_slice_buffer_test deps_gpr_slice_test clean_gpr_slice_test deps_gpr_string_test clean_gpr_string_test deps_gpr_sync_test clean_gpr_sync_test deps_gpr_thd_test clean_gpr_thd_test deps_gpr_time_test clean_gpr_time_test deps_murmur_hash_test clean_murmur_hash_test deps_grpc_em_test clean_grpc_em_test deps_grpc_em_pipe_test clean_grpc_em_pipe_test deps_grpc_stream_op_test clean_grpc_stream_op_test deps_chttp2_stream_encoder_test clean_chttp2_stream_encoder_test deps_hpack_table_test clean_hpack_table_test deps_chttp2_stream_map_test clean_chttp2_stream_map_test deps_hpack_parser_test clean_hpack_parser_test deps_transport_metadata_test clean_transport_metadata_test deps_chttp2_status_conversion_test clean_chttp2_status_conversion_test deps_chttp2_transport_end2end_test clean_chttp2_transport_end2end_test deps_grpc_tcp_test clean_grpc_tcp_test deps_resolve_address_test clean_resolve_address_test deps_tcp_server_test clean_tcp_server_test deps_tcp_client_test clean_tcp_client_test deps_grpc_channel_stack_test clean_grpc_channel_stack_test deps_metadata_buffer_test clean_metadata_buffer_test deps_grpc_completion_queue_test clean_grpc_completion_queue_test deps_grpc_completion_queue_benchmark clean_grpc_completion_queue_benchmark deps_census_window_stats_test clean_census_window_stats_test deps_census_statistics_quick_test clean_census_statistics_quick_test deps_census_statistics_performance_test clean_census_statistics_performance_test deps_census_statistics_multiple_writers_test clean_census_statistics_multiple_writers_test deps_census_statistics_multiple_writers_circular_buffer_test clean_census_statistics_multiple_writers_circular_buffer_test deps_census_stub_test clean_census_stub_test deps_census_hash_table_test clean_census_hash_table_test deps_fling_server clean_fling_server deps_fling_client clean_fling_client deps_fling_test clean_fling_test deps_echo_server clean_echo_server deps_echo_client clean_echo_client deps_echo_test clean_echo_test deps_low_level_ping_pong_benchmark clean_low_level_ping_pong_benchmark deps_message_compress_test clean_message_compress_test deps_secure_endpoint_test clean_secure_endpoint_test deps_httpcli_format_request_test clean_httpcli_format_request_test deps_httpcli_parser_test clean_httpcli_parser_test deps_httpcli_test clean_httpcli_test deps_grpc_credentials_test clean_grpc_credentials_test deps_fling_stream_test clean_fling_stream_test deps_lame_client_test clean_lame_client_test deps_thread_pool_test clean_thread_pool_test deps_status_test clean_status_test deps_chttp2_fake_security_cancel_after_accept_test clean_chttp2_fake_security_cancel_after_accept_test deps_chttp2_fake_security_cancel_after_accept_and_writes_closed_test clean_chttp2_fake_security_cancel_after_accept_and_writes_closed_test deps_chttp2_fake_security_cancel_after_invoke_test clean_chttp2_fake_security_cancel_after_invoke_test deps_chttp2_fake_security_cancel_before_invoke_test clean_chttp2_fake_security_cancel_before_invoke_test deps_chttp2_fake_security_cancel_in_a_vacuum_test clean_chttp2_fake_security_cancel_in_a_vacuum_test deps_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_fake_security_early_server_shutdown_finishes_tags_test clean_chttp2_fake_security_early_server_shutdown_finishes_tags_test deps_chttp2_fake_security_invoke_large_request_test clean_chttp2_fake_security_invoke_large_request_test deps_chttp2_fake_security_max_concurrent_streams_test clean_chttp2_fake_security_max_concurrent_streams_test deps_chttp2_fake_security_no_op_test clean_chttp2_fake_security_no_op_test deps_chttp2_fake_security_ping_pong_streaming_test clean_chttp2_fake_security_ping_pong_streaming_test deps_chttp2_fake_security_request_response_with_metadata_and_payload_test clean_chttp2_fake_security_request_response_with_metadata_and_payload_test deps_chttp2_fake_security_request_response_with_payload_test clean_chttp2_fake_security_request_response_with_payload_test deps_chttp2_fake_security_simple_delayed_request_test clean_chttp2_fake_security_simple_delayed_request_test deps_chttp2_fake_security_simple_request_test clean_chttp2_fake_security_simple_request_test deps_chttp2_fake_security_thread_stress_test_test clean_chttp2_fake_security_thread_stress_test_test deps_chttp2_fake_security_writes_done_hangs_with_pending_read_test clean_chttp2_fake_security_writes_done_hangs_with_pending_read_test deps_chttp2_fullstack_cancel_after_accept_test clean_chttp2_fullstack_cancel_after_accept_test deps_chttp2_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_fullstack_cancel_after_accept_and_writes_closed_test deps_chttp2_fullstack_cancel_after_invoke_test clean_chttp2_fullstack_cancel_after_invoke_test deps_chttp2_fullstack_cancel_before_invoke_test clean_chttp2_fullstack_cancel_before_invoke_test deps_chttp2_fullstack_cancel_in_a_vacuum_test clean_chttp2_fullstack_cancel_in_a_vacuum_test deps_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_fullstack_early_server_shutdown_finishes_tags_test deps_chttp2_fullstack_invoke_large_request_test clean_chttp2_fullstack_invoke_large_request_test deps_chttp2_fullstack_max_concurrent_streams_test clean_chttp2_fullstack_max_concurrent_streams_test deps_chttp2_fullstack_no_op_test clean_chttp2_fullstack_no_op_test deps_chttp2_fullstack_ping_pong_streaming_test clean_chttp2_fullstack_ping_pong_streaming_test deps_chttp2_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_fullstack_request_response_with_metadata_and_payload_test deps_chttp2_fullstack_request_response_with_payload_test clean_chttp2_fullstack_request_response_with_payload_test deps_chttp2_fullstack_simple_delayed_request_test clean_chttp2_fullstack_simple_delayed_request_test deps_chttp2_fullstack_simple_request_test clean_chttp2_fullstack_simple_request_test deps_chttp2_fullstack_thread_stress_test_test clean_chttp2_fullstack_thread_stress_test_test deps_chttp2_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_fullstack_writes_done_hangs_with_pending_read_test deps_chttp2_simple_ssl_fullstack_cancel_after_accept_test clean_chttp2_simple_ssl_fullstack_cancel_after_accept_test deps_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test deps_chttp2_simple_ssl_fullstack_cancel_after_invoke_test clean_chttp2_simple_ssl_fullstack_cancel_after_invoke_test deps_chttp2_simple_ssl_fullstack_cancel_before_invoke_test clean_chttp2_simple_ssl_fullstack_cancel_before_invoke_test deps_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test clean_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test deps_chttp2_simple_ssl_fullstack_invoke_large_request_test clean_chttp2_simple_ssl_fullstack_invoke_large_request_test deps_chttp2_simple_ssl_fullstack_max_concurrent_streams_test clean_chttp2_simple_ssl_fullstack_max_concurrent_streams_test deps_chttp2_simple_ssl_fullstack_no_op_test clean_chttp2_simple_ssl_fullstack_no_op_test deps_chttp2_simple_ssl_fullstack_ping_pong_streaming_test clean_chttp2_simple_ssl_fullstack_ping_pong_streaming_test deps_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test deps_chttp2_simple_ssl_fullstack_request_response_with_payload_test clean_chttp2_simple_ssl_fullstack_request_response_with_payload_test deps_chttp2_simple_ssl_fullstack_simple_delayed_request_test clean_chttp2_simple_ssl_fullstack_simple_delayed_request_test deps_chttp2_simple_ssl_fullstack_simple_request_test clean_chttp2_simple_ssl_fullstack_simple_request_test deps_chttp2_simple_ssl_fullstack_thread_stress_test_test clean_chttp2_simple_ssl_fullstack_thread_stress_test_test deps_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test deps_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test deps_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test clean_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test deps_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test clean_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test deps_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test clean_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test deps_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test clean_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test_test deps_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test deps_chttp2_socket_pair_cancel_after_accept_test clean_chttp2_socket_pair_cancel_after_accept_test deps_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test clean_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test deps_chttp2_socket_pair_cancel_after_invoke_test clean_chttp2_socket_pair_cancel_after_invoke_test deps_chttp2_socket_pair_cancel_before_invoke_test clean_chttp2_socket_pair_cancel_before_invoke_test deps_chttp2_socket_pair_cancel_in_a_vacuum_test clean_chttp2_socket_pair_cancel_in_a_vacuum_test deps_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test deps_chttp2_socket_pair_early_server_shutdown_finishes_tags_test clean_chttp2_socket_pair_early_server_shutdown_finishes_tags_test deps_chttp2_socket_pair_invoke_large_request_test clean_chttp2_socket_pair_invoke_large_request_test deps_chttp2_socket_pair_max_concurrent_streams_test clean_chttp2_socket_pair_max_concurrent_streams_test deps_chttp2_socket_pair_no_op_test clean_chttp2_socket_pair_no_op_test deps_chttp2_socket_pair_ping_pong_streaming_test clean_chttp2_socket_pair_ping_pong_streaming_test deps_chttp2_socket_pair_request_response_with_metadata_and_payload_test clean_chttp2_socket_pair_request_response_with_metadata_and_payload_test deps_chttp2_socket_pair_request_response_with_payload_test clean_chttp2_socket_pair_request_response_with_payload_test deps_chttp2_socket_pair_simple_delayed_request_test clean_chttp2_socket_pair_simple_delayed_request_test deps_chttp2_socket_pair_simple_request_test clean_chttp2_socket_pair_simple_request_test deps_chttp2_socket_pair_thread_stress_test_test clean_chttp2_socket_pair_thread_stress_test_test deps_chttp2_socket_pair_writes_done_hangs_with_pending_read_test clean_chttp2_socket_pair_writes_done_hangs_with_pending_read_test
