@@ -120,24 +120,45 @@ all: static shared\
 % endif
 % endfor
 
+static: static_c static_cxx
 
-static: make_dirs dep\
+static_c: make_dirs dep\
 % for lib in libs:
-% if lib.build == 'all':
+% if lib.build == 'all' and not lib.get('c++', False):
  libs/lib${lib.name}.a\
 % endif
 % endfor
 
 
-shared: make_dirs dep\
+static_cxx: make_dirs dep\
 % for lib in libs:
-% if lib.build == 'all':
+% if lib.build == 'all' and lib.get('c++', False):
+ libs/lib${lib.name}.a\
+% endif
+% endfor
+
+
+shared: shared_c shared_cxx
+
+shared_c: make_dirs dep\
+% for lib in libs:
+% if lib.build == 'all' and not lib.get('c++', False):
  libs/lib${lib.name}.so.$(VERSION)\
 % endif
 % endfor
 
 
-privatelibs: make_dirs dep\
+shared_cxx: make_dirs dep\
+% for lib in libs:
+% if lib.build == 'all' and lib.get('c++', False):
+ libs/lib${lib.name}.so.$(VERSION)\
+% endif
+% endfor
+
+
+privatelibs: privatelibs_c privatelibs_cxx
+
+privatelibs_c: make_dirs dep\
 % for lib in libs:
 % if lib.build == 'private':
  libs/lib${lib.name}.a\
@@ -145,15 +166,17 @@ privatelibs: make_dirs dep\
 % endfor
 
 
-buildtests: privatelibs\
-% for tgt in targets:
-% if tgt.build == 'test':
- bins/${tgt.name}\
+privatelibs_cxx: make_dirs dep\
+% for lib in libs:
+% if lib.build == 'private':
+ libs/lib${lib.name}.a\
 % endif
 % endfor
 
 
-buildtests_c: privatelibs\
+buildtests: buildtests_c buildtests_cxx
+
+buildtests_c: privatelibs_c\
 % for tgt in targets:
 % if tgt.build == 'test' and not tgt.get('c++', False):
  bins/${tgt.name}\
@@ -161,9 +184,28 @@ buildtests_c: privatelibs\
 % endfor
 
 
-tests: buildtests
+buildtests_cxx: privatelibs_cxx\
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True):
+% if tgt.build == 'test' and tgt.get('c++', False):
+ bins/${tgt.name}\
+% endif
+% endfor
+
+
+tests: tests_c tests_cxx
+
+tests_c: buildtests_c
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.get('c++', False):
+	$(E) "[RUN]     Testing ${tgt.name}"
+	$(Q) ./bins/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+% endif
+% endfor
+
+
+tests_cxx: buildtests_cxx
+% for tgt in targets:
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.get('c++', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) ./bins/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
