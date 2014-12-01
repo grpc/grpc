@@ -340,11 +340,9 @@ grpc_em_error grpc_em_alarm_add(grpc_em_alarm *alarm, gpr_timespec deadline) {
   }
 }
 
-grpc_em_error grpc_em_alarm_cancel(grpc_em_alarm *alarm, void **arg) {
+grpc_em_error grpc_em_alarm_cancel(grpc_em_alarm *alarm) {
   grpc_em_activation_data *adata = &alarm->task.activation[GRPC_EM_TA_ONLY];
   int trigger_old;
-
-  *arg = adata->arg;
 
   /* First check if this alarm has been triggered, atomically */
   trigger_old =

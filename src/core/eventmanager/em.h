@@ -136,7 +136,7 @@ grpc_em_error grpc_em_alarm_add(grpc_em_alarm *alarm, gpr_timespec deadline);
    or from the activation (with status SUCCESS)
 
    Requires:  cancel() must happen after add() on a given alarm */
-grpc_em_error grpc_em_alarm_cancel(grpc_em_alarm *alarm, void **arg);
+grpc_em_error grpc_em_alarm_cancel(grpc_em_alarm *alarm);
 
 /* ========================== grpc_em_fd ============================= */
 

@@ -108,7 +108,6 @@ static void setup_initiate(grpc_transport_setup *sp) {
    not to initiate again) */
 static void setup_cancel(grpc_transport_setup *sp) {
   grpc_client_setup *s = (grpc_client_setup *)sp;
-  void *ignored;
 
   gpr_mu_lock(&s->mu);
 
@@ -116,7 +115,7 @@ static void setup_cancel(grpc_transport_setup *sp) {
   /* effectively cancels the current request (if any) */
   s->active_request = NULL;
   if (s->in_alarm) {
-    grpc_em_alarm_cancel(&s->backoff_alarm, &ignored);
+    grpc_em_alarm_cancel(&s->backoff_alarm);
   }
   if (--s->refs == 0) {
     gpr_mu_unlock(&s->mu);

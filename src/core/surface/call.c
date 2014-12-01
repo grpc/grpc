@@ -253,8 +253,7 @@ void grpc_call_internal_unref(grpc_call *c) {
 void grpc_call_destroy(grpc_call *c) {
   gpr_mu_lock(&c->read_mu);
   if (c->have_alarm) {
-    void *arg_was;
-    grpc_em_alarm_cancel(&c->alarm, &arg_was);
+    grpc_em_alarm_cancel(&c->alarm);
     c->have_alarm = 0;
   }
   gpr_mu_unlock(&c->read_mu);
@@ -774,8 +773,7 @@ void grpc_call_recv_finish(grpc_call_element *elem, int is_full_close) {
   }
   if (is_full_close) {
     if (call->have_alarm) {
-      void *arg_was;
-      grpc_em_alarm_cancel(&call->alarm, &arg_was);
+      grpc_em_alarm_cancel(&call->alarm);
       call->have_alarm = 0;
     }
     call->received_finish = 1;

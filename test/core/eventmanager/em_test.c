@@ -580,7 +580,6 @@ static void test_grpc_em_alarm() {
   gpr_timespec alarm_deadline;
   gpr_timespec followup_deadline;
 
-  alarm_arg *cancel_arg = NULL;
   alarm_arg arg;
   alarm_arg arg2;
   void *fdone;
@@ -649,7 +648,7 @@ static void test_grpc_em_alarm() {
              GRPC_EM_OK);
   GPR_ASSERT(grpc_em_alarm_add(&alarm_to_cancel,
                                gpr_time_add(tv2, gpr_now())) == GRPC_EM_OK);
-  switch (grpc_em_alarm_cancel(&alarm_to_cancel, (void **)&cancel_arg)) {
+  switch (grpc_em_alarm_cancel(&alarm_to_cancel)) {
     case GRPC_EM_OK:
       gpr_log(GPR_INFO, "Alarm cancel succeeded");
       break;
@@ -700,10 +699,6 @@ static void test_grpc_em_alarm() {
     GPR_ASSERT(0);
   }
 
-  if (cancel_arg != &arg2) {
-    gpr_log(GPR_ERROR, "Alarm cancel arg address wrong");
-    GPR_ASSERT(0);
-  }
   if (fdone != (void *)&arg2.fcb_arg) {
     gpr_log(GPR_ERROR, "Followup callback #2 not invoked properly %p %p", fdone,
             &arg2.fcb_arg);
