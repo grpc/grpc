@@ -64,6 +64,13 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
         /* swallow it */
         grpc_mdelem_unref(op->data.metadata);
         op->done_cb(op->user_data, GRPC_OP_OK);
+      } else if (op->data.metadata->key == channeld->te_trailers->key) {
+        gpr_log(GPR_ERROR, "Invalid te: header: '%s'",
+                grpc_mdstr_as_c_string(op->data.metadata->value));
+        /* swallow it */
+        grpc_mdelem_unref(op->data.metadata);
+        op->done_cb(op->user_data, GRPC_OP_OK);
+        grpc_call_element_send_cancel(elem);
       } else {
         /* pass the event up */
         grpc_call_next_op(elem, op);
