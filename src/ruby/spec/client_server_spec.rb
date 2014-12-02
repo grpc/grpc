@@ -1,0 +1,349 @@
+# Copyright 2014, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+require 'grpc'
+require 'port_picker'
+require 'spec_helper'
+
+include GRPC::CompletionType
+include GRPC
+
+shared_context 'setup: tags' do
+
+  before(:example) do
+    @server_finished_tag = Object.new
+    @client_finished_tag = Object.new
+    @server_tag = Object.new
+    @tag = Object.new
+  end
+
+  def deadline
+    Time.now + 0.05
+  end
+
+  def expect_next_event_on(queue, type, tag)
+    ev = queue.pluck(tag, deadline)
+    if type.nil?
+      expect(ev).to be_nil
+    else
+      expect(ev).to_not be_nil
+      expect(ev.type).to be(type)
+    end
+    ev
+  end
+
+  def server_receives_and_responds_with(reply_text)
+    reply = ByteBuffer.new(reply_text)
+    @server.request_call(@server_tag)
+    ev = @server_queue.pluck(@server_tag, TimeConsts::INFINITE_FUTURE)
+    expect(ev).not_to be_nil
+    expect(ev.type).to be(SERVER_RPC_NEW)
+    ev.call.accept(@server_queue, @server_finished_tag)
+    ev.call.start_read(@server_tag)
+    ev = @server_queue.pluck(@server_tag, TimeConsts::INFINITE_FUTURE)
+    expect(ev.type).to be(READ)
+    ev.call.start_write(reply, @server_tag)
+    ev = @server_queue.pluck(@server_tag, TimeConsts::INFINITE_FUTURE)
+    expect(ev).not_to be_nil
+    expect(ev.type).to be(WRITE_ACCEPTED)
+    return ev.call
+  end
+
+  def client_sends(call, sent='a message')
+    req = ByteBuffer.new(sent)
+    call.start_invoke(@client_queue, @tag, @tag, @client_finished_tag)
+    ev = @client_queue.pluck(@tag, TimeConsts::INFINITE_FUTURE)
+    expect(ev).not_to be_nil
+    expect(ev.type).to be(INVOKE_ACCEPTED)
+    call.start_write(req, @tag)
+    ev = @client_queue.pluck(@tag, TimeConsts::INFINITE_FUTURE)
+    expect(ev).not_to be_nil
+    expect(ev.type).to be(WRITE_ACCEPTED)
+    return sent
+  end
+
+  def new_client_call
+    @ch.create_call('/method', 'localhost', deadline)
+  end
+
+end
+
+shared_examples 'basic GRPC message delivery is OK' do
+
+  include_context 'setup: tags'
+
+  it 'servers receive requests from clients and start responding' do
+    reply = ByteBuffer.new('the server payload')
+    call = new_client_call
+    msg = client_sends(call)
+
+    # check the server rpc new was received
+    @server.request_call(@server_tag)
+    ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+
+    # accept the call
+    server_call = ev.call
+    server_call.accept(@server_queue, @server_finished_tag)
+
+    # confirm the server can read the inbound message
+    server_call.start_read(@server_tag)
+    ev = expect_next_event_on(@server_queue, READ, @server_tag)
+    expect(ev.result.to_s).to eq(msg)
+
+    #  the server response
+    server_call.start_write(reply, @server_tag)
+    ev = expect_next_event_on(@server_queue, WRITE_ACCEPTED, @server_tag)
+  end
+
+  it 'responses written by servers are received by the client' do
+    call = new_client_call
+    client_sends(call)
+    server_receives_and_responds_with('server_response')
+
+    call.start_read(@tag)
+    ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ, @tag)
+    ev = expect_next_event_on(@client_queue, READ, @tag)
+    expect(ev.result.to_s).to eq('server_response')
+  end
+
+  it 'servers can ignore a client write and send a status' do
+    reply = ByteBuffer.new('the server payload')
+    call = new_client_call
+    msg = client_sends(call)
+
+    # check the server rpc new was received
+    @server.request_call(@server_tag)
+    ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+    expect(ev.tag).to be(@server_tag)
+
+    # accept the call - need to do this to sent status.
+    server_call = ev.call
+    server_call.accept(@server_queue, @server_finished_tag)
+    sts = Status.new(StatusCodes::NOT_FOUND, 'not found')
+    server_call.start_write_status(sts, @server_tag)
+
+    # client gets an empty response for the read, preceeded by some metadata.
+    call.start_read(@tag)
+    ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ, @tag)
+    ev = expect_next_event_on(@client_queue, READ, @tag)
+    expect(ev.tag).to be(@tag)
+    expect(ev.result.to_s).to eq('')
+
+    # finally, after client sends writes_done, they get the finished.
+    call.writes_done(@tag)
+    ev = expect_next_event_on(@client_queue, FINISH_ACCEPTED, @tag)
+    ev = expect_next_event_on(@client_queue, FINISHED, @client_finished_tag)
+    expect(ev.result.code).to eq(StatusCodes::NOT_FOUND)
+  end
+
+  it 'completes calls by sending status to client and server' do
+    call = new_client_call
+    client_sends(call)
+    server_call = server_receives_and_responds_with('server_response')
+    sts = Status.new(10101, 'status code is 10101')
+    server_call.start_write_status(sts, @server_tag)
+
+    # first the client says writes are done
+    call.start_read(@tag)
+    ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ, @tag)
+    ev = expect_next_event_on(@client_queue, READ, @tag)
+    call.writes_done(@tag)
+
+    # but nothing happens until the server sends a status
+    expect_next_event_on(@server_queue, FINISH_ACCEPTED, @server_tag)
+    ev = expect_next_event_on(@server_queue, FINISHED, @server_finished_tag)
+    expect(ev.result).to be_a(Status)
+
+    # client gets FINISHED
+    expect_next_event_on(@client_queue, FINISH_ACCEPTED, @tag)
+    ev = expect_next_event_on(@client_queue, FINISHED, @client_finished_tag)
+    expect(ev.result.details).to eq('status code is 10101')
+    expect(ev.result.code).to eq(10101)
+  end
+
+end
+
+
+shared_examples 'GRPC metadata delivery works OK' do
+
+  include_context 'setup: tags'
+
+  describe 'from client => server' do
+
+    before(:example) do
+      n = 7  # arbitrary number of metadata
+      diff_keys = Hash[n.times.collect { |i| ['k%d' % i, 'v%d' % i] }]
+      null_vals = Hash[n.times.collect { |i| ['k%d' % i, 'v\0%d' % i] }]
+      same_keys = Hash[n.times.collect { |i| ['k%d' % i, ['v%d' % i] * n] }]
+      symbol_key = {:a_key => 'a val'}
+      @valid_metadata = [diff_keys, same_keys, null_vals, symbol_key]
+      @bad_keys = []
+      @bad_keys << { Object.new => 'a value' }
+      @bad_keys << { 1 => 'a value' }
+    end
+
+    it 'raises an exception if a metadata key is invalid' do
+      @bad_keys.each do |md|
+        call = new_client_call
+        expect { call.add_metadata(md) }.to raise_error
+      end
+    end
+
+    it 'sends an empty hash when no metadata is added' do
+      call = new_client_call
+      client_sends(call)
+
+      # Server gets a response
+      @server.request_call(@server_tag)
+      expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+    end
+
+    it 'sends all the metadata pairs when keys and values are valid' do
+      @valid_metadata.each do |md|
+        call = new_client_call
+        call.add_metadata(md)
+
+        # Client begins a call OK
+        call.start_invoke(@client_queue, @tag, @tag, @client_finished_tag)
+        ev = expect_next_event_on(@client_queue, INVOKE_ACCEPTED, @tag)
+
+        # ... server has all metadata available even though the client did not
+        # send a write
+        @server.request_call(@server_tag)
+        ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+        replace_symbols = Hash[md.each_pair.collect { |x,y| [x.to_s, y] }]
+        result = ev.result.metadata
+        expect(result.merge(replace_symbols)).to eq(result)
+      end
+    end
+
+  end
+
+  describe 'from server => client' do
+
+    before(:example) do
+      n = 7  # arbitrary number of metadata
+      diff_keys = Hash[n.times.collect { |i| ['k%d' % i, 'v%d' % i] }]
+      null_vals = Hash[n.times.collect { |i| ['k%d' % i, 'v\0%d' % i] }]
+      same_keys = Hash[n.times.collect { |i| ['k%d' % i, ['v%d' % i] * n] }]
+      symbol_key = {:a_key => 'a val'}
+      @valid_metadata = [diff_keys, same_keys, null_vals, symbol_key]
+      @bad_keys = []
+      @bad_keys << { Object.new => 'a value' }
+      @bad_keys << { 1 => 'a value' }
+    end
+
+    it 'raises an exception if a metadata key is invalid' do
+      @bad_keys.each do |md|
+        call = new_client_call
+        client_sends(call)
+
+        # server gets the invocation
+        @server.request_call(@server_tag)
+        ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+        expect { ev.call.add_metadata(md) }.to raise_error
+      end
+    end
+
+    it 'sends a hash that contains the status when no metadata is added' do
+      call = new_client_call
+      client_sends(call)
+
+      # server gets the invocation
+      @server.request_call(@server_tag)
+      ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+      server_call = ev.call
+
+      # ... server accepts the call without adding metadata
+      server_call.accept(@server_queue, @server_finished_tag)
+
+      # ... these server sends some data, allowing the metadata read
+      server_call.start_write(ByteBuffer.new('reply with metadata'),
+                              @server_tag)
+      expect_next_event_on(@server_queue, WRITE_ACCEPTED, @server_tag)
+
+      # there is the HTTP status metadata, though there should not be any
+      # TODO(temiola): update this with the bug number to be resolved
+      ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ, @tag)
+      expect(ev.result).to eq({':status' => '200'})
+    end
+
+    it 'sends all the pairs and status:200 when keys and values are valid' do
+      @valid_metadata.each do |md|
+        call = new_client_call
+        client_sends(call)
+
+        # server gets the invocation
+        @server.request_call(@server_tag)
+        ev = expect_next_event_on(@server_queue, SERVER_RPC_NEW, @server_tag)
+        server_call = ev.call
+
+        # ... server adds metadata and accepts the call
+        server_call.add_metadata(md)
+        server_call.accept(@server_queue, @server_finished_tag)
+
+        # Now the client can read the metadata
+        ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ, @tag)
+        replace_symbols = Hash[md.each_pair.collect { |x,y| [x.to_s, y] }]
+        replace_symbols[':status'] = '200'
+        expect(ev.result).to eq(replace_symbols)
+      end
+
+    end
+
+  end
+
+end
+
+
+describe 'the http client/server' do
+
+  before(:example) do
+    port = find_unused_tcp_port
+    host = "localhost:#{port}"
+    @client_queue = GRPC::CompletionQueue.new
+    @server_queue = GRPC::CompletionQueue.new
+    @server = GRPC::Server.new(@server_queue, nil)
+    @server.add_http2_port(host)
+    @server.start
+    @ch = Channel.new(host, nil)
+  end
+
+  after(:example) do
+    @server.close
+  end
+
+
+  it_behaves_like 'basic GRPC message delivery is OK' do
+  end
+
+  it_behaves_like 'GRPC metadata delivery works OK' do
+  end
+
+end

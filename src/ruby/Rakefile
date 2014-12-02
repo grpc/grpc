@@ -1,0 +1,38 @@
+# -*- ruby -*-
+require 'rake/extensiontask'
+require 'rspec/core/rake_task'
+
+
+Rake::ExtensionTask.new 'grpc' do |ext|
+  ext.lib_dir = File.join('lib', 'grpc')
+end
+
+SPEC_SUITES = [
+  { :id => :wrapper, :title => 'wrapper layer', :files => %w(spec/*.rb) },
+  { :id => :idiomatic, :title => 'idiomatic layer', :dir => %w(spec/generic) }
+]
+
+desc "Run all RSpec tests"
+namespace :spec do
+  namespace :suite do
+    SPEC_SUITES.each do |suite|
+      desc "Run all specs in #{suite[:title]} spec suite"
+      RSpec::Core::RakeTask.new(suite[:id]) do |t|
+        spec_files = []
+        if suite[:files]
+          suite[:files].each { |f| spec_files += Dir[f] }
+        end
+
+        if suite[:dirs]
+          suite[:dirs].each { |f| spec_files += Dir["#{f}/**/*_spec.rb"] }
+        end
+
+        t.pattern = spec_files
+      end
+    end
+  end
+end
+
+desc "Run tests"
+task :default => [ "spec:suite:wrapper", "spec:suite:idiomatic"]
+task :spec => :compile
