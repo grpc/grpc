@@ -27,43 +27,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
-
 module Google
   module RPC
-    module TimeConsts  # re-opens a module in the C extension.
-
-      # Converts a time delta to an absolute deadline.
-      #
-      # Assumes timeish is a relative time, and converts its to an absolute,
-      # with following exceptions:
-      #
-      # * if timish is one of the TimeConsts.TimeSpec constants the value is
-      # preserved.
-      # * timish < 0 => TimeConsts.INFINITE_FUTURE
-      # * timish == 0 => TimeConsts.ZERO
-      #
-      # @param timeish [Number|TimeSpec]
-      # @return timeish [Number|TimeSpec]
-      def from_relative_time(timeish)
-        if timeish.is_a?TimeSpec
-          timeish
-        elsif timeish.nil?
-          TimeConsts::ZERO
-        elsif !timeish.is_a?Numeric
-          raise TypeError('Cannot make an absolute deadline from %s',
-                          timeish.inspect)
-        elsif timeish < 0
-          TimeConsts::INFINITE_FUTURE
-        elsif timeish == 0
-          TimeConsts::ZERO
-        else !timeish.nil?
-          Time.now + timeish
+    module Core
+      class Event  # Add an inspect method to C-defined Event class.
+        def inspect
+          '<%s: type:%s, tag:%s result:%s>' % [self.class, type, tag, result]
         end
       end
-
-      module_function :from_relative_time
-
     end
   end
 end

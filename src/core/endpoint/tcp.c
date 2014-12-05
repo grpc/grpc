@@ -250,7 +250,7 @@ static void slice_state_remove_last(grpc_tcp_slice_state *state, size_t bytes) {
 typedef struct {
   grpc_endpoint base;
   grpc_em *em;
-  grpc_em_fd em_fd;
+  grpc_em_fd *em_fd;
   int fd;
   size_t slice_size;
   gpr_refcount refcount;
@@ -277,14 +277,14 @@ grpc_endpoint *grpc_tcp_create(int fd, grpc_em *em) {
 
 static void grpc_tcp_shutdown(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  grpc_em_fd_shutdown(&tcp->em_fd);
+  grpc_em_fd_shutdown(tcp->em_fd);
 }
 
 static void grpc_tcp_unref(grpc_tcp *tcp) {
   int refcount_zero = gpr_unref(&tcp->refcount);
   if (refcount_zero) {
-    grpc_em_fd_destroy(&tcp->em_fd);
-    close(tcp->fd);
+    grpc_em_fd_destroy(tcp->em_fd);
+    gpr_free(tcp->em_fd);
     gpr_free(tcp);
   }
 }
@@ -385,7 +385,7 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */,
         } else {
           /* Spurious read event, consume it here */
           slice_state_destroy(&read_state);
-          grpc_em_fd_notify_on_read(&tcp->em_fd, grpc_tcp_handle_read, tcp,
+          grpc_em_fd_notify_on_read(tcp->em_fd, grpc_tcp_handle_read, tcp,
                                     tcp->read_deadline);
         }
       } else {
@@ -422,7 +422,7 @@ static void grpc_tcp_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
   tcp->read_user_data = user_data;
   tcp->read_deadline = deadline;
   gpr_ref(&tcp->refcount);
-  grpc_em_fd_notify_on_read(&tcp->em_fd, grpc_tcp_handle_read, tcp, deadline);
+  grpc_em_fd_notify_on_read(tcp->em_fd, grpc_tcp_handle_read, tcp, deadline);
 }
 
 #define MAX_WRITE_IOVEC 16
@@ -494,7 +494,7 @@ static void grpc_tcp_handle_write(void *arg /* grpc_tcp */,
 
   write_status = grpc_tcp_flush(tcp);
   if (write_status == GRPC_ENDPOINT_WRITE_PENDING) {
-    grpc_em_fd_notify_on_write(&tcp->em_fd, grpc_tcp_handle_write, tcp,
+    grpc_em_fd_notify_on_write(tcp->em_fd, grpc_tcp_handle_write, tcp,
                                tcp->write_deadline);
   } else {
     slice_state_destroy(&tcp->write_state);
@@ -539,7 +539,7 @@ static grpc_endpoint_write_status grpc_tcp_write(
     tcp->write_cb = cb;
     tcp->write_user_data = user_data;
     tcp->write_deadline = deadline;
-    grpc_em_fd_notify_on_write(&tcp->em_fd, grpc_tcp_handle_write, tcp,
+    grpc_em_fd_notify_on_write(tcp->em_fd, grpc_tcp_handle_write, tcp,
                                tcp->write_deadline);
   }
 
@@ -550,11 +550,12 @@ static const grpc_endpoint_vtable vtable = {grpc_tcp_notify_on_read,
                                             grpc_tcp_write, grpc_tcp_shutdown,
                                             grpc_tcp_destroy};
 
-grpc_endpoint *grpc_tcp_create_dbg(int fd, grpc_em *em, size_t slice_size) {
+static grpc_endpoint *grpc_tcp_create_generic(grpc_em_fd *em_fd,
+                                              size_t slice_size) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
-  tcp->fd = fd;
-  tcp->em = em;
+  tcp->fd = grpc_em_fd_get(em_fd);
+  tcp->em = grpc_em_fd_get_em(em_fd);
   tcp->read_cb = NULL;
   tcp->write_cb = NULL;
   tcp->read_user_data = NULL;
@@ -565,6 +566,16 @@ grpc_endpoint *grpc_tcp_create_dbg(int fd, grpc_em *em, size_t slice_size) {
   slice_state_init(&tcp->write_state, NULL, 0, 0);
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
-  grpc_em_fd_init(&tcp->em_fd, tcp->em, fd);
+  tcp->em_fd = em_fd;
   return &tcp->base;
+}
+
+grpc_endpoint *grpc_tcp_create_dbg(int fd, grpc_em *em, size_t slice_size) {
+  grpc_em_fd *em_fd = gpr_malloc(sizeof(grpc_em_fd));
+  grpc_em_fd_init(em_fd, em, fd);
+  return grpc_tcp_create_generic(em_fd, slice_size);
+}
+
+grpc_endpoint *grpc_tcp_create_emfd(grpc_em_fd *em_fd) {
+  return grpc_tcp_create_generic(em_fd, DEFAULT_SLICE_SIZE);
 }

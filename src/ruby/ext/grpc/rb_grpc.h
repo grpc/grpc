@@ -41,8 +41,8 @@
 /* rb_mGoogle is the top-level Google module. */
 extern VALUE rb_mGoogle;
 
-/* rb_mGoogleRPC is the module containing all the ruby wrapper GRPC classes. */
-extern VALUE rb_mGoogleRPC;
+/* rb_mGoogleRpcCore is the module containing the ruby wrapper GRPC classes. */
+extern VALUE rb_mGoogleRpcCore;
 
 /* Class used to wrap timeval structs. */
 extern VALUE rb_cTimeVal;

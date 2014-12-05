@@ -27,12 +27,61 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Google
-  module RPC
-    class Event  # Add an inspect method to C-defined Event class.
-      def inspect
-        '<%s: type:%s, tag:%s result:%s>' % [self.class, type, tag, result]
-      end
+require 'grpc'
+
+
+def load_test_certs
+  test_root = File.join(File.dirname(__FILE__), 'testdata')
+  files = ['ca.pem', 'server1.pem', 'server1.key']
+  files.map { |f| File.open(File.join(test_root, f)).read }
+end
+
+Credentials = GRPC::Core::Credentials
+
+describe Credentials do
+
+  describe '#new' do
+
+    it 'can be constructed with fake inputs' do
+      expect { Credentials.new('root_certs', 'key', 'cert') }.not_to raise_error
     end
+
+    it 'it can be constructed using specific test certificates' do
+      certs = load_test_certs
+      expect { Credentials.new(*certs) }.not_to raise_error
+    end
+
+    it 'can be constructed with server roots certs only' do
+      root_cert, _, _ = load_test_certs
+      expect { Credentials.new(root_cert) }.not_to raise_error
+    end
+
+    it 'cannot be constructed with a nil server roots' do
+      _, client_key, client_chain = load_test_certs
+      blk = Proc.new { Credentials.new(nil, client_key, client_chain) }
+      expect(&blk).to raise_error
+    end
+
   end
+
+  describe '#compose' do
+
+    it 'can be completed OK' do
+      certs = load_test_certs
+      cred1 = Credentials.new(*certs)
+      cred2 = Credentials.new(*certs)
+      expect { cred1.compose(cred2) }.to_not raise_error
+    end
+
+  end
+
+  describe 'Credentials#default' do
+
+    it 'is not implemented yet' do
+      expect { Credentials.default() }.to raise_error RuntimeError
+    end
+
+  end
+
+
 end

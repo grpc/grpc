@@ -154,7 +154,12 @@ static int prq_pop_to_cq(pending_read_queue *q, void *tag, grpc_call *call,
 
 /* the state of a call, based upon which functions have been called against
    said call */
-typedef enum { CALL_CREATED, CALL_STARTED, CALL_FINISHED } call_state;
+typedef enum {
+  CALL_CREATED,
+  CALL_BOUNDCQ,
+  CALL_STARTED,
+  CALL_FINISHED
+} call_state;
 
 struct grpc_call {
   grpc_completion_queue *cq;
@@ -404,24 +409,18 @@ grpc_call_error grpc_call_start_invoke(grpc_call *call,
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
-                                 void *finished_tag, gpr_uint32 flags) {
-  grpc_call_element *elem;
-  grpc_call_op op;
-
+grpc_call_error grpc_call_server_accept(grpc_call *call,
+                                        grpc_completion_queue *cq,
+                                        void *finished_tag) {
   /* validate preconditions */
   if (call->is_client) {
     gpr_log(GPR_ERROR, "can only call %s on servers", __FUNCTION__);
     return GRPC_CALL_ERROR_NOT_ON_CLIENT;
   }
 
-  if (call->state >= CALL_STARTED) {
-    gpr_log(GPR_ERROR, "call is already invoked");
-    return GRPC_CALL_ERROR_ALREADY_INVOKED;
-  }
-
-  if (flags & GRPC_WRITE_NO_COMPRESS) {
-    return GRPC_CALL_ERROR_INVALID_FLAGS;
+  if (call->state >= CALL_BOUNDCQ) {
+    gpr_log(GPR_ERROR, "call is already accepted");
+    return GRPC_CALL_ERROR_ALREADY_ACCEPTED;
   }
 
   /* inform the completion queue of an incoming operation (corresponding to
@@ -430,7 +429,7 @@ grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
 
   /* update state */
   gpr_mu_lock(&call->read_mu);
-  call->state = CALL_STARTED;
+  call->state = CALL_BOUNDCQ;
   call->cq = cq;
   call->finished_tag = finished_tag;
   if (prq_is_empty(&call->prq) && call->received_finish) {
@@ -442,6 +441,32 @@ grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
   }
   gpr_mu_unlock(&call->read_mu);
 
+  return GRPC_CALL_OK;
+}
+
+grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
+                                                      gpr_uint32 flags) {
+  grpc_call_element *elem;
+  grpc_call_op op;
+
+  /* validate preconditions */
+  if (call->is_client) {
+    gpr_log(GPR_ERROR, "can only call %s on servers", __FUNCTION__);
+    return GRPC_CALL_ERROR_NOT_ON_CLIENT;
+  }
+
+  if (call->state >= CALL_STARTED) {
+    gpr_log(GPR_ERROR, "call is already started");
+    return GRPC_CALL_ERROR_ALREADY_INVOKED;
+  }
+
+  if (flags & GRPC_WRITE_NO_COMPRESS) {
+    return GRPC_CALL_ERROR_INVALID_FLAGS;
+  }
+
+  /* update state */
+  call->state = CALL_STARTED;
+
   /* call down */
   op.type = GRPC_SEND_START;
   op.dir = GRPC_CALL_DOWN;
@@ -452,6 +477,17 @@ grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
   elem = CALL_ELEM_FROM_CALL(call, 0);
   elem->filter->call_op(elem, &op);
 
+  return GRPC_CALL_OK;
+}
+
+grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
+                                 void *finished_tag, gpr_uint32 flags) {
+  grpc_call_error err;
+
+  err = grpc_call_server_accept(call, cq, finished_tag);
+  if (err != GRPC_CALL_OK) return err;
+  err = grpc_call_server_end_initial_metadata(call, flags);
+  if (err != GRPC_CALL_OK) return err;
   return GRPC_CALL_OK;
 }
 
@@ -515,6 +551,7 @@ grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
   switch (call->state) {
     case CALL_CREATED:
       return GRPC_CALL_ERROR_NOT_INVOKED;
+    case CALL_BOUNDCQ:
     case CALL_STARTED:
       break;
     case CALL_FINISHED:
@@ -559,6 +596,7 @@ grpc_call_error grpc_call_start_write(grpc_call *call,
 
   switch (call->state) {
     case CALL_CREATED:
+    case CALL_BOUNDCQ:
       return GRPC_CALL_ERROR_NOT_INVOKED;
     case CALL_STARTED:
       break;
@@ -607,6 +645,7 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
 
   switch (call->state) {
     case CALL_CREATED:
+    case CALL_BOUNDCQ:
       return GRPC_CALL_ERROR_NOT_INVOKED;
     case CALL_FINISHED:
       return GRPC_CALL_ERROR_ALREADY_FINISHED;
@@ -646,6 +685,7 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
 
   switch (call->state) {
     case CALL_CREATED:
+    case CALL_BOUNDCQ:
       return GRPC_CALL_ERROR_NOT_INVOKED;
     case CALL_FINISHED:
       return GRPC_CALL_ERROR_ALREADY_FINISHED;

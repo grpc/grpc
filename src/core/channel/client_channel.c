@@ -392,7 +392,13 @@ static void broadcast_channel_op_down(grpc_channel_element *elem,
   /* send the message down */
   for (i = 0; i < child_count; i++) {
     child_elem = grpc_channel_stack_element(children[i], 0);
+    if (op->type == GRPC_CHANNEL_GOAWAY) {
+      gpr_slice_ref(op->data.goaway.message);
+    }
     child_elem->filter->channel_op(child_elem, op);
+  }
+  if (op->type == GRPC_CHANNEL_GOAWAY) {
+    gpr_slice_unref(op->data.goaway.message);
   }
 
   /* unmark the inflight requests */

@@ -30,9 +30,9 @@
 require 'grpc'
 require 'port_picker'
 
-include GRPC::StatusCodes
+include GRPC::Core::StatusCodes
 
-describe GRPC::RpcErrors do
+describe GRPC::Core::RpcErrors do
 
   before(:each) do
     @known_types = {
@@ -60,24 +60,24 @@ describe GRPC::RpcErrors do
   end
 
   it 'should have symbols for all the known error codes' do
-    m = GRPC::RpcErrors
+    m = GRPC::Core::RpcErrors
     syms_and_codes = m.constants.collect { |c| [c, m.const_get(c)] }
     expect(Hash[syms_and_codes]).to eq(@known_types)
   end
 
 end
 
-describe GRPC::Call do
+describe GRPC::Core::Call do
 
   before(:each) do
     @tag = Object.new
-    @client_queue = GRPC::CompletionQueue.new
-    @server_queue = GRPC::CompletionQueue.new
+    @client_queue = GRPC::Core::CompletionQueue.new
+    @server_queue = GRPC::Core::CompletionQueue.new
     port = find_unused_tcp_port
     host = "localhost:#{port}"
-    @server = GRPC::Server.new(@server_queue, nil)
+    @server = GRPC::Core::Server.new(@server_queue, nil)
     @server.add_http2_port(host)
-    @ch = GRPC::Channel.new(host, nil)
+    @ch = GRPC::Core::Channel.new(host, nil)
   end
 
   after(:each) do
@@ -86,29 +86,29 @@ describe GRPC::Call do
 
   describe '#start_read' do
     it 'should fail if called immediately' do
-      expect { make_test_call.start_read(@tag) }.to raise_error GRPC::CallError
+      expect { make_test_call.start_read(@tag) }.to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#start_write' do
     it 'should fail if called immediately' do
-      bytes = GRPC::ByteBuffer.new('test string')
+      bytes = GRPC::Core::ByteBuffer.new('test string')
       expect { make_test_call.start_write(bytes, @tag) }
-          .to raise_error GRPC::CallError
+          .to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#start_write_status' do
     it 'should fail if called immediately' do
-      sts = GRPC::Status.new(153, 'test detail')
+      sts = GRPC::Core::Status.new(153, 'test detail')
       expect { make_test_call.start_write_status(sts, @tag) }
-          .to raise_error GRPC::CallError
+          .to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#writes_done' do
     it 'should fail if called immediately' do
-      expect { make_test_call.writes_done(@tag) }.to raise_error GRPC::CallError
+      expect { make_test_call.writes_done(@tag) }.to raise_error GRPC::Core::CallError
     end
   end
 
@@ -126,9 +126,9 @@ describe GRPC::Call do
       call = make_test_call
       expect(call.start_invoke(@client_queue, @tag, @tag, @tag)).to be_nil
       ev = @client_queue.next(deadline)
-      expect(ev.call).to be_a(GRPC::Call)
+      expect(ev.call).to be_a(GRPC::Core::Call)
       expect(ev.tag).to be(@tag)
-      expect(ev.type).to be(GRPC::CompletionType::INVOKE_ACCEPTED)
+      expect(ev.type).to be(GRPC::Core::CompletionType::INVOKE_ACCEPTED)
       expect(ev.call).to_not be(call)
     end
   end
@@ -138,12 +138,12 @@ describe GRPC::Call do
       call = make_test_call
       call.start_invoke(@client_queue, @tag, @tag, @tag)
       ev = @client_queue.next(deadline)
-      expect(ev.type).to be(GRPC::CompletionType::INVOKE_ACCEPTED)
-      expect(call.start_write(GRPC::ByteBuffer.new('test_start_write'),
+      expect(ev.type).to be(GRPC::Core::CompletionType::INVOKE_ACCEPTED)
+      expect(call.start_write(GRPC::Core::ByteBuffer.new('test_start_write'),
                               @tag)).to be_nil
       ev = @client_queue.next(deadline)
-      expect(ev.call).to be_a(GRPC::Call)
-      expect(ev.type).to be(GRPC::CompletionType::WRITE_ACCEPTED)
+      expect(ev.call).to be_a(GRPC::Core::Call)
+      expect(ev.type).to be(GRPC::Core::CompletionType::WRITE_ACCEPTED)
       expect(ev.tag).to be(@tag)
     end
   end
@@ -151,7 +151,7 @@ describe GRPC::Call do
   describe '#status' do
     it 'can save the status and read it back' do
       call = make_test_call
-      sts = GRPC::Status.new(OK, 'OK')
+      sts = GRPC::Core::Status.new(OK, 'OK')
       expect { call.status = sts }.not_to raise_error
       expect(call.status).to be(sts)
     end

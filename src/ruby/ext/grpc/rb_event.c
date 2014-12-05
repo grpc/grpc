@@ -245,9 +245,9 @@ VALUE rb_cEvent = Qnil;
 VALUE rb_eEventError = Qnil;
 
 void Init_google_rpc_event() {
-  rb_eEventError = rb_define_class_under(rb_mGoogleRPC, "EventError",
+  rb_eEventError = rb_define_class_under(rb_mGoogleRpcCore, "EventError",
                                          rb_eStandardError);
-  rb_cEvent = rb_define_class_under(rb_mGoogleRPC, "Event", rb_cObject);
+  rb_cEvent = rb_define_class_under(rb_mGoogleRpcCore, "Event", rb_cObject);
   rb_sNewServerRpc = rb_struct_define("NewServerRpc", "method", "host",
                                       "deadline", "metadata", NULL);
 
@@ -263,7 +263,7 @@ void Init_google_rpc_event() {
   rb_define_method(rb_cEvent, "type", grpc_rb_event_type, 0);
 
   /* Constants representing the completion types */
-  rb_mCompletionType = rb_define_module_under(rb_mGoogleRPC, "CompletionType");
+  rb_mCompletionType = rb_define_module_under(rb_mGoogleRpcCore, "CompletionType");
   rb_define_const(rb_mCompletionType, "QUEUE_SHUTDOWN",
                   INT2NUM(GRPC_QUEUE_SHUTDOWN));
   rb_define_const(rb_mCompletionType, "READ", INT2NUM(GRPC_READ));

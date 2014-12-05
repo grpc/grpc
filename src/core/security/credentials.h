@@ -50,8 +50,14 @@ typedef enum {
 
 #define GRPC_CREDENTIALS_TYPE_SSL "Ssl"
 #define GRPC_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
+#define GRPC_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CREDENTIALS_TYPE_COMPOSITE "Composite"
 #define GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY "FakeTransportSecurity"
+
+#define GRPC_AUTHORIZATION_METADATA_KEY "Authorization"
+#define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
+  "x-goog-iam-authorization-token"
+#define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
 
 /* --- grpc_credentials. --- */
 
@@ -93,6 +99,14 @@ typedef struct {
 
 const grpc_ssl_config *grpc_ssl_credentials_get_config(
     const grpc_credentials *ssl_creds);
+
+typedef struct {
+  grpc_credentials **creds_array;
+  size_t num_creds;
+} grpc_credentials_array;
+
+const grpc_credentials_array *grpc_composite_credentials_get_credentials(
+    grpc_credentials *composite_creds);
 
 /* Exposed for testing only. */
 grpc_credentials_status grpc_compute_engine_credentials_parse_server_response(

@@ -35,20 +35,16 @@
 
 #include <grpc/support/log.h>
 #include "src/cpp/server/rpc_service_method.h"
+#include "src/cpp/stream/stream_context.h"
 #include <grpc++/async_server_context.h>
 
 namespace grpc {
 
 ServerRpcHandler::ServerRpcHandler(AsyncServerContext* server_context,
                                    RpcServiceMethod* method)
-    : server_context_(server_context),
-      method_(method) {
-}
+    : server_context_(server_context), method_(method) {}
 
 void ServerRpcHandler::StartRpc() {
-  // Start the rpc on this dedicated completion queue.
-  server_context_->Accept(cq_.cq());
-
   if (method_ == nullptr) {
     // Method not supported, finish the rpc with error.
     // TODO(rocking): do we need to call read to consume the request?
@@ -56,30 +52,54 @@ void ServerRpcHandler::StartRpc() {
     return;
   }
 
-  // Allocate request and response.
-  std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
-  std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+  if (method_->method_type() == RpcMethod::NORMAL_RPC) {
+    // Start the rpc on this dedicated completion queue.
+    server_context_->Accept(cq_.cq());
 
-  // Read request
-  server_context_->StartRead(request.get());
-  auto type = WaitForNextEvent();
-  GPR_ASSERT(type == CompletionQueue::SERVER_READ_OK);
+    // Allocate request and response.
+    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
 
-  // Run the application's rpc handler
-  MethodHandler* handler = method_->handler();
-  Status status = handler->RunHandler(
-      MethodHandler::HandlerParameter(request.get(), response.get()));
+    // Read request
+    server_context_->StartRead(request.get());
+    auto type = WaitForNextEvent();
+    GPR_ASSERT(type == CompletionQueue::SERVER_READ_OK);
 
-  if (status.IsOk()) {
-    // Send the response if we get an ok status.
-    server_context_->StartWrite(*response, 0);
-    type = WaitForNextEvent();
-    if (type != CompletionQueue::SERVER_WRITE_OK) {
-      status = Status(StatusCode::INTERNAL, "Error writing response.");
+    // Run the application's rpc handler
+    MethodHandler* handler = method_->handler();
+    Status status = handler->RunHandler(
+        MethodHandler::HandlerParameter(request.get(), response.get()));
+
+    if (status.IsOk()) {
+      // Send the response if we get an ok status.
+      server_context_->StartWrite(*response, 0);
+      type = WaitForNextEvent();
+      if (type != CompletionQueue::SERVER_WRITE_OK) {
+        status = Status(StatusCode::INTERNAL, "Error writing response.");
+      }
     }
-  }
 
-  FinishRpc(status);
+    FinishRpc(status);
+  } else {
+    // Allocate request and response.
+    // TODO(yangg) maybe not allocate both when not needed?
+    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+
+    StreamContext stream_context(*method_, server_context_->call(), cq_.cq(),
+                                 request.get(), response.get());
+
+    // Run the application's rpc handler
+    MethodHandler* handler = method_->handler();
+    Status status = handler->RunHandler(MethodHandler::HandlerParameter(
+        request.get(), response.get(), &stream_context));
+    if (status.IsOk() &&
+        method_->method_type() == RpcMethod::CLIENT_STREAMING) {
+      stream_context.Write(response.get(), false);
+    }
+    // TODO(yangg) Do we need to consider the status in stream_context?
+    FinishRpc(status);
+  }
 }
 
 CompletionQueue::CompletionType ServerRpcHandler::WaitForNextEvent() {
@@ -94,11 +114,15 @@ CompletionQueue::CompletionType ServerRpcHandler::WaitForNextEvent() {
 
 void ServerRpcHandler::FinishRpc(const Status& status) {
   server_context_->StartWriteStatus(status);
-  CompletionQueue::CompletionType type = WaitForNextEvent();
-  // TODO(rocking): do we care about this return type?
+  CompletionQueue::CompletionType type;
 
+  // HALFCLOSE_OK and RPC_END events come in either order.
   type = WaitForNextEvent();
-  GPR_ASSERT(type == CompletionQueue::RPC_END);
+  GPR_ASSERT(type == CompletionQueue::HALFCLOSE_OK ||
+             type == CompletionQueue::RPC_END);
+  type = WaitForNextEvent();
+  GPR_ASSERT(type == CompletionQueue::HALFCLOSE_OK ||
+             type == CompletionQueue::RPC_END);
 
   cq_.Shutdown();
   type = WaitForNextEvent();

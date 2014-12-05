@@ -36,16 +36,18 @@
 #include <ruby.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_completion_queue.h"
+#include "rb_server_credentials.h"
 #include "rb_grpc.h"
 
 /* rb_cServer is the ruby class that proxies grpc_server. */
 VALUE rb_cServer = Qnil;
 
 /* grpc_rb_server wraps a grpc_server.  It provides a peer ruby object,
- * 'mark' to minimize copying when a server is created from ruby. */
+  'mark' to minimize copying when a server is created from ruby. */
 typedef struct grpc_rb_server {
   /* Holder of ruby objects involved in constructing the server */
   VALUE mark;
@@ -62,7 +64,7 @@ static void grpc_rb_server_free(void *p) {
   svr = (grpc_rb_server *)p;
 
   /* Deletes the wrapped object if the mark object is Qnil, which indicates
-   * that no other object is the actual owner. */
+     that no other object is the actual owner. */
   if (svr->wrapped != NULL && svr->mark == Qnil) {
     grpc_server_shutdown(svr->wrapped);
     grpc_server_destroy(svr->wrapped);
@@ -92,17 +94,39 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
                           wrapper);
 }
 
-/* Initializes Server instances. */
-static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
-  grpc_completion_queue *cq = grpc_rb_get_wrapped_completion_queue(cqueue);
+/*
+  call-seq:
+    cq = CompletionQueue.new
+    insecure_server = Server.new(cq, {'arg1': 'value1'})
+    server_creds = ...
+    secure_server = Server.new(cq, {'arg1': 'value1'}, server_creds)
+
+  Initializes server instances. */
+static VALUE grpc_rb_server_init(int argc, VALUE *argv, VALUE self) {
+  VALUE cqueue = Qnil;
+  VALUE credentials = Qnil;
+  VALUE channel_args = Qnil;
+  grpc_completion_queue *cq = NULL;
+  grpc_server_credentials *creds = NULL;
   grpc_rb_server *wrapper = NULL;
   grpc_server *srv = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
 
+  /* "21" == 2 mandatory args, 1 (credentials) is optional */
+  rb_scan_args(argc, argv, "21", &cqueue, &channel_args, &credentials);
+  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
+
   Data_Get_Struct(self, grpc_rb_server, wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   srv = grpc_server_create(cq, &args);
+  if (credentials == Qnil) {
+    srv = grpc_server_create(cq, &args);
+  } else {
+    creds = grpc_rb_get_wrapped_server_credentials(credentials);
+    srv = grpc_secure_server_create(creds, cq, &args);
+  }
+
   if (args.args != NULL) {
     xfree(args.args);  /* Allocated by grpc_rb_hash_convert_to_channel_args */
   }
@@ -112,7 +136,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   wrapper->wrapped = srv;
 
   /* Add the cq as the server's mark object. This ensures the ruby cq can't be
-   * GCed before the server */
+     GCed before the server */
   wrapper->mark = cqueue;
   return self;
 }
@@ -139,7 +163,7 @@ static VALUE grpc_rb_server_init_copy(VALUE copy, VALUE orig) {
   Data_Get_Struct(copy, grpc_rb_server, copy_srv);
 
   /* use ruby's MEMCPY to make a byte-for-byte copy of the server wrapper
-   * object. */
+     object. */
   MEMCPY(copy_srv, orig_srv, grpc_rb_server, 1);
   return copy;
 }
@@ -183,16 +207,44 @@ static VALUE grpc_rb_server_destroy(VALUE self) {
   return Qnil;
 }
 
-static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port) {
+/*
+  call-seq:
+    // insecure port
+    insecure_server = Server.new(cq, {'arg1': 'value1'})
+    insecure_server.add_http2_port('mydomain:7575')
+
+    // secure port
+    server_creds = ...
+    secure_server = Server.new(cq, {'arg1': 'value1'}, creds)
+    secure_server.add_http_port('mydomain:7575', True)
+
+    Adds a http2 port to server */
+static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
+  VALUE port = Qnil;
+  VALUE is_secure = Qnil;
   grpc_rb_server *s = NULL;
   int added_ok = 0;
+
+  /* "11" == 1 mandatory args, 1 (is_secure) is optional */
+  rb_scan_args(argc, argv, "11", &port, &is_secure);
+
   Data_Get_Struct(self, grpc_rb_server, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
-  } else {
+    return Qnil;
+  } else if (is_secure == Qnil || TYPE(is_secure) != T_TRUE) {
     added_ok = grpc_server_add_http2_port(s->wrapped, StringValueCStr(port));
     if (added_ok == 0) {
-      rb_raise(rb_eRuntimeError, "could not add port %s to server, not sure why",
+      rb_raise(rb_eRuntimeError,
+               "could not add port %s to server, not sure why",
+               StringValueCStr(port));
+    }
+  } else if (TYPE(is_secure) != T_FALSE) {
+    added_ok = grpc_server_add_secure_http2_port(s->wrapped,
+                                                 StringValueCStr(port));
+    if (added_ok == 0) {
+      rb_raise(rb_eRuntimeError,
+               "could not add secure port %s to server, not sure why",
                StringValueCStr(port));
     }
   }
@@ -200,13 +252,13 @@ static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port) {
 }
 
 void Init_google_rpc_server() {
-  rb_cServer = rb_define_class_under(rb_mGoogleRPC, "Server", rb_cObject);
+  rb_cServer = rb_define_class_under(rb_mGoogleRpcCore, "Server", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cServer, grpc_rb_server_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cServer, "initialize", grpc_rb_server_init, 2);
+  rb_define_method(rb_cServer, "initialize", grpc_rb_server_init, -1);
   rb_define_method(rb_cServer, "initialize_copy", grpc_rb_server_init_copy, 1);
 
   /* Add the server methods. */
@@ -215,7 +267,7 @@ void Init_google_rpc_server() {
   rb_define_method(rb_cServer, "destroy", grpc_rb_server_destroy, 0);
   rb_define_alias(rb_cServer, "close", "destroy");
   rb_define_method(rb_cServer, "add_http2_port", grpc_rb_server_add_http2_port,
-                   1);
+                   -1);
 }
 
 /* Gets the wrapped server from the ruby wrapper */

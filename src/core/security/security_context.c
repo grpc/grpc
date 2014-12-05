@@ -37,6 +37,8 @@
 
 #include "src/core/endpoint/secure_endpoint.h"
 #include "src/core/security/credentials.h"
+#include "src/core/surface/lame_client.h"
+#include "src/core/transport/chttp2/alpn.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
@@ -47,7 +49,6 @@
 
 /* -- Constants. -- */
 
-#define GRPC_ALPN_PROTOCOL_STRING "h2-15"
 /* Defines the cipher suites that we accept. All these cipher suites are
    compliant with TLS 1.2 and use an RSA public key. We prefer GCM over CBC
    and ECDHE-RSA over just RSA. */
@@ -122,11 +123,11 @@ grpc_security_context *grpc_find_security_context_in_args(
   return NULL;
 }
 
-static int check_request_metadata_only_creds(grpc_credentials *creds) {
-  if (creds != NULL && !grpc_credentials_has_request_metadata_only(creds)) {
+static int check_request_metadata_creds(grpc_credentials *creds) {
+  if (creds != NULL && !grpc_credentials_has_request_metadata(creds)) {
     gpr_log(GPR_ERROR,
             "Incompatible credentials for channel security context: needs to "
-            "only set request metadata.");
+            "set request metadata.");
     return 0;
   }
   return 1;
@@ -136,7 +137,7 @@ static int check_request_metadata_only_creds(grpc_credentials *creds) {
 
 static void fake_channel_destroy(grpc_security_context *ctx) {
   grpc_channel_security_context *c = (grpc_channel_security_context *)ctx;
-  grpc_credentials_unref(c->request_metadata_only_creds);
+  grpc_credentials_unref(c->request_metadata_creds);
   gpr_free(ctx);
 }
 
@@ -191,15 +192,14 @@ static grpc_security_context_vtable fake_server_vtable = {
     fake_server_destroy, fake_server_create_handshaker, fake_check_peer};
 
 grpc_channel_security_context *grpc_fake_channel_security_context_create(
-    grpc_credentials *request_metadata_only_creds) {
+    grpc_credentials *request_metadata_creds) {
   grpc_channel_security_context *c =
       gpr_malloc(sizeof(grpc_channel_security_context));
   gpr_ref_init(&c->base.refcount, 1);
   c->base.is_client_side = 1;
   c->base.vtable = &fake_channel_vtable;
-  GPR_ASSERT(check_request_metadata_only_creds(request_metadata_only_creds));
-  c->request_metadata_only_creds =
-      grpc_credentials_ref(request_metadata_only_creds);
+  GPR_ASSERT(check_request_metadata_creds(request_metadata_creds));
+  c->request_metadata_creds = grpc_credentials_ref(request_metadata_creds);
   return c;
 }
 
@@ -226,7 +226,7 @@ typedef struct {
 static void ssl_channel_destroy(grpc_security_context *ctx) {
   grpc_ssl_channel_security_context *c =
       (grpc_ssl_channel_security_context *)ctx;
-  grpc_credentials_unref(c->base.request_metadata_only_creds);
+  grpc_credentials_unref(c->base.request_metadata_creds);
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
@@ -282,8 +282,8 @@ static grpc_security_status ssl_check_peer(const char *secure_peer_name,
     gpr_log(GPR_ERROR, "Invalid or missing selected ALPN property.");
     return GRPC_SECURITY_ERROR;
   }
-  if (strncmp(GRPC_ALPN_PROTOCOL_STRING, p->value.string.data,
-              p->value.string.length)) {
+  if (!grpc_chttp2_is_alpn_version_supported(p->value.string.data,
+                                             p->value.string.length)) {
     gpr_log(GPR_ERROR, "Invalid ALPN value.");
     return GRPC_SECURITY_ERROR;
   }
@@ -320,10 +320,9 @@ static grpc_security_context_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_create_handshaker, ssl_server_check_peer};
 
 grpc_security_status grpc_ssl_channel_security_context_create(
-    grpc_credentials *request_metadata_only_creds,
-    const grpc_ssl_config *config, const char *secure_peer_name,
-    grpc_channel_security_context **ctx) {
-  const char *alpn_protocol_string = GRPC_ALPN_PROTOCOL_STRING;
+    grpc_credentials *request_metadata_creds, const grpc_ssl_config *config,
+    const char *secure_peer_name, grpc_channel_security_context **ctx) {
+  const char *alpn_protocol_string = GRPC_CHTTP2_ALPN_VERSION;
   unsigned char alpn_protocol_string_len =
       (unsigned char)strlen(alpn_protocol_string);
   tsi_result result = TSI_OK;
@@ -334,7 +333,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
     gpr_log(GPR_ERROR, "An ssl channel needs a secure name and root certs.");
     return GRPC_SECURITY_ERROR;
   }
-  if (!check_request_metadata_only_creds(request_metadata_only_creds)) {
+  if (!check_request_metadata_creds(request_metadata_creds)) {
     return GRPC_SECURITY_ERROR;
   }
 
@@ -344,8 +343,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
   c->base.base.is_client_side = 1;
-  c->base.request_metadata_only_creds =
-      grpc_credentials_ref(request_metadata_only_creds);
+  c->base.request_metadata_creds = grpc_credentials_ref(request_metadata_creds);
   if (secure_peer_name != NULL) {
     c->secure_peer_name = gpr_strdup(secure_peer_name);
   }
@@ -368,7 +366,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
 
 grpc_security_status grpc_ssl_server_security_context_create(
     const grpc_ssl_config *config, grpc_security_context **ctx) {
-  const char *alpn_protocol_string = GRPC_ALPN_PROTOCOL_STRING;
+  const char *alpn_protocol_string = GRPC_CHTTP2_ALPN_VERSION;
   unsigned char alpn_protocol_string_len =
       (unsigned char)strlen(alpn_protocol_string);
   tsi_result result = TSI_OK;
@@ -427,7 +425,7 @@ static grpc_channel *grpc_ssl_channel_create(grpc_credentials *creds,
   status = grpc_ssl_channel_security_context_create(creds, config,
                                                     secure_peer_name, &ctx);
   if (status != GRPC_SECURITY_OK) {
-    return NULL; /* TODO(ctiller): return lame channel. */
+    return grpc_lame_client_channel_create();
   }
   channel = grpc_secure_channel_create_internal(target, args, ctx);
   grpc_security_context_unref(&ctx->base);
@@ -435,13 +433,38 @@ static grpc_channel *grpc_ssl_channel_create(grpc_credentials *creds,
 }
 
 
+static grpc_credentials *get_creds_from_composite(
+    grpc_credentials *composite_creds, const char *type) {
+  size_t i;
+  const grpc_credentials_array *inner_creds_array =
+      grpc_composite_credentials_get_credentials(composite_creds);
+  for (i = 0; i < inner_creds_array->num_creds; i++) {
+    if (!strcmp(type, inner_creds_array->creds_array[i]->type)) {
+      return inner_creds_array->creds_array[i];
+    }
+  }
+  return NULL;
+}
+
+static grpc_channel *grpc_channel_create_from_composite_creds(
+    grpc_credentials *composite_creds, const char *target,
+    const grpc_channel_args *args) {
+  grpc_credentials *creds =
+      get_creds_from_composite(composite_creds, GRPC_CREDENTIALS_TYPE_SSL);
+  if (creds != NULL) {
+    return grpc_ssl_channel_create(
+        composite_creds, grpc_ssl_credentials_get_config(creds), target, args);
+  }
+  return NULL; /* TODO(ctiller): return lame channel. */
+}
+
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
                                          const char *target,
                                          const grpc_channel_args *args) {
   if (grpc_credentials_has_request_metadata_only(creds)) {
     gpr_log(GPR_ERROR,
             "Credentials is insufficient to create a secure channel.");
-    return NULL; /* TODO(ctiller): return lame channel. */
+    return grpc_lame_client_channel_create();
   }
   if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
     return grpc_ssl_channel_create(NULL, grpc_ssl_credentials_get_config(creds),
@@ -455,11 +478,11 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
     grpc_security_context_unref(&ctx->base);
     return channel;
   } else if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE)) {
-    return NULL; /* TODO(jboeuf) Implement. */
+    return grpc_channel_create_from_composite_creds(creds, target, args);
   } else {
     gpr_log(GPR_ERROR,
             "Unknown credentials type %s for creating a secure channel.");
-    return NULL; /* TODO(ctiller): return lame channel. */
+    return grpc_lame_client_channel_create();
   }
 }
 

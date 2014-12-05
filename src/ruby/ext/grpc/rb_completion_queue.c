@@ -168,7 +168,7 @@ static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
 VALUE rb_cCompletionQueue = Qnil;
 
 void Init_google_rpc_completion_queue() {
-  rb_cCompletionQueue = rb_define_class_under(rb_mGoogleRPC,
+  rb_cCompletionQueue = rb_define_class_under(rb_mGoogleRpcCore,
                                               "CompletionQueue",
                                               rb_cObject);
 

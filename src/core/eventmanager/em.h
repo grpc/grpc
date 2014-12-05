@@ -146,10 +146,12 @@ grpc_em_error grpc_em_alarm_cancel(grpc_em_alarm *alarm);
    initialized *em_fd.
    fd is a non-blocking file descriptor.
 
+   This takes ownership of closing fd.
+
    Requires:  *em_fd uninitialized. fd is a non-blocking file descriptor.  */
 grpc_em_error grpc_em_fd_init(grpc_em_fd *em_fd, grpc_em *em, int fd);
 
-/* Cause *em_fd no longer to be initialized.
+/* Cause *em_fd no longer to be initialized and closes the underlying fd.
    Requires: *em_fd initialized; no outstanding notify_on_read or
    notify_on_write.  */
 void grpc_em_fd_destroy(grpc_em_fd *em_fd);

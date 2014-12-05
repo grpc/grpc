@@ -41,6 +41,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/status.h>
+#include <grpc++/stream.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -58,6 +59,44 @@ class TestServiceImpl : public TestService::Service {
     response->set_message(request->message());
     return Status::OK;
   }
+
+  // Unimplemented is left unimplemented to test the returned error.
+
+  Status RequestStream(ServerReader<EchoRequest>* reader,
+                       EchoResponse* response) {
+    EchoRequest request;
+    response->set_message("");
+    while (reader->Read(&request)) {
+      response->mutable_message()->append(request.message());
+    }
+    return Status::OK;
+  }
+
+  // Return 3 messages.
+  // TODO(yangg) make it generic by adding a parameter into EchoRequest
+  Status ResponseStream(const EchoRequest* request,
+                        ServerWriter<EchoResponse>* writer) {
+    EchoResponse response;
+    response.set_message(request->message() + "0");
+    writer->Write(response);
+    response.set_message(request->message() + "1");
+    writer->Write(response);
+    response.set_message(request->message() + "2");
+    writer->Write(response);
+
+    return Status::OK;
+  }
+
+  Status BidiStream(ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
+    EchoRequest request;
+    EchoResponse response;
+    while (stream->Read(&request)) {
+      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      response.set_message(request.message());
+      stream->Write(response);
+    }
+    return Status::OK;
+  }
 };
 
 class End2endTest : public ::testing::Test {
@@ -68,7 +107,7 @@ class End2endTest : public ::testing::Test {
     // Setup server
     ServerBuilder builder;
     builder.AddPort(server_address_.str());
-    builder.RegisterService(service.service());
+    builder.RegisterService(service_.service());
     server_ = builder.BuildAndStart();
   }
 
@@ -78,7 +117,7 @@ class End2endTest : public ::testing::Test {
 
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
-  TestServiceImpl service;
+  TestServiceImpl service_;
 };
 
 static void SendRpc(const grpc::string& server_address, int num_rpcs) {
@@ -112,6 +151,127 @@ TEST_F(End2endTest, MultipleRpcs) {
     threads[i]->join();
     delete threads[i];
   }
+}
+
+TEST_F(End2endTest, UnimplementedRpc) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  Status s = stub->Unimplemented(&context, request, &response);
+  EXPECT_FALSE(s.IsOk());
+  EXPECT_EQ(s.code(), grpc::StatusCode::UNIMPLEMENTED);
+  EXPECT_EQ(s.details(), "");
+  EXPECT_EQ(response.message(), "");
+
+  delete stub;
+}
+
+TEST_F(End2endTest, RequestStreamOneRequest) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  ClientWriter<EchoRequest>* stream = stub->RequestStream(&context, &response);
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request));
+  stream->WritesDone();
+  Status s = stream->Wait();
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.IsOk());
+
+  delete stream;
+  delete stub;
+}
+
+TEST_F(End2endTest, RequestStreamTwoRequests) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  ClientWriter<EchoRequest>* stream = stub->RequestStream(&context, &response);
+  request.set_message("hello");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Write(request));
+  stream->WritesDone();
+  Status s = stream->Wait();
+  EXPECT_EQ(response.message(), "hellohello");
+  EXPECT_TRUE(s.IsOk());
+
+  delete stream;
+  delete stub;
+}
+
+TEST_F(End2endTest, ResponseStream) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+
+  ClientReader<EchoResponse>* stream = stub->ResponseStream(&context, &request);
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "0");
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "1");
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "2");
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Wait();
+  EXPECT_TRUE(s.IsOk());
+
+  delete stream;
+  delete stub;
+}
+
+TEST_F(End2endTest, BidiStream) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  grpc::string msg("hello");
+
+  ClientReaderWriter<EchoRequest, EchoResponse>* stream =
+      stub->BidiStream(&context);
+
+  request.set_message(msg + "0");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  request.set_message(msg + "1");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  request.set_message(msg + "2");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  stream->WritesDone();
+  EXPECT_FALSE(stream->Read(&response));
+
+  Status s = stream->Wait();
+  EXPECT_TRUE(s.IsOk());
+
+  delete stream;
+  delete stub;
 }
 
 }  // namespace grpc

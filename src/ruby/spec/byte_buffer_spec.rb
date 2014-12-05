@@ -29,25 +29,25 @@
 
 require 'grpc'
 
-describe GRPC::ByteBuffer do
+describe GRPC::Core::ByteBuffer do
 
   describe '#new' do
 
     it 'is constructed from a string' do
-      expect { GRPC::ByteBuffer.new('#new') }.not_to raise_error
+      expect { GRPC::Core::ByteBuffer.new('#new') }.not_to raise_error
     end
 
     it 'can be constructed from the empty string' do
-      expect { GRPC::ByteBuffer.new('') }.not_to raise_error
+      expect { GRPC::Core::ByteBuffer.new('') }.not_to raise_error
     end
 
     it 'cannot be constructed from nil' do
-      expect { GRPC::ByteBuffer.new(nil) }.to raise_error TypeError
+      expect { GRPC::Core::ByteBuffer.new(nil) }.to raise_error TypeError
     end
 
     it 'cannot be constructed from non-strings' do
       [1, Object.new, :a_symbol].each do |x|
-        expect { GRPC::ByteBuffer.new(x) }.to raise_error TypeError
+        expect { GRPC::Core::ByteBuffer.new(x) }.to raise_error TypeError
       end
     end
 
@@ -55,13 +55,13 @@ describe GRPC::ByteBuffer do
 
   describe '#to_s' do
     it 'is the string value the ByteBuffer was constructed with' do
-      expect(GRPC::ByteBuffer.new('#to_s').to_s).to eq('#to_s')
+      expect(GRPC::Core::ByteBuffer.new('#to_s').to_s).to eq('#to_s')
     end
   end
 
   describe '#dup' do
     it 'makes an instance whose #to_s is the original string value' do
-      bb = GRPC::ByteBuffer.new('#dup')
+      bb = GRPC::Core::ByteBuffer.new('#dup')
       a_copy = bb.dup
       expect(a_copy.to_s).to eq('#dup')
       expect(a_copy.dup.to_s).to eq('#dup')

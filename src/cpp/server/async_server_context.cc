@@ -75,18 +75,11 @@ bool AsyncServerContext::StartWrite(const google::protobuf::Message& response,
   return err == GRPC_CALL_OK;
 }
 
-namespace {
-grpc_status TranslateStatus(const Status& status) {
-  grpc_status c_status;
-  // TODO(yangg)
-  c_status.code = GRPC_STATUS_OK;
-  c_status.details = nullptr;
-  return c_status;
-}
-}  // namespace
-
 bool AsyncServerContext::StartWriteStatus(const Status& status) {
-  grpc_status c_status = TranslateStatus(status);
+  grpc_status c_status = {static_cast<grpc_status_code>(status.code()),
+                          status.details().empty()
+                              ? nullptr
+                              : const_cast<char*>(status.details().c_str())};
   grpc_call_error err = grpc_call_start_write_status(call_, c_status, this);
   return err == GRPC_CALL_OK;
 }

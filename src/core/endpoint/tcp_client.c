@@ -34,6 +34,7 @@
 #include "src/core/endpoint/tcp_client.h"
 
 #include <errno.h>
+#include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -45,14 +46,12 @@
 typedef struct {
   void (*cb)(void *arg, grpc_endpoint *tcp);
   void *cb_arg;
-  grpc_em_fd fd;
+  grpc_em_fd *fd;
   gpr_timespec deadline;
 } async_connect;
 
-static int create_fd(int address_family) {
-  int fd = socket(address_family, SOCK_STREAM, 0);
+static int prepare_socket(int fd) {
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
     goto error;
   }
 
@@ -63,13 +62,13 @@ static int create_fd(int address_family) {
     goto error;
   }
 
-  return fd;
+  return 1;
 
 error:
   if (fd >= 0) {
     close(fd);
   }
-  return -1;
+  return 0;
 }
 
 static void on_writable(void *acp, grpc_em_cb_status status) {
@@ -77,8 +76,7 @@ static void on_writable(void *acp, grpc_em_cb_status status) {
   int so_error = 0;
   socklen_t so_error_size;
   int err;
-  int fd = grpc_em_fd_get(&ac->fd);
-  grpc_em *em = grpc_em_fd_get_em(&ac->fd);
+  int fd = grpc_em_fd_get(ac->fd);
 
   if (status == GRPC_CALLBACK_SUCCESS) {
     do {
@@ -105,7 +103,7 @@ static void on_writable(void *acp, grpc_em_cb_status status) {
            opened too many network connections.  The "easy" fix:
            don't do that! */
         gpr_log(GPR_ERROR, "kernel out of buffers");
-        grpc_em_fd_notify_on_write(&ac->fd, on_writable, ac, ac->deadline);
+        grpc_em_fd_notify_on_write(ac->fd, on_writable, ac, ac->deadline);
         return;
       } else {
         goto error;
@@ -122,31 +120,50 @@ static void on_writable(void *acp, grpc_em_cb_status status) {
 
 error:
   ac->cb(ac->cb_arg, NULL);
-  grpc_em_fd_destroy(&ac->fd);
+  grpc_em_fd_destroy(ac->fd);
+  gpr_free(ac->fd);
   gpr_free(ac);
-  close(fd);
   return;
 
 great_success:
-  grpc_em_fd_destroy(&ac->fd);
-  ac->cb(ac->cb_arg, grpc_tcp_create(fd, em));
+  ac->cb(ac->cb_arg, grpc_tcp_create_emfd(ac->fd));
   gpr_free(ac);
 }
 
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
-                             void *arg, grpc_em *em, struct sockaddr *addr,
-                             int len, gpr_timespec deadline) {
-  int fd = create_fd(addr->sa_family);
+                             void *arg, grpc_em *em,
+                             const struct sockaddr *addr, int addr_len,
+                             gpr_timespec deadline) {
+  int fd;
+  grpc_dualstack_mode dsmode;
   int err;
   async_connect *ac;
+  struct sockaddr_in6 addr6_v4mapped;
+  struct sockaddr_in addr4_copy;
 
+  /* Use dualstack sockets where available. */
+  if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
+    addr = (const struct sockaddr *)&addr6_v4mapped;
+    addr_len = sizeof(addr6_v4mapped);
+  }
+
+  fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
   if (fd < 0) {
+    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+  }
+  if (dsmode == GRPC_DSMODE_IPV4) {
+    /* If we got an AF_INET socket, map the address back to IPv4. */
+    GPR_ASSERT(grpc_sockaddr_is_v4mapped(addr, &addr4_copy));
+    addr = (struct sockaddr *)&addr4_copy;
+    addr_len = sizeof(addr4_copy);
+  }
+  if (!prepare_socket(fd)) {
     cb(arg, NULL);
     return;
   }
 
   do {
-    err = connect(fd, addr, len);
+    err = connect(fd, addr, addr_len);
   } while (err < 0 && errno == EINTR);
 
   if (err >= 0) {
@@ -165,6 +182,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->cb = cb;
   ac->cb_arg = arg;
   ac->deadline = deadline;
-  grpc_em_fd_init(&ac->fd, em, fd);
-  grpc_em_fd_notify_on_write(&ac->fd, on_writable, ac, deadline);
+  ac->fd = gpr_malloc(sizeof(grpc_em_fd));
+  grpc_em_fd_init(ac->fd, em, fd);
+  grpc_em_fd_notify_on_write(ac->fd, on_writable, ac, deadline);
 }

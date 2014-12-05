@@ -30,135 +30,166 @@
 require 'grpc'
 require 'port_picker'
 
-module GRPC
+def load_test_certs
+  test_root = File.join(File.dirname(__FILE__), 'testdata')
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  files.map { |f| File.open(File.join(test_root, f)).read }
+end
 
-  describe Channel do
+describe GRPC::Core::Channel do
 
-    before(:each) do
-      @cq = CompletionQueue.new
+
+  def create_test_cert
+    GRPC::Core::Credentials.new(load_test_certs[0])
+  end
+
+  before(:each) do
+    @cq = GRPC::Core::CompletionQueue.new
+  end
+
+  shared_examples '#new' do
+
+    it 'take a host name without channel args' do
+      expect { GRPC::Core::Channel.new('dummy_host', nil) }.not_to raise_error
     end
 
-    describe '#new' do
-
-      it 'take a host name without channel args' do
-        expect { Channel.new('dummy_host', nil) }.not_to raise_error
-      end
-
-      it 'does not take a hash with bad keys as channel args' do
-        blk = construct_with_args(Object.new => 1)
-        expect(&blk).to raise_error TypeError
-        blk = construct_with_args(1 => 1)
-        expect(&blk).to raise_error TypeError
-      end
-
-      it 'does not take a hash with bad values as channel args' do
-        blk = construct_with_args(:symbol => Object.new)
-        expect(&blk).to raise_error TypeError
-        blk = construct_with_args('1' => Hash.new)
-        expect(&blk).to raise_error TypeError
-      end
-
-      it 'can take a hash with a symbol key as channel args' do
-        blk = construct_with_args(:a_symbol => 1)
-        expect(&blk).to_not raise_error
-      end
-
-      it 'can take a hash with a string key as channel args' do
-        blk = construct_with_args('a_symbol' => 1)
-        expect(&blk).to_not raise_error
-      end
-
-      it 'can take a hash with a string value as channel args' do
-        blk = construct_with_args(:a_symbol => '1')
-        expect(&blk).to_not raise_error
-      end
-
-      it 'can take a hash with a symbol value as channel args' do
-        blk = construct_with_args(:a_symbol => :another_symbol)
-        expect(&blk).to_not raise_error
-      end
-
-      it 'can take a hash with a numeric value as channel args' do
-        blk = construct_with_args(:a_symbol => 1)
-        expect(&blk).to_not raise_error
-      end
-
-      it 'can take a hash with many args as channel args' do
-        args = Hash[127.times.collect { |x| [x.to_s, x] } ]
-        blk = construct_with_args(args)
-        expect(&blk).to_not raise_error
-      end
-
+    it 'does not take a hash with bad keys as channel args' do
+      blk = construct_with_args(Object.new => 1)
+      expect(&blk).to raise_error TypeError
+      blk = construct_with_args(1 => 1)
+      expect(&blk).to raise_error TypeError
     end
 
-    describe '#create_call' do
-      it 'creates a call OK' do
-        port = find_unused_tcp_port
-        host = "localhost:#{port}"
-        ch = Channel.new(host, nil)
-
-        deadline = Time.now + 5
-        expect(ch.create_call('dummy_method', 'dummy_host', deadline))
-          .not_to be(nil)
-      end
-
-      it 'raises an error if called on a closed channel' do
-        port = find_unused_tcp_port
-        host = "localhost:#{port}"
-        ch = Channel.new(host, nil)
-        ch.close
-
-        deadline = Time.now + 5
-        blk = Proc.new do
-          ch.create_call('dummy_method', 'dummy_host', deadline)
-        end
-        expect(&blk).to raise_error(RuntimeError)
-      end
-
+    it 'does not take a hash with bad values as channel args' do
+      blk = construct_with_args(:symbol => Object.new)
+      expect(&blk).to raise_error TypeError
+      blk = construct_with_args('1' => Hash.new)
+      expect(&blk).to raise_error TypeError
     end
 
-    describe '#destroy' do
-      it 'destroys a channel ok' do
-        port = find_unused_tcp_port
-        host = "localhost:#{port}"
-        ch = Channel.new(host, nil)
-        blk = Proc.new { ch.destroy }
-        expect(&blk).to_not raise_error
-      end
-
-      it 'can be called more than once without error' do
-        port = find_unused_tcp_port
-        host = "localhost:#{port}"
-        ch = Channel.new(host, nil)
-        blk = Proc.new { ch.destroy }
-        blk.call
-        expect(&blk).to_not raise_error
-      end
+    it 'can take a hash with a symbol key as channel args' do
+      blk = construct_with_args(:a_symbol => 1)
+      expect(&blk).to_not raise_error
     end
 
-    describe '#close' do
-      it 'closes a channel ok' do
-        port = find_unused_tcp_port
-        host = "localhost:#{port}"
-        ch = Channel.new(host, nil)
-        blk = Proc.new { ch.close }
-        expect(&blk).to_not raise_error
-      end
-
-      it 'can be called more than once without error' do
-        port = find_unused_tcp_port
-        host = "localhost:#{port}"
-        ch = Channel.new(host, nil)
-        blk = Proc.new { ch.close }
-        blk.call
-        expect(&blk).to_not raise_error
-      end
+    it 'can take a hash with a string key as channel args' do
+      blk = construct_with_args('a_symbol' => 1)
+      expect(&blk).to_not raise_error
     end
+
+    it 'can take a hash with a string value as channel args' do
+      blk = construct_with_args(:a_symbol => '1')
+      expect(&blk).to_not raise_error
+    end
+
+    it 'can take a hash with a symbol value as channel args' do
+      blk = construct_with_args(:a_symbol => :another_symbol)
+      expect(&blk).to_not raise_error
+    end
+
+    it 'can take a hash with a numeric value as channel args' do
+      blk = construct_with_args(:a_symbol => 1)
+      expect(&blk).to_not raise_error
+    end
+
+    it 'can take a hash with many args as channel args' do
+      args = Hash[127.times.collect { |x| [x.to_s, x] } ]
+      blk = construct_with_args(args)
+      expect(&blk).to_not raise_error
+    end
+
+  end
+
+  describe '#new for secure channels' do
 
     def construct_with_args(a)
-      Proc.new {Channel.new('dummy_host', a)}
+      Proc.new { GRPC::Core::Channel.new('dummy_host', a, create_test_cert) }
     end
 
+    it_behaves_like '#new'
+  end
+
+  describe '#new for insecure channels' do
+    it_behaves_like '#new'
+
+    def construct_with_args(a)
+      Proc.new { GRPC::Core::Channel.new('dummy_host', a) }
+    end
+  end
+
+  describe '#create_call' do
+    it 'creates a call OK' do
+      port = find_unused_tcp_port
+      host = "localhost:#{port}"
+      ch = GRPC::Core::Channel.new(host, nil)
+
+      deadline = Time.now + 5
+
+      blk = Proc.new do
+        ch.create_call('dummy_method', 'dummy_host', deadline)
+      end
+      expect(&blk).to_not raise_error
+    end
+
+    it 'raises an error if called on a closed channel' do
+      port = find_unused_tcp_port
+      host = "localhost:#{port}"
+      ch = GRPC::Core::Channel.new(host, nil)
+      ch.close
+
+      deadline = Time.now + 5
+      blk = Proc.new do
+        ch.create_call('dummy_method', 'dummy_host', deadline)
+      end
+      expect(&blk).to raise_error(RuntimeError)
+    end
+
+  end
+
+  describe '#destroy' do
+    it 'destroys a channel ok' do
+      port = find_unused_tcp_port
+      host = "localhost:#{port}"
+      ch = GRPC::Core::Channel.new(host, nil)
+      blk = Proc.new { ch.destroy }
+      expect(&blk).to_not raise_error
+    end
+
+    it 'can be called more than once without error' do
+      port = find_unused_tcp_port
+      host = "localhost:#{port}"
+      ch = GRPC::Core::Channel.new(host, nil)
+      blk = Proc.new { ch.destroy }
+      blk.call
+      expect(&blk).to_not raise_error
+    end
+  end
+
+  describe '::SSL_TARGET' do
+
+    it 'is a symbol' do
+      expect(GRPC::Core::Channel::SSL_TARGET).to be_a(Symbol)
+    end
+
+  end
+
+  describe '#close' do
+    it 'closes a channel ok' do
+      port = find_unused_tcp_port
+      host = "localhost:#{port}"
+      ch = GRPC::Core::Channel.new(host, nil)
+      blk = Proc.new { ch.close }
+      expect(&blk).to_not raise_error
+    end
+
+    it 'can be called more than once without error' do
+      port = find_unused_tcp_port
+      host = "localhost:#{port}"
+      ch = GRPC::Core::Channel.new(host, nil)
+      blk = Proc.new { ch.close }
+      blk.call
+      expect(&blk).to_not raise_error
+    end
   end
 
 end

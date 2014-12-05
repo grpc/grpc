@@ -30,6 +30,7 @@
         "src/core/support/slice_buffer.c",
         "src/core/support/string.c",
         "src/core/support/string_posix.c",
+        "src/core/support/string_win32.c",
         "src/core/support/sync.c",
         "src/core/support/sync_posix.c",
         "src/core/support/thd_posix.c",
@@ -129,13 +130,17 @@
         "src/core/surface/server_chttp2.c",
         "src/core/surface/server_create.c",
         "src/core/surface/surface_em.c",
+        "src/core/transport/chttp2/alpn.c",
+        "src/core/transport/chttp2/bin_encoder.c",
         "src/core/transport/chttp2/frame_data.c",
+        "src/core/transport/chttp2/frame_goaway.c",
         "src/core/transport/chttp2/frame_ping.c",
         "src/core/transport/chttp2/frame_rst_stream.c",
         "src/core/transport/chttp2/frame_settings.c",
         "src/core/transport/chttp2/frame_window_update.c",
         "src/core/transport/chttp2/hpack_parser.c",
         "src/core/transport/chttp2/hpack_table.c",
+        "src/core/transport/chttp2/huffsyms.c",
         "src/core/transport/chttp2/status_conversion.c",
         "src/core/transport/chttp2/stream_encoder.c",
         "src/core/transport/chttp2/stream_map.c",
@@ -221,7 +226,9 @@
         "src/core/surface/server.h",
         "src/core/surface/surface_em.h",
         "src/core/surface/surface_trace.h",
+        "src/core/transport/chttp2/bin_encoder.h",
         "src/core/transport/chttp2/frame_data.h",
+        "src/core/transport/chttp2/frame_goaway.h",
         "src/core/transport/chttp2/frame.h",
         "src/core/transport/chttp2/frame_ping.h",
         "src/core/transport/chttp2/frame_rst_stream.h",
@@ -229,6 +236,7 @@
         "src/core/transport/chttp2/frame_window_update.h",
         "src/core/transport/chttp2/hpack_parser.h",
         "src/core/transport/chttp2/hpack_table.h",
+        "src/core/transport/chttp2/huffsyms.h",
         "src/core/transport/chttp2/http2_errors.h",
         "src/core/transport/chttp2/status_conversion.h",
         "src/core/transport/chttp2/stream_encoder.h",
@@ -332,7 +340,8 @@
       ],
       "deps": [
         "grpc_test_util",
-        "gpr"
+        "gpr",
+        "grpc"
       ]
     },
 
@@ -530,6 +539,18 @@
       ]
     },
     {
+      "name": "alpn_test",
+      "build": "test",
+      "src": [
+        "test/core/transport/chttp2/alpn_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
       "name": "chttp2_stream_encoder_test",
       "build": "test",
       "src": [
@@ -626,10 +647,46 @@
       ]
     },
     {
+      "name": "dualstack_socket_test",
+      "build": "test",
+      "src": [
+        "test/core/end2end/dualstack_socket_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "no_server_test",
+      "build": "test",
+      "src": [
+        "test/core/end2end/no_server_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
       "name": "resolve_address_test",
       "build": "test",
       "src": [
         "test/core/endpoint/resolve_address_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "socket_utils_test",
+      "build": "test",
+      "src": [
+        "test/core/endpoint/socket_utils_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -893,7 +950,18 @@
         "gpr"
       ]
     },
-
+    {
+      "name": "bin_encoder_test",
+      "build": "test",
+      "src": [
+        "test/core/transport/chttp2/bin_encoder_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
     {
       "name": "secure_endpoint_test",
       "build": "test",

@@ -51,7 +51,7 @@ module Math
     class Service
       include GRPC::GenericService
 
-      self.marshal_instance_method = :encode
+      self.marshal_class_method = :encode
       self.unmarshal_class_method = :decode
 
       rpc :Div, DivArgs, DivReply

@@ -34,6 +34,7 @@ module GRPC
   # RpcDesc is a Descriptor of an RPC method.
   class RpcDesc < Struct.new(:name, :input, :output, :marshal_method,
                              :unmarshal_method)
+    include Core::StatusCodes
 
     # Used to wrap a message class to indicate that it needs to be streamed.
     class Stream
@@ -46,7 +47,7 @@ module GRPC
 
     # @return [Proc] { |instance| marshalled(instance) }
     def marshal_proc
-      Proc.new { |o| o.method(marshal_method).call.to_s }
+      Proc.new { |o| o.class.method(marshal_method).call(o).to_s }
     end
 
     # @param [:input, :output] target determines whether to produce the an
@@ -82,7 +83,7 @@ module GRPC
         else  # is a bidi_stream
           active_call.run_server_bidi(mth)
         end
-        send_status(active_call, StatusCodes::OK, 'OK')
+        send_status(active_call, OK, 'OK')
         active_call.finished
       rescue BadStatus => e
         # this is raised by handlers that want GRPC to send an application
@@ -97,7 +98,7 @@ module GRPC
         # This is raised when active_call#method.call exceeeds the deadline
         # event.  Send a status of deadline exceeded
         logger.warn("late call: #{active_call}")
-        send_status(active_call, StatusCodes::DEADLINE_EXCEEDED, 'late')
+        send_status(active_call, DEADLINE_EXCEEDED, 'late')
       rescue EventError => e
         # This is raised by GRPC internals but should rarely, if ever happen.
         # Log it, but don't notify the other endpoint..
@@ -107,7 +108,7 @@ module GRPC
         # Send back a UNKNOWN status to the client
         logger.warn("failed handler: #{active_call}; sending status:UNKNOWN")
         logger.warn(e)
-        send_status(active_call, StatusCodes::UNKNOWN, 'no reason given')
+        send_status(active_call, UNKNOWN, 'no reason given')
       end
     end
 

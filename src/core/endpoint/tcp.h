@@ -52,4 +52,8 @@ grpc_endpoint *grpc_tcp_create(int fd, grpc_em *em);
 /* Special version for debugging slice changes */
 grpc_endpoint *grpc_tcp_create_dbg(int fd, grpc_em *em, size_t slice_size);
 
+/* Special version for handing off ownership of an existing already created
+   eventmanager fd. Must not have any outstanding callbacks. */
+grpc_endpoint *grpc_tcp_create_emfd(grpc_em_fd *em_fd);
+
 #endif  /* __GRPC_INTERNAL_ENDPOINT_TCP_H__ */

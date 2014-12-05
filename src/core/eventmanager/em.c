@@ -537,6 +537,8 @@ void grpc_em_fd_destroy(grpc_em_fd *em_fd) {
   em->num_fds--;
   gpr_cv_broadcast(&em->cv);
   gpr_mu_unlock(&em->mu);
+
+  close(em_fd->fd);
 }
 
 int grpc_em_fd_get(struct grpc_em_fd *em_fd) { return em_fd->fd; }

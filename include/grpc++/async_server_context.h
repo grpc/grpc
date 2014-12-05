@@ -75,6 +75,8 @@ class AsyncServerContext {
   grpc::string host() const { return host_; }
   system_clock::time_point absolute_deadline() { return absolute_deadline_; }
 
+  grpc_call* call() { return call_; }
+
  private:
   AsyncServerContext(const AsyncServerContext&);
   AsyncServerContext& operator=(const AsyncServerContext&);

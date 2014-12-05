@@ -29,7 +29,7 @@
 
 require 'grpc'
 
-describe GRPC::CompletionType do
+describe GRPC::Core::CompletionType do
 
   before(:each) do
     @known_types = {
@@ -46,9 +46,9 @@ describe GRPC::CompletionType do
   end
 
   it 'should have all the known types' do
-    mod = GRPC::CompletionType
-    expect(Hash[mod.constants.collect { |c| [c, mod.const_get(c)] }])
-        .to eq(@known_types)
+    mod = GRPC::Core::CompletionType
+    blk = Proc.new { Hash[mod.constants.collect { |c| [c, mod.const_get(c)] }] }
+    expect(blk.call).to eq(@known_types)
   end
 
 end

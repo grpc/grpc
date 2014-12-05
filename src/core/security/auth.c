@@ -75,7 +75,7 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
   switch (op->type) {
     case GRPC_SEND_START: {
       grpc_credentials *channel_creds =
-          channeld->security_context->request_metadata_only_creds;
+          channeld->security_context->request_metadata_creds;
       /* TODO(jboeuf):
          Decide on the policy in this case:
          - populate both channel and call?

@@ -34,10 +34,7 @@
 #ifndef __GRPCPP_INTERNAL_STREAM_STREAM_CONTEXT_H__
 #define __GRPCPP_INTERNAL_STREAM_STREAM_CONTEXT_H__
 
-#include <condition_variable>
-#include <mutex>
-#include <thread>
-
+#include <grpc/grpc.h>
 #include <grpc++/status.h>
 #include <grpc++/stream_context_interface.h>
 
@@ -47,8 +44,6 @@ class Message;
 }
 }
 
-struct grpc_event;
-
 namespace grpc {
 class ClientContext;
 class RpcMethod;
@@ -57,6 +52,9 @@ class StreamContext : public StreamContextInterface {
  public:
   StreamContext(const RpcMethod& method, ClientContext* context,
                 const google::protobuf::Message* request, google::protobuf::Message* result);
+  StreamContext(const RpcMethod& method, grpc_call* call,
+                grpc_completion_queue* cq, google::protobuf::Message* request,
+                google::protobuf::Message* result);
   ~StreamContext();
   // Start the stream, if there is a final write following immediately, set
   // buffered so that the messages can be sent in batch.
@@ -66,37 +64,31 @@ class StreamContext : public StreamContextInterface {
   const Status& Wait() override;
   void FinishStream(const Status& status, bool send) override;
 
-  const google::protobuf::Message* request() override { return request_; }
+  google::protobuf::Message* request() override { return request_; }
   google::protobuf::Message* response() override { return result_; }
 
  private:
-  void PollingLoop();
-  bool BlockingStart();
+  // Unique tags for plucking events from the c layer. this pointer is casted
+  // to char* to create single byte step between tags. It implicitly relies on
+  // that StreamContext is large enough to contain all the pointers.
+  void* finished_tag() { return reinterpret_cast<char*>(this); }
+  void* read_tag() { return reinterpret_cast<char*>(this) + 1; }
+  void* write_tag() { return reinterpret_cast<char*>(this) + 2; }
+  void* halfclose_tag() { return reinterpret_cast<char*>(this) + 3; }
+  void* invoke_tag() { return reinterpret_cast<char*>(this) + 4; }
+  void* client_metadata_read_tag() { return reinterpret_cast<char*>(this) + 5; }
+  grpc_call* call() { return call_; }
+  grpc_completion_queue* cq() { return cq_; }
+
   bool is_client_;
   const RpcMethod* method_;         // not owned
-  ClientContext* context_;          // now owned
-  const google::protobuf::Message* request_;  // not owned
-  google::protobuf::Message* result_;         // not owned
+  grpc_call* call_;                 // not owned
+  grpc_completion_queue* cq_;       // not owned
+  google::protobuf::Message* request_;        // first request, not owned
+  google::protobuf::Message* result_;         // last response, not owned
 
-  std::thread cq_poller_;
-  std::mutex mu_;
-  std::condition_variable invoke_cv_;
-  std::condition_variable read_cv_;
-  std::condition_variable write_cv_;
-  std::condition_variable finish_cv_;
-  grpc_event* invoke_ev_;
-  // TODO(yangg) make these two into queues to support concurrent reads and
-  // writes
-  grpc_event* read_ev_;
-  grpc_event* write_ev_;
-  bool reading_;
-  bool writing_;
-  bool got_read_;
-  bool got_write_;
   bool peer_halfclosed_;
   bool self_halfclosed_;
-  bool stream_finished_;
-  bool waiting_;
   Status final_status_;
 };
 

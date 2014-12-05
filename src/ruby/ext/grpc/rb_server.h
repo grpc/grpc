@@ -31,7 +31,7 @@
  *
  */
 
-#ifndef GRPC_RB_BYTE_BUFFER_H_
+#ifndef GRPC_RB_SERVER_H_
 #define GRPC_RB_SERVER_H_
 
 #include <ruby.h>

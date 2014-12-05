@@ -173,6 +173,58 @@ class ClientReaderWriter : public ClientStreamingInterface,
   StreamContextInterface* const context_;
 };
 
+template <class R>
+class ServerReader : public ReaderInterface<R> {
+ public:
+  explicit ServerReader(StreamContextInterface* context) : context_(context) {
+    GPR_ASSERT(context_);
+    context_->Start(true);
+  }
+
+  virtual bool Read(R* msg) { return context_->Read(msg); }
+
+ private:
+  StreamContextInterface* const context_;  // not owned
+};
+
+template <class W>
+class ServerWriter : public WriterInterface<W> {
+ public:
+  explicit ServerWriter(StreamContextInterface* context) : context_(context) {
+    GPR_ASSERT(context_);
+    context_->Start(true);
+    context_->Read(context_->request());
+  }
+
+  virtual bool Write(const W& msg) {
+    return context_->Write(const_cast<W*>(&msg), false);
+  }
+
+ private:
+  StreamContextInterface* const context_;  // not owned
+};
+
+// Server-side interface for bi-directional streaming.
+template <class W, class R>
+class ServerReaderWriter : public WriterInterface<W>,
+                           public ReaderInterface<R> {
+ public:
+  explicit ServerReaderWriter(StreamContextInterface* context)
+      : context_(context) {
+    GPR_ASSERT(context_);
+    context_->Start(true);
+  }
+
+  virtual bool Read(R* msg) { return context_->Read(msg); }
+
+  virtual bool Write(const W& msg) {
+    return context_->Write(const_cast<W*>(&msg), false);
+  }
+
+ private:
+  StreamContextInterface* const context_;  // not owned
+};
+
 }  // namespace grpc
 
 #endif  // __GRPCPP_STREAM_H__

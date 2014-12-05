@@ -114,7 +114,6 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
     server_port *sp = &s->ports[i];
     grpc_em_fd_destroy(sp->emfd);
     gpr_free(sp->emfd);
-    close(sp->fd);
   }
   gpr_free(s->ports);
   gpr_free(s);
@@ -153,11 +152,9 @@ static int get_max_accept_queue_size() {
   return s_max_accept_queue_size;
 }
 
-/* create a socket to listen with */
-static int create_listening_socket(struct sockaddr *port, int len) {
-  int fd = socket(port->sa_family, SOCK_STREAM, 0);
+/* Prepare a recently-created socket for listening. */
+static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
   if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
     goto error;
   }
 
@@ -169,8 +166,11 @@ static int create_listening_socket(struct sockaddr *port, int len) {
     goto error;
   }
 
-  if (bind(fd, port, len) < 0) {
-    gpr_log(GPR_ERROR, "bind: %s", strerror(errno));
+  if (bind(fd, addr, addr_len) < 0) {
+    char *addr_str;
+    grpc_sockaddr_to_string(&addr_str, addr, 0);
+    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
+    gpr_free(addr_str);
     goto error;
   }
 
@@ -179,13 +179,13 @@ static int create_listening_socket(struct sockaddr *port, int len) {
     goto error;
   }
 
-  return fd;
+  return 1;
 
 error:
   if (fd >= 0) {
     close(fd);
   }
-  return -1;
+  return 0;
 }
 
 /* event manager callback when reads are ready */
@@ -200,6 +200,8 @@ static void on_read(void *arg, grpc_em_cb_status status) {
   for (;;) {
     struct sockaddr_storage addr;
     socklen_t addrlen = sizeof(addr);
+    /* Note: If we ever decide to return this address to the user, remember to
+             strip off the ::ffff:0.0.0.0/96 prefix first. */
     int fd = grpc_accept4(sp->fd, (struct sockaddr *)&addr, &addrlen, 1, 1);
     if (fd < 0) {
       switch (errno) {
@@ -231,13 +233,12 @@ error:
   gpr_mu_unlock(&sp->server->mu);
 }
 
-int grpc_tcp_server_add_port(grpc_tcp_server *s, struct sockaddr *port,
-                             int len) {
+static int add_socket_to_server(grpc_tcp_server *s, int fd,
+                                const struct sockaddr *addr, int addr_len) {
   server_port *sp;
-  /* create a socket */
-  int fd = create_listening_socket(port, len);
-  if (fd < 0) {
-    return -1;
+
+  if (!prepare_socket(fd, addr, addr_len)) {
+    return 0;
   }
 
   gpr_mu_lock(&s->mu);
@@ -257,11 +258,62 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, struct sockaddr *port,
     gpr_free(sp->emfd);
     s->nports--;
     gpr_mu_unlock(&s->mu);
-    return -1;
+    return 0;
   }
   gpr_mu_unlock(&s->mu);
 
-  return fd;
+  return 1;
+}
+
+int grpc_tcp_server_add_port(grpc_tcp_server *s, const struct sockaddr *addr,
+                             int addr_len) {
+  int ok = 0;
+  int fd;
+  grpc_dualstack_mode dsmode;
+  struct sockaddr_in6 addr6_v4mapped;
+  struct sockaddr_in wild4;
+  struct sockaddr_in6 wild6;
+  struct sockaddr_in addr4_copy;
+  int port;
+
+  if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
+    addr = (const struct sockaddr *)&addr6_v4mapped;
+    addr_len = sizeof(addr6_v4mapped);
+  }
+
+  /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
+  if (grpc_sockaddr_is_wildcard(addr, &port)) {
+    grpc_sockaddr_make_wildcards(port, &wild4, &wild6);
+
+    /* Try listening on IPv6 first. */
+    addr = (struct sockaddr *)&wild6;
+    addr_len = sizeof(wild6);
+    fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
+    ok |= add_socket_to_server(s, fd, addr, addr_len);
+    if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
+      return ok;
+    }
+
+    /* If we didn't get a dualstack socket, also listen on 0.0.0.0. */
+    addr = (struct sockaddr *)&wild4;
+    addr_len = sizeof(wild4);
+  }
+
+  fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
+  if (fd < 0) {
+    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+  }
+  if (dsmode == GRPC_DSMODE_IPV4 &&
+      grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
+    addr = (struct sockaddr *)&addr4_copy;
+    addr_len = sizeof(addr4_copy);
+  }
+  ok |= add_socket_to_server(s, fd, addr, addr_len);
+  return ok;
+}
+
+int grpc_tcp_server_get_fd(grpc_tcp_server *s, int index) {
+  return (0 <= index && index < s->nports) ? s->ports[index].fd : -1;
 }
 
 void grpc_tcp_server_start(grpc_tcp_server *s, grpc_tcp_server_cb cb,

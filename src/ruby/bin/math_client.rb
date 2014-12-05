@@ -43,13 +43,16 @@ require 'grpc'
 require 'grpc/generic/client_stub'
 require 'grpc/generic/service'
 require 'math.pb'
+require 'optparse'
+
+include GRPC::Core::TimeConsts
 
 def do_div(stub)
   logger.info('request_response')
   logger.info('----------------')
   req = Math::DivArgs.new(:dividend => 7, :divisor => 3)
   logger.info("div(7/3): req=#{req.inspect}")
-  resp = stub.div(req, deadline=GRPC::TimeConsts::INFINITE_FUTURE)
+  resp = stub.div(req, deadline=INFINITE_FUTURE)
   logger.info("Answer: #{resp.inspect}")
   logger.info('----------------')
 end
@@ -70,7 +73,7 @@ def do_fib(stub)
   logger.info('----------------')
   req = Math::FibArgs.new(:limit => 11)
   logger.info("fib(11): req=#{req.inspect}")
-  resp = stub.fib(req, deadline=GRPC::TimeConsts::INFINITE_FUTURE)
+  resp = stub.fib(req, deadline=INFINITE_FUTURE)
   resp.each do |r|
     logger.info("Answer: #{r.inspect}")
   end
@@ -92,15 +95,51 @@ def do_div_many(stub)
   logger.info('----------------')
 end
 
+def load_test_certs
+  this_dir = File.expand_path(File.dirname(__FILE__))
+  data_dir = File.join(File.dirname(this_dir), 'spec/testdata')
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  files.map { |f| File.open(File.join(data_dir, f)).read }
+end
+
+def test_creds
+  certs = load_test_certs
+  creds = GRPC::Core::Credentials.new(certs[0])
+end
 
 def main
-  host_port = 'localhost:7070'
-  if ARGV.size > 0
-    host_port = ARGV[0]
-  end
+  options = {
+    'host' => 'localhost:7071',
+    'secure' => false
+  }
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: [--host|-h <hostname>:<port>] [--secure|-s]'
+    opts.on('-h', '--host', '<hostname>:<port>') do |v|
+      options['host'] = v
+    end
+    opts.on('-s', '--secure', 'access using test creds') do |v|
+      options['secure'] = true
+    end
+  end.parse!
+
   # The Math::Math:: module occurs because the service has the same name as its
   # package. That practice should be avoided by defining real services.
-  stub = Math::Math::Stub.new(host_port)
+
+  p options
+  if options['secure']
+    stub_opts = {
+      :creds => test_creds,
+      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com',
+    }
+    p stub_opts
+    p options['host']
+    stub = Math::Math::Stub.new(options['host'], **stub_opts)
+    logger.info("... connecting securely on #{options['host']}")
+  else
+    stub = Math::Math::Stub.new(options['host'])
+    logger.info("... connecting insecurely on #{options['host']}")
+  end
+
   do_div(stub)
   do_sum(stub)
   do_fib(stub)

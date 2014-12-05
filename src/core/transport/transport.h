@@ -116,6 +116,10 @@ struct grpc_transport_callbacks {
                      grpc_stream *stream, grpc_stream_op *ops, size_t ops_count,
                      grpc_stream_state final_state);
 
+  /* The transport received a goaway */
+  void (*goaway)(void *user_data, grpc_transport *transport,
+                 grpc_status_code status, gpr_slice debug);
+
   /* The transport has been closed */
   void (*closed)(void *user_data, grpc_transport *transport);
 };
@@ -197,6 +201,10 @@ void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
    TODO(ctiller): consider adding a HTTP/2 reason to this function. */
 void grpc_transport_abort_stream(grpc_transport *transport, grpc_stream *stream,
                                  grpc_status_code status);
+
+/* Advise peer of pending connection termination. */
+void grpc_transport_goaway(struct grpc_transport *transport,
+                           grpc_status_code status, gpr_slice debug_data);
 
 /* Close a transport. Aborts all open streams. */
 void grpc_transport_close(struct grpc_transport *transport);

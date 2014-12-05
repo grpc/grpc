@@ -9,7 +9,10 @@ end
 
 SPEC_SUITES = [
   { :id => :wrapper, :title => 'wrapper layer', :files => %w(spec/*.rb) },
-  { :id => :idiomatic, :title => 'idiomatic layer', :dir => %w(spec/generic) }
+  { :id => :idiomatic, :title => 'idiomatic layer', :dir => %w(spec/generic),
+    :tag => '~bidi' },
+  { :id => :bidi, :title => 'bidi tests', :dir => %w(spec/generic),
+    :tag => 'bidi' }
 ]
 
 desc "Run all RSpec tests"
@@ -28,11 +31,16 @@ namespace :spec do
         end
 
         t.pattern = spec_files
+
+        if suite[:tag]
+          t.rspec_opts = "--tag #{suite[:tag]}"
+        end
       end
     end
   end
 end
 
-desc "Run tests"
-task :default => [ "spec:suite:wrapper", "spec:suite:idiomatic"]
-task :spec => :compile
+task :default => "spec:suite:idiomatic"  # this should be spec:suite:bidi
+task "spec:suite:wrapper" => :compile
+task "spec:suite:idiomatic" => "spec:suite:wrapper"
+task "spec:suite:bidi" => "spec:suite:idiomatic"

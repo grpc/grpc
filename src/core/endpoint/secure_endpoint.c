@@ -50,6 +50,8 @@ typedef struct {
   /* saved upper level callbacks and user_data. */
   grpc_endpoint_read_cb read_cb;
   void *read_user_data;
+  grpc_endpoint_write_cb write_cb;
+  void *write_user_data;
   /* saved handshaker leftover data to unprotect. */
   gpr_slice_buffer leftover_bytes;
   /* buffers for read and write */
@@ -208,6 +210,12 @@ static void flush_write_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
   *end = GPR_SLICE_END_PTR(ep->write_staging_buffer);
 }
 
+static void on_write(void *data, grpc_endpoint_cb_status error) {
+  secure_endpoint *ep = data;
+  ep->write_cb(ep->write_user_data, error);
+  secure_endpoint_unref(ep);
+}
+
 static grpc_endpoint_write_status write(grpc_endpoint *secure_ep,
                                         gpr_slice *slices, size_t nslices,
                                         grpc_endpoint_write_cb cb,
@@ -219,6 +227,7 @@ static grpc_endpoint_write_status write(grpc_endpoint *secure_ep,
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   gpr_uint8 *cur = GPR_SLICE_START_PTR(ep->write_staging_buffer);
   gpr_uint8 *end = GPR_SLICE_END_PTR(ep->write_staging_buffer);
+  grpc_endpoint_write_status status;
   GPR_ASSERT(ep->output_buffer.count == 0);
 
 #ifdef GRPC_TRACE_SECURE_TRANSPORT
@@ -295,8 +304,16 @@ static grpc_endpoint_write_status write(grpc_endpoint *secure_ep,
   /* clear output_buffer and let the lower level handle its slices. */
   output_buffer_count = ep->output_buffer.count;
   ep->output_buffer.count = 0;
-  return grpc_endpoint_write(ep->wrapped_ep, ep->output_buffer.slices,
-                             output_buffer_count, cb, user_data, deadline);
+  ep->write_cb = cb;
+  ep->write_user_data = user_data;
+  /* Need to keep the endpoint alive across a transport */
+  secure_endpoint_ref(ep);
+  status = grpc_endpoint_write(ep->wrapped_ep, ep->output_buffer.slices,
+                               output_buffer_count, on_write, ep, deadline);
+  if (status != GRPC_ENDPOINT_WRITE_PENDING) {
+    secure_endpoint_unref(ep);
+  }
+  return status;
 }
 
 static void shutdown(grpc_endpoint *secure_ep) {

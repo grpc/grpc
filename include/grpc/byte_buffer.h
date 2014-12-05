@@ -39,7 +39,7 @@
 
 typedef enum { GRPC_BB_SLICE_BUFFER } grpc_byte_buffer_type;
 
-/* byte buffers are what meesages are passed in as from the public api's */
+/* byte buffers are containers for messages passed in from the public api's */
 struct grpc_byte_buffer {
   grpc_byte_buffer_type type;
   union {

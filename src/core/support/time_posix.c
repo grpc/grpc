@@ -37,6 +37,11 @@
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
 #endif
+
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_TIME
+
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -79,3 +84,5 @@ void gpr_sleep_until(gpr_timespec until) {
     }
   }
 }
+
+#endif /* GPR_POSIX_TIME */

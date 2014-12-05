@@ -37,6 +37,10 @@
 #define _POSIX_C_SOURCE 200112L
 #endif
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_STRING
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -84,3 +88,5 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   *strp = NULL;
   return -1;
 }
+
+#endif /* GPR_POSIX_STRING */

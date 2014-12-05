@@ -47,7 +47,6 @@
 #include "test/core/util/port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
-
 static grpc_em em;
 
 typedef struct fullstack_secure_fixture_data {
@@ -70,6 +69,15 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
+static void chttp2_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
+                                                grpc_channel_args *client_args,
+                                                grpc_credentials *creds) {
+  fullstack_secure_fixture_data *ffd = f->fixture_data;
+  f->client = grpc_secure_channel_create(creds, ffd->localaddr, client_args);
+  GPR_ASSERT(f->client != NULL);
+  grpc_credentials_release(creds);
+}
+
 static void chttp2_init_server_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
     grpc_server_credentials *server_creds) {
@@ -89,23 +97,21 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  /* TODO(jboeuf): Replace with composite credentials when those are
-     implemented. */
-  grpc_channel_security_context *client_ctx = NULL;
-  fullstack_secure_fixture_data *ffd = f->fixture_data;
-  grpc_ssl_config config;
-  grpc_credentials *oauth2 =
+  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(
+      test_ca_cert, test_ca_cert_size, NULL, 0, NULL, 0);
+  grpc_credentials *oauth2_creds =
       grpc_fake_oauth2_credentials_create("Bearer aaslkfjs424535asdf", 1);
-  memset(&config, 0, sizeof(grpc_ssl_config));
-  config.pem_root_certs = test_ca_cert;
-  config.pem_root_certs_size = test_ca_cert_size;
-  GPR_ASSERT(grpc_ssl_channel_security_context_create(
-                 oauth2, &config, "foo.test.google.com", &client_ctx) ==
-             GRPC_SECURITY_OK);
-  f->client = grpc_secure_channel_create_internal(ffd->localaddr, client_args,
-                                                  client_ctx);
-  grpc_security_context_unref(&client_ctx->base);
-  grpc_credentials_unref(oauth2);
+  grpc_credentials *ssl_oauth2_creds =
+      grpc_composite_credentials_create(ssl_creds, oauth2_creds);
+  grpc_arg ssl_name_override = {GRPC_ARG_STRING,
+                                GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
+                                {"foo.test.google.com"}};
+  grpc_channel_args *new_client_args =
+      grpc_channel_args_copy_and_add(client_args, &ssl_name_override);
+  chttp2_init_client_secure_fullstack(f, new_client_args, ssl_oauth2_creds);
+  grpc_channel_args_destroy(new_client_args);
+  grpc_credentials_release(ssl_creds);
+  grpc_credentials_release(oauth2_creds);
 }
 
 static void chttp2_init_server_simple_ssl_secure_fullstack(
@@ -130,7 +136,6 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char **argv) {
   size_t i;
   grpc_test_init(argc, argv);
-
 
   grpc_init();
   grpc_em_init(&em);

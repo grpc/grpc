@@ -124,9 +124,17 @@ typedef struct {
 char *grpc_call_op_string(grpc_call_op *op);
 
 typedef enum {
-  GRPC_CHANNEL_SHUTDOWN,
+  /* send a goaway message to remote channels indicating that we are going
+     to disconnect in the future */
+  GRPC_CHANNEL_GOAWAY,
+  /* disconnect any underlying transports */
+  GRPC_CHANNEL_DISCONNECT,
+  /* transport received a new call */
   GRPC_ACCEPT_CALL,
-  GRPC_TRANSPORT_CLOSED
+  /* an underlying transport was closed */
+  GRPC_TRANSPORT_CLOSED,
+  /* an underlying transport is about to be closed */
+  GRPC_TRANSPORT_GOAWAY
 } grpc_channel_op_type;
 
 /* A single filterable operation to be performed on a channel */
@@ -142,6 +150,10 @@ typedef struct {
       grpc_transport *transport;
       const void *transport_server_data;
     } accept_call;
+    struct {
+      grpc_status_code status;
+      gpr_slice message;
+    } goaway;
   } data;
 } grpc_channel_op;
 

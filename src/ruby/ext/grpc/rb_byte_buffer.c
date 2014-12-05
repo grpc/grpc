@@ -205,7 +205,7 @@ static VALUE grpc_rb_byte_buffer_init(VALUE self, VALUE src) {
 VALUE rb_cByteBuffer = Qnil;
 
 void Init_google_rpc_byte_buffer() {
-  rb_cByteBuffer = rb_define_class_under(rb_mGoogleRPC, "ByteBuffer",
+  rb_cByteBuffer = rb_define_class_under(rb_mGoogleRpcCore, "ByteBuffer",
                                          rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */

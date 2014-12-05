@@ -172,7 +172,8 @@ static VALUE grpc_rb_status_details(VALUE self) {
 
 void Init_google_status_codes() {
   /* Constants representing the status codes or grpc_status_code in status.h */
-  VALUE rb_mStatusCodes = rb_define_module_under(rb_mGoogleRPC, "StatusCodes");
+  VALUE rb_mStatusCodes = rb_define_module_under(rb_mGoogleRpcCore,
+                                                 "StatusCodes");
   rb_define_const(rb_mStatusCodes, "OK", INT2NUM(GRPC_STATUS_OK));
   rb_define_const(rb_mStatusCodes, "CANCELLED", INT2NUM(GRPC_STATUS_CANCELLED));
   rb_define_const(rb_mStatusCodes, "UNKNOWN", INT2NUM(GRPC_STATUS_UNKNOWN));
@@ -207,7 +208,7 @@ VALUE rb_cStatus = Qnil;
 
 /* Initializes the Status class. */
 void Init_google_rpc_status() {
-  rb_cStatus = rb_define_class_under(rb_mGoogleRPC, "Status", rb_cObject);
+  rb_cStatus = rb_define_class_under(rb_mGoogleRpcCore, "Status", rb_cObject);
 
   /* Allocates an object whose memory is managed by the Ruby. */
   rb_define_alloc_func(rb_cStatus, grpc_rb_status_alloc);

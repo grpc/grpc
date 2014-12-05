@@ -53,11 +53,23 @@ grpc_tcp_server *grpc_tcp_server_create(grpc_em *em);
 void grpc_tcp_server_start(grpc_tcp_server *server, grpc_tcp_server_cb cb,
                            void *cb_arg);
 
-/* Add a port to the server, returns a file descriptor on success, or <0 on
-   failure; the file descriptor remains owned by the server and will be cleaned
-   up when grpc_tcp_server_destroy is called */
-int grpc_tcp_server_add_port(grpc_tcp_server *server, struct sockaddr *port,
-                             int len);
+/* Add a port to the server, returning true on success, or false otherwise.
+
+   The :: and 0.0.0.0 wildcard addresses are treated identically, accepting
+   both IPv4 and IPv6 connections, but :: is the preferred style.  This usually
+   creates one socket, but possibly two on systems which support IPv6,
+   but not dualstack sockets.
+
+   For raw access to the underlying sockets, see grpc_tcp_server_get_fd(). */
+int grpc_tcp_server_add_port(grpc_tcp_server *s, const struct sockaddr *addr,
+                             int addr_len);
+
+/* Returns the file descriptor of the Nth listening socket on this server,
+   or -1 if the index is out of bounds.
+
+   The file descriptor remains owned by the server, and will be cleaned
+   up when grpc_tcp_server_destroy is called. */
+int grpc_tcp_server_get_fd(grpc_tcp_server *s, int index);
 
 void grpc_tcp_server_destroy(grpc_tcp_server *server);
 

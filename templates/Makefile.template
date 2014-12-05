@@ -122,7 +122,7 @@ all: static shared\
 
 static: static_c static_cxx
 
-static_c: make_dirs dep\
+static_c: make_dirs dep_c\
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
  libs/lib${lib.name}.a\
@@ -130,7 +130,7 @@ static_c: make_dirs dep\
 % endfor
 
 
-static_cxx: make_dirs dep\
+static_cxx: make_dirs dep_cxx\
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
  libs/lib${lib.name}.a\
@@ -140,7 +140,7 @@ static_cxx: make_dirs dep\
 
 shared: shared_c shared_cxx
 
-shared_c: make_dirs dep\
+shared_c: make_dirs dep_c\
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
  libs/lib${lib.name}.so.$(VERSION)\
@@ -148,7 +148,7 @@ shared_c: make_dirs dep\
 % endfor
 
 
-shared_cxx: make_dirs dep\
+shared_cxx: make_dirs dep_cxx\
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
  libs/lib${lib.name}.so.$(VERSION)\
@@ -158,7 +158,7 @@ shared_cxx: make_dirs dep\
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c: make_dirs dep\
+privatelibs_c: make_dirs dep_c\
 % for lib in libs:
 % if lib.build == 'private':
  libs/lib${lib.name}.a\
@@ -166,7 +166,7 @@ privatelibs_c: make_dirs dep\
 % endfor
 
 
-privatelibs_cxx: make_dirs dep\
+privatelibs_cxx: make_dirs dep_cxx\
 % for lib in libs:
 % if lib.build == 'private':
  libs/lib${lib.name}.a\
@@ -288,12 +288,31 @@ objs/%.o : %.cc
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-dep:\
+dep: dep_c dep_cxx
+
+dep_c:\
 % for lib in libs:
+% if not lib.get('c++', False):
  deps_lib${lib.name}\
+% endif
 % endfor
 % for tgt in targets:
+% if not tgt.get('c++', False):
  deps_${tgt.name}\
+% endif
+% endfor
+
+
+dep_cxx:\
+% for lib in libs:
+% if lib.get('c++', False):
+ deps_lib${lib.name}\
+% endif
+% endfor
+% for tgt in targets:
+% if tgt.get('c++', False):
+ deps_${tgt.name}\
+% endif
 % endfor
 
 

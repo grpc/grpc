@@ -35,7 +35,7 @@ module GRPC
 
   # ClientStub represents an endpoint used to send requests to GRPC servers.
   class ClientStub
-    include StatusCodes
+    include Core::StatusCodes
 
     # Default deadline is 5 seconds.
     DEFAULT_DEADLINE = 5
@@ -62,23 +62,29 @@ module GRPC
     # when present, this is the default deadline used for calls
     #
     # @param host [String] the host the stub connects to
-    # @param q [TaggedCompletionQueue] used to wait for events
-    # @param channel_override [Channel] a pre-created channel
+    # @param q [Core::CompletionQueue] used to wait for events
+    # @param channel_override [Core::Channel] a pre-created channel
     # @param deadline [Number] the default deadline to use in requests
+    # @param creds [Core::Credentials] secures and/or authenticates the channel
     # @param kw [KeywordArgs] the channel arguments
     def initialize(host, q,
                    channel_override:nil,
                    deadline:DEFAULT_DEADLINE,
+                   creds:nil,
                    **kw)
-      if !q.is_a?CompletionQueue
+      if !q.is_a?Core::CompletionQueue
         raise ArgumentError.new('not a CompletionQueue')
       end
       @host = host
       if !channel_override.nil?
         ch = channel_override
-        raise ArgumentError.new('not a Channel') unless ch.is_a?(Channel)
+        raise ArgumentError.new('not a Channel') unless ch.is_a?(Core::Channel)
+      elsif creds.nil?
+        ch = Core::Channel.new(host, kw)
+      elsif !creds.is_a?(Core::Credentials)
+        raise ArgumentError.new('not a Credentials')
       else
-        ch = Channel.new(host, **kw)
+        ch = Core::Channel.new(host, kw, creds)
       end
 
       @deadline = deadline
@@ -347,7 +353,7 @@ module GRPC
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param deadline [TimeConst]
     def new_active_call(ch, marshal, unmarshal, deadline=nil)
-      absolute_deadline = TimeConsts.from_relative_time(deadline)
+      absolute_deadline = Core::TimeConsts.from_relative_time(deadline)
       call = @ch.create_call(ch, @host, absolute_deadline)
       ActiveCall.new(call, @queue, marshal, unmarshal, absolute_deadline,
                      started:false)

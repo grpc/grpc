@@ -61,7 +61,15 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
   op->done_cb(op->user_data, GRPC_OP_ERROR);
 }
 
-static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {}
+static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
+  switch (op->type) {
+    case GRPC_CHANNEL_GOAWAY:
+      gpr_slice_unref(op->data.goaway.message);
+      break;
+    default:
+      break;
+  }
+}
 
 static void init_call_elem(grpc_call_element *elem,
                            const void *transport_server_data) {}
@@ -87,7 +95,7 @@ static const grpc_channel_filter lame_filter = {
     "lame-client",
 };
 
-grpc_channel *grpc_lame_client_channel_create() {
+grpc_channel *grpc_lame_client_channel_create(void) {
   static const grpc_channel_filter *filters[] = {&lame_filter};
   return grpc_channel_create_from_filters(filters, 1, NULL, grpc_mdctx_create(),
                                           1);

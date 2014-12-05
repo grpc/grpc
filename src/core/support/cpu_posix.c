@@ -34,8 +34,6 @@
 #include "src/core/support/cpu.h"
 
 #ifdef __linux__
-#include <errno.h>
-#include <unistd.h>
 #define _GNU_SOURCE
 #define __USE_GNU
 #define __USE_MISC
@@ -43,6 +41,9 @@
 #undef _GNU_SOURCE
 #undef __USE_GNU
 #undef __USE_MISC
+
+#include <errno.h>
+#include <unistd.h>
 #include <string.h>
 
 #include <grpc/support/log.h>

@@ -40,8 +40,9 @@ module GRPC
   # The ActiveCall class provides simple methods for sending marshallable
   # data to a call
   class ActiveCall
-    include CompletionType
-    include StatusCodes
+    include Core::CompletionType
+    include Core::StatusCodes
+    include Core::TimeConsts
     attr_reader(:deadline)
 
     # client_start_invoke begins a client invocation.
@@ -55,15 +56,15 @@ module GRPC
     # @param q [CompletionQueue] used to wait for INVOKE_ACCEPTED
     # @param deadline [Fixnum,TimeSpec] the deadline for INVOKE_ACCEPTED
     def self.client_start_invoke(call, q, deadline)
-      raise ArgumentError.new('not a call') unless call.is_a?Call
-      if !q.is_a?CompletionQueue
+      raise ArgumentError.new('not a call') unless call.is_a?Core::Call
+      if !q.is_a?Core::CompletionQueue
         raise ArgumentError.new('not a CompletionQueue')
       end
       invoke_accepted, client_metadata_read = Object.new, Object.new
       finished_tag = Object.new
       call.start_invoke(q, invoke_accepted, client_metadata_read, finished_tag)
       # wait for the invocation to be accepted
-      ev = q.pluck(invoke_accepted, TimeConsts::INFINITE_FUTURE)
+      ev = q.pluck(invoke_accepted, INFINITE_FUTURE)
       raise OutOfTime if ev.nil?
       finished_tag
     end
@@ -93,8 +94,8 @@ module GRPC
     # @param started [true|false] (default true) indicates if the call has begun
     def initialize(call, q, marshal, unmarshal, deadline, finished_tag: nil,
                    started: true)
-      raise ArgumentError.new('not a call') unless call.is_a?Call
-      if !q.is_a?CompletionQueue
+      raise ArgumentError.new('not a call') unless call.is_a?Core::Call
+      if !q.is_a?Core::CompletionQueue
         raise ArgumentError.new('not a CompletionQueue')
       end
       @call = call
@@ -178,11 +179,11 @@ module GRPC
     # FINISHED.
     def writes_done(assert_finished=true)
       @call.writes_done(self)
-      ev = @cq.pluck(self, TimeConsts::INFINITE_FUTURE)
+      ev = @cq.pluck(self, INFINITE_FUTURE)
       assert_event_type(ev.type, FINISH_ACCEPTED)
       logger.debug("Writes done: waiting for finish? #{assert_finished}")
       if assert_finished
-        ev = @cq.pluck(@finished_tag, TimeConsts::INFINITE_FUTURE)
+        ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
         raise "unexpected event: #{ev.inspect}" if ev.nil?
         return @call.status
       end
@@ -193,9 +194,9 @@ module GRPC
     # It blocks until the remote endpoint acknowledges by sending a FINISHED
     # event.
     def finished
-      ev = @cq.pluck(@finished_tag, TimeConsts::INFINITE_FUTURE)
+      ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
       raise "unexpected event: #{ev.inspect}" unless ev.type == FINISHED
-      if ev.result.code != StatusCodes::OK
+      if ev.result.code != Core::StatusCodes::OK
         raise BadStatus.new(ev.result.code, ev.result.details)
       end
       res = ev.result
@@ -223,11 +224,11 @@ module GRPC
       else
         payload = @marshal.call(req)
       end
-      @call.start_write(ByteBuffer.new(payload), self)
+      @call.start_write(Core::ByteBuffer.new(payload), self)
 
       # call queue#pluck, and wait for WRITE_ACCEPTED, so as not to return
       # until the flow control allows another send on this call.
-      ev = @cq.pluck(self, TimeConsts::INFINITE_FUTURE)
+      ev = @cq.pluck(self, INFINITE_FUTURE)
       assert_event_type(ev.type, WRITE_ACCEPTED)
       ev = nil
     end
@@ -240,8 +241,8 @@ module GRPC
     # FINISHED.
     def send_status(code=OK, details='', assert_finished=false)
       assert_queue_is_ready
-      @call.start_write_status(Status.new(code, details), self)
-      ev = @cq.pluck(self, TimeConsts::INFINITE_FUTURE)
+      @call.start_write_status(Core::Status.new(code, details), self)
+      ev = @cq.pluck(self, INFINITE_FUTURE)
       assert_event_type(ev.type, FINISH_ACCEPTED)
       logger.debug("Status sent: #{code}:'#{details}'")
       if assert_finished
@@ -257,7 +258,7 @@ module GRPC
     # FINISHED, it returns nil if the status is OK, otherwise raising BadStatus
     def remote_read
       @call.start_read(self)
-      ev = @cq.pluck(self, TimeConsts::INFINITE_FUTURE)
+      ev = @cq.pluck(self, INFINITE_FUTURE)
       assert_event_type(ev.type, READ)
       logger.debug("received req: #{ev.result.inspect}")
       if !ev.result.nil?
@@ -291,7 +292,7 @@ module GRPC
       return enum_for(:each_remote_read) if !block_given?
       loop do
         resp = remote_read()
-        break if resp.is_a?Status  # this will be an OK status, bad statii raise
+        break if resp.is_a?Core::Status  # is an OK status, bad statii raise
         break if resp.nil?  # the last response was received
         yield resp
       end
@@ -321,7 +322,7 @@ module GRPC
       return enum_for(:each_remote_read_then_finish) if !block_given?
       loop do
         resp = remote_read
-        break if resp.is_a?Status  # this will be an OK status, bad statii raise
+        break if resp.is_a?Core::Status  # is an OK status, bad statii raise
         if resp.nil?  # the last response was received, but not finished yet
           finished
           break
@@ -339,7 +340,7 @@ module GRPC
       remote_send(req)
       writes_done(false)
       response = remote_read
-      if !response.is_a?(Status)  # finish if status not yet received
+      if !response.is_a?(Core::Status)  # finish if status not yet received
         finished
       end
       response
@@ -360,7 +361,7 @@ module GRPC
       requests.each { |r| remote_send(r) }
       writes_done(false)
       response = remote_read
-      if !response.is_a?(Status)  # finish if status not yet received
+      if !response.is_a?(Core::Status)  # finish if status not yet received
         finished
       end
       response
@@ -472,7 +473,7 @@ module GRPC
     # shutdown.
     def assert_queue_is_ready
       begin
-        ev = @cq.pluck(self, TimeConsts::ZERO)
+        ev = @cq.pluck(self, ZERO)
         raise "unexpected event #{ev.inspect}" unless ev.nil?
       rescue OutOfTime
         # expected, nothing should be on the queue and the deadline was ZERO,

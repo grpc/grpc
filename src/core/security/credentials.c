@@ -47,12 +47,10 @@
 #include <stdio.h>
 
 /* -- Constants. -- */
-
 #define GRPC_COMPUTE_ENGINE_TOKEN_REFRESH_THRESHOLD_SECS 60
 #define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata"
 #define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
   "computeMetadata/v1/instance/service-accounts/default/token"
-#define GRPC_AUTHORIZATION_METADATA_KEY "Authorization"
 
 /* -- Common. -- */
 
@@ -108,7 +106,13 @@ int grpc_credentials_has_request_metadata_only(grpc_credentials *creds) {
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data) {
-  if (creds == NULL || !grpc_credentials_has_request_metadata(creds)) return;
+  if (creds == NULL || !grpc_credentials_has_request_metadata(creds) ||
+      creds->vtable->get_request_metadata == NULL) {
+    if (cb != NULL) {
+      cb(user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+    }
+    return;
+  }
   creds->vtable->get_request_metadata(creds, cb, user_data);
 }
 
@@ -521,14 +525,235 @@ grpc_fake_transport_security_server_credentials_create() {
   return c;
 }
 
+/* -- Composite credentials. -- */
 
-/* -- Composite credentials TODO(jboeuf). -- */
+typedef struct {
+  grpc_credentials base;
+  grpc_credentials_array inner;
+} grpc_composite_credentials;
+
+typedef struct {
+  grpc_composite_credentials *composite_creds;
+  size_t creds_index;
+  grpc_mdelem **md_elems;
+  size_t num_md;
+  void *user_data;
+  grpc_credentials_metadata_cb cb;
+} grpc_composite_credentials_metadata_context;
+
+static void composite_destroy(grpc_credentials *creds) {
+  grpc_composite_credentials *c = (grpc_composite_credentials *)creds;
+  size_t i;
+  for (i = 0; i < c->inner.num_creds; i++) {
+    grpc_credentials_unref(c->inner.creds_array[i]);
+  }
+  gpr_free(c->inner.creds_array);
+  gpr_free(creds);
+}
+
+static int composite_has_request_metadata(const grpc_credentials *creds) {
+  const grpc_composite_credentials *c =
+      (const grpc_composite_credentials *)creds;
+  size_t i;
+  for (i = 0; i < c->inner.num_creds; i++) {
+    if (grpc_credentials_has_request_metadata(c->inner.creds_array[i])) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static int composite_has_request_metadata_only(const grpc_credentials *creds) {
+  const grpc_composite_credentials *c =
+      (const grpc_composite_credentials *)creds;
+  size_t i;
+  for (i = 0; i < c->inner.num_creds; i++) {
+    if (!grpc_credentials_has_request_metadata_only(c->inner.creds_array[i])) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+static void composite_md_context_destroy(
+    grpc_composite_credentials_metadata_context *ctx) {
+  size_t i;
+  for (i = 0; i < ctx->num_md; i++) {
+    grpc_mdelem_unref(ctx->md_elems[i]);
+  }
+  gpr_free(ctx->md_elems);
+  gpr_free(ctx);
+}
+
+static void composite_metadata_cb(void *user_data, grpc_mdelem **md_elems,
+                                  size_t num_md,
+                                  grpc_credentials_status status) {
+  grpc_composite_credentials_metadata_context *ctx =
+      (grpc_composite_credentials_metadata_context *)user_data;
+  size_t i;
+  if (status != GRPC_CREDENTIALS_OK) {
+    ctx->cb(ctx->user_data, NULL, 0, status);
+    return;
+  }
+
+  /* Copy the metadata in the context. */
+  if (num_md > 0) {
+    ctx->md_elems = gpr_realloc(ctx->md_elems,
+                                (ctx->num_md + num_md) * sizeof(grpc_mdelem *));
+    for (i = 0; i < num_md; i++) {
+      ctx->md_elems[i + ctx->num_md] = grpc_mdelem_ref(md_elems[i]);
+    }
+    ctx->num_md += num_md;
+  }
+
+  /* See if we need to get some more metadata. */
+  while (ctx->creds_index < ctx->composite_creds->inner.num_creds) {
+    grpc_credentials *inner_creds =
+        ctx->composite_creds->inner.creds_array[ctx->creds_index++];
+    if (grpc_credentials_has_request_metadata(inner_creds)) {
+      grpc_credentials_get_request_metadata(inner_creds, composite_metadata_cb,
+                                            ctx);
+      return;
+    }
+  }
+
+  /* We're done!. */
+  ctx->cb(ctx->user_data, ctx->md_elems, ctx->num_md, GRPC_CREDENTIALS_OK);
+  composite_md_context_destroy(ctx);
+}
+
+static void composite_get_request_metadata(grpc_credentials *creds,
+                                           grpc_credentials_metadata_cb cb,
+                                           void *user_data) {
+  grpc_composite_credentials *c = (grpc_composite_credentials *)creds;
+  grpc_composite_credentials_metadata_context *ctx;
+  if (!grpc_credentials_has_request_metadata(creds)) {
+    cb(user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+    return;
+  }
+  ctx = gpr_malloc(sizeof(grpc_composite_credentials_metadata_context));
+  memset(ctx, 0, sizeof(grpc_composite_credentials_metadata_context));
+  ctx->user_data = user_data;
+  ctx->cb = cb;
+  ctx->composite_creds = c;
+  while (ctx->creds_index < c->inner.num_creds) {
+    grpc_credentials *inner_creds = c->inner.creds_array[ctx->creds_index++];
+    if (grpc_credentials_has_request_metadata(inner_creds)) {
+      grpc_credentials_get_request_metadata(inner_creds, composite_metadata_cb,
+                                            ctx);
+      return;
+    }
+  }
+  GPR_ASSERT(0); /* Should have exited before. */
+}
+
+static grpc_credentials_vtable composite_credentials_vtable = {
+    composite_destroy, composite_has_request_metadata,
+    composite_has_request_metadata_only, composite_get_request_metadata};
+
+static grpc_credentials_array get_creds_array(grpc_credentials **creds_addr) {
+  grpc_credentials_array result;
+  grpc_credentials *creds = *creds_addr;
+  result.creds_array = creds_addr;
+  result.num_creds = 1;
+  if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE)) {
+    result = *grpc_composite_credentials_get_credentials(creds);
+  }
+  return result;
+}
 
 grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
                                                     grpc_credentials *creds2) {
-  return NULL;
+  size_t i;
+  grpc_credentials_array creds1_array;
+  grpc_credentials_array creds2_array;
+  grpc_composite_credentials *c;
+  GPR_ASSERT(creds1 != NULL);
+  GPR_ASSERT(creds2 != NULL);
+  c = gpr_malloc(sizeof(grpc_composite_credentials));
+  memset(c, 0, sizeof(grpc_composite_credentials));
+  c->base.type = GRPC_CREDENTIALS_TYPE_COMPOSITE;
+  c->base.vtable = &composite_credentials_vtable;
+  gpr_ref_init(&c->base.refcount, 1);
+  creds1_array = get_creds_array(&creds1);
+  creds2_array = get_creds_array(&creds2);
+  c->inner.num_creds = creds1_array.num_creds + creds2_array.num_creds;
+  c->inner.creds_array =
+      gpr_malloc(c->inner.num_creds * sizeof(grpc_credentials *));
+  for (i = 0; i < creds1_array.num_creds; i++) {
+    c->inner.creds_array[i] = grpc_credentials_ref(creds1_array.creds_array[i]);
+  }
+  for (i = 0; i < creds2_array.num_creds; i++) {
+    c->inner.creds_array[i + creds1_array.num_creds] =
+        grpc_credentials_ref(creds2_array.creds_array[i]);
+  }
+  return &c->base;
+}
+
+const grpc_credentials_array *grpc_composite_credentials_get_credentials(
+    grpc_credentials *creds) {
+  const grpc_composite_credentials *c =
+      (const grpc_composite_credentials *)creds;
+  GPR_ASSERT(!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE));
+  return &c->inner;
+}
+
+/* -- IAM credentials. -- */
+
+typedef struct {
+  grpc_credentials base;
+  grpc_mdctx *md_ctx;
+  grpc_mdelem *token_md;
+  grpc_mdelem *authority_selector_md;
+} grpc_iam_credentials;
+
+static void iam_destroy(grpc_credentials *creds) {
+  grpc_iam_credentials *c = (grpc_iam_credentials *)creds;
+  grpc_mdelem_unref(c->token_md);
+  grpc_mdelem_unref(c->authority_selector_md);
+  grpc_mdctx_orphan(c->md_ctx);
+  gpr_free(c);
+}
+
+static int iam_has_request_metadata(const grpc_credentials *creds) { return 1; }
+
+static int iam_has_request_metadata_only(const grpc_credentials *creds) {
+  return 1;
+}
+
+static void iam_get_request_metadata(grpc_credentials *creds,
+                                     grpc_credentials_metadata_cb cb,
+                                     void *user_data) {
+  grpc_iam_credentials *c = (grpc_iam_credentials *)creds;
+  grpc_mdelem *md_array[2];
+  md_array[0] = c->token_md;
+  md_array[1] = c->authority_selector_md;
+  cb(user_data, md_array, 2, GRPC_CREDENTIALS_OK);
+}
+
+static grpc_credentials_vtable iam_vtable = {
+    iam_destroy, iam_has_request_metadata, iam_has_request_metadata_only,
+    iam_get_request_metadata};
+
+grpc_credentials *grpc_iam_credentials_create(const char *token,
+                                              const char *authority_selector) {
+  grpc_iam_credentials *c;
+  GPR_ASSERT(token != NULL);
+  GPR_ASSERT(authority_selector != NULL);
+  c = gpr_malloc(sizeof(grpc_iam_credentials));
+  memset(c, 0, sizeof(grpc_iam_credentials));
+  c->base.type = GRPC_CREDENTIALS_TYPE_IAM;
+  c->base.vtable = &iam_vtable;
+  gpr_ref_init(&c->base.refcount, 1);
+  c->md_ctx = grpc_mdctx_create();
+  c->token_md = grpc_mdelem_from_strings(
+      c->md_ctx, GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, token);
+  c->authority_selector_md = grpc_mdelem_from_strings(
+      c->md_ctx, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, authority_selector);
+  return &c->base;
 }
 
 /* -- Default credentials TODO(jboeuf). -- */
 
 grpc_credentials *grpc_default_credentials_create(void) { return NULL; }
+

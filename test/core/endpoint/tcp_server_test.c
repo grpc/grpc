@@ -80,7 +80,7 @@ static void test_no_op_with_port() {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(
-      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)) >= 0);
+      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
   grpc_tcp_server_destroy(s);
 }
@@ -93,7 +93,7 @@ static void test_no_op_with_port_and_start() {
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   GPR_ASSERT(
-      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)) >= 0);
+      grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
   grpc_tcp_server_start(s, on_connect, NULL);
 
@@ -101,7 +101,7 @@ static void test_no_op_with_port_and_start() {
 }
 
 static void test_connect(int n) {
-  struct sockaddr_in addr;
+  struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
   int svrfd, clifd;
   grpc_tcp_server *s = grpc_tcp_server_create(&em);
@@ -114,12 +114,13 @@ static void test_connect(int n) {
   gpr_mu_lock(&mu);
 
   memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  svrfd = grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len);
-  GPR_ASSERT(svrfd >= 0);
+  addr.ss_family = AF_INET;
+  GPR_ASSERT(grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, addr_len));
 
+  svrfd = grpc_tcp_server_get_fd(s, 0);
+  GPR_ASSERT(svrfd >= 0);
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
-  GPR_ASSERT(addr_len == sizeof(addr));
+  GPR_ASSERT(addr_len <= sizeof(addr));
 
   grpc_tcp_server_start(s, on_connect, NULL);
 
@@ -127,7 +128,7 @@ static void test_connect(int n) {
     deadline = gpr_time_add(gpr_now(), gpr_time_from_micros(10000000));
 
     nconnects_before = nconnects;
-    clifd = socket(AF_INET, SOCK_STREAM, 0);
+    clifd = socket(addr.ss_family, SOCK_STREAM, 0);
     GPR_ASSERT(clifd >= 0);
     GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, addr_len) == 0);
 

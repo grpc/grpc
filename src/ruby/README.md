@@ -52,11 +52,25 @@ $ ./configure --prefix=/usr
 $ make
 $ sudo make install
 
+Install an update to OpenSSL with ALPN support
+
+$ wget https://www.openssl.org/source/openssl-1.0.2-beta3.tar.gz
+$ tar -zxvf openssl-1.0.2-beta3.tar.gz
+$ cd openssl-1.0.2-beta3
+$ ./config shared
+$ make
+$ sudo make install
+
 Install RVM
 
+$ # the -with-openssl-dir ensures that ruby uses the updated version of SSL
+$ command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
 $ \curl -sSL https://get.rvm.io | bash -s stable --ruby
-$ # follow the instructions to ensure that your're using the latest stable version of Ruby
 $
+$ # follow the instructions to ensure that your're using the latest stable version of Ruby
+$ # and that the rvm command is installed
+$
+$ rvm reinstall 2.1.5 --with-openssl-dir=/usr/local/ssl
 $ gem install bundler  # install bundler, the standard ruby package manager
 
 Install the patched beefcake, and update the Gemfile to reference
@@ -90,4 +104,3 @@ $ # update the Gemfile, modify the line beginning # gem 'beefcake' to refer to
 $ # the patched beefcake dir
 $
 $ bundle install
-

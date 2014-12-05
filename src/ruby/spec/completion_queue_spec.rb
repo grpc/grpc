@@ -29,26 +29,25 @@
 
 require 'grpc'
 
-describe GRPC::CompletionQueue do
+describe GRPC::Core::CompletionQueue do
 
   describe '#new' do
     it 'is constructed successufully' do
-      expect { GRPC::CompletionQueue.new }.not_to raise_error
-      expect(GRPC::CompletionQueue.new).to be_a(GRPC::CompletionQueue)
+      expect { GRPC::Core::CompletionQueue.new }.not_to raise_error
     end
   end
 
   describe '#next' do
     it 'can be called without failing' do
-      ch = GRPC::CompletionQueue.new
+      ch = GRPC::Core::CompletionQueue.new
       expect { ch.next(3) }.not_to raise_error
     end
 
     it 'can be called with the time constants' do
-      ch = GRPC::CompletionQueue.new
+      ch = GRPC::Core::CompletionQueue.new
       # don't use INFINITE_FUTURE, as there we have no events.
       non_blocking_consts = [:ZERO, :INFINITE_PAST]
-      m = GRPC::TimeConsts
+      m = GRPC::Core::TimeConsts
       non_blocking_consts.each do |c|
         a_time = m.const_get(c)
         expect { ch.next(a_time) }.not_to raise_error
@@ -59,16 +58,16 @@ describe GRPC::CompletionQueue do
 
   describe '#pluck' do
     it 'can be called without failing' do
-      ch = GRPC::CompletionQueue.new
+      ch = GRPC::Core::CompletionQueue.new
       tag = Object.new
       expect { ch.pluck(tag, 3) }.not_to raise_error
     end
 
     it 'can be called with the time constants' do
-      ch = GRPC::CompletionQueue.new
+      ch = GRPC::Core::CompletionQueue.new
       # don't use INFINITE_FUTURE, as there we have no events.
       non_blocking_consts = [:ZERO, :INFINITE_PAST]
-      m = GRPC::TimeConsts
+      m = GRPC::Core::TimeConsts
       tag = Object.new
       non_blocking_consts.each do |c|
         a_time = m.const_get(c)

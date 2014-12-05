@@ -83,6 +83,9 @@ static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
     case GRPC_TRANSPORT_CLOSED:
       gpr_log(GPR_ERROR, "Transport closed");
       break;
+    case GRPC_TRANSPORT_GOAWAY:
+      gpr_slice_unref(op->data.goaway.message);
+      break;
     default:
       GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
       grpc_channel_next_op(elem, op);

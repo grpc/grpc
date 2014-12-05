@@ -38,7 +38,8 @@ module GRPC
   # RpcServer hosts a number of services and makes them available on the
   # network.
   class RpcServer
-    include CompletionType
+    include Core::CompletionType
+    include Core::TimeConsts
     extend ::Forwardable
 
     def_delegators :@server, :add_http2_port
@@ -57,7 +58,7 @@ module GRPC
     # instance, however other arbitrary are allowed and when present are used
     # to configure the listeninng connection set up by the RpcServer.
     #
-    # * server_override: which if passed must be a [GRPC::Server].  When
+    # * server_override: which if passed must be a [GRPC::Core::Server].  When
     # present.
     #
     # * poll_period: when present, the server polls for new events with this
@@ -70,30 +71,38 @@ module GRPC
     # completion_queue that the server uses to receive network events,
     # otherwise its creates a new instance itself
     #
+    # * creds: [GRPC::Core::ServerCredentials]
+    # the credentials used to secure the server
+    #
     # * max_waiting_requests: the maximum number of requests that are not
     # being handled to allow. When this limit is exceeded, the server responds
     # with not available to new requests
     def initialize(pool_size:DEFAULT_POOL_SIZE,
                    max_waiting_requests:DEFAULT_MAX_WAITING_REQUESTS,
-                   poll_period:TimeConsts::INFINITE_FUTURE,
+                   poll_period:INFINITE_FUTURE,
                    completion_queue_override:nil,
+                   creds:nil,
                    server_override:nil,
                    **kw)
       if !completion_queue_override.nil?
         cq = completion_queue_override
-        if !cq.is_a?(CompletionQueue)
+        if !cq.is_a?(Core::CompletionQueue)
           raise ArgumentError.new('not a CompletionQueue')
         end
       else
-        cq = CompletionQueue.new
+        cq = Core::CompletionQueue.new
       end
       @cq = cq
 
       if !server_override.nil?
         srv = server_override
-        raise ArgumentError.new('not a Server') unless srv.is_a?(Server)
+        raise ArgumentError.new('not a Server') unless srv.is_a?(Core::Server)
+      elsif creds.nil?
+        srv = Core::Server.new(@cq, kw)
+      elsif !creds.is_a?(Core::ServerCredentials)
+        raise ArgumentError.new('not a ServerCredentials')
       else
-        srv = Server.new(@cq, **kw)
+        srv = Core::Server.new(@cq, kw, creds)
       end
       @server = srv
 
@@ -236,7 +245,7 @@ module GRPC
       # Accept the call.  This is necessary even if a status is to be sent back
       # immediately
       finished_tag = Object.new
-      call_queue = CompletionQueue.new
+      call_queue = Core::CompletionQueue.new
       call.accept(call_queue, finished_tag)
 
       # Send UNAVAILABLE if there are too many unprocessed jobs

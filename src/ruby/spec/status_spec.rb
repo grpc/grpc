@@ -29,133 +29,138 @@
 
 require 'grpc'
 
-module GRPC
 
-  describe StatusCodes do
+describe GRPC::Core::StatusCodes do
 
-    before(:each) do
-      @known_types = {
-        :OK => 0,
-        :CANCELLED => 1,
-        :UNKNOWN => 2,
-        :INVALID_ARGUMENT => 3,
-        :DEADLINE_EXCEEDED => 4,
-        :NOT_FOUND => 5,
-        :ALREADY_EXISTS => 6,
-        :PERMISSION_DENIED => 7,
-        :RESOURCE_EXHAUSTED => 8,
-        :FAILED_PRECONDITION => 9,
-        :ABORTED => 10,
-        :OUT_OF_RANGE => 11,
-        :UNIMPLEMENTED => 12,
-        :INTERNAL => 13,
-        :UNAVAILABLE => 14,
-        :DATA_LOSS => 15,
-        :UNAUTHENTICATED => 16
-      }
-    end
+  StatusCodes = GRPC::Core::StatusCodes
 
-    it 'should have symbols for all the known status codes' do
-      m = StatusCodes
-      syms_and_codes = m.constants.collect { |c| [c, m.const_get(c)] }
-      expect(Hash[syms_and_codes]).to eq(@known_types)
-    end
-
+  before(:each) do
+    @known_types = {
+      :OK => 0,
+      :CANCELLED => 1,
+      :UNKNOWN => 2,
+      :INVALID_ARGUMENT => 3,
+      :DEADLINE_EXCEEDED => 4,
+      :NOT_FOUND => 5,
+      :ALREADY_EXISTS => 6,
+      :PERMISSION_DENIED => 7,
+      :RESOURCE_EXHAUSTED => 8,
+      :FAILED_PRECONDITION => 9,
+      :ABORTED => 10,
+      :OUT_OF_RANGE => 11,
+      :UNIMPLEMENTED => 12,
+      :INTERNAL => 13,
+      :UNAVAILABLE => 14,
+      :DATA_LOSS => 15,
+      :UNAUTHENTICATED => 16
+    }
   end
 
-  describe Status do
-
-    describe '#new' do
-      it 'should create new instances' do
-        expect { Status.new(142, 'test details') }.to_not raise_error
-      end
-    end
-
-    describe '#details' do
-      it 'return the detail' do
-        sts = Status.new(142, 'test details')
-        expect(sts.details).to eq('test details')
-      end
-    end
-
-    describe '#code' do
-      it 'should return the code' do
-        sts = Status.new(142, 'test details')
-        expect(sts.code).to eq(142)
-      end
-    end
-
-    describe '#dup' do
-      it 'should create a copy that returns the correct details' do
-        sts = Status.new(142, 'test details')
-        expect(sts.dup.code).to eq(142)
-      end
-
-      it 'should create a copy that returns the correct code' do
-        sts = Status.new(142, 'test details')
-        expect(sts.dup.details).to eq('test details')
-      end
-    end
-
-
+  it 'should have symbols for all the known status codes' do
+    m = StatusCodes
+    syms_and_codes = m.constants.collect { |c| [c, m.const_get(c)] }
+    expect(Hash[syms_and_codes]).to eq(@known_types)
   end
 
-  describe BadStatus do
+end
 
-    describe '#new' do
-      it 'should create new instances' do
-        expect { BadStatus.new(142, 'test details') }.to_not raise_error
-      end
+
+describe GRPC::Core::Status do
+
+  Status = GRPC::Core::Status
+
+  describe '#new' do
+    it 'should create new instances' do
+      expect { Status.new(142, 'test details') }.to_not raise_error
+    end
+  end
+
+  describe '#details' do
+    it 'return the detail' do
+      sts = Status.new(142, 'test details')
+      expect(sts.details).to eq('test details')
+    end
+  end
+
+  describe '#code' do
+    it 'should return the code' do
+      sts = Status.new(142, 'test details')
+      expect(sts.code).to eq(142)
+    end
+  end
+
+  describe '#dup' do
+    it 'should create a copy that returns the correct details' do
+      sts = Status.new(142, 'test details')
+      expect(sts.dup.code).to eq(142)
     end
 
-    describe '#details' do
-      it 'return the detail' do
-        err = BadStatus.new(142, 'test details')
-        expect(err.details).to eq('test details')
-      end
+    it 'should create a copy that returns the correct code' do
+      sts = Status.new(142, 'test details')
+      expect(sts.dup.details).to eq('test details')
+    end
+  end
+
+
+end
+
+
+describe GRPC::BadStatus do
+
+  BadStatus = GRPC::BadStatus
+
+  describe '#new' do
+    it 'should create new instances' do
+      expect { BadStatus.new(142, 'test details') }.to_not raise_error
+    end
+  end
+
+  describe '#details' do
+    it 'return the detail' do
+      err = BadStatus.new(142, 'test details')
+      expect(err.details).to eq('test details')
+    end
+  end
+
+  describe '#code' do
+    it 'should return the code' do
+      err = BadStatus.new(142, 'test details')
+      expect(err.code).to eq(142)
+    end
+  end
+
+  describe '#dup' do
+    it 'should create a copy that returns the correct details' do
+      err = BadStatus.new(142, 'test details')
+      expect(err.dup.code).to eq(142)
     end
 
-    describe '#code' do
-      it 'should return the code' do
-        err = BadStatus.new(142, 'test details')
-        expect(err.code).to eq(142)
-      end
+    it 'should create a copy that returns the correct code' do
+      err = BadStatus.new(142, 'test details')
+      expect(err.dup.details).to eq('test details')
+    end
+  end
+
+  describe '#to_status' do
+    it 'should create a Status with the same code and details' do
+      err = BadStatus.new(142, 'test details')
+      sts = err.to_status
+      expect(sts.code).to eq(142)
+      expect(sts.details).to eq('test details')
     end
 
-    describe '#dup' do
-      it 'should create a copy that returns the correct details' do
-        err = BadStatus.new(142, 'test details')
-        expect(err.dup.code).to eq(142)
-      end
-
-      it 'should create a copy that returns the correct code' do
-        err = BadStatus.new(142, 'test details')
-        expect(err.dup.details).to eq('test details')
-      end
+    it 'should create a copy that returns the correct code' do
+      err = BadStatus.new(142, 'test details')
+      expect(err.dup.details).to eq('test details')
     end
+  end
 
-    describe '#to_status' do
-      it 'should create a Status with the same code and details' do
-        err = BadStatus.new(142, 'test details')
-        sts = err.to_status
-        expect(sts.code).to eq(142)
-        expect(sts.details).to eq('test details')
-      end
+  describe 'as an exception' do
 
-      it 'should create a copy that returns the correct code' do
-        err = BadStatus.new(142, 'test details')
-        expect(err.dup.details).to eq('test details')
-      end
+    it 'can be raised' do
+      blk = Proc.new { raise BadStatus.new(343, 'status 343') }
+      expect(&blk).to raise_error(BadStatus)
     end
-
-    describe 'as an exception' do
-
-      it 'can be raised' do
-        blk = Proc.new { raise BadStatus.new(343, 'status 343') }
-        expect(&blk).to raise_error(BadStatus)
-      end
-    end
-
   end
 
 end

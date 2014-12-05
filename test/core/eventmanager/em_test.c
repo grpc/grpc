@@ -138,7 +138,6 @@ static void session_read_cb(void *arg, /*session*/
   ssize_t read_total = 0;
 
   if (status == GRPC_CALLBACK_CANCELLED) {
-    close(fd);
     session_shutdown_cb(arg, GRPC_CALLBACK_SUCCESS);
     return;
   }
@@ -181,7 +180,6 @@ static void listen_shutdown_cb(void *arg /*server*/,
                                enum grpc_em_cb_status status) {
   server *sv = arg;
 
-  close(grpc_em_fd_get(&sv->em_fd));
   grpc_em_fd_destroy(&sv->em_fd);
 
   gpr_mu_lock(&sv->mu);
@@ -527,7 +525,6 @@ void test_grpc_em_fd_notify_timeout() {
   GPR_ASSERT(gpr_event_get(&ev) == (void *)1);
   grpc_em_fd_destroy(&em_fd);
   grpc_em_destroy(&em);
-  close(sv[0]);
   close(sv[1]);
 }
 

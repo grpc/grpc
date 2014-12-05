@@ -37,6 +37,6 @@
 #include <grpc/grpc.h>
 
 /* Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create();
+grpc_channel *grpc_lame_client_channel_create(void);
 
 #endif /* __GRPC_INTERNAL_SURFACE_LAME_CLIENT_H_ */

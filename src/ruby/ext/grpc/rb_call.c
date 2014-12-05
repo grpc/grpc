@@ -429,7 +429,7 @@ VALUE rb_eCallError = Qnil;
 
 void Init_google_rpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
-  VALUE rb_RpcErrors = rb_define_module_under(rb_mGoogleRPC, "RpcErrors");
+  VALUE rb_RpcErrors = rb_define_module_under(rb_mGoogleRpcCore, "RpcErrors");
   rb_define_const(rb_RpcErrors, "OK", UINT2NUM(GRPC_CALL_OK));
   rb_define_const(rb_RpcErrors, "ERROR", UINT2NUM(GRPC_CALL_ERROR));
   rb_define_const(rb_RpcErrors, "NOT_ON_SERVER",
@@ -475,9 +475,9 @@ void Init_google_rpc_error_codes() {
 
 void Init_google_rpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
-  rb_eCallError = rb_define_class_under(rb_mGoogleRPC, "CallError",
+  rb_eCallError = rb_define_class_under(rb_mGoogleRpcCore, "CallError",
                                         rb_eException);
-  rb_cCall = rb_define_class_under(rb_mGoogleRPC, "Call", rb_cObject);
+  rb_cCall = rb_define_class_under(rb_mGoogleRpcCore, "Call", rb_cObject);
 
   /* Prevent allocation or inialization of the Call class */
   rb_define_alloc_func(rb_cCall, grpc_rb_cannot_alloc);

@@ -44,6 +44,7 @@ require 'grpc'
 require 'grpc/generic/service'
 require 'grpc/generic/rpc_server'
 require 'math.pb'
+require 'optparse'
 
 # Holds state for a fibonacci series
 class Fibber
@@ -151,14 +152,43 @@ class Calculator < Math::Math::Service
 
 end
 
+def load_test_certs
+  this_dir = File.expand_path(File.dirname(__FILE__))
+  data_dir = File.join(File.dirname(this_dir), 'spec/testdata')
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  files.map { |f| File.open(File.join(data_dir, f)).read }
+end
+
+def test_server_creds
+  certs = load_test_certs
+  server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+end
+
 def main
-  host_port = 'localhost:7070'
-  if ARGV.size > 0
-    host_port = ARGV[0]
+  options = {
+    'host' => 'localhost:7071',
+    'secure' => false
+  }
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: [--host|-h <hostname>:<port>] [--secure|-s]'
+    opts.on('-h', '--host', '<hostname>:<port>') do |v|
+      options['host'] = v
+    end
+    opts.on('-s', '--secure', 'access using test creds') do |v|
+      options['secure'] = true
+    end
+  end.parse!
+
+  if options['secure']
+    s = GRPC::RpcServer.new(creds: test_server_creds)
+    s.add_http2_port(options['host'], true)
+    logger.info("... running securely on #{options['host']}")
+  else
+    s = GRPC::RpcServer.new
+    s.add_http2_port(options['host'])
+    logger.info("... running insecurely on #{options['host']}")
   end
 
-  s = GRPC::RpcServer.new()
-  s.add_http2_port(host_port)
   s.handle(Calculator)
   s.run
 end

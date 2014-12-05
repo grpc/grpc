@@ -48,7 +48,7 @@ struct thd_arg {
 };
 
 /* Body of every thread started via gpr_thd_new. */
-static DWORD thread_body(void *v) {
+static DWORD WINAPI thread_body(void *v) {
   struct thd_arg a = *(struct thd_arg *)v;
   gpr_free(v);
   (*a.body)(a.arg);
@@ -62,7 +62,7 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
   a->body = thd_body;
   a->arg = arg;
   *t = 0;
-  handle = CreateThread(NULL, 64 * 1024, &thread_body, a, 0, NULL);
+  handle = CreateThread(NULL, 64 * 1024, thread_body, a, 0, NULL);
   if (handle == NULL) {
     gpr_free(a);
   } else {

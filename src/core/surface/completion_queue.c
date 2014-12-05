@@ -105,7 +105,7 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
                          void *tag, grpc_call *call,
                          grpc_event_finish_func on_finish, void *user_data) {
   event *ev = gpr_malloc(sizeof(event));
-  gpr_intptr bucket = ((gpr_intptr)tag) % NUM_TAG_BUCKETS;
+  gpr_uintptr bucket = ((gpr_uintptr)tag) % NUM_TAG_BUCKETS;
   GPR_ASSERT(!cc->shutdown);
   ev->base.type = type;
   ev->base.tag = tag;
@@ -260,9 +260,9 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cc,
   gpr_mu_lock(&cc->em->mu);
   for (;;) {
     if (cc->queue != NULL) {
-      gpr_intptr bucket;
+      gpr_uintptr bucket;
       ev = cc->queue;
-      bucket = ((gpr_intptr)ev->base.tag) % NUM_TAG_BUCKETS;
+      bucket = ((gpr_uintptr)ev->base.tag) % NUM_TAG_BUCKETS;
       cc->queue = ev->queue_next;
       ev->queue_next->queue_prev = ev->queue_prev;
       ev->queue_prev->queue_next = ev->queue_next;
@@ -297,7 +297,7 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cc,
 }
 
 static event *pluck_event(grpc_completion_queue *cc, void *tag) {
-  gpr_intptr bucket = ((gpr_intptr)tag) % NUM_TAG_BUCKETS;
+  gpr_uintptr bucket = ((gpr_uintptr)tag) % NUM_TAG_BUCKETS;
   event *ev = cc->buckets[bucket];
   if (ev == NULL) return NULL;
   do {

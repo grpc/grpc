@@ -37,6 +37,10 @@
 #include "grpc.h"
 #include "status.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* --- grpc_credentials object. ---
 
    A credentials object represents a way to authenticate a client.  */
@@ -76,6 +80,10 @@ grpc_credentials *grpc_compute_engine_credentials_create(void);
 
 /* Creates a fake transport security credentials object for testing. */
 grpc_credentials *grpc_fake_transport_security_credentials_create(void);
+
+/* Creates an IAM credentials object. */
+grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
+                                              const char *authority_selector);
 
 
 /* --- Secure channel creation. --- */
@@ -139,5 +147,9 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 grpc_server *grpc_secure_server_create(grpc_server_credentials *creds,
                                        grpc_completion_queue *cq,
                                        const grpc_channel_args *args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SECURITY_H_ */

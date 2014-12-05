@@ -331,6 +331,9 @@ static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
       gpr_mu_unlock(&chand->server->mu);
       server_unref(chand->server);
       break;
+    case GRPC_TRANSPORT_GOAWAY:
+      gpr_slice_unref(op->data.goaway.message);
+      break;
     default:
       GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
       grpc_channel_next_op(elem, op);
@@ -341,7 +344,7 @@ static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
 static void finish_shutdown_channel(void *cd, grpc_em_cb_status status) {
   channel_data *chand = cd;
   grpc_channel_op op;
-  op.type = GRPC_CHANNEL_SHUTDOWN;
+  op.type = GRPC_CHANNEL_DISCONNECT;
   op.dir = GRPC_CALL_DOWN;
   channel_op(grpc_channel_stack_element(
                  grpc_channel_get_channel_stack(chand->channel), 0),
@@ -515,16 +518,35 @@ grpc_transport_setup_result grpc_server_setup_transport(
 }
 
 void grpc_server_shutdown(grpc_server *server) {
-  /* TODO(ctiller): send goaway, etc */
   listener *l;
   void **tags;
   size_t ntags;
+  channel_data **channels;
+  channel_data *c;
+  size_t nchannels;
+  size_t i;
+  grpc_channel_op op;
+  grpc_channel_element *elem;
 
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu);
   if (server->shutdown) {
     gpr_mu_unlock(&server->mu);
     return;
+  }
+
+  nchannels = 0;
+  for (c = server->root_channel_data.next; c != &server->root_channel_data;
+       c = c->next) {
+    nchannels++;
+  }
+  channels = gpr_malloc(sizeof(channel_data *) * nchannels);
+  i = 0;
+  for (c = server->root_channel_data.next; c != &server->root_channel_data;
+       c = c->next) {
+    grpc_channel_internal_ref(c->channel);
+    channels[i] = c;
+    i++;
   }
 
   tags = server->tags;
@@ -534,6 +556,21 @@ void grpc_server_shutdown(grpc_server *server) {
 
   server->shutdown = 1;
   gpr_mu_unlock(&server->mu);
+
+  for (i = 0; i < nchannels; i++) {
+    c = channels[i];
+    elem = grpc_channel_stack_element(
+        grpc_channel_get_channel_stack(c->channel), 0);
+
+    op.type = GRPC_CHANNEL_GOAWAY;
+    op.dir = GRPC_CALL_DOWN;
+    op.data.goaway.status = GRPC_STATUS_OK;
+    op.data.goaway.message = gpr_slice_from_copied_string("Server shutdown");
+    elem->filter->channel_op(elem, &op);
+
+    grpc_channel_internal_unref(c->channel);
+  }
+  gpr_free(channels);
 
   /* terminate all the requested calls */
   early_terminate_requested_calls(server->cq, tags, ntags);

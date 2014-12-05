@@ -64,13 +64,11 @@ static gpr_timespec n_seconds_time(int n) {
   return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
 }
 
-static gpr_timespec five_seconds_time() { return n_seconds_time(5); }
-
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event *ev;
   grpc_completion_type type;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time());
+    ev = grpc_completion_queue_next(cq, n_seconds_time(5));
     GPR_ASSERT(ev);
     type = ev->type;
     grpc_event_finish(ev);
@@ -115,7 +113,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   gpr_slice request_payload_slice = large_slice();
   grpc_byte_buffer *request_payload =
       grpc_byte_buffer_create(&request_payload_slice, 1);
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = n_seconds_time(10);
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);

@@ -29,67 +29,65 @@
 
 require 'grpc'
 
-module GRPC
-  describe TimeConsts do
+TimeConsts = GRPC::Core::TimeConsts
 
-    before(:each) do
-      @known_consts = [:ZERO, :INFINITE_FUTURE, :INFINITE_PAST].sort
-    end
+describe TimeConsts do
 
-    it 'should have all the known types' do
-      expect(TimeConsts.constants.collect.sort).to eq(@known_consts)
-    end
-
-    describe "#to_time" do
-      it 'converts each constant to a Time' do
-        m = TimeConsts
-        m.constants.each do |c|
-          expect(m.const_get(c).to_time).to be_a(Time)
-        end
-      end
-    end
-
+  before(:each) do
+    @known_consts = [:ZERO, :INFINITE_FUTURE, :INFINITE_PAST].sort
   end
 
-  describe '#from_relative_time' do
+  it 'should have all the known types' do
+    expect(TimeConsts.constants.collect.sort).to eq(@known_consts)
+  end
 
-    it 'cannot handle arbitrary objects' do
-      expect { TimeConsts.from_relative_time(Object.new) }.to raise_error
-    end
-
-    it 'preserves TimeConsts' do
+  describe '#to_time' do
+    it 'converts each constant to a Time' do
       m = TimeConsts
       m.constants.each do |c|
-        const = m.const_get(c)
-        expect(TimeConsts.from_relative_time(const)).to be(const)
+        expect(m.const_get(c).to_time).to be_a(Time)
       end
     end
-
-    it 'converts 0 to TimeConsts::ZERO' do
-      expect(TimeConsts.from_relative_time(0)).to eq(TimeConsts::ZERO)
-    end
-
-    it 'converts nil to TimeConsts::ZERO' do
-      expect(TimeConsts.from_relative_time(nil)).to eq(TimeConsts::ZERO)
-    end
-
-    it 'converts negative values to TimeConsts::INFINITE_FUTURE' do
-      [-1, -3.2, -1e6].each do |t|
-        y = TimeConsts.from_relative_time(t)
-        expect(y).to eq(TimeConsts::INFINITE_FUTURE)
-      end
-    end
-
-    it 'converts a positive value to an absolute time' do
-      epsilon = 1
-      [1, 3.2, 1e6].each do |t|
-        want = Time.now + t
-        abs = TimeConsts.from_relative_time(t)
-        expect(abs.to_f).to be_within(epsilon).of(want.to_f)
-      end
-    end
-
   end
 
 end
 
+describe '#from_relative_time' do
+
+  it 'cannot handle arbitrary objects' do
+    expect { TimeConsts.from_relative_time(Object.new) }.to raise_error
+  end
+
+  it 'preserves TimeConsts' do
+    m = TimeConsts
+    m.constants.each do |c|
+      const = m.const_get(c)
+      expect(TimeConsts.from_relative_time(const)).to be(const)
+    end
+  end
+
+  it 'converts 0 to TimeConsts::ZERO' do
+    expect(TimeConsts.from_relative_time(0)).to eq(TimeConsts::ZERO)
+  end
+
+  it 'converts nil to TimeConsts::ZERO' do
+    expect(TimeConsts.from_relative_time(nil)).to eq(TimeConsts::ZERO)
+  end
+
+  it 'converts negative values to TimeConsts::INFINITE_FUTURE' do
+    [-1, -3.2, -1e6].each do |t|
+      y = TimeConsts.from_relative_time(t)
+      expect(y).to eq(TimeConsts::INFINITE_FUTURE)
+    end
+  end
+
+  it 'converts a positive value to an absolute time' do
+    epsilon = 1
+    [1, 3.2, 1e6].each do |t|
+      want = Time.now + t
+      abs = TimeConsts.from_relative_time(t)
+      expect(abs.to_f).to be_within(epsilon).of(want.to_f)
+    end
+  end
+
+end

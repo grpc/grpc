@@ -50,7 +50,7 @@
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
-static int done = 0;
+static int got_sigint = 0;
 
 static const grpc_status status_ok = {GRPC_STATUS_OK, NULL};
 
@@ -65,13 +65,15 @@ static void request_call() {
   grpc_server_request_call(server, s);
 }
 
-static void sigint_handler(int x) { done = 1; }
+static void sigint_handler(int x) { got_sigint = 1; }
 
 int main(int argc, char **argv) {
   grpc_event *ev;
   call_state *s;
   char *addr_buf = NULL;
   gpr_cmdline *cl;
+  int shutdown_started = 0;
+  int shutdown_finished = 0;
 
   int secure = 0;
   char *addr = NULL;
@@ -109,23 +111,34 @@ int main(int argc, char **argv) {
 
   grpc_profiler_start("server.prof");
   signal(SIGINT, sigint_handler);
-  while (!done) {
+  while (!shutdown_finished) {
+    if (got_sigint && !shutdown_started) {
+      gpr_log(GPR_INFO, "Shutting down due to SIGINT");
+      grpc_server_shutdown(server);
+      grpc_completion_queue_shutdown(cq);
+      shutdown_started = 1;
+    }
     ev = grpc_completion_queue_next(
         cq, gpr_time_add(gpr_now(), gpr_time_from_micros(1000000)));
     if (!ev) continue;
     s = ev->tag;
     switch (ev->type) {
       case GRPC_SERVER_RPC_NEW:
-        /* initial ops are already started in request_call */
-        if (0 == strcmp(ev->data.server_rpc_new.method,
-                        "/Reflector/reflectStream")) {
-          s->flags = 0;
+        if (ev->call != NULL) {
+          /* initial ops are already started in request_call */
+          if (0 == strcmp(ev->data.server_rpc_new.method,
+                          "/Reflector/reflectStream")) {
+            s->flags = 0;
+          } else {
+            s->flags = GRPC_WRITE_BUFFER_HINT;
+          }
+          grpc_call_accept(ev->call, cq, s, s->flags);
+          GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
+          request_call();
         } else {
-          s->flags = GRPC_WRITE_BUFFER_HINT;
+          GPR_ASSERT(shutdown_started);
+          gpr_free(s);
         }
-        grpc_call_accept(ev->call, cq, s, s->flags);
-        GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
-        request_call();
         break;
       case GRPC_WRITE_ACCEPTED:
         GPR_ASSERT(ev->data.write_accepted == GRPC_OP_OK);
@@ -147,13 +160,19 @@ int main(int argc, char **argv) {
           gpr_free(s);
         }
         break;
+      case GRPC_QUEUE_SHUTDOWN:
+        GPR_ASSERT(shutdown_started);
+        shutdown_finished = 1;
+        break;
       default:
-        abort();
+        GPR_ASSERT(0);
     }
     grpc_event_finish(ev);
   }
   grpc_profiler_stop();
 
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq);
   grpc_shutdown();
   return 0;
 }

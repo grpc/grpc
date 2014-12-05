@@ -31,15 +31,15 @@ require 'grpc'
 
 describe 'Wrapped classes where .new cannot create an instance' do
 
-  describe GRPC::Event do
+  describe GRPC::Core::Event do
     it 'should fail .new fail with a runtime error' do
-      expect { GRPC::Event.new }.to raise_error(TypeError)
+      expect { GRPC::Core::Event.new }.to raise_error(TypeError)
     end
   end
 
-  describe GRPC::Call do
+  describe GRPC::Core::Call do
     it 'should fail .new fail with a runtime error' do
-      expect { GRPC::Event.new }.to raise_error(TypeError)
+      expect { GRPC::Core::Event.new }.to raise_error(TypeError)
     end
   end
 

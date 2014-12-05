@@ -466,8 +466,13 @@ static void recv_batch(void *user_data, grpc_transport *transport,
 
 static void close_transport(void *user_data, grpc_transport *transport) {}
 
+static void recv_goaway(void *user_data, grpc_transport *transport,
+                        grpc_status_code status, gpr_slice debug) {
+  gpr_slice_unref(debug);
+}
+
 static grpc_transport_callbacks transport_callbacks = {
-    alloc_recv_buffer, create_stream, recv_batch, close_transport};
+    alloc_recv_buffer, create_stream, recv_batch, recv_goaway, close_transport};
 
 /* Helper for tests to create a stream.
    Arguments:

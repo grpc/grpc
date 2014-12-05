@@ -38,6 +38,11 @@ size_t grpc_transport_stream_size(grpc_transport *transport) {
   return transport->vtable->sizeof_stream;
 }
 
+void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
+                           gpr_slice message) {
+  transport->vtable->goaway(transport, status, message);
+}
+
 void grpc_transport_close(grpc_transport *transport) {
   transport->vtable->close(transport);
 }

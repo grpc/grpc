@@ -60,6 +60,10 @@ typedef struct grpc_transport_vtable {
   void (*abort_stream)(grpc_transport *self, grpc_stream *stream,
                        grpc_status_code status);
 
+  /* implementation of grpc_transport_goaway */
+  void (*goaway)(grpc_transport *self, grpc_status_code status,
+                 gpr_slice debug_data);
+
   /* implementation of grpc_transport_close */
   void (*close)(grpc_transport *self);
 

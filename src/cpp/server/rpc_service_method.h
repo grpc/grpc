@@ -42,8 +42,10 @@
 #include "src/cpp/rpc_method.h"
 #include <google/protobuf/message.h>
 #include <grpc++/status.h>
+#include <grpc++/stream.h>
 
 namespace grpc {
+class StreamContextInterface;
 
 // TODO(rocking): we might need to split this file into multiple ones.
 
@@ -53,23 +55,27 @@ class MethodHandler {
   virtual ~MethodHandler() {}
   struct HandlerParameter {
     HandlerParameter(const google::protobuf::Message* req, google::protobuf::Message* resp)
-        : request(req), response(resp) {}
+        : request(req), response(resp), stream_context(nullptr) {}
+    HandlerParameter(const google::protobuf::Message* req, google::protobuf::Message* resp,
+                     StreamContextInterface* context)
+        : request(req), response(resp), stream_context(context) {}
     const google::protobuf::Message* request;
     google::protobuf::Message* response;
+    StreamContextInterface* stream_context;
   };
-  virtual ::grpc::Status RunHandler(const HandlerParameter& param) = 0;
+  virtual Status RunHandler(const HandlerParameter& param) = 0;
 };
 
 // A wrapper class of an application provided rpc method handler.
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler : public MethodHandler {
  public:
-  RpcMethodHandler(std::function<::grpc::Status(
-                       ServiceType*, const RequestType*, ResponseType*)> func,
+  RpcMethodHandler(std::function<Status(ServiceType*, const RequestType*,
+                                        ResponseType*)> func,
                    ServiceType* service)
       : func_(func), service_(service) {}
 
-  ::grpc::Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) final {
     // Invoke application function, cast proto messages to their actual types.
     return func_(service_, dynamic_cast<const RequestType*>(param.request),
                  dynamic_cast<ResponseType*>(param.response));
@@ -77,9 +83,73 @@ class RpcMethodHandler : public MethodHandler {
 
  private:
   // Application provided rpc handler function.
-  std::function<::grpc::Status(ServiceType*, const RequestType*, ResponseType*)>
-      func_;
+  std::function<Status(ServiceType*, const RequestType*, ResponseType*)> func_;
   // The class the above handler function lives in.
+  ServiceType* service_;
+};
+
+// A wrapper class of an application provided client streaming handler.
+template <class ServiceType, class RequestType, class ResponseType>
+class ClientStreamingHandler : public MethodHandler {
+ public:
+  ClientStreamingHandler(
+      std::function<Status(ServiceType*, ServerReader<RequestType>*,
+                           ResponseType*)> func,
+      ServiceType* service)
+      : func_(func), service_(service) {}
+
+  Status RunHandler(const HandlerParameter& param) final {
+    ServerReader<RequestType> reader(param.stream_context);
+    return func_(service_, &reader,
+                 dynamic_cast<ResponseType*>(param.response));
+  }
+
+ private:
+  std::function<Status(ServiceType*, ServerReader<RequestType>*, ResponseType*)>
+      func_;
+  ServiceType* service_;
+};
+
+// A wrapper class of an application provided server streaming handler.
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler : public MethodHandler {
+ public:
+  ServerStreamingHandler(
+      std::function<Status(ServiceType*, const RequestType*,
+                           ServerWriter<ResponseType>*)> func,
+      ServiceType* service)
+      : func_(func), service_(service) {}
+
+  Status RunHandler(const HandlerParameter& param) final {
+    ServerWriter<ResponseType> writer(param.stream_context);
+    return func_(service_, dynamic_cast<const RequestType*>(param.request),
+                 &writer);
+  }
+
+ private:
+  std::function<Status(ServiceType*, const RequestType*,
+                       ServerWriter<ResponseType>*)> func_;
+  ServiceType* service_;
+};
+
+// A wrapper class of an application provided bidi-streaming handler.
+template <class ServiceType, class RequestType, class ResponseType>
+class BidiStreamingHandler : public MethodHandler {
+ public:
+  BidiStreamingHandler(
+      std::function<Status(
+          ServiceType*, ServerReaderWriter<ResponseType, RequestType>*)> func,
+      ServiceType* service)
+      : func_(func), service_(service) {}
+
+  Status RunHandler(const HandlerParameter& param) final {
+    ServerReaderWriter<ResponseType, RequestType> stream(param.stream_context);
+    return func_(service_, &stream);
+  }
+
+ private:
+  std::function<Status(ServiceType*,
+                       ServerReaderWriter<ResponseType, RequestType>*)> func_;
   ServiceType* service_;
 };
 
@@ -87,10 +157,10 @@ class RpcMethodHandler : public MethodHandler {
 class RpcServiceMethod : public RpcMethod {
  public:
   // Takes ownership of the handler and two prototype objects.
-  RpcServiceMethod(const char* name, MethodHandler* handler,
-                   google::protobuf::Message* request_prototype,
+  RpcServiceMethod(const char* name, RpcMethod::RpcType type,
+                   MethodHandler* handler, google::protobuf::Message* request_prototype,
                    google::protobuf::Message* response_prototype)
-      : RpcMethod(name),
+      : RpcMethod(name, type),
         handler_(handler),
         request_prototype_(request_prototype),
         response_prototype_(response_prototype) {}

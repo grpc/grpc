@@ -33,6 +33,7 @@
 
 #include <grpc/grpc.h>
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,6 +49,7 @@
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
+static int got_sigint = 0;
 
 static const grpc_status status_ok = {GRPC_STATUS_OK, NULL};
 
@@ -79,10 +81,14 @@ static void assert_read_ok(call_state *s, grpc_byte_buffer *b) {
   grpc_byte_buffer_reader_destroy(bb_reader);
 }
 
+static void sigint_handler(int x) { got_sigint = 1; }
+
 int main(int argc, char **argv) {
   grpc_event *ev;
   char *addr;
   call_state *s;
+  int shutdown_started = 0;
+  int shutdown_finished = 0;
 
   grpc_test_init(argc, argv);
 
@@ -104,16 +110,29 @@ int main(int argc, char **argv) {
 
   request_call();
 
-  for (;;) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_future);
-    GPR_ASSERT(ev);
+  signal(SIGINT, sigint_handler);
+  while (!shutdown_finished) {
+    if (got_sigint && !shutdown_started) {
+      gpr_log(GPR_INFO, "Shutting down due to SIGINT");
+      grpc_server_shutdown(server);
+      grpc_completion_queue_shutdown(cq);
+      shutdown_started = 1;
+    }
+    ev = grpc_completion_queue_next(
+        cq, gpr_time_add(gpr_now(), gpr_time_from_micros(1000000)));
+    if (!ev) continue;
     s = ev->tag;
     switch (ev->type) {
       case GRPC_SERVER_RPC_NEW:
-        /* initial ops are already started in request_call */
-        grpc_call_accept(ev->call, cq, s, GRPC_WRITE_BUFFER_HINT);
-        GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
-        request_call();
+        if (ev->call != NULL) {
+          /* initial ops are already started in request_call */
+          grpc_call_accept(ev->call, cq, s, GRPC_WRITE_BUFFER_HINT);
+          GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
+          request_call();
+        } else {
+          GPR_ASSERT(shutdown_started);
+          gpr_free(s);
+        }
         break;
       case GRPC_WRITE_ACCEPTED:
         GPR_ASSERT(ev->data.write_accepted == GRPC_OP_OK);
@@ -137,12 +156,18 @@ int main(int argc, char **argv) {
           gpr_free(s);
         }
         break;
+      case GRPC_QUEUE_SHUTDOWN:
+        GPR_ASSERT(shutdown_started);
+        shutdown_finished = 1;
+        break;
       default:
-        abort();
+        GPR_ASSERT(0);
     }
     grpc_event_finish(ev);
   }
 
+  grpc_server_destroy(server);
+  grpc_completion_queue_destroy(cq);
   grpc_shutdown();
 
   return 0;

@@ -27,12 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/event'
+require 'grpc/beefcake'  # extends beefcake
 require 'grpc/errors'
 require 'grpc/grpc'
 require 'grpc/logconfig'
-require 'grpc/time_consts'
 require 'grpc/version'
+require 'grpc/core/event'
+require 'grpc/core/time_consts'
 
 # alias GRPC
 GRPC = Google::RPC

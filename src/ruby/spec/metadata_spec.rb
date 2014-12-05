@@ -29,24 +29,23 @@
 
 require 'grpc'
 
-describe GRPC::Metadata do
+describe GRPC::Core::Metadata do
 
   describe '#new' do
     it 'should create instances' do
-      expect { GRPC::Metadata.new('a key', 'a value') }.to_not raise_error
-      expect(GRPC::Metadata.new('a key', 'a value')).to be_a(GRPC::Metadata)
+      expect { GRPC::Core::Metadata.new('a key', 'a value') }.to_not raise_error
     end
   end
 
   describe '#key' do
-    md = GRPC::Metadata.new('a key', 'a value')
+    md = GRPC::Core::Metadata.new('a key', 'a value')
     it 'should be the constructor value' do
       expect(md.key).to eq('a key')
     end
   end
 
   describe '#value' do
-    md = GRPC::Metadata.new('a key', 'a value')
+    md = GRPC::Core::Metadata.new('a key', 'a value')
     it 'should be the constuctor value' do
       expect(md.value).to eq('a value')
     end
@@ -54,12 +53,12 @@ describe GRPC::Metadata do
 
   describe '#dup' do
     it 'should create a copy that returns the correct key' do
-      md = GRPC::Metadata.new('a key', 'a value')
+      md = GRPC::Core::Metadata.new('a key', 'a value')
       expect(md.dup.key).to eq('a key')
     end
 
     it 'should create a copy that returns the correct value' do
-      md = GRPC::Metadata.new('a key', 'a value')
+      md = GRPC::Core::Metadata.new('a key', 'a value')
       expect(md.dup.value).to eq('a value')
     end
   end

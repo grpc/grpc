@@ -31,8 +31,14 @@ require 'grpc'
 require 'port_picker'
 require 'spec_helper'
 
-include GRPC::CompletionType
-include GRPC
+include GRPC::Core::CompletionType
+include GRPC::Core
+
+def load_test_certs
+  test_root = File.join(File.dirname(__FILE__), 'testdata')
+  files = ['ca.pem', 'server1.key', 'server1.pem']
+  files.map { |f| File.open(File.join(test_root, f)).read }
+end
 
 shared_context 'setup: tags' do
 
@@ -327,9 +333,9 @@ describe 'the http client/server' do
   before(:example) do
     port = find_unused_tcp_port
     host = "localhost:#{port}"
-    @client_queue = GRPC::CompletionQueue.new
-    @server_queue = GRPC::CompletionQueue.new
-    @server = GRPC::Server.new(@server_queue, nil)
+    @client_queue = GRPC::Core::CompletionQueue.new
+    @server_queue = GRPC::Core::CompletionQueue.new
+    @server = GRPC::Core::Server.new(@server_queue, nil)
     @server.add_http2_port(host)
     @server.start
     @ch = Channel.new(host, nil)
@@ -339,6 +345,34 @@ describe 'the http client/server' do
     @server.close
   end
 
+  it_behaves_like 'basic GRPC message delivery is OK' do
+  end
+
+  it_behaves_like 'GRPC metadata delivery works OK' do
+  end
+
+end
+
+describe 'the secure http client/server' do
+
+  before(:example) do
+    certs = load_test_certs
+    port = find_unused_tcp_port
+    host = "localhost:#{port}"
+    @client_queue = GRPC::Core::CompletionQueue.new
+    @server_queue = GRPC::Core::CompletionQueue.new
+    server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+    @server = GRPC::Core::Server.new(@server_queue, nil, server_creds)
+    @server.add_http2_port(host, true)
+    @server.start
+    args = {Channel::SSL_TARGET => 'foo.test.google.com'}
+    @ch = Channel.new(host, args,
+                      GRPC::Core::Credentials.new(certs[0], nil, nil))
+  end
+
+  after(:example) do
+    @server.close
+  end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
   end

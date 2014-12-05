@@ -35,6 +35,7 @@
 #define __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_H__
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/slice.h>
 
 /* Common definitions for frame handling in the chttp2 transport */
 
@@ -51,8 +52,12 @@ typedef struct {
   gpr_uint8 ack_settings;
   gpr_uint8 send_ping_ack;
   gpr_uint8 process_ping_reply;
+  gpr_uint8 goaway;
 
   gpr_uint32 window_update;
+  gpr_uint32 goaway_last_stream_index;
+  gpr_uint32 goaway_error;
+  gpr_slice goaway_text;
 } grpc_chttp2_parse_state;
 
 #define GRPC_CHTTP2_FRAME_DATA 0
@@ -61,6 +66,7 @@ typedef struct {
 #define GRPC_CHTTP2_FRAME_RST_STREAM 3
 #define GRPC_CHTTP2_FRAME_SETTINGS 4
 #define GRPC_CHTTP2_FRAME_PING 6
+#define GRPC_CHTTP2_FRAME_GOAWAY 7
 #define GRPC_CHTTP2_FRAME_WINDOW_UPDATE 8
 
 #define GRPC_CHTTP2_MAX_PAYLOAD_LENGTH ((1 << 14) - 1)

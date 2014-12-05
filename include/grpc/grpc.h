@@ -126,6 +126,8 @@ typedef enum grpc_call_error {
   GRPC_CALL_ERROR_NOT_ON_SERVER,
   /* this method is not available on the client */
   GRPC_CALL_ERROR_NOT_ON_CLIENT,
+  /* this method must be called before server_accept */
+  GRPC_CALL_ERROR_ALREADY_ACCEPTED,
   /* this method must be called before invoke */
   GRPC_CALL_ERROR_ALREADY_INVOKED,
   /* this method must be called after invoke */
@@ -324,7 +326,11 @@ grpc_call_error grpc_call_start_invoke(grpc_call *call,
                                        void *metadata_read_tag,
                                        void *finished_tag, gpr_uint32 flags);
 
-/* Accept an incoming RPC, binding a completion queue to it.
+/* DEPRECATED: users should use grpc_call_server_accept, and
+   grpc_call_server_end_initial_metadata instead now.
+
+
+   Accept an incoming RPC, binding a completion queue to it.
    To be called after adding metadata to the call, but before sending
    messages.
    flags is a bit-field combination of the write flags defined above.
@@ -335,6 +341,27 @@ grpc_call_error grpc_call_start_invoke(grpc_call *call,
        time) */
 grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
                                  void *finished_tag, gpr_uint32 flags);
+
+/* Accept an incoming RPC, binding a completion queue to it.
+   To be called before sending or receiving messages.
+   flags is a bit-field combination of the write flags defined above.
+   REQUIRES: Can be called at most once per call.
+             Can only be called on the server.
+   Produces a GRPC_FINISHED event with finished_tag when the call has been
+       completed (there may be other events for the call pending at this
+       time) */
+grpc_call_error grpc_call_server_accept(grpc_call *call,
+                                        grpc_completion_queue *cq,
+                                        void *finished_tag);
+
+/* Accept an incoming RPC, binding a completion queue to it.
+   To be called before sending messages.
+   flags is a bit-field combination of the write flags defined above.
+   REQUIRES: Can be called at most once per call.
+             Can only be called on the server.
+             Must be called after grpc_call_server_accept */
+grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
+                                                      gpr_uint32 flags);
 
 /* Called by clients to cancel an RPC on the server.
    Can be called multiple times, from any thread. */
@@ -350,7 +377,8 @@ grpc_call_error grpc_call_cancel(grpc_call *call);
              is received.
              GRPC_INVOKE_ACCEPTED must have been received by the application
              prior to calling this on the client. On the server,
-             grpc_call_accept must have been called successfully.
+             grpc_call_server_end_of_initial_metadata must have been called
+             successfully.
    Produces a GRPC_WRITE_ACCEPTED event. */
 grpc_call_error grpc_call_start_write(grpc_call *call,
                                       grpc_byte_buffer *byte_buffer, void *tag,
@@ -376,8 +404,11 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag);
    result of the read.
    REQUIRES: No other reads are pending on the call. It is only safe to start
              the next read after the corresponding read event is received.
-             GRPC_INVOKE_ACCEPTED must have been received by the application
-             prior to calling this.
+             On the client:
+               GRPC_INVOKE_ACCEPTED must have been received by the application
+               prior to calling this.
+             On the server:
+               grpc_call_server_accept must be called before calling this.
    Produces a single GRPC_READ event. */
 grpc_call_error grpc_call_start_read(grpc_call *call, void *tag);
 

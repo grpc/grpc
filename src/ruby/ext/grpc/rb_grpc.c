@@ -46,6 +46,8 @@
 #include "rb_event.h"
 #include "rb_metadata.h"
 #include "rb_server.h"
+#include "rb_credentials.h"
+#include "rb_server_credentials.h"
 #include "rb_status.h"
 
 /* Define common vars and funcs declared in rb.h */
@@ -184,8 +186,10 @@ VALUE grpc_rb_time_val_to_s(VALUE self) {
 
 /* Adds a module with constants that map to gpr's static timeval structs. */
 void Init_google_time_consts() {
-  VALUE rb_mTimeConsts = rb_define_module_under(rb_mGoogleRPC, "TimeConsts");
-  rb_cTimeVal = rb_define_class_under(rb_mGoogleRPC, "TimeSpec", rb_cObject);
+  VALUE rb_mTimeConsts = rb_define_module_under(rb_mGoogleRpcCore,
+                                                "TimeConsts");
+  rb_cTimeVal = rb_define_class_under(rb_mGoogleRpcCore, "TimeSpec",
+                                      rb_cObject);
   rb_define_const(rb_mTimeConsts, "ZERO",
                   Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED,
                                    GC_DONT_FREE, (void *)&gpr_time_0));
@@ -212,19 +216,23 @@ void grpc_rb_shutdown(void *vm) {
 /* Initialize the Google RPC module. */
 VALUE rb_mGoogle = Qnil;
 VALUE rb_mGoogleRPC = Qnil;
+VALUE rb_mGoogleRpcCore = Qnil;
 void Init_grpc() {
   grpc_init();
   ruby_vm_at_exit(grpc_rb_shutdown);
   rb_mGoogle = rb_define_module("Google");
   rb_mGoogleRPC = rb_define_module_under(rb_mGoogle, "RPC");
+  rb_mGoogleRpcCore = rb_define_module_under(rb_mGoogleRPC, "Core");
 
   Init_google_rpc_byte_buffer();
   Init_google_rpc_event();
   Init_google_rpc_channel();
   Init_google_rpc_completion_queue();
   Init_google_rpc_call();
+  Init_google_rpc_credentials();
   Init_google_rpc_metadata();
   Init_google_rpc_server();
+  Init_google_rpc_server_credentials();
   Init_google_rpc_status();
   Init_google_time_consts();
 }

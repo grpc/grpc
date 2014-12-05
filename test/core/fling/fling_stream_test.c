@@ -96,8 +96,10 @@ int main(int argc, char **argv) {
   if (waitpid(cli, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;
   if (WEXITSTATUS(status)) return WEXITSTATUS(status);
-  printf("checking server\n");
-  if (waitpid(svr, &status, WNOHANG) != 0) return 2;
-  kill(svr, SIGKILL);
+  printf("waiting for server\n");
+  kill(svr, SIGINT);
+  if (waitpid(svr, &status, 0) == -1) return 2;
+  if (!WIFEXITED(status)) return 4;
+  if (WEXITSTATUS(status)) return WEXITSTATUS(status);
   return 0;
 }

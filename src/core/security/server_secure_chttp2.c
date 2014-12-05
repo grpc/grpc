@@ -109,7 +109,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
   for (i = 0; i < resolved->naddrs; i++) {
     if (grpc_tcp_server_add_port(tcp,
                                  (struct sockaddr *)&resolved->addrs[i].addr,
-                                 resolved->addrs[i].len) >= 0) {
+                                 resolved->addrs[i].len)) {
       count++;
     }
   }

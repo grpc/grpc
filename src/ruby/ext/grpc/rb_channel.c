@@ -36,10 +36,12 @@
 #include <ruby.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include "rb_grpc.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_completion_queue.h"
+#include "rb_credentials.h"
 #include "rb_server.h"
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
@@ -104,18 +106,36 @@ static VALUE grpc_rb_channel_alloc(VALUE cls) {
                           wrapper);
 }
 
-/* Initializes channel instances */
-static VALUE grpc_rb_channel_init(VALUE self, VALUE target,
-                                  VALUE channel_args) {
+/*
+  call-seq:
+    insecure_channel = Channel:new("myhost:8080", {'arg1': 'value1'})
+    creds = ...
+    secure_channel = Channel:new("myhost:443", {'arg1': 'value1'}, creds)
+
+  Creates channel instances. */
+static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
+  VALUE channel_args = Qnil;
+  VALUE credentials = Qnil;
+  VALUE target = Qnil;
   grpc_rb_channel *wrapper = NULL;
+  grpc_credentials *creds = NULL;
   grpc_channel *ch = NULL;
-  char *target_chars = StringValueCStr(target);
+  char *target_chars = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
 
+  /* "21" == 2 mandatory args, 1 (credentials) is optional */
+  rb_scan_args(argc, argv, "21", &target, &channel_args, &credentials);
+
   Data_Get_Struct(self, grpc_rb_channel, wrapper);
+  target_chars = StringValueCStr(target);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
-  ch = grpc_channel_create(target_chars, &args);
+  if (credentials == Qnil) {
+    ch = grpc_channel_create(target_chars, &args);
+  } else {
+    creds = grpc_rb_get_wrapped_credentials(credentials);
+    ch = grpc_secure_channel_create(creds, target_chars, &args);
+  }
   if (args.args != NULL) {
     xfree(args.args);   /* Allocated by grpc_rb_hash_convert_to_channel_args */
   }
@@ -208,13 +228,13 @@ VALUE rb_cChannel = Qnil;
 
 void Init_google_rpc_channel() {
   rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
-  rb_cChannel = rb_define_class_under(rb_mGoogleRPC, "Channel", rb_cObject);
+  rb_cChannel = rb_define_class_under(rb_mGoogleRpcCore, "Channel", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cChannel, grpc_rb_channel_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cChannel, "initialize", grpc_rb_channel_init, 2);
+  rb_define_method(rb_cChannel, "initialize", grpc_rb_channel_init, -1);
   rb_define_method(rb_cChannel, "initialize_copy", grpc_rb_channel_init_copy,
                    1);
 
@@ -225,6 +245,8 @@ void Init_google_rpc_channel() {
 
   id_channel = rb_intern("__channel");
   id_target = rb_intern("__target");
+  rb_define_const(rb_cChannel, "SSL_TARGET",
+                  ID2SYM(rb_intern(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
 }
 
 /* Gets the wrapped channel from the ruby wrapper */

@@ -153,11 +153,13 @@ static void test_request_response_with_metadata_and_payload(
                            deadline, "key1", "val1", "key2", "val2", NULL);
   cq_verify(v_server);
 
+  grpc_call_server_accept(s, f.server_cq, tag(102));
+
   /* add multiple metadata */
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata(s, &meta3, 0));
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata(s, &meta4, 0));
 
-  grpc_call_accept(s, f.server_cq, tag(102), 0);
+  grpc_call_server_end_initial_metadata(s, 0);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(s, tag(5)));
   cq_expect_read(v_server, tag(5), gpr_slice_from_copied_string("hello world"));

@@ -44,7 +44,8 @@
    cb with arg and the completed connection when done (or call cb with arg and
    NULL on failure) */
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
-                             void *arg, grpc_em *em, struct sockaddr *addr,
-                             int len, gpr_timespec deadline);
+                             void *arg, grpc_em *em,
+                             const struct sockaddr *addr, int addr_len,
+                             gpr_timespec deadline);
 
 #endif  /* __GRPC_INTERNAL_ENDPOINT_TCP_CLIENT_H__ */

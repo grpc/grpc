@@ -33,7 +33,7 @@ require 'grpc/generic/service'
 
 
 class GoodMsg
-  def marshal
+  def self.marshal(o)
     ''
   end
 
@@ -43,7 +43,7 @@ class GoodMsg
 end
 
 class EncodeDecodeMsg
-  def encode
+  def self.encode(o)
     ''
   end
 
@@ -53,7 +53,6 @@ class EncodeDecodeMsg
 end
 
 GenericService = GRPC::GenericService
-RpcDesc = GRPC::RpcDesc
 Dsl = GenericService::Dsl
 
 
@@ -95,7 +94,7 @@ describe GenericService do
       end
 
       expect(c.rpc_descs).to include(:AnRpc)
-      expect(c.rpc_descs[:AnRpc]).to be_a(RpcDesc)
+      expect(c.rpc_descs[:AnRpc]).to be_a(GRPC::RpcDesc)
     end
 
     it 'give subclasses access to #rpc_descs' do
@@ -106,7 +105,7 @@ describe GenericService do
       c = Class.new(base) do
       end
       expect(c.rpc_descs).to include(:AnRpc)
-      expect(c.rpc_descs[:AnRpc]).to be_a(RpcDesc)
+      expect(c.rpc_descs[:AnRpc]).to be_a(GRPC::RpcDesc)
     end
 
   end
@@ -189,7 +188,7 @@ describe GenericService do
       blk = Proc.new do
         Class.new do
           include GenericService
-          self.marshal_instance_method = :encode
+          self.marshal_class_method = :encode
           self.unmarshal_class_method = :decode
           rpc :AnRpc, EncodeDecodeMsg, EncodeDecodeMsg
         end

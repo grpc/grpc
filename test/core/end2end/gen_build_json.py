@@ -1,3 +1,8 @@
+#!/usr/bin/python
+
+"""Generates the appropriate build.json data for all the end2end tests."""
+
+
 import simplejson
 
 END2END_FIXTURES = [
@@ -6,6 +11,7 @@ END2END_FIXTURES = [
     'chttp2_simple_ssl_fullstack',
     'chttp2_simple_ssl_with_oauth2_fullstack',
     'chttp2_socket_pair',
+    'chttp2_socket_pair_one_byte_at_a_time',
 ]
 
 

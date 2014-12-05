@@ -35,8 +35,11 @@ describe GRPC::RpcDesc do
 
   RpcDesc = GRPC::RpcDesc
   Stream = RpcDesc::Stream
-  OK = GRPC::StatusCodes::OK
-  UNKNOWN = GRPC::StatusCodes::UNKNOWN
+  OK = GRPC::Core::StatusCodes::OK
+  INTERNAL = GRPC::Core::StatusCodes::INTERNAL
+  UNKNOWN = GRPC::Core::StatusCodes::UNKNOWN
+  CallError = GRPC::Core::CallError
+  EventError = GRPC::Core::EventError
 
   before(:each) do
     @request_response = RpcDesc.new('rr', Object.new, Object.new, 'encode',
@@ -47,7 +50,7 @@ describe GRPC::RpcDesc do
                                    'encode', 'decode')
     @bidi_streamer = RpcDesc.new('ss', Stream.new(Object.new),
                                  Stream.new(Object.new), 'encode', 'decode')
-    @bs_code = GRPC::StatusCodes::INTERNAL
+    @bs_code = INTERNAL
     @no_reason = 'no reason given'
     @ok_response = Object.new
   end
@@ -74,7 +77,7 @@ describe GRPC::RpcDesc do
       end
 
       it 'absorbs EventError  with no further action' do
-        expect(@call).to receive(:remote_read).once.and_raise(GRPC::EventError)
+        expect(@call).to receive(:remote_read).once.and_raise(EventError)
         blk = Proc.new do
           @request_response.run_server_method(@call, method(:fake_reqresp))
         end
@@ -82,7 +85,7 @@ describe GRPC::RpcDesc do
       end
 
       it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_read).once.and_raise(GRPC::CallError)
+        expect(@call).to receive(:remote_read).once.and_raise(CallError)
         blk = Proc.new do
           @request_response.run_server_method(@call, method(:fake_reqresp))
         end
@@ -118,7 +121,7 @@ describe GRPC::RpcDesc do
       end
 
       it 'absorbs EventError  with no further action' do
-        expect(@call).to receive(:remote_send).once.and_raise(GRPC::EventError)
+        expect(@call).to receive(:remote_send).once.and_raise(EventError)
         blk = Proc.new do
           @client_streamer.run_server_method(@call, method(:fake_clstream))
         end
@@ -126,7 +129,7 @@ describe GRPC::RpcDesc do
       end
 
       it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_send).once.and_raise(GRPC::CallError)
+        expect(@call).to receive(:remote_send).once.and_raise(CallError)
         blk = Proc.new do
           @client_streamer.run_server_method(@call, method(:fake_clstream))
         end
@@ -163,7 +166,7 @@ describe GRPC::RpcDesc do
       end
 
       it 'absorbs EventError  with no further action' do
-        expect(@call).to receive(:remote_read).once.and_raise(GRPC::EventError)
+        expect(@call).to receive(:remote_read).once.and_raise(EventError)
         blk = Proc.new do
           @server_streamer.run_server_method(@call, method(:fake_svstream))
         end
@@ -171,7 +174,7 @@ describe GRPC::RpcDesc do
       end
 
       it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_read).once.and_raise(GRPC::CallError)
+        expect(@call).to receive(:remote_read).once.and_raise(CallError)
         blk = Proc.new do
           @server_streamer.run_server_method(@call, method(:fake_svstream))
         end
@@ -377,4 +380,3 @@ describe GRPC::RpcDesc do
   end
 
 end
-

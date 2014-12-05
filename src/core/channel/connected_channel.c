@@ -169,7 +169,11 @@ static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
 
   switch (op->type) {
-    case GRPC_CHANNEL_SHUTDOWN:
+    case GRPC_CHANNEL_GOAWAY:
+      grpc_transport_goaway(chand->transport, op->data.goaway.status,
+                            op->data.goaway.message);
+      break;
+    case GRPC_CHANNEL_DISCONNECT:
       grpc_transport_close(chand->transport);
       break;
     default:
@@ -439,7 +443,6 @@ static void recv_batch(void *user_data, grpc_transport *transport,
                  "Last message truncated; read %d bytes, expected %d",
                  calld->incoming_message.length,
                  calld->incoming_message_length);
-      return;
     }
     call_op.type = GRPC_RECV_HALF_CLOSE;
     call_op.dir = GRPC_CALL_UP;
@@ -458,6 +461,29 @@ static void recv_batch(void *user_data, grpc_transport *transport,
   }
 }
 
+static void transport_goaway(void *user_data, grpc_transport *transport,
+                             grpc_status_code status, gpr_slice debug) {
+  /* transport got goaway ==> call up and handle it */
+  grpc_channel_element *elem = user_data;
+  channel_data *chand = elem->channel_data;
+  char *msg;
+  grpc_channel_op op;
+
+  GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
+  GPR_ASSERT(chand->transport == transport);
+
+  msg = gpr_hexdump((const char *)GPR_SLICE_START_PTR(debug),
+                    GPR_SLICE_LENGTH(debug), GPR_HEXDUMP_PLAINTEXT);
+  gpr_log(GPR_DEBUG, "got goaway: status=%d, message=%s", status, msg);
+  gpr_free(msg);
+
+  op.type = GRPC_TRANSPORT_GOAWAY;
+  op.dir = GRPC_CALL_UP;
+  op.data.goaway.status = status;
+  op.data.goaway.message = debug;
+  channel_op(elem, &op);
+}
+
 static void transport_closed(void *user_data, grpc_transport *transport) {
   /* transport was closed ==> call up and handle it */
   grpc_channel_element *elem = user_data;
@@ -473,7 +499,8 @@ static void transport_closed(void *user_data, grpc_transport *transport) {
 }
 
 const grpc_transport_callbacks connected_channel_transport_callbacks = {
-    alloc_recv_buffer, accept_stream, recv_batch, transport_closed,
+    alloc_recv_buffer, accept_stream,    recv_batch,
+    transport_goaway,  transport_closed,
 };
 
 grpc_transport_setup_result grpc_connected_channel_bind_transport(

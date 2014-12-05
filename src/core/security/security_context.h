@@ -119,7 +119,7 @@ typedef struct grpc_channel_security_context grpc_channel_security_context;
 
 struct grpc_channel_security_context {
   grpc_security_context base;  /* requires is_client_side to be non 0. */
-  grpc_credentials *request_metadata_only_creds;
+  grpc_credentials *request_metadata_creds;
 };
 
 /* --- Creation security contexts. --- */
@@ -127,14 +127,14 @@ struct grpc_channel_security_context {
 /* For TESTING ONLY!
    Creates a fake context that emulates real channel security.  */
 grpc_channel_security_context *grpc_fake_channel_security_context_create(
-    grpc_credentials *request_metadata_only_creds);
+    grpc_credentials *request_metadata_creds);
 
 /* For TESTING ONLY!
    Creates a fake context that emulates real server security.  */
 grpc_security_context *grpc_fake_server_security_context_create(void);
 
 /* Creates an SSL channel_security_context.
-   - request_metadata_only_creds is the credentials object which metadata
+   - request_metadata_creds is the credentials object which metadata
      will be sent with each request. This parameter can be NULL.
    - config is the SSL config to be used for the SSL channel establishment.
    - is_client should be 0 for a server or a non-0 value for a client.
@@ -147,9 +147,8 @@ grpc_security_context *grpc_fake_server_security_context_create(void);
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_channel_security_context_create(
-    grpc_credentials *request_metadata_only_creds,
-    const grpc_ssl_config *config, const char *secure_peer_name,
-    grpc_channel_security_context **ctx);
+    grpc_credentials *request_metadata_creds, const grpc_ssl_config *config,
+    const char *secure_peer_name, grpc_channel_security_context **ctx);
 
 /* Creates an SSL server_security_context.
    - config is the SSL config to be used for the SSL channel establishment.

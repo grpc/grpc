@@ -73,7 +73,6 @@ typedef struct {
 void write_shutdown_cb(void *arg, /*async_pipe*/
                        enum grpc_em_cb_status status) {
   async_pipe *ap = arg;
-  close(ap->fd[1]);
   grpc_em_fd_destroy(&ap->write_em_fd);
 }
 
@@ -110,7 +109,6 @@ void write_cb(void *arg, /*async_pipe*/ enum grpc_em_cb_status status) {
 
 void read_shutdown_cb(void *arg, /*async_pipe*/ enum grpc_em_cb_status status) {
   async_pipe *ap = arg;
-  close(ap->fd[0]);
   grpc_em_fd_destroy(&ap->read_em_fd);
   pthread_mutex_lock(&ap->mu);
   if (ap->done == 0) {

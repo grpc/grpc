@@ -33,6 +33,10 @@
 
 /* Posix implementation for gpr threads. */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SYNC
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,3 +80,5 @@ gpr_thd_options gpr_thd_options_default(void) {
   memset(&options, 0, sizeof(options));
   return options;
 }
+
+#endif /* GPR_POSIX_SYNC */

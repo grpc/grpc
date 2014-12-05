@@ -59,67 +59,19 @@ Channel::Channel(const grpc::string& target) : target_(target) {
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 namespace {
-// Poll one event from the compeletion queue. Return false when an error
-// occured or the polled type is not expected. If a finished event has been
-// polled, set finished and set status if it has not been set.
-bool NextEvent(grpc_completion_queue* cq, grpc_completion_type expected_type,
-               bool* finished, bool* status_set, Status* status,
-               google::protobuf::Message* result) {
-  // We rely on the c layer to enforce deadline and thus do not use deadline
-  // here.
-  grpc_event* ev = grpc_completion_queue_next(cq, gpr_inf_future);
-  if (!ev) {
-    return false;
-  }
-  bool ret = ev->type == expected_type;
-  switch (ev->type) {
-    case GRPC_INVOKE_ACCEPTED:
-      ret = ret && (ev->data.invoke_accepted == GRPC_OP_OK);
-      break;
-    case GRPC_READ:
-      ret = ret && (ev->data.read != nullptr);
-      if (ret && !DeserializeProto(ev->data.read, result)) {
-        *status_set = true;
-        *status =
-            Status(StatusCode::DATA_LOSS, "Failed to parse response proto.");
-        ret = false;
-      }
-      break;
-    case GRPC_WRITE_ACCEPTED:
-      ret = ret && (ev->data.write_accepted == GRPC_OP_OK);
-      break;
-    case GRPC_FINISH_ACCEPTED:
-      ret = ret && (ev->data.finish_accepted == GRPC_OP_OK);
-      break;
-    case GRPC_CLIENT_METADATA_READ:
-      break;
-    case GRPC_FINISHED:
-      *finished = true;
-      if (!*status_set) {
-        *status_set = true;
-        StatusCode error_code = static_cast<StatusCode>(ev->data.finished.code);
-        grpc::string details(
-            ev->data.finished.details ? ev->data.finished.details : "");
-        *status = Status(error_code, details);
-      }
-      break;
-    default:
-      gpr_log(GPR_ERROR, "Dropping unhandled event with type %d", ev->type);
-      break;
+// Pluck the finished event and set to status when it is not nullptr.
+void GetFinalStatus(grpc_completion_queue* cq, void* finished_tag,
+                    Status* status) {
+  grpc_event* ev =
+      grpc_completion_queue_pluck(cq, finished_tag, gpr_inf_future);
+  if (status) {
+    StatusCode error_code = static_cast<StatusCode>(ev->data.finished.code);
+    grpc::string details(ev->data.finished.details ? ev->data.finished.details
+                                                   : "");
+    *status = Status(error_code, details);
   }
   grpc_event_finish(ev);
-  return ret;
 }
-
-// If finished is not true, get final status by polling until a finished
-// event is obtained.
-void GetFinalStatus(grpc_completion_queue* cq, bool status_set, bool finished,
-                    Status* status) {
-  while (!finished) {
-    NextEvent(cq, GRPC_FINISHED, &finished, &status_set, status, nullptr);
-  }
-}
-
 }  // namespace
 
 // TODO(yangg) more error handling
@@ -128,8 +80,6 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
                                  const google::protobuf::Message& request,
                                  google::protobuf::Message* result) {
   Status status;
-  bool status_set = false;
-  bool finished = false;
   gpr_timespec absolute_deadline;
   AbsoluteDeadlineTimepoint2Timespec(context->absolute_deadline(),
                                      &absolute_deadline);
@@ -137,59 +87,68 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
                                              // FIXME(yangg)
                                              "localhost", absolute_deadline);
   context->set_call(call);
+  grpc_event* ev;
+  void* finished_tag = reinterpret_cast<char*>(call);
+  void* invoke_tag = reinterpret_cast<char*>(call) + 1;
+  void* metadata_read_tag = reinterpret_cast<char*>(call) + 2;
+  void* write_tag = reinterpret_cast<char*>(call) + 3;
+  void* halfclose_tag = reinterpret_cast<char*>(call) + 4;
+  void* read_tag = reinterpret_cast<char*>(call) + 5;
+
   grpc_completion_queue* cq = grpc_completion_queue_create();
   context->set_cq(cq);
   // add_metadata from context
   //
   // invoke
-  GPR_ASSERT(grpc_call_start_invoke(call, cq, call, call, call,
+  GPR_ASSERT(grpc_call_start_invoke(call, cq, invoke_tag, metadata_read_tag,
+                                    finished_tag,
                                     GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
-  if (!NextEvent(cq, GRPC_INVOKE_ACCEPTED, &status_set, &finished, &status,
-                 nullptr)) {
-    GetFinalStatus(cq, finished, status_set, &status);
-    return status;
-  }
+  ev = grpc_completion_queue_pluck(cq, invoke_tag, gpr_inf_future);
+  grpc_event_finish(ev);
   // write request
   grpc_byte_buffer* write_buffer = nullptr;
   bool success = SerializeProto(request, &write_buffer);
   if (!success) {
     grpc_call_cancel(call);
-    status_set = true;
     status =
         Status(StatusCode::DATA_LOSS, "Failed to serialize request proto.");
-    GetFinalStatus(cq, finished, status_set, &status);
+    GetFinalStatus(cq, finished_tag, nullptr);
     return status;
   }
-  GPR_ASSERT(grpc_call_start_write(call, write_buffer, call,
+  GPR_ASSERT(grpc_call_start_write(call, write_buffer, write_tag,
                                    GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   grpc_byte_buffer_destroy(write_buffer);
-  if (!NextEvent(cq, GRPC_WRITE_ACCEPTED, &finished, &status_set, &status,
-                 nullptr)) {
-    GetFinalStatus(cq, finished, status_set, &status);
+  ev = grpc_completion_queue_pluck(cq, write_tag, gpr_inf_future);
+
+  success = ev->data.write_accepted == GRPC_OP_OK;
+  grpc_event_finish(ev);
+  if (!success) {
+    GetFinalStatus(cq, finished_tag, &status);
     return status;
   }
   // writes done
-  GPR_ASSERT(grpc_call_writes_done(call, call) == GRPC_CALL_OK);
-  if (!NextEvent(cq, GRPC_FINISH_ACCEPTED, &finished, &status_set, &status,
-                 nullptr)) {
-    GetFinalStatus(cq, finished, status_set, &status);
-    return status;
-  }
+  GPR_ASSERT(grpc_call_writes_done(call, halfclose_tag) == GRPC_CALL_OK);
+  ev = grpc_completion_queue_pluck(cq, halfclose_tag, gpr_inf_future);
+  grpc_event_finish(ev);
   // start read metadata
   //
-  if (!NextEvent(cq, GRPC_CLIENT_METADATA_READ, &finished, &status_set, &status,
-                 nullptr)) {
-    GetFinalStatus(cq, finished, status_set, &status);
-    return status;
-  }
+  ev = grpc_completion_queue_pluck(cq, metadata_read_tag, gpr_inf_future);
+  grpc_event_finish(ev);
   // start read
-  GPR_ASSERT(grpc_call_start_read(call, call) == GRPC_CALL_OK);
-  if (!NextEvent(cq, GRPC_READ, &finished, &status_set, &status, result)) {
-    GetFinalStatus(cq, finished, status_set, &status);
-    return status;
+  GPR_ASSERT(grpc_call_start_read(call, read_tag) == GRPC_CALL_OK);
+  ev = grpc_completion_queue_pluck(cq, read_tag, gpr_inf_future);
+  if (ev->data.read) {
+    if (!DeserializeProto(ev->data.read, result)) {
+      grpc_event_finish(ev);
+      status = Status(StatusCode::DATA_LOSS, "Failed to parse response proto.");
+      GetFinalStatus(cq, finished_tag, nullptr);
+      return status;
+    }
   }
+  grpc_event_finish(ev);
+
   // wait status
-  GetFinalStatus(cq, finished, status_set, &status);
+  GetFinalStatus(cq, finished_tag, &status);
   return status;
 }
 

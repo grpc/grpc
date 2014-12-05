@@ -88,12 +88,12 @@ module GRPC
       # - unmarshal_class method must be a class method on the serializable
       # message type that takes a string (byte stream) and produces and object
       #
-      # - marshal_instance_method is called on a serializable message instance
+      # - marshal_class_method is called on a serializable message instance
       # and produces a serialized string.
       #
       # The Dsl verifies that the types in the descriptor have both the
       # unmarshal and marshal methods.
-      attr_writer(:marshal_instance_method, :unmarshal_class_method)
+      attr_writer(:marshal_class_method, :unmarshal_class_method)
       attr_accessor(:service_name)
 
       # Adds an RPC spec.
@@ -113,7 +113,7 @@ module GRPC
         assert_can_marshal(input)
         assert_can_marshal(output)
         rpc_descs[name] = RpcDesc.new(name, input, output,
-                                      marshal_instance_method,
+                                      marshal_class_method,
                                       unmarshal_class_method)
       end
 
@@ -125,8 +125,8 @@ module GRPC
       end
 
       # the name of the instance method used to marshal events to a byte stream.
-      def marshal_instance_method
-        @marshal_instance_method ||= :marshal
+      def marshal_class_method
+        @marshal_class_method ||= :marshal
       end
 
       # the name of the class method used to unmarshal from a byte stream.
@@ -144,9 +144,9 @@ module GRPC
           raise ArgumentError, "#{cls} needs #{cls}.#{mth}"
         end
 
-        mth = marshal_instance_method
-        if !cls.instance_methods.include?(mth)
-          raise ArgumentError, "#{cls} needs #{cls}.new.#{mth}"
+        mth = marshal_class_method
+        if !cls.methods.include?(mth)
+          raise ArgumentError, "#{cls} needs #{cls}.#{mth}"
         end
       end
 
@@ -173,7 +173,7 @@ module GRPC
           # @param kw [KeywordArgs] the channel arguments, plus any optional
           #                         args for configuring the client's channel
           def initialize(host, **kw)
-            super(host, CompletionQueue.new, **kw)
+            super(host, Core::CompletionQueue.new, **kw)
           end
 
           # Used define_method to add a method for each rpc_desc.  Each method

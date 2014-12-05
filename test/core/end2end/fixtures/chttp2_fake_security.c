@@ -47,7 +47,6 @@
 #include "test/core/util/port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
-
 static grpc_em em;
 
 typedef struct fullstack_secure_fixture_data {
@@ -123,7 +122,6 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char **argv) {
   size_t i;
   grpc_test_init(argc, argv);
-
 
   grpc_init();
   grpc_em_init(&em);

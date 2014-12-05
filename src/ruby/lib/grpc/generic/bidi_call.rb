@@ -35,8 +35,9 @@ module GRPC
   # The BiDiCall class orchestrates exection of a BiDi stream on a client or
   # server.
   class BidiCall
-    include CompletionType
-    include StatusCodes
+    include Core::CompletionType
+    include Core::StatusCodes
+    include Core::TimeConsts
 
     # Creates a BidiCall.
     #
@@ -59,8 +60,8 @@ module GRPC
     # @param deadline [Fixnum] the deadline for the call to complete
     # @param finished_tag [Object] the object used as the call's finish tag,
     def initialize(call, q, marshal, unmarshal, deadline, finished_tag)
-      raise ArgumentError.new('not a call') unless call.is_a?Call
-      if !q.is_a?CompletionQueue
+      raise ArgumentError.new('not a call') unless call.is_a?Core::Call
+      if !q.is_a?Core::CompletionQueue
         raise ArgumentError.new('not a CompletionQueue')
       end
       @call = call
@@ -210,7 +211,7 @@ module GRPC
 
       # send the payload
       payload = @marshal.call(req)
-      @call.start_write(ByteBuffer.new(payload), self)
+      @call.start_write(Core::ByteBuffer.new(payload), self)
       logger.debug("rwloop: sent payload #{req.inspect}")
       in_write = true
       return [in_write, done_writing]
@@ -259,10 +260,10 @@ module GRPC
           logger.debug('waiting for another event')
           if in_write or !done_reading or !pre_finished
             logger.debug('waiting for another event')
-            ev = @cq.pluck(self, TimeConsts::INFINITE_FUTURE)
+            ev = @cq.pluck(self, INFINITE_FUTURE)
           elsif !finished
             logger.debug('waiting for another event')
-            ev = @cq.pluck(@finish_tag, TimeConsts::INFINITE_FUTURE)
+            ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
           else
             next  # no events to wait on, but not done writing
           end
@@ -270,7 +271,7 @@ module GRPC
           break if done_writing and done_reading
           if in_write or !done_reading
             logger.debug('waiting for another event')
-            ev = @cq.pluck(self, TimeConsts::INFINITE_FUTURE)
+            ev = @cq.pluck(self, INFINITE_FUTURE)
           else
             next  # no events to wait on, but not done writing
           end

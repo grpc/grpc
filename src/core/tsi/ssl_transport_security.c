@@ -289,6 +289,17 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   return result;
 }
 
+/* Logs the SSL error stack. */
+static void log_ssl_error_stack(void) {
+  unsigned long err;
+  while ((err = ERR_get_error()) != 0) {
+    char details[256];
+    ERR_error_string_n(err, details, sizeof(details));
+    gpr_log(GPR_ERROR, "%s", details);
+  }
+}
+
+
 /* Performs an SSL_read and handle errors. */
 static tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
                               uint32_t* unprotected_bytes_size) {
@@ -312,6 +323,7 @@ static tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
         return TSI_UNIMPLEMENTED;
       case SSL_ERROR_SSL:
         gpr_log(GPR_ERROR, "Corruption detected.");
+        log_ssl_error_stack();
         return TSI_DATA_CORRUPTED;
       default:
         gpr_log(GPR_ERROR, "SSL_read failed with error %s.",
@@ -364,7 +376,10 @@ static tsi_result ssl_ctx_use_certificate_chain(
     }
     while (1) {
       X509* certificate_authority = PEM_read_bio_X509(pem, NULL, NULL, "");
-      if (certificate_authority == NULL) break;  /* Done reading. */
+      if (certificate_authority == NULL) {
+        ERR_clear_error();
+        break;  /* Done reading. */
+      }
       if (!SSL_CTX_add_extra_chain_cert(context, certificate_authority)) {
         X509_free(certificate_authority);
         result = TSI_INVALID_ARGUMENT;
@@ -425,7 +440,10 @@ static tsi_result ssl_ctx_load_verification_certs(
 
   while (1) {
     root = PEM_read_bio_X509_AUX(pem, NULL, NULL, "");
-    if (root == NULL) break;  /* We're at the end of stream. */
+    if (root == NULL) {
+      ERR_clear_error();
+      break;  /* We're at the end of stream. */
+    }
     if (root_names != NULL) {
       root_name = X509_get_subject_name(root);
       if (root_name == NULL) {

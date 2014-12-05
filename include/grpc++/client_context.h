@@ -39,6 +39,7 @@
 #include <vector>
 
 #include <grpc++/config.h>
+#include <grpc/support/log.h>
 
 using std::chrono::system_clock;
 
@@ -69,7 +70,10 @@ class ClientContext {
   friend class StreamContext;
 
   grpc_call *call() { return call_; }
-  void set_call(grpc_call *call) { call_ = call; }
+  void set_call(grpc_call *call) {
+    GPR_ASSERT(call_ == nullptr);
+    call_ = call;
+  }
 
   grpc_completion_queue *cq() { return cq_; }
   void set_cq(grpc_completion_queue *cq) { cq_ = cq; }

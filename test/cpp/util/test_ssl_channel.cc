@@ -34,10 +34,8 @@
 #include "test/cpp/util/test_ssl_channel.h"
 
 #include <grpc/support/log.h>
-extern "C" {
-#include "src/core/channel/channel_args.h"
+
 #include <grpc/grpc_security.h>
-}
 
 #include "test/core/end2end/data/ssl_test_data.h"
 
@@ -57,3 +55,4 @@ TestSslChannel::TestSslChannel(const grpc::string& target) {
 }
 
 }  // namespace grpc
+
