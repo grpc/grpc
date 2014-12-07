@@ -56,7 +56,8 @@
 #include <grpc/support/string.h>
 #include <grpc/support/useful.h>
 
-#define DEFAULT_WINDOW 65536
+#define DEFAULT_WINDOW 65535
+#define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 
 #define CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
@@ -190,12 +191,14 @@ struct transport {
 
   /* settings */
   gpr_uint32 settings[NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
-  gpr_uint8 sent_local_settings;
-  gpr_uint8 dirtied_local_settings;
+  gpr_uint32 force_send_settings;   /* bitmask of setting indexes to send out */
+  gpr_uint8 sent_local_settings;    /* have local settings been sent? */
+  gpr_uint8 dirtied_local_settings; /* are the local settings dirty? */
 
   /* window management */
   gpr_uint32 outgoing_window;
   gpr_uint32 incoming_window;
+  gpr_uint32 connection_window_target;
 
   /* deframing */
   deframe_transport_state deframe_state;
@@ -383,6 +386,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->is_client = is_client;
   t->outgoing_window = DEFAULT_WINDOW;
   t->incoming_window = DEFAULT_WINDOW;
+  t->connection_window_target = DEFAULT_CONNECTION_WINDOW_TARGET;
   t->deframe_state = is_client ? DTS_FH_0 : DTS_CLIENT_PREFIX_0;
   t->expect_continuation_stream_id = 0;
   t->pings = NULL;
@@ -415,6 +419,9 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
     }
   }
   t->dirtied_local_settings = 1;
+  /* Hack: it's common for implementations to assume 65536 bytes initial send
+     window -- this should by rights be 0 */
+  t->force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   t->sent_local_settings = 0;
 
   /* configure http2 the way we like it */
@@ -422,6 +429,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
     push_setting(t, GRPC_CHTTP2_SETTINGS_ENABLE_PUSH, 0);
     push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, 0);
   }
+  push_setting(t, GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE, DEFAULT_WINDOW);
 
   if (channel_args) {
     for (i = 0; i < channel_args->num_args; i++) {
@@ -506,8 +514,10 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
 
-  s->outgoing_window = DEFAULT_WINDOW;
-  s->incoming_window = DEFAULT_WINDOW;
+  s->outgoing_window =
+      t->settings[PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
+  s->incoming_window =
+      t->settings[SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
   s->write_closed = 0;
   s->read_closed = 0;
   s->cancelled = 0;
@@ -812,9 +822,10 @@ static int prepare_write(transport *t) {
 
   if (t->dirtied_local_settings && !t->sent_local_settings) {
     gpr_slice_buffer_add(
-        &t->outbuf, grpc_chttp2_settings_create(t->settings[SENT_SETTINGS],
-                                                t->settings[LOCAL_SETTINGS],
-                                                GRPC_CHTTP2_NUM_SETTINGS));
+        &t->outbuf, grpc_chttp2_settings_create(
+                        t->settings[SENT_SETTINGS], t->settings[LOCAL_SETTINGS],
+                        t->force_send_settings, GRPC_CHTTP2_NUM_SETTINGS));
+    t->force_send_settings = 0;
     t->dirtied_local_settings = 0;
     t->sent_local_settings = 1;
   }
@@ -845,7 +856,9 @@ static int prepare_write(transport *t) {
 
   /* for each stream that wants to update its window, add that window here */
   while ((s = stream_list_remove_head(t, WINDOW_UPDATE))) {
-    gpr_uint32 window_add = DEFAULT_WINDOW - s->incoming_window;
+    gpr_uint32 window_add =
+        t->settings[LOCAL_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] -
+        s->incoming_window;
     if (!s->read_closed && window_add) {
       gpr_slice_buffer_add(&t->outbuf,
                            grpc_chttp2_window_update_create(s->id, window_add));
@@ -854,8 +867,8 @@ static int prepare_write(transport *t) {
   }
 
   /* if the transport is ready to send a window update, do so here also */
-  if (t->incoming_window < DEFAULT_WINDOW / 2) {
-    gpr_uint32 window_add = DEFAULT_WINDOW - t->incoming_window;
+  if (t->incoming_window < t->connection_window_target * 3 / 4) {
+    gpr_uint32 window_add = t->connection_window_target - t->incoming_window;
     gpr_slice_buffer_add(&t->outbuf,
                          grpc_chttp2_window_update_create(0, window_add));
     t->incoming_window += window_add;
@@ -1017,7 +1030,11 @@ static void drop_connection(transport *t) {
 }
 
 static void maybe_join_window_updates(transport *t, stream *s) {
-  if (s->allow_window_updates && s->incoming_window < DEFAULT_WINDOW / 2) {
+  if (s->allow_window_updates &&
+      s->incoming_window <
+          t->settings[LOCAL_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] *
+              3 / 4) {
     stream_list_join(t, s, WINDOW_UPDATE);
   }
 }

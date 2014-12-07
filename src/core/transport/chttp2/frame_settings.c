@@ -71,21 +71,21 @@ static gpr_uint8 *fill_header(gpr_uint8 *out, gpr_uint32 length,
 }
 
 gpr_slice grpc_chttp2_settings_create(gpr_uint32 *old, const gpr_uint32 *new,
-                                      size_t count) {
+                                      gpr_uint32 force_mask, size_t count) {
   size_t i;
   size_t n = 0;
   gpr_slice output;
   gpr_uint8 *p;
 
   for (i = 0; i < count; i++) {
-    n += (new[i] != old[i]);
+    n += (new[i] != old[i] || (force_mask & (1 << i)) != 0);
   }
 
   output = gpr_slice_malloc(9 + 6 * n);
   p = fill_header(GPR_SLICE_START_PTR(output), 6 * n, 0);
 
   for (i = 0; i < count; i++) {
-    if (new[i] != old[i]) {
+    if (new[i] != old[i] || (force_mask & (1 << i)) != 0) {
       GPR_ASSERT(i);
       *p++ = i >> 8;
       *p++ = i;
@@ -217,6 +217,8 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
             }
           }
           parser->incoming_settings[parser->id] = parser->value;
+          gpr_log(GPR_DEBUG, "CHTTP2: got setting %d = %d", parser->id,
+                  parser->value);
         } else {
           gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",
                   parser->id, parser->value);
