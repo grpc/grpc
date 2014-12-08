@@ -90,7 +90,7 @@ module GRPC
         # error code and detail message.
         logger.debug("app error: #{active_call}, status:#{e.code}:#{e.details}")
         send_status(active_call, e.code, e.details)
-      rescue CallError => e
+      rescue Core::CallError => e
         # This is raised by GRPC internals but should rarely, if ever happen.
         # Log it, but don't notify the other endpoint..
         logger.warn("failed call: #{active_call}\n#{e}")
@@ -99,7 +99,7 @@ module GRPC
         # event.  Send a status of deadline exceeded
         logger.warn("late call: #{active_call}")
         send_status(active_call, DEADLINE_EXCEEDED, 'late')
-      rescue EventError => e
+      rescue Core::EventError => e
         # This is raised by GRPC internals but should rarely, if ever happen.
         # Log it, but don't notify the other endpoint..
         logger.warn("failed call: #{active_call}\n#{e}")
