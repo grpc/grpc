@@ -204,6 +204,7 @@ grpc_em_error grpc_em_add_callback(grpc_em *em, grpc_em_cb_func cb,
 
 /* Forward declarations */
 struct grpc_em_activation_data;
+struct grpc_em_fd_impl;
 
 /* ================== Actual structure definitions ========================= */
 /* gRPC event manager handle.
@@ -222,6 +223,8 @@ struct grpc_em {
 
   int shutdown_backup_poller;
   gpr_event backup_poller_done;
+
+  struct grpc_em_fd_impl *fds_to_free;
 
   struct event *timeout_ev; /* activated to break out of the event loop early */
 };
@@ -330,23 +333,12 @@ typedef enum grpc_em_fd_state {
   GRPC_EM_FD_CACHED = 2
 } grpc_em_fd_state;
 
+struct grpc_em_fd_impl;
+
 /* gRPC file descriptor handle.
    The handle is used to register read/write callbacks to a file descriptor */
 struct grpc_em_fd {
-  grpc_em_task task; /* Base class, callbacks, queues, etc */
-  int fd;            /* File descriptor */
-
-  /* Note that the shutdown event is only needed as a workaround for libevent
-     not properly handling event_active on an in flight event. */
-  struct event *shutdown_ev; /* activated to trigger shutdown */
-
-  /* protect shutdown_started|read_state|write_state and ensure barriers
-     between notify_on_[read|write] and read|write callbacks */
-  gpr_mu mu;
-  int shutdown_started; /* 0 -> shutdown not started, 1 -> started */
-  grpc_em_fd_state read_state;
-  grpc_em_fd_state write_state;
-  /* activated after some timeout to activate shutdown_ev */
+  struct grpc_em_fd_impl *impl;
 };
 
 #endif  /* __GRPC_INTERNAL_EVENTMANAGER_EM_H__ */
