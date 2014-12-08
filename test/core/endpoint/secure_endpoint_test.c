@@ -58,7 +58,7 @@ static void create_sockets(int sv[2]) {
 }
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
-    ssize_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
+    size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
   int sv[2];
   tsi_frame_protector *fake_read_protector = tsi_create_fake_protector(NULL);
   tsi_frame_protector *fake_write_protector = tsi_create_fake_protector(NULL);
@@ -127,12 +127,12 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
 }
 
 static grpc_endpoint_test_fixture
-secure_endpoint_create_fixture_tcp_socketpair_noleftover(ssize_t slice_size) {
+secure_endpoint_create_fixture_tcp_socketpair_noleftover(size_t slice_size) {
   return secure_endpoint_create_fixture_tcp_socketpair(slice_size, NULL, 0);
 }
 
 static grpc_endpoint_test_fixture
-secure_endpoint_create_fixture_tcp_socketpair_leftover(ssize_t slice_size) {
+secure_endpoint_create_fixture_tcp_socketpair_leftover(size_t slice_size) {
   gpr_slice s =
       gpr_slice_from_copied_string("hello world 12345678900987654321");
   grpc_endpoint_test_fixture f;
@@ -164,8 +164,7 @@ static void verify_leftover(void *user_data, gpr_slice *slices, size_t nslices,
   *(int *)user_data = 1;
 }
 
-static void test_leftover(grpc_endpoint_test_config config,
-                          ssize_t slice_size) {
+static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_test_fixture f = config.create_fixture(slice_size);
   int verified = 0;
   gpr_log(GPR_INFO, "Start test left over");
@@ -200,7 +199,7 @@ static void destroy_early(void *user_data, gpr_slice *slices, size_t nslices,
 
 /* test which destroys the ep before finishing reading */
 static void test_destroy_ep_early(grpc_endpoint_test_config config,
-                                  ssize_t slice_size) {
+                                  size_t slice_size) {
   grpc_endpoint_test_fixture f = config.create_fixture(slice_size);
   gpr_log(GPR_INFO, "Start test destroy early");
 

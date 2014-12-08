@@ -56,9 +56,9 @@
 
 */
 
-ssize_t count_and_unref_slices(gpr_slice *slices, size_t nslices,
-                               int *current_data) {
-  ssize_t num_bytes = 0;
+size_t count_and_unref_slices(gpr_slice *slices, size_t nslices,
+                              int *current_data) {
+  size_t num_bytes = 0;
   int i;
   int j;
   unsigned char *buf;
@@ -76,18 +76,18 @@ ssize_t count_and_unref_slices(gpr_slice *slices, size_t nslices,
 
 static grpc_endpoint_test_fixture begin_test(grpc_endpoint_test_config config,
                                              const char *test_name,
-                                             ssize_t slice_size) {
+                                             size_t slice_size) {
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   return config.create_fixture(slice_size);
 }
 
 static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 
-static gpr_slice *allocate_blocks(ssize_t num_bytes, ssize_t slice_size,
+static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
                                   size_t *num_blocks, int *current_data) {
-  ssize_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
+  size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
   gpr_slice *slices = malloc(sizeof(gpr_slice) * nslices);
-  ssize_t num_bytes_left = num_bytes;
+  size_t num_bytes_left = num_bytes;
   int i;
   int j;
   unsigned char *buf;
@@ -112,10 +112,10 @@ struct read_and_write_test_state {
   grpc_endpoint *write_ep;
   gpr_mu mu;
   gpr_cv cv;
-  ssize_t target_bytes;
-  ssize_t bytes_read;
-  ssize_t current_write_size;
-  ssize_t bytes_written;
+  size_t target_bytes;
+  size_t bytes_read;
+  size_t current_write_size;
+  size_t bytes_written;
   int current_read_data;
   int current_write_data;
   int read_done;
@@ -205,8 +205,8 @@ static void read_and_write_test_write_handler(void *data,
    This also includes a test of the shutdown behavior.
  */
 static void read_and_write_test(grpc_endpoint_test_config config,
-                                ssize_t num_bytes, ssize_t write_size,
-                                ssize_t slice_size, int shutdown) {
+                                size_t num_bytes, size_t write_size,
+                                size_t slice_size, int shutdown) {
   struct read_and_write_test_state state;
   gpr_timespec rel_deadline = {20, 0};
   gpr_timespec deadline = gpr_time_add(gpr_now(), rel_deadline);
@@ -234,6 +234,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.current_write_data = 0;
 
   /* Get started by pretending an initial write completed */
+  /* NOTE: Sets up initial conditions so we can have the same write handler
+     for the first iteration as for later iterations. It does the right thing
+     even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
   read_and_write_test_write_handler(&state, GRPC_ENDPOINT_CB_OK);
 
@@ -271,7 +274,7 @@ static void read_timeout_test_read_handler(void *data, gpr_slice *slices,
 }
 
 static void read_timeout_test(grpc_endpoint_test_config config,
-                              ssize_t slice_size) {
+                              size_t slice_size) {
   gpr_timespec timeout = gpr_time_from_micros(10000);
   gpr_timespec read_deadline = gpr_time_add(gpr_now(), timeout);
   gpr_timespec test_deadline =
@@ -297,7 +300,7 @@ static void write_timeout_test_write_handler(void *data,
 }
 
 static void write_timeout_test(grpc_endpoint_test_config config,
-                               ssize_t slice_size) {
+                               size_t slice_size) {
   gpr_timespec timeout = gpr_time_from_micros(10000);
   gpr_timespec write_deadline = gpr_time_add(gpr_now(), timeout);
   gpr_timespec test_deadline =
@@ -370,7 +373,7 @@ static void shutdown_during_write_test_write_handler(
 }
 
 static void shutdown_during_write_test(grpc_endpoint_test_config config,
-                                       ssize_t slice_size) {
+                                       size_t slice_size) {
   /* test that shutdown with a pending write creates no leaks */
   gpr_timespec deadline;
   size_t size;

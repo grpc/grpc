@@ -31,6 +31,9 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+#ifdef GPR_POSIX_SOCKET
+
 #include "test/core/util/port.h"
 
 #include <netinet/in.h>
@@ -143,3 +146,5 @@ int grpc_pick_unused_port_or_die() {
   GPR_ASSERT(port > 0);
   return port;
 }
+
+#endif  /* GPR_POSIX_SOCKET */

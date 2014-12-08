@@ -490,7 +490,7 @@ void run_tests() {
 static void clean_up() { grpc_em_destroy(&g_em); }
 
 static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
-    ssize_t slice_size) {
+    size_t slice_size) {
   int sv[2];
   grpc_endpoint_test_fixture f;
 

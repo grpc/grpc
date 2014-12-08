@@ -712,7 +712,7 @@ clean_libgrpc:
 LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
-    test/core/util/port.c \
+    test/core/util/port_posix.c \
     test/core/util/slice_splitter.c \
     test/core/util/test_config.c \
     test/core/end2end/end2end_tests.c \
@@ -1645,9 +1645,9 @@ GPR_CANCELLABLE_TEST_SRC = \
 GPR_CANCELLABLE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_CANCELLABLE_TEST_SRC))))
 GPR_CANCELLABLE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_CANCELLABLE_TEST_SRC))))
 
-bins/gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
-	$(Q) $(LD) $(LDFLAGS) $(GPR_CANCELLABLE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_cancellable_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_CANCELLABLE_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_cancellable_test
 
 deps_gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_DEPS)
 
@@ -1668,9 +1668,9 @@ GPR_LOG_TEST_SRC = \
 GPR_LOG_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_LOG_TEST_SRC))))
 GPR_LOG_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_LOG_TEST_SRC))))
 
-bins/gpr_log_test: $(GPR_LOG_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_log_test: $(GPR_LOG_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
-	$(Q) $(LD) $(LDFLAGS) $(GPR_LOG_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_log_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_LOG_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_log_test
 
 deps_gpr_log_test: $(GPR_LOG_TEST_DEPS)
 
@@ -1691,9 +1691,9 @@ GPR_CMDLINE_TEST_SRC = \
 GPR_CMDLINE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_CMDLINE_TEST_SRC))))
 GPR_CMDLINE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_CMDLINE_TEST_SRC))))
 
-bins/gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
-	$(Q) $(LD) $(LDFLAGS) $(GPR_CMDLINE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_cmdline_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_CMDLINE_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_cmdline_test
 
 deps_gpr_cmdline_test: $(GPR_CMDLINE_TEST_DEPS)
 

@@ -54,6 +54,7 @@
 #define GPR_POSIX_TIME 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_STRING 1
+#define GPR_POSIX_SOCKET 1
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_ANDROID 1
 #define GPR_GCC_SYNC 1
@@ -62,6 +63,7 @@
 #define GPR_POSIX_TIME 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_STRING 1
+#define GPR_POSIX_SOCKET 1
 #define GPR_LINUX 1
 #define GPR_GCC_ATOMIC 1
 #ifdef _LP64
@@ -74,6 +76,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_LOG 1
+#define GPR_POSIX_SOCKET 1
 #define GPR_POSIX_SOCKETUTILS 1
 #define GPR_GCC_ATOMIC 1
 #ifdef _LP64

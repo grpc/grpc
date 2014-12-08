@@ -652,12 +652,13 @@ static int count_expectations(test_fixture *f) {
 
 /* Callback for enumerate_expectations that adds an expectation to the log */
 static void dump_expectation(void *p, const char *fmt, ...) {
-  char buffer[256];
+  char *str;
   va_list args;
   va_start(args, fmt);
 
-  vsprintf(buffer, fmt, args);
-  gpr_log(GPR_INFO, "EXPECTED: %s", buffer);
+  gpr_asprintf(&str, fmt, args);
+  gpr_log(GPR_INFO, "EXPECTED: %s", str);
+  gpr_free(str);
 
   va_end(args);
 }

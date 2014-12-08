@@ -48,7 +48,7 @@ struct grpc_endpoint_test_fixture {
 
 struct grpc_endpoint_test_config {
   const char *name;
-  grpc_endpoint_test_fixture (*create_fixture)(ssize_t slice_size);
+  grpc_endpoint_test_fixture (*create_fixture)(size_t slice_size);
   void (*clean_up)();
 };
 

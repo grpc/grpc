@@ -1,0 +1,58 @@
+## Template for Visual Studio solution
+## based on http://msdn.microsoft.com/en-us/library/bb165951(v=vs.90).aspx
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+<%
+## Visual Studio uses GUIDs for project types
+## http://msdn.microsoft.com/en-us/library/hb23x61k%28v=vs.80%29.aspx
+cpp_proj_type = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
+
+for lib in libs:
+  lib.is_library = True
+for target in targets:
+  target.is_library = False
+
+projects = []
+projects.extend(libs)
+projects.extend(targets)
+projects = [project for project in projects if project.get('vs_project_guid', None)]
+
+## Exclude C++ projects for now
+projects = [project for project in projects if not project.get('c++', False)]
+
+for p in projects:
+  p.deps = p.get('deps',[])
+
+project_dict = dict([(p.name, p) for p in projects])
+%>\
+% for project in projects:
+Project("${cpp_proj_type}") = "${project.name}", "${project.name}.vcxproj", "${project.vs_project_guid}"
+  % if project.deps:
+  ProjectSection(ProjectDependencies) = postProject
+    % for dep in project.deps:
+    ${project_dict[dep].vs_project_guid} = ${project_dict[dep].vs_project_guid}
+    % endfor
+  EndProjectSection
+  % endif
+EndProject
+% endfor
+Global
+  GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    Debug|Win32 = Debug|Win32
+    Release|Win32 = Release|Win32
+  EndGlobalSection
+  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+% for project in projects:
+    ${project.vs_project_guid}.Debug|Win32.ActiveCfg = Debug|Win32
+    ${project.vs_project_guid}.Debug|Win32.Build.0 = Debug|Win32
+    ${project.vs_project_guid}.Release|Win32.ActiveCfg = Release|Win32
+    ${project.vs_project_guid}.Release|Win32.Build.0 = Release|Win32
+% endfor
+  EndGlobalSection
+  GlobalSection(SolutionProperties) = preSolution
+    HideSolutionNode = FALSE
+  EndGlobalSection
+EndGlobal
