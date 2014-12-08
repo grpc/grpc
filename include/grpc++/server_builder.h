@@ -43,6 +43,7 @@ namespace grpc {
 
 class RpcService;
 class Server;
+class ServerCredentials;
 class ThreadPoolInterface;
 
 class ServerBuilder {
@@ -57,6 +58,10 @@ class ServerBuilder {
   // Add a listening port. Can be called multiple times.
   void AddPort(const grpc::string& addr);
 
+  // Set a ServerCredentials. Can only be called once.
+  // TODO(yangg) move this to be part of AddPort
+  void SetCredentials(const std::shared_ptr<ServerCredentials>& creds);
+
   // Set the thread pool used for running appliation rpc handlers.
   // Does not take ownership.
   void SetThreadPool(ThreadPoolInterface* thread_pool);
@@ -67,6 +72,7 @@ class ServerBuilder {
  private:
   std::vector<RpcService*> services_;
   std::vector<grpc::string> ports_;
+  std::shared_ptr<ServerCredentials> creds_;
   ThreadPoolInterface* thread_pool_;
 };
 

@@ -35,26 +35,34 @@
 #include <utility>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 #include "src/cpp/server/rpc_service_method.h"
 #include "src/cpp/server/server_rpc_handler.h"
 #include "src/cpp/server/thread_pool.h"
 #include <grpc++/async_server_context.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/server_credentials.h>
 
 namespace grpc {
 
 // TODO(rocking): consider a better default value like num of cores.
 static const int kNumThreads = 4;
 
-Server::Server(ThreadPoolInterface* thread_pool)
+Server::Server(ThreadPoolInterface* thread_pool, ServerCredentials* creds)
     : started_(false),
       shutdown_(false),
       num_running_cb_(0),
       thread_pool_(thread_pool == nullptr ? new ThreadPool(kNumThreads)
                                           : thread_pool),
-      thread_pool_owned_(thread_pool == nullptr) {
-  server_ = grpc_server_create(cq_.cq(), nullptr);
+      thread_pool_owned_(thread_pool == nullptr),
+      secure_(creds != nullptr) {
+  if (creds) {
+    server_ =
+        grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
+  } else {
+    server_ = grpc_server_create(cq_.cq(), nullptr);
+  }
 }
 
 Server::Server() {
@@ -83,7 +91,12 @@ void Server::RegisterService(RpcService* service) {
 
 void Server::AddPort(const grpc::string& addr) {
   GPR_ASSERT(!started_);
-  int success = grpc_server_add_http2_port(server_, addr.c_str());
+  int success;
+  if (secure_) {
+    success = grpc_server_add_secure_http2_port(server_, addr.c_str());
+  } else {
+    success = grpc_server_add_http2_port(server_, addr.c_str());
+  }
   GPR_ASSERT(success);
 }
 

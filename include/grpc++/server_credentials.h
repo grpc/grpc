@@ -53,6 +53,7 @@ class ServerCredentials final {
   grpc_server_credentials* GetRawCreds();
 
   friend class ServerCredentialsFactory;
+  friend class Server;
 
   grpc_server_credentials* creds_;
 };

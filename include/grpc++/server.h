@@ -55,6 +55,7 @@ namespace grpc {
 class AsyncServerContext;
 class RpcService;
 class RpcServiceMethod;
+class ServerCredentials;
 class ThreadPoolInterface;
 
 // Currently it only supports handling rpcs in a single thread.
@@ -69,7 +70,7 @@ class Server {
   friend class ServerBuilder;
 
   // ServerBuilder use only
-  explicit Server(ThreadPoolInterface* thread_pool);
+  Server(ThreadPoolInterface* thread_pool, ServerCredentials* creds);
   Server();
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
@@ -104,6 +105,8 @@ class Server {
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
+  // Whether the server is created with credentials.
+  bool secure_;
 };
 
 }  // namespace grpc

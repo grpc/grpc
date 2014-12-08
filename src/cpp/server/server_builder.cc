@@ -33,6 +33,7 @@
 
 #include <grpc++/server_builder.h>
 
+#include <grpc/support/log.h>
 #include <grpc++/server.h>
 
 namespace grpc {
@@ -47,12 +48,18 @@ void ServerBuilder::AddPort(const grpc::string& addr) {
   ports_.push_back(addr);
 }
 
+void ServerBuilder::SetCredentials(
+    const std::shared_ptr<ServerCredentials>& creds) {
+  GPR_ASSERT(!creds_);
+  creds_ = creds;
+}
+
 void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
   thread_pool_ = thread_pool;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  std::unique_ptr<Server> server(new Server(thread_pool_));
+  std::unique_ptr<Server> server(new Server(thread_pool_, creds_.get()));
   for (auto* service : services_) {
     server->RegisterService(service);
   }
