@@ -322,19 +322,29 @@ static grpc_security_context_vtable ssl_server_vtable = {
 grpc_security_status grpc_ssl_channel_security_context_create(
     grpc_credentials *request_metadata_creds, const grpc_ssl_config *config,
     const char *secure_peer_name, grpc_channel_security_context **ctx) {
-  const char *alpn_protocol_string = GRPC_CHTTP2_ALPN_VERSION;
-  unsigned char alpn_protocol_string_len =
-      (unsigned char)strlen(alpn_protocol_string);
+  size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
+  const unsigned char **alpn_protocol_strings =
+      gpr_malloc(sizeof(const char *) * num_alpn_protocols);
+  unsigned char *alpn_protocol_string_lengths =
+      gpr_malloc(sizeof(unsigned char) * num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_channel_security_context *c;
+  size_t i;
+
+  for (i = 0; i < num_alpn_protocols; i++) {
+    alpn_protocol_strings[i] =
+        (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
+    alpn_protocol_string_lengths[i] =
+        strlen(grpc_chttp2_get_alpn_version_index(i));
+  }
 
   if (config == NULL || secure_peer_name == NULL ||
       config->pem_root_certs == NULL) {
     gpr_log(GPR_ERROR, "An ssl channel needs a secure name and root certs.");
-    return GRPC_SECURITY_ERROR;
+    goto error;
   }
   if (!check_request_metadata_creds(request_metadata_creds)) {
-    return GRPC_SECURITY_ERROR;
+    goto error;
   }
 
   c = gpr_malloc(sizeof(grpc_ssl_channel_security_context));
@@ -351,31 +361,48 @@ grpc_security_status grpc_ssl_channel_security_context_create(
       config->pem_private_key, config->pem_private_key_size,
       config->pem_cert_chain, config->pem_cert_chain_size,
       config->pem_root_certs, config->pem_root_certs_size,
-      GRPC_SSL_CIPHER_SUITES, (const unsigned char **)&alpn_protocol_string,
-      &alpn_protocol_string_len, 1, &c->handshaker_factory);
+      GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
+      alpn_protocol_string_lengths, 1, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
     ssl_channel_destroy(&c->base.base);
     *ctx = NULL;
-    return GRPC_SECURITY_ERROR;
+    goto error;
   }
   *ctx = &c->base;
+  gpr_free(alpn_protocol_strings);
+  gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_OK;
+
+error:
+  gpr_free(alpn_protocol_strings);
+  gpr_free(alpn_protocol_string_lengths);
+  return GRPC_SECURITY_ERROR;
 }
 
 grpc_security_status grpc_ssl_server_security_context_create(
     const grpc_ssl_config *config, grpc_security_context **ctx) {
-  const char *alpn_protocol_string = GRPC_CHTTP2_ALPN_VERSION;
-  unsigned char alpn_protocol_string_len =
-      (unsigned char)strlen(alpn_protocol_string);
+  size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
+  const unsigned char **alpn_protocol_strings =
+      gpr_malloc(sizeof(const char *) * num_alpn_protocols);
+  unsigned char *alpn_protocol_string_lengths =
+      gpr_malloc(sizeof(unsigned char) * num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_server_security_context *c;
+  size_t i;
+
+  for (i = 0; i < num_alpn_protocols; i++) {
+    alpn_protocol_strings[i] =
+        (const unsigned char *)grpc_chttp2_get_alpn_version_index(i);
+    alpn_protocol_string_lengths[i] =
+        strlen(grpc_chttp2_get_alpn_version_index(i));
+  }
 
   if (config == NULL || config->pem_private_key == NULL ||
       config->pem_cert_chain == NULL) {
     gpr_log(GPR_ERROR, "An SSL server needs a key and a cert.");
-    return GRPC_SECURITY_ERROR;
+    goto error;
   }
   c = gpr_malloc(sizeof(grpc_ssl_server_security_context));
   memset(c, 0, sizeof(grpc_ssl_server_security_context));
@@ -388,17 +415,24 @@ grpc_security_status grpc_ssl_server_security_context_create(
       (const unsigned char **)&config->pem_cert_chain,
       (const gpr_uint32 *)&config->pem_cert_chain_size, 1,
       config->pem_root_certs, config->pem_root_certs_size,
-      GRPC_SSL_CIPHER_SUITES, (const unsigned char **)&alpn_protocol_string,
-      &alpn_protocol_string_len, 1, &c->handshaker_factory);
+      GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
+      alpn_protocol_string_lengths, 1, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
     ssl_server_destroy(&c->base);
     *ctx = NULL;
-    return GRPC_SECURITY_ERROR;
+    goto error;
   }
   *ctx = &c->base;
+  gpr_free(alpn_protocol_strings);
+  gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_OK;
+
+error:
+  gpr_free(alpn_protocol_strings);
+  gpr_free(alpn_protocol_string_lengths);
+  return GRPC_SECURITY_ERROR;
 }
 
 
