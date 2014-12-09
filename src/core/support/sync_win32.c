@@ -33,6 +33,10 @@
 
 /* Win32 code for gpr synchronization support. */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_WIN32
+
 #define _WIN32_WINNT 0x0600
 #include <windows.h>
 #include <grpc/support/log.h>
@@ -107,7 +111,7 @@ static void *dummy;
 struct run_once_func_arg {
   void (*init_function)(void);
 };
-static int run_once_func(gpr_once *once, void *v, void **pv) {
+static BOOL CALLBACK run_once_func(gpr_once *once, void *v, void **pv) {
   struct run_once_func_arg *arg = v;
   (*arg->init_function)();
   return 1;
@@ -116,5 +120,7 @@ static int run_once_func(gpr_once *once, void *v, void **pv) {
 void gpr_once_init(gpr_once *once, void (*init_function)(void)) {
   struct run_once_func_arg arg;
   arg.init_function = init_function;
-  InitOnceExecuteOnce(once, &run_once_func, &arg, &dummy);
+  InitOnceExecuteOnce(once, run_once_func, &arg, &dummy);
 }
+
+#endif /* GPR_WIN32 */

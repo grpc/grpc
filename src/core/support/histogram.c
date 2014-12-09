@@ -127,7 +127,7 @@ void gpr_histogram_add(gpr_histogram *h, double x) {
 }
 
 int gpr_histogram_merge(gpr_histogram *dst, gpr_histogram *src) {
-  int i;
+  size_t i;
   if ((dst->num_buckets != src->num_buckets) ||
       (dst->multiplier != src->multiplier)) {
     /* Fail because these histograms don't match */
@@ -152,8 +152,8 @@ static double threshold_for_count_below(gpr_histogram *h, double count_below) {
   double count_so_far;
   double lower_bound;
   double upper_bound;
-  int lower_idx;
-  int upper_idx;
+  size_t lower_idx;
+  size_t upper_idx;
 
   GPR_ASSERT(h->count >= 1);
 

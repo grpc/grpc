@@ -57,18 +57,27 @@ static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
 static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
   /* InterlockedCompareExchangePointerNoFence() not available on vista or
      windows7 */
-  return o == (gpr_atm)InterlockedCompareExchangePointerAcquire(p, (void *)n,
-                                                                (void *)o);
+#ifdef GPR_ARCH_64
+  return o == (gpr_atm)InterlockedCompareExchangeAcquire64(p, n, o);
+#else
+  return o == (gpr_atm)InterlockedCompareExchangeAcquire(p, n, o);
+#endif
 }
 
 static __inline int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return o == (gpr_atm)InterlockedCompareExchangePointerAcquire(p, (void *)n,
-                                                                (void *)o);
+#ifdef GPR_ARCH_64
+  return o == (gpr_atm)InterlockedCompareExchangeAcquire64(p, n, o);
+#else
+  return o == (gpr_atm)InterlockedCompareExchangeAcquire(p, n, o);
+#endif
 }
 
 static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return o == (gpr_atm)InterlockedCompareExchangePointerRelease(p, (void *)n,
-                                                                (void *)o);
+#ifdef GPR_ARCH_64
+  return o == (gpr_atm)InterlockedCompareExchangeRelease64(p, n, o);
+#else
+  return o == (gpr_atm)InterlockedCompareExchangeRelease(p, n, o);
+#endif
 }
 
 static __inline gpr_atm gpr_atm_no_barrier_fetch_add(gpr_atm *p,
@@ -86,9 +95,12 @@ static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta) {
   gpr_atm old;
   do {
     old = *p;
-  } while (old != (gpr_atm)InterlockedCompareExchangePointer(
-                      p, (void *)(old + delta), (void *)old));
+#ifdef GPR_ARCH_64
+  } while (old != (gpr_atm)InterlockedCompareExchange64(p, old + delta, old));
+#else
+  } while (old != (gpr_atm)InterlockedCompareExchange(p, old + delta, old));
+#endif
   return old;
 }
 
-#endif  /* __GRPC_SUPPORT_ATM_WIN32_H__ */
+#endif /* __GRPC_SUPPORT_ATM_WIN32_H__ */

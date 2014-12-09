@@ -50,7 +50,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
 
   /* Determine the length. */
   va_start(args, format);
-  ret = vscprintf(format, args);
+  ret = _vscprintf(format, args);
   va_end(args);
   if (!(0 <= ret && ret < ~(size_t)0)) {
     *strp = NULL;

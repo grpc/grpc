@@ -40,8 +40,8 @@
 #include <stdarg.h>
 
 /* Simple starter implementation */
-void gpr_log(char *file, int line, gpr_log_severity severity, char *format,
-             ...) {
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *format, ...) {
   va_list args;
   va_start(args, format);
 

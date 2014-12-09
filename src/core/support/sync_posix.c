@@ -33,6 +33,10 @@
 
 /* Posix gpr synchroization support code. */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SYNC
+
 #include <errno.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -80,3 +84,5 @@ void gpr_cv_broadcast(gpr_cv *cv) {
 void gpr_once_init(gpr_once *once, void (*init_function)(void)) {
   GPR_ASSERT(pthread_once(once, init_function) == 0);
 }
+
+#endif /* GRP_POSIX_SYNC */
