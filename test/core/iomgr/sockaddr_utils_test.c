@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/endpoint/socket_utils.h"
+#include "src/core/iomgr/sockaddr_utils.h"
 
 #include <errno.h>
 #include <netinet/in.h>

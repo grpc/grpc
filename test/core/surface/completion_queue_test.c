@@ -33,12 +33,12 @@
 
 #include "src/core/surface/completion_queue.h"
 
+#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
-#include "src/core/surface/surface_em.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
@@ -417,7 +417,7 @@ static void test_threading(int producers, int consumers) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_surface_em_init();
+  grpc_iomgr_init();
   test_no_op();
   test_wait_empty();
   test_cq_end_read();
@@ -430,6 +430,6 @@ int main(int argc, char **argv) {
   test_threading(1, 10);
   test_threading(10, 1);
   test_threading(10, 10);
-  grpc_surface_em_shutdown();
+  grpc_iomgr_shutdown();
   return 0;
 }

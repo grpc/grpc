@@ -35,7 +35,6 @@
 #define __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__
 
 #include "src/core/channel/client_channel.h"
-#include "src/core/eventmanager/em.h"
 #include "src/core/transport/metadata.h"
 #include <grpc/support/time.h>
 
@@ -48,7 +47,7 @@ void grpc_client_setup_create_and_attach(
     grpc_channel_stack *newly_minted_channel, const grpc_channel_args *args,
     grpc_mdctx *mdctx,
     void (*initiate)(void *user_data, grpc_client_setup_request *request),
-    void (*done)(void *user_data), void *user_data, grpc_em *em);
+    void (*done)(void *user_data), void *user_data);
 
 /* Check that r is the active request: needs to be performed at each callback.
    If this races, we'll have two connection attempts running at once and the

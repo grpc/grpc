@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/endpoint/socket_utils.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -165,16 +165,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_completion_queue_shutdown(server_cq);
   drain_cq(server_cq);
   grpc_completion_queue_destroy(server_cq);
-  /* TODO(klempner): We need to give the EM time to actually close the listening
-     socket, or later tests will fail to bind to this port. We should fix this
-     by adding an API to EM to get notified when this happens and having it
-     prevent listener teardown. */
-  gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_millis(250)));
 }
 
 int main(int argc, char **argv) {
   int i;
-  int port = grpc_pick_unused_port_or_die();
 
   grpc_test_init(argc, argv);
   grpc_init();
@@ -184,20 +178,21 @@ int main(int argc, char **argv) {
     grpc_forbid_dualstack_sockets_for_testing = i;
 
     /* :: and 0.0.0.0 are handled identically. */
-    test_connect("::", "127.0.0.1", port, 1);
-    test_connect("::", "::1", port, 1);
-    test_connect("::", "::ffff:127.0.0.1", port, 1);
-    test_connect("::", "localhost", port, 1);
-    test_connect("0.0.0.0", "127.0.0.1", port, 1);
-    test_connect("0.0.0.0", "::1", port, 1);
-    test_connect("0.0.0.0", "::ffff:127.0.0.1", port, 1);
-    test_connect("0.0.0.0", "localhost", port, 1);
+    test_connect("::", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("::", "::1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("::", "::ffff:127.0.0.1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("::", "localhost", grpc_pick_unused_port_or_die(), 1);
+    test_connect("0.0.0.0", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("0.0.0.0", "::1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("0.0.0.0", "::ffff:127.0.0.1", grpc_pick_unused_port_or_die(),
+                 1);
+    test_connect("0.0.0.0", "localhost", grpc_pick_unused_port_or_die(), 1);
 
     /* These only work when the families agree. */
-    test_connect("::1", "::1", port, 1);
-    test_connect("::1", "127.0.0.1", port, 0);
-    test_connect("127.0.0.1", "127.0.0.1", port, 1);
-    test_connect("127.0.0.1", "::1", port, 0);
+    test_connect("::1", "::1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("::1", "127.0.0.1", grpc_pick_unused_port_or_die(), 0);
+    test_connect("127.0.0.1", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("127.0.0.1", "::1", grpc_pick_unused_port_or_die(), 0);
 
   }
 

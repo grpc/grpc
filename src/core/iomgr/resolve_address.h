@@ -31,17 +31,37 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_SURFACE_EM_H__
-#define __GRPC_INTERNAL_SURFACE_SURFACE_EM_H__
+#ifndef __GRPC_INTERNAL_IOMGR_RESOLVE_ADDRESS_H__
+#define __GRPC_INTERNAL_IOMGR_RESOLVE_ADDRESS_H__
 
-#include "src/core/eventmanager/em.h"
+#include <sys/socket.h>
 
-/* Returns a global singleton event manager for
-   the surface apis, and is passed down to channels and
-   transports as needed. */
-grpc_em *grpc_surface_em();
+typedef struct {
+  struct sockaddr_storage addr;
+  int len;
+} grpc_resolved_address;
 
-void grpc_surface_em_init();
-void grpc_surface_em_shutdown();
+typedef struct {
+  size_t naddrs;
+  grpc_resolved_address *addrs;
+} grpc_resolved_addresses;
 
-#endif  /* __GRPC_INTERNAL_SURFACE_SURFACE_EM_H__ */
+/* Async result callback:
+   On success: addresses is the result, and the callee must call
+   grpc_resolved_addresses_destroy when it's done with them
+   On failure: addresses is NULL */
+typedef void (*grpc_resolve_cb)(void *arg, grpc_resolved_addresses *addresses);
+/* Asynchronously resolve addr. Use default_port if a port isn't designated
+   in addr, otherwise use the port in addr. */
+/* TODO(ctiller): add a timeout here */
+void grpc_resolve_address(const char *addr, const char *default_port,
+                          grpc_resolve_cb cb, void *arg);
+/* Destroy resolved addresses */
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
+
+/* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
+   result must be freed with grpc_resolved_addresses_destroy. */
+grpc_resolved_addresses *grpc_blocking_resolve_address(
+    const char *addr, const char *default_port);
+
+#endif /* __GRPC_INTERNAL_IOMGR_RESOLVE_ADDRESS_H__ */

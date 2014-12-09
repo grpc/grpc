@@ -31,29 +31,18 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_ENDPOINT_TCP_H__
-#define __GRPC_INTERNAL_ENDPOINT_TCP_H__
-/*
-   Low level TCP "bottom half" implementation, for use by transports built on
-   top of a TCP connection.
-
-   Note that this file does not (yet) include APIs for creating the socket in
-   the first place.
-
-   All calls passing slice transfer ownership of a slice refcount unless
-   otherwise specified.
-*/
+#ifndef __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__
+#define __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__
 
 #include "src/core/endpoint/endpoint.h"
-#include "src/core/eventmanager/em.h"
+#include "src/core/iomgr/sockaddr.h"
+#include <grpc/support/time.h>
 
-/* Create a tcp from an already connected file descriptor. */
-grpc_endpoint *grpc_tcp_create(int fd, grpc_em *em);
-/* Special version for debugging slice changes */
-grpc_endpoint *grpc_tcp_create_dbg(int fd, grpc_em *em, size_t slice_size);
+/* Asynchronously connect to an address (specified as (addr, len)), and call
+   cb with arg and the completed connection when done (or call cb with arg and
+   NULL on failure) */
+void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
+                             void *arg, const struct sockaddr *addr,
+                             int addr_len, gpr_timespec deadline);
 
-/* Special version for handing off ownership of an existing already created
-   eventmanager fd. Must not have any outstanding callbacks. */
-grpc_endpoint *grpc_tcp_create_emfd(grpc_em_fd *em_fd);
-
-#endif  /* __GRPC_INTERNAL_ENDPOINT_TCP_H__ */
+#endif /* __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__ */

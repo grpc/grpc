@@ -31,17 +31,31 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
+#include "src/core/iomgr/endpoint_pair.h"
 
-#include "src/core/endpoint/endpoint.h"
-#include "src/core/transport/transport.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+#include "src/core/iomgr/tcp_posix.h"
+#include <grpc/support/log.h>
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__ */
+static void create_sockets(int sv[2]) {
+  int flags;
+  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+  flags = fcntl(sv[0], F_GETFL, 0);
+  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
+  flags = fcntl(sv[1], F_GETFL, 0);
+  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
+}
+
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(size_t read_slice_size) {
+  int sv[2];
+  grpc_endpoint_pair p;
+  create_sockets(sv);
+  p.client = grpc_tcp_create(grpc_fd_create(sv[1]), read_slice_size);
+  p.server = grpc_tcp_create(grpc_fd_create(sv[0]), read_slice_size);
+  return p;
+}

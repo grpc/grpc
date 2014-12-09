@@ -31,14 +31,13 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_ENDPOINT_TCP_SERVER_H__
-#define __GRPC_INTERNAL_ENDPOINT_TCP_SERVER_H__
+#ifndef __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__
+#define __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__
 
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "src/core/endpoint/tcp.h"
-#include "src/core/eventmanager/em.h"
+#include "src/core/endpoint/endpoint.h"
 
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
@@ -47,7 +46,7 @@ typedef struct grpc_tcp_server grpc_tcp_server;
 typedef void (*grpc_tcp_server_cb)(void *arg, grpc_endpoint *ep);
 
 /* Create a server, initially not bound to any ports */
-grpc_tcp_server *grpc_tcp_server_create(grpc_em *em);
+grpc_tcp_server *grpc_tcp_server_create();
 
 /* Start listening to bound ports */
 void grpc_tcp_server_start(grpc_tcp_server *server, grpc_tcp_server_cb cb,
@@ -73,4 +72,4 @@ int grpc_tcp_server_get_fd(grpc_tcp_server *s, int index);
 
 void grpc_tcp_server_destroy(grpc_tcp_server *server);
 
-#endif  /* __GRPC_INTERNAL_ENDPOINT_TCP_SERVER_H__ */
+#endif /* __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__ */

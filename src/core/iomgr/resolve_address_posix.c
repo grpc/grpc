@@ -33,7 +33,7 @@
 
 #define _POSIX_SOURCE
 
-#include "src/core/endpoint/resolve_address.h"
+#include "src/core/iomgr/resolve_address.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -41,10 +41,11 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "src/core/endpoint/socket_utils.h"
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/alloc.h>
-#include <grpc/support/string.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 

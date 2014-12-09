@@ -31,22 +31,15 @@
  *
  */
 
-#define _GNU_SOURCE
-#include <grpc/support/port_platform.h>
+#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_COMPLETION_QUEUE_INTERFACE_H_
+#define __GRPC_INTERNAL_IOMGR_IOMGR_COMPLETION_QUEUE_INTERFACE_H_
 
-#ifdef GPR_LINUX
+/* Internals of iomgr that are exposed only to be used for completion queue
+   implementation */
 
-#include "src/core/endpoint/socket_utils.h"
+extern gpr_mu grpc_iomgr_mu;
+extern gpr_cv grpc_iomgr_cv;
 
-#include <sys/types.h>
-#include <sys/socket.h>
+int grpc_iomgr_work(gpr_timespec deadline);
 
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
-                 int nonblock, int cloexec) {
-  int flags = 0;
-  flags |= nonblock ? SOCK_NONBLOCK : 0;
-  flags |= cloexec ? SOCK_CLOEXEC : 0;
-  return accept4(sockfd, addr, addrlen, flags);
-}
-
-#endif
+#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_COMPLETION_QUEUE_INTERFACE_H_ */

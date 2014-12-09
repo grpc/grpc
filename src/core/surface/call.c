@@ -34,12 +34,12 @@
 #include "src/core/surface/call.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/metadata_buffer.h"
+#include "src/core/iomgr/alarm.h"
+#include "src/core/surface/channel.h"
+#include "src/core/surface/completion_queue.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
-#include "src/core/surface/channel.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/surface_em.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -184,7 +184,7 @@ struct grpc_call {
   void *finished_tag;
   pending_read_queue prq;
 
-  grpc_em_alarm alarm;
+  grpc_alarm alarm;
 
   /* The current outstanding send message/context/invoke/end tag (only valid if
      have_write == 1) */
@@ -258,7 +258,7 @@ void grpc_call_internal_unref(grpc_call *c) {
 void grpc_call_destroy(grpc_call *c) {
   gpr_mu_lock(&c->read_mu);
   if (c->have_alarm) {
-    grpc_em_alarm_cancel(&c->alarm);
+    grpc_alarm_cancel(&c->alarm);
     c->have_alarm = 0;
   }
   gpr_mu_unlock(&c->read_mu);
@@ -813,7 +813,7 @@ void grpc_call_recv_finish(grpc_call_element *elem, int is_full_close) {
   }
   if (is_full_close) {
     if (call->have_alarm) {
-      grpc_em_alarm_cancel(&call->alarm);
+      grpc_alarm_cancel(&call->alarm);
       call->have_alarm = 0;
     }
     call->received_finish = 1;
@@ -852,7 +852,7 @@ grpc_metadata_buffer *grpc_call_get_metadata_buffer(grpc_call *call) {
   return &call->incoming_metadata;
 }
 
-static void call_alarm(void *arg, grpc_em_cb_status status) {
+static void call_alarm(void *arg, grpc_iomgr_cb_status status) {
   grpc_call *call = arg;
   if (status == GRPC_CALLBACK_SUCCESS) {
     grpc_call_cancel(call);
@@ -868,6 +868,6 @@ void grpc_call_set_deadline(grpc_call_element *elem, gpr_timespec deadline) {
   }
   grpc_call_internal_ref(call);
   call->have_alarm = 1;
-  grpc_em_alarm_init(&call->alarm, grpc_surface_em(), call_alarm, call);
-  grpc_em_alarm_add(&call->alarm, deadline);
+  grpc_alarm_init(&call->alarm, call_alarm, call);
+  grpc_alarm_add(&call->alarm, deadline);
 }

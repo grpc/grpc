@@ -31,21 +31,7 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_ENDPOINT_TCP_CLIENT_H__
-#define __GRPC_INTERNAL_ENDPOINT_TCP_CLIENT_H__
+#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#define __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
 
-#include "src/core/endpoint/tcp.h"
-#include <grpc/support/time.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-
-/* Asynchronously connect to an address (specified as (addr, len)), and call
-   cb with arg and the completed connection when done (or call cb with arg and
-   NULL on failure) */
-void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
-                             void *arg, grpc_em *em,
-                             const struct sockaddr *addr, int addr_len,
-                             gpr_timespec deadline);
-
-#endif  /* __GRPC_INTERNAL_ENDPOINT_TCP_CLIENT_H__ */
+#endif  // __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_

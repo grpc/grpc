@@ -42,20 +42,10 @@
 #include <unistd.h>
 
 #include "test/core/util/test_config.h"
-#include "src/core/eventmanager/em.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/log.h>
-
-static grpc_em em;
-
-static void create_sockets(int sv[2]) {
-  int flags;
-  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
-  flags = fcntl(sv[0], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
-  flags = fcntl(sv[1], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-}
 
 /* Wrapper to create an http2 transport pair */
 static int create_http2_transport_for_test(
@@ -63,17 +53,12 @@ static int create_http2_transport_for_test(
     void *client_setup_arg,
     grpc_transport_setup_callback server_setup_transport,
     void *server_setup_arg, size_t slice_size, grpc_mdctx *mdctx) {
-  int sv[2];
-  grpc_endpoint *svr_ep, *cli_ep;
-
-  create_sockets(sv);
-  svr_ep = grpc_tcp_create_dbg(sv[1], &em, slice_size);
-  cli_ep = grpc_tcp_create_dbg(sv[0], &em, slice_size);
+  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair(1);
 
   grpc_create_chttp2_transport(client_setup_transport, client_setup_arg, NULL,
-                               cli_ep, NULL, 0, mdctx, 1);
+                               p.client, NULL, 0, mdctx, 1);
   grpc_create_chttp2_transport(server_setup_transport, server_setup_arg, NULL,
-                               svr_ep, NULL, 0, mdctx, 0);
+                               p.server, NULL, 0, mdctx, 0);
 
   return 0;
 }
@@ -126,13 +111,13 @@ int main(int argc, char **argv) {
   signal(SIGPIPE, SIG_IGN);
 
   grpc_test_init(argc, argv);
-  grpc_em_init(&em);
+  grpc_iomgr_init();
 
   for (i = 0; i < sizeof(fixture_configs) / sizeof(*fixture_configs); i++) {
     grpc_transport_end2end_tests(&fixture_configs[i]);
   }
 
-  grpc_em_destroy(&em);
+  grpc_iomgr_shutdown();
 
   gpr_log(GPR_INFO, "exiting");
   return 0;

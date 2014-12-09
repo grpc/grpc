@@ -39,10 +39,10 @@
 #include "src/core/channel/census_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
+#include "src/core/iomgr/iomgr.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
-#include "src/core/surface/surface_em.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
@@ -73,7 +73,6 @@ struct grpc_server {
   const grpc_channel_filter **channel_filters;
   grpc_channel_args *channel_args;
   grpc_completion_queue *cq;
-  grpc_em *em;
 
   gpr_mu mu;
 
@@ -193,7 +192,7 @@ static void orphan_channel(channel_data *chand) {
   chand->next = chand->prev = chand;
 }
 
-static void finish_destroy_channel(void *cd, grpc_em_cb_status status) {
+static void finish_destroy_channel(void *cd, grpc_iomgr_cb_status status) {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
   /*gpr_log(GPR_INFO, "destroy channel %p", chand->channel);*/
@@ -206,7 +205,7 @@ static void destroy_channel(channel_data *chand) {
   GPR_ASSERT(chand->server != NULL);
   orphan_channel(chand);
   server_ref(chand->server);
-  grpc_em_add_callback(chand->server->em, finish_destroy_channel, chand);
+  grpc_iomgr_add_callback(finish_destroy_channel, chand);
 }
 
 static void queue_new_rpc(grpc_server *server, call_data *calld, void *tag) {
@@ -254,7 +253,7 @@ static void start_new_rpc(grpc_call_element *elem) {
   gpr_mu_unlock(&server->mu);
 }
 
-static void kill_zombie(void *elem, grpc_em_cb_status status) {
+static void kill_zombie(void *elem, grpc_iomgr_cb_status status) {
   grpc_call_destroy(grpc_call_from_top_element(elem));
 }
 
@@ -275,7 +274,7 @@ static void finish_rpc(grpc_call_element *elem, int is_full_close) {
     /* fallthrough intended */
     case NOT_STARTED:
       calld->state = ZOMBIED;
-      grpc_em_add_callback(chand->server->em, kill_zombie, elem);
+      grpc_iomgr_add_callback(kill_zombie, elem);
       break;
     case ZOMBIED:
       break;
@@ -341,7 +340,7 @@ static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
   }
 }
 
-static void finish_shutdown_channel(void *cd, grpc_em_cb_status status) {
+static void finish_shutdown_channel(void *cd, grpc_iomgr_cb_status status) {
   channel_data *chand = cd;
   grpc_channel_op op;
   op.type = GRPC_CHANNEL_DISCONNECT;
@@ -354,7 +353,7 @@ static void finish_shutdown_channel(void *cd, grpc_em_cb_status status) {
 
 static void shutdown_channel(channel_data *chand) {
   grpc_channel_internal_ref(chand->channel);
-  grpc_em_add_callback(chand->server->em, finish_shutdown_channel, chand);
+  grpc_iomgr_add_callback(finish_shutdown_channel, chand);
 }
 
 static void init_call_elem(grpc_call_element *elem,
@@ -442,7 +441,6 @@ grpc_server *grpc_server_create_from_filters(grpc_completion_queue *cq,
   gpr_mu_init(&server->mu);
 
   server->cq = cq;
-  server->em = grpc_surface_em();
   /* decremented by grpc_server_destroy */
   gpr_ref_init(&server->internal_refcount, 1);
   server->root_channel_data.next = server->root_channel_data.prev =

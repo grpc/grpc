@@ -31,17 +31,26 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
+#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_H__
+#define __GRPC_INTERNAL_IOMGR_IOMGR_H__
 
-#include "src/core/endpoint/endpoint.h"
-#include "src/core/transport/transport.h"
+/* Status passed to callbacks for grpc_em_fd_notify_on_read and
+   grpc_em_fd_notify_on_write.  */
+typedef enum grpc_em_cb_status {
+  GRPC_CALLBACK_SUCCESS = 0,
+  GRPC_CALLBACK_TIMED_OUT,
+  GRPC_CALLBACK_CANCELLED,
+  GRPC_CALLBACK_DO_NOT_USE
+} grpc_iomgr_cb_status;
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+/* gRPC Callback definition */
+typedef void (*grpc_iomgr_cb_func)(void *arg, grpc_iomgr_cb_status status);
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__ */
+void grpc_iomgr_init();
+void grpc_iomgr_shutdown();
+
+/* This function is called from within a callback or from anywhere else
+   and causes the invocation of a callback at some point in the future */
+void grpc_iomgr_add_callback(grpc_iomgr_cb_func cb, void *cb_arg);
+
+#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_H__ */

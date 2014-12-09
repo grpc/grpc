@@ -36,7 +36,6 @@
 
 #include <stddef.h>
 
-#include "src/core/eventmanager/em.h"
 #include <grpc/support/time.h>
 
 /* User agent this library reports */
@@ -90,7 +89,7 @@ typedef void (*grpc_httpcli_response_cb)(void *user_data,
    'on_response' is a callback to report results to (and 'user_data' is a user
      supplied pointer to pass to said call) */
 void grpc_httpcli_get(const grpc_httpcli_request *request,
-                      gpr_timespec deadline, grpc_em *em,
+                      gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data);
 
 /* Asynchronously perform a HTTP POST.
@@ -98,7 +97,7 @@ void grpc_httpcli_get(const grpc_httpcli_request *request,
    Does not support ?var1=val1&var2=val2 in the path. */
 void grpc_httpcli_post(const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline, grpc_em *em,
+                       gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data);
 
 #endif  /* __GRPC_INTERNAL_HTTPCLI_HTTPCLI_H__ */

@@ -31,8 +31,16 @@
  *
  */
 
-/* Windows event manager support code. */
-#include <event2/thread.h>
+#ifndef __GRPC_INTERNAL_IOMGR_ENDPOINT_PAIR_H_
+#define __GRPC_INTERNAL_IOMGR_ENDPOINT_PAIR_H_
 
-/* Notify LibEvent that Windows thread is used. */
-int evthread_use_threads() { return evthread_use_windows_threads(); }
+#include "src/core/endpoint/endpoint.h"
+
+typedef struct {
+  grpc_endpoint *client;
+  grpc_endpoint *server;
+} grpc_endpoint_pair;
+
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(size_t read_slice_size);
+
+#endif /* __GRPC_INTERNAL_IOMGR_ENDPOINT_PAIR_H_ */

@@ -49,7 +49,7 @@
 #endif
 #include <sys/socket.h>
 
-#include "src/core/endpoint/socket_utils.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/cmdline.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>

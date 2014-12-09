@@ -31,14 +31,17 @@
  *
  */
 
-#include "src/core/endpoint/tcp_client.h"
+#include "src/core/iomgr/tcp_client.h"
 
 #include <errno.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/endpoint/socket_utils.h"
+#include "src/core/iomgr/iomgr_libevent.h"
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/tcp_posix.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -46,7 +49,7 @@
 typedef struct {
   void (*cb)(void *arg, grpc_endpoint *tcp);
   void *cb_arg;
-  grpc_em_fd *fd;
+  grpc_fd *fd;
   gpr_timespec deadline;
 } async_connect;
 
@@ -71,12 +74,12 @@ error:
   return 0;
 }
 
-static void on_writable(void *acp, grpc_em_cb_status status) {
+static void on_writable(void *acp, grpc_iomgr_cb_status status) {
   async_connect *ac = acp;
   int so_error = 0;
   socklen_t so_error_size;
   int err;
-  int fd = grpc_em_fd_get(ac->fd);
+  int fd = grpc_fd_get(ac->fd);
 
   if (status == GRPC_CALLBACK_SUCCESS) {
     do {
@@ -103,7 +106,7 @@ static void on_writable(void *acp, grpc_em_cb_status status) {
            opened too many network connections.  The "easy" fix:
            don't do that! */
         gpr_log(GPR_ERROR, "kernel out of buffers");
-        grpc_em_fd_notify_on_write(ac->fd, on_writable, ac, ac->deadline);
+        grpc_fd_notify_on_write(ac->fd, on_writable, ac, ac->deadline);
         return;
       } else {
         goto error;
@@ -120,20 +123,18 @@ static void on_writable(void *acp, grpc_em_cb_status status) {
 
 error:
   ac->cb(ac->cb_arg, NULL);
-  grpc_em_fd_destroy(ac->fd);
-  gpr_free(ac->fd);
+  grpc_fd_destroy(ac->fd);
   gpr_free(ac);
   return;
 
 great_success:
-  ac->cb(ac->cb_arg, grpc_tcp_create_emfd(ac->fd));
+  ac->cb(ac->cb_arg, grpc_tcp_create(ac->fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
   gpr_free(ac);
 }
 
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
-                             void *arg, grpc_em *em,
-                             const struct sockaddr *addr, int addr_len,
-                             gpr_timespec deadline) {
+                             void *arg, const struct sockaddr *addr,
+                             int addr_len, gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
@@ -167,7 +168,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   } while (err < 0 && errno == EINTR);
 
   if (err >= 0) {
-    cb(arg, grpc_tcp_create(fd, em));
+    cb(arg,
+       grpc_tcp_create(grpc_fd_create(fd), GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
     return;
   }
 
@@ -182,7 +184,6 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->cb = cb;
   ac->cb_arg = arg;
   ac->deadline = deadline;
-  ac->fd = gpr_malloc(sizeof(grpc_em_fd));
-  grpc_em_fd_init(ac->fd, em, fd);
-  grpc_em_fd_notify_on_write(ac->fd, on_writable, ac, deadline);
+  ac->fd = grpc_fd_create(fd);
+  grpc_fd_notify_on_write(ac->fd, on_writable, ac, deadline);
 }

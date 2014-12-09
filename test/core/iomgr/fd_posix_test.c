@@ -32,7 +32,7 @@
  */
 
 /* Test gRPC event manager with a simple TCP upload server and client. */
-#include "src/core/eventmanager/em.h"
+#include "src/core/iomgr/iomgr_libevent.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -92,8 +92,7 @@ void no_op_cb(void *arg, enum grpc_em_cb_status status) {}
 
 /* An upload server. */
 typedef struct {
-  grpc_em em;               /* event manger used by the sever */
-  grpc_em_fd em_fd;         /* listening fd */
+  grpc_fd *em_fd;           /* listening fd */
   ssize_t read_bytes_total; /* total number of received bytes */
   gpr_mu mu;                /* protect done and done_cv */
   gpr_cv done_cv;           /* signaled when a server finishes serving */
@@ -101,7 +100,6 @@ typedef struct {
 } server;
 
 static void server_init(server *sv) {
-  GPR_ASSERT(grpc_em_init(&sv->em) == GRPC_EM_OK);
   sv->read_bytes_total = 0;
   gpr_mu_init(&sv->mu);
   gpr_cv_init(&sv->done_cv);
@@ -112,7 +110,7 @@ static void server_init(server *sv) {
    Created when a new upload request arrives in the server. */
 typedef struct {
   server *sv;              /* not owned by a single session */
-  grpc_em_fd em_fd;        /* fd to read upload bytes */
+  grpc_fd *em_fd;          /* fd to read upload bytes */
   char read_buf[BUF_SIZE]; /* buffer to store upload bytes */
 } session;
 
@@ -122,17 +120,17 @@ static void session_shutdown_cb(void *arg, /*session*/
                                 enum grpc_em_cb_status status) {
   session *se = arg;
   server *sv = se->sv;
-  grpc_em_fd_destroy(&se->em_fd);
+  grpc_fd_destroy(se->em_fd);
   gpr_free(se);
   /* Start to shutdown listen fd. */
-  grpc_em_fd_shutdown(&sv->em_fd);
+  grpc_fd_shutdown(sv->em_fd);
 }
 
 /* Called when data become readable in a session. */
 static void session_read_cb(void *arg, /*session*/
                             enum grpc_em_cb_status status) {
   session *se = arg;
-  int fd = grpc_em_fd_get(&se->em_fd);
+  int fd = grpc_fd_get(se->em_fd);
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
@@ -153,8 +151,8 @@ static void session_read_cb(void *arg, /*session*/
      It is possible to read nothing due to spurious edge event or data has
      been drained, In such a case, read() returns -1 and set errno to EAGAIN. */
   if (read_once == 0) {
-    grpc_em_fd_shutdown(&se->em_fd);
-    grpc_em_fd_notify_on_read(&se->em_fd, session_read_cb, se, gpr_inf_future);
+    grpc_fd_shutdown(se->em_fd);
+    grpc_fd_notify_on_read(se->em_fd, session_read_cb, se, gpr_inf_future);
   } else if (read_once == -1) {
     if (errno == EAGAIN) {
       /* An edge triggered event is cached in the kernel until next poll.
@@ -165,8 +163,8 @@ static void session_read_cb(void *arg, /*session*/
          TODO(chenw): in multi-threaded version, callback and polling can be
          run in different threads. polling may catch a persist read edge event
          before notify_on_read is called.  */
-      GPR_ASSERT(grpc_em_fd_notify_on_read(&se->em_fd, session_read_cb, se,
-                                           gpr_inf_future) == GRPC_EM_OK);
+      GPR_ASSERT(grpc_fd_notify_on_read(se->em_fd, session_read_cb, se,
+                                        gpr_inf_future));
     } else {
       gpr_log(GPR_ERROR, "Unhandled read error %s", strerror(errno));
       GPR_ASSERT(0);
@@ -180,7 +178,7 @@ static void listen_shutdown_cb(void *arg /*server*/,
                                enum grpc_em_cb_status status) {
   server *sv = arg;
 
-  grpc_em_fd_destroy(&sv->em_fd);
+  grpc_fd_destroy(sv->em_fd);
 
   gpr_mu_lock(&sv->mu);
   sv->done = 1;
@@ -197,26 +195,26 @@ static void listen_cb(void *arg, /*=sv_arg*/
   session *se;
   struct sockaddr_storage ss;
   socklen_t slen = sizeof(ss);
-  struct grpc_em_fd *listen_em_fd = &sv->em_fd;
+  struct grpc_fd *listen_em_fd = sv->em_fd;
 
   if (status == GRPC_CALLBACK_CANCELLED) {
     listen_shutdown_cb(arg, GRPC_CALLBACK_SUCCESS);
     return;
   }
 
-  fd = accept(grpc_em_fd_get(listen_em_fd), (struct sockaddr *)&ss, &slen);
+  fd = accept(grpc_fd_get(listen_em_fd), (struct sockaddr *)&ss, &slen);
   GPR_ASSERT(fd >= 0);
   GPR_ASSERT(fd < FD_SETSIZE);
   flags = fcntl(fd, F_GETFL, 0);
   fcntl(fd, F_SETFL, flags | O_NONBLOCK);
   se = gpr_malloc(sizeof(*se));
   se->sv = sv;
-  GPR_ASSERT(grpc_em_fd_init(&se->em_fd, &sv->em, fd) == GRPC_EM_OK);
-  GPR_ASSERT(grpc_em_fd_notify_on_read(&se->em_fd, session_read_cb, se,
-                                       gpr_inf_future) == GRPC_EM_OK);
+  se->em_fd = grpc_fd_create(fd);
+  GPR_ASSERT(
+      grpc_fd_notify_on_read(se->em_fd, session_read_cb, se, gpr_inf_future));
 
-  GPR_ASSERT(grpc_em_fd_notify_on_read(listen_em_fd, listen_cb, sv,
-                                       gpr_inf_future) == GRPC_EM_OK);
+  GPR_ASSERT(
+      grpc_fd_notify_on_read(listen_em_fd, listen_cb, sv, gpr_inf_future));
 }
 
 /* Max number of connections pending to be accepted by listen(). */
@@ -235,14 +233,13 @@ static int server_start(server *sv) {
   create_test_socket(port, &fd, &sin);
   addr_len = sizeof(sin);
   GPR_ASSERT(bind(fd, (struct sockaddr *)&sin, addr_len) == 0);
-  GPR_ASSERT(getsockname(fd, (struct sockaddr *)&sin, &addr_len) == GRPC_EM_OK);
+  GPR_ASSERT(getsockname(fd, (struct sockaddr *)&sin, &addr_len) == 0);
   port = ntohs(sin.sin_port);
   GPR_ASSERT(listen(fd, MAX_NUM_FD) == 0);
 
-  GPR_ASSERT(grpc_em_fd_init(&sv->em_fd, &sv->em, fd) == GRPC_EM_OK);
+  sv->em_fd = grpc_fd_create(fd);
   /* Register to be interested in reading from listen_fd. */
-  GPR_ASSERT(grpc_em_fd_notify_on_read(&sv->em_fd, listen_cb, sv,
-                                       gpr_inf_future) == GRPC_EM_OK);
+  GPR_ASSERT(grpc_fd_notify_on_read(sv->em_fd, listen_cb, sv, gpr_inf_future));
 
   return port;
 }
@@ -255,8 +252,6 @@ static void server_wait_and_shutdown(server *sv) {
 
   gpr_mu_destroy(&sv->mu);
   gpr_cv_destroy(&sv->done_cv);
-
-  GPR_ASSERT(grpc_em_destroy(&sv->em) == GRPC_EM_OK);
 }
 
 /* ===An upload client to test notify_on_write=== */
@@ -268,8 +263,7 @@ static void server_wait_and_shutdown(server *sv) {
 
 /* An upload client. */
 typedef struct {
-  grpc_em em;
-  grpc_em_fd em_fd;
+  grpc_fd *em_fd;
   char write_buf[CLIENT_WRITE_BUF_SIZE];
   ssize_t write_bytes_total;
   /* Number of times that the client fills up the write buffer and calls
@@ -282,7 +276,6 @@ typedef struct {
 } client;
 
 static void client_init(client *cl) {
-  GPR_ASSERT(grpc_em_init(&cl->em) == GRPC_EM_OK);
   memset(cl->write_buf, 0, sizeof(cl->write_buf));
   cl->write_bytes_total = 0;
   cl->client_write_cnt = 0;
@@ -295,7 +288,7 @@ static void client_init(client *cl) {
 static void client_session_shutdown_cb(void *arg /*client*/,
                                        enum grpc_em_cb_status status) {
   client *cl = arg;
-  grpc_em_fd_destroy(&cl->em_fd);
+  grpc_fd_destroy(cl->em_fd);
   gpr_mu_lock(&cl->mu);
   cl->done = 1;
   gpr_cv_signal(&cl->done_cv);
@@ -306,7 +299,7 @@ static void client_session_shutdown_cb(void *arg /*client*/,
 static void client_session_write(void *arg, /*client*/
                                  enum grpc_em_cb_status status) {
   client *cl = arg;
-  int fd = grpc_em_fd_get(&cl->em_fd);
+  int fd = grpc_fd_get(cl->em_fd);
   ssize_t write_once = 0;
 
   if (status == GRPC_CALLBACK_CANCELLED) {
@@ -322,14 +315,14 @@ static void client_session_write(void *arg, /*client*/
   if (errno == EAGAIN) {
     gpr_mu_lock(&cl->mu);
     if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-      GPR_ASSERT(grpc_em_fd_notify_on_write(&cl->em_fd, client_session_write,
-                                            cl, gpr_inf_future) == GRPC_EM_OK);
+      GPR_ASSERT(grpc_fd_notify_on_write(cl->em_fd, client_session_write, cl,
+                                         gpr_inf_future));
       cl->client_write_cnt++;
     } else {
       close(fd);
-      grpc_em_fd_shutdown(&cl->em_fd);
-      grpc_em_fd_notify_on_write(&cl->em_fd, client_session_write, cl,
-                                 gpr_inf_future);
+      grpc_fd_shutdown(cl->em_fd);
+      grpc_fd_notify_on_write(cl->em_fd, client_session_write, cl,
+                              gpr_inf_future);
     }
     gpr_mu_unlock(&cl->mu);
   } else {
@@ -349,7 +342,7 @@ static void client_start(client *cl, int port) {
     GPR_ASSERT(0);
   }
 
-  GPR_ASSERT(grpc_em_fd_init(&cl->em_fd, &cl->em, fd) == GRPC_EM_OK);
+  cl->em_fd = grpc_fd_create(fd);
 
   client_session_write(cl, GRPC_CALLBACK_SUCCESS);
 }
@@ -362,14 +355,12 @@ static void client_wait_and_shutdown(client *cl) {
 
   gpr_mu_destroy(&cl->mu);
   gpr_cv_destroy(&cl->done_cv);
-
-  GPR_ASSERT(grpc_em_destroy(&cl->em) == GRPC_EM_OK);
 }
 
-/* Test grpc_em_fd. Start an upload server and client, upload a stream of
+/* Test grpc_fd. Start an upload server and client, upload a stream of
    bytes from the client to the server, and verify that the total number of
    sent bytes is equal to the total number of received bytes. */
-static void test_grpc_em_fd() {
+static void test_grpc_fd() {
   server sv;
   client cl;
   int port;
@@ -425,9 +416,8 @@ static void second_read_callback(void *arg /* fd_change_data */,
    Note that we have two different but almost identical callbacks above -- the
    point is to have two different function pointers and two different data
    pointers and make sure that changing both really works. */
-static void test_grpc_em_fd_change() {
-  grpc_em em;
-  grpc_em_fd em_fd;
+static void test_grpc_fd_change() {
+  grpc_fd *em_fd;
   fd_change_data a, b;
   int flags;
   int sv[2];
@@ -443,11 +433,10 @@ static void test_grpc_em_fd_change() {
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 
-  grpc_em_init(&em);
-  grpc_em_fd_init(&em_fd, &em, sv[0]);
+  em_fd = grpc_fd_create(sv[0]);
 
   /* Register the first callback, then make its FD readable */
-  grpc_em_fd_notify_on_read(&em_fd, first_read_callback, &a, gpr_inf_future);
+  grpc_fd_notify_on_read(em_fd, first_read_callback, &a, gpr_inf_future);
   data = 0;
   result = write(sv[1], &data, 1);
   GPR_ASSERT(result == 1);
@@ -466,7 +455,7 @@ static void test_grpc_em_fd_change() {
 
   /* Now register a second callback with distinct change data, and do the same
      thing again. */
-  grpc_em_fd_notify_on_read(&em_fd, second_read_callback, &b, gpr_inf_future);
+  grpc_fd_notify_on_read(em_fd, second_read_callback, &b, gpr_inf_future);
   data = 0;
   result = write(sv[1], &data, 1);
   GPR_ASSERT(result == 1);
@@ -479,8 +468,7 @@ static void test_grpc_em_fd_change() {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(&b.mu);
 
-  grpc_em_fd_destroy(&em_fd);
-  grpc_em_destroy(&em);
+  grpc_fd_destroy(em_fd);
   destroy_change_data(&a);
   destroy_change_data(&b);
   close(sv[0]);
@@ -495,9 +483,8 @@ void timeout_callback(void *arg, enum grpc_em_cb_status status) {
   }
 }
 
-void test_grpc_em_fd_notify_timeout() {
-  grpc_em em;
-  grpc_em_fd em_fd;
+void test_grpc_fd_notify_timeout() {
+  grpc_fd *em_fd;
   gpr_event ev;
   int flags;
   int sv[2];
@@ -512,206 +499,26 @@ void test_grpc_em_fd_notify_timeout() {
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 
-  grpc_em_init(&em);
-  grpc_em_fd_init(&em_fd, &em, sv[0]);
+  em_fd = grpc_fd_create(sv[0]);
 
   timeout = gpr_time_from_micros(1000000);
   deadline = gpr_time_add(gpr_now(), timeout);
 
-  grpc_em_fd_notify_on_read(&em_fd, timeout_callback, &ev, deadline);
+  grpc_fd_notify_on_read(em_fd, timeout_callback, &ev, deadline);
 
   GPR_ASSERT(gpr_event_wait(&ev, gpr_time_add(deadline, timeout)));
 
   GPR_ASSERT(gpr_event_get(&ev) == (void *)1);
-  grpc_em_fd_destroy(&em_fd);
-  grpc_em_destroy(&em);
+  grpc_fd_destroy(em_fd);
   close(sv[1]);
-}
-
-typedef struct {
-  grpc_em *em;
-  gpr_cv cv;
-  gpr_mu mu;
-  int counter;
-  int done_success_ctr;
-  int done_cancel_ctr;
-  int done;
-  gpr_event fcb_arg;
-  grpc_em_cb_status status;
-} alarm_arg;
-
-static void followup_cb(void *arg, grpc_em_cb_status status) {
-  gpr_event_set((gpr_event *)arg, arg);
-}
-
-/* Called when an alarm expires. */
-static void alarm_cb(void *arg /* alarm_arg */, grpc_em_cb_status status) {
-  alarm_arg *a = arg;
-  gpr_mu_lock(&a->mu);
-  if (status == GRPC_CALLBACK_SUCCESS) {
-    a->counter++;
-    a->done_success_ctr++;
-  } else if (status == GRPC_CALLBACK_CANCELLED) {
-    a->done_cancel_ctr++;
-  } else {
-    GPR_ASSERT(0);
-  }
-  a->done = 1;
-  a->status = status;
-  gpr_cv_signal(&a->cv);
-  gpr_mu_unlock(&a->mu);
-  grpc_em_add_callback(a->em, followup_cb, &a->fcb_arg);
-}
-
-/* Test grpc_em_alarm add and cancel. */
-static void test_grpc_em_alarm() {
-  struct grpc_em em;
-  struct grpc_em_alarm alarm;
-  struct grpc_em_alarm alarm_to_cancel;
-  gpr_timespec tv0 = {0, 1};
-  /* Timeout on the alarm cond. var, so make big enough to absorb time
-     deviations. Otherwise, operations after wait will not be properly ordered
-   */
-  gpr_timespec tv1 = gpr_time_from_micros(200000);
-  gpr_timespec tv2 = {0, 1};
-  gpr_timespec alarm_deadline;
-  gpr_timespec followup_deadline;
-
-  alarm_arg arg;
-  alarm_arg arg2;
-  void *fdone;
-
-  GPR_ASSERT(grpc_em_init(&em) == GRPC_EM_OK);
-
-  arg.em = &em;
-  arg.counter = 0;
-  arg.status = GRPC_CALLBACK_DO_NOT_USE;
-  arg.done_success_ctr = 0;
-  arg.done_cancel_ctr = 0;
-  arg.done = 0;
-  gpr_mu_init(&arg.mu);
-  gpr_cv_init(&arg.cv);
-  gpr_event_init(&arg.fcb_arg);
-
-  GPR_ASSERT(grpc_em_alarm_init(&alarm, &em, alarm_cb, &arg) == GRPC_EM_OK);
-  GPR_ASSERT(grpc_em_alarm_add(&alarm, gpr_time_add(tv0, gpr_now())) ==
-             GRPC_EM_OK);
-
-  alarm_deadline = gpr_time_add(gpr_now(), tv1);
-  gpr_mu_lock(&arg.mu);
-  while (arg.done == 0) {
-    gpr_cv_wait(&arg.cv, &arg.mu, alarm_deadline);
-  }
-  gpr_mu_unlock(&arg.mu);
-
-  followup_deadline = gpr_time_add(gpr_now(), tv1);
-  fdone = gpr_event_wait(&arg.fcb_arg, followup_deadline);
-
-  if (arg.counter != 1) {
-    gpr_log(GPR_ERROR, "Alarm callback not called");
-    GPR_ASSERT(0);
-  } else if (arg.done_success_ctr != 1) {
-    gpr_log(GPR_ERROR, "Alarm done callback not called with success");
-    GPR_ASSERT(0);
-  } else if (arg.done_cancel_ctr != 0) {
-    gpr_log(GPR_ERROR, "Alarm done callback called with cancel");
-    GPR_ASSERT(0);
-  } else if (arg.status == GRPC_CALLBACK_DO_NOT_USE) {
-    gpr_log(GPR_ERROR, "Alarm callback without status");
-    GPR_ASSERT(0);
-  } else {
-    gpr_log(GPR_INFO, "Alarm callback called successfully");
-  }
-
-  if (fdone != (void *)&arg.fcb_arg) {
-    gpr_log(GPR_ERROR, "Followup callback #1 not invoked properly %p %p", fdone,
-            &arg.fcb_arg);
-    GPR_ASSERT(0);
-  }
-  gpr_cv_destroy(&arg.cv);
-  gpr_mu_destroy(&arg.mu);
-
-  arg2.em = &em;
-  arg2.counter = 0;
-  arg2.status = GRPC_CALLBACK_DO_NOT_USE;
-  arg2.done_success_ctr = 0;
-  arg2.done_cancel_ctr = 0;
-  arg2.done = 0;
-  gpr_mu_init(&arg2.mu);
-  gpr_cv_init(&arg2.cv);
-  gpr_event_init(&arg2.fcb_arg);
-
-  GPR_ASSERT(grpc_em_alarm_init(&alarm_to_cancel, &em, alarm_cb, &arg2) ==
-             GRPC_EM_OK);
-  GPR_ASSERT(grpc_em_alarm_add(&alarm_to_cancel,
-                               gpr_time_add(tv2, gpr_now())) == GRPC_EM_OK);
-  switch (grpc_em_alarm_cancel(&alarm_to_cancel)) {
-    case GRPC_EM_OK:
-      gpr_log(GPR_INFO, "Alarm cancel succeeded");
-      break;
-    case GRPC_EM_ERROR:
-      gpr_log(GPR_ERROR, "Alarm cancel failed");
-      GPR_ASSERT(0);
-      break;
-    case GRPC_EM_INVALID_ARGUMENTS:
-      gpr_log(GPR_ERROR, "Alarm cancel failed with bad response code");
-      gpr_log(GPR_ERROR, "Current value of triggered is %d\n",
-              (int)alarm_to_cancel.triggered);
-      GPR_ASSERT(0);
-      break;
-  }
-
-  alarm_deadline = gpr_time_add(gpr_now(), tv1);
-  gpr_mu_lock(&arg2.mu);
-  while (arg2.done == 0) {
-    gpr_cv_wait(&arg2.cv, &arg2.mu, alarm_deadline);
-  }
-  gpr_mu_unlock(&arg2.mu);
-
-  followup_deadline = gpr_time_add(gpr_now(), tv1);
-  fdone = gpr_event_wait(&arg2.fcb_arg, followup_deadline);
-
-  if (arg2.counter != arg2.done_success_ctr) {
-    gpr_log(GPR_ERROR, "Alarm callback called but didn't lead to done success");
-    GPR_ASSERT(0);
-  } else if (arg2.done_success_ctr && arg2.done_cancel_ctr) {
-    gpr_log(GPR_ERROR, "Alarm done callback called with success and cancel");
-    GPR_ASSERT(0);
-  } else if (arg2.done_cancel_ctr + arg2.done_success_ctr != 1) {
-    gpr_log(GPR_ERROR, "Alarm done callback called incorrect number of times");
-    GPR_ASSERT(0);
-  } else if (arg2.status == GRPC_CALLBACK_DO_NOT_USE) {
-    gpr_log(GPR_ERROR, "Alarm callback without status");
-    GPR_ASSERT(0);
-  } else if (arg2.done_success_ctr) {
-    gpr_log(GPR_INFO, "Alarm callback executed before cancel");
-    gpr_log(GPR_INFO, "Current value of triggered is %d\n",
-            (int)alarm_to_cancel.triggered);
-  } else if (arg2.done_cancel_ctr) {
-    gpr_log(GPR_INFO, "Alarm callback canceled");
-    gpr_log(GPR_INFO, "Current value of triggered is %d\n",
-            (int)alarm_to_cancel.triggered);
-  } else {
-    gpr_log(GPR_ERROR, "Alarm cancel test should not be here");
-    GPR_ASSERT(0);
-  }
-
-  if (fdone != (void *)&arg2.fcb_arg) {
-    gpr_log(GPR_ERROR, "Followup callback #2 not invoked properly %p %p", fdone,
-            &arg2.fcb_arg);
-    GPR_ASSERT(0);
-  }
-  gpr_cv_destroy(&arg2.cv);
-  gpr_mu_destroy(&arg2.mu);
-
-  GPR_ASSERT(grpc_em_destroy(&em) == GRPC_EM_OK);
 }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  test_grpc_em_alarm();
-  test_grpc_em_fd();
-  test_grpc_em_fd_change();
-  test_grpc_em_fd_notify_timeout();
+  grpc_iomgr_init();
+  test_grpc_fd();
+  test_grpc_fd_change();
+  test_grpc_fd_notify_timeout();
+  grpc_iomgr_shutdown();
   return 0;
 }

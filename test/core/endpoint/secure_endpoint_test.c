@@ -39,41 +39,25 @@
 #include <unistd.h>
 
 #include "src/core/endpoint/secure_endpoint.h"
-#include "src/core/endpoint/tcp.h"
-#include "src/core/eventmanager/em.h"
-#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/iomgr/endpoint_pair.h"
+#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
-
-grpc_em g_em;
-
-static void create_sockets(int sv[2]) {
-  int flags;
-  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
-  flags = fcntl(sv[0], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
-  flags = fcntl(sv[1], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-}
+#include "src/core/tsi/fake_transport_security.h"
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
-  int sv[2];
   tsi_frame_protector *fake_read_protector = tsi_create_fake_protector(NULL);
   tsi_frame_protector *fake_write_protector = tsi_create_fake_protector(NULL);
   grpc_endpoint_test_fixture f;
-  grpc_endpoint *tcp_read;
-  grpc_endpoint *tcp_write;
+  grpc_endpoint_pair tcp;
 
-  create_sockets(sv);
-  grpc_em_init(&g_em);
-  tcp_read = grpc_tcp_create_dbg(sv[0], &g_em, slice_size);
-  tcp_write = grpc_tcp_create(sv[1], &g_em);
+  tcp = grpc_iomgr_create_endpoint_pair(slice_size);
 
   if (leftover_nslices == 0) {
     f.client_ep =
-        grpc_secure_endpoint_create(fake_read_protector, tcp_read, NULL, 0);
+        grpc_secure_endpoint_create(fake_read_protector, tcp.client, NULL, 0);
   } else {
     int i;
     tsi_result result;
@@ -115,14 +99,14 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     } while (still_pending_size > 0);
     encrypted_leftover = gpr_slice_from_copied_buffer(
         (const char *)encrypted_buffer, total_buffer_size - buffer_size);
-    f.client_ep = grpc_secure_endpoint_create(fake_read_protector, tcp_read,
+    f.client_ep = grpc_secure_endpoint_create(fake_read_protector, tcp.client,
                                               &encrypted_leftover, 1);
     gpr_slice_unref(encrypted_leftover);
     gpr_free(encrypted_buffer);
   }
 
   f.server_ep =
-      grpc_secure_endpoint_create(fake_write_protector, tcp_write, NULL, 0);
+      grpc_secure_endpoint_create(fake_write_protector, tcp.server, NULL, 0);
   return f;
 }
 
@@ -141,7 +125,7 @@ secure_endpoint_create_fixture_tcp_socketpair_leftover(size_t slice_size) {
   return f;
 }
 
-static void clean_up() { grpc_em_destroy(&g_em); }
+static void clean_up() {}
 
 static grpc_endpoint_test_config configs[] = {
     {"secure_ep/tcp_socketpair",
@@ -213,9 +197,11 @@ static void test_destroy_ep_early(grpc_endpoint_test_config config,
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
+  grpc_iomgr_init();
   grpc_endpoint_tests(configs[0]);
   test_leftover(configs[1], 1);
   test_destroy_ep_early(configs[1], 1);
+  grpc_iomgr_shutdown();
 
   return 0;
 }

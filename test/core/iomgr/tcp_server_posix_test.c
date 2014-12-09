@@ -31,8 +31,8 @@
  *
  */
 
-#include "src/core/endpoint/tcp_server.h"
-#include "src/core/eventmanager/em.h"
+#include "src/core/iomgr/tcp_server.h"
+#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -43,8 +43,6 @@
 #include <unistd.h>
 
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
-
-static grpc_em em;
 
 static gpr_mu mu;
 static gpr_cv cv;
@@ -61,12 +59,12 @@ static void on_connect(void *arg, grpc_endpoint *tcp) {
 }
 
 static void test_no_op() {
-  grpc_tcp_server *s = grpc_tcp_server_create(&em);
+  grpc_tcp_server *s = grpc_tcp_server_create();
   grpc_tcp_server_destroy(s);
 }
 
 static void test_no_op_with_start() {
-  grpc_tcp_server *s = grpc_tcp_server_create(&em);
+  grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST();
   grpc_tcp_server_start(s, on_connect, NULL);
   grpc_tcp_server_destroy(s);
@@ -74,7 +72,7 @@ static void test_no_op_with_start() {
 
 static void test_no_op_with_port() {
   struct sockaddr_in addr;
-  grpc_tcp_server *s = grpc_tcp_server_create(&em);
+  grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST();
 
   memset(&addr, 0, sizeof(addr));
@@ -87,7 +85,7 @@ static void test_no_op_with_port() {
 
 static void test_no_op_with_port_and_start() {
   struct sockaddr_in addr;
-  grpc_tcp_server *s = grpc_tcp_server_create(&em);
+  grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST();
 
   memset(&addr, 0, sizeof(addr));
@@ -104,7 +102,7 @@ static void test_connect(int n) {
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
   int svrfd, clifd;
-  grpc_tcp_server *s = grpc_tcp_server_create(&em);
+  grpc_tcp_server *s = grpc_tcp_server_create();
   int nconnects_before;
   gpr_timespec deadline;
   int i;
@@ -151,7 +149,7 @@ static void test_connect(int n) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_em_init(&em);
+  grpc_iomgr_init();
   gpr_mu_init(&mu);
   gpr_cv_init(&cv);
 
@@ -162,7 +160,7 @@ int main(int argc, char **argv) {
   test_connect(1);
   test_connect(10);
 
-  grpc_em_destroy(&em);
+  grpc_iomgr_shutdown();
   gpr_mu_destroy(&mu);
   gpr_cv_destroy(&cv);
   return 0;

@@ -31,17 +31,22 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
+#define _GNU_SOURCE
+#include <grpc/support/port_platform.h>
 
-#include "src/core/endpoint/endpoint.h"
-#include "src/core/transport/transport.h"
+#ifdef GPR_LINUX
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+#include "src/core/iomgr/socket_utils_posix.h"
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__ */
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
+                 int nonblock, int cloexec) {
+  int flags = 0;
+  flags |= nonblock ? SOCK_NONBLOCK : 0;
+  flags |= cloexec ? SOCK_CLOEXEC : 0;
+  return accept4(sockfd, addr, addrlen, flags);
+}
+
+#endif

@@ -34,6 +34,7 @@
 #include "src/core/channel/client_setup.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/channel_stack.h"
+#include "src/core/iomgr/alarm.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -45,8 +46,7 @@ struct grpc_client_setup {
   void *user_data;
   grpc_channel_args *args;
   grpc_mdctx *mdctx;
-  grpc_em *em;
-  grpc_em_alarm backoff_alarm;
+  grpc_alarm backoff_alarm;
   gpr_timespec current_backoff_interval;
   int in_alarm;
 
@@ -115,7 +115,7 @@ static void setup_cancel(grpc_transport_setup *sp) {
   /* effectively cancels the current request (if any) */
   s->active_request = NULL;
   if (s->in_alarm) {
-    grpc_em_alarm_cancel(&s->backoff_alarm);
+    grpc_alarm_cancel(&s->backoff_alarm);
   }
   if (--s->refs == 0) {
     gpr_mu_unlock(&s->mu);
@@ -133,7 +133,7 @@ void grpc_client_setup_create_and_attach(
     grpc_channel_stack *newly_minted_channel, const grpc_channel_args *args,
     grpc_mdctx *mdctx,
     void (*initiate)(void *user_data, grpc_client_setup_request *request),
-    void (*done)(void *user_data), void *user_data, grpc_em *em) {
+    void (*done)(void *user_data), void *user_data) {
   grpc_client_setup *s = gpr_malloc(sizeof(grpc_client_setup));
 
   s->base.vtable = &setup_vtable;
@@ -143,7 +143,6 @@ void grpc_client_setup_create_and_attach(
   s->initiate = initiate;
   s->done = done;
   s->user_data = user_data;
-  s->em = em;
   s->active_request = NULL;
   s->args = grpc_channel_args_copy(args);
   s->current_backoff_interval = gpr_time_from_micros(1000000);
@@ -164,7 +163,7 @@ int grpc_client_setup_request_should_continue(grpc_client_setup_request *r) {
 }
 
 static void backoff_alarm_done(void *arg /* grpc_client_setup */,
-                               grpc_em_cb_status status) {
+                               grpc_iomgr_cb_status status) {
   grpc_client_setup *s = arg;
   grpc_client_setup_request *r = gpr_malloc(sizeof(grpc_client_setup_request));
   r->setup = s;
@@ -215,9 +214,9 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
     gpr_timespec max_backoff = gpr_time_from_micros(120000000);
     GPR_ASSERT(!s->in_alarm);
     s->in_alarm = 1;
-    grpc_em_alarm_init(&s->backoff_alarm, s->em, backoff_alarm_done, s);
-    grpc_em_alarm_add(&s->backoff_alarm,
-                      gpr_time_add(s->current_backoff_interval, gpr_now()));
+    grpc_alarm_init(&s->backoff_alarm, backoff_alarm_done, s);
+    grpc_alarm_add(&s->backoff_alarm,
+                   gpr_time_add(s->current_backoff_interval, gpr_now()));
     s->current_backoff_interval =
         gpr_time_add(s->current_backoff_interval, s->current_backoff_interval);
     if (gpr_time_cmp(s->current_backoff_interval, max_backoff) > 0) {

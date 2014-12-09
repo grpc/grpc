@@ -31,25 +31,26 @@
  *
  */
 
-#include "src/core/surface/surface_em.h"
-#include <grpc/support/log.h>
+#ifndef __GRPC_INTERNAL_IOMGR_TCP_POSIX_H__
+#define __GRPC_INTERNAL_IOMGR_TCP_POSIX_H__
+/*
+   Low level TCP "bottom half" implementation, for use by transports built on
+   top of a TCP connection.
 
-static int initialized = 0;
-static grpc_em em;
+   Note that this file does not (yet) include APIs for creating the socket in
+   the first place.
 
-grpc_em *grpc_surface_em() {
-  GPR_ASSERT(initialized && "call grpc_init()");
-  return &em;
-}
+   All calls passing slice transfer ownership of a slice refcount unless
+   otherwise specified.
+*/
 
-void grpc_surface_em_init() {
-  GPR_ASSERT(!initialized);
-  initialized = 1;
-  grpc_em_init(&em);
-}
+#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/iomgr_libevent.h"
 
-void grpc_surface_em_shutdown() {
-  GPR_ASSERT(initialized);
-  grpc_em_destroy(&em);
-  initialized = 0;
-}
+#define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
+
+/* Create a tcp endpoint given a file desciptor and a read slice size.
+   Takes ownership of fd. */
+grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size);
+
+#endif /* __GRPC_INTERNAL_IOMGR_TCP_POSIX_H__ */

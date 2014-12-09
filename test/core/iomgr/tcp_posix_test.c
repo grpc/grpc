@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/endpoint/tcp.h"
+#include "src/core/iomgr/tcp_posix.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -41,7 +41,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "src/core/eventmanager/em.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -64,8 +63,6 @@
    The tests here tend to parameterize these where applicable.
 
  */
-
-grpc_em g_em;
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -165,7 +162,6 @@ static void read_cb(void *user_data, gpr_slice *slices, size_t nslices,
 /* Write to a socket, then read from it using the grpc_tcp API. */
 static void read_test(ssize_t num_bytes, ssize_t slice_size) {
   int sv[2];
-  grpc_em em;
   grpc_endpoint *ep;
   struct read_socket_state state;
   ssize_t written_bytes;
@@ -176,9 +172,8 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
           slice_size);
 
   create_sockets(sv);
-  grpc_em_init(&em);
 
-  ep = grpc_tcp_create_dbg(sv[1], &em, slice_size);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
   written_bytes = fill_socket_partial(sv[0], num_bytes);
   gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
 
@@ -202,7 +197,6 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
 
   grpc_endpoint_destroy(ep);
 
-  grpc_em_destroy(&em);
   gpr_mu_destroy(&state.mu);
   gpr_cv_destroy(&state.cv);
 }
@@ -211,7 +205,6 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
    API. */
 static void large_read_test(ssize_t slice_size) {
   int sv[2];
-  grpc_em em;
   grpc_endpoint *ep;
   struct read_socket_state state;
   ssize_t written_bytes;
@@ -221,9 +214,8 @@ static void large_read_test(ssize_t slice_size) {
   gpr_log(GPR_INFO, "Start large read test, slice size %d", slice_size);
 
   create_sockets(sv);
-  grpc_em_init(&em);
 
-  ep = grpc_tcp_create_dbg(sv[1], &em, slice_size);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
   written_bytes = fill_socket(sv[0]);
   gpr_log(GPR_INFO, "Wrote %d bytes", written_bytes);
 
@@ -247,7 +239,6 @@ static void large_read_test(ssize_t slice_size) {
 
   grpc_endpoint_destroy(ep);
 
-  grpc_em_destroy(&em);
   gpr_mu_destroy(&state.mu);
   gpr_cv_destroy(&state.cv);
 }
@@ -349,7 +340,6 @@ static ssize_t drain_socket(int fd) {
    socket in parallel with the read. */
 static void write_test(ssize_t num_bytes, ssize_t slice_size) {
   int sv[2];
-  grpc_em em;
   grpc_endpoint *ep;
   struct write_socket_state state;
   ssize_t read_bytes;
@@ -363,9 +353,8 @@ static void write_test(ssize_t num_bytes, ssize_t slice_size) {
           slice_size);
 
   create_sockets(sv);
-  grpc_em_init(&em);
 
-  ep = grpc_tcp_create(sv[1], &em);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1]), GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
 
   gpr_mu_init(&state.mu);
   gpr_cv_init(&state.cv);
@@ -392,7 +381,6 @@ static void write_test(ssize_t num_bytes, ssize_t slice_size) {
   }
 
   grpc_endpoint_destroy(ep);
-  grpc_em_destroy(&em);
   gpr_mu_destroy(&state.mu);
   gpr_cv_destroy(&state.cv);
   gpr_free(slices);
@@ -410,7 +398,6 @@ static void read_done_for_write_error(void *ud, gpr_slice *slices,
    socket in parallel with the read. */
 static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
   int sv[2];
-  grpc_em em;
   grpc_endpoint *ep;
   struct write_socket_state state;
   size_t num_blocks;
@@ -423,9 +410,8 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
           num_bytes, slice_size);
 
   create_sockets(sv);
-  grpc_em_init(&em);
 
-  ep = grpc_tcp_create(sv[1], &em);
+  ep = grpc_tcp_create(grpc_fd_create(sv[1]), GRPC_TCP_DEFAULT_READ_SLICE_SIZE);
   close(sv[0]);
 
   gpr_mu_init(&state.mu);
@@ -456,7 +442,6 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
   }
 
   grpc_endpoint_destroy(ep);
-  grpc_em_destroy(&em);
   gpr_mu_destroy(&state.mu);
   gpr_cv_destroy(&state.cv);
   free(slices);
@@ -487,7 +472,7 @@ void run_tests() {
   }
 }
 
-static void clean_up() { grpc_em_destroy(&g_em); }
+static void clean_up() {}
 
 static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
     size_t slice_size) {
@@ -495,9 +480,8 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
 
   create_sockets(sv);
-  grpc_em_init(&g_em);
-  f.client_ep = grpc_tcp_create_dbg(sv[0], &g_em, slice_size);
-  f.server_ep = grpc_tcp_create(sv[1], &g_em);
+  f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0]), slice_size);
+  f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1]), slice_size);
 
   return f;
 }
@@ -508,10 +492,12 @@ static grpc_endpoint_test_config configs[] = {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_iomgr_init();
   /* disable SIGPIPE */
   signal(SIGPIPE, SIG_IGN);
   run_tests();
   grpc_endpoint_tests(configs[0]);
+  grpc_iomgr_shutdown();
 
   return 0;
 }

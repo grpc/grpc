@@ -31,37 +31,10 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_ENDPOINT_RESOLVE_ADDRESS_H__
-#define __GRPC_INTERNAL_ENDPOINT_RESOLVE_ADDRESS_H__
+#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_POSIX_H_
+#define __GRPC_INTERNAL_IOMGR_SOCKADDR_POSIX_H_
 
 #include <sys/socket.h>
+#include <netinet/in.h>
 
-typedef struct {
-  struct sockaddr_storage addr;
-  int len;
-} grpc_resolved_address;
-
-typedef struct {
-  size_t naddrs;
-  grpc_resolved_address *addrs;
-} grpc_resolved_addresses;
-
-/* Async result callback:
-   On success: addresses is the result, and the callee must call
-   grpc_resolved_addresses_destroy when it's done with them
-   On failure: addresses is NULL */
-typedef void (*grpc_resolve_cb)(void *arg, grpc_resolved_addresses *addresses);
-/* Asynchronously resolve addr. Use default_port if a port isn't designated
-   in addr, otherwise use the port in addr. */
-/* TODO(ctiller): add a timeout here */
-void grpc_resolve_address(const char *addr, const char *default_port,
-                          grpc_resolve_cb cb, void *arg);
-/* Destroy resolved addresses */
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
-
-/* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
-   result must be freed with grpc_resolved_addresses_destroy. */
-grpc_resolved_addresses *grpc_blocking_resolve_address(
-    const char *addr, const char *default_port);
-
-#endif  /* __GRPC_INTERNAL_ENDPOINT_RESOLVE_ADDRESS_H__ */
+#endif /* __GRPC_INTERNAL_IOMGR_SOCKADDR_POSIX_H_ */

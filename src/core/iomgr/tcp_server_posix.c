@@ -32,7 +32,7 @@
  */
 
 #define _GNU_SOURCE
-#include "src/core/endpoint/tcp_server.h"
+#include "src/core/iomgr/tcp_server.h"
 
 #include <limits.h>
 #include <fcntl.h>
@@ -45,7 +45,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include "src/core/endpoint/socket_utils.h"
+#include "src/core/iomgr/iomgr_libevent.h"
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/tcp_posix.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -60,13 +63,12 @@ static int s_max_accept_queue_size;
 /* one listening port */
 typedef struct {
   int fd;
-  grpc_em_fd *emfd;
+  grpc_fd *emfd;
   grpc_tcp_server *server;
 } server_port;
 
 /* the overall server */
 struct grpc_tcp_server {
-  grpc_em *em;
   grpc_tcp_server_cb cb;
   void *cb_arg;
 
@@ -82,12 +84,11 @@ struct grpc_tcp_server {
   size_t port_capacity;
 };
 
-grpc_tcp_server *grpc_tcp_server_create(grpc_em *em) {
+grpc_tcp_server *grpc_tcp_server_create() {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_mu_init(&s->mu);
   gpr_cv_init(&s->cv);
   s->active_ports = 0;
-  s->em = em;
   s->cb = NULL;
   s->cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
@@ -101,7 +102,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   gpr_mu_lock(&s->mu);
   /* shutdown all fd's */
   for (i = 0; i < s->nports; i++) {
-    grpc_em_fd_shutdown(s->ports[i].emfd);
+    grpc_fd_shutdown(s->ports[i].emfd);
   }
   /* wait while that happens */
   while (s->active_ports) {
@@ -112,8 +113,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   /* delete ALL the things */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    grpc_em_fd_destroy(sp->emfd);
-    gpr_free(sp->emfd);
+    grpc_fd_destroy(sp->emfd);
   }
   gpr_free(s->ports);
   gpr_free(s);
@@ -189,7 +189,7 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(void *arg, grpc_em_cb_status status) {
+static void on_read(void *arg, grpc_iomgr_cb_status status) {
   server_port *sp = arg;
 
   if (status != GRPC_CALLBACK_SUCCESS) {
@@ -208,11 +208,7 @@ static void on_read(void *arg, grpc_em_cb_status status) {
         case EINTR:
           continue;
         case EAGAIN:
-          if (GRPC_EM_OK != grpc_em_fd_notify_on_read(sp->emfd, on_read, sp,
-                                                      gpr_inf_future)) {
-            gpr_log(GPR_ERROR, "Failed to register read request with em");
-            goto error;
-          }
+          grpc_fd_notify_on_read(sp->emfd, on_read, sp, gpr_inf_future);
           return;
         default:
           gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
@@ -220,7 +216,9 @@ static void on_read(void *arg, grpc_em_cb_status status) {
       }
     }
 
-    sp->server->cb(sp->server->cb_arg, grpc_tcp_create(fd, sp->server->em));
+    sp->server->cb(
+        sp->server->cb_arg,
+        grpc_tcp_create(grpc_fd_create(fd), GRPC_TCP_DEFAULT_READ_SLICE_SIZE));
   }
 
   abort();
@@ -249,13 +247,11 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     s->ports = gpr_realloc(s->ports, sizeof(server_port *) * s->port_capacity);
   }
   sp = &s->ports[s->nports++];
-  sp->emfd = gpr_malloc(sizeof(grpc_em_fd));
+  sp->emfd = grpc_fd_create(fd);
   sp->fd = fd;
   sp->server = s;
   /* initialize the em desc */
-  if (GRPC_EM_OK != grpc_em_fd_init(sp->emfd, s->em, fd)) {
-    grpc_em_fd_destroy(sp->emfd);
-    gpr_free(sp->emfd);
+  if (sp->emfd == NULL) {
     s->nports--;
     gpr_mu_unlock(&s->mu);
     return 0;
@@ -326,8 +322,8 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_tcp_server_cb cb,
   s->cb = cb;
   s->cb_arg = cb_arg;
   for (i = 0; i < s->nports; i++) {
-    grpc_em_fd_notify_on_read(s->ports[i].emfd, on_read, &s->ports[i],
-                              gpr_inf_future);
+    grpc_fd_notify_on_read(s->ports[i].emfd, on_read, &s->ports[i],
+                           gpr_inf_future);
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);

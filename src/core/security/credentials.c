@@ -34,7 +34,7 @@
 #include "src/core/security/credentials.h"
 
 #include "src/core/httpcli/httpcli.h"
-#include "src/core/surface/surface_em.h"
+#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
@@ -379,7 +379,7 @@ static void compute_engine_get_request_metadata(grpc_credentials *creds,
     request.hdr_count = 1;
     request.hdrs = &header;
     grpc_httpcli_get(
-        &request, gpr_time_add(gpr_now(), refresh_threshold), grpc_surface_em(),
+        &request, gpr_time_add(gpr_now(), refresh_threshold),
         on_compute_engine_token_response,
         grpc_credentials_metadata_request_create(creds, cb, user_data));
   } else {
@@ -433,7 +433,8 @@ static int fake_oauth2_has_request_metadata_only(
   return 1;
 }
 
-void on_simulated_token_fetch_done(void *user_data, grpc_em_cb_status status) {
+void on_simulated_token_fetch_done(void *user_data,
+                                   grpc_iomgr_cb_status status) {
   grpc_credentials_metadata_request *r =
       (grpc_credentials_metadata_request *)user_data;
   grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)r->creds;
@@ -448,10 +449,9 @@ static void fake_oauth2_get_request_metadata(grpc_credentials *creds,
   grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)creds;
 
   if (c->is_async) {
-    GPR_ASSERT(grpc_em_add_callback(grpc_surface_em(),
-                                    on_simulated_token_fetch_done,
-                                    grpc_credentials_metadata_request_create(
-                                        creds, cb, user_data)) == GRPC_EM_OK);
+    grpc_iomgr_add_callback(
+        on_simulated_token_fetch_done,
+        grpc_credentials_metadata_request_create(creds, cb, user_data));
   } else {
     cb(user_data, &c->access_token_md, 1, GRPC_CREDENTIALS_OK);
   }

@@ -45,40 +45,44 @@
 #if defined(_WIN64) || defined(WIN64)
 #define GPR_WIN32 1
 #define GPR_ARCH_64 1
-#define GPR_POSIX_SOCKETUTILS 1
 #elif defined(_WIN32) || defined(WIN32)
+#define GPR_ARCH_32 1
 #define GPR_WIN32 1
-#define GPR_ARCH_32 1
-#define GPR_POSIX_SOCKETUTILS 1
 #elif defined(ANDROID) || defined(__ANDROID__)
-#define GPR_POSIX_TIME 1
-#define GPR_POSIX_SYNC 1
-#define GPR_POSIX_STRING 1
-#define GPR_POSIX_SOCKET 1
-#define GPR_POSIX_SOCKETUTILS 1
 #define GPR_ANDROID 1
-#define GPR_GCC_SYNC 1
 #define GPR_ARCH_32 1
-#elif defined(__linux__)
-#define GPR_POSIX_TIME 1
-#define GPR_POSIX_SYNC 1
-#define GPR_POSIX_STRING 1
+#define GPR_GCC_SYNC 1
+#define GPR_LIBEVENT 1
 #define GPR_POSIX_SOCKET 1
-#define GPR_LINUX 1
+#define GPR_POSIX_SOCKETADDR 1
+#define GPR_POSIX_SOCKETUTILS 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#elif defined(__linux__)
 #define GPR_GCC_ATOMIC 1
+#define GPR_LIBEVENT 1
+#define GPR_LINUX 1
+#define GPR_POSIX_SOCKET 1
+#define GPR_POSIX_SOCKETADDR 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__APPLE__)
-#define GPR_POSIX_TIME 1
-#define GPR_POSIX_SYNC 1
-#define GPR_POSIX_STRING 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_LIBEVENT 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_SOCKET 1
+#define GPR_POSIX_SOCKETADDR 1
 #define GPR_POSIX_SOCKETUTILS 1
-#define GPR_GCC_ATOMIC 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */

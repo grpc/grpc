@@ -35,12 +35,11 @@
 
 #include "src/core/channel/http_filter.h"
 #include "src/core/channel/http_server_filter.h"
-#include "src/core/endpoint/resolve_address.h"
-#include "src/core/endpoint/tcp_server.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/tcp_server.h"
 #include "src/core/security/security_context.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/surface/server.h"
-#include "src/core/surface/surface_em.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -101,7 +100,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
     goto error;
   }
 
-  tcp = grpc_tcp_server_create(grpc_surface_em());
+  tcp = grpc_tcp_server_create();
   if (!tcp) {
     goto error;
   }

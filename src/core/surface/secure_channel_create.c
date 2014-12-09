@@ -43,15 +43,13 @@
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/channel/http_filter.h"
-#include "src/core/endpoint/resolve_address.h"
-#include "src/core/endpoint/tcp.h"
-#include "src/core/endpoint/tcp_client.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/tcp_client.h"
 #include "src/core/security/auth.h"
 #include "src/core/security/security_context.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/client.h"
-#include "src/core/surface/surface_em.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -78,7 +76,6 @@ struct setup {
   const char *target;
   grpc_transport_setup_callback setup_callback;
   void *setup_user_data;
-  grpc_em *em;
 };
 
 static int maybe_try_next_resolved(request *r);
@@ -139,8 +136,8 @@ static int maybe_try_next_resolved(request *r) {
   if (!r->resolved) return 0;
   if (r->resolved_index == r->resolved->naddrs) return 0;
   addr = &r->resolved->addrs[r->resolved_index++];
-  grpc_tcp_client_connect(on_connect, r, r->setup->em,
-                          (struct sockaddr *)&addr->addr, addr->len,
+  grpc_tcp_client_connect(on_connect, r, (struct sockaddr *)&addr->addr,
+                          addr->len,
                           grpc_client_setup_request_deadline(r->cs_request));
   return 1;
 }
@@ -230,7 +227,6 @@ grpc_channel *grpc_secure_channel_create_internal(
   grpc_channel_args_destroy(args_copy);
 
   s->target = gpr_strdup(target);
-  s->em = grpc_surface_em();
   s->setup_callback = complete_setup;
   s->setup_user_data = grpc_channel_get_channel_stack(channel);
   s->security_context =
@@ -238,6 +234,6 @@ grpc_channel *grpc_secure_channel_create_internal(
           &context->base);
   grpc_client_setup_create_and_attach(grpc_channel_get_channel_stack(channel),
                                       args, mdctx, initiate_setup, done_setup,
-                                      s, s->em);
+                                      s);
   return channel;
 }

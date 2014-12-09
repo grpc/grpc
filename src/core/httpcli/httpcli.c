@@ -36,8 +36,8 @@
 #include <string.h>
 
 #include "src/core/endpoint/endpoint.h"
-#include "src/core/endpoint/resolve_address.h"
-#include "src/core/endpoint/tcp_client.h"
+#include "src/core/iomgr/resolve_address.h"
+#include "src/core/iomgr/tcp_client.h"
 #include "src/core/httpcli/format_request.h"
 #include "src/core/httpcli/httpcli_security_context.h"
 #include "src/core/httpcli/parser.h"
@@ -54,7 +54,6 @@ typedef struct {
   grpc_resolved_addresses *addresses;
   size_t next_address;
   grpc_endpoint *ep;
-  grpc_em *em;
   char *host;
   gpr_timespec deadline;
   int have_read_byte;
@@ -200,9 +199,8 @@ static void next_address(internal_request *req) {
     return;
   }
   addr = &req->addresses->addrs[req->next_address++];
-  grpc_tcp_client_connect(on_connected, req, req->em,
-                          (struct sockaddr *)&addr->addr, addr->len,
-                          req->deadline);
+  grpc_tcp_client_connect(on_connected, req, (struct sockaddr *)&addr->addr,
+                          addr->len, req->deadline);
 }
 
 static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
@@ -217,7 +215,7 @@ static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
 }
 
 void grpc_httpcli_get(const grpc_httpcli_request *request,
-                      gpr_timespec deadline, grpc_em *em,
+                      gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data) {
   internal_request *req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
@@ -225,7 +223,6 @@ void grpc_httpcli_get(const grpc_httpcli_request *request,
   grpc_httpcli_parser_init(&req->parser);
   req->on_response = on_response;
   req->user_data = user_data;
-  req->em = em;
   req->deadline = deadline;
   req->use_ssl = request->use_ssl;
   if (req->use_ssl) {
@@ -238,7 +235,7 @@ void grpc_httpcli_get(const grpc_httpcli_request *request,
 
 void grpc_httpcli_post(const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
-                       gpr_timespec deadline, grpc_em *em,
+                       gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data) {
   internal_request *req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
@@ -247,7 +244,6 @@ void grpc_httpcli_post(const grpc_httpcli_request *request,
   grpc_httpcli_parser_init(&req->parser);
   req->on_response = on_response;
   req->user_data = user_data;
-  req->em = em;
   req->deadline = deadline;
   req->use_ssl = request->use_ssl;
   if (req->use_ssl) {

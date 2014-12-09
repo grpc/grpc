@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include "src/core/channel/channel_args.h"
-#include "src/core/eventmanager/em.h"
+#include "src/core/iomgr/iomgr.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/security_context.h"
 #include <grpc/support/alloc.h>
@@ -46,8 +46,6 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
-
-static grpc_em em;
 
 typedef struct fullstack_secure_fixture_data {
   char *localaddr;
@@ -138,13 +136,11 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
-  grpc_em_init(&em);
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     grpc_end2end_tests(configs[i]);
   }
 
-  GPR_ASSERT(grpc_em_destroy(&em) == GRPC_EM_OK);
   grpc_shutdown();
 
   return 0;

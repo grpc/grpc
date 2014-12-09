@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/endpoint/resolve_address.h"
+#include "src/core/iomgr/resolve_address.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>

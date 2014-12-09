@@ -33,14 +33,14 @@
 
 #include <grpc/grpc.h>
 #include "src/core/statistics/census_interface.h"
-#include "src/core/surface/surface_em.h"
+#include "src/core/iomgr/iomgr.h"
 
 void grpc_init() {
-  grpc_surface_em_init();
+  grpc_iomgr_init();
   census_init();
 }
 
 void grpc_shutdown() {
-  grpc_surface_em_shutdown();
+  grpc_iomgr_shutdown();
   census_shutdown();
 }

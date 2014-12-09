@@ -31,17 +31,17 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
+#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_H_
+#define __GRPC_INTERNAL_IOMGR_SOCKADDR_H_
 
-#include "src/core/endpoint/endpoint.h"
-#include "src/core/transport/transport.h"
+#include <grpc/support/port_platform.h>
 
-void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
-                                  void *arg,
-                                  const grpc_channel_args *channel_args,
-                                  grpc_endpoint *ep, gpr_slice *slices,
-                                  size_t nslices, grpc_mdctx *metadata_context,
-                                  int is_client);
+#ifdef GPR_WIN32
+#include "src/core/iomgr/sockaddr_win32.h"
+#endif
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__ */
+#ifdef GPR_POSIX_SOCKETADDR
+#include "src/core/iomgr/sockaddr_posix.h"
+#endif
+
+#endif /* __GRPC_INTERNAL_IOMGR_SOCKADDR_H_ */
