@@ -122,7 +122,7 @@ all: static shared\
 
 static: static_c static_cxx
 
-static_c: make_dirs dep_c\
+static_c: dep_c\
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
  libs/lib${lib.name}.a\
@@ -130,7 +130,7 @@ static_c: make_dirs dep_c\
 % endfor
 
 
-static_cxx: make_dirs dep_cxx\
+static_cxx: dep_cxx\
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
  libs/lib${lib.name}.a\
@@ -140,7 +140,7 @@ static_cxx: make_dirs dep_cxx\
 
 shared: shared_c shared_cxx
 
-shared_c: make_dirs dep_c\
+shared_c: dep_c\
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
  libs/lib${lib.name}.so.$(VERSION)\
@@ -148,7 +148,7 @@ shared_c: make_dirs dep_c\
 % endfor
 
 
-shared_cxx: make_dirs dep_cxx\
+shared_cxx: dep_cxx\
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
  libs/lib${lib.name}.so.$(VERSION)\
@@ -158,7 +158,7 @@ shared_cxx: make_dirs dep_cxx\
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c: make_dirs dep_c\
+privatelibs_c: dep_c\
 % for lib in libs:
 % if lib.build == 'private':
  libs/lib${lib.name}.a\
@@ -166,7 +166,7 @@ privatelibs_c: make_dirs dep_c\
 % endfor
 
 
-privatelibs_cxx: make_dirs dep_cxx\
+privatelibs_cxx: dep_cxx\
 % for lib in libs:
 % if lib.build == 'private':
  libs/lib${lib.name}.a\
@@ -192,9 +192,9 @@ buildtests_cxx: privatelibs_cxx\
 % endfor
 
 
-tests: tests_c tests_cxx
+test: test_c test_cxx
 
-tests_c: buildtests_c
+test_c: buildtests_c
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('run', True) and not tgt.get('c++', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
@@ -203,7 +203,7 @@ tests_c: buildtests_c
 % endfor
 
 
-tests_cxx: buildtests_cxx
+test_cxx: buildtests_cxx
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('run', True) and tgt.get('c++', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
@@ -230,26 +230,45 @@ buildbenchmarks: privatelibs\
 
 benchmarks: buildbenchmarks
 
-make_dirs:
-	$(Q) mkdir -p libs
-	$(Q) mkdir -p bins
-	$(Q) mkdir -p gens
-
 strip: strip-static strip-shared
 
-strip-static: static
+strip-static_c: static_c
 % for lib in libs:
+% if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
 	$(Q) $(STRIP) libs/lib${lib.name}.a
 % endif
+% endif
 % endfor
 
-strip-shared: shared
+strip-static_cxx: static_cxx
 % for lib in libs:
+% if lib.get("c++", False):
+% if lib.build == "all":
+	$(E) "[STRIP]   Stripping lib${lib.name}.a"
+	$(Q) $(STRIP) libs/lib${lib.name}.a
+% endif
+% endif
+% endfor
+
+strip-shared_c: shared_c
+% for lib in libs:
+% if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
 	$(Q) $(STRIP) libs/lib${lib.name}.so.$(VERSION)
+% endif
+% endif
+% endfor
+
+strip-shared_cxx: shared_cxx
+% for lib in libs:
+% if lib.get("c++", False):
+% if lib.build == "all":
+	$(E) "[STRIP]   Stripping lib${lib.name}.so"
+	$(Q) $(STRIP) libs/lib${lib.name}.so.$(VERSION)
+% endif
 % endif
 % endfor
 
@@ -316,25 +335,61 @@ dep_cxx:\
 % endfor
 
 
-install: install-headers install-static install-shared
+install: install_c install_cxx
 
-install-headers:
-	$(E) "[INSTALL] Installing public headers"
-	$(Q) $(foreach h, $(PUBLIC_HEADERS), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+install_c: install-headers_c install-static_c install-shared_c
 
-install-static: static strip-static
+install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
+
+install-headers: install-headers_c install-headers_cxx
+
+install-headers_c:
+	$(E) "[INSTALL] Installing public C headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+
+install-headers_cxx:
+	$(E) "[INSTALL] Installing public C++ headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+
+install-static: install-static_c install-static_cxx
+
+install-static_c: static_c strip-static_c
 % for lib in libs:
+% if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
 	$(Q) $(INSTALL) libs/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
 % endif
+% endif
 % endfor
 
-install-shared: shared strip-shared
+install-static_cxx: static_cxx strip-static_cxx
 % for lib in libs:
+% if lib.get("c++", False):
+% if lib.build == "all":
+	$(E) "[INSTALL] Installing lib${lib.name}.a"
+	$(Q) $(INSTALL) libs/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+% endif
+% endif
+% endfor
+
+install-shared_c: shared_c strip-shared_c
+% for lib in libs:
+% if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.so"
 	$(Q) $(INSTALL) libs/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
+% endif
+% endif
+% endfor
+
+install-shared_cxx: shared_cxx strip-shared_cxx
+% for lib in libs:
+% if lib.get("c++", False):
+% if lib.build == "all":
+	$(E) "[INSTALL] Installing lib${lib.name}.so"
+	$(Q) $(INSTALL) libs/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
+% endif
 % endif
 % endfor
 
@@ -371,8 +426,13 @@ LIB${lib.name.upper()}_SRC = \\
 % endfor
 
 % if "public_headers" in lib:
-PUBLIC_HEADERS += \\
+% if lib.get("c++", False):
+PUBLIC_HEADERS_CXX += \\
 
+% else:
+PUBLIC_HEADERS_C += \\
+
+% endif
 % for hdr in lib.public_headers:
     ${hdr} \\
 
@@ -384,11 +444,13 @@ LIB${lib.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(
 
 libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
 	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 
 % if lib.build == "all":
 libs/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
 	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
 % if lib.get('c++', False):
 	$(Q) $(LDXX) $(LDFLAGS) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} \
 % else:
@@ -432,6 +494,7 @@ bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % endfor
 
 	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
 % if tgt.get("c++", False):
 	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) $(GTEST_LIB) -Llibs\
 % else:
@@ -462,7 +525,17 @@ clean_${tgt.name}:
 	$(Q) $(RM) bins/${tgt.name}
 </%def>
 
-.PHONY: all strip tools buildtests tests make_dirs install clean\
+.PHONY: all strip tools \
+buildtests buildtests_c buildtests_cxx \
+test test_c test_cxx \
+install install_c install_cxx \
+install-headers install-headers_c install-headers_cxx \
+install-shared install-shared_c install-shared_cxx \
+install-static install-static_c install-static_cxx \
+strip strip-shared strip-static \
+strip_c strip-shared_c strip-static_c \
+strip_cxx strip-shared_cxx strip-static_cxx \
+clean\
 % for lib in libs:
  deps_lib${lib.name} clean_lib${lib.name}\
 % endfor
