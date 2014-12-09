@@ -34,36 +34,40 @@
 #ifndef __GRPC_SUPPORT_ATM_GCC_SYNC_H__
 #define __GRPC_SUPPORT_ATM_GCC_SYNC_H__
 
-/* atm_platform.h for gcc and gcc-like compilers with the
-   __atomic_* interface.  */
+/* variant of atm_platform.h for gcc and gcc-like compiers with __sync_*
+   interface */
 #include <grpc/support/port_platform.h>
 
 typedef gpr_intptr gpr_atm;
 
-#define gpr_atm_full_barrier() (__atomic_thread_fence(__ATOMIC_SEQ_CST))
+#if defined(__i386) || defined(__x86_64__)
+/* All loads are acquire loads and all stores are release stores.  */
+#define GPR_ATM_LS_BARRIER_() __asm__ __volatile__("" : : : "memory")
+#else
+#define GPR_ATM_LS_BARRIER_() gpr_atm_full_barrier()
+#endif
 
-#define gpr_atm_acq_load(p) (__atomic_load_n((p), __ATOMIC_ACQUIRE))
-#define gpr_atm_rel_store(p, value) \
-  (__atomic_store_n((p), (gpr_intptr)(value), __ATOMIC_RELEASE))
+#define gpr_atm_full_barrier() (__sync_synchronize())
+
+static __inline gpr_atm gpr_atm_acq_load(const gpr_atm *p) {
+  gpr_atm value = *p;
+  GPR_ATM_LS_BARRIER_();
+  return value;
+}
+
+static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
+  GPR_ATM_LS_BARRIER_();
+  *p = value;
+}
+
+#undef GPR_ATM_LS_BARRIER_
 
 #define gpr_atm_no_barrier_fetch_add(p, delta) \
-  (__atomic_fetch_add((p), (gpr_intptr)(delta), __ATOMIC_RELAXED))
-#define gpr_atm_full_fetch_add(p, delta) \
-  (__atomic_fetch_add((p), (gpr_intptr)(delta), __ATOMIC_ACQ_REL))
+  gpr_atm_full_fetch_add((p), (delta))
+#define gpr_atm_full_fetch_add(p, delta) (__sync_fetch_and_add((p), (delta)))
 
-static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELAXED,
-                                     __ATOMIC_RELAXED);
-}
-
-static __inline int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_ACQUIRE,
-                                     __ATOMIC_RELAXED);
-}
-
-static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELEASE,
-                                     __ATOMIC_RELAXED);
-}
+#define gpr_atm_no_barrier_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
+#define gpr_atm_acq_cas(p, o, n) (__sync_bool_compare_and_swap((p), (o), (n)))
+#define gpr_atm_rel_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 
 #endif  /* __GRPC_SUPPORT_ATM_GCC_SYNC_H__ */
