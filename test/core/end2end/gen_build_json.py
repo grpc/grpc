@@ -31,7 +31,7 @@ END2END_TESTS = [
     'request_response_with_payload',
     'simple_delayed_request',
     'simple_request',
-    'thread_stress_test',
+    'thread_stress',
     'writes_done_hangs_with_pending_read',
 ]
 

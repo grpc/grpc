@@ -264,7 +264,7 @@ static void run_test(grpc_end2end_test_config config, int requests_in_flight) {
   int i;
   gpr_thd_id thd_id;
 
-  gpr_log(GPR_INFO, "thread_test/%s @ %d requests", config.name,
+  gpr_log(GPR_INFO, "thread_stress_test/%s @ %d requests", config.name,
           requests_in_flight);
 
   /* setup client, server */
