@@ -92,7 +92,7 @@ GTEST_LIB = /usr/src/gtest/src/gtest-all.cc -I/usr/src/gtest
 else
 GTEST_LIB = -lgtest
 endif
-
+GTEST_LIB += -lgflags
 ifeq ($(V),1)
 E = @:
 Q =

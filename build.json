@@ -276,6 +276,9 @@
         "test/core/util/slice_splitter.c",
         "test/core/util/test_config.c",
         "test/core/end2end/end2end_tests.c",
+        "test/core/end2end/data/server1_cert.c",
+        "test/core/end2end/data/server1_key.c",
+        "test/core/end2end/data/ca_cert.c",
         "test/core/end2end/cq_verifier.c",
         "test/core/endpoint/endpoint_tests.c",
         "test/core/transport/transport_end2end_tests.c",
@@ -338,6 +341,7 @@
       "build": "test",
       "src": [
         "test/cpp/end2end/async_test_server.cc",
+        "test/cpp/util/test_ssl_channel.cc",
         "test/cpp/util/echo.proto"
       ],
       "c++": true
@@ -1188,6 +1192,25 @@
       ],
       "deps": [
         "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "interop_client",
+      "build": "test",
+      "run": false,
+      "c++": true,
+      "src": [
+        "test/cpp/interop/client.cc",
+        "test/cpp/interop/empty.pb.cc",
+        "test/cpp/interop/messages.pb.cc",
+        "test/cpp/interop/test.pb.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
         "grpc",
         "gpr"
       ]
