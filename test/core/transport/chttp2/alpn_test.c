@@ -37,8 +37,7 @@
 #include "test/core/util/test_config.h"
 
 static void test_alpn_success(void) {
-  const char *version = GRPC_CHTTP2_ALPN_VERSION;
-  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported(version, strlen(version)));
+  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2-16", 5));
   GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2-15", 5));
   GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2-14", 5));
 }
