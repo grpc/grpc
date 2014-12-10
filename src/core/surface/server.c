@@ -276,7 +276,8 @@ static void finish_rpc(grpc_call_element *elem, int is_full_close) {
   gpr_mu_unlock(&chand->server->mu);
 }
 
-static void call_op(grpc_call_element *elem, grpc_call_op *op) {
+static void call_op(grpc_call_element *elem, grpc_call_element *from_elemn,
+                    grpc_call_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   switch (op->type) {
     case GRPC_RECV_METADATA:
@@ -306,7 +307,8 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
   }
 }
 
-static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
+static void channel_op(grpc_channel_element *elem,
+                       grpc_channel_element *from_elem, grpc_channel_op *op) {
   channel_data *chand = elem->channel_data;
 
   switch (op->type) {
@@ -341,7 +343,7 @@ static void finish_shutdown_channel(void *cd, grpc_iomgr_cb_status status) {
   op.dir = GRPC_CALL_DOWN;
   channel_op(grpc_channel_stack_element(
                  grpc_channel_get_channel_stack(chand->channel), 0),
-             &op);
+             NULL, &op);
   grpc_channel_internal_unref(chand->channel);
 }
 
@@ -558,7 +560,7 @@ void grpc_server_shutdown(grpc_server *server) {
     op.dir = GRPC_CALL_DOWN;
     op.data.goaway.status = GRPC_STATUS_OK;
     op.data.goaway.message = gpr_slice_from_copied_string("Server shutdown");
-    elem->filter->channel_op(elem, &op);
+    elem->filter->channel_op(elem, NULL, &op);
 
     grpc_channel_internal_unref(c->channel);
   }

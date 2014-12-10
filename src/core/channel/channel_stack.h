@@ -170,11 +170,13 @@ typedef struct {
 typedef struct {
   /* Called to eg. send/receive data on a call.
      See grpc_call_next_op on how to call the next element in the stack */
-  void (*call_op)(grpc_call_element *elem, grpc_call_op *op);
+  void (*call_op)(grpc_call_element *elem, grpc_call_element *from_elem,
+                  grpc_call_op *op);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
-  void (*channel_op)(grpc_channel_element *elem, grpc_channel_op *op);
+  void (*channel_op)(grpc_channel_element *elem,
+                     grpc_channel_element *from_elem, grpc_channel_op *op);
 
   /* sizeof(per call data) */
   size_t sizeof_call_data;

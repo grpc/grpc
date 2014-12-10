@@ -133,11 +133,11 @@ void grpc_channel_destroy(grpc_channel *channel) {
   op.dir = GRPC_CALL_DOWN;
   op.data.goaway.status = GRPC_STATUS_OK;
   op.data.goaway.message = gpr_slice_from_copied_string("Client disconnect");
-  elem->filter->channel_op(elem, &op);
+  elem->filter->channel_op(elem, NULL, &op);
 
   op.type = GRPC_CHANNEL_DISCONNECT;
   op.dir = GRPC_CALL_DOWN;
-  elem->filter->channel_op(elem, &op);
+  elem->filter->channel_op(elem, NULL, &op);
 
   grpc_channel_internal_unref(channel);
 }

@@ -113,7 +113,8 @@ static void end_bufferable_op(grpc_call_op *op, channel_data *chand,
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
-static void call_op(grpc_call_element *elem, grpc_call_op *op) {
+static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
+                    grpc_call_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
@@ -164,7 +165,8 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
 }
 
 /* Currently we assume all channel operations should just be pushed up. */
-static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
+static void channel_op(grpc_channel_element *elem,
+                       grpc_channel_element *from_elem, grpc_channel_op *op) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
 
@@ -282,7 +284,7 @@ static void accept_stream(void *user_data, grpc_transport *transport,
   op.dir = GRPC_CALL_UP;
   op.data.accept_call.transport = transport;
   op.data.accept_call.transport_server_data = transport_server_data;
-  channel_op(elem, &op);
+  channel_op(elem, NULL, &op);
 }
 
 static void recv_error(channel_data *chand, call_data *calld, int line,
@@ -481,7 +483,7 @@ static void transport_goaway(void *user_data, grpc_transport *transport,
   op.dir = GRPC_CALL_UP;
   op.data.goaway.status = status;
   op.data.goaway.message = debug;
-  channel_op(elem, &op);
+  channel_op(elem, NULL, &op);
 }
 
 static void transport_closed(void *user_data, grpc_transport *transport) {
@@ -495,7 +497,7 @@ static void transport_closed(void *user_data, grpc_transport *transport) {
 
   op.type = GRPC_TRANSPORT_CLOSED;
   op.dir = GRPC_CALL_UP;
-  channel_op(elem, &op);
+  channel_op(elem, NULL, &op);
 }
 
 const grpc_transport_callbacks connected_channel_transport_callbacks = {

@@ -67,7 +67,8 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void call_op(grpc_call_element *elem, grpc_call_op *op) {
+static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
+                    grpc_call_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -103,7 +104,8 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
 
 /* Called on special channel events, such as disconnection or new incoming
    calls on the server */
-static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
+static void channel_op(grpc_channel_element *elem,
+                       grpc_channel_element *from_elem, grpc_channel_op *op) {
   grpc_channel_next_op(elem, op);
 }
 

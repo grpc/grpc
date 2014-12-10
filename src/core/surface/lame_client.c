@@ -44,7 +44,8 @@ typedef struct { void *unused; } call_data;
 
 typedef struct { void *unused; } channel_data;
 
-static void call_op(grpc_call_element *elem, grpc_call_op *op) {
+static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
+                    grpc_call_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
   switch (op->type) {
@@ -61,7 +62,8 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
   op->done_cb(op->user_data, GRPC_OP_ERROR);
 }
 
-static void channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
+static void channel_op(grpc_channel_element *elem,
+                       grpc_channel_element *from_elem, grpc_channel_op *op) {
   switch (op->type) {
     case GRPC_CHANNEL_GOAWAY:
       gpr_slice_unref(op->data.goaway.message);

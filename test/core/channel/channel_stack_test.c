@@ -66,11 +66,13 @@ static void call_destroy_func(grpc_call_element *elem) {
   ++*(int *)(elem->channel_data);
 }
 
-static void call_func(grpc_call_element *elem, grpc_call_op *op) {
+static void call_func(grpc_call_element *elem, grpc_call_element *from_elem,
+                      grpc_call_op *op) {
   ++*(int *)(elem->call_data);
 }
 
-static void channel_func(grpc_channel_element *elem, grpc_channel_op *op) {
+static void channel_func(grpc_channel_element *elem,
+                         grpc_channel_element *from_elem, grpc_channel_op *op) {
   ++*(int *)(elem->channel_data);
 }
 

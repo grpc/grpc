@@ -72,7 +72,8 @@ static void extract_and_annotate_method_tag(grpc_call_op* op, call_data* calld,
   }
 }
 
-static void client_call_op(grpc_call_element* elem, grpc_call_op* op) {
+static void client_call_op(grpc_call_element* elem,
+                           grpc_call_element* from_elem, grpc_call_op* op) {
   call_data* calld = elem->call_data;
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(calld != NULL);
@@ -92,7 +93,8 @@ static void client_call_op(grpc_call_element* elem, grpc_call_op* op) {
   grpc_call_next_op(elem, op);
 }
 
-static void server_call_op(grpc_call_element* elem, grpc_call_op* op) {
+static void server_call_op(grpc_call_element* elem,
+                           grpc_call_element* from_elem, grpc_call_op* op) {
   call_data* calld = elem->call_data;
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(calld != NULL);
@@ -112,7 +114,8 @@ static void server_call_op(grpc_call_element* elem, grpc_call_op* op) {
   grpc_call_next_op(elem, op);
 }
 
-static void channel_op(grpc_channel_element* elem, grpc_channel_op* op) {
+static void channel_op(grpc_channel_element* elem,
+                       grpc_channel_element* from_elem, grpc_channel_op* op) {
   switch (op->type) {
     case GRPC_TRANSPORT_CLOSED:
       /* TODO(hongyu): Annotate trace information for all calls of the channel

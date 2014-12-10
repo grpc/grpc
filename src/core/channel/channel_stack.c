@@ -180,12 +180,12 @@ void grpc_call_stack_destroy(grpc_call_stack *stack) {
 
 void grpc_call_next_op(grpc_call_element *elem, grpc_call_op *op) {
   grpc_call_element *next_elem = elem + op->dir;
-  next_elem->filter->call_op(next_elem, op);
+  next_elem->filter->call_op(next_elem, elem, op);
 }
 
 void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op) {
   grpc_channel_element *next_elem = elem + op->dir;
-  next_elem->filter->channel_op(next_elem, op);
+  next_elem->filter->channel_op(next_elem, elem, op);
 }
 
 grpc_channel_stack *grpc_channel_stack_from_top_element(

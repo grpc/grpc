@@ -276,7 +276,7 @@ grpc_call_error grpc_call_cancel(grpc_call *c) {
   op.user_data = NULL;
 
   elem = CALL_ELEM_FROM_CALL(c, 0);
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
 }
@@ -285,7 +285,7 @@ void grpc_call_execute_op(grpc_call *call, grpc_call_op *op) {
   grpc_call_element *elem;
   GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, op);
+  elem->filter->call_op(elem, NULL, op);
 }
 
 grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
@@ -307,7 +307,7 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
       metadata->value_length);
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
 }
@@ -404,7 +404,7 @@ grpc_call_error grpc_call_start_invoke(grpc_call *call,
   op.user_data = call;
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
 }
@@ -475,7 +475,7 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   op.user_data = NULL;
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
 }
@@ -542,7 +542,7 @@ static void request_more_data(grpc_call *call) {
   op.user_data = NULL;
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 }
 
 grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
@@ -630,7 +630,7 @@ grpc_call_error grpc_call_start_write(grpc_call *call,
   op.data.message = byte_buffer;
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
 }
@@ -669,7 +669,7 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
   op.user_data = call;
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
 }
@@ -709,7 +709,7 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
     op.done_cb = do_nothing;
     op.user_data = NULL;
     op.data.metadata = md;
-    elem->filter->call_op(elem, &op);
+    elem->filter->call_op(elem, NULL, &op);
   }
 
   /* always send status */
@@ -726,7 +726,7 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
     op.done_cb = do_nothing;
     op.user_data = NULL;
     op.data.metadata = md;
-    elem->filter->call_op(elem, &op);
+    elem->filter->call_op(elem, NULL, &op);
   }
 
   grpc_cq_begin_op(call->cq, call, GRPC_FINISH_ACCEPTED);
@@ -741,7 +741,7 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
   op.done_cb = done_writes_done;
   op.user_data = call;
 
-  elem->filter->call_op(elem, &op);
+  elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
 }

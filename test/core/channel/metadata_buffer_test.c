@@ -61,10 +61,14 @@ typedef struct {
   size_t value_prefix_len;
 } channel_data;
 
-static void fail_call_op(grpc_call_element *elem, grpc_call_op *op) { abort(); }
+static void fail_call_op(grpc_call_element *elem, grpc_call_element *from_elem,
+                         grpc_call_op *op) {
+  abort();
+}
 
 /* verify that the metadata passed on during flush is the same as we expect */
-static void expect_call_op(grpc_call_element *elem, grpc_call_op *op) {
+static void expect_call_op(grpc_call_element *elem,
+                           grpc_call_element *from_elem, grpc_call_op *op) {
   size_t *n = elem->call_data;
   channel_data *cd = elem->channel_data;
   gpr_slice key = construct_buffer(cd->key_prefix_len, *n);
@@ -85,7 +89,9 @@ static void expect_call_op(grpc_call_element *elem, grpc_call_op *op) {
   grpc_mdelem_unref(op->data.metadata);
 }
 
-static void fail_channel_op(grpc_channel_element *elem, grpc_channel_op *op) {
+static void fail_channel_op(grpc_channel_element *elem,
+                            grpc_channel_element *from_elem,
+                            grpc_channel_op *op) {
   abort();
 }
 
