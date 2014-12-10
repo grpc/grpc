@@ -11,9 +11,10 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
         file_get_contents(dirname(__FILE__) . '/../data/server1.pem'));
     $this->server = new Grpc\Server($this->server_queue,
                                     ['credentials' => $server_credentials]);
-    $this->server->add_secure_http2_port('localhost:9000');
+    $address = '127.0.0.1:' . getNewPort();
+    $this->server->add_secure_http2_port($address);
     $this->channel = new Grpc\Channel(
-        'localhost:9000',
+        $address,
         [
             'grpc.ssl_target_name_override' => 'foo.test.google.com',
             'credentials' => $credentials
