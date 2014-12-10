@@ -31,7 +31,9 @@ require 'forwardable'
 require 'grpc'
 require 'grpc/generic/bidi_call'
 
-def assert_event_type(got, want)
+def assert_event_type(ev, want)
+  raise OutOfTime if ev.nil?
+  got = ev.type
   raise 'Unexpected rpc event: got %s, want %s' % [got, want] unless got == want
 end
 
@@ -52,21 +54,28 @@ module GRPC
     #
     # deadline is the absolute deadline for the call.
     #
+    # == Keyword Arguments ==
+    # any keyword arguments are treated as metadata to be sent to the server
+    # if a keyword value is a list, multiple metadata for it's key are sent
+    #
     # @param call [Call] a call on which to start and invocation
     # @param q [CompletionQueue] used to wait for INVOKE_ACCEPTED
     # @param deadline [Fixnum,TimeSpec] the deadline for INVOKE_ACCEPTED
-    def self.client_start_invoke(call, q, deadline)
+    def self.client_start_invoke(call, q, deadline, **kw)
       raise ArgumentError.new('not a call') unless call.is_a?Core::Call
       if !q.is_a?Core::CompletionQueue
         raise ArgumentError.new('not a CompletionQueue')
       end
+      call.add_metadata(kw) if kw.length > 0
       invoke_accepted, client_metadata_read = Object.new, Object.new
       finished_tag = Object.new
       call.start_invoke(q, invoke_accepted, client_metadata_read, finished_tag)
+
       # wait for the invocation to be accepted
       ev = q.pluck(invoke_accepted, INFINITE_FUTURE)
       raise OutOfTime if ev.nil?
-      finished_tag
+
+      [finished_tag, client_metadata_read]
     end
 
     # Creates an ActiveCall.
@@ -91,9 +100,11 @@ module GRPC
     # @param deadline [Fixnum] the deadline for the call to complete
     # @param finished_tag [Object] the object used as the call's finish tag,
     #                              if the call has begun
+    # @param read_metadata_tag [Object] the object used as the call's finish
+    #                                   tag, if the call has begun
     # @param started [true|false] (default true) indicates if the call has begun
     def initialize(call, q, marshal, unmarshal, deadline, finished_tag: nil,
-                   started: true)
+                   read_metadata_tag: nil, started: true)
       raise ArgumentError.new('not a call') unless call.is_a?Core::Call
       if !q.is_a?Core::CompletionQueue
         raise ArgumentError.new('not a CompletionQueue')
@@ -102,6 +113,7 @@ module GRPC
       @cq = q
       @deadline = deadline
       @finished_tag = finished_tag
+      @read_metadata_tag = read_metadata_tag
       @marshal = marshal
       @started = started
       @unmarshal = unmarshal
@@ -180,7 +192,7 @@ module GRPC
     def writes_done(assert_finished=true)
       @call.writes_done(self)
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev.type, FINISH_ACCEPTED)
+      assert_event_type(ev, FINISH_ACCEPTED)
       logger.debug("Writes done: waiting for finish? #{assert_finished}")
       if assert_finished
         ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
@@ -229,7 +241,7 @@ module GRPC
       # call queue#pluck, and wait for WRITE_ACCEPTED, so as not to return
       # until the flow control allows another send on this call.
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev.type, WRITE_ACCEPTED)
+      assert_event_type(ev, WRITE_ACCEPTED)
       ev = nil
     end
 
@@ -243,7 +255,7 @@ module GRPC
       assert_queue_is_ready
       @call.start_write_status(Core::Status.new(code, details), self)
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev.type, FINISH_ACCEPTED)
+      assert_event_type(ev, FINISH_ACCEPTED)
       logger.debug("Status sent: #{code}:'#{details}'")
       if assert_finished
         return finished
@@ -257,9 +269,16 @@ module GRPC
     # a READ, it returns the response after unmarshalling it. On
     # FINISHED, it returns nil if the status is OK, otherwise raising BadStatus
     def remote_read
+      if @call.metadata.nil? && !@read_metadata_tag.nil?
+        ev = @cq.pluck(@read_metadata_tag, INFINITE_FUTURE)
+        assert_event_type(ev, CLIENT_METADATA_READ)
+        @call.metadata = ev.result
+        @read_metadata_tag = nil
+      end
+
       @call.start_read(self)
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev.type, READ)
+      assert_event_type(ev, READ)
       logger.debug("received req: #{ev.result.inspect}")
       if !ev.result.nil?
         logger.debug("received req.to_s: #{ev.result.to_s}")
@@ -333,10 +352,15 @@ module GRPC
 
     # request_response sends a request to a GRPC server, and returns the
     # response.
+    #
+    # == Keyword Arguments ==
+    # any keyword arguments are treated as metadata to be sent to the server
+    # if a keyword value is a list, multiple metadata for it's key are sent
+    #
     # @param req [Object] the request sent to the server
     # @return [Object] the response received from the server
-    def request_response(req)
-      start_call unless @started
+    def request_response(req, **kw)
+      start_call(**kw) unless @started
       remote_send(req)
       writes_done(false)
       response = remote_read
@@ -354,10 +378,14 @@ module GRPC
     # array of marshallable objects; in typical case it will be an Enumerable
     # that allows dynamic construction of the marshallable objects.
     #
+    # == Keyword Arguments ==
+    # any keyword arguments are treated as metadata to be sent to the server
+    # if a keyword value is a list, multiple metadata for it's key are sent
+    #
     # @param requests [Object] an Enumerable of requests to send
     # @return [Object] the response received from the server
-    def client_streamer(requests)
-      start_call unless @started
+    def client_streamer(requests, **kw)
+      start_call(**kw) unless @started
       requests.each { |r| remote_send(r) }
       writes_done(false)
       response = remote_read
@@ -377,10 +405,15 @@ module GRPC
     # it is executed with each response as the argument and no result is
     # returned.
     #
+    # == Keyword Arguments ==
+    # any keyword arguments are treated as metadata to be sent to the server
+    # if a keyword value is a list, multiple metadata for it's key are sent
+    # any keyword arguments are treated as metadata to be sent to the server.
+    #
     # @param req [Object] the request sent to the server
     # @return [Enumerator|nil] a response Enumerator
-    def server_streamer(req)
-      start_call unless @started
+    def server_streamer(req, **kw)
+      start_call(**kw) unless @started
       remote_send(req)
       writes_done(false)
       replies = enum_for(:each_remote_read_then_finish)
@@ -410,10 +443,14 @@ module GRPC
     # the_call#writes_done has been called, otherwise the block will loop
     # forever.
     #
+    # == Keyword Arguments ==
+    # any keyword arguments are treated as metadata to be sent to the server
+    # if a keyword value is a list, multiple metadata for it's key are sent
+    #
     # @param requests [Object] an Enumerable of requests to send
     # @return [Enumerator, nil] a response Enumerator
-    def bidi_streamer(requests, &blk)
-      start_call unless @started
+    def bidi_streamer(requests, **kw, &blk)
+      start_call(**kw) unless @started
       bd = BidiCall.new(@call, @cq, @marshal, @unmarshal, @deadline,
                         @finished_tag)
       bd.run_on_client(requests, &blk)
@@ -438,8 +475,9 @@ module GRPC
 
     private
 
-    def start_call
-      @finished_tag = ActiveCall.client_start_invoke(@call, @cq, @deadline)
+    def start_call(**kw)
+      tags = ActiveCall.client_start_invoke(@call, @cq, @deadline, **kw)
+      @finished_tag, @read_metadata_tag = tags
       @started = true
     end
 

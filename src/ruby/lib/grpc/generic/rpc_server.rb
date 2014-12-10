@@ -246,6 +246,7 @@ module GRPC
       # immediately
       finished_tag = Object.new
       call_queue = Core::CompletionQueue.new
+      call.metadata = new_server_rpc.metadata  # store the metadata on the call
       call.accept(call_queue, finished_tag)
 
       # Send UNAVAILABLE if there are too many unprocessed jobs

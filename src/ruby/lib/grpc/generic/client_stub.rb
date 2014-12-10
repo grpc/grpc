@@ -50,7 +50,7 @@ module GRPC
     # Any arbitrary keyword arguments are treated as channel arguments used to
     # configure the RPC connection to the host.
     #
-    # There are two specific keywords are that not used to configure the
+    # There are some specific keyword args that are not used to configure the
     # channel:
     #
     # - :channel_override
@@ -61,21 +61,30 @@ module GRPC
     # - :deadline
     # when present, this is the default deadline used for calls
     #
+    # - :update_metadata
+    # when present, this a func that takes a hash and returns a hash
+    # it can be used to update metadata, i.e, remove, change or update
+    # amend metadata values.
+    #
     # @param host [String] the host the stub connects to
     # @param q [Core::CompletionQueue] used to wait for events
     # @param channel_override [Core::Channel] a pre-created channel
     # @param deadline [Number] the default deadline to use in requests
     # @param creds [Core::Credentials] secures and/or authenticates the channel
-    # @param kw [KeywordArgs] the channel arguments
+    # @param update_metadata a func that updates metadata as described above
+    # @param kw [KeywordArgs]the channel arguments
     def initialize(host, q,
                    channel_override:nil,
-                   deadline:DEFAULT_DEADLINE,
-                   creds:nil,
+                   deadline: DEFAULT_DEADLINE,
+                   creds: nil,
+                   update_metadata: nil,
                    **kw)
       if !q.is_a?Core::CompletionQueue
         raise ArgumentError.new('not a CompletionQueue')
       end
-      @host = host
+      @queue = q
+
+      # set the channel instance
       if !channel_override.nil?
         ch = channel_override
         raise ArgumentError.new('not a Channel') unless ch.is_a?(Core::Channel)
@@ -86,10 +95,19 @@ module GRPC
       else
         ch = Core::Channel.new(host, kw, creds)
       end
-
-      @deadline = deadline
       @ch = ch
-      @queue = q
+
+      @update_metadata = nil
+      if !update_metadata.nil?
+        if !update_metadata.is_a?(Proc)
+          raise ArgumentError.new('update_metadata is not a Proc')
+        end
+        @update_metadata = update_metadata
+      end
+
+
+      @host = host
+      @deadline = deadline
     end
 
     # request_response sends a request to a GRPC server, and returns the
@@ -117,6 +135,11 @@ module GRPC
     # If return_op is true, the call returns an Operation, calling execute
     # on the Operation returns the response.
     #
+    # == Keyword Args ==
+    #
+    # Unspecified keyword arguments are treated as metadata to be sent to the
+    # server.
+    #
     # @param method [String] the RPC method to call on the GRPC server
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
@@ -125,15 +148,16 @@ module GRPC
     # @param return_op [true|false] (default false) return an Operation if true
     # @return [Object] the response received from the server
     def request_response(method, req, marshal, unmarshal, deadline=nil,
-                         return_op:false)
+                         return_op:false, **kw)
       c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      return c.request_response(req) unless return_op
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      return c.request_response(req, **md) unless return_op
 
       # return the operation view of the active_call; define #execute as a
       # new method for this instance that invokes #request_response.
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.request_response(req)
+        c.request_response(req, **md)
       end
       op
     end
@@ -168,6 +192,11 @@ module GRPC
     #
     # If return_op is true, the call returns the response.
     #
+    # == Keyword Args ==
+    #
+    # Unspecified keyword arguments are treated as metadata to be sent to the
+    # server.
+    #
     # @param method [String] the RPC method to call on the GRPC server
     # @param requests [Object] an Enumerable of requests to send
     # @param marshal [Function] f(obj)->string that marshals requests
@@ -176,15 +205,16 @@ module GRPC
     # @param return_op [true|false] (default false) return an Operation if true
     # @return [Object|Operation] the response received from the server
     def client_streamer(method, requests, marshal, unmarshal, deadline=nil,
-                        return_op:false)
+                        return_op:false, **kw)
       c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      return c.client_streamer(requests) unless return_op
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      return c.client_streamer(requests, **md) unless return_op
 
       # return the operation view of the active_call; define #execute as a
       # new method for this instance that invokes #client_streamer.
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.client_streamer(requests)
+        c.client_streamer(requests, **md)
       end
       op
     end
@@ -227,6 +257,11 @@ module GRPC
     # calls the given block with each response or returns an Enumerator of the
     # responses.
     #
+    # == Keyword Args ==
+    #
+    # Unspecified keyword arguments are treated as metadata to be sent to the
+    # server.
+    #
     # @param method [String] the RPC method to call on the GRPC server
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
@@ -236,15 +271,16 @@ module GRPC
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|Operation|nil] as discussed above
     def server_streamer(method, req, marshal, unmarshal, deadline=nil,
-                        return_op:false, &blk)
+                        return_op:false, **kw, &blk)
       c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      return c.server_streamer(req, &blk) unless return_op
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      return c.server_streamer(req, **md, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
       # as a new method for this instance that invokes #server_streamer
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.server_streamer(req, &blk)
+        c.server_streamer(req, **md, &blk)
       end
       op
     end
@@ -313,6 +349,12 @@ module GRPC
     #
     # * the deadline is exceeded
     #
+    #
+    # == Keyword Args ==
+    #
+    # Unspecified keyword arguments are treated as metadata to be sent to the
+    # server.
+    #
     # == Return Value ==
     #
     # if the return_op is false, the return value is an Enumerator of the
@@ -332,15 +374,16 @@ module GRPC
     # @param return_op [true|false] (default false) return an Operation if true
     # @return [Enumerator|nil|Operation] as discussed above
     def bidi_streamer(method, requests, marshal, unmarshal, deadline=nil,
-                      return_op:false, &blk)
+                      return_op:false, **kw, &blk)
       c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
-      return c.bidi_streamer(requests, &blk) unless return_op
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      return c.bidi_streamer(requests, **md, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
       # as a new method for this instance that invokes #bidi_streamer
       op = c.operation
       op.define_singleton_method(:execute) do
-        c.bidi_streamer(requests, &blk)
+        c.bidi_streamer(requests, **md, &blk)
       end
       op
     end

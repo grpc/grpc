@@ -205,7 +205,7 @@ static VALUE grpc_rb_event_result(VALUE self) {
         return Qnil;
       }
       rb_raise(rb_eEventError, "write failed, not sure why (code=%d)",
-               event->data.invoke_accepted);
+               event->data.write_accepted);
       break;
 
     case GRPC_CLIENT_METADATA_READ:
@@ -263,7 +263,8 @@ void Init_google_rpc_event() {
   rb_define_method(rb_cEvent, "type", grpc_rb_event_type, 0);
 
   /* Constants representing the completion types */
-  rb_mCompletionType = rb_define_module_under(rb_mGoogleRpcCore, "CompletionType");
+  rb_mCompletionType = rb_define_module_under(rb_mGoogleRpcCore,
+                                              "CompletionType");
   rb_define_const(rb_mCompletionType, "QUEUE_SHUTDOWN",
                   INT2NUM(GRPC_QUEUE_SHUTDOWN));
   rb_define_const(rb_mCompletionType, "READ", INT2NUM(GRPC_READ));

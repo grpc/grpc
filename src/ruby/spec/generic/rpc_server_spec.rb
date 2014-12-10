@@ -36,7 +36,7 @@ require 'xray/thread_dump_signal_handler'
 require_relative '../port_picker'
 
 def load_test_certs
-  test_root = File.join(File.parent(File.dirname(__FILE__)), 'testdata')
+  test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')
   files = ['ca.pem', 'server1.key', 'server1.pem']
   files.map { |f| File.open(File.join(test_root, f)).read }
 end
@@ -95,6 +95,7 @@ SlowStub = SlowService.rpc_stub_class
 describe GRPC::RpcServer do
 
   RpcServer = GRPC::RpcServer
+  StatusCodes = GRPC::Core::StatusCodes
 
   before(:each) do
     @method = 'an_rpc_method'
@@ -343,7 +344,7 @@ describe GRPC::RpcServer do
           stub = GRPC::ClientStub.new(@host, cq, **@client_opts)
           stub.request_response('/unknown', req, @marshal, @unmarshal)
         end
-        expect(&blk).to raise_error BadStatus
+        expect(&blk).to raise_error GRPC::BadStatus
         @srv.stop
         t.join
       end
@@ -402,7 +403,7 @@ describe GRPC::RpcServer do
             stub = SlowStub.new(@host, **@client_opts)
             begin
               stub.an_rpc(req)
-            rescue BadStatus => e
+            rescue GRPC::BadStatus => e
               _1_failed_as_unavailable = e.code == StatusCodes::UNAVAILABLE
             end
           end
