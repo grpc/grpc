@@ -34,11 +34,12 @@
 #include "src/core/channel/http_server_filter.h"
 #include <grpc/support/log.h>
 
-typedef struct call_data {
-  int unused; /* C89 requires at least one struct element */
-} call_data;
+typedef struct call_data { int sent_status; } call_data;
 
-typedef struct channel_data { grpc_mdelem *te_trailers; } channel_data;
+typedef struct channel_data {
+  grpc_mdelem *te_trailers;
+  grpc_mdelem *status_md;
+} channel_data;
 
 /* used to silence 'variable not used' warnings */
 static void ignore_unused(void *ignored) {}
@@ -76,6 +77,17 @@ static void call_op(grpc_call_element *elem, grpc_call_op *op) {
         grpc_call_next_op(elem, op);
       }
       break;
+    case GRPC_SEND_START:
+    case GRPC_SEND_METADATA:
+      /* If we haven't sent status 200 yet, we need to so so because it needs to
+         come before any non : prefixed metadata. */
+      if (!calld->sent_status) {
+        calld->sent_status = 1;
+        /* status_md is reffed by grpc_call_element_send_metadata */
+        grpc_call_element_send_metadata(elem, channeld->status_md);
+      }
+      grpc_call_next_op(elem, op);
+      break;
     default:
       /* pass control up or down the stack depending on op->dir */
       grpc_call_next_op(elem, op);
@@ -109,7 +121,7 @@ static void init_call_elem(grpc_call_element *elem,
   ignore_unused(channeld);
 
   /* initialize members */
-  calld->unused = 0;
+  calld->sent_status = 0;
 }
 
 /* Destructor for call_data */
@@ -137,6 +149,7 @@ static void init_channel_elem(grpc_channel_element *elem,
 
   /* initialize members */
   channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
+  channeld->status_md = grpc_mdelem_from_strings(mdctx, ":status", "200");
 }
 
 /* Destructor for channel data */
@@ -145,6 +158,7 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *channeld = elem->channel_data;
 
   grpc_mdelem_unref(channeld->te_trailers);
+  grpc_mdelem_unref(channeld->status_md);
 }
 
 const grpc_channel_filter grpc_http_server_filter = {

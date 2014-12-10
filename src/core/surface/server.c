@@ -216,7 +216,6 @@ static void queue_new_rpc(grpc_server *server, call_data *calld, void *tag) {
   const char *host = NULL;
   const char *method = NULL;
   size_t i;
-  grpc_metadata status_md;
 
   for (i = 0; i < count; i++) {
     if (0 == strcmp(elements[i].key, ":authority")) {
@@ -225,11 +224,6 @@ static void queue_new_rpc(grpc_server *server, call_data *calld, void *tag) {
       method = elements[i].value;
     }
   }
-
-  status_md.key = ":status";
-  status_md.value = "200";
-  status_md.value_length = 3;
-  grpc_call_add_metadata(call, &status_md, GRPC_WRITE_BUFFER_HINT);
 
   grpc_call_internal_ref(call);
   grpc_cq_end_new_rpc(server->cq, tag, call,
