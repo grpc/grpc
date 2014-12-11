@@ -109,7 +109,8 @@ describe GRPC::ActiveCall do
       expect(ev.tag).to be(@server_tag)
 
       # Accept the call, and verify that the server reads the response ok.
-      ev.call.accept(@client_queue, @server_tag)
+      ev.call.server_accept(@client_queue, @server_tag)
+      ev.call.server_end_initial_metadata()
       server_call = ActiveCall.new(ev.call, @client_queue, @pass_through,
                                    @pass_through, deadline)
       expect(server_call.remote_read).to eq(msg)
@@ -130,7 +131,8 @@ describe GRPC::ActiveCall do
       # confirm that the message was marshalled
       @server.request_call(@server_tag)
       ev = @server_queue.next(deadline)
-      ev.call.accept(@client_queue, @server_tag)
+      ev.call.server_accept(@client_queue, @server_tag)
+      ev.call.server_end_initial_metadata()
       server_call = ActiveCall.new(ev.call, @client_queue, @pass_through,
                                    @pass_through, deadline)
       expect(server_call.remote_read).to eq('marshalled:' + msg)
@@ -368,7 +370,8 @@ describe GRPC::ActiveCall do
     @server.request_call(@server_tag)
     ev = @server_queue.next(deadline)
     ev.call.add_metadata(kw)
-    ev.call.accept(@client_queue, @server_done_tag)
+    ev.call.server_accept(@client_queue, @server_done_tag)
+    ev.call.server_end_initial_metadata()
     ActiveCall.new(ev.call, @client_queue, @pass_through,
                    @pass_through, deadline,
                    finished_tag: @server_done_tag)

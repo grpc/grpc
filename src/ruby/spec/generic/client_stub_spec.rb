@@ -520,7 +520,8 @@ describe 'ClientStub' do
     server_call = ev.call
     server_call.metadata = ev.result.metadata
     finished_tag = Object.new
-    server_call.accept(server_queue, finished_tag)
+    server_call.server_accept(server_queue, finished_tag)
+    server_call.server_end_initial_metadata()
     GRPC::ActiveCall.new(server_call, server_queue, NOOP, NOOP, INFINITE_FUTURE,
                          finished_tag: finished_tag)
   end

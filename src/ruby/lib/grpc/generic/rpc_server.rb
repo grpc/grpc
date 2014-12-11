@@ -247,7 +247,8 @@ module Google::RPC
       finished_tag = Object.new
       call_queue = Core::CompletionQueue.new
       call.metadata = new_server_rpc.metadata  # store the metadata on the call
-      call.accept(call_queue, finished_tag)
+      call.server_accept(call_queue, finished_tag)
+      call.server_end_initial_metadata()
 
       # Send UNAVAILABLE if there are too many unprocessed jobs
       jobs_count, max = @pool.jobs_waiting, @max_waiting_requests

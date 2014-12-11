@@ -247,6 +247,12 @@ void Init_google_rpc_channel() {
   id_target = rb_intern("__target");
   rb_define_const(rb_cChannel, "SSL_TARGET",
                   ID2SYM(rb_intern(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
+  rb_define_const(rb_cChannel, "ENABLE_CENSUS",
+                  ID2SYM(rb_intern(GRPC_ARG_ENABLE_CENSUS)));
+  rb_define_const(rb_cChannel, "MAX_CONCURRENT_STREAMS",
+                  ID2SYM(rb_intern(GRPC_ARG_MAX_CONCURRENT_STREAMS)));
+  rb_define_const(rb_cChannel, "MAX_MESSAGE_LENGTH",
+                  ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
 }
 
 /* Gets the wrapped channel from the ruby wrapper */

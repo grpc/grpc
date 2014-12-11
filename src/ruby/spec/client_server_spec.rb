@@ -70,7 +70,8 @@ shared_context 'setup: tags' do
     ev = @server_queue.pluck(@server_tag, TimeConsts::INFINITE_FUTURE)
     expect(ev).not_to be_nil
     expect(ev.type).to be(SERVER_RPC_NEW)
-    ev.call.accept(@server_queue, @server_finished_tag)
+    ev.call.server_accept(@server_queue, @server_finished_tag)
+    ev.call.server_end_initial_metadata()
     ev.call.start_read(@server_tag)
     ev = @server_queue.pluck(@server_tag, TimeConsts::INFINITE_FUTURE)
     expect(ev.type).to be(READ)
@@ -115,7 +116,8 @@ shared_examples 'basic GRPC message delivery is OK' do
 
     # accept the call
     server_call = ev.call
-    server_call.accept(@server_queue, @server_finished_tag)
+    server_call.server_accept(@server_queue, @server_finished_tag)
+    server_call.server_end_initial_metadata
 
     # confirm the server can read the inbound message
     server_call.start_read(@server_tag)
@@ -150,7 +152,8 @@ shared_examples 'basic GRPC message delivery is OK' do
 
     # accept the call - need to do this to sent status.
     server_call = ev.call
-    server_call.accept(@server_queue, @server_finished_tag)
+    server_call.server_accept(@server_queue, @server_finished_tag)
+    server_call.server_end_initial_metadata()
     sts = Status.new(StatusCodes::NOT_FOUND, 'not found')
     server_call.start_write_status(sts, @server_tag)
 
@@ -287,7 +290,8 @@ shared_examples 'GRPC metadata delivery works OK' do
       server_call = ev.call
 
       # ... server accepts the call without adding metadata
-      server_call.accept(@server_queue, @server_finished_tag)
+      server_call.server_accept(@server_queue, @server_finished_tag)
+      server_call.server_end_initial_metadata()
 
       # ... these server sends some data, allowing the metadata read
       server_call.start_write(ByteBuffer.new('reply with metadata'),
@@ -312,7 +316,8 @@ shared_examples 'GRPC metadata delivery works OK' do
 
         # ... server adds metadata and accepts the call
         server_call.add_metadata(md)
-        server_call.accept(@server_queue, @server_finished_tag)
+        server_call.server_accept(@server_queue, @server_finished_tag)
+        server_call.server_end_initial_metadata()
 
         # Now the client can read the metadata
         ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ, @tag)

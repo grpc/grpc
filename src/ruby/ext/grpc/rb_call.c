@@ -383,42 +383,64 @@ static VALUE grpc_rb_call_writes_done(VALUE self, VALUE tag) {
 }
 
 /* call-seq:
-     call.accept(completion_queue, flags=nil)
+     call.server_end_initial_metadata(flag)
 
-   Accept an incoming RPC, binding a completion queue to it.
-   To be called after adding metadata to the call, but before sending
-   messages.
+   Only to be called on servers, before sending messages.
    flags is a bit-field combination of the write flags defined above.
+
    REQUIRES: Can be called at most once per call.
-             Can only be called on the server.
-   Produces no events. */
-static VALUE grpc_rb_call_accept(int argc, VALUE *argv, VALUE self) {
-  VALUE cqueue = Qnil;
-  VALUE finished_tag = Qnil;
+             Can only be called on the server, must be called after
+             grpc_call_server_accept
+   Produces no events */
+static VALUE grpc_rb_call_server_end_initial_metadata(int argc, VALUE *argv,
+                                                      VALUE self) {
   VALUE flags = Qnil;
   grpc_call *call = NULL;
-  grpc_completion_queue *cq = NULL;
   grpc_call_error err;
 
-  /* "21" == 2 mandatory args, 1 (flags) is optional */
-  rb_scan_args(argc, argv, "21", &cqueue, &finished_tag, &flags);
+  /* "01" == 1 (flags) is optional */
+  rb_scan_args(argc, argv, "01", &flags);
   if (NIL_P(flags)) {
     flags = UINT2NUM(0);  /* Default to no flags */
   }
-  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_accept(call, cq, ROBJECT(finished_tag), NUM2UINT(flags));
+  err = grpc_call_server_end_initial_metadata(call, NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "accept failed: %s (code=%d)",
+    rb_raise(rb_eCallError, "end_initial_metadata failed: %s (code=%d)",
+             grpc_call_error_detail_of(err), err);
+  }
+  return Qnil;
+}
+
+/* call-seq:
+     call.server_accept(completion_queue, finished_tag)
+
+   Accept an incoming RPC, binding a completion queue to it.
+   To be called before sending or receiving messages.
+
+   REQUIRES: Can be called at most once per call.
+             Can only be called on the server.
+   Produces a GRPC_FINISHED event with finished_tag when the call has been
+       completed (there may be other events for the call pending at this
+       time) */
+static VALUE grpc_rb_call_server_accept(VALUE self, VALUE cqueue,
+                                        VALUE finished_tag) {
+  grpc_call *call = NULL;
+  grpc_completion_queue *cq = grpc_rb_get_wrapped_completion_queue(cqueue);
+  grpc_call_error err;
+  Data_Get_Struct(self, grpc_call, call);
+  err = grpc_call_server_accept(call, cq, ROBJECT(finished_tag));
+  if (err != GRPC_CALL_OK) {
+    rb_raise(rb_eCallError, "server_accept failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
   /* Add the completion queue as an instance attribute, prevents it from being
    * GCed until this call object is GCed */
   rb_ivar_set(self, id_cq, cqueue);
-
   return Qnil;
 }
+
 
 /* rb_cCall is the ruby class that proxies grpc_call. */
 VALUE rb_cCall = Qnil;
@@ -436,6 +458,8 @@ void Init_google_rpc_error_codes() {
                   UINT2NUM(GRPC_CALL_ERROR_NOT_ON_SERVER));
   rb_define_const(rb_RpcErrors, "NOT_ON_CLIENT",
                   UINT2NUM(GRPC_CALL_ERROR_NOT_ON_CLIENT));
+  rb_define_const(rb_RpcErrors, "ALREADY_ACCEPTED",
+                  UINT2NUM(GRPC_CALL_ERROR_ALREADY_ACCEPTED));
   rb_define_const(rb_RpcErrors, "ALREADY_INVOKED",
                   UINT2NUM(GRPC_CALL_ERROR_ALREADY_INVOKED));
   rb_define_const(rb_RpcErrors, "NOT_INVOKED",
@@ -457,6 +481,9 @@ void Init_google_rpc_error_codes() {
                rb_str_new2("not available on a server"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_NOT_ON_CLIENT),
                rb_str_new2("not available on a client"));
+  rb_hash_aset(rb_error_code_details,
+               UINT2NUM(GRPC_CALL_ERROR_ALREADY_ACCEPTED),
+               rb_str_new2("call is already accepted"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_ALREADY_INVOKED),
                rb_str_new2("call is already invoked"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_NOT_INVOKED),
@@ -485,7 +512,9 @@ void Init_google_rpc_call() {
   rb_define_method(rb_cCall, "initialize_copy", grpc_rb_cannot_init_copy, 1);
 
   /* Add ruby analogues of the Call methods. */
-  rb_define_method(rb_cCall, "accept", grpc_rb_call_accept, -1);
+  rb_define_method(rb_cCall, "server_accept", grpc_rb_call_server_accept, 2);
+  rb_define_method(rb_cCall, "server_end_initial_metadata",
+                   grpc_rb_call_server_end_initial_metadata, -1);
   rb_define_method(rb_cCall, "add_metadata", grpc_rb_call_add_metadata,
                    -1);
   rb_define_method(rb_cCall, "cancel", grpc_rb_call_cancel, 0);
