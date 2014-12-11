@@ -37,6 +37,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/ipv6.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -168,10 +169,16 @@ void test_connect(const char *server_host, const char *client_host, int port,
 }
 
 int main(int argc, char **argv) {
+  int do_ipv6 = 1;
   int i;
 
   grpc_test_init(argc, argv);
   grpc_init();
+
+  if (!grpc_ipv6_loopback_available()) {
+    gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
+    do_ipv6 = 0;
+  }
 
   for (i = 0; i <= 1; i++) {
     /* For coverage, test with and without dualstack sockets. */
@@ -179,20 +186,24 @@ int main(int argc, char **argv) {
 
     /* :: and 0.0.0.0 are handled identically. */
     test_connect("::", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
-    test_connect("::", "::1", grpc_pick_unused_port_or_die(), 1);
     test_connect("::", "::ffff:127.0.0.1", grpc_pick_unused_port_or_die(), 1);
     test_connect("::", "localhost", grpc_pick_unused_port_or_die(), 1);
     test_connect("0.0.0.0", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
-    test_connect("0.0.0.0", "::1", grpc_pick_unused_port_or_die(), 1);
     test_connect("0.0.0.0", "::ffff:127.0.0.1", grpc_pick_unused_port_or_die(),
                  1);
     test_connect("0.0.0.0", "localhost", grpc_pick_unused_port_or_die(), 1);
+    if (do_ipv6) {
+      test_connect("::", "::1", grpc_pick_unused_port_or_die(), 1);
+      test_connect("0.0.0.0", "::1", grpc_pick_unused_port_or_die(), 1);
+    }
 
     /* These only work when the families agree. */
-    test_connect("::1", "::1", grpc_pick_unused_port_or_die(), 1);
-    test_connect("::1", "127.0.0.1", grpc_pick_unused_port_or_die(), 0);
     test_connect("127.0.0.1", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
-    test_connect("127.0.0.1", "::1", grpc_pick_unused_port_or_die(), 0);
+    if (do_ipv6) {
+      test_connect("::1", "::1", grpc_pick_unused_port_or_die(), 1);
+      test_connect("::1", "127.0.0.1", grpc_pick_unused_port_or_die(), 0);
+      test_connect("127.0.0.1", "::1", grpc_pick_unused_port_or_die(), 0);
+    }
 
   }
 

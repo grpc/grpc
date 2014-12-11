@@ -42,12 +42,33 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string.h>
+#include "test/core/util/ipv6.h"
 #include "test/core/util/port.h"
 
-static const char *const kHosts[] = {
-    "127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost",
-};
+int test_client(const char *root, const char *host, int port) {
+  char *args[3];
+  int status;
+  pid_t cli;
+  cli = fork();
+  if (cli == 0) {
+    gpr_asprintf(&args[0], "%s/echo_client", root);
+    gpr_join_host_port(&args[1], host, port);
+    args[2] = 0;
+    execv(args[0], args);
+
+    gpr_free(args[0]);
+    gpr_free(args[1]);
+    return 1;
+  }
+  /* wait for client */
+  gpr_log(GPR_INFO, "Waiting for client: %s", host);
+  if (waitpid(cli, &status, 0) == -1) return 2;
+  if (!WIFEXITED(status)) return 4;
+  if (WEXITSTATUS(status)) return WEXITSTATUS(status);
+  return 0;
+}
 
 int main(int argc, char **argv) {
   char *me = argv[0];
@@ -56,8 +77,13 @@ int main(int argc, char **argv) {
   int port = grpc_pick_unused_port_or_die();
   char *args[3];
   int status;
-  pid_t svr, cli;
-  int i;
+  pid_t svr;
+  int ret;
+  int do_ipv6 = 1;
+  if (!grpc_ipv6_loopback_available()) {
+    gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
+    do_ipv6 = 0;
+  }
   /* figure out where we are */
   if (lslash) {
     memcpy(root, me, lslash - me);
@@ -80,26 +106,18 @@ int main(int argc, char **argv) {
   /* wait a little */
   sleep(2);
   /* start the clients */
-  for (i = 0; i < sizeof(kHosts) / sizeof(*kHosts); i++) {
-    cli = fork();
-    if (cli == 0) {
-      gpr_asprintf(&args[0], "%s/echo_client", root);
-      gpr_join_host_port(&args[1], kHosts[i], port);
-      args[2] = 0;
-      execv(args[0], args);
-
-      gpr_free(args[0]);
-      gpr_free(args[1]);
-      return 1;
-    }
-    /* wait for client */
-    printf("waiting for client: %s\n", kHosts[i]);
-    if (waitpid(cli, &status, 0) == -1) return 2;
-    if (!WIFEXITED(status)) return 4;
-    if (WEXITSTATUS(status)) return WEXITSTATUS(status);
+  ret = test_client(root, "127.0.0.1", port);
+  if (ret != 0) return ret;
+  ret = test_client(root, "::ffff:127.0.0.1", port);
+  if (ret != 0) return ret;
+  ret = test_client(root, "localhost", port);
+  if (ret != 0) return ret;
+  if (do_ipv6) {
+    ret = test_client(root, "::1", port);
+    if (ret != 0) return ret;
   }
   /* wait for server */
-  printf("waiting for server\n");
+  gpr_log(GPR_INFO, "Waiting for server");
   kill(svr, SIGINT);
   if (waitpid(svr, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;

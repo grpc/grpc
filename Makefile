@@ -750,6 +750,7 @@ clean_libgrpc:
 
 LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/grpc_profiler.c \
+    test/core/util/ipv6.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
     test/core/util/slice_splitter.c \
