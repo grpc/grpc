@@ -220,6 +220,14 @@ tools: privatelibs\
 % endfor
 
 
+protoc_plugins:\
+% for tgt in targets:
+% if tgt.build == 'protoc':
+ bins/${tgt.name}\
+% endif
+% endfor
+
+
 buildbenchmarks: privatelibs\
 % for tgt in targets:
 % if tgt.build == 'benchmark':

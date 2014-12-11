@@ -360,6 +360,36 @@
         "grpc"
       ]
     },
+
+    {
+      "name": "cpp_plugin",
+      "build": "protoc",
+      "src": [
+        "src/compiler/cpp_plugin.cpp",
+        "src/compiler/cpp_generator.cpp"
+      ],
+      "headers": [
+        "src/compiler/cpp_generator.h",
+        "src/compiler/cpp_generator_helpers.h"
+      ],
+      "deps": []
+    },
+    {
+      "name": "ruby_plugin",
+      "build": "protoc",
+      "src": [
+        "src/compiler/ruby_plugin.cpp",
+        "src/compiler/ruby_generator.cpp"
+      ],
+      "headers": [
+        "src/compiler/cpp_generator.h",
+        "src/compiler/cpp_generator_helpers-inl.h",
+        "src/compiler/cpp_generator_map-inl.h",
+        "src/compiler/cpp_generator_string-inl.h"
+      ],
+      "deps": []
+    },
+
     {
       "name": "grpc_byte_buffer_reader_test",
       "build": "test",

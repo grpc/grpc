@@ -1,0 +1,172 @@
+/*
+ *
+ * Copyright 2014, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+#include <cctype>
+#include <map>
+#include <vector>
+
+#include "src/compiler/ruby_generator.h"
+#include "src/compiler/ruby_generator_helpers-inl.h"
+#include "src/compiler/ruby_generator_map-inl.h"
+#include "src/compiler/ruby_generator_string-inl.h"
+#include <google/protobuf/io/printer.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+#include <google/protobuf/descriptor.pb.h>
+#include <google/protobuf/descriptor.h>
+
+using google::protobuf::FileDescriptor;
+using google::protobuf::ServiceDescriptor;
+using google::protobuf::MethodDescriptor;
+using google::protobuf::io::Printer;
+using google::protobuf::io::StringOutputStream;
+using std::map;
+using std::vector;
+
+namespace grpc_ruby_generator {
+namespace {
+
+// Prints out the method using the ruby gRPC DSL.
+void PrintMethod(const MethodDescriptor* method, const string& package,
+                 Printer* out) {
+  string input_type = RubyTypeOf(method->input_type()->name(), package);
+  if (method->options().has_client_streaming()) {
+    input_type = "stream(" + input_type + ")";
+  }
+  string output_type = RubyTypeOf(method->output_type()->name(), package);
+  if (method->options().has_server_streaming()) {
+    output_type = "stream(" + output_type + ")";
+  }
+  map<string, string> method_vars = ListToDict({
+      "mth.name", method->name(),
+      "input.type", input_type,
+      "output.type", output_type,
+  });
+  out->Print(method_vars, "rpc :$mth.name$, $input.type$, $output.type$\n");
+}
+
+// Prints out the service using the ruby gRPC DSL.
+void PrintService(const ServiceDescriptor* service, const string& package,
+                  Printer* out) {
+  if (service->method_count() == 0) {
+    return;
+  }
+
+  // Begin the service module
+  map<string, string> module_vars = ListToDict({
+      "module.name", CapitalizeString(service->name()),
+  });
+  out->Print(module_vars, "module $module.name$\n");
+  out->Indent();
+
+  // TODO(temiola): add documentation
+  string doc = "TODO: add proto service documentation here";
+  map<string, string> template_vars = ListToDict({
+      "Documentation", doc,
+  });
+  out->Print("\n");
+  out->Print(template_vars, "# $Documentation$\n");
+  out->Print("class Service\n");
+
+  // Write the indented class body.
+  out->Indent();
+  out->Print("\n");
+  out->Print("include GRPC::Generic::Service\n");
+  out->Print("\n");
+  out->Print("self.marshal_class_method = :encode\n");
+  out->Print("self.unmarshal_class_method = :decode\n");
+  out->Print("\n");
+  for (int i = 0; i < service->method_count(); ++i) {
+    PrintMethod(service->method(i), package, out);
+  }
+  out->Outdent();
+
+  out->Print("end\n");
+  out->Print("\n");
+  out->Print("Stub = Service.rpc_stub_class\n");
+
+  // End the service module
+  out->Outdent();
+  out->Print("end\n");
+}
+
+}  // namespace
+
+string GetServices(const FileDescriptor* file) {
+  string output;
+  StringOutputStream output_stream(&output);
+  Printer out(&output_stream, '$');
+
+  // Always write out a file header.
+  map<string, string> header_comment_vars = ListToDict({
+        "file.name", file->name(),
+        "file.package", file->package(),
+      });
+  out.Print(header_comment_vars,
+            "### Generated from $file.name$ for $file.package$\n");
+  if (file->service_count() == 0) {
+    return output;
+  }
+
+  out.Print("\n");
+  out.Print("require 'grpc'\n");
+  // Write out require statemment to import the separately generated file
+  // that defines the messages used by the service. This is generated by the
+  // main ruby plugin.
+  map<string, string> dep_vars = ListToDict({
+      "dep.name", MessagesRequireName(file),
+  });
+  out.Print(dep_vars, "require '$dep.name$'\n");
+
+  // Write out services within the modules
+  out.Print("\n");
+  vector<string> modules = Split(file->package(), '.');
+  for (size_t i = 0; i < modules.size(); ++i) {
+    map<string, string> module_vars = ListToDict({
+        "module.name", CapitalizeString(modules[i]),
+    });
+    out.Print(module_vars, "module $module.name$\n");
+    out.Indent();
+  }
+  for (int i = 0; i < file->service_count(); ++i) {
+    auto service = file->service(i);
+    PrintService(service, file->package(), &out);
+  }
+  for (size_t i = 0; i < modules.size(); ++i) {
+    out.Outdent();
+    out.Print("end\n");
+  }
+
+  return output;
+}
+
+}  // namespace grpc_ruby_generator
