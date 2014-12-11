@@ -368,8 +368,14 @@ static void shutdown_during_write_test_write_handler(
   shutdown_during_write_test_state *st = user_data;
   gpr_log(GPR_INFO, "shutdown_during_write_test_write_handler: error = %d",
           error);
-  grpc_endpoint_destroy(st->ep);
-  gpr_event_set(&st->ev, (void *)(gpr_intptr)error);
+  if (error == 0) {
+    /* This happens about 0.5% of the time when run under TSAN, and is entirely
+       legitimate, but means we aren't testing the path we think we are. */
+    /* TODO(klempner): Change this test to retry the write in that case */
+    gpr_log(GPR_ERROR,
+            "shutdown_during_write_test_write_handler completed unexpectedly");
+  }
+  gpr_event_set(&st->ev, (void *)(gpr_intptr)1);
 }
 
 static void shutdown_during_write_test(grpc_endpoint_test_config config,
@@ -391,11 +397,6 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
   gpr_event_init(&read_st.ev);
   gpr_event_init(&write_st.ev);
 
-#if 0
-  read_st.ep = grpc_tcp_create(sv[1], &em);
-  write_st.ep = grpc_tcp_create(sv[0], &em);
-#endif
-
   grpc_endpoint_notify_on_read(read_st.ep,
                                shutdown_during_write_test_read_handler,
                                &read_st, gpr_inf_future);
@@ -414,6 +415,7 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
         deadline =
             gpr_time_add(gpr_now(), gpr_time_from_micros(10 * GPR_US_PER_SEC));
         GPR_ASSERT(gpr_event_wait(&write_st.ev, deadline));
+        grpc_endpoint_destroy(write_st.ep);
         GPR_ASSERT(gpr_event_wait(&read_st.ev, deadline));
         gpr_free(slices);
         end_test(config);
