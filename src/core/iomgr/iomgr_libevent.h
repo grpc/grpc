@@ -204,4 +204,6 @@ struct grpc_alarm {
   gpr_atm triggered; /* To be used atomically if alarm triggered */
 };
 
+void grpc_iomgr_ref_address_resolution(int delta);
+
 #endif /* __GRPC_INTERNAL_IOMGR_IOMGR_LIBEVENT_H__ */

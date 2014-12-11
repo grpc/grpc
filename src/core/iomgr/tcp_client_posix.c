@@ -109,6 +109,14 @@ static void on_writable(void *acp, grpc_iomgr_cb_status status) {
         grpc_fd_notify_on_write(ac->fd, on_writable, ac, ac->deadline);
         return;
       } else {
+        switch (so_error) {
+          case ECONNREFUSED:
+            gpr_log(GPR_ERROR, "socket error: connection refused");
+            break;
+          default:
+            gpr_log(GPR_ERROR, "socket error: %d", so_error);
+            break;
+        }
         goto error;
       }
     } else {

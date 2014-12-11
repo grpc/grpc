@@ -59,6 +59,7 @@ gpr_cv grpc_iomgr_cv;
 static grpc_libevent_activation_data *g_activation_queue;
 static int g_num_pollers;
 static int g_num_fds;
+static int g_num_address_resolutions;
 static gpr_timespec g_last_poll_completed;
 static int g_shutdown_backup_poller;
 static gpr_event g_backup_poller_done;
@@ -68,6 +69,18 @@ static grpc_fd *g_fds_to_free;
 
 int evthread_use_threads(void);
 static void grpc_fd_impl_destroy(grpc_fd *impl);
+
+void grpc_iomgr_ref_address_resolution(int delta) {
+  gpr_mu_lock(&grpc_iomgr_mu);
+  gpr_log(GPR_DEBUG, "num_address_resolutions = %d + %d",
+          g_num_address_resolutions, delta);
+  GPR_ASSERT(!g_shutdown_backup_poller);
+  g_num_address_resolutions += delta;
+  if (0 == g_num_address_resolutions) {
+    gpr_cv_broadcast(&grpc_iomgr_cv);
+  }
+  gpr_mu_unlock(&grpc_iomgr_mu);
+}
 
 /* If anything is in the work queue, process one item and return 1.
    Return 0 if there were no work items to complete.
@@ -86,6 +99,10 @@ static int maybe_do_queue_work() {
         g_activation_queue;
   }
   work->next = work->prev = NULL;
+  /* force status to cancelled from ok when shutting down */
+  if (g_shutdown_backup_poller && work->status == GRPC_CALLBACK_SUCCESS) {
+    work->status = GRPC_CALLBACK_CANCELLED;
+  }
   gpr_mu_unlock(&grpc_iomgr_mu);
 
   work->cb(work->arg, work->status);
@@ -225,6 +242,7 @@ void grpc_iomgr_init() {
   g_activation_queue = NULL;
   g_num_pollers = 0;
   g_num_fds = 0;
+  g_num_address_resolutions = 0;
   g_last_poll_completed = gpr_now();
   g_shutdown_backup_poller = 0;
   g_fds_to_free = NULL;
@@ -256,17 +274,19 @@ void grpc_iomgr_shutdown() {
 
   /* broadcast shutdown */
   gpr_mu_lock(&grpc_iomgr_mu);
-  while (g_num_fds) {
+  while (g_num_fds > 0 || g_num_address_resolutions > 0) {
     gpr_log(GPR_INFO,
-            "waiting for %d fds to be destroyed before closing event manager",
-            g_num_fds);
+            "waiting for %d fds and %d name resolutions to be destroyed before "
+            "closing event manager",
+            g_num_fds, g_num_address_resolutions);
     if (gpr_cv_wait(&grpc_iomgr_cv, &grpc_iomgr_mu, fd_shutdown_deadline)) {
       gpr_log(GPR_ERROR,
-              "not all fds destroyed before shutdown deadline: memory leaks "
+              "not all fds or name resolutions destroyed before shutdown "
+              "deadline: memory leaks "
               "are likely");
       break;
-    } else if (g_num_fds == 0) {
-      gpr_log(GPR_INFO, "all fds closed");
+    } else if (g_num_fds == 0 && g_num_address_resolutions == 0) {
+      gpr_log(GPR_INFO, "all fds closed, all name resolutions finished");
     }
   }
 
