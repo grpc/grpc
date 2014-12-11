@@ -1,0 +1,66 @@
+Dependencies
+============
+
+grpc has few external dependencies. If needed, they are present in the
+third_party directory, if you have cloned the github repository recursively.
+If you didn't clone recursively, you can still get them later by running the
+following command:
+
+$ git submodule --init update
+
+
+grpc core currently depends on zlib and OpenSSL 1.0.2beta3, and also requires
+libevent2 for the Linux port.
+
+grpc++'s tests depends on protobuf 3.0.0, gtests and gflags.
+
+OpenSSL
+-------
+
+Secure HTTP2 requires to have the TLS extension ALPN (see rfc 7301 and
+http://http2.github.io/http2-spec/ section 3.3). Our HTTP2 implementation
+relies on OpenSSL's implementation. OpenSSL 1.0.2beta3 is the first version
+of OpenSSL that has ALPN support, and this explains our dependency on it.
+
+
+Compiling
+=========
+
+Currently, you will need to manually install OpenSSL-1.0.2beta3 prior
+attempting to compile grpc. To avoid clobbering any system OpenSSL, it is
+preferable to install it in a separate directory. Running binaries however
+will require the appropriate LD_LIBRARY_PATH variable set up, as shown later.
+
+To compile OpenSSL 1.0.2beta3:
+
+$ cd third_party/openssl
+$ ./config --prefix=/usr/local/openssl-alpn --shared
+$ make
+$ sudo make install
+
+
+After that step, you can compile grpc:
+
+$ ssl=/usr/local/openssl-alpn
+$ CPPFLAGS=-I$ssl/include LDFLAGS=-L$ssl/lib make
+
+This will compile both grpc and grpc++.
+
+
+Testing
+=======
+
+At the moment, C++ tests aren't fully available yet. If you want to run tests
+on the C core of grpc, you can do the following:
+
+$ CPPFLAGS=-I$ssl/include LDFLAGS=-L$ssl/lib make buildtests_c
+$ LD_LIBRARY_PATH=$ssl/lib make test_c
+
+
+Installing
+==========
+
+Once everything is compiled, you should be able to install grpc and grpc++
+libraries and headers:
+
+$ sudo make install
