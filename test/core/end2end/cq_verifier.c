@@ -133,7 +133,7 @@ static void verify_and_destroy_metadata(metadata *md, grpc_metadata *elems,
   gpr_free(md);
 }
 
-static gpr_slice merge_slices(gpr_slice *slices, int nslices) {
+static gpr_slice merge_slices(gpr_slice *slices, size_t nslices) {
   size_t i;
   size_t len = 0;
   gpr_uint8 *cursor;

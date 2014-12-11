@@ -700,7 +700,7 @@ static void end_test(test_fixture *f) {
 /* Generate a test slice filled with {0,1,2,3,...,255,0,1,2,3,4,...} */
 static gpr_slice generate_test_data(size_t length) {
   gpr_slice slice = gpr_slice_malloc(length);
-  int i;
+  size_t i;
   for (i = 0; i < length; i++) {
     GPR_SLICE_START_PTR(slice)[i] = i;
   }

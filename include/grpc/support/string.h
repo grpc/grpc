@@ -66,7 +66,8 @@ int gpr_parse_bytes_to_uint32(const char *data, size_t length,
    On success, returns the number of bytes printed (excluding the final '\0'),
    and *strp points to a string which must later be destroyed with gpr_free().
 
-   On error, returns -1 and sets *strp to NULL. */
+   On error, returns -1 and sets *strp to NULL. If the format string is bad,
+   the result is undefined. */
 int gpr_asprintf(char **strp, const char *format, ...);
 
 #ifdef __cplusplus

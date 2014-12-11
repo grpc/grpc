@@ -406,7 +406,6 @@
     {
       "name": "gpr_cancellable_test",
       "build": "test",
-      "vs_project_guid": "{19730BF6-7F8C-44EF-ACDC-2CA50C0403E7}",
       "src": [
         "test/core/support/cancellable_test.c"
       ],
@@ -418,7 +417,6 @@
     {
       "name": "gpr_log_test",
       "build": "test",
-      "vs_project_guid": "{42B70122-188F-4535-AB74-F061C77068B4}",
       "src": [
         "test/core/support/log_test.c"
       ],
@@ -430,7 +428,6 @@
     {
       "name": "gpr_cmdline_test",
       "build": "test",
-      "vs_project_guid": "{8F260F48-3C22-48A8-9928-A152ABB2EDF2}",
       "src": [
         "test/core/support/cmdline_test.c"
       ],
@@ -447,7 +444,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },
@@ -459,7 +455,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },
@@ -471,7 +466,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },
@@ -483,7 +477,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },
@@ -495,7 +488,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },
@@ -507,7 +499,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },
@@ -519,7 +510,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },
@@ -531,7 +521,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
         "gpr"
       ]
     },

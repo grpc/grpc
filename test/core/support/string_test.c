@@ -130,10 +130,6 @@ static void test_asprintf() {
   GPR_ASSERT(buf[0] == '\0');
   gpr_free(buf);
 
-  /* Print an invalid format. */
-  GPR_ASSERT(gpr_asprintf(&buf, "%") == -1);
-  GPR_ASSERT(buf == NULL);
-
   /* Print strings of various lengths. */
   for (i = 1; i < 100; i++) {
     GPR_ASSERT(gpr_asprintf(&buf, "%0*d", i, 1) == i);

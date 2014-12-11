@@ -59,8 +59,8 @@
 size_t count_and_unref_slices(gpr_slice *slices, size_t nslices,
                               int *current_data) {
   size_t num_bytes = 0;
-  int i;
-  int j;
+  size_t i;
+  size_t j;
   unsigned char *buf;
   for (i = 0; i < nslices; ++i) {
     buf = GPR_SLICE_START_PTR(slices[i]);
@@ -88,8 +88,8 @@ static gpr_slice *allocate_blocks(size_t num_bytes, size_t slice_size,
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
   gpr_slice *slices = malloc(sizeof(gpr_slice) * nslices);
   size_t num_bytes_left = num_bytes;
-  int i;
-  int j;
+  size_t i;
+  size_t j;
   unsigned char *buf;
   *num_blocks = nslices;
 

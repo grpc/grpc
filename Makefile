@@ -1844,10 +1844,10 @@ GPR_HISTOGRAM_TEST_SRC = \
 GPR_HISTOGRAM_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
 GPR_HISTOGRAM_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
 
-bins/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_histogram_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_histogram_test
 
 deps_gpr_histogram_test: $(GPR_HISTOGRAM_TEST_DEPS)
 
@@ -1868,10 +1868,10 @@ GPR_HOST_PORT_TEST_SRC = \
 GPR_HOST_PORT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_HOST_PORT_TEST_SRC))))
 GPR_HOST_PORT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_HOST_PORT_TEST_SRC))))
 
-bins/gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_HOST_PORT_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_host_port_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_HOST_PORT_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_host_port_test
 
 deps_gpr_host_port_test: $(GPR_HOST_PORT_TEST_DEPS)
 
@@ -1892,10 +1892,10 @@ GPR_SLICE_BUFFER_TEST_SRC = \
 GPR_SLICE_BUFFER_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
 GPR_SLICE_BUFFER_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
 
-bins/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_slice_buffer_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_slice_buffer_test
 
 deps_gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_DEPS)
 
@@ -1916,10 +1916,10 @@ GPR_SLICE_TEST_SRC = \
 GPR_SLICE_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_SLICE_TEST_SRC))))
 GPR_SLICE_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_SLICE_TEST_SRC))))
 
-bins/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_slice_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_slice_test
 
 deps_gpr_slice_test: $(GPR_SLICE_TEST_DEPS)
 
@@ -1940,10 +1940,10 @@ GPR_STRING_TEST_SRC = \
 GPR_STRING_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_STRING_TEST_SRC))))
 GPR_STRING_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_STRING_TEST_SRC))))
 
-bins/gpr_string_test: $(GPR_STRING_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_string_test: $(GPR_STRING_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_STRING_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_string_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_STRING_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_string_test
 
 deps_gpr_string_test: $(GPR_STRING_TEST_DEPS)
 
@@ -1964,10 +1964,10 @@ GPR_SYNC_TEST_SRC = \
 GPR_SYNC_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_SYNC_TEST_SRC))))
 GPR_SYNC_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_SYNC_TEST_SRC))))
 
-bins/gpr_sync_test: $(GPR_SYNC_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_sync_test: $(GPR_SYNC_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SYNC_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_sync_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SYNC_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_sync_test
 
 deps_gpr_sync_test: $(GPR_SYNC_TEST_DEPS)
 
@@ -1988,10 +1988,10 @@ GPR_THD_TEST_SRC = \
 GPR_THD_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_THD_TEST_SRC))))
 GPR_THD_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_THD_TEST_SRC))))
 
-bins/gpr_thd_test: $(GPR_THD_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_thd_test: $(GPR_THD_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_THD_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_thd_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_THD_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_thd_test
 
 deps_gpr_thd_test: $(GPR_THD_TEST_DEPS)
 
@@ -2012,10 +2012,10 @@ GPR_TIME_TEST_SRC = \
 GPR_TIME_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(GPR_TIME_TEST_SRC))))
 GPR_TIME_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(GPR_TIME_TEST_SRC))))
 
-bins/gpr_time_test: $(GPR_TIME_TEST_OBJS) libs/libgrpc_test_util.a libs/libgrpc.a libs/libgpr.a
+bins/gpr_time_test: $(GPR_TIME_TEST_OBJS) libs/libgrpc_test_util.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_TIME_TEST_OBJS) -Llibs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_time_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_TIME_TEST_OBJS) -Llibs -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/gpr_time_test
 
 deps_gpr_time_test: $(GPR_TIME_TEST_DEPS)
 
