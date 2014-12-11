@@ -52,14 +52,12 @@ TEST_F(TimeTest, AbsolutePointTest) {
   long us = 10000000L;
   gpr_timespec ts = gpr_time_from_micros(us);
   system_clock::time_point tp{microseconds(us)};
-  system_clock::time_point tp_converted =
-      AbsoluteDeadlineTimespec2Timepoint(ts);
+  system_clock::time_point tp_converted = Timespec2Timepoint(ts);
   gpr_timespec ts_converted;
-  AbsoluteDeadlineTimepoint2Timespec(tp_converted, &ts_converted);
+  Timepoint2Timespec(tp_converted, &ts_converted);
   EXPECT_TRUE(ts.tv_sec == ts_converted.tv_sec);
   EXPECT_TRUE(ts.tv_nsec == ts_converted.tv_nsec);
-  system_clock::time_point tp_converted_2 =
-      AbsoluteDeadlineTimespec2Timepoint(ts_converted);
+  system_clock::time_point tp_converted_2 = Timespec2Timepoint(ts_converted);
   EXPECT_TRUE(tp == tp_converted);
   EXPECT_TRUE(tp == tp_converted_2);
 }

@@ -41,11 +41,10 @@
 namespace grpc {
 
 // from and to should be absolute time.
-void AbsoluteDeadlineTimepoint2Timespec(
-    const std::chrono::system_clock::time_point& from, gpr_timespec* to);
+void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
+                        gpr_timespec* to);
 
-std::chrono::system_clock::time_point AbsoluteDeadlineTimespec2Timepoint(
-    gpr_timespec t);
+std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
 
 }  // namespace grpc
 

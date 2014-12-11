@@ -38,8 +38,9 @@
 #include <string>
 #include <vector>
 
-#include <grpc++/config.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <grpc++/config.h>
 
 using std::chrono::system_clock;
 
@@ -78,9 +79,11 @@ class ClientContext {
   grpc_completion_queue *cq() { return cq_; }
   void set_cq(grpc_completion_queue *cq) { cq_ = cq; }
 
+  gpr_timespec RawDeadline() { return absolute_deadline_; }
+
   grpc_call *call_;
   grpc_completion_queue *cq_;
-  system_clock::time_point absolute_deadline_;
+  gpr_timespec absolute_deadline_;
   std::vector<std::pair<grpc::string, grpc::string> > metadata_;
 };
 

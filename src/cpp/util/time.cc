@@ -42,8 +42,9 @@ using std::chrono::system_clock;
 
 namespace grpc {
 
-void AbsoluteDeadlineTimepoint2Timespec(const system_clock::time_point& from,
-                                        gpr_timespec* to) {
+// TODO(yangg) prevent potential overflow.
+void Timepoint2Timespec(const system_clock::time_point& from,
+                        gpr_timespec* to) {
   system_clock::duration deadline = from.time_since_epoch();
   seconds secs = duration_cast<seconds>(deadline);
   nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
@@ -51,7 +52,7 @@ void AbsoluteDeadlineTimepoint2Timespec(const system_clock::time_point& from,
   to->tv_nsec = nsecs.count();
 }
 
-system_clock::time_point AbsoluteDeadlineTimespec2Timepoint(gpr_timespec t) {
+system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
   system_clock::time_point tp;
   tp += seconds(t.tv_sec);
   tp += nanoseconds(t.tv_nsec);

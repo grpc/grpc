@@ -86,10 +86,10 @@ CompletionQueue::CompletionType CompletionQueue::Next(void** tag) {
       if (!ev->call) {
         *tag = nullptr;
       } else {
-        *tag = new AsyncServerContext(ev->call, ev->data.server_rpc_new.method,
-                                      ev->data.server_rpc_new.host,
-                                      AbsoluteDeadlineTimespec2Timepoint(
-                                          ev->data.server_rpc_new.deadline));
+        *tag = new AsyncServerContext(
+            ev->call, ev->data.server_rpc_new.method,
+            ev->data.server_rpc_new.host,
+            Timespec2Timepoint(ev->data.server_rpc_new.deadline));
       }
       return_type = SERVER_RPC_NEW;
       break;

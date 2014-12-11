@@ -39,12 +39,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
-#include <grpc/support/time.h>
 
 #include "src/cpp/rpc_method.h"
 #include "src/cpp/proto/proto_utils.h"
 #include "src/cpp/stream/stream_context.h"
-#include "src/cpp/util/time.h"
 #include <grpc++/config.h>
 #include <google/protobuf/message.h>
 #include <grpc++/client_context.h>
@@ -80,12 +78,10 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
                                  const google::protobuf::Message& request,
                                  google::protobuf::Message* result) {
   Status status;
-  gpr_timespec absolute_deadline;
-  AbsoluteDeadlineTimepoint2Timespec(context->absolute_deadline(),
-                                     &absolute_deadline);
-  grpc_call* call = grpc_channel_create_call(c_channel_, method.name(),
-                                             // FIXME(yangg)
-                                             "localhost", absolute_deadline);
+  grpc_call* call =
+      grpc_channel_create_call(c_channel_, method.name(),
+                               // FIXME(yangg)
+                               "localhost", context->RawDeadline());
   context->set_call(call);
   grpc_event* ev;
   void* finished_tag = reinterpret_cast<char*>(call);
@@ -156,12 +152,10 @@ StreamContextInterface* Channel::CreateStream(const RpcMethod& method,
                                               ClientContext* context,
                                               const google::protobuf::Message* request,
                                               google::protobuf::Message* result) {
-  gpr_timespec absolute_deadline;
-  AbsoluteDeadlineTimepoint2Timespec(context->absolute_deadline(),
-                                     &absolute_deadline);
-  grpc_call* call = grpc_channel_create_call(c_channel_, method.name(),
-                                             // FIXME(yangg)
-                                             "localhost", absolute_deadline);
+  grpc_call* call =
+      grpc_channel_create_call(c_channel_, method.name(),
+                               // FIXME(yangg)
+                               "localhost", context->RawDeadline());
   context->set_call(call);
   grpc_completion_queue* cq = grpc_completion_queue_create();
   context->set_cq(cq);

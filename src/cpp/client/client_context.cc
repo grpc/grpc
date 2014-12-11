@@ -34,15 +34,14 @@
 #include <grpc++/client_context.h>
 
 #include <grpc/grpc.h>
+#include "src/cpp/util/time.h"
 
 using std::chrono::system_clock;
 
 namespace grpc {
 
 ClientContext::ClientContext()
-    : call_(nullptr),
-      cq_(nullptr),
-      absolute_deadline_(system_clock::time_point::max()) {}
+    : call_(nullptr), cq_(nullptr), absolute_deadline_(gpr_inf_future) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
@@ -64,11 +63,11 @@ ClientContext::~ClientContext() {
 
 void ClientContext::set_absolute_deadline(
     const system_clock::time_point& deadline) {
-  absolute_deadline_ = deadline;
+  Timepoint2Timespec(deadline, &absolute_deadline_);
 }
 
 system_clock::time_point ClientContext::absolute_deadline() {
-  return absolute_deadline_;
+  return Timespec2Timepoint(absolute_deadline_);
 }
 
 void ClientContext::AddMetadata(const grpc::string& meta_key,
