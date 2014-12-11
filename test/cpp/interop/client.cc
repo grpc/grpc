@@ -95,8 +95,8 @@ void DoEmpty(std::shared_ptr<ChannelInterface> channel) {
   gpr_log(GPR_INFO, "Sending an empty rpc...");
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
 
-  google::protobuf::Empty request = google::protobuf::Empty::default_instance();
-  google::protobuf::Empty response = google::protobuf::Empty::default_instance();
+  grpc::testing::Empty request = grpc::testing::Empty::default_instance();
+  grpc::testing::Empty response = grpc::testing::Empty::default_instance();
   ClientContext context;
 
   grpc::Status s = stub->EmptyCall(&context, request, &response);

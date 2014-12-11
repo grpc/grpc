@@ -93,14 +93,6 @@ inline bool ReplacePrefix(string* s, const string& from, const string& to) {
   return true;
 }
 
-// RubyTypeOf updates a proto type to the required ruby equivalent.
-inline string RubyTypeOf(const string& a_type, const string& package) {
-  string res(a_type);
-  ReplacePrefix(&res, package, "");  // remove the leading package if present
-  ReplacePrefix(&res, ".", "");  // remove the leading . (no package)
-  return ReplaceAll(res, ".", "::");  // switch '.' to the ruby module delimiter
-}
-
 // CapitalizeString capitalizes a string.
 inline string CapitalizeString(string s) {
   if (!s.empty()) {
@@ -109,6 +101,29 @@ inline string CapitalizeString(string s) {
   transform(s.begin(), s.end(), s.begin(), ::tolower);
   s[0] = ::toupper(s[0]);
   return s;
+}
+
+// RubyTypeOf updates a proto type to the required ruby equivalent.
+inline string RubyTypeOf(const string& a_type, const string& package) {
+  string res(a_type);
+  ReplacePrefix(&res, package, "");  // remove the leading package if present
+  ReplacePrefix(&res, ".", "");  // remove the leading . (no package)
+  if (res.find('.') == string::npos) {
+    return res;
+  } else {
+    vector<string> prefixes_and_type = Split(res, '.');
+    for (int i = 0; i < prefixes_and_type.size(); ++i) {
+      if (i != 0) {
+        res += "::";  // switch '.' to the ruby module delim
+      }
+      if (i < prefixes_and_type.size() - 1) {
+        res += CapitalizeString(prefixes_and_type[i]);  // capitalize pkgs
+      } else {
+        res += prefixes_and_type[i];
+      }
+    }
+    return res;
+  }
 }
 
 }  // namespace grpc_ruby_generator

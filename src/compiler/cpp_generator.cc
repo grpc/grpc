@@ -98,8 +98,8 @@ bool HasBidiStreaming(const google::protobuf::FileDescriptor* file) {
 
 string GetHeaderIncludes(const google::protobuf::FileDescriptor* file) {
   string temp =
-      "#include \"net/grpc/cpp/internal/client/internal_stub.h\"\n"
-      "#include \"net/grpc/cpp/public/status.h\"\n"
+      "#include \"src/cpp/client/internal_stub.h\"\n"
+      "#include \"grpc++/status.h\"\n"
       "\n"
       "namespace grpc {\n"
       "class ChannelInterface;\n"
@@ -125,10 +125,10 @@ string GetHeaderIncludes(const google::protobuf::FileDescriptor* file) {
 }
 
 string GetSourceIncludes() {
-  return "#include \"net/grpc/cpp/internal/rpc_method.h\"\n"
-         "#include \"net/grpc/cpp/internal/server/rpc_service_method.h\"\n"
-         "#include \"net/grpc/cpp/public/channel_interface.h\"\n"
-         "#include \"net/grpc/cpp/public/stream.h\"\n";
+  return "#include \"src/cpp/rpc_method.h\"\n"
+         "#include \"src/cpp/server/rpc_service_method.h\"\n"
+         "#include \"grpc++/channel_interface.h\"\n"
+         "#include \"grpc++/stream.h\"\n";
 }
 
 void PrintHeaderClientMethod(google::protobuf::io::Printer* printer,

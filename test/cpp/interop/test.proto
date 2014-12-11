@@ -2,8 +2,8 @@
 // of unary/streaming requests/responses.
 syntax = "proto2";
 
-import "net/grpc/cpp/test/interop/empty.proto";
-import "net/grpc/cpp/test/interop/messages.proto";
+import "test/cpp/interop/empty.proto";
+import "test/cpp/interop/messages.proto";
 
 package grpc.testing;
 
