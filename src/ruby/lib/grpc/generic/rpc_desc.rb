@@ -99,7 +99,7 @@ module Google::RPC
         # event.  Send a status of deadline exceeded
         logger.warn("late call: #{active_call}")
         send_status(active_call, DEADLINE_EXCEEDED, 'late')
-      rescue EventError => e
+      rescue Core::EventError => e
         # This is raised by GRPC internals but should rarely, if ever happen.
         # Log it, but don't notify the other endpoint..
         logger.warn("failed call: #{active_call}\n#{e}")
@@ -146,6 +146,7 @@ module Google::RPC
 
     def send_status(active_client, code, details)
       begin
+        details = 'Not sure why' if details.nil?
         active_client.send_status(code, details)
       rescue StandardError => e
         logger.warn('Could not send status %d:%s' % [code, details])
