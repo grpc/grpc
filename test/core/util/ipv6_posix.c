@@ -31,6 +31,9 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+#ifdef GPR_POSIX_SOCKET
+
 #include "test/core/util/ipv6.h"
 
 #include <netinet/in.h>
@@ -53,3 +56,5 @@ int grpc_ipv6_loopback_available() {
   }
   return ok;
 }
+
+#endif  /* GPR_POSIX_SOCKET */

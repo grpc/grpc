@@ -271,7 +271,7 @@
       "vs_project_guid": "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}",
       "src": [
         "test/core/util/grpc_profiler.c",
-        "test/core/util/ipv6.c",
+        "test/core/util/ipv6_posix.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
         "test/core/util/slice_splitter.c",
