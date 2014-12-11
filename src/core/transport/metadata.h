@@ -98,6 +98,10 @@ grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *str,
                                    size_t length);
 
+/* Returns a borrowed slice from the mdstr with its contents base64 encoded
+   and huffman compressed */
+gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
+
 /* Constructors for grpc_mdelem instances; take a variety of data types that
    clients may have handy */
 grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx, grpc_mdstr *key,

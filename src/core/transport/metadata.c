@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/support/murmur_hash.h"
+#include "src/core/transport/chttp2/bin_encoder.h"
 #include <grpc/support/time.h>
 
 #define INITIAL_STRTAB_CAPACITY 4
@@ -53,7 +54,10 @@ typedef struct internal_string {
 
   /* private only data */
   gpr_uint32 refs;
+  gpr_uint8 has_base64_and_huffman_encoded;
   gpr_slice_refcount refcount;
+
+  gpr_slice base64_and_huffman;
 
   grpc_mdctx *context;
 
@@ -225,6 +229,9 @@ static void internal_destroy_string(internal_string *is) {
   internal_string **prev_next;
   internal_string *cur;
   grpc_mdctx *ctx = is->context;
+  if (is->has_base64_and_huffman_encoded) {
+    gpr_slice_unref(is->base64_and_huffman);
+  }
   for (prev_next = &ctx->strtab[is->hash % ctx->strtab_capacity],
       cur = *prev_next;
        cur != is; prev_next = &cur->bucket_next, cur = cur->bucket_next)
@@ -312,6 +319,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
     /* add a null terminator for cheap c string conversion when desired */
     s->slice.data.refcounted.bytes[length] = 0;
   }
+  s->has_base64_and_huffman_encoded = 0;
   s->hash = hash;
   s->context = ctx;
   s->bucket_next = ctx->strtab[hash % ctx->strtab_capacity];
@@ -522,4 +530,18 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
   }
   im->destroy_user_data = destroy_func;
   im->user_data = user_data;
+}
+
+gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
+  internal_string *s = (internal_string *)gs;
+  gpr_slice slice;
+  grpc_mdctx *ctx = s->context;
+  lock(ctx);
+  if (!s->has_base64_and_huffman_encoded) {
+    s->base64_and_huffman =
+        grpc_chttp2_base64_encode_and_huffman_compress(s->slice);
+  }
+  slice = s->base64_and_huffman;
+  unlock(ctx);
+  return slice;
 }

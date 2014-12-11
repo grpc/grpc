@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 
+#include "src/core/transport/chttp2/bin_encoder.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
@@ -244,6 +245,25 @@ static void test_slices_work() {
   grpc_mdctx_orphan(ctx);
 }
 
+static void test_base64_and_huffman_works() {
+  grpc_mdctx *ctx;
+  grpc_mdstr *str;
+  gpr_slice slice1;
+  gpr_slice slice2;
+
+  LOG_TEST();
+
+  ctx = grpc_mdctx_create();
+  str = grpc_mdstr_from_string(ctx, "abcdefg");
+  slice1 = grpc_mdstr_as_base64_encoded_and_huffman_compressed(str);
+  slice2 = grpc_chttp2_base64_encode_and_huffman_compress(str->slice);
+  GPR_ASSERT(0 == gpr_slice_cmp(slice1, slice2));
+
+  gpr_slice_unref(slice2);
+  grpc_mdstr_unref(str);
+  grpc_mdctx_orphan(ctx);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_no_op();
@@ -254,5 +274,6 @@ int main(int argc, char **argv) {
   test_spin_creating_the_same_thing();
   test_things_stick_around();
   test_slices_work();
+  test_base64_and_huffman_works();
   return 0;
 }
