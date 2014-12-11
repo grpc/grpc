@@ -84,6 +84,7 @@ void gpr_cv_destroy(gpr_cv *cv) {
 int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
   int timeout = 0;
   DWORD timeout_max_ms;
+  mu->locked = 0;
   if (gpr_time_cmp(abs_deadline, gpr_inf_future) == 0) {
     SleepConditionVariableCS(cv, &mu->cs, INFINITE);
   } else {
@@ -99,6 +100,7 @@ int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
                  GetLastError() == ERROR_TIMEOUT);
     }
   }
+  mu->locked = 1;
   return timeout;
 }
 
