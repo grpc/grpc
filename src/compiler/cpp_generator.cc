@@ -43,23 +43,23 @@ namespace grpc_cpp_generator {
 namespace {
 
 bool NoStreaming(const google::protobuf::MethodDescriptor* method) {
-  return !method->options().has_client_streaming() &&
-         !method->options().has_server_streaming();
+  return !method->client_streaming() &&
+         !method->server_streaming();
 }
 
 bool ClientOnlyStreaming(const google::protobuf::MethodDescriptor* method) {
-  return method->options().has_client_streaming() &&
-         !method->options().has_server_streaming();
+  return method->client_streaming() &&
+         !method->server_streaming();
 }
 
 bool ServerOnlyStreaming(const google::protobuf::MethodDescriptor* method) {
-  return !method->options().has_client_streaming() &&
-         method->options().has_server_streaming();
+  return !method->client_streaming() &&
+         method->server_streaming();
 }
 
 bool BidiStreaming(const google::protobuf::MethodDescriptor* method) {
-  return method->options().has_client_streaming() &&
-         method->options().has_server_streaming();
+  return method->client_streaming() &&
+         method->server_streaming();
 }
 
 bool HasClientOnlyStreaming(const google::protobuf::FileDescriptor* file) {
