@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'grpc/generic/active_call'
 require_relative '../port_picker'
 
 include GRPC::Core::StatusCodes

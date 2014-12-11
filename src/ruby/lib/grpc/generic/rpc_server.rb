@@ -27,13 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
+require 'grpc/grpc'
 require 'grpc/generic/active_call'
 require 'grpc/generic/service'
 require 'thread'
 require 'xray/thread_dump_signal_handler'
 
-module GRPC
+module Google::RPC
 
   # RpcServer hosts a number of services and makes them available on the
   # network.

@@ -28,8 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'grpc/generic/active_call'
-require 'grpc/generic/client_stub'
 require 'xray/thread_dump_signal_handler'
 require_relative '../port_picker'
 

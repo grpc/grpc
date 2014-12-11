@@ -27,7 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
 require 'grpc/generic/client_stub'
 require 'grpc/generic/rpc_desc'
 
@@ -51,7 +50,7 @@ class String
 
 end
 
-module GRPC
+module Google::RPC
 
   # Provides behaviour used to implement schema-derived service classes.
   #

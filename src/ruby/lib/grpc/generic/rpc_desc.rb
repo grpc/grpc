@@ -27,9 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
+require 'grpc/grpc'
 
-module GRPC
+module Google::RPC
 
   # RpcDesc is a Descriptor of an RPC method.
   class RpcDesc < Struct.new(:name, :input, :output, :marshal_method,
@@ -99,7 +99,7 @@ module GRPC
         # event.  Send a status of deadline exceeded
         logger.warn("late call: #{active_call}")
         send_status(active_call, DEADLINE_EXCEEDED, 'late')
-      rescue Core::EventError => e
+      rescue EventError => e
         # This is raised by GRPC internals but should rarely, if ever happen.
         # Log it, but don't notify the other endpoint..
         logger.warn("failed call: #{active_call}\n#{e}")

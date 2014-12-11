@@ -46,8 +46,6 @@ require 'forwardable'
 require 'optparse'
 
 require 'grpc'
-require 'grpc/generic/service'
-require 'grpc/generic/rpc_server'
 
 require 'third_party/stubby/testing/proto/test.pb'
 require 'third_party/stubby/testing/proto/messages.pb'

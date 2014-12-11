@@ -28,9 +28,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
-require 'grpc'
+require 'grpc/grpc'
 
-module GRPC
+module Google::RPC
 
   # The BiDiCall class orchestrates exection of a BiDi stream on a client or
   # server.

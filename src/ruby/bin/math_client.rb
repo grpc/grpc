@@ -40,8 +40,6 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
-require 'grpc/generic/client_stub'
-require 'grpc/generic/service'
 require 'math.pb'
 require 'optparse'
 

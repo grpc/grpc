@@ -47,8 +47,6 @@ require 'minitest'
 require 'minitest/assertions'
 
 require 'grpc'
-require 'grpc/generic/client_stub'
-require 'grpc/generic/service'
 
 require 'third_party/stubby/testing/proto/test.pb'
 require 'third_party/stubby/testing/proto/messages.pb'

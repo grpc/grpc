@@ -37,8 +37,6 @@ lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
-require 'grpc/generic/rpc_server'
-require 'grpc/generic/service'
 
 class EchoMsg
   def marshal

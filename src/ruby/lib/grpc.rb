@@ -34,6 +34,10 @@ require 'grpc/logconfig'
 require 'grpc/version'
 require 'grpc/core/event'
 require 'grpc/core/time_consts'
+require 'grpc/generic/active_call'
+require 'grpc/generic/client_stub'
+require 'grpc/generic/service'
+require 'grpc/generic/rpc_server'
 
 # alias GRPC
 GRPC = Google::RPC

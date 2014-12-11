@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'forwardable'
-require 'grpc'
 require 'grpc/generic/bidi_call'
 
 def assert_event_type(ev, want)
@@ -37,7 +36,7 @@ def assert_event_type(ev, want)
   raise 'Unexpected rpc event: got %s, want %s' % [got, want] unless got == want
 end
 
-module GRPC
+module Google::RPC
 
   # The ActiveCall class provides simple methods for sending marshallable
   # data to a call

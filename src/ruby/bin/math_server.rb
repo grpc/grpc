@@ -41,8 +41,6 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'forwardable'
 require 'grpc'
-require 'grpc/generic/service'
-require 'grpc/generic/rpc_server'
 require 'math.pb'
 require 'optparse'
 

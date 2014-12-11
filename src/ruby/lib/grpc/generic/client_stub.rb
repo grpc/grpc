@@ -27,11 +27,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
 require 'grpc/generic/active_call'
 require 'xray/thread_dump_signal_handler'
 
-module GRPC
+module Google::RPC
 
   # ClientStub represents an endpoint used to send requests to GRPC servers.
   class ClientStub
