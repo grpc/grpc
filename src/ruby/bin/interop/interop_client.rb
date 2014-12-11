@@ -82,6 +82,41 @@ def nulls(l)
   [].pack('x' * l)
 end
 
+# a PingPongPlayer implements the ping pong bidi test.
+class PingPongPlayer
+  include Minitest::Assertions
+  include Grpc::Testing
+  include Grpc::Testing::PayloadType
+  attr_accessor :assertions # required by Minitest::Assertions
+  attr_accessor :queue
+
+  # reqs is the enumerator over the requests
+  def initialize(msg_sizes)
+    @queue = Queue.new
+    @msg_sizes = msg_sizes
+    @assertions = 0  # required by Minitest::Assertions
+  end
+
+  def each_item
+    return enum_for(:each_item) unless block_given?
+    req_cls, p_cls= StreamingOutputCallRequest, ResponseParameters  # short
+    count = 0
+    @msg_sizes.each do |m|
+      req_size, resp_size = m
+      req = req_cls.new(:payload => Payload.new(:body => nulls(req_size)),
+                        :response_type => COMPRESSABLE,
+                        :response_parameters => p_cls.new(:size => resp_size))
+      yield req
+      resp = @queue.pop
+      assert_equal(COMPRESSABLE, resp.payload.type, 'payload type is wrong')
+      assert_equal(resp_size, resp.payload.body.length,
+                   'payload body #{i} has the wrong length')
+      p "OK: ping_pong #{count}"
+      count += 1
+    end
+  end
+end
+
 # defines methods corresponding to each interop test case.
 class NamedTests
   include Minitest::Assertions
@@ -166,22 +201,11 @@ class NamedTests
   # TODO(temiola): update this test to stay consistent with the java test's
   # interpretation of the test spec.
   def ping_pong
-    req_cls, param_cls= StreamingOutputCallRequest, ResponseParameters  # short
     msg_sizes = [[27182, 31415], [8, 9], [1828, 2653], [45904, 58979]]
-    reqs = msg_sizes.map do |x|
-      req_size, resp_size = x
-      req_cls.new(:payload => Payload.new(:body => nulls(req_size)),
-                  :response_type => COMPRESSABLE,
-                  :response_parameters => param_cls.new(:size => resp_size))
-    end
-    resps = @stub.full_duplex_call(reqs)
-    resps.each_with_index do |r, i|
-      assert i < msg_sizes.length, 'too many responses'
-      assert_equal(COMPRESSABLE, r.payload.type, 'payload type is wrong')
-      assert_equal(msg_sizes[i][1], r.payload.body.length,
-                   'payload body #{i} has the wrong length')
-    end
-    p 'OK ping_pong'
+    ppp = PingPongPlayer.new(msg_sizes)
+    resps = @stub.full_duplex_call(ppp.each_item)
+    resps.each { |r| ppp.queue.push(r) }
+    p 'OK: ping_pong'
   end
 
 end
