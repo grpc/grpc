@@ -6,7 +6,7 @@ third_party directory, if you have cloned the github repository recursively.
 If you didn't clone recursively, you can still get them later by running the
 following command:
 
-$ git submodule --init update
+$ git submodule update --init
 
 
 grpc core currently depends on zlib and OpenSSL 1.0.2beta3, and also requires
@@ -37,6 +37,7 @@ $ cd third_party/openssl
 $ ./config --prefix=/usr/local/openssl-alpn --shared
 $ make
 $ sudo make install
+$ cd ../../
 
 
 After that step, you can compile grpc:
