@@ -99,7 +99,7 @@
     </ClCompile>
     <ClCompile Include="..\..\test\core\transport\transport_end2end_tests.c">
     </ClCompile>
-    <ClCompile Include="..\..\test\core\statistics\log_tests.c">
+    <ClCompile Include="..\..\test\core\statistics\census_log_tests.c">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

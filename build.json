@@ -289,7 +289,7 @@
         "test/core/end2end/cq_verifier.c",
         "test/core/endpoint/endpoint_tests.c",
         "test/core/transport/transport_end2end_tests.c",
-        "test/core/statistics/log_tests.c"
+        "test/core/statistics/census_log_tests.c"
       ]
     },
     {
@@ -372,6 +372,7 @@
       "name": "cpp_plugin",
       "build": "protoc",
       "c++": true,
+      "secure": false,
       "src": [
         "src/compiler/cpp_plugin.cpp",
         "src/compiler/cpp_generator.cpp"
@@ -386,6 +387,7 @@
       "name": "ruby_plugin",
       "build": "protoc",
       "c++": true,
+      "secure": false,
       "src": [
         "src/compiler/ruby_plugin.cpp",
         "src/compiler/ruby_generator.cpp"

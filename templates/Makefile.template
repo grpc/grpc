@@ -131,14 +131,154 @@ HOST_CXXFLAGS = $(CXXFLAGS)
 HOST_LDFLAGS = $(LDFLAGS)
 HOST_LDLIBS = $(LDLIBS)
 
+
+# These are automatically computed variables.
+# There shouldn't be any need to change anything from now on.
+
+HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
+ifeq ($(SYSTEM),)
+SYSTEM = $(HOST_SYSTEM)
+endif
+
+ifeq ($(wildcard .git),)
+IS_GIT_FOLDER = false
+else
+IS_GIT_FOLDER = true
+endif
+
+EVENT2_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/event2.c -levent $(LDFLAGS)
+OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -levent $(LDFLAGS) $(LDLIBS_SECURE)
+ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/event2.c -levent $(LDFLAGS)
+
+HAS_SYSTEM_EVENT2 = $(shell $(EVENT2_CHECK_CMD) >& /dev/null && echo true || echo false)
+HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) >& /dev/null && echo true || echo false)
+HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) >& /dev/null && echo true || echo false)
+
+ifeq ($(wildcard third_party/libevent/include/event2/event.h),)
+HAS_EMBEDDED_EVENT2 = false
+else
+HAS_EMBEDDED_EVENT2 = true
+endif
+
+ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
+HAS_EMBEDDED_OPENSSL_ALPN = false
+else
+HAS_EMBEDDED_OPENSSL_ALPN = true
+endif
+
+ifeq ($(wildcard third_party/zlib/zlib.h),)
+HAS_EMBEDDED_ZLIB = false
+else
+HAS_EMBEDDED_ZLIB = true
+endif
+
+ifneq ($(SYSTEM),MINGW32)
+ifeq ($(HAS_SYSTEM_EVENT2),false)
+DEP_MISSING += libevent
+endif
+endif
+
+ifeq ($(HAS_SYSTEM_ZLIB),false)
+ifeq ($(HAS_EMBEDDED_ZLIB),true)
+ZLIB_DEP = third_party/zlib/libz.a
+CPPFLAGS += -Ithird_party/zlib
+LDFLAGS += -Lthird_party/zlib
+else
+DEP_MISSING += zlib
+endif
+endif
+
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
+ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
+OPENSSL_DEP = third_party/openssl/libssl.a
+CPPFLAGS += -Ithird_party/openssl/include
+LDFLAGS += -Lthird_party/openssl
+else
+NO_SECURE = true
+endif
+endif
+
+ifneq ($(DEP_MISSING),)
+NO_DEPS = true
+endif
+
+ifneq ($(MAKECMDGOALS),clean)
+NO_DEPS = true
+endif
+
 .SECONDARY = %.pb.h %.pb.cc
 
+ifeq ($(DEP_MISSING),)
 all: static shared\
 % for tgt in targets:
 % if tgt.build == 'all':
  bins/${tgt.name}\
 % endif
 % endfor
+
+dep_error:
+	@echo "You shouldn't see this message - all of your dependencies are correct."
+else
+all: dep_error git_update stop
+
+dep_error:
+	@echo
+	@echo "DEPENDENCY ERROR"
+	@echo
+	@echo "You are missing system dependencies that are essential to build grpc,"
+	@echo "and the third_party directory doesn't have them:"
+	@echo
+	@echo "  $(DEP_MISSING)"
+	@echo
+	@echo "Installing the development packages for your system will solve"
+	@echo "this issue. Please consult INSTALL to get more information."
+	@echo
+	@echo "If you need information about why these tests failed, run:"
+	@echo
+	@echo "  make run_dep_checks"
+	@echo
+endif
+
+git_update:
+ifeq ($(IS_GIT_FOLDER),true)
+	@echo "Additionally, since you are in a git clone, you can download the"
+	@echo "missing dependencies in third_party by running the following command:"
+	@echo
+	@echo "  git submodule --init update"
+	@echo
+endif
+
+openssl_dep_error: openssl_dep_message git_update stop
+
+openssl_dep_message:
+	@echo
+	@echo "DEPENDENCY ERROR"
+	@echo
+	@echo "The target you are trying to run requires OpenSSL with ALPN support."
+	@echo "Your system doesn't have it, and neither does the third_party directory."
+	@echo
+	@echo "Please consult INSTALL to get more information."
+	@echo
+	@echo "If you need information about why these tests failed, run:"
+	@echo
+	@echo "  make run_dep_checks"
+	@echo
+
+stop:
+	@false
+
+run_dep_checks:
+	$(EVENT2_CHECK_CMD) || true
+	$(OPENSSL_ALPN_CHECK_CMD) || true
+	$(ZLIB_CHECK_CMD) || true
+
+third_party/zlib/libz.a:
+	(cd third_party/zlib ; CFLAGS="-fPIC -fvisibility=hidden" ./configure --static)
+	$(MAKE) -C third_party/zlib
+
+third_party/openssl/libssl.a:
+	(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden" ./config)
+	$(MAKE) -C third_party/openssl build_crypto build_ssl
 
 static: static_c static_cxx
 
@@ -196,7 +336,7 @@ privatelibs_cxx: dep_cxx\
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: privatelibs_c\
+buildtests_c: bin_dep_c privatelibs_c\
 % for tgt in targets:
 % if tgt.build == 'test' and not tgt.get('c++', False):
  bins/${tgt.name}\
@@ -204,7 +344,7 @@ buildtests_c: privatelibs_c\
 % endfor
 
 
-buildtests_cxx: privatelibs_cxx\
+buildtests_cxx: bin_dep_cxx privatelibs_cxx\
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('c++', False):
  bins/${tgt.name}\
@@ -350,6 +490,9 @@ dep_c:\
  deps_lib${lib.name}\
 % endif
 % endfor
+
+
+bins_dep_c:\
 % for tgt in targets:
 % if not tgt.get('c++', False):
  deps_${tgt.name}\
@@ -363,6 +506,9 @@ dep_cxx:\
  deps_lib${lib.name}\
 % endif
 % endfor
+
+
+bins_dep_cxx:\
 % for tgt in targets:
 % if tgt.get('c++', False):
  deps_${tgt.name}\
@@ -446,7 +592,7 @@ ${makelib(lib)}
 % endfor
 
 
-# All of the test targets
+# All of the test targets, and protoc plugins
 
 % for tgt in targets:
 ${maketarget(tgt)}
@@ -477,6 +623,16 @@ PUBLIC_HEADERS_C += \\
 LIB${lib.name.upper()}_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 LIB${lib.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
 
+% if lib.get('secure', True):
+LIB${lib.name.upper()}_OBJS += $(OPENSSL_DEP)
+
+ifeq ($(NO_SECURE),true)
+
+libs/lib${lib.name}.a: openssl_dep_error
+
+else
+
+% endif
 libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -492,17 +648,27 @@ libs/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
 	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} \
 % endif
 -o libs/lib${lib.name}.so.$(VERSION) $(LIB${lib.name.upper()}_OBJS) $(LDLIBS)\
-% if lib.secure:
+% if lib.get('secure', True):
  $(LDLIBS_SECURE)\
 % endif
 % endif
 
+% if lib.get('secure', True):
+
+endif
+% endif
 
 deps_lib${lib.name}: $(LIB${lib.name.upper()}_DEPS)
 
-ifneq ($(MAKECMDGOALS),clean)
+% if lib.get('secure', True):
+ifneq ($(NO_SECURE),true)
+% endif
+ifneq ($(NO_DEPS),true)
 -include $(LIB${lib.name.upper()}_DEPS)
 endif
+% if lib.get('secure', True):
+endif
+% endif
 
 clean_lib${lib.name}:
 	$(E) "[CLEAN]   Cleaning lib${lib.name} files"
@@ -523,6 +689,14 @@ ${tgt.name.upper()}_SRC = \\
 ${tgt.name.upper()}_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
 ${tgt.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(${tgt.name.upper()}_SRC))))
 
+% if tgt.get('secure', True):
+ifeq ($(NO_SECURE),true)
+
+bins/${tgt.name}: openssl_dep_error
+
+else
+
+% endif
 bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % for dep in tgt.deps:
  libs/lib${dep}.a\
@@ -568,12 +742,22 @@ bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  $(LDLIBS_SECURE)\
 % endif
  -o bins/${tgt.name}
+% if tgt.get('secure', True):
+
+endif
+% endif
 
 deps_${tgt.name}: $(${tgt.name.upper()}_DEPS)
 
-ifneq ($(MAKECMDGOALS),clean)
+% if tgt.get('secure', True):
+ifneq ($(NO_SECURE),true)
+% endif
+ifneq ($(NO_DEPS),true)
 -include $(${tgt.name.upper()}_DEPS)
 endif
+% if tgt.get('secure', True):
+endif
+% endif
 
 clean_${tgt.name}:
 	$(E) "[CLEAN]   Cleaning ${tgt.name} files"
@@ -583,6 +767,7 @@ clean_${tgt.name}:
 </%def>
 
 .PHONY: all strip tools \
+dep_error openssl_dep_error openssl_dep_message git_update stop \
 buildtests buildtests_c buildtests_cxx \
 test test_c test_cxx \
 install install_c install_cxx \

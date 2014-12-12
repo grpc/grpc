@@ -8,6 +8,9 @@ following command:
 
 $ git submodule update --init
 
+Note that the Makefile makes it much easier for you to compile from sources
+if you were to clone recursively our git repository.
+
 
 grpc core currently depends on zlib and OpenSSL 1.0.2beta3, and also requires
 libevent2 for the Linux port.
@@ -22,30 +25,44 @@ http://http2.github.io/http2-spec/ section 3.3). Our HTTP2 implementation
 relies on OpenSSL's implementation. OpenSSL 1.0.2beta3 is the first version
 of OpenSSL that has ALPN support, and this explains our dependency on it.
 
+Note that the Makefile supports compiling only the unsecure elements of grpc,
+and if you do not have OpenSSL and do not want it, you can still proceed
+with installing only the elements you require. However, it is recommended
+to encrypt your network traffic, therefore we urge you to not use the unsecure
+version of grpc if possible.
+
 
 Compiling
 =========
 
-Currently, you will need to manually install OpenSSL-1.0.2beta3 prior
-attempting to compile grpc. To avoid clobbering any system OpenSSL, it is
-preferable to install it in a separate directory. Running binaries however
-will require the appropriate LD_LIBRARY_PATH variable set up, as shown later.
+If you have all the dependencies in the third_party subfolder, you should
+simply be able to go ahead and run "make" to compile grpc. The other targets
+that you might find interesting are "buildtests" and "test".
 
-To compile OpenSSL 1.0.2beta3:
+If you didn't clone from git, and thus are unable to get the required
+dependencies, you can manually download and unpack the necessary packages,
+and let the Makefile build them itself.
 
-$ cd third_party/openssl
-$ ./config --prefix=/usr/local/openssl-alpn --shared
-$ make
-$ sudo make install
-$ cd ../../
+You may also install the dependencies yourself, from the sources, or from
+your distribution's package manager.
 
+The development packages needed for grpc are libevent2 under Linux, and zlib.
+The development packages needed for grpc++'s tests are gtests, and gflags.
 
-After that step, you can compile grpc:
+To the best of our knowledge, no distribution has an OpenSSL package that
+supports ALPN yet, so you would still have to depend on installing from source
+for that particular dependency.
 
-$ ssl=/usr/local/openssl-alpn
-$ CPPFLAGS=-I$ssl/include LDFLAGS=-L$ssl/lib make
+The recommended version of OpenSSL that provides ALPN support is available
+at this URL:
 
-This will compile both grpc and grpc++.
+  https://www.openssl.org/source/openssl-1.0.2-beta3.tar.gz
+
+If you want to let the Makefile build them automatically for you, please
+extract them in the third_party folder. You will need to rename the extracted
+folder the following way:
+
+  openssl-1.0.2-beta3 --> openssl
 
 
 Testing
@@ -54,8 +71,8 @@ Testing
 At the moment, C++ tests aren't fully available yet. If you want to run tests
 on the C core of grpc, you can do the following:
 
-$ CPPFLAGS=-I$ssl/include LDFLAGS=-L$ssl/lib make buildtests_c
-$ LD_LIBRARY_PATH=$ssl/lib make test_c
+$ make buildtests_c
+$ make test_c
 
 
 Installing
