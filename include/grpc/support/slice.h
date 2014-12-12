@@ -101,6 +101,7 @@ typedef struct gpr_slice {
                     : ((slice).data.inlined.length = (newlen)))
 #define GPR_SLICE_END_PTR(slice) \
   GPR_SLICE_START_PTR(slice) + GPR_SLICE_LENGTH(slice)
+#define GPR_SLICE_IS_EMPTY(slice) (GPR_SLICE_LENGTH(slice) == 0)
 
 /* Increment the refcount of s. Requires slice is initialized.
    Returns s. */
