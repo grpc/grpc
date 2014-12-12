@@ -4,11 +4,19 @@
   from copy import deepcopy
   import re
 
+  proto_re = re.compile('(.*)\.proto')
+
   def excluded(filename, exclude_res):
     for r in exclude_res:
       if r.match(filename):
         return True
     return False
+
+  def proto_to_cc(filename):
+    m = proto_re.match(filename)
+    if not m:
+      return filename
+    return 'gens/' + m.group(1) + '.pb.cc'
 %>
 
 <%
@@ -38,20 +46,19 @@
       altlibs.append(new)
   libs.extend(altlibs)
 
-  protos_dict = {}
-  proto_re = re.compile('\.proto$')
+  protos = set()
   for lib in libs:
     for src in lib.src:
-      if proto_re.match(src):
-        protos_dict[src] = True
+      m = proto_re.match(src)
+      if m:
+        protos.add(m.group(1))
   for tgt in targets:
     for src in tgt.src:
-      if proto_re.match(src):
-        protos_dict[src] = True
+      m = proto_re.match(src)
+      if m:
+        protos.add(m.group(1))
 
-  protos = []
-  for k, v in protos_dict:
-    protos.append(k)
+  protos = sorted(protos)
 %>
 
 # General settings.
@@ -68,6 +75,11 @@ AR = ar
 STRIP = strip --strip-unneeded
 INSTALL = install -D
 RM = rm -f
+
+HOST_CC = $(CC)
+HOST_CXX = $(CXX)
+HOST_LD = $(LD)
+HOST_LDXX = $(LDXX)
 
 ifeq ($(DEBUG),)
 CPPFLAGS += -O2
@@ -111,7 +123,13 @@ LDFLAGS += $(ARCH_FLAGS)
 LDLIBS += $(addprefix -l, $(LIBS))
 LDLIBSXX += $(addprefix -l, $(LIBSXX))
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
-LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
+HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
+
+HOST_CPPFLAGS = $(CPPFLAGS)
+HOST_CFLAGS = $(CFLAGS)
+HOST_CXXFLAGS = $(CXXFLAGS)
+HOST_LDFLAGS = $(LDFLAGS)
+HOST_LDLIBS = $(LDLIBS)
 
 .SECONDARY = %.pb.h %.pb.cc
 
@@ -282,20 +300,22 @@ strip-shared_cxx: shared_cxx
 % endif
 % endfor
 
-gens/%.pb.cc : %.proto
+% for p in protos:
+deps/gens/${p}.pb.dep:
+	$(Q) mkdir -p `dirname $@`
+	$(Q) touch $@
+
+gens/${p}.pb.cc: ${p}.proto protoc_plugins
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens $<
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/cpp_plugin $<
+
+% endfor
 
 deps/%.dep : %.c
 	$(E) "[DEP]     Generating dependencies for $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
-
-deps/%.dep : gens/%.pb.cc
-	$(E) "[DEP]     Generating dependencies for $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
 
 deps/%.dep : %.cc
 	$(E) "[DEP]     Generating dependencies for $<"
@@ -311,6 +331,11 @@ objs/%.o : gens/%.pb.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+objs/src/compiler/%.o : src/compiler/%.cc
+	$(E) "[HOSTCXX] Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -c -o $@ $<
 
 objs/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
@@ -431,7 +456,7 @@ ${maketarget(tgt)}
 LIB${lib.name.upper()}_SRC = \\
 
 % for src in lib.src:
-    ${src} \\
+    ${proto_to_cc(src)} \\
 
 % endfor
 
@@ -491,7 +516,7 @@ clean_lib${lib.name}:
 ${tgt.name.upper()}_SRC = \\
 
 % for src in tgt.src:
-    ${src} \\
+    ${proto_to_cc(src)} \\
 
 % endfor
 
@@ -503,29 +528,44 @@ bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  libs/lib${dep}.a\
 % endfor
 
+% if tgt.get("c++", False):
+% if tgt.build == 'protoc':
+	$(E) "[HOSTLD]  Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+% else:
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-% if tgt.get("c++", False):
 	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+% endif
 % if tgt.build == 'test':
  $(GTEST_LIB)\
 % endif
  -Llibs\
 % else:
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) -Llibs\
 % endif
 % for dep in tgt.deps:
  -l${dep}\
 % endfor
 % if tgt.get("c++", False):
+% if tgt.build == 'protoc':
+ $(HOST_LDLIBSXX)\
+% else:
  $(LDLIBSXX)\
 % endif
- $(LDLIBS)\
-% if tgt.get('secure', True):
- $(LDLIBS_SECURE)\
 % endif
 % if tgt.build == 'protoc':
- $(LDLIBS_PROTOC)\
+ $(HOST_LDLIBS)\
+% else:
+ $(LDLIBS)\
+% endif
+% if tgt.build == 'protoc':
+ $(HOST_LDLIBS_PROTOC)\
+% elif tgt.get('secure', True):
+ $(LDLIBS_SECURE)\
 % endif
  -o bins/${tgt.name}
 

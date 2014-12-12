@@ -343,9 +343,9 @@
       "name": "grpc++_test_util",
       "build": "test",
       "src": [
-        "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/test_ssl_channel.cc",
-        "test/cpp/util/echo.proto"
+        "test/cpp/util/echo.proto",
+        "test/cpp/end2end/async_test_server.cc"
       ],
       "c++": true
     }
@@ -1157,11 +1157,16 @@
     {
       "name": "interop_server",
       "build": "test",
+      "run": false,
       "c++": true,
       "src": [
+        "test/cpp/interop/empty.proto",
+        "test/cpp/interop/messages.proto",
+        "test/cpp/interop/test.proto",
         "test/cpp/interop/server.cc"
       ],
       "deps": [
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1171,11 +1176,16 @@
     {
       "name": "interop_client",
       "build": "test",
+      "run": false,
       "c++": true,
       "src": [
+        "test/cpp/interop/empty.proto",
+        "test/cpp/interop/messages.proto",
+        "test/cpp/interop/test.proto",
         "test/cpp/interop/client.cc"
       ],
       "deps": [
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1216,25 +1226,6 @@
       ],
       "deps": [
         "grpc_test_util",
-        "grpc",
-        "gpr"
-      ]
-    },
-    {
-      "name": "interop_client",
-      "build": "test",
-      "run": false,
-      "c++": true,
-      "src": [
-        "test/cpp/interop/client.cc",
-        "test/cpp/interop/empty.pb.cc",
-        "test/cpp/interop/messages.pb.cc",
-        "test/cpp/interop/test.pb.cc"
-      ],
-      "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
         "grpc",
         "gpr"
       ]

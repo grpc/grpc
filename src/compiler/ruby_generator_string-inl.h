@@ -112,7 +112,7 @@ inline string RubyTypeOf(const string& a_type, const string& package) {
     return res;
   } else {
     vector<string> prefixes_and_type = Split(res, '.');
-    for (int i = 0; i < prefixes_and_type.size(); ++i) {
+    for (unsigned int i = 0; i < prefixes_and_type.size(); ++i) {
       if (i != 0) {
         res += "::";  // switch '.' to the ruby module delim
       }

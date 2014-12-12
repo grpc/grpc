@@ -11,7 +11,7 @@ package grpc.testing;
 // performance with various types of payload.
 service TestService {
   // One empty request followed by one empty response.
-  rpc EmptyCall(proto2.Empty) returns (proto2.Empty);
+  rpc EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty);
 
   // One request followed by one response.
   // The server returns the client payload as-is.
