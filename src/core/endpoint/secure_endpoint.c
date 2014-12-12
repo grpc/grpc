@@ -99,8 +99,8 @@ static void call_read_cb(secure_endpoint *ep, gpr_slice *slices, size_t nslices,
   size_t i;
   for (i = 0; i < nslices; i++) {
     char *data =
-        gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                    GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+        gpr_hexdump((char*)GPR_SLICE_START_PTR(slices[i]),
+            GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
     gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
     gpr_free(data);
   }
@@ -183,8 +183,8 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
   call_read_cb(ep, ep->input_buffer.slices, input_buffer_count, error);
 }
 
-static void notify_on_read_m(grpc_endpoint *secure_ep, grpc_endpoint_read_cb cb,
-                             void *user_data, gpr_timespec deadline) {
+static void notify_on_read(grpc_endpoint *secure_ep, grpc_endpoint_read_cb cb,
+                           void *user_data, gpr_timespec deadline) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   ep->read_cb = cb;
   ep->read_user_data = user_data;
@@ -216,11 +216,11 @@ static void on_write(void *data, grpc_endpoint_cb_status error) {
   secure_endpoint_unref(ep);
 }
 
-static grpc_endpoint_write_status write_m(grpc_endpoint *secure_ep,
-                                          gpr_slice *slices, size_t nslices,
-                                          grpc_endpoint_write_cb cb,
-                                          void *user_data,
-                                          gpr_timespec deadline) {
+static grpc_endpoint_write_status write(grpc_endpoint *secure_ep,
+                                        gpr_slice *slices, size_t nslices,
+                                        grpc_endpoint_write_cb cb,
+                                        void *user_data,
+                                        gpr_timespec deadline) {
   int i = 0;
   int output_buffer_count = 0;
   tsi_result result = TSI_OK;
@@ -233,8 +233,8 @@ static grpc_endpoint_write_status write_m(grpc_endpoint *secure_ep,
 #ifdef GRPC_TRACE_SECURE_TRANSPORT
   for (i = 0; i < nslices; i++) {
     char *data =
-        gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                    GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+        gpr_hexdump((char*)GPR_SLICE_START_PTR(slices[i]),
+            GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
     gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
     gpr_free(data);
   }
@@ -316,18 +316,18 @@ static grpc_endpoint_write_status write_m(grpc_endpoint *secure_ep,
   return status;
 }
 
-static void shutdown_m(grpc_endpoint *secure_ep) {
+static void shutdown(grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   grpc_endpoint_shutdown(ep->wrapped_ep);
 }
 
-static void unref_m(grpc_endpoint *secure_ep) {
+static void unref(grpc_endpoint *secure_ep) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   secure_endpoint_unref(ep);
 }
 
-static const grpc_endpoint_vtable vtable = {notify_on_read_m, write_m,
-                                            shutdown_m, unref_m};
+static const grpc_endpoint_vtable vtable = {notify_on_read, write, shutdown,
+                                            unref};
 
 grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *transport,
