@@ -36,9 +36,13 @@
 
 #include <string>
 
-namespace proto2 {
+using namespace std;
+
+namespace google {
+namespace protobuf {
 class FileDescriptor;
-}  // namespace proto2
+}  // namespace protobuf
+}  // namespace google
 
 namespace grpc_ruby_generator {
 

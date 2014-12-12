@@ -59,11 +59,11 @@ namespace {
 void PrintMethod(const MethodDescriptor* method, const string& package,
                  Printer* out) {
   string input_type = RubyTypeOf(method->input_type()->name(), package);
-  if (method->options().has_client_streaming()) {
+  if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
   string output_type = RubyTypeOf(method->output_type()->name(), package);
-  if (method->options().has_server_streaming()) {
+  if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }
   map<string, string> method_vars = ListToDict({

@@ -86,6 +86,7 @@ INCLUDES = . include gens
 LIBS = rt m z event event_pthreads pthread
 LIBSXX = protobuf
 LIBS_SECURE = ssl crypto dl
+LIBS_PROTOC = protoc protobuf
 
 ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
 GTEST_LIB = /usr/src/gtest/src/gtest-all.cc -I/usr/src/gtest
@@ -110,6 +111,7 @@ LDFLAGS += $(ARCH_FLAGS)
 LDLIBS += $(addprefix -l, $(LIBS))
 LDLIBSXX += $(addprefix -l, $(LIBSXX))
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 .SECONDARY = %.pb.h %.pb.cc
 
@@ -466,7 +468,7 @@ libs/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
 % endif
 -o libs/lib${lib.name}.so.$(VERSION) $(LIB${lib.name.upper()}_OBJS) $(LDLIBS)\
 % if lib.secure:
- $(LDLIBS_SECURE)
+ $(LDLIBS_SECURE)\
 % endif
 % endif
 
@@ -504,7 +506,11 @@ bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 % if tgt.get("c++", False):
-	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) $(GTEST_LIB) -Llibs\
+	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
+% if tgt.build == 'test':
+ $(GTEST_LIB)\
+% endif
+ -Llibs\
 % else:
 	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) -Llibs\
 % endif
@@ -517,6 +523,9 @@ bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  $(LDLIBS)\
 % if tgt.get('secure', True):
  $(LDLIBS_SECURE)\
+% endif
+% if tgt.build == 'protoc':
+ $(LDLIBS_PROTOC)\
 % endif
  -o bins/${tgt.name}
 

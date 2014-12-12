@@ -365,6 +365,7 @@
     {
       "name": "cpp_plugin",
       "build": "protoc",
+      "c++": true,
       "src": [
         "src/compiler/cpp_plugin.cpp",
         "src/compiler/cpp_generator.cpp"
@@ -378,6 +379,7 @@
     {
       "name": "ruby_plugin",
       "build": "protoc",
+      "c++": true,
       "src": [
         "src/compiler/ruby_plugin.cpp",
         "src/compiler/ruby_generator.cpp"
