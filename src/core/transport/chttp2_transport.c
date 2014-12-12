@@ -948,14 +948,14 @@ static void send_ping(grpc_transport *gt, void (*cb)(void *user_data),
         gpr_realloc(t->pings, sizeof(outstanding_ping) * t->ping_capacity);
   }
   p = &t->pings[t->ping_count++];
-  p->id[0] = t->ping_counter >> 56;
-  p->id[1] = t->ping_counter >> 48;
-  p->id[2] = t->ping_counter >> 40;
-  p->id[3] = t->ping_counter >> 32;
-  p->id[4] = t->ping_counter >> 24;
-  p->id[5] = t->ping_counter >> 16;
-  p->id[6] = t->ping_counter >> 8;
-  p->id[7] = t->ping_counter;
+  p->id[0] = (t->ping_counter >> 56) & 0xff;
+  p->id[1] = (t->ping_counter >> 48) & 0xff;
+  p->id[2] = (t->ping_counter >> 40) & 0xff;
+  p->id[3] = (t->ping_counter >> 32) & 0xff;
+  p->id[4] = (t->ping_counter >> 24) & 0xff;
+  p->id[5] = (t->ping_counter >> 16) & 0xff;
+  p->id[6] = (t->ping_counter >> 8) & 0xff;
+  p->id[7] = t->ping_counter & 0xff;
   p->cb = cb;
   p->user_data = user_data;
   gpr_slice_buffer_add(&t->qbuf, grpc_chttp2_ping_create(0, p->id));
