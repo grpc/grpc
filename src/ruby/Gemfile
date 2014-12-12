@@ -6,8 +6,7 @@ source 'https://rubygems.org'
 #
 # The default value is what's used for gRPC ruby's GCE configuration
 #
-# gem 'beefcake', path: "/var/local/git/beefcake"
-gem 'beefcake', path: "/usr/local/google/repos/beefcake"
+gem 'beefcake', path: "/var/local/git/beefcake"
 
 # Specify your gem's dependencies in grpc.gemspec
 gemspec
