@@ -123,7 +123,7 @@
     <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\src\core\statistics\hash_table.h" />
-    <ClInclude Include="..\..\src\core\statistics\log.h" />
+    <ClInclude Include="..\..\src\core\statistics\census_log.h" />
     <ClInclude Include="..\..\src\core\statistics\window_stats.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
@@ -246,7 +246,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\hash_table.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\log.c">
+    <ClCompile Include="..\..\src\core\statistics\census_log.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\window_stats.c">
     </ClCompile>

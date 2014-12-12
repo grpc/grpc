@@ -289,14 +289,11 @@ static void accept_stream(void *user_data, grpc_transport *transport,
 
 static void recv_error(channel_data *chand, call_data *calld, int line,
                        const char *fmt, ...) {
-  char msg[512];
   va_list a;
 
   va_start(a, fmt);
-  vsprintf(msg, fmt, a);
+  gpr_vlog(__FILE__, line, GPR_LOG_SEVERITY_ERROR, fmt, a);
   va_end(a);
-
-  gpr_log(__FILE__, line, GPR_LOG_SEVERITY_ERROR, "%s", msg);
 
   if (chand->transport) {
     grpc_transport_abort_stream(chand->transport,

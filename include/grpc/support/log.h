@@ -35,6 +35,7 @@
 #define __GRPC_SUPPORT_LOG_H__
 
 #include <stdlib.h> /* for abort() */
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +71,10 @@ const char *gpr_log_severity_string(gpr_log_severity severity);
  * for each message */
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...);
+
+/* Same as above, but using a va_list instead. */
+void gpr_vlog(const char *file, int line, gpr_log_severity severity,
+              const char *format, va_list args);
 
 /* abort() the process if x is zero, having written a line to the log.
 

@@ -54,15 +54,13 @@ static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
   return ANDROID_LOG_DEFAULT;
 }
 
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
+void gpr_vlog(const char *file, int line, gpr_log_severity severity,
+              const char *format, va_list args) {
   char *final_slash;
   const char *display_file;
   char *prefix = NULL;
   char *suffix = NULL;
   char *output = NULL;
-  va_list args;
-  va_start(args, format);
 
   final_slash = strrchr(file, '/');
   if (final_slash == NULL)
@@ -73,7 +71,6 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   asprintf(&prefix, "%s:%d] ", display_file, line);
   vasprintf(&suffix, format, args);
   asprintf(&output, "%s%s", prefix, suffix);
-  va_end(args);
 
   __android_log_write(severity_to_log_priority(severity), "GRPC", output);
 

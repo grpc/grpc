@@ -40,16 +40,11 @@
 #include <stdarg.h>
 
 /* Simple starter implementation */
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
-  va_list args;
-  va_start(args, format);
-
+void gpr_vlog(const char *file, int line, gpr_log_severity severity,
+              const char *format, va_list args) {
   fprintf(stderr, "%s %s:%d: ", gpr_log_severity_string(severity), file, line);
   vfprintf(stderr, format, args);
   fputc('\n', stderr);
-
-  va_end(args);
 }
 
 #endif

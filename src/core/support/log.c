@@ -46,3 +46,13 @@ const char *gpr_log_severity_string(gpr_log_severity severity) {
   }
   return "UNKNOWN";
 }
+
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+
+  gpr_vlog(file, line, severity, format, args);
+
+  va_end(args);
+}

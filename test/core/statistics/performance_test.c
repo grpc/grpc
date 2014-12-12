@@ -31,7 +31,7 @@
  *
  */
 
-#include "log_tests.h"
+#include "test/core/statistics/census_log_tests.h"
 
 #include <stdlib.h>
 

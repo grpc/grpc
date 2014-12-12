@@ -49,15 +49,13 @@
 
 static long gettid() { return syscall(__NR_gettid); }
 
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
+void gpr_vlog(const char *file, int line, gpr_log_severity severity,
+              const char *format, va_list args) {
   char *final_slash;
   const char *display_file;
   char time_buffer[64];
   gpr_timespec now = gpr_now();
   struct tm tm;
-  va_list args;
-  va_start(args, format);
 
   final_slash = strrchr(file, '/');
   if (final_slash == NULL)
@@ -78,8 +76,6 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   vfprintf(stderr, format, args);
   fputc('\n', stderr);
   funlockfile(stderr);
-
-  va_end(args);
 }
 
 #endif
