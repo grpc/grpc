@@ -682,6 +682,7 @@ static void unlock(transport *t) {
       num_goaways = t->num_pending_goaways;
       t->pending_goaways = NULL;
       t->num_pending_goaways = 0;
+      t->cap_pending_goaways = 0;
       t->calling_back = 1;
     }
   }

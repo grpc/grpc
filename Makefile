@@ -636,6 +636,7 @@ LIBGRPC_SRC = \
     src/core/channel/census_filter.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
+    src/core/channel/child_channel.c \
     src/core/channel/client_channel.c \
     src/core/channel/client_setup.c \
     src/core/channel/connected_channel.c \
@@ -1559,6 +1560,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/census_filter.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
+    src/core/channel/child_channel.c \
     src/core/channel/client_channel.c \
     src/core/channel/client_setup.c \
     src/core/channel/connected_channel.c \
