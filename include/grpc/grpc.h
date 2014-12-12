@@ -439,10 +439,13 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr);
 /* Start a server - tells all listeners to start listening */
 void grpc_server_start(grpc_server *server);
 
-/* Begin shutting down a server. */
+/* Begin shutting down a server.
+   After completion, no new calls or connections will be admitted.
+   Existing calls will be allowed to complete. */
 void grpc_server_shutdown(grpc_server *server);
 
-/* Destroy a server */
+/* Destroy a server.
+   Forcefully cancels all existing calls. */
 void grpc_server_destroy(grpc_server *server);
 
 #ifdef __cplusplus
