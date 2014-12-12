@@ -72,8 +72,6 @@ static void grpc_fd_impl_destroy(grpc_fd *impl);
 
 void grpc_iomgr_ref_address_resolution(int delta) {
   gpr_mu_lock(&grpc_iomgr_mu);
-  gpr_log(GPR_DEBUG, "num_address_resolutions = %d + %d",
-          g_num_address_resolutions, delta);
   GPR_ASSERT(!g_shutdown_backup_poller);
   g_num_address_resolutions += delta;
   if (0 == g_num_address_resolutions) {
