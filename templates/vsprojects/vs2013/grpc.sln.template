@@ -1,5 +1,7 @@
 ## Template for Visual Studio solution
 ## based on http://msdn.microsoft.com/en-us/library/bb165951(v=vs.90).aspx
+## NOTE: tabs in this file are needed by Visual Studio to correctly interpret
+## the file.
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
@@ -31,28 +33,39 @@ project_dict = dict([(p.name, p) for p in projects])
 % for project in projects:
 Project("${cpp_proj_type}") = "${project.name}", "${project.name}.vcxproj", "${project.vs_project_guid}"
   % if project.deps:
-  ProjectSection(ProjectDependencies) = postProject
+	ProjectSection(ProjectDependencies) = postProject
     % for dep in project.deps:
-    ${project_dict[dep].vs_project_guid} = ${project_dict[dep].vs_project_guid}
+		${project_dict[dep].vs_project_guid} = ${project_dict[dep].vs_project_guid}
     % endfor
-  EndProjectSection
+	EndProjectSection
   % endif
 EndProject
 % endfor
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlibvc", "third_party\zlibvc.vcxproj", "{8FD826F8-3739-44E6-8CC8-997122E53B8D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "third_party", "third_party", "{DD51818F-0BCA-4035-9E5B-F28A9F87DED4}"
+EndProject
 Global
-  GlobalSection(SolutionConfigurationPlatforms) = preSolution
-    Debug|Win32 = Debug|Win32
-    Release|Win32 = Release|Win32
-  EndGlobalSection
-  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 % for project in projects:
-    ${project.vs_project_guid}.Debug|Win32.ActiveCfg = Debug|Win32
-    ${project.vs_project_guid}.Debug|Win32.Build.0 = Debug|Win32
-    ${project.vs_project_guid}.Release|Win32.ActiveCfg = Release|Win32
-    ${project.vs_project_guid}.Release|Win32.Build.0 = Release|Win32
+		${project.vs_project_guid}.Debug|Win32.ActiveCfg = Debug|Win32
+		${project.vs_project_guid}.Debug|Win32.Build.0 = Debug|Win32
+		${project.vs_project_guid}.Release|Win32.ActiveCfg = Release|Win32
+		${project.vs_project_guid}.Release|Win32.Build.0 = Release|Win32
 % endfor
-  EndGlobalSection
-  GlobalSection(SolutionProperties) = preSolution
-    HideSolutionNode = FALSE
-  EndGlobalSection
+		{8FD826F8-3739-44E6-8CC8-997122E53B8D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8FD826F8-3739-44E6-8CC8-997122E53B8D}.Debug|Win32.Build.0 = Debug|Win32
+		{8FD826F8-3739-44E6-8CC8-997122E53B8D}.Release|Win32.ActiveCfg = Release|Win32
+		{8FD826F8-3739-44E6-8CC8-997122E53B8D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8FD826F8-3739-44E6-8CC8-997122E53B8D} = {DD51818F-0BCA-4035-9E5B-F28A9F87DED4}
+	EndGlobalSection
 EndGlobal

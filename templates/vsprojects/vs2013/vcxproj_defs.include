@@ -1,6 +1,7 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_configuration_type(is_library)">${'StaticLibrary' if is_library else 'Application'}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
+<%def name="include_directories()">$(SolutionDir)\..\..;$(SolutionDir)\..\..\include;$(SolutionDir)\..\..\third_party\zlib;%(AdditionalIncludeDirectories)</%def>\
 <%def name="gen_project(name, libs, targets)">\
 <%
 ## TODO(jtattermusch): this code is c&p from the solution template
@@ -38,8 +39,6 @@ project_dict = dict([(p.name, p) for p in projects])
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>${project.vs_project_guid}</ProjectGuid>
-    <Keyword>Win32Proj</Keyword>
-    <RootNamespace></RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -75,7 +74,7 @@ project_dict = dict([(p.name, p) for p in projects])
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>${include_directories()}</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
@@ -91,7 +90,7 @@ project_dict = dict([(p.name, p) for p in projects])
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\..;$(SolutionDir)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>  
+      <AdditionalIncludeDirectories>${include_directories()}</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
