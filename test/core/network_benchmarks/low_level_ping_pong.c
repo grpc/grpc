@@ -55,6 +55,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 
 typedef struct fd_pair {
   int read_fd;
@@ -68,6 +69,7 @@ typedef struct thread_args {
   int (*write_bytes)(struct thread_args *args, char *buf);
   int (*setup)(struct thread_args *args);
   int epoll_fd;
+  char *strategy_name;
 } thread_args;
 
 /*
@@ -548,8 +550,71 @@ static test_strategy test_strategies[] = {
     {"spin_read", spin_read_bytes, set_socket_nonblocking},
     {"spin_poll", poll_read_bytes_spin, set_socket_nonblocking}};
 
-int main(int argc, char **argv) {
+static char *socket_types[] = {"tcp", "socketpair", "pipe"};
+
+int create_socket(char *socket_type, fd_pair *client_fds, fd_pair *server_fds) {
+  if (strcmp(socket_type, "tcp") == 0) {
+    create_sockets_tcp(client_fds, server_fds);
+  } else if (strcmp(socket_type, "socketpair") == 0) {
+    create_sockets_socketpair(client_fds, server_fds);
+  } else if (strcmp(socket_type, "pipe") == 0) {
+    create_sockets_pipe(client_fds, server_fds);
+  } else {
+    fprintf(stderr, "Invalid socket type %s\n", socket_type);
+    return -1;
+  }
+  return 0;
+}
+
+static int run_benchmark(char *socket_type, thread_args *client_args,
+                         thread_args *server_args) {
   gpr_thd_id tid;
+  int rv = 0;
+
+  rv = create_socket(socket_type, &client_args->fds, &server_args->fds);
+  if (rv < 0) {
+    return rv;
+  }
+
+  gpr_log(GPR_INFO, "Starting test %s %s %d", client_args->strategy_name,
+          socket_type, client_args->msg_size);
+
+  gpr_thd_new(&tid, server_thread_wrap, server_args, NULL);
+  client_thread(client_args);
+  return 0;
+}
+
+static int run_all_benchmarks(int msg_size) {
+  int error = 0;
+  int i;
+  for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
+    test_strategy *test_strategy = &test_strategies[i];
+    int j;
+    for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
+      thread_args *client_args = malloc(sizeof(thread_args));
+      thread_args *server_args = malloc(sizeof(thread_args));
+      char *socket_type = socket_types[j];
+
+      client_args->read_bytes = test_strategy->read_strategy;
+      client_args->write_bytes = blocking_write_bytes;
+      client_args->setup = test_strategy->setup;
+      client_args->msg_size = msg_size;
+      client_args->strategy_name = test_strategy->name;
+      server_args->read_bytes = test_strategy->read_strategy;
+      server_args->write_bytes = blocking_write_bytes;
+      server_args->setup = test_strategy->setup;
+      server_args->msg_size = msg_size;
+      server_args->strategy_name = test_strategy->name;
+      error = run_benchmark(socket_type, client_args, server_args);
+      if (error < 0) {
+        return error;
+      }
+    }
+  }
+  return error;
+}
+
+int main(int argc, char **argv) {
   thread_args *client_args = malloc(sizeof(thread_args));
   thread_args *server_args = malloc(sizeof(thread_args));
   int msg_size = -1;
@@ -557,6 +622,7 @@ int main(int argc, char **argv) {
   char *socket_type = NULL;
   int i;
   const test_strategy *test_strategy = NULL;
+  int error = 0;
 
   gpr_cmdline *cmdline =
       gpr_cmdline_create("low_level_ping_pong network benchmarking tool");
@@ -569,17 +635,25 @@ int main(int argc, char **argv) {
 
   gpr_cmdline_parse(cmdline, argc, argv);
 
-  if (read_strategy == NULL) {
-    read_strategy = "blocking";
-  }
-  if (socket_type == NULL) {
-    socket_type = "tcp";
-  }
   if (msg_size == -1) {
     msg_size = 50;
   }
 
-  for (i = 0; i < sizeof(test_strategies) / sizeof(struct test_strategy); ++i) {
+  if (read_strategy == NULL) {
+    gpr_log(GPR_INFO, "No strategy specified, running all benchmarks");
+    return run_all_benchmarks(msg_size);
+  }
+
+  if (socket_type == NULL) {
+    socket_type = "tcp";
+  }
+  if (msg_size <= 0) {
+    fprintf(stderr, "msg_size must be > 0\n");
+    print_usage(argv[0]);
+    return -1;
+  }
+
+  for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
     if (!strcmp(test_strategies[i].name, read_strategy)) {
       test_strategy = &test_strategies[i];
     }
@@ -592,35 +666,16 @@ int main(int argc, char **argv) {
   client_args->read_bytes = test_strategy->read_strategy;
   client_args->write_bytes = blocking_write_bytes;
   client_args->setup = test_strategy->setup;
+  client_args->msg_size = msg_size;
+  client_args->strategy_name = read_strategy;
   server_args->read_bytes = test_strategy->read_strategy;
   server_args->write_bytes = blocking_write_bytes;
   server_args->setup = test_strategy->setup;
-
-  if (strcmp(socket_type, "tcp") == 0) {
-    create_sockets_tcp(&client_args->fds, &server_args->fds);
-  } else if (strcmp(socket_type, "socketpair") == 0) {
-    create_sockets_socketpair(&client_args->fds, &server_args->fds);
-  } else if (strcmp(socket_type, "pipe") == 0) {
-    create_sockets_pipe(&client_args->fds, &server_args->fds);
-  } else {
-    fprintf(stderr, "Invalid socket type %s\n", socket_type);
-    return -1;
-  }
-
-  if (msg_size <= 0) {
-    fprintf(stderr, "msg_size must be > 0\n");
-    print_usage(argv[0]);
-    return -1;
-  }
-
   server_args->msg_size = msg_size;
-  client_args->msg_size = msg_size;
+  server_args->strategy_name = read_strategy;
 
-  gpr_log(GPR_INFO, "Starting test %s %s %d", read_strategy, socket_type,
-          msg_size);
+  error = run_benchmark(socket_type, client_args, server_args);
 
-  gpr_thd_new(&tid, server_thread_wrap, server_args, NULL);
-  client_thread(client_args);
   gpr_cmdline_destroy(cmdline);
-  return 0;
+  return error;
 }
