@@ -78,12 +78,15 @@ struct grpc_chttp2_hpack_parser {
   gpr_uint32 strgot;
   /* huffman decoding state */
   gpr_uint16 huff_state;
+  /* is the string being decoded binary? */
+  gpr_uint8 binary;
   /* is the current string huffman encoded? */
   gpr_uint8 huff;
   /* set by higher layers, used by grpc_chttp2_header_parser_parse to signal
      it should append a metadata boundary at the end of frame */
   gpr_uint8 is_boundary;
   gpr_uint8 is_eof;
+  gpr_uint32 base64_buffer;
 
   /* hpack table */
   grpc_chttp2_hptbl table;

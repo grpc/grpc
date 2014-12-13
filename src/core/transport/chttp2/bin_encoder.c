@@ -32,6 +32,9 @@
  */
 
 #include "src/core/transport/chttp2/bin_encoder.h"
+
+#include <string.h>
+
 #include "src/core/transport/chttp2/huffsyms.h"
 #include <grpc/support/log.h>
 
@@ -123,7 +126,7 @@ gpr_slice grpc_chttp2_base64_encode(gpr_slice input) {
   /* encode full triplets */
   for (i = 0; i < input_triplets; i++) {
     out[0] = alphabet[in[0] >> 2];
-    out[1] = alphabet[((in[0] & 0x2) << 4) | (in[1] >> 4)];
+    out[1] = alphabet[((in[0] & 0x3) << 4) | (in[1] >> 4)];
     out[2] = alphabet[((in[1] & 0xf) << 2) | (in[2] >> 6)];
     out[3] = alphabet[in[2] & 0x3f];
     out += 4;
@@ -136,13 +139,13 @@ gpr_slice grpc_chttp2_base64_encode(gpr_slice input) {
       break;
     case 1:
       out[0] = alphabet[in[0] >> 2];
-      out[1] = alphabet[(in[0] & 0x2) << 4];
+      out[1] = alphabet[(in[0] & 0x3) << 4];
       out += 2;
       in += 1;
       break;
     case 2:
       out[0] = alphabet[in[0] >> 2];
-      out[1] = alphabet[((in[0] & 0x2) << 4) | (in[1] >> 4)];
+      out[1] = alphabet[((in[0] & 0x3) << 4) | (in[1] >> 4)];
       out[2] = alphabet[(in[1] & 0xf) << 2];
       out += 3;
       in += 2;
@@ -238,7 +241,7 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
 
   /* encode full triplets */
   for (i = 0; i < input_triplets; i++) {
-    enc_add2(&out, in[0] >> 2, ((in[0] & 0x2) << 4) | (in[1] >> 4));
+    enc_add2(&out, in[0] >> 2, ((in[0] & 0x3) << 4) | (in[1] >> 4));
     enc_add2(&out, ((in[1] & 0xf) << 2) | (in[2] >> 6), in[2] & 0x3f);
     in += 3;
   }
@@ -248,11 +251,11 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
     case 0:
       break;
     case 1:
-      enc_add2(&out, in[0] >> 2, (in[0] & 0x2) << 4);
+      enc_add2(&out, in[0] >> 2, (in[0] & 0x3) << 4);
       in += 1;
       break;
     case 2:
-      enc_add2(&out, in[0] >> 2, ((in[0] & 0x2) << 4) | (in[1] >> 4));
+      enc_add2(&out, in[0] >> 2, ((in[0] & 0x3) << 4) | (in[1] >> 4));
       enc_add1(&out, (in[1] & 0xf) << 2);
       in += 2;
       break;
@@ -268,4 +271,9 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
 
   GPR_ASSERT(in == GPR_SLICE_END_PTR(input));
   return output;
+}
+
+int grpc_is_binary_header(const char *key, size_t length) {
+  if (length < 5) return 0;
+  return 0 == memcmp(key + length - 4, "-bin", 4);
 }

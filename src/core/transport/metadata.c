@@ -540,6 +540,7 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   if (!s->has_base64_and_huffman_encoded) {
     s->base64_and_huffman =
         grpc_chttp2_base64_encode_and_huffman_compress(s->slice);
+    s->has_base64_and_huffman_encoded = 1;
   }
   slice = s->base64_and_huffman;
   unlock(ctx);

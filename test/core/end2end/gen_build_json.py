@@ -27,6 +27,7 @@ END2END_TESTS = [
     'max_concurrent_streams',
     'no_op',
     'ping_pong_streaming',
+    'request_response_with_binary_metadata_and_payload',
     'request_response_with_metadata_and_payload',
     'request_response_with_payload',
     'simple_delayed_request',

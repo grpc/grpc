@@ -32,6 +32,9 @@
  */
 
 #include "src/core/transport/chttp2/bin_encoder.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
@@ -90,6 +93,7 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
     gpr_free(t);
     gpr_free(e);
     gpr_free(g);
+    all_ok = 0;
   }
   gpr_slice_unref(input);
   gpr_slice_unref(base64);
@@ -99,6 +103,14 @@ static void expect_combined_equiv(const char *s, size_t len, int line) {
 
 #define EXPECT_COMBINED_EQUIV(x) \
   expect_combined_equiv(x, sizeof(x) - 1, __LINE__)
+
+static void expect_binary_header(const char *hdr, int binary) {
+  if (grpc_is_binary_header(hdr, strlen(hdr)) != binary) {
+    gpr_log(GPR_ERROR, "FAILED: expected header '%s' to be %s", hdr,
+            binary ? "binary" : "not binary");
+    all_ok = 0;
+  }
+}
 
 int main(int argc, char **argv) {
   /* Base64 test vectors from RFC 4648, with padding removed */
@@ -116,6 +128,8 @@ int main(int argc, char **argv) {
   EXPECT_SLICE_EQ("Zm9vYmE", B64("fooba"));
   /* BASE64("foobar") = "Zm9vYmFy" */
   EXPECT_SLICE_EQ("Zm9vYmFy", B64("foobar"));
+
+  EXPECT_SLICE_EQ("wMHCw8TF", B64("\xc0\xc1\xc2\xc3\xc4\xc5"));
 
   /* Huffman encoding tests */
   EXPECT_SLICE_EQ("\xf1\xe3\xc2\xe5\xf2\x3a\x6b\xa0\xab\x90\xf4\xff",
@@ -164,6 +178,10 @@ int main(int argc, char **argv) {
       "\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf"
       "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef"
       "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff");
+
+  expect_binary_header("foo-bin", 1);
+  expect_binary_header("foo-bar", 0);
+  expect_binary_header("-bin", 0);
 
   return all_ok ? 0 : 1;
 }

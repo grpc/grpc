@@ -332,10 +332,29 @@ static void generate_base64_huff_encoder_table() {
   printf("};\n");
 }
 
+static void generate_base64_inverse_table() {
+  static const char alphabet[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+  unsigned char inverse[256];
+  int i;
+
+  memset(inverse, 255, sizeof(inverse));
+  for (i = 0; i < strlen(alphabet); i++) {
+    inverse[(unsigned char)alphabet[i]] = i;
+  }
+
+  printf("static const gpr_uint8 inverse_base64[256] = {");
+  for (i = 0; i < 256; i++) {
+    printf("%d,", inverse[i]);
+  }
+  printf("};\n");
+}
+
 int main(void) {
   generate_huff_tables();
   generate_first_byte_lut();
   generate_base64_huff_encoder_table();
+  generate_base64_inverse_table();
 
   return 0;
 }

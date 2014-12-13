@@ -51,4 +51,6 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
    return y; */
 gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input);
 
+int grpc_is_binary_header(const char *key, size_t length);
+
 #endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_BIN_ENCODER_H_ */
