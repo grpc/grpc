@@ -114,7 +114,7 @@ void DoLargeUnary(std::shared_ptr<ChannelInterface> channel) {
   ClientContext context;
   request.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
   request.set_response_size(314159);
-  grpc::string payload(271828, '0');
+  grpc::string payload(271828, '\0');
   request.mutable_payload()->set_body(payload.c_str(), 271828);
 
   grpc::Status s = stub->UnaryCall(&context, request, &response);
@@ -122,7 +122,7 @@ void DoLargeUnary(std::shared_ptr<ChannelInterface> channel) {
   GPR_ASSERT(s.IsOk());
   GPR_ASSERT(response.payload().type() ==
          grpc::testing::PayloadType::COMPRESSABLE);
-  GPR_ASSERT(response.payload().body().length() == 314159);
+  GPR_ASSERT(response.payload().body() == grpc::string(314159, '\0'));
   gpr_log(GPR_INFO, "Large unary done.");
 }
 
