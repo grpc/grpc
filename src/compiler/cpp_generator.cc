@@ -240,7 +240,7 @@ string GetHeaderServices(const google::protobuf::FileDescriptor* file) {
   map<string, string> vars;
 
   for (int i = 0; i < file->service_count(); ++i) {
-    PrintHeaderService(&printer, file->service(0), &vars);
+    PrintHeaderService(&printer, file->service(i), &vars);
     printer.Print("\n");
   }
   return output;
@@ -442,7 +442,7 @@ string GetSourceServices(const google::protobuf::FileDescriptor* file) {
   map<string, string> vars;
 
   for (int i = 0; i < file->service_count(); ++i) {
-    PrintSourceService(&printer, file->service(0), &vars);
+    PrintSourceService(&printer, file->service(i), &vars);
     printer.Print("\n");
   }
   return output;
