@@ -40,9 +40,11 @@
 #define CENSUS_LOG_2_MAX_RECORD_SIZE 14 /* 2^14 = 16KB */
 #define CENSUS_LOG_MAX_RECORD_SIZE (1 << CENSUS_LOG_2_MAX_RECORD_SIZE)
 
-/* Initialize the statistics logging subsystem with the given log size. If
-   discard_old_records is non-zero, then new records will displace older
-   ones when the log is full. This function must be called before any other
+/* Initialize the statistics logging subsystem with the given log size. A log
+   size of 0 will result in the smallest possible log for the platform
+   (approximately CENSUS_LOG_MAX_RECORD_SIZE * gpr_cpu_num_cores()). If
+   discard_old_records is non-zero, then new records will displace older ones
+   when the log is full. This function must be called before any other
    census_log functions.
 */
 void census_log_initialize(size_t size_in_mb, int discard_old_records);
@@ -86,4 +88,4 @@ size_t census_log_remaining_space();
    out-of-space. */
 int census_log_out_of_space_count();
 
-#endif  /* __GRPC_INTERNAL_STATISTICS_LOG_H__ */
+#endif /* __GRPC_INTERNAL_STATISTICS_LOG_H__ */

@@ -822,6 +822,18 @@
       ]
     },
     {
+      "name": "census_statistics_small_log_test",
+      "build": "test",
+      "src": [
+        "test/core/statistics/small_log_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
       "name": "census_statistics_performance_test",
       "build": "test",
       "src": [

@@ -41,6 +41,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 
 /* Fills in 'record' of size 'size'. Each byte in record is filled in with the
    same value. The value is extracted from 'record' pointer. */
@@ -120,12 +121,18 @@ static void assert_log_empty() {
 }
 
 /* Given log size and record size, computes the minimum usable space. */
-static size_t min_usable_space(size_t log_size, size_t record_size) {
+static gpr_int32 min_usable_space(size_t log_size, size_t record_size) {
+  gpr_int32 usable_space;
   gpr_int32 num_blocks = log_size / CENSUS_LOG_MAX_RECORD_SIZE;
   gpr_int32 waste_per_block = CENSUS_LOG_MAX_RECORD_SIZE % record_size;
-  /* In the worst case, all except one core-local block is empty. */
-  return (log_size - ((gpr_cpu_num_cores() - 1) * CENSUS_LOG_MAX_RECORD_SIZE) -
-          ((num_blocks - gpr_cpu_num_cores() - 1) * waste_per_block));
+  /* In the worst case, all except one core-local block is full. */
+  gpr_int32 num_full_blocks = GPR_MAX(gpr_cpu_num_cores() - 2, 2);
+  GPR_ASSERT(num_blocks >= num_full_blocks);
+  usable_space = (gpr_int32)log_size -
+                 (num_full_blocks * CENSUS_LOG_MAX_RECORD_SIZE) -
+                 ((num_blocks - num_full_blocks) * waste_per_block);
+  GPR_ASSERT(usable_space > 0);
+  return usable_space;
 }
 
 /* Fills the log and verifies data. If 'no fragmentation' is true, records
@@ -152,7 +159,6 @@ static void fill_log(size_t log_size, int no_fragmentation, int circular_log) {
   records_written = write_records_to_log(
       0 /* writer id */, size, (log_size / size) * 2, 0 /* spin count */);
   usable_space = min_usable_space(log_size, size);
-  GPR_ASSERT(usable_space > 0);
   GPR_ASSERT(records_written * size >= usable_space);
   records_read = perform_read_iteration(size);
   if (!circular_log) {
@@ -534,6 +540,21 @@ void test_multiple_writers() {
   const int circular = 0;
   printf("Starting test: multiple writers\n");
   setup_test(circular);
+  multiple_writers_single_reader(circular);
+  census_log_shutdown();
+}
+
+/* Repeat the straddling records and multiple writers tests with a small log. */
+void test_small_log() {
+  size_t log_size;
+  const int circular = 0;
+  printf("Starting test: small log\n");
+  census_log_initialize(0, circular);
+  log_size = census_log_remaining_space();
+  GPR_ASSERT(log_size > 0);
+  fill_log(log_size, 0, circular);
+  census_log_shutdown();
+  census_log_initialize(0, circular);
   multiple_writers_single_reader(circular);
   census_log_shutdown();
 }

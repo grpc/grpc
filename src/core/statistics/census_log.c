@@ -97,6 +97,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/useful.h>
 
 /* End of platform specific code */
 
@@ -118,18 +119,18 @@ typedef struct census_log_block {
   gpr_int32 bytes_read;
   /* Links for list */
   cl_block_list_struct link;
-  /* We want this structure to be cacheline aligned. We assume the following
-     sizes for the various parts on 32/64bit systems:
-     type                 32b size    64b size
-     char*                   4           8
-     3x gpr_atm             12          24
-     gpr_int32               4           8 (assumes padding)
-     cl_block_list_struct   12          24
-     TOTAL                  32          64
+/* We want this structure to be cacheline aligned. We assume the following
+   sizes for the various parts on 32/64bit systems:
+   type                 32b size    64b size
+   char*                   4           8
+   3x gpr_atm             12          24
+   gpr_int32               4           8 (assumes padding)
+   cl_block_list_struct   12          24
+   TOTAL                  32          64
 
-     Depending on the size of our cacheline and the architecture, we
-     selectively add char buffering to this structure. The size is checked
-     via assert in census_log_initialize(). */
+   Depending on the size of our cacheline and the architecture, we
+   selectively add char buffering to this structure. The size is checked
+   via assert in census_log_initialize(). */
 #if defined(GPR_ARCH_64)
 #define CL_BLOCK_PAD_SIZE (GPR_CACHELINE_SIZE - 64)
 #else
@@ -146,15 +147,15 @@ typedef struct census_log_block {
 
 /* A list of cl_blocks, doubly-linked through cl_block::link. */
 typedef struct census_log_block_list {
-  gpr_int32 count;  /* Number of items in list. */
-  cl_block_list_struct ht;  /* head/tail of linked list. */
+  gpr_int32 count;         /* Number of items in list. */
+  cl_block_list_struct ht; /* head/tail of linked list. */
 } cl_block_list;
 
 /* Cacheline aligned block pointers to avoid false sharing. Block pointer must
    be initialized via set_block(), before calling other functions */
 typedef struct census_log_core_local_block {
   gpr_atm block;
-  /* Ensure cachline alignment: we assume sizeof(gpr_atm) == 4 or 8 */
+/* Ensure cachline alignment: we assume sizeof(gpr_atm) == 4 or 8 */
 #if defined(GPR_ARCH_64)
 #define CL_CORE_LOCAL_BLOCK_PAD_SIZE (GPR_CACHELINE_SIZE - 8)
 #else
@@ -175,10 +176,10 @@ struct census_log {
   int num_cores;
   /* number of CENSUS_LOG_2_MAX_RECORD_SIZE blocks in log */
   gpr_int32 num_blocks;
-  cl_block* blocks;  /* Block metadata. */
-  cl_core_local_block* core_local_blocks;  /* Keeps core to block mappings. */
+  cl_block* blocks;                       /* Block metadata. */
+  cl_core_local_block* core_local_blocks; /* Keeps core to block mappings. */
   gpr_mu lock;
-  int initialized;  /* has log been initialized? */
+  int initialized; /* has log been initialized? */
   /* Keeps the state of the reader iterator. A value of 0 indicates that
      iterator has reached the end. census_log_init_reader() resets the
      value to num_core to restart iteration. */
@@ -200,14 +201,9 @@ static struct census_log g_log;
 /* Functions that operate on an atomic memory location used as a lock */
 
 /* Returns non-zero if lock is acquired */
-static int cl_try_lock(gpr_atm* lock) {
-  return gpr_atm_acq_cas(lock, 0, 1);
-}
+static int cl_try_lock(gpr_atm* lock) { return gpr_atm_acq_cas(lock, 0, 1); }
 
-static void cl_unlock(gpr_atm* lock) {
-  gpr_atm_rel_store(lock, 0);
-}
-
+static void cl_unlock(gpr_atm* lock) { gpr_atm_rel_store(lock, 0); }
 
 /* Functions that operate on cl_core_local_block's */
 
@@ -220,7 +216,6 @@ static cl_block* cl_core_local_block_get_block(cl_core_local_block* clb) {
   return (cl_block*)gpr_atm_acq_load(&clb->block);
 }
 
-
 /* Functions that operate on cl_block_list_struct's */
 
 static void cl_block_list_struct_initialize(cl_block_list_struct* bls,
@@ -228,7 +223,6 @@ static void cl_block_list_struct_initialize(cl_block_list_struct* bls,
   bls->next = bls->prev = bls;
   bls->block = block;
 }
-
 
 /* Functions that operate on cl_block_list's */
 
@@ -243,8 +237,7 @@ static cl_block* cl_block_list_head(cl_block_list* list) {
 }
 
 /* Insert element *e after *pos. */
-static void cl_block_list_insert(cl_block_list* list,
-                                 cl_block_list_struct* pos,
+static void cl_block_list_insert(cl_block_list* list, cl_block_list_struct* pos,
                                  cl_block_list_struct* e) {
   list->count++;
   e->next = pos->next;
@@ -254,14 +247,12 @@ static void cl_block_list_insert(cl_block_list* list,
 }
 
 /* Insert block at the head of the list */
-static void cl_block_list_insert_at_head(cl_block_list* list,
-                                         cl_block* block) {
+static void cl_block_list_insert_at_head(cl_block_list* list, cl_block* block) {
   cl_block_list_insert(list, &list->ht, &block->link);
 }
 
 /* Insert block at the tail of the list */
-static void cl_block_list_insert_at_tail(cl_block_list* list,
-                                         cl_block* block) {
+static void cl_block_list_insert_at_tail(cl_block_list* list, cl_block* block) {
   cl_block_list_insert(list, list->ht.prev, &block->link);
 }
 
@@ -271,7 +262,6 @@ static void cl_block_list_remove(cl_block_list* list, cl_block* b) {
   b->link.next->prev = b->link.prev;
   b->link.prev->next = b->link.next;
 }
-
 
 /* Functions that operate on cl_block's */
 
@@ -374,7 +364,6 @@ static void cl_block_end_read(cl_block* block) {
   cl_unlock(&block->reader_lock);
 }
 
-
 /* Internal functions operating on g_log */
 
 /* Allocates a new free block (or recycles an available dirty block if log is
@@ -472,17 +461,15 @@ static cl_block* cl_next_block_to_read(cl_block* prev) {
 /* External functions: primary stats_log interface */
 void census_log_initialize(size_t size_in_mb, int discard_old_records) {
   gpr_int32 ix;
-  /* check cacheline alignment */
+  /* Check cacheline alignment. */
   GPR_ASSERT(sizeof(cl_block) % GPR_CACHELINE_SIZE == 0);
   GPR_ASSERT(sizeof(cl_core_local_block) % GPR_CACHELINE_SIZE == 0);
   GPR_ASSERT(!g_log.initialized);
   g_log.discard_old_records = discard_old_records;
   g_log.num_cores = gpr_cpu_num_cores();
-  if (size_in_mb < 1 || size_in_mb > 1000) {
-    gpr_log(GPR_ERROR, "Invalid size for stats_log: using 1MB default");
-    size_in_mb = 1;
-  }
-  g_log.num_blocks = (size_in_mb << 20) >> CENSUS_LOG_2_MAX_RECORD_SIZE;
+  /* Ensure at least as many blocks as there are cores. */
+  g_log.num_blocks = GPR_MAX(
+      g_log.num_cores, (size_in_mb << 20) >> CENSUS_LOG_2_MAX_RECORD_SIZE);
   gpr_mu_init(&g_log.lock);
   g_log.read_iterator_state = 0;
   g_log.block_being_read = NULL;
@@ -501,7 +488,7 @@ void census_log_initialize(size_t size_in_mb, int discard_old_records) {
   for (ix = 0; ix < g_log.num_blocks; ++ix) {
     cl_block* block = g_log.blocks + ix;
     cl_block_initialize(block,
-                         g_log.buffer + (CENSUS_LOG_MAX_RECORD_SIZE * ix));
+                        g_log.buffer + (CENSUS_LOG_MAX_RECORD_SIZE * ix));
     cl_block_try_disable_access(block, 1 /* discard data */);
     cl_block_list_insert_at_tail(&g_log.free_block_list, block);
   }
@@ -585,8 +572,8 @@ const void* census_log_read_next(size_t* bytes_available) {
   do {
     g_log.block_being_read = cl_next_block_to_read(g_log.block_being_read);
     if (g_log.block_being_read != NULL) {
-      void* record = cl_block_start_read(g_log.block_being_read,
-                                          bytes_available);
+      void* record =
+          cl_block_start_read(g_log.block_being_read, bytes_available);
       if (record != NULL) {
         gpr_mu_unlock(&g_log.lock);
         return record;
