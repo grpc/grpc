@@ -181,7 +181,7 @@ ifeq ($(IS_GIT_FOLDER),true)
 	@echo "Additionally, since you are in a git clone, you can download the"
 	@echo "missing dependencies in third_party by running the following command:"
 	@echo
-	@echo "  git submodule --init update"
+	@echo "  git submodule update --init"
 	@echo
 endif
 
