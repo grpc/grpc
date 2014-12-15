@@ -127,6 +127,7 @@
         "src/core/iomgr/tcp_client_posix.c",
         "src/core/iomgr/tcp_posix.c",
         "src/core/iomgr/tcp_server_posix.c",
+        "src/core/iomgr/time_averaged_stats.c",
         "src/core/security/auth.c",
         "src/core/security/base64.c",
         "src/core/security/credentials.c",
@@ -222,6 +223,7 @@
         "src/core/iomgr/tcp_client.h",
         "src/core/iomgr/tcp_posix.h",
         "src/core/iomgr/tcp_server.h",
+        "src/core/iomgr/time_averaged_stats.h",
         "src/core/security/auth.h",
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
@@ -574,6 +576,18 @@
       "build": "test",
       "src": [
         "test/core/transport/chttp2/alpn_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "time_averaged_stats_test",
+      "build": "test",
+      "src": [
+        "test/core/iomgr/time_averaged_stats_test.c"
       ],
       "deps": [
         "grpc_test_util",
