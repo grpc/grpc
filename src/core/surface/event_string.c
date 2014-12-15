@@ -99,8 +99,9 @@ char *grpc_event_string(grpc_event *ev) {
     case GRPC_FINISHED:
       p += sprintf(p, "FINISHED: ");
       p += addhdr(p, ev);
-      p += sprintf(p, " status_code=%d details='%s'", ev->data.finished.code,
-                   ev->data.finished.details);
+      p += sprintf(p, " status=%d details='%s' %d metadata elements",
+                   ev->data.finished.status, ev->data.finished.details,
+                   (int)ev->data.finished.metadata_count);
       break;
     case GRPC_SERVER_RPC_NEW:
       p += sprintf(p, "SERVER_RPC_NEW: ");

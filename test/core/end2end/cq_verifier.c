@@ -80,7 +80,8 @@ typedef struct expectation {
     } server_rpc_new;
     metadata *client_metadata_read;
     struct {
-      grpc_status status;
+      grpc_status_code status;
+      const char *details;
       metadata *metadata;
     } finished;
     gpr_slice *read;
@@ -201,12 +202,14 @@ static void verify_matches(expectation *e, grpc_event *ev) {
                                   ev->data.client_metadata_read.count);
       break;
     case GRPC_FINISHED:
-      if (e->data.finished.status.code != GRPC_STATUS__DO_NOT_USE) {
-        GPR_ASSERT(e->data.finished.status.code == ev->data.finished.code);
-        GPR_ASSERT(string_equivalent(e->data.finished.status.details,
+      if (e->data.finished.status != GRPC_STATUS__DO_NOT_USE) {
+        GPR_ASSERT(e->data.finished.status == ev->data.finished.status);
+        GPR_ASSERT(string_equivalent(e->data.finished.details,
                                      ev->data.finished.details));
       }
-      verify_and_destroy_metadata(e->data.finished.metadata, NULL, 0);
+      verify_and_destroy_metadata(e->data.finished.metadata,
+                                  ev->data.finished.metadata_elements,
+                                  ev->data.finished.metadata_count);
       break;
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "premature queue shutdown");
@@ -279,9 +282,8 @@ static size_t expectation_to_string(char *out, expectation *e) {
       return len;
     case GRPC_FINISHED:
       str = metadata_expectation_string(e->data.finished.metadata);
-      len = sprintf(out, "GRPC_FINISHED code=%d details=%s %s",
-                    e->data.finished.status.code,
-                    e->data.finished.status.details, str);
+      len = sprintf(out, "GRPC_FINISHED status=%d details=%s %s",
+                    e->data.finished.status, e->data.finished.details, str);
       gpr_free(str);
       return len;
     case GRPC_READ:
@@ -456,25 +458,27 @@ void cq_expect_client_metadata_read(cq_verifier *v, void *tag, ...) {
   va_end(args);
 }
 
-static void finished_internal(cq_verifier *v, void *tag, grpc_status status,
+static void finished_internal(cq_verifier *v, void *tag,
+                              grpc_status_code status, const char *details,
                               va_list args) {
   expectation *e = add(v, GRPC_FINISHED, tag);
   e->data.finished.status = status;
+  e->data.finished.details = details;
   e->data.finished.metadata = metadata_from_args(args);
 }
 
 void cq_expect_finished_with_status(cq_verifier *v, void *tag,
-                                    grpc_status status, ...) {
+                                    grpc_status_code status,
+                                    const char *details, ...) {
   va_list args;
-  va_start(args, status);
-  finished_internal(v, tag, status, args);
+  va_start(args, details);
+  finished_internal(v, tag, status, details, args);
   va_end(args);
 }
 
 void cq_expect_finished(cq_verifier *v, void *tag, ...) {
   va_list args;
-  grpc_status status = {GRPC_STATUS__DO_NOT_USE, NULL};
   va_start(args, tag);
-  finished_internal(v, tag, status, args);
+  finished_internal(v, tag, GRPC_STATUS__DO_NOT_USE, NULL, args);
   va_end(args);
 }

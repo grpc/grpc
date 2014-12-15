@@ -109,7 +109,6 @@ static gpr_slice large_slice() {
 static void test_invoke_large_request(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
-  grpc_status send_status = {GRPC_STATUS_UNIMPLEMENTED, "xyz"};
   gpr_slice request_payload_slice = large_slice();
   grpc_byte_buffer *request_payload =
       grpc_byte_buffer_create(&request_payload_slice, 1);
@@ -156,11 +155,12 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(8)));
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s, send_status, tag(9)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status(
+                                 s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(9)));
 
   cq_expect_finish_accepted(v_client, tag(8), GRPC_OP_OK);
-  cq_expect_finished_with_status(v_client, tag(3), send_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
+                                 "xyz", NULL);
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(9), GRPC_OP_OK);

@@ -107,12 +107,6 @@ typedef struct {
 /* Maximum message length that the channel can receive */
 #define GRPC_ARG_MAX_MESSAGE_LENGTH "grpc.max_message_length"
 
-/* Status of a completed call */
-typedef struct grpc_status {
-  grpc_status_code code;
-  char *details;
-} grpc_status;
-
 /* Result of a grpc call. If the caller satisfies the prerequisites of a
    particular operation, the grpc_call_error returned will be GRPC_CALL_OK.
    Receiving any other value listed here is an indication of a bug in the
@@ -221,7 +215,12 @@ typedef struct grpc_event {
       size_t count;
       grpc_metadata *elements;
     } client_metadata_read;
-    grpc_status finished;
+    struct {
+      grpc_status_code status;
+      const char *details;
+      size_t metadata_count;
+      grpc_metadata *metadata_elements;
+    } finished;
     struct {
       const char *method;
       const char *host;
@@ -391,7 +390,9 @@ grpc_call_error grpc_call_start_write(grpc_call *call,
              Only callable on the server.
    Produces a GRPC_FINISH_ACCEPTED event when the status is sent. */
 grpc_call_error grpc_call_start_write_status(grpc_call *call,
-                                             grpc_status status, void *tag);
+                                             grpc_status_code status_code,
+                                             const char *status_message,
+                                             void *tag);
 
 /* No more messages to send.
    REQUIRES: No other writes are pending on the call.

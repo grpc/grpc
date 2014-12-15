@@ -31,6 +31,7 @@ END2END_TESTS = [
     'request_response_with_binary_metadata_and_payload',
     'request_response_with_metadata_and_payload',
     'request_response_with_payload',
+    'request_response_with_trailing_metadata_and_payload',
     'simple_delayed_request',
     'simple_request',
     'thread_stress',

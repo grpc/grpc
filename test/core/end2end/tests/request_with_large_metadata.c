@@ -106,7 +106,6 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
-  grpc_status send_status = {GRPC_STATUS_OK, NULL};
   gpr_timespec deadline = five_seconds_time();
   grpc_metadata meta;
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
@@ -145,10 +144,10 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(8)));
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s, send_status, tag(9)));
+             grpc_call_start_write_status(s, GRPC_STATUS_OK, NULL, tag(9)));
 
   cq_expect_finish_accepted(v_client, tag(8), GRPC_OP_OK);
-  cq_expect_finished_with_status(v_client, tag(3), send_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_OK, NULL, NULL);
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(9), GRPC_OP_OK);

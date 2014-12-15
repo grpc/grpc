@@ -63,7 +63,7 @@ void GetFinalStatus(grpc_completion_queue* cq, void* finished_tag,
   grpc_event* ev =
       grpc_completion_queue_pluck(cq, finished_tag, gpr_inf_future);
   if (status) {
-    StatusCode error_code = static_cast<StatusCode>(ev->data.finished.code);
+    StatusCode error_code = static_cast<StatusCode>(ev->data.finished.status);
     grpc::string details(ev->data.finished.details ? ev->data.finished.details
                                                    : "");
     *status = Status(error_code, details);

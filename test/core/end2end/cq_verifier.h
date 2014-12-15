@@ -67,7 +67,8 @@ void cq_expect_server_rpc_new(cq_verifier *v, grpc_call **output_call,
                               gpr_timespec deadline, ...);
 void cq_expect_client_metadata_read(cq_verifier *v, void *tag, ...);
 void cq_expect_finished_with_status(cq_verifier *v, void *tag,
-                                    grpc_status status, ...);
+                                    grpc_status_code status_code,
+                                    const char *details, ...);
 void cq_expect_finished(cq_verifier *v, void *tag, ...);
 
 #endif  /* __GRPC_TEST_END2END_CQ_VERIFIER_H__ */

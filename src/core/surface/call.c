@@ -296,8 +296,8 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
   grpc_call_element *elem;
   grpc_call_op op;
 
-  if (call->state >= CALL_STARTED) {
-    return GRPC_CALL_ERROR_ALREADY_INVOKED;
+  if (call->state >= CALL_FINISHED) {
+    return GRPC_CALL_ERROR_ALREADY_FINISHED;
   }
 
   op.type = GRPC_SEND_METADATA;
@@ -326,12 +326,17 @@ static void done_invoke(void *user_data, grpc_op_error error) {
 }
 
 static void finish_call(grpc_call *call) {
-  grpc_status status;
-  status.code = call->status_code;
-  status.details = call->status_details
-                       ? (char *)grpc_mdstr_as_c_string(call->status_details)
-                       : NULL;
-  grpc_cq_end_finished(call->cq, call->finished_tag, call, NULL, NULL, status);
+  size_t count;
+  grpc_metadata *elements;
+  count = grpc_metadata_buffer_count(&call->incoming_metadata);
+  elements = grpc_metadata_buffer_extract_elements(&call->incoming_metadata);
+  grpc_cq_end_finished(
+      call->cq, call->finished_tag, call, grpc_metadata_buffer_cleanup_elements,
+      elements, call->status_code,
+      call->status_details
+          ? (char *)grpc_mdstr_as_c_string(call->status_details)
+          : NULL,
+      elements, count);
 }
 
 grpc_call_error grpc_call_start_invoke(grpc_call *call,
@@ -678,7 +683,8 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
 }
 
 grpc_call_error grpc_call_start_write_status(grpc_call *call,
-                                             grpc_status status, void *tag) {
+                                             grpc_status_code status,
+                                             const char *details, void *tag) {
   grpc_call_element *elem;
   grpc_call_op op;
 
@@ -702,9 +708,9 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
 
-  if (status.details && status.details[0]) {
+  if (details && details[0]) {
     grpc_mdelem *md = grpc_mdelem_from_strings(call->metadata_context,
-                                               "grpc-message", status.details);
+                                               "grpc-message", details);
 
     op.type = GRPC_SEND_METADATA;
     op.dir = GRPC_CALL_DOWN;
@@ -719,7 +725,7 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
   {
     grpc_mdelem *md;
     char buffer[32];
-    sprintf(buffer, "%d", status.code);
+    sprintf(buffer, "%d", status);
     md =
         grpc_mdelem_from_strings(call->metadata_context, "grpc-status", buffer);
 

@@ -119,7 +119,6 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
-  grpc_status chk_status = {GRPC_STATUS_CANCELLED, NULL};
 
   c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
@@ -140,10 +139,12 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == call_cancel(c));
 
-  cq_expect_finished_with_status(v_client, tag(3), chk_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_CANCELLED, NULL,
+                                 NULL);
   cq_verify(v_client);
 
-  cq_expect_finished_with_status(v_server, tag(102), chk_status, NULL);
+  cq_expect_finished_with_status(v_server, tag(102), GRPC_STATUS_CANCELLED,
+                                 NULL, NULL);
   cq_verify(v_server);
 
   grpc_call_destroy(c);

@@ -63,8 +63,6 @@ static void drain_cq(grpc_completion_queue *cq) {
 
 void test_connect(const char *server_host, const char *client_host, int port,
                   int expect_ok) {
-  const grpc_status send_status = {GRPC_STATUS_UNIMPLEMENTED, "xyz"};
-  const grpc_status cancelled_status = {GRPC_STATUS_CANCELLED, NULL};
   char *client_hostport;
   char *server_hostport;
   grpc_channel *client;
@@ -130,8 +128,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_verify(v_client);
 
     GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_write_status(s, send_status, tag(5)));
-    cq_expect_finished_with_status(v_client, tag(3), send_status, NULL);
+               grpc_call_start_write_status(s, GRPC_STATUS_UNIMPLEMENTED, "xyz",
+                                            tag(5)));
+    cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
+                                   "xyz", NULL);
     cq_verify(v_client);
 
     cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
@@ -145,7 +145,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
     /* Check for a failed connection. */
     cq_expect_invoke_accepted(v_client, tag(1), GRPC_OP_ERROR);
     cq_expect_client_metadata_read(v_client, tag(2), NULL);
-    cq_expect_finished_with_status(v_client, tag(3), cancelled_status, NULL);
+    cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_CANCELLED,
+                                   NULL, NULL);
     cq_verify(v_client);
 
     grpc_call_destroy(c);

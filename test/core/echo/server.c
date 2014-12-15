@@ -51,8 +51,6 @@ static grpc_completion_queue *cq;
 static grpc_server *server;
 static int got_sigint = 0;
 
-static const grpc_status status_ok = {GRPC_STATUS_OK, NULL};
-
 typedef struct {
   gpr_refcount pending_ops;
   gpr_intmax bytes_read;
@@ -145,8 +143,8 @@ int main(int argc, char **argv) {
                                            GRPC_WRITE_BUFFER_HINT) ==
                      GRPC_CALL_OK);
         } else {
-          GPR_ASSERT(grpc_call_start_write_status(ev->call, status_ok, s) ==
-                     GRPC_CALL_OK);
+          GPR_ASSERT(grpc_call_start_write_status(ev->call, GRPC_STATUS_OK,
+                                                  NULL, s) == GRPC_CALL_OK);
         }
         break;
       case GRPC_FINISH_ACCEPTED:

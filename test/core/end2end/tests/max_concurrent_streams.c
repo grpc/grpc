@@ -105,7 +105,6 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call *c;
   grpc_call *s;
-  grpc_status send_status = {GRPC_STATUS_UNIMPLEMENTED, "xyz"};
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
@@ -131,9 +130,10 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s, send_status, tag(5)));
-  cq_expect_finished_with_status(v_client, tag(3), send_status, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status(
+                                 s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(5)));
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
+                                 "xyz", NULL);
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
@@ -157,7 +157,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_call *s1;
   grpc_call *s2;
   gpr_timespec deadline;
-  grpc_status send_status = {GRPC_STATUS_UNIMPLEMENTED, "xyz"};
   cq_verifier *v_client;
   cq_verifier *v_server;
 
@@ -208,13 +207,15 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s1, send_status, tag(103)));
+             grpc_call_start_write_status(s1, GRPC_STATUS_UNIMPLEMENTED, "xyz",
+                                          tag(103)));
   cq_expect_finish_accepted(v_server, tag(103), GRPC_OP_OK);
   cq_expect_finished(v_server, tag(102), NULL);
   cq_verify(v_server);
 
   /* first request is finished, we should be able to start the second */
-  cq_expect_finished_with_status(v_client, tag(302), send_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(302), GRPC_STATUS_UNIMPLEMENTED,
+                                 "xyz", NULL);
   cq_expect_invoke_accepted(v_client, tag(400), GRPC_OP_OK);
   cq_verify(v_client);
 
@@ -232,12 +233,14 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s2, send_status, tag(203)));
+             grpc_call_start_write_status(s2, GRPC_STATUS_UNIMPLEMENTED, "xyz",
+                                          tag(203)));
   cq_expect_finish_accepted(v_server, tag(203), GRPC_OP_OK);
   cq_expect_finished(v_server, tag(202), NULL);
   cq_verify(v_server);
 
-  cq_expect_finished_with_status(v_client, tag(402), send_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(402), GRPC_STATUS_UNIMPLEMENTED,
+                                 "xyz", NULL);
   cq_verify(v_client);
 
   cq_verifier_destroy(v_client);

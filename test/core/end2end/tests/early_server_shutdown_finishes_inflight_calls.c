@@ -107,7 +107,6 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   grpc_call *c;
   grpc_call *s;
-  grpc_status expect_status = {GRPC_STATUS_UNAVAILABLE, NULL};
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
@@ -141,7 +140,8 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 
   grpc_call_destroy(s);
 
-  cq_expect_finished_with_status(v_client, tag(3), expect_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNAVAILABLE,
+                                 NULL, NULL);
   cq_verify(v_client);
 
   grpc_call_destroy(c);

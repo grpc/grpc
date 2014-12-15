@@ -76,11 +76,11 @@ bool AsyncServerContext::StartWrite(const google::protobuf::Message& response,
 }
 
 bool AsyncServerContext::StartWriteStatus(const Status& status) {
-  grpc_status c_status = {static_cast<grpc_status_code>(status.code()),
-                          status.details().empty()
-                              ? nullptr
-                              : const_cast<char*>(status.details().c_str())};
-  grpc_call_error err = grpc_call_start_write_status(call_, c_status, this);
+  grpc_call_error err = grpc_call_start_write_status(
+      call_, static_cast<grpc_status_code>(status.code()),
+      status.details().empty() ? nullptr
+                               : const_cast<char*>(status.details().c_str()),
+      this);
   return err == GRPC_CALL_OK;
 }
 

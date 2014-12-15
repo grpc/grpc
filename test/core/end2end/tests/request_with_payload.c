@@ -106,7 +106,6 @@ static void end_test(grpc_end2end_test_fixture *f) {
 static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
-  grpc_status send_status = {GRPC_STATUS_UNIMPLEMENTED, "xyz"};
   gpr_slice payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *payload = grpc_byte_buffer_create(&payload_slice, 1);
   gpr_timespec deadline = five_seconds_time();
@@ -146,10 +145,11 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   cq_expect_read(v_server, tag(4), gpr_slice_from_copied_string("hello world"));
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(5)));
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s, send_status, tag(6)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status(
+                                 s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(6)));
   cq_expect_finish_accepted(v_client, tag(5), GRPC_OP_OK);
-  cq_expect_finished_with_status(v_client, tag(3), send_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
+                                 "xyz", NULL);
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(6), GRPC_OP_OK);

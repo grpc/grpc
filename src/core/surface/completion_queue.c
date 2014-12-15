@@ -214,11 +214,16 @@ void grpc_cq_end_client_metadata_read(grpc_completion_queue *cc, void *tag,
 
 void grpc_cq_end_finished(grpc_completion_queue *cc, void *tag, grpc_call *call,
                           grpc_event_finish_func on_finish, void *user_data,
-                          grpc_status status) {
+                          grpc_status_code status, const char *details,
+                          grpc_metadata *metadata_elements,
+                          size_t metadata_count) {
   event *ev;
   gpr_mu_lock(&grpc_iomgr_mu);
   ev = add_locked(cc, GRPC_FINISHED, tag, call, on_finish, user_data);
-  ev->base.data.finished = status;
+  ev->base.data.finished.status = status;
+  ev->base.data.finished.details = details;
+  ev->base.data.finished.metadata_count = metadata_count;
+  ev->base.data.finished.metadata_elements = metadata_elements;
   end_op_locked(cc, GRPC_FINISHED);
   gpr_mu_unlock(&grpc_iomgr_mu);
 }

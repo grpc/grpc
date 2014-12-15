@@ -112,7 +112,6 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
-  grpc_status chk_status = {GRPC_STATUS_CANCELLED, NULL};
 
   c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
@@ -123,7 +122,8 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config) {
              grpc_call_start_invoke(c, f.client_cq, tag(1), tag(2), tag(3), 0));
   cq_expect_invoke_accepted(v_client, tag(1), GRPC_OP_ERROR);
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
-  cq_expect_finished_with_status(v_client, tag(3), chk_status, NULL);
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_CANCELLED, NULL,
+                                 NULL);
   cq_verify(v_client);
 
   grpc_call_destroy(c);

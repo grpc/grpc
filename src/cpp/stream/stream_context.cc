@@ -170,11 +170,10 @@ const Status& StreamContext::Wait() {
     grpc_event* finish_ev =
         grpc_completion_queue_pluck(cq(), finished_tag(), gpr_inf_future);
     GPR_ASSERT(finish_ev->type == GRPC_FINISHED);
-    std::string error_details(finish_ev->data.finished.details
-                                  ? finish_ev->data.finished.details
-                                  : "");
     final_status_ = Status(
-        static_cast<StatusCode>(finish_ev->data.finished.code), error_details);
+        static_cast<StatusCode>(finish_ev->data.finished.status),
+        finish_ev->data.finished.details ? finish_ev->data.finished.details
+                                         : "");
     grpc_event_finish(finish_ev);
   }
   return final_status_;

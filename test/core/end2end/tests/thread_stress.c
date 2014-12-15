@@ -187,10 +187,9 @@ static void request_server_call() {
 }
 
 static void maybe_end_server_call(grpc_call *call, gpr_refcount *rc) {
-  grpc_status ok_status = {GRPC_STATUS_OK, NULL};
   if (gpr_unref(rc)) {
     GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_write_status(call, ok_status, NULL));
+               grpc_call_start_write_status(call, GRPC_STATUS_OK, NULL, NULL));
     gpr_free(rc);
   }
 }

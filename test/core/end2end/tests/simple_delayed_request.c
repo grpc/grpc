@@ -97,7 +97,6 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
                                         long delay_us) {
   grpc_call *c;
   grpc_call *s;
-  grpc_status send_status = {GRPC_STATUS_UNIMPLEMENTED, "xyz"};
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f->client_cq);
   cq_verifier *v_server = cq_verifier_create(f->server_cq);
@@ -129,9 +128,10 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s, send_status, tag(5)));
-  cq_expect_finished_with_status(v_client, tag(3), send_status, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status(
+                                 s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(5)));
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
+                                 "xyz", NULL);
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);

@@ -95,7 +95,6 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
                                            cq_verifier *v_server) {
   grpc_call *c;
   grpc_call *s;
-  grpc_status send_status = {GRPC_STATUS_UNIMPLEMENTED, "xyz"};
   gpr_timespec deadline = five_seconds_time();
 
   c = grpc_channel_create_call(f->client, "/foo", "test.google.com", deadline);
@@ -124,9 +123,10 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
      - and still complete the request */
   grpc_server_shutdown(f->server);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s, send_status, tag(5)));
-  cq_expect_finished_with_status(v_client, tag(3), send_status, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status(
+                                 s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(5)));
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
+                                 "xyz", NULL);
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
