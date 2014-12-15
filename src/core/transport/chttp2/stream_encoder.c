@@ -175,7 +175,7 @@ static gpr_uint8 *add_tiny_header_data(framer_state *st, int len) {
 
 static void add_elem(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem) {
   gpr_uint32 key_hash = elem->key->hash;
-  gpr_uint32 elem_hash = key_hash ^ elem->value->hash;
+  gpr_uint32 elem_hash = GRPC_MDSTR_KV_HASH(key_hash, elem->value->hash);
   gpr_uint32 new_index = c->tail_remote_index + c->table_elems + 1;
   gpr_uint32 elem_size = 32 + GPR_SLICE_LENGTH(elem->key->slice) +
                          GPR_SLICE_LENGTH(elem->value->slice);
@@ -354,7 +354,7 @@ static gpr_uint32 dynidx(grpc_chttp2_hpack_compressor *c, gpr_uint32 index) {
 static void hpack_enc(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem,
                       framer_state *st) {
   gpr_uint32 key_hash = elem->key->hash;
-  gpr_uint32 elem_hash = key_hash ^ elem->value->hash;
+  gpr_uint32 elem_hash = GRPC_MDSTR_KV_HASH(key_hash, elem->value->hash);
   size_t decoder_space_usage;
   gpr_uint32 indices_key;
   int should_add_elem;

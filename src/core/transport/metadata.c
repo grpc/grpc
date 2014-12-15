@@ -45,8 +45,6 @@
 #define INITIAL_STRTAB_CAPACITY 4
 #define INITIAL_MDTAB_CAPACITY 4
 
-#define KV_HASH(key, value) ((key)->hash ^ (value)->hash)
-
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
   gpr_slice slice;
@@ -375,7 +373,7 @@ static void grow_mdtab(grpc_mdctx *ctx) {
 
   for (i = 0; i < ctx->mdtab_capacity; i++) {
     for (md = ctx->mdtab[i]; md; md = next) {
-      hash = KV_HASH(md->key, md->value);
+      hash = GRPC_MDSTR_KV_HASH(md->key->hash, md->value->hash);
       next = md->bucket_next;
       md->bucket_next = mdtab[hash % capacity];
       mdtab[hash % capacity] = md;
@@ -400,7 +398,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
                                                grpc_mdstr *mvalue) {
   internal_string *key = (internal_string *)mkey;
   internal_string *value = (internal_string *)mvalue;
-  gpr_uint32 hash = KV_HASH(mkey, mvalue);
+  gpr_uint32 hash = GRPC_MDSTR_KV_HASH(mkey->hash, mvalue->hash);
   internal_metadata *md;
 
   GPR_ASSERT(key->context == ctx);

@@ -35,6 +35,7 @@
 #define __GRPC_INTERNAL_TRANSPORT_METADATA_H__
 
 #include <grpc/support/slice.h>
+#include <grpc/support/useful.h>
 
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
@@ -132,5 +133,7 @@ void grpc_mdelem_unref(grpc_mdelem *md);
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
    Does not promise that the returned string has no embedded nulls however. */
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
+
+#define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
 #endif  /* __GRPC_INTERNAL_TRANSPORT_METADATA_H__ */
