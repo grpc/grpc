@@ -131,7 +131,7 @@ static void on_writable(void *acp, grpc_iomgr_cb_status status) {
 
 error:
   ac->cb(ac->cb_arg, NULL);
-  grpc_fd_destroy(ac->fd);
+  grpc_fd_destroy(ac->fd, NULL, NULL);
   gpr_free(ac);
   return;
 

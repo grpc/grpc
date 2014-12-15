@@ -33,14 +33,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
-#include <errno.h>
-#include <fcntl.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
@@ -68,6 +61,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
+  memset(&f, 0, sizeof(f));
 
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
@@ -87,8 +81,11 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture *f,
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture *f,
                                   grpc_channel_args *server_args) {
   fullstack_fixture_data *ffd = f->fixture_data;
+  if (f->server) {
+    grpc_server_destroy(f->server);
+  }
   f->server = grpc_server_create(f->server_cq, server_args);
-  grpc_server_add_http2_port(f->server, ffd->localaddr);
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }
 

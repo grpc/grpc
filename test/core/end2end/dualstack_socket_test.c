@@ -171,6 +171,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
 int main(int argc, char **argv) {
   int do_ipv6 = 1;
   int i;
+  int port = grpc_pick_unused_port_or_die();
 
   grpc_test_init(argc, argv);
   grpc_init();
@@ -185,24 +186,23 @@ int main(int argc, char **argv) {
     grpc_forbid_dualstack_sockets_for_testing = i;
 
     /* :: and 0.0.0.0 are handled identically. */
-    test_connect("::", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
-    test_connect("::", "::ffff:127.0.0.1", grpc_pick_unused_port_or_die(), 1);
-    test_connect("::", "localhost", grpc_pick_unused_port_or_die(), 1);
-    test_connect("0.0.0.0", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
-    test_connect("0.0.0.0", "::ffff:127.0.0.1", grpc_pick_unused_port_or_die(),
-                 1);
-    test_connect("0.0.0.0", "localhost", grpc_pick_unused_port_or_die(), 1);
+    test_connect("::", "127.0.0.1", port, 1);
+    test_connect("::", "::ffff:127.0.0.1", port, 1);
+    test_connect("::", "localhost", port, 1);
+    test_connect("0.0.0.0", "127.0.0.1", port, 1);
+    test_connect("0.0.0.0", "::ffff:127.0.0.1", port, 1);
+    test_connect("0.0.0.0", "localhost", port, 1);
     if (do_ipv6) {
-      test_connect("::", "::1", grpc_pick_unused_port_or_die(), 1);
-      test_connect("0.0.0.0", "::1", grpc_pick_unused_port_or_die(), 1);
+      test_connect("::", "::1", port, 1);
+      test_connect("0.0.0.0", "::1", port, 1);
     }
 
     /* These only work when the families agree. */
-    test_connect("127.0.0.1", "127.0.0.1", grpc_pick_unused_port_or_die(), 1);
+    test_connect("127.0.0.1", "127.0.0.1", port, 1);
     if (do_ipv6) {
-      test_connect("::1", "::1", grpc_pick_unused_port_or_die(), 1);
-      test_connect("::1", "127.0.0.1", grpc_pick_unused_port_or_die(), 0);
-      test_connect("127.0.0.1", "::1", grpc_pick_unused_port_or_die(), 0);
+      test_connect("::1", "::1", port, 1);
+      test_connect("::1", "127.0.0.1", port, 0);
+      test_connect("127.0.0.1", "::1", port, 0);
     }
 
   }

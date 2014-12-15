@@ -39,6 +39,7 @@
 #include "src/core/channel/child_channel.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/metadata_buffer.h"
+#include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
@@ -290,6 +291,14 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
   }
 }
 
+static void finally_destroy_channel(void *arg, grpc_iomgr_cb_status status) {
+  grpc_child_channel_destroy(arg);
+}
+
+static void destroy_channel_later(grpc_child_channel *channel) {
+  grpc_iomgr_add_callback(finally_destroy_channel, channel);
+}
+
 static void channel_op(grpc_channel_element *elem,
                        grpc_channel_element *from_elem, grpc_channel_op *op) {
   channel_data *chand = elem->channel_data;
@@ -298,24 +307,57 @@ static void channel_op(grpc_channel_element *elem,
 
   switch (op->type) {
     case GRPC_CHANNEL_GOAWAY:
+      /* sending goaway: clear out the active child on the way through */
       gpr_mu_lock(&chand->mu);
       child_channel = chand->active_child;
       chand->active_child = NULL;
       gpr_mu_unlock(&chand->mu);
       if (child_channel) {
         grpc_child_channel_handle_op(child_channel, op);
-        grpc_child_channel_destroy(child_channel);
+        destroy_channel_later(child_channel);
       } else {
         gpr_slice_unref(op->data.goaway.message);
       }
       break;
     case GRPC_CHANNEL_DISCONNECT:
+      /* sending disconnect: clear out the active child on the way through */
       gpr_mu_lock(&chand->mu);
       child_channel = chand->active_child;
       chand->active_child = NULL;
       gpr_mu_unlock(&chand->mu);
       if (child_channel) {
-        grpc_child_channel_destroy(child_channel);
+        destroy_channel_later(child_channel);
+      }
+      break;
+    case GRPC_TRANSPORT_GOAWAY:
+      /* receiving goaway: if it's from our active child, drop the active child;
+         in all cases consume the event here */
+      gpr_mu_lock(&chand->mu);
+      child_channel = grpc_channel_stack_from_top_element(from_elem);
+      if (child_channel == chand->active_child) {
+        chand->active_child = NULL;
+      } else {
+        child_channel = NULL;
+      }
+      gpr_mu_unlock(&chand->mu);
+      if (child_channel) {
+        destroy_channel_later(child_channel);
+      }
+      gpr_slice_unref(op->data.goaway.message);
+      break;
+    case GRPC_TRANSPORT_CLOSED:
+      /* receiving disconnect: if it's from our active child, drop the active
+         child; in all cases consume the event here */
+      gpr_mu_lock(&chand->mu);
+      child_channel = grpc_channel_stack_from_top_element(from_elem);
+      if (child_channel == chand->active_child) {
+        chand->active_child = NULL;
+      } else {
+        child_channel = NULL;
+      }
+      gpr_mu_unlock(&chand->mu);
+      if (child_channel) {
+        destroy_channel_later(child_channel);
       }
       break;
     default:

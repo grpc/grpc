@@ -120,7 +120,7 @@ static void session_shutdown_cb(void *arg, /*session*/
                                 enum grpc_em_cb_status status) {
   session *se = arg;
   server *sv = se->sv;
-  grpc_fd_destroy(se->em_fd);
+  grpc_fd_destroy(se->em_fd, NULL, NULL);
   gpr_free(se);
   /* Start to shutdown listen fd. */
   grpc_fd_shutdown(sv->em_fd);
@@ -178,7 +178,7 @@ static void listen_shutdown_cb(void *arg /*server*/,
                                enum grpc_em_cb_status status) {
   server *sv = arg;
 
-  grpc_fd_destroy(sv->em_fd);
+  grpc_fd_destroy(sv->em_fd, NULL, NULL);
 
   gpr_mu_lock(&sv->mu);
   sv->done = 1;
@@ -288,7 +288,7 @@ static void client_init(client *cl) {
 static void client_session_shutdown_cb(void *arg /*client*/,
                                        enum grpc_em_cb_status status) {
   client *cl = arg;
-  grpc_fd_destroy(cl->em_fd);
+  grpc_fd_destroy(cl->em_fd, NULL, NULL);
   gpr_mu_lock(&cl->mu);
   cl->done = 1;
   gpr_cv_signal(&cl->done_cv);
@@ -468,7 +468,7 @@ static void test_grpc_fd_change() {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(&b.mu);
 
-  grpc_fd_destroy(em_fd);
+  grpc_fd_destroy(em_fd, NULL, NULL);
   destroy_change_data(&a);
   destroy_change_data(&b);
   close(sv[0]);
@@ -509,7 +509,7 @@ void test_grpc_fd_notify_timeout() {
   GPR_ASSERT(gpr_event_wait(&ev, gpr_time_add(deadline, timeout)));
 
   GPR_ASSERT(gpr_event_get(&ev) == (void *)1);
-  grpc_fd_destroy(em_fd);
+  grpc_fd_destroy(em_fd, NULL, NULL);
   close(sv[1]);
 }
 

@@ -32,6 +32,9 @@
  */
 
 #include "test/core/end2end/end2end_tests.h"
+
+#include <string.h>
+
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_filter.h"
@@ -88,11 +91,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   grpc_endpoint_pair *sfd = gpr_malloc(sizeof(grpc_endpoint_pair));
 
   grpc_end2end_test_fixture f;
+  memset(&f, 0, sizeof(f));
   f.fixture_data = sfd;
   f.client_cq = grpc_completion_queue_create();
   f.server_cq = grpc_completion_queue_create();
-  f.server = grpc_server_create_from_filters(f.server_cq, NULL, 0, server_args);
-  f.client = NULL;
 
   *sfd = grpc_iomgr_create_endpoint_pair(65536);
 
@@ -113,6 +115,9 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
 static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
                                           grpc_channel_args *server_args) {
   grpc_endpoint_pair *sfd = f->fixture_data;
+  GPR_ASSERT(!f->server);
+  f->server =
+      grpc_server_create_from_filters(f->server_cq, NULL, 0, server_args);
   grpc_create_chttp2_transport(server_setup_transport, f, server_args,
                                sfd->server, NULL, 0, grpc_mdctx_create(), 0);
 }

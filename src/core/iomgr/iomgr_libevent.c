@@ -119,6 +119,7 @@ static void free_fd_list(grpc_fd *impl) {
     grpc_fd *current = impl;
     impl = impl->next;
     grpc_fd_impl_destroy(current);
+    current->on_done(current->on_done_user_data, GRPC_CALLBACK_SUCCESS);
     gpr_free(current);
   }
 }
@@ -556,20 +557,21 @@ grpc_fd *grpc_fd_create(int fd) {
   return impl;
 }
 
-void grpc_fd_destroy(grpc_fd *impl) {
+static void do_nothing(void *ignored, grpc_iomgr_cb_status also_ignored) {}
+
+void grpc_fd_destroy(grpc_fd *impl, grpc_iomgr_cb_func on_done,
+                     void *user_data) {
+  if (on_done == NULL) on_done = do_nothing;
+
   gpr_mu_lock(&grpc_iomgr_mu);
 
-  if (g_num_pollers == 0) {
-    /* it is safe to simply free it */
-    grpc_fd_impl_destroy(impl);
-    gpr_free(impl);
-  } else {
-    /* Put the impl on the list to be destroyed by the poller. */
-    impl->next = g_fds_to_free;
-    g_fds_to_free = impl;
-    /* TODO(ctiller): kick the poller so it destroys this fd promptly
-       (currently we may wait up to a second) */
-  }
+  /* Put the impl on the list to be destroyed by the poller. */
+  impl->on_done = on_done;
+  impl->on_done_user_data = user_data;
+  impl->next = g_fds_to_free;
+  g_fds_to_free = impl;
+  /* TODO(ctiller): kick the poller so it destroys this fd promptly
+     (currently we may wait up to a second) */
 
   g_num_fds--;
   gpr_cv_broadcast(&grpc_iomgr_cv);

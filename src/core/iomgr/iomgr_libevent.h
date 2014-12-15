@@ -96,9 +96,12 @@ typedef struct grpc_libevent_task {
 grpc_fd *grpc_fd_create(int fd);
 
 /* Cause *em_fd no longer to be initialized and closes the underlying fd.
+   on_done is called when the underlying file descriptor is definitely close()d.
+   If on_done is NULL, no callback will be made.
    Requires: *em_fd initialized; no outstanding notify_on_read or
    notify_on_write.  */
-void grpc_fd_destroy(grpc_fd *em_fd);
+void grpc_fd_destroy(grpc_fd *em_fd, grpc_iomgr_cb_func on_done,
+                     void *user_data);
 
 /* Returns the file descriptor associated with *em_fd. */
 int grpc_fd_get(grpc_fd *em_fd);
@@ -194,6 +197,8 @@ struct grpc_fd {
 
   /* descriptor delete list. These are destroyed during polling. */
   struct grpc_fd *next;
+  grpc_iomgr_cb_func on_done;
+  void *on_done_user_data;
 };
 
 /* gRPC alarm handle.

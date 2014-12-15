@@ -97,8 +97,13 @@ grpc_tcp_server *grpc_tcp_server_create() {
   return s;
 }
 
+static void done_destroy(void *p, grpc_iomgr_cb_status status) {
+  gpr_event_set(p, (void *)1);
+}
+
 void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   size_t i;
+  gpr_event fd_done;
   gpr_mu_lock(&s->mu);
   /* shutdown all fd's */
   for (i = 0; i < s->nports; i++) {
@@ -113,7 +118,9 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   /* delete ALL the things */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    grpc_fd_destroy(sp->emfd);
+    gpr_event_init(&fd_done);
+    grpc_fd_destroy(sp->emfd, done_destroy, &fd_done);
+    gpr_event_wait(&fd_done, gpr_inf_future);
   }
   gpr_free(s->ports);
   gpr_free(s);

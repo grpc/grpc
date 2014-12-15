@@ -56,6 +56,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data *ffd =
       gpr_malloc(sizeof(fullstack_secure_fixture_data));
+  memset(&f, 0, sizeof(f));
 
   gpr_join_host_port(&ffd->localaddr, "localhost", port);
 
@@ -79,10 +80,13 @@ static void chttp2_init_server_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
     grpc_server_credentials *server_creds) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
+  if (f->server) {
+    grpc_server_destroy(f->server);
+  }
   f->server =
       grpc_secure_server_create(server_creds, f->server_cq, server_args);
   grpc_server_credentials_release(server_creds);
-  grpc_server_add_secure_http2_port(f->server, ffd->localaddr);
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }
 

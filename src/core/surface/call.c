@@ -256,12 +256,15 @@ void grpc_call_internal_unref(grpc_call *c) {
 }
 
 void grpc_call_destroy(grpc_call *c) {
+  int cancel;
   gpr_mu_lock(&c->read_mu);
   if (c->have_alarm) {
     grpc_alarm_cancel(&c->alarm);
     c->have_alarm = 0;
   }
+  cancel = !c->received_finish;
   gpr_mu_unlock(&c->read_mu);
+  if (cancel) grpc_call_cancel(c);
   grpc_call_internal_unref(c);
 }
 

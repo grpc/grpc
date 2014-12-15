@@ -276,7 +276,7 @@ static void grpc_tcp_shutdown(grpc_endpoint *ep) {
 static void grpc_tcp_unref(grpc_tcp *tcp) {
   int refcount_zero = gpr_unref(&tcp->refcount);
   if (refcount_zero) {
-    grpc_fd_destroy(tcp->em_fd);
+    grpc_fd_destroy(tcp->em_fd, NULL, NULL);
     gpr_free(tcp);
   }
 }

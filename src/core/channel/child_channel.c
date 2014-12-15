@@ -38,20 +38,30 @@
 /* Link back filter: passes up calls to the client channel, pushes down calls
    down */
 
-static void unref_channel(grpc_child_channel *channel);
+static void maybe_destroy_channel(grpc_child_channel *channel);
 
 typedef struct {
   gpr_mu mu;
   gpr_cv cv;
   grpc_channel_element *back;
-  gpr_refcount refs;
-  int calling_back;
-  int sent_goaway;
+  /* # of active calls on the channel */
+  gpr_uint32 active_calls;
+  /* has grpc_child_channel_destroy been called? */
+  gpr_uint8 destroyed;
+  /* has the transport reported itself disconnected? */
+  gpr_uint8 disconnected;
+  /* are we calling 'back' - our parent channel */
+  gpr_uint8 calling_back;
+  /* have we or our parent sent goaway yet? - dup suppression */
+  gpr_uint8 sent_goaway;
+  /* are we currently sending farewell (in this file: goaway + disconnect) */
+  gpr_uint8 sending_farewell;
+  /* have we sent farewell (goaway + disconnect) */
+  gpr_uint8 sent_farewell;
 } lb_channel_data;
 
 typedef struct {
   grpc_call_element *back;
-  gpr_refcount refs;
   grpc_child_channel *channel;
 } lb_call_data;
 
@@ -67,10 +77,6 @@ static void lb_call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       grpc_call_next_op(elem, op);
       break;
   }
-}
-
-static void delayed_unref(void *elem, grpc_iomgr_cb_status status) {
-  unref_channel(grpc_channel_stack_from_top_element(elem));
 }
 
 /* Currently we assume all channel operations should just be pushed up. */
@@ -92,6 +98,8 @@ static void lb_channel_op(grpc_channel_element *elem,
         chand->calling_back--;
         gpr_cv_broadcast(&chand->cv);
         gpr_mu_unlock(&chand->mu);
+      } else if (op->type == GRPC_TRANSPORT_GOAWAY) {
+        gpr_slice_unref(op->data.goaway.message);
       }
       break;
     case GRPC_CALL_DOWN:
@@ -101,7 +109,10 @@ static void lb_channel_op(grpc_channel_element *elem,
 
   switch (op->type) {
     case GRPC_TRANSPORT_CLOSED:
-      grpc_iomgr_add_callback(delayed_unref, elem);
+      gpr_mu_lock(&chand->mu);
+      chand->disconnected = 1;
+      maybe_destroy_channel(grpc_channel_stack_from_top_element(elem));
+      gpr_mu_unlock(&chand->mu);
       break;
     case GRPC_CHANNEL_GOAWAY:
       gpr_mu_lock(&chand->mu);
@@ -132,12 +143,14 @@ static void lb_init_channel_elem(grpc_channel_element *elem,
   GPR_ASSERT(!is_last);
   gpr_mu_init(&chand->mu);
   gpr_cv_init(&chand->cv);
-  /* one ref for getting grpc_child_channel_destroy called, one for getting
-     disconnected */
-  gpr_ref_init(&chand->refs, 2);
   chand->back = NULL;
+  chand->destroyed = 0;
+  chand->disconnected = 0;
+  chand->active_calls = 0;
   chand->sent_goaway = 0;
   chand->calling_back = 0;
+  chand->sending_farewell = 0;
+  chand->sent_farewell = 0;
 }
 
 /* Destructor for channel_data */
@@ -164,35 +177,59 @@ const grpc_channel_filter grpc_child_channel_top_filter = {
 
 #define LINK_BACK_ELEM_FROM_CALL(call) grpc_call_stack_element((call), 0)
 
-static void unref_channel(grpc_child_channel *channel) {
-  lb_channel_data *lb = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
-  if (gpr_unref(&lb->refs)) {
-    grpc_channel_stack_destroy(channel);
-    gpr_free(channel);
+static void finally_destroy_channel(void *c, grpc_iomgr_cb_status status) {
+  grpc_child_channel *channel = c;
+  lb_channel_data *chand = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
+  /* wait for the initiator to leave the mutex */
+  gpr_mu_lock(&chand->mu);
+  gpr_mu_unlock(&chand->mu);
+  grpc_channel_stack_destroy(channel);
+  gpr_free(channel);
+}
+
+static void send_farewells(void *c, grpc_iomgr_cb_status status) {
+  grpc_child_channel *channel = c;
+  grpc_channel_element *lbelem = LINK_BACK_ELEM_FROM_CHANNEL(channel);
+  lb_channel_data *chand = lbelem->channel_data;
+  int send_goaway;
+  grpc_channel_op op;
+
+  gpr_mu_lock(&chand->mu);
+  send_goaway = !chand->sent_goaway;
+  chand->sent_goaway = 1;
+  gpr_mu_unlock(&chand->mu);
+
+  if (send_goaway) {
+    op.type = GRPC_CHANNEL_GOAWAY;
+    op.dir = GRPC_CALL_DOWN;
+    op.data.goaway.status = GRPC_STATUS_OK;
+    op.data.goaway.message = gpr_slice_from_copied_string("Client disconnect");
+    grpc_channel_next_op(lbelem, &op);
+  }
+
+  op.type = GRPC_CHANNEL_DISCONNECT;
+  op.dir = GRPC_CALL_DOWN;
+  grpc_channel_next_op(lbelem, &op);
+
+  gpr_mu_lock(&chand->mu);
+  chand->sending_farewell = 0;
+  chand->sent_farewell = 1;
+  maybe_destroy_channel(channel);
+  gpr_mu_unlock(&chand->mu);
+}
+
+static void maybe_destroy_channel(grpc_child_channel *channel) {
+  lb_channel_data *chand = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
+  if (chand->destroyed && chand->disconnected && chand->active_calls == 0 &&
+      !chand->sending_farewell) {
+    grpc_iomgr_add_callback(finally_destroy_channel, channel);
+  } else if (chand->destroyed && !chand->disconnected &&
+             chand->active_calls == 0 && !chand->sending_farewell &&
+             !chand->sent_farewell) {
+    chand->sending_farewell = 1;
+    grpc_iomgr_add_callback(send_farewells, channel);
   }
 }
-
-static void ref_channel(grpc_child_channel *channel) {
-  lb_channel_data *lb = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
-  gpr_ref(&lb->refs);
-}
-
-static void unref_call(grpc_child_call *call) {
-  lb_call_data *lb = LINK_BACK_ELEM_FROM_CALL(call)->call_data;
-  if (gpr_unref(&lb->refs)) {
-    grpc_child_channel *channel = lb->channel;
-    grpc_call_stack_destroy(call);
-    gpr_free(call);
-    unref_channel(channel);
-  }
-}
-
-#if 0
-static void ref_call(grpc_child_call *call) {
-  lb_call_data *lb = LINK_BACK_ELEM_FROM_CALL(call)->call_data;
-  gpr_ref(&lb->refs);
-}
-#endif
 
 grpc_child_channel *grpc_child_channel_create(
     grpc_channel_element *parent, const grpc_channel_filter **filters,
@@ -209,12 +246,10 @@ grpc_child_channel *grpc_child_channel_create(
   lb->back = parent;
   gpr_mu_unlock(&lb->mu);
 
-  return (grpc_child_channel *)stk;
+  return stk;
 }
 
 void grpc_child_channel_destroy(grpc_child_channel *channel) {
-  grpc_channel_op op;
-  int send_goaway = 0;
   grpc_channel_element *lbelem = LINK_BACK_ELEM_FROM_CHANNEL(channel);
   lb_channel_data *chand = lbelem->channel_data;
 
@@ -222,24 +257,10 @@ void grpc_child_channel_destroy(grpc_child_channel *channel) {
   while (chand->calling_back) {
     gpr_cv_wait(&chand->cv, &chand->mu, gpr_inf_future);
   }
-  send_goaway = !chand->sent_goaway;
-  chand->sent_goaway = 1;
   chand->back = NULL;
+  chand->destroyed = 1;
+  maybe_destroy_channel(channel);
   gpr_mu_unlock(&chand->mu);
-
-  if (send_goaway) {
-    op.type = GRPC_CHANNEL_GOAWAY;
-    op.dir = GRPC_CALL_DOWN;
-    op.data.goaway.status = GRPC_STATUS_OK;
-    op.data.goaway.message = gpr_slice_from_copied_string("Client disconnect");
-    grpc_channel_next_op(lbelem, &op);
-  }
-
-  op.type = GRPC_CHANNEL_DISCONNECT;
-  op.dir = GRPC_CALL_DOWN;
-  grpc_channel_next_op(lbelem, &op);
-
-  unref_channel(channel);
 }
 
 void grpc_child_channel_handle_op(grpc_child_channel *channel,
@@ -250,19 +271,36 @@ void grpc_child_channel_handle_op(grpc_child_channel *channel,
 grpc_child_call *grpc_child_channel_create_call(grpc_child_channel *channel,
                                                 grpc_call_element *parent) {
   grpc_call_stack *stk = gpr_malloc((channel)->call_stack_size);
+  grpc_call_element *lbelem;
   lb_call_data *lbcalld;
-  ref_channel(channel);
+  lb_channel_data *lbchand;
 
   grpc_call_stack_init(channel, NULL, stk);
-  lbcalld = LINK_BACK_ELEM_FROM_CALL(stk)->call_data;
-  gpr_ref_init(&lbcalld->refs, 1);
+  lbelem = LINK_BACK_ELEM_FROM_CALL(stk);
+  lbchand = lbelem->channel_data;
+  lbcalld = lbelem->call_data;
   lbcalld->back = parent;
   lbcalld->channel = channel;
 
-  return (grpc_child_call *)stk;
+  gpr_mu_lock(&lbchand->mu);
+  lbchand->active_calls++;
+  gpr_mu_unlock(&lbchand->mu);
+
+  return stk;
 }
 
-void grpc_child_call_destroy(grpc_child_call *call) { unref_call(call); }
+void grpc_child_call_destroy(grpc_child_call *call) {
+  grpc_call_element *lbelem = LINK_BACK_ELEM_FROM_CALL(call);
+  lb_call_data *calld = lbelem->call_data;
+  lb_channel_data *chand = lbelem->channel_data;
+  grpc_child_channel *channel = calld->channel;
+  grpc_call_stack_destroy(call);
+  gpr_free(call);
+  gpr_mu_lock(&chand->mu);
+  chand->active_calls--;
+  maybe_destroy_channel(channel);
+  gpr_mu_unlock(&chand->mu);
+}
 
 grpc_call_element *grpc_child_call_get_top_element(grpc_child_call *call) {
   return LINK_BACK_ELEM_FROM_CALL(call);
