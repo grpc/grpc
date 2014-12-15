@@ -436,6 +436,17 @@
       ]
     },
     {
+      "name": "gpr_useful_test",
+      "build": "test",
+      "src": [
+        "test/core/support/useful_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "gpr_cmdline_test",
       "build": "test",
       "src": [

@@ -31,18 +31,29 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_USEFUL_H__
-#define __GRPC_SUPPORT_USEFUL_H__
+#include <grpc/support/useful.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/log.h>
+#include "test/core/util/test_config.h"
 
-/* useful macros that don't belong anywhere else */
+int main(int argc, char **argv) {
+  int four[4];
+  int five[5];
+  grpc_test_init(argc, argv);
 
-#define GPR_MIN(a, b) ((a) < (b) ? (a) : (b))
-#define GPR_MAX(a, b) ((a) > (b) ? (a) : (b))
-#define GPR_CLAMP(a, min, max) ((a) < (min) ? (min) : (a) > (max) ? (max) : (a))
-/* rotl, rotr assume x is unsigned */
-#define GPR_ROTL(x, n) (((x) << (n)) | ((x) >> (sizeof(x) * 8 - (n))))
-#define GPR_ROTR(x, n) (((x) >> (n)) | ((x) << (sizeof(x) * 8 - (n))))
+  GPR_ASSERT(GPR_MIN(1, 2) == 1);
+  GPR_ASSERT(GPR_MAX(1, 2) == 2);
+  GPR_ASSERT(GPR_MIN(2, 1) == 1);
+  GPR_ASSERT(GPR_MAX(2, 1) == 2);
+  GPR_ASSERT(GPR_CLAMP(1, 0, 2) == 1);
+  GPR_ASSERT(GPR_CLAMP(0, 0, 2) == 0);
+  GPR_ASSERT(GPR_CLAMP(2, 0, 2) == 2);
+  GPR_ASSERT(GPR_CLAMP(-1, 0, 2) == 0);
+  GPR_ASSERT(GPR_CLAMP(3, 0, 2) == 2);
+  GPR_ASSERT(GPR_ROTL((gpr_uint32)0x80000001, 1) == 3);
+  GPR_ASSERT(GPR_ROTR((gpr_uint32)0x80000001, 1) == 0xc0000000);
+  GPR_ASSERT(GPR_ARRAY_SIZE(four) == 4);
+  GPR_ASSERT(GPR_ARRAY_SIZE(five) == 5);
 
-#define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
-
-#endif  /* __GRPC_SUPPORT_USEFUL_H__ */
+  return 0;
+}
