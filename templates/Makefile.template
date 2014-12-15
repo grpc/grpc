@@ -336,7 +336,7 @@ privatelibs_cxx: dep_cxx\
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: bin_dep_c privatelibs_c\
+buildtests_c: bins_dep_c privatelibs_c\
 % for tgt in targets:
 % if tgt.build == 'test' and not tgt.get('c++', False):
  bins/${tgt.name}\
@@ -344,7 +344,7 @@ buildtests_c: bin_dep_c privatelibs_c\
 % endfor
 
 
-buildtests_cxx: bin_dep_cxx privatelibs_cxx\
+buildtests_cxx: bins_dep_cxx privatelibs_cxx\
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('c++', False):
  bins/${tgt.name}\
@@ -777,7 +777,8 @@ install-static install-static_c install-static_cxx \
 strip strip-shared strip-static \
 strip_c strip-shared_c strip-static_c \
 strip_cxx strip-shared_cxx strip-static_cxx \
-clean\
+clean \
+dep_c dep_cxx bins_dep_c bins_dep_cxx\
 % for lib in libs:
  deps_lib${lib.name} clean_lib${lib.name}\
 % endfor
