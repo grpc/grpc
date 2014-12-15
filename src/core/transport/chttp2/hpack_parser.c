@@ -1305,6 +1305,10 @@ static int parse_value_string(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
     case ERROR_HEADER:
       return 0;
   }
+  /* Add code to prevent return without value error */
+  gpr_log(GPR_ERROR, "Should never reach beyond switch in parse_value_string");
+  abort();
+  return 0;
 }
 
 static int parse_value_string_with_indexed_key(grpc_chttp2_hpack_parser *p,
