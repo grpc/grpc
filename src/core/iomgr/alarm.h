@@ -50,9 +50,10 @@ typedef struct grpc_alarm grpc_alarm;
    canceled (CANCELLED). alarm_cb is guaranteed to be called exactly once,
    and application code should check the status to determine how it was
    invoked. The application callback is also responsible for maintaining
-   information about when to free up any user-level state.  */
-void grpc_alarm_init(grpc_alarm *alarm, grpc_iomgr_cb_func alarm_cb,
-                     void *alarm_cb_arg);
+   information about when to free up any user-level state.
+   Returns 1 on success, 0 on failure. */
+int grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
+                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg);
 
 /* Note that there is no alarm destroy function. This is because the
    alarm is a one-time occurrence with a guarantee that the callback will
@@ -61,12 +62,6 @@ void grpc_alarm_init(grpc_alarm *alarm, grpc_iomgr_cb_func alarm_cb,
    that callback is invoked. If the user has additional state associated with
    the alarm, the user is responsible for determining when it is safe to
    destroy that state. */
-
-/* Schedule *alarm to expire at deadline. If *alarm is
-   re-added before expiration, the *delay is simply reset to the new value.
-   Return GRPC_EM_OK on success, or GRPC_EM_ERROR on failure.
-   Upon failure, caller should abort further operations on *alarm */
-int grpc_alarm_add(grpc_alarm *alarm, gpr_timespec deadline);
 
 /* Cancel an *alarm.
    There are three cases:

@@ -361,29 +361,18 @@ static void libevent_alarm_cb(int fd, short what, void *arg /*=alarm*/) {
   }
 }
 
-void grpc_alarm_init(grpc_alarm *alarm, grpc_iomgr_cb_func alarm_cb,
-                     void *alarm_cb_arg) {
+int grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
+                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg) {
   grpc_libevent_activation_data *adata =
       &alarm->task.activation[GRPC_EM_TA_ONLY];
+  gpr_timespec delay_timespec = gpr_time_sub(deadline, gpr_now());
+  struct timeval delay = gpr_timeval_from_timespec(delay_timespec);
   alarm->task.type = GRPC_EM_TASK_ALARM;
   gpr_atm_rel_store(&alarm->triggered, ALARM_TRIGGER_INIT);
   adata->cb = alarm_cb;
   adata->arg = alarm_cb_arg;
   adata->prev = NULL;
   adata->next = NULL;
-  adata->ev = NULL;
-}
-
-int grpc_alarm_add(grpc_alarm *alarm, gpr_timespec deadline) {
-  grpc_libevent_activation_data *adata =
-      &alarm->task.activation[GRPC_EM_TA_ONLY];
-  gpr_timespec delay_timespec = gpr_time_sub(deadline, gpr_now());
-  struct timeval delay = gpr_timeval_from_timespec(delay_timespec);
-  if (adata->ev) {
-    event_free(adata->ev);
-    gpr_log(GPR_INFO, "Adding an alarm that already has an event.");
-    adata->ev = NULL;
-  }
   adata->ev = evtimer_new(g_event_base, libevent_alarm_cb, alarm);
   /* Set the trigger field to untriggered. Do this as the last store since
      it is a release of previous stores. */
