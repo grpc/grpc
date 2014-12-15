@@ -93,9 +93,9 @@ EVENT2_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/event2.c 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -levent $(LDFLAGS) $(LDLIBS_SECURE)
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/event2.c -levent $(LDFLAGS)
 
-HAS_SYSTEM_EVENT2 = $(shell $(EVENT2_CHECK_CMD) >& /dev/null && echo true || echo false)
-HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) >& /dev/null && echo true || echo false)
-HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) >& /dev/null && echo true || echo false)
+HAS_SYSTEM_EVENT2 = $(shell $(EVENT2_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
 ifeq ($(wildcard third_party/libevent/include/event2/event.h),)
 HAS_EMBEDDED_EVENT2 = false
