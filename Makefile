@@ -1001,7 +1001,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/port_posix.c \
     test/core/util/slice_splitter.c \
     test/core/util/test_config.c \
-    test/core/end2end/end2end_tests.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
     test/core/end2end/data/ca_cert.c \

@@ -85,8 +85,6 @@
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\test_config.c">
     </ClCompile>
-    <ClCompile Include="..\..\test\core\end2end\end2end_tests.c">
-    </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_cert.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_key.c">
