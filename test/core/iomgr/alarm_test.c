@@ -116,7 +116,8 @@ static void test_grpc_alarm() {
   gpr_cv_init(&arg.cv);
   gpr_event_init(&arg.fcb_arg);
 
-  grpc_alarm_init(&alarm, gpr_time_add(tv0, gpr_now()), alarm_cb, &arg);
+  grpc_alarm_init(&alarm, gpr_time_add(tv0, gpr_now()), alarm_cb, &arg,
+                  gpr_now());
 
   alarm_deadline = gpr_time_add(gpr_now(), tv1);
   gpr_mu_lock(&arg.mu);
@@ -162,7 +163,7 @@ static void test_grpc_alarm() {
   gpr_event_init(&arg2.fcb_arg);
 
   grpc_alarm_init(&alarm_to_cancel, gpr_time_add(tv2, gpr_now()), alarm_cb,
-                  &arg2);
+                  &arg2, gpr_now());
   grpc_alarm_cancel(&alarm_to_cancel);
 
   alarm_deadline = gpr_time_add(gpr_now(), tv1);

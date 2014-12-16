@@ -212,11 +212,11 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
     /* TODO(klempner): Replace these values with further consideration. 2x is
        probably too aggressive of a backoff. */
     gpr_timespec max_backoff = gpr_time_from_minutes(2);
-    gpr_timespec deadline =
-        gpr_time_add(s->current_backoff_interval, gpr_now());
+    gpr_timespec now = gpr_now();
+    gpr_timespec deadline = gpr_time_add(s->current_backoff_interval, now);
     GPR_ASSERT(!s->in_alarm);
     s->in_alarm = 1;
-    grpc_alarm_init(&s->backoff_alarm, deadline, backoff_alarm_done, s);
+    grpc_alarm_init(&s->backoff_alarm, deadline, backoff_alarm_done, s, now);
     s->current_backoff_interval =
         gpr_time_add(s->current_backoff_interval, s->current_backoff_interval);
     if (gpr_time_cmp(s->current_backoff_interval, max_backoff) > 0) {

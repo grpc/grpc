@@ -53,7 +53,8 @@ typedef struct grpc_alarm grpc_alarm;
    information about when to free up any user-level state.
    Returns 1 on success, 0 on failure. */
 int grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
-                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg);
+                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg,
+                    gpr_timespec now);
 
 /* Note that there is no alarm destroy function. This is because the
    alarm is a one-time occurrence with a guarantee that the callback will

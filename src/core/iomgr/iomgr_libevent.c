@@ -363,10 +363,11 @@ static void libevent_alarm_cb(int fd, short what, void *arg /*=alarm*/) {
 }
 
 int grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
-                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg) {
+                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg,
+                    gpr_timespec now) {
   grpc_libevent_activation_data *adata =
       &alarm->task.activation[GRPC_EM_TA_ONLY];
-  gpr_timespec delay_timespec = gpr_time_sub(deadline, gpr_now());
+  gpr_timespec delay_timespec = gpr_time_sub(deadline, now);
   struct timeval delay = gpr_timeval_from_timespec(delay_timespec);
   alarm->task.type = GRPC_EM_TASK_ALARM;
   gpr_atm_rel_store(&alarm->triggered, ALARM_TRIGGER_INIT);
