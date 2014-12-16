@@ -134,6 +134,7 @@ endif
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = third_party/openssl/libssl.a
+OPENSSL_MERGE_LIBS += third_party/openssl/libssl.a third_party/openssl/libcrypto.a
 CPPFLAGS += -Ithird_party/openssl/include
 LDFLAGS += -Lthird_party/openssl
 else
@@ -629,6 +630,10 @@ benchmarks: buildbenchmarks
 
 strip: strip-static strip-shared
 
+strip-static: strip-static_c strip-static_cxx
+
+strip-shared: strip-shared_c strip-shared_cxx
+
 strip-static_c: static_c
 	$(E) "[STRIP]   Stripping libgpr.a"
 	$(Q) $(STRIP) libs/libgpr.a
@@ -958,18 +963,22 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
 LIBGRPC_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC_SRC))))
 
-LIBGRPC_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libgrpc.a: openssl_dep_error
 
 else
 
-libs/libgrpc.a: $(LIBGRPC_OBJS)
+libs/libgrpc.a: $(LIBGRPC_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc.a $(LIBGRPC_OBJS)
+	$(Q) mkdir tmp-merge
+	$(Q) ( cd tmp-merge ; $(AR) x ../libs/libgrpc.a )
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; ar x ../$${l} ) ; done
+	$(Q) rm -f libs/libgrpc.a tmp-merge/__.SYMDEF*
+	$(Q) ar rcs libs/libgrpc.a tmp-merge/*
+	$(Q) rm -rf tmp-merge
 
 libs/libgrpc.so.$(VERSION): $(LIBGRPC_OBJS)
 	$(E) "[LD]      Linking $@"
@@ -1013,15 +1022,13 @@ LIBGRPC_TEST_UTIL_SRC = \
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 LIBGRPC_TEST_UTIL_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 
-LIBGRPC_TEST_UTIL_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libgrpc_test_util.a: openssl_dep_error
 
 else
 
-libs/libgrpc_test_util.a: $(LIBGRPC_TEST_UTIL_OBJS)
+libs/libgrpc_test_util.a: $(LIBGRPC_TEST_UTIL_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS)
@@ -1082,15 +1089,13 @@ PUBLIC_HEADERS_CXX += \
 LIBGRPC++_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 LIBGRPC++_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC++_SRC))))
 
-LIBGRPC++_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libgrpc++.a: openssl_dep_error
 
 else
 
-libs/libgrpc++.a: $(LIBGRPC++_OBJS)
+libs/libgrpc++.a: $(LIBGRPC++_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc++.a $(LIBGRPC++_OBJS)
@@ -1127,15 +1132,13 @@ LIBGRPC++_TEST_UTIL_SRC = \
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 LIBGRPC++_TEST_UTIL_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
-LIBGRPC++_TEST_UTIL_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libgrpc++_test_util.a: openssl_dep_error
 
 else
 
-libs/libgrpc++_test_util.a: $(LIBGRPC++_TEST_UTIL_OBJS)
+libs/libgrpc++_test_util.a: $(LIBGRPC++_TEST_UTIL_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
@@ -1167,15 +1170,13 @@ LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC))))
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC))))
 
-LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libend2end_fixture_chttp2_fake_security.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_fake_security.a: $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
+libs/libend2end_fixture_chttp2_fake_security.a: $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_fake_security.a $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
@@ -1207,15 +1208,13 @@ LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC))))
 LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC))))
 
-LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libend2end_fixture_chttp2_fullstack.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
+libs/libend2end_fixture_chttp2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
@@ -1247,15 +1246,13 @@ LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC))))
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC))))
 
-LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
+libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
@@ -1287,15 +1284,13 @@ LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC))))
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC))))
 
-LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
+libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
@@ -1327,15 +1322,13 @@ LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC))))
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC))))
 
-LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libend2end_fixture_chttp2_socket_pair.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_socket_pair.a: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
+libs/libend2end_fixture_chttp2_socket_pair.a: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_socket_pair.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
@@ -1367,15 +1360,13 @@ LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC))))
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC))))
 
-LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
+libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
@@ -1969,15 +1960,13 @@ LIBEND2END_CERTS_SRC = \
 LIBEND2END_CERTS_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBEND2END_CERTS_SRC))))
 LIBEND2END_CERTS_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBEND2END_CERTS_SRC))))
 
-LIBEND2END_CERTS_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/libend2end_certs.a: openssl_dep_error
 
 else
 
-libs/libend2end_certs.a: $(LIBEND2END_CERTS_OBJS)
+libs/libend2end_certs.a: $(LIBEND2END_CERTS_OBJS) $(OPENSSL_DEP)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_certs.a $(LIBEND2END_CERTS_OBJS)

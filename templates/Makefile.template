@@ -191,6 +191,7 @@ endif
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = third_party/openssl/libssl.a
+OPENSSL_MERGE_LIBS += third_party/openssl/libssl.a third_party/openssl/libcrypto.a
 CPPFLAGS += -Ithird_party/openssl/include
 LDFLAGS += -Lthird_party/openssl
 else
@@ -399,6 +400,10 @@ buildbenchmarks: privatelibs\
 benchmarks: buildbenchmarks
 
 strip: strip-static strip-shared
+
+strip-static: strip-static_c strip-static_cxx
+
+strip-shared: strip-shared_c strip-shared_cxx
 
 strip-static_c: static_c
 % for lib in libs:
@@ -624,19 +629,29 @@ LIB${lib.name.upper()}_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LI
 LIB${lib.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
 
 % if lib.get('secure', True):
-LIB${lib.name.upper()}_OBJS += $(OPENSSL_DEP)
-
 ifeq ($(NO_SECURE),true)
 
 libs/lib${lib.name}.a: openssl_dep_error
 
 else
 
-% endif
+libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS) $(OPENSSL_DEP)
+% else:
 libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
+% endif
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
+% if lib.get('baselib', False):
+% if lib.get('secure', True):
+	$(Q) mkdir tmp-merge
+	$(Q) ( cd tmp-merge ; $(AR) x ../libs/lib${lib.name}.a )
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; <%text>ar x ../$${l}</%text> ) ; done
+	$(Q) rm -f libs/lib${lib.name}.a tmp-merge/__.SYMDEF*
+	$(Q) ar rcs libs/lib${lib.name}.a tmp-merge/*
+	$(Q) rm -rf tmp-merge
+% endif
+% endif
 
 % if lib.build == "all":
 libs/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)

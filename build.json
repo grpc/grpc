@@ -79,6 +79,7 @@
       "build": "all",
       "secure": true,
       "vs_project_guid": "{29D16885-7228-4C31-81ED-5F9187C7F2A9}",
+      "baselib": true,
       "alternates": [
         {
           "name": "grpc_unsecure",
