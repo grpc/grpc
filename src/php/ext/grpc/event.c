@@ -130,7 +130,7 @@ PHP_METHOD(Event, get_data){
     case GRPC_FINISHED:
       MAKE_STD_ZVAL(retval);
       object_init(retval);
-      add_property_long(retval, "code", event->data.finished.code);
+      add_property_long(retval, "code", event->data.finished.status);
       if(event->data.finished.details == NULL){
         add_property_null(retval, "details");
       } else {
@@ -142,6 +142,9 @@ PHP_METHOD(Event, get_data){
                             detail_string,
                             true);
       }
+      add_property_zval(retval, "metadata", grpc_call_create_metadata_array(
+          event->data.finished.metadata_count,
+          event->data.finished.metadata_elements));
       break;
     case GRPC_SERVER_RPC_NEW:
       MAKE_STD_ZVAL(retval);

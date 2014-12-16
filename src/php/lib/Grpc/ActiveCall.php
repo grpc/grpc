@@ -87,8 +87,8 @@ class ActiveCall {
 
   /**
    * Wait for the server to send the status, and return it.
-   * @return object The status object, with integer $code and string $details
-   *     members
+   * @return object The status object, with integer $code, string $details,
+   *     and array $metadata members
    */
   public function getStatus() {
     $status_event = $this->completion_queue->pluck(FINISHED,

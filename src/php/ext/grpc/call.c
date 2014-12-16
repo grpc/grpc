@@ -376,12 +376,12 @@ PHP_METHOD(Call, start_write_status){
   long status_code;
   int status_details_length;
   long tag;
-  grpc_status status;
+  char *status_details;
   /* "lsl" == 1 long, 1 string, 1 long */
   if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
                            "lsl",
                            &status_code,
-                           &status.details, &status_details_length,
+                           &status_details, &status_details_length,
                            &tag) == FAILURE){
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
@@ -389,9 +389,9 @@ PHP_METHOD(Call, start_write_status){
         1 TSRMLS_CC);
     return;
   }
-  status.code = (gpr_uint32)status_code;
   RETURN_LONG(grpc_call_start_write_status(call->wrapped,
-                                           status,
+                                           (grpc_status_code)status_code,
+                                           status_details,
                                            (void*)tag));
 }
 
