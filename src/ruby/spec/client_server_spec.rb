@@ -154,8 +154,8 @@ shared_examples 'basic GRPC message delivery is OK' do
     server_call = ev.call
     server_call.server_accept(@server_queue, @server_finished_tag)
     server_call.server_end_initial_metadata()
-    sts = Status.new(StatusCodes::NOT_FOUND, 'not found')
-    server_call.start_write_status(sts, @server_tag)
+    server_call.start_write_status(StatusCodes::NOT_FOUND, 'not found',
+                                   @server_tag)
 
     # client gets an empty response for the read, preceeded by some metadata.
     call.start_read(@tag)
@@ -175,8 +175,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     call = new_client_call
     client_sends(call)
     server_call = server_receives_and_responds_with('server_response')
-    sts = Status.new(10101, 'status code is 10101')
-    server_call.start_write_status(sts, @server_tag)
+    server_call.start_write_status(10101, 'status code is 10101', @server_tag)
 
     # first the client says writes are done
     call.start_read(@tag)
@@ -187,7 +186,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     # but nothing happens until the server sends a status
     expect_next_event_on(@server_queue, FINISH_ACCEPTED, @server_tag)
     ev = expect_next_event_on(@server_queue, FINISHED, @server_finished_tag)
-    expect(ev.result).to be_a(Status)
+    expect(ev.result).to be_a(Struct::Status)
 
     # client gets FINISHED
     expect_next_event_on(@client_queue, FINISH_ACCEPTED, @tag)

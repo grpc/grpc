@@ -88,29 +88,30 @@ describe GRPC::Core::Call do
 
   describe '#start_read' do
     it 'should fail if called immediately' do
-      expect { make_test_call.start_read(@tag) }.to raise_error GRPC::Core::CallError
+      blk = Proc.new { make_test_call.start_read(@tag) }
+      expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#start_write' do
     it 'should fail if called immediately' do
       bytes = GRPC::Core::ByteBuffer.new('test string')
-      expect { make_test_call.start_write(bytes, @tag) }
-          .to raise_error GRPC::Core::CallError
+      blk = Proc.new { make_test_call.start_write(bytes, @tag) }
+      expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#start_write_status' do
     it 'should fail if called immediately' do
-      sts = GRPC::Core::Status.new(153, 'test detail')
-      expect { make_test_call.start_write_status(sts, @tag) }
-          .to raise_error GRPC::Core::CallError
+      blk = Proc.new { make_test_call.start_write_status(153, 'x', @tag) }
+      expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#writes_done' do
     it 'should fail if called immediately' do
-      expect { make_test_call.writes_done(@tag) }.to raise_error GRPC::Core::CallError
+      blk = Proc.new { make_test_call.writes_done(Object.new) }
+      expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
 
@@ -153,9 +154,9 @@ describe GRPC::Core::Call do
   describe '#status' do
     it 'can save the status and read it back' do
       call = make_test_call
-      sts = GRPC::Core::Status.new(OK, 'OK')
+      sts = Struct::Status.new(OK, 'OK')
       expect { call.status = sts }.not_to raise_error
-      expect(call.status).to be(sts)
+      expect(call.status).to eq(sts)
     end
 
     it 'must be set to a status' do

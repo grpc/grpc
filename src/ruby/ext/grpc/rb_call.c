@@ -38,8 +38,8 @@
 #include <grpc/grpc.h>
 #include "rb_byte_buffer.h"
 #include "rb_completion_queue.h"
+#include "rb_event.h"
 #include "rb_metadata.h"
-#include "rb_status.h"
 #include "rb_grpc.h"
 
 /* id_cq is the name of the hidden ivar that preserves a reference to a
@@ -270,8 +270,8 @@ static VALUE grpc_rb_call_get_status(VALUE self) {
 
     Saves a status object on the call.  */
 static VALUE grpc_rb_call_set_status(VALUE self, VALUE status) {
-  if (!NIL_P(status) && rb_obj_class(status) != rb_cStatus) {
-    rb_raise(rb_eTypeError, "bad status: got:<%s> want: <Status>",
+  if (!NIL_P(status) && rb_obj_class(status) != rb_sStatus) {
+    rb_raise(rb_eTypeError, "bad status: got:<%s> want: <Struct::Status>",
              rb_obj_classname(status));
     return Qnil;
   }
@@ -344,6 +344,11 @@ static VALUE grpc_rb_call_start_write(int argc, VALUE *argv, VALUE self) {
 }
 
 /* Queue a status for writing.
+
+   call-seq:
+      tag = Object.new
+      call.write_status(200, "OK", tag)
+
    REQUIRES: No other writes are pending on the call. It is only safe to
    start the next write after the corresponding write_accepted event
    is received.
@@ -352,13 +357,13 @@ static VALUE grpc_rb_call_start_write(int argc, VALUE *argv, VALUE self) {
    Only callable on the server.
    Produces a GRPC_FINISHED event when the status is sent and the stream is
    fully closed */
-static VALUE grpc_rb_call_start_write_status(VALUE self, VALUE status,
-                                             VALUE tag) {
+static VALUE grpc_rb_call_start_write_status(VALUE self, VALUE code,
+                                             VALUE status, VALUE tag) {
   grpc_call *call = NULL;
-  grpc_status *sts = grpc_rb_get_wrapped_status(status);
   grpc_call_error err;
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_write_status(call, *sts, ROBJECT(tag));
+  err = grpc_call_start_write_status(call, NUM2UINT(code),
+                                     StringValueCStr(status), ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "start write status: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -522,7 +527,7 @@ void Init_google_rpc_call() {
   rb_define_method(rb_cCall, "start_read", grpc_rb_call_start_read, 1);
   rb_define_method(rb_cCall, "start_write", grpc_rb_call_start_write, -1);
   rb_define_method(rb_cCall, "start_write_status",
-                   grpc_rb_call_start_write_status, 2);
+                   grpc_rb_call_start_write_status, 3);
   rb_define_method(rb_cCall, "writes_done", grpc_rb_call_writes_done, 1);
   rb_define_method(rb_cCall, "status", grpc_rb_call_get_status, 0);
   rb_define_method(rb_cCall, "status=", grpc_rb_call_set_status, 1);

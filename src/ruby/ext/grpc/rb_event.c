@@ -40,7 +40,6 @@
 #include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_metadata.h"
-#include "rb_status.h"
 
 /* rb_mCompletionType is a ruby module that holds the completion type values */
 VALUE rb_mCompletionType = Qnil;
@@ -132,6 +131,11 @@ static VALUE grpc_rb_event_metadata(VALUE self) {
       metadata = event->data.client_metadata_read.elements;
       break;
 
+    case GRPC_FINISHED:
+      count = event->data.finished.metadata_count;
+      metadata = event->data.finished.metadata_elements;
+      break;
+
     case GRPC_SERVER_RPC_NEW:
       count = event->data.server_rpc_new.metadata_count;
       metadata = event->data.server_rpc_new.metadata_elements;
@@ -139,8 +143,9 @@ static VALUE grpc_rb_event_metadata(VALUE self) {
 
     default:
       rb_raise(rb_eRuntimeError,
-               "bug: bad event type reading server metadata. got %d; want %d",
-               event->type, GRPC_SERVER_RPC_NEW);
+               "bug: bad event type metadata. got %d; want %d|%d:%d",
+               event->type, GRPC_CLIENT_METADATA_READ, GRPC_FINISHED,
+               GRPC_SERVER_RPC_NEW);
       return Qnil;
   }
 
@@ -212,7 +217,13 @@ static VALUE grpc_rb_event_result(VALUE self) {
       return grpc_rb_event_metadata(self);
 
     case GRPC_FINISHED:
-      return grpc_rb_status_create_with_mark(self, &event->data.finished);
+      return rb_struct_new(
+          rb_sStatus,
+          UINT2NUM(event->data.finished.status),
+          (event->data.finished.details == NULL ?
+           Qnil : rb_str_new2(event->data.finished.details)),
+          grpc_rb_event_metadata(self),
+          NULL);
       break;
 
     case GRPC_SERVER_RPC_NEW:
@@ -237,6 +248,9 @@ static VALUE grpc_rb_event_result(VALUE self) {
 /* rb_sNewServerRpc is the struct that holds new server rpc details. */
 VALUE rb_sNewServerRpc = Qnil;
 
+/* rb_sStatus is the struct that holds status details. */
+VALUE rb_sStatus = Qnil;
+
 /* rb_cEvent is the Event class whose instances proxy grpc_event */
 VALUE rb_cEvent = Qnil;
 
@@ -250,6 +264,7 @@ void Init_google_rpc_event() {
   rb_cEvent = rb_define_class_under(rb_mGoogleRpcCore, "Event", rb_cObject);
   rb_sNewServerRpc = rb_struct_define("NewServerRpc", "method", "host",
                                       "deadline", "metadata", NULL);
+  rb_sStatus = rb_struct_define("Status", "code", "details", "metadata", NULL);
 
   /* Prevent allocation or inialization from ruby. */
   rb_define_alloc_func(rb_cEvent, grpc_rb_cannot_alloc);

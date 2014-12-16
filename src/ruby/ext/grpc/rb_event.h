@@ -39,6 +39,9 @@
 /* rb_sNewServerRpc is the struct that holds new server rpc details. */
 extern VALUE rb_sNewServerRpc;
 
+/* rb_sStruct is the struct that holds status details. */
+extern VALUE rb_sStatus;
+
 /* rb_cEvent is the Event class whose instances proxy grpc_event. */
 extern VALUE rb_cEvent;
 

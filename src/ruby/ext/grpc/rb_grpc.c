@@ -48,7 +48,6 @@
 #include "rb_server.h"
 #include "rb_credentials.h"
 #include "rb_server_credentials.h"
-#include "rb_status.h"
 
 /* Define common vars and funcs declared in rb.h */
 const RUBY_DATA_FUNC GC_NOT_MARKED = NULL;
@@ -157,6 +156,39 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   return t;
 }
 
+void Init_google_status_codes() {
+  /* Constants representing the status codes or grpc_status_code in status.h */
+  VALUE rb_mStatusCodes = rb_define_module_under(rb_mGoogleRpcCore,
+                                                 "StatusCodes");
+  rb_define_const(rb_mStatusCodes, "OK", INT2NUM(GRPC_STATUS_OK));
+  rb_define_const(rb_mStatusCodes, "CANCELLED", INT2NUM(GRPC_STATUS_CANCELLED));
+  rb_define_const(rb_mStatusCodes, "UNKNOWN", INT2NUM(GRPC_STATUS_UNKNOWN));
+  rb_define_const(rb_mStatusCodes, "INVALID_ARGUMENT",
+                  INT2NUM(GRPC_STATUS_INVALID_ARGUMENT));
+  rb_define_const(rb_mStatusCodes, "DEADLINE_EXCEEDED",
+                  INT2NUM(GRPC_STATUS_DEADLINE_EXCEEDED));
+  rb_define_const(rb_mStatusCodes, "NOT_FOUND", INT2NUM(GRPC_STATUS_NOT_FOUND));
+  rb_define_const(rb_mStatusCodes, "ALREADY_EXISTS",
+                  INT2NUM(GRPC_STATUS_ALREADY_EXISTS));
+  rb_define_const(rb_mStatusCodes, "PERMISSION_DENIED",
+                  INT2NUM(GRPC_STATUS_PERMISSION_DENIED));
+  rb_define_const(rb_mStatusCodes, "UNAUTHENTICATED",
+                  INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
+  rb_define_const(rb_mStatusCodes, "RESOURCE_EXHAUSTED",
+                  INT2NUM(GRPC_STATUS_RESOURCE_EXHAUSTED));
+  rb_define_const(rb_mStatusCodes, "FAILED_PRECONDITION",
+                  INT2NUM(GRPC_STATUS_FAILED_PRECONDITION));
+  rb_define_const(rb_mStatusCodes, "ABORTED", INT2NUM(GRPC_STATUS_ABORTED));
+  rb_define_const(rb_mStatusCodes, "OUT_OF_RANGE",
+                  INT2NUM(GRPC_STATUS_OUT_OF_RANGE));
+  rb_define_const(rb_mStatusCodes, "UNIMPLEMENTED",
+                  INT2NUM(GRPC_STATUS_UNIMPLEMENTED));
+  rb_define_const(rb_mStatusCodes, "INTERNAL", INT2NUM(GRPC_STATUS_INTERNAL));
+  rb_define_const(rb_mStatusCodes, "UNAVAILABLE",
+                  INT2NUM(GRPC_STATUS_UNAVAILABLE));
+  rb_define_const(rb_mStatusCodes, "DATA_LOSS", INT2NUM(GRPC_STATUS_DATA_LOSS));
+}
+
 /* id_at is the constructor method of the ruby standard Time class. */
 static ID id_at;
 
@@ -233,6 +265,6 @@ void Init_grpc() {
   Init_google_rpc_metadata();
   Init_google_rpc_server();
   Init_google_rpc_server_credentials();
-  Init_google_rpc_status();
+  Init_google_status_codes();
   Init_google_time_consts();
 }

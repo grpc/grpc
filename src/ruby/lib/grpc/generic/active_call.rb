@@ -207,6 +207,12 @@ module Google::RPC
     def finished
       ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
       raise "unexpected event: #{ev.inspect}" unless ev.type == FINISHED
+      if @call.metadata.nil?
+        @call.metadata = ev.result.metadata
+      else
+        @call.metadata.merge!(ev.result.metadata)
+      end
+
       if ev.result.code != Core::StatusCodes::OK
         raise BadStatus.new(ev.result.code, ev.result.details)
       end
@@ -252,7 +258,7 @@ module Google::RPC
     # FINISHED.
     def send_status(code=OK, details='', assert_finished=false)
       assert_queue_is_ready
-      @call.start_write_status(Core::Status.new(code, details), self)
+      @call.start_write_status(code, details, self)
       ev = @cq.pluck(self, INFINITE_FUTURE)
       assert_event_type(ev, FINISH_ACCEPTED)
       logger.debug("Status sent: #{code}:'#{details}'")
@@ -310,7 +316,7 @@ module Google::RPC
       return enum_for(:each_remote_read) if !block_given?
       loop do
         resp = remote_read()
-        break if resp.is_a?Core::Status  # is an OK status, bad statii raise
+        break if resp.is_a?Struct::Status  # is an OK status, bad statii raise
         break if resp.nil?  # the last response was received
         yield resp
       end
@@ -340,7 +346,7 @@ module Google::RPC
       return enum_for(:each_remote_read_then_finish) if !block_given?
       loop do
         resp = remote_read
-        break if resp.is_a?Core::Status  # is an OK status, bad statii raise
+        break if resp.is_a?Struct::Status  # is an OK status, bad statii raise
         if resp.nil?  # the last response was received, but not finished yet
           finished
           break
@@ -363,7 +369,7 @@ module Google::RPC
       remote_send(req)
       writes_done(false)
       response = remote_read
-      if !response.is_a?(Core::Status)  # finish if status not yet received
+      if !response.is_a?(Struct::Status)  # finish if status not yet received
         finished
       end
       response
@@ -388,7 +394,7 @@ module Google::RPC
       requests.each { |r| remote_send(r) }
       writes_done(false)
       response = remote_read
-      if !response.is_a?(Core::Status)  # finish if status not yet received
+      if !response.is_a?(Struct::Status)  # finish if status not yet received
         finished
       end
       response
