@@ -32,8 +32,10 @@
  */
 
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -57,6 +59,8 @@ DEFINE_string(test_case, "large_unary",
               "large_unary : single request and (large) response; "
               "client_streaming : request streaming with single response; "
               "server_streaming : single request with response streaming; "
+              "slow_consumer : single request with response"
+              " streaming with slow client consumer; "
               "half_duplex : half-duplex streaming;"
               "ping_pong : full-duplex streaming;"
               "all : all of above.");
@@ -78,6 +82,9 @@ namespace {
 // The same value is defined by the Java client.
 const std::vector<int> request_stream_sizes = {27182, 8, 1828, 45904};
 const std::vector<int> response_stream_sizes = {31415, 9, 2653, 58979};
+const int kNumResponseMessages = 2000;
+const int kResponseMessageSize = 1030;
+const int kReceiveDelayMilliSeconds = 20;
 }  // namespace
 
 std::shared_ptr<ChannelInterface> CreateTestChannel(
