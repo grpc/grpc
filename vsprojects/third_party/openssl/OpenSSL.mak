@@ -38,7 +38,7 @@ EX_LIBS=ws2_32.lib gdi32.lib advapi32.lib crypt32.lib user32.lib
 
 # The OpenSSL directory
 SRC_D=.
-GEN_INC_D=..\..\vsprojects\openssl
+GEN_INC_D=..\..\vsprojects\third_party\openssl
 
 LINK=link
 LFLAGS=/nologo /subsystem:console /opt:ref /debug
@@ -463,7 +463,6 @@ $(INC_D):
 # This needs to be invoked once, when the makefile is first constructed, or
 # after cleaning.
 init: $(TMP_D) $(LIB_D) $(INC_D) $(INCO_D) $(BIN_D) $(TEST_D) headers
-	$(CP) "$(SRC_D)/crypto/opensslconf.h" "$(INCO_D)/opensslconf.h"
 
 headers: $(HEADER) $(EXHEADER)
 
