@@ -44,7 +44,7 @@ namespace grpc_ruby_generator {
 inline bool ServicesFilename(const google::protobuf::FileDescriptor* file,
                              string* file_name_or_error) {
   // Get output file name.
-  static const int proto_suffix_length = 6;  // length of ".proto"
+  static const unsigned proto_suffix_length = 6;  // length of ".proto"
   if (file->name().size() > proto_suffix_length &&
       file->name().find_last_of(".proto") == file->name().size() - 1) {
     *file_name_or_error = file->name().substr(

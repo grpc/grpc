@@ -54,8 +54,9 @@ void Timepoint2Timespec(const system_clock::time_point& from,
 
 system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
   system_clock::time_point tp;
-  tp += seconds(t.tv_sec);
-  tp += nanoseconds(t.tv_nsec);
+  tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
+  tp +=
+      duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
   return tp;
 }
 
