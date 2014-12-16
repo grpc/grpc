@@ -34,9 +34,9 @@
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
-#include <pthread.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include "src/core/tsi/transport_security.h"
 
 #include <openssl/bio.h>
@@ -103,7 +103,7 @@ typedef struct {
 
 /* --- Library Initialization. ---*/
 
-static pthread_once_t init_openssl_once = PTHREAD_ONCE_INIT;
+static gpr_once init_openssl_once = GPR_ONCE_INIT;
 
 static void init_openssl(void) {
   SSL_library_init();
@@ -1109,7 +1109,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
   tsi_ssl_client_handshaker_factory* impl = NULL;
   tsi_result result = TSI_OK;
 
-  pthread_once(&init_openssl_once, init_openssl);
+  gpr_once_init(&init_openssl_once, init_openssl);
 
   if (factory == NULL) return TSI_INVALID_ARGUMENT;
   *factory = NULL;
@@ -1188,7 +1188,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
   tsi_result result = TSI_OK;
   uint32_t i = 0;
 
-  pthread_once(&init_openssl_once, init_openssl);
+  gpr_once_init(&init_openssl_once, init_openssl);
 
   if (factory == NULL) return TSI_INVALID_ARGUMENT;
   *factory = NULL;
