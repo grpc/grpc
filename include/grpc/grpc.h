@@ -302,8 +302,8 @@ void grpc_channel_destroy(grpc_channel *channel);
 
 /* Add a single metadata element to the call, to be sent upon invocation.
    flags is a bit-field combination of the write flags defined above.
-   REQUIRES: grpc_call_start_invoke/grpc_call_accept have not been called on
-             this call.
+   REQUIRES: grpc_call_start_invoke/grpc_call_server_end_initial_metadata have
+             not been called on this call.
    Produces no events. */
 grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
                                        gpr_uint32 flags);
@@ -343,7 +343,6 @@ grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
 
 /* Accept an incoming RPC, binding a completion queue to it.
    To be called before sending or receiving messages.
-   flags is a bit-field combination of the write flags defined above.
    REQUIRES: Can be called at most once per call.
              Can only be called on the server.
    Produces a GRPC_FINISHED event with finished_tag when the call has been
@@ -353,7 +352,7 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
                                         grpc_completion_queue *cq,
                                         void *finished_tag);
 
-/* Accept an incoming RPC, binding a completion queue to it.
+/* Start sending metadata.
    To be called before sending messages.
    flags is a bit-field combination of the write flags defined above.
    REQUIRES: Can be called at most once per call.
@@ -385,8 +384,8 @@ grpc_call_error grpc_call_start_write(grpc_call *call,
 
 /* Queue a status for writing.
    REQUIRES: No other writes are pending on the call.
-             grpc_call_accept must have been called on the call prior to calling
-             this.
+             grpc_call_server_end_initial_metadata must have been called on the
+             call prior to calling this.
              Only callable on the server.
    Produces a GRPC_FINISH_ACCEPTED event when the status is sent. */
 grpc_call_error grpc_call_start_write_status(grpc_call *call,
