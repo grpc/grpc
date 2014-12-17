@@ -37,7 +37,7 @@
 #include <grpc/support/slice.h>
 #include <openssl/rsa.h>
 
-/* --- json_key parsing. Exposed for testing only. --- */
+/* --- auth_json_key parsing. Exposed for testing only. --- */
 
 typedef struct {
   char *type;
@@ -57,5 +57,12 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
 
 /* Destructs the object. */
 void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key);
+
+/* --- json token encoding and signing. --- */
+
+/* Caller is responsible for calling gpr_free on the returned value. May return
+   NULL on invalid input. */
+char *grpc_jwt_encode_and_sign(const grpc_auth_json_key *json_key,
+                               const char *scope, gpr_timespec token_lifetime);
 
 #endif /* __GRPC_INTERNAL_SECURITY_JSON_TOKEN_H_ */

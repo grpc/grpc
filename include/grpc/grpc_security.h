@@ -78,13 +78,17 @@ grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
 /* Creates a compute engine credentials object. */
 grpc_credentials *grpc_compute_engine_credentials_create(void);
 
-extern const gpr_timespec grpc_max_service_accounts_token_validity;
+extern const gpr_timespec grpc_max_auth_token_lifetime;
 
 /* Creates a service account credentials object. May return NULL if the input is
-   invalid. time_validity should not exceed grpc_max_service_accounts_token
-   validity or will be cropped to this value. */
-grpc_credentials *grpc_service_accounts_credentials_create(
-    const char *json_key, const char *scope, gpr_timespec token_validity);
+   invalid.
+   - json_key is the JSON key string containing the client's private key.
+   - scope is a space-delimited list of the requested permissions.
+   - token_lifetime is the lifetime of each token acquired through this service
+     account credentials.  It should not exceed grpc_max_auth_token_lifetime
+     or will be cropped to this value.  */
+grpc_credentials *grpc_service_account_credentials_create(
+    const char *json_key, const char *scope, gpr_timespec token_lifetime);
 
 /* Creates a fake transport security credentials object for testing. */
 grpc_credentials *grpc_fake_transport_security_credentials_create(void);

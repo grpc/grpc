@@ -38,18 +38,25 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
 
+#include "src/core/security/base64.h"
+
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
 #include "third_party/cJSON/cJSON.h"
 
 /* --- Constants. --- */
 
 /* 1 hour max. */
-const gpr_timespec grpc_max_service_accounts_token_validity = {3600, 0};
+const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0};
 
 #define GRPC_AUTH_JSON_KEY_TYPE_INVALID "invalid"
 #define GRPC_AUTH_JSON_KEY_TYPE_SERVICE_ACCOUNT "service_account"
+
+#define GRPC_JWT_AUDIENCE "https://www.googleapis.com/oauth2/v3/token"
+#define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
+#define GRPC_JWT_TYPE "JWT"
 
 /* --- grpc_auth_json_key. --- */
 
@@ -149,4 +156,135 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key) {
     RSA_free(json_key->private_key);
     json_key->private_key = NULL;
   }
+}
+
+/* --- jwt encoding and signature. --- */
+
+static char *encoded_jwt_header(const char *algorithm) {
+  cJSON *json = cJSON_CreateObject();
+  cJSON *child = cJSON_CreateString(algorithm);
+  char *json_str = NULL;
+  char *result = NULL;
+  cJSON_AddItemToObject(json, "alg", child);
+  child = cJSON_CreateString(GRPC_JWT_TYPE);
+  cJSON_AddItemToObject(json, "typ", child);
+  json_str = cJSON_PrintUnformatted(json);
+  result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
+  free(json_str);
+  cJSON_Delete(json);
+  return result;
+}
+
+static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
+                               const char *scope, gpr_timespec token_lifetime) {
+  cJSON *json = cJSON_CreateObject();
+  cJSON *child = NULL;
+  char *json_str = NULL;
+  char *result = NULL;
+  gpr_timespec now = gpr_now();
+  gpr_timespec expiration = gpr_time_add(now, token_lifetime);
+  if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime) > 0) {
+    gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
+    expiration = gpr_time_add(now, grpc_max_auth_token_lifetime);
+  }
+  child = cJSON_CreateString(json_key->client_email);
+  cJSON_AddItemToObject(json, "iss", child);
+  child = cJSON_CreateString(scope);
+  cJSON_AddItemToObject(json, "scope", child);
+  child = cJSON_CreateString(GRPC_JWT_AUDIENCE);
+  cJSON_AddItemToObject(json, "aud", child);
+  child = cJSON_CreateNumber(now.tv_sec);
+  cJSON_SetIntValue(child, now.tv_sec);
+  cJSON_AddItemToObject(json, "iat", child);
+  child = cJSON_CreateNumber(expiration.tv_sec);
+  cJSON_SetIntValue(child, expiration.tv_sec);
+  cJSON_AddItemToObject(json, "exp", child);
+  json_str = cJSON_PrintUnformatted(json);
+  result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
+  free(json_str);
+  cJSON_Delete(json);
+  return result;
+}
+
+static char *dot_concat_and_free_strings(char *str1, char *str2) {
+  size_t str1_len = strlen(str1);
+  size_t str2_len = strlen(str2);
+  size_t result_len = str1_len + 1 /* dot */ + str2_len;
+  char *result = gpr_malloc(result_len + 1 /* NULL terminated */);
+  char *current = result;
+  strncpy(current, str1, str1_len);
+  current += str1_len;
+  *(current++) = '.';
+  strncpy(current, str2, str2_len);
+  current += str2_len;
+  GPR_ASSERT((current - result) == result_len);
+  *current = '\0';
+  gpr_free(str1);
+  gpr_free(str2);
+  return result;
+}
+
+const EVP_MD *openssl_digest_from_algorithm(const char *algorithm) {
+  if (!strcmp(algorithm, GRPC_JWT_RSA_SHA256_ALGORITHM)) {
+    return EVP_sha256();
+  } else {
+    gpr_log(GPR_ERROR, "Unknown algorithm %s.", algorithm);
+    return NULL;
+  }
+}
+
+char *compute_and_encode_signature(const grpc_auth_json_key *json_key,
+                                   const char *signature_algorithm,
+                                   const char *to_sign) {
+  const EVP_MD *md = openssl_digest_from_algorithm(signature_algorithm);
+  EVP_MD_CTX *md_ctx = NULL;
+  EVP_PKEY *key = EVP_PKEY_new();
+  size_t sig_len = 0;
+  unsigned char *sig = NULL;
+  char *result = NULL;
+  if (md == NULL) return NULL;
+  md_ctx = EVP_MD_CTX_create();
+  if (md_ctx == NULL) {
+    gpr_log(GPR_ERROR, "Could not create MD_CTX");
+    goto end;
+  }
+  EVP_PKEY_set1_RSA(key, json_key->private_key);
+  if (EVP_DigestSignInit(md_ctx, NULL, md, NULL, key) != 1) {
+    gpr_log(GPR_ERROR, "DigestInit failed.");
+    goto end;
+  }
+  if (EVP_DigestSignUpdate(md_ctx, to_sign, strlen(to_sign)) != 1) {
+    gpr_log(GPR_ERROR, "DigestUpdate failed.");
+    goto end;
+  }
+  if (EVP_DigestSignFinal(md_ctx, NULL, &sig_len) != 1) {
+    gpr_log(GPR_ERROR, "DigestFinal (get signature length) failed.");
+    goto end;
+  }
+  sig = gpr_malloc(sig_len);
+  if (EVP_DigestSignFinal(md_ctx, sig, &sig_len) != 1) {
+    gpr_log(GPR_ERROR, "DigestFinal (signature compute) failed.");
+    goto end;
+  }
+  result = grpc_base64_encode(sig, sig_len, 1, 0);
+
+end:
+  if (key != NULL) EVP_PKEY_free(key);
+  if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
+  if (sig != NULL) gpr_free(sig);
+  return result;
+}
+
+char *grpc_jwt_encode_and_sign(const grpc_auth_json_key *json_key,
+                               const char *scope, gpr_timespec token_lifetime) {
+  const char *sig_algo = GRPC_JWT_RSA_SHA256_ALGORITHM;
+  char *to_sign = dot_concat_and_free_strings(
+      encoded_jwt_header(sig_algo),
+      encoded_jwt_claim(json_key, scope, token_lifetime));
+  char *sig = compute_and_encode_signature(json_key, sig_algo, to_sign);
+  if (sig == NULL) {
+    gpr_free(to_sign);
+    return NULL;
+  }
+  return dot_concat_and_free_strings(to_sign, sig);
 }
