@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_ENDPOINT_ENDPOINT_H__
-#define __GRPC_INTERNAL_ENDPOINT_ENDPOINT_H__
+#ifndef __GRPC_INTERNAL_IOMGR_ENDPOINT_H__
+#define __GRPC_INTERNAL_IOMGR_ENDPOINT_H__
 
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
@@ -96,4 +96,4 @@ struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;
 };
 
-#endif  /* __GRPC_INTERNAL_ENDPOINT_ENDPOINT_H__ */
+#endif /* __GRPC_INTERNAL_IOMGR_ENDPOINT_H__ */
