@@ -635,7 +635,7 @@ libs/lib${lib.name}.a: openssl_dep_error
 
 else
 
-libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS) $(OPENSSL_DEP)
+libs/lib${lib.name}.a: $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
 % else:
 libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
 % endif

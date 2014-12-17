@@ -969,7 +969,7 @@ libs/libgrpc.a: openssl_dep_error
 
 else
 
-libs/libgrpc.a: $(LIBGRPC_OBJS) $(OPENSSL_DEP)
+libs/libgrpc.a: $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc.a $(LIBGRPC_OBJS)
@@ -1028,7 +1028,7 @@ libs/libgrpc_test_util.a: openssl_dep_error
 
 else
 
-libs/libgrpc_test_util.a: $(LIBGRPC_TEST_UTIL_OBJS) $(OPENSSL_DEP)
+libs/libgrpc_test_util.a: $(OPENSSL_DEP) $(LIBGRPC_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS)
@@ -1095,7 +1095,7 @@ libs/libgrpc++.a: openssl_dep_error
 
 else
 
-libs/libgrpc++.a: $(LIBGRPC++_OBJS) $(OPENSSL_DEP)
+libs/libgrpc++.a: $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc++.a $(LIBGRPC++_OBJS)
@@ -1138,7 +1138,7 @@ libs/libgrpc++_test_util.a: openssl_dep_error
 
 else
 
-libs/libgrpc++_test_util.a: $(LIBGRPC++_TEST_UTIL_OBJS) $(OPENSSL_DEP)
+libs/libgrpc++_test_util.a: $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
@@ -1176,7 +1176,7 @@ libs/libend2end_fixture_chttp2_fake_security.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_fake_security.a: $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS) $(OPENSSL_DEP)
+libs/libend2end_fixture_chttp2_fake_security.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_fake_security.a $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
@@ -1214,7 +1214,7 @@ libs/libend2end_fixture_chttp2_fullstack.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS) $(OPENSSL_DEP)
+libs/libend2end_fixture_chttp2_fullstack.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
@@ -1252,7 +1252,7 @@ libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS) $(OPENSSL_DEP)
+libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
@@ -1290,7 +1290,7 @@ libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: openssl_dep_e
 
 else
 
-libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS) $(OPENSSL_DEP)
+libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
@@ -1328,7 +1328,7 @@ libs/libend2end_fixture_chttp2_socket_pair.a: openssl_dep_error
 
 else
 
-libs/libend2end_fixture_chttp2_socket_pair.a: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS) $(OPENSSL_DEP)
+libs/libend2end_fixture_chttp2_socket_pair.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_socket_pair.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
@@ -1366,7 +1366,7 @@ libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: openssl_dep_err
 
 else
 
-libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS) $(OPENSSL_DEP)
+libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
@@ -1966,7 +1966,7 @@ libs/libend2end_certs.a: openssl_dep_error
 
 else
 
-libs/libend2end_certs.a: $(LIBEND2END_CERTS_OBJS) $(OPENSSL_DEP)
+libs/libend2end_certs.a: $(OPENSSL_DEP) $(LIBEND2END_CERTS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/libend2end_certs.a $(LIBEND2END_CERTS_OBJS)
