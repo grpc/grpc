@@ -1057,6 +1057,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/channel.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
+    src/cpp/client/credentials.cc \
     src/cpp/client/internal_stub.cc \
     src/cpp/proto/proto_utils.cc \
     src/cpp/rpc_method.cc \
@@ -1066,6 +1067,7 @@ LIBGRPC++_SRC = \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_rpc_handler.cc \
+    src/cpp/server/server_credentials.cc \
     src/cpp/server/thread_pool.cc \
     src/cpp/stream/stream_context.cc \
     src/cpp/util/status.cc \
@@ -1079,12 +1081,13 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/completion_queue.h \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
+    include/grpc++/credentials.h \
     include/grpc++/server_builder.h \
+    include/grpc++/server_credentials.h \
     include/grpc++/server.h \
     include/grpc++/status.h \
     include/grpc++/stream_context_interface.h \
     include/grpc++/stream.h \
-    include/grpc++/thread_pool_interface.h \
 
 LIBGRPC++_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 LIBGRPC++_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC++_SRC))))
@@ -4434,7 +4437,10 @@ clean_sync_client_async_server_test:
 
 
 QPS_CLIENT_SRC = \
-    test/cpp/qps/qps_client.cc \
+    gens/test/cpp/interop/empty.pb.cc \
+    gens/test/cpp/interop/messages.pb.cc \
+    gens/test/cpp/interop/test.pb.cc \
+    test/cpp/qps/client.cc \
 
 QPS_CLIENT_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(QPS_CLIENT_SRC))))
 QPS_CLIENT_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(QPS_CLIENT_SRC))))
@@ -4445,10 +4451,10 @@ bins/qps_client: openssl_dep_error
 
 else
 
-bins/qps_client: $(QPS_CLIENT_OBJS) libs/libgrpc_test_util.a libs/libgrpc++.a libs/libgrpc.a libs/libgpr.a
+bins/qps_client: $(QPS_CLIENT_OBJS) libs/libgrpc++_test_util.a libs/libgrpc_test_util.a libs/libgrpc++.a libs/libgrpc.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_OBJS) $(GTEST_LIB) -Llibs -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/qps_client
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_OBJS) $(GTEST_LIB) -Llibs -lgrpc++_test_util -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/qps_client
 
 endif
 
@@ -4468,7 +4474,10 @@ clean_qps_client:
 
 
 QPS_SERVER_SRC = \
-    test/cpp/end2end/qps_server.cc \
+    gens/test/cpp/interop/empty.pb.cc \
+    gens/test/cpp/interop/messages.pb.cc \
+    gens/test/cpp/interop/test.pb.cc \
+    test/cpp/qps/server.cc \
 
 QPS_SERVER_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(QPS_SERVER_SRC))))
 QPS_SERVER_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(QPS_SERVER_SRC))))
@@ -4479,10 +4488,10 @@ bins/qps_server: openssl_dep_error
 
 else
 
-bins/qps_server: $(QPS_SERVER_OBJS) libs/libgrpc_test_util.a libs/libgrpc++.a libs/libgrpc.a libs/libgpr.a
+bins/qps_server: $(QPS_SERVER_OBJS) libs/libgrpc++_test_util.a libs/libgrpc_test_util.a libs/libgrpc++.a libs/libgrpc.a libs/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_OBJS) $(GTEST_LIB) -Llibs -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/qps_server
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_OBJS) $(GTEST_LIB) -Llibs -lgrpc++_test_util -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/qps_server
 
 endif
 
