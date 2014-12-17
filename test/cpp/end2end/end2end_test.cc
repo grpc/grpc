@@ -40,6 +40,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include <gtest/gtest.h>
@@ -55,14 +56,16 @@ namespace grpc {
 
 class TestServiceImpl : public TestService::Service {
  public:
-  Status Echo(const EchoRequest* request, EchoResponse* response) {
+  Status Echo(ServerContext* context, const EchoRequest* request,
+              EchoResponse* response) {
     response->set_message(request->message());
     return Status::OK;
   }
 
   // Unimplemented is left unimplemented to test the returned error.
 
-  Status RequestStream(ServerReader<EchoRequest>* reader,
+  Status RequestStream(ServerContext* context,
+                       ServerReader<EchoRequest>* reader,
                        EchoResponse* response) {
     EchoRequest request;
     response->set_message("");
@@ -74,7 +77,7 @@ class TestServiceImpl : public TestService::Service {
 
   // Return 3 messages.
   // TODO(yangg) make it generic by adding a parameter into EchoRequest
-  Status ResponseStream(const EchoRequest* request,
+  Status ResponseStream(ServerContext* context, const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) {
     EchoResponse response;
     response.set_message(request->message() + "0");
@@ -87,7 +90,8 @@ class TestServiceImpl : public TestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
+  Status BidiStream(ServerContext* context,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {

@@ -39,6 +39,7 @@
 #include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
 #include <grpc++/status.h>
 #include "test/cpp/interop/test.pb.h"
 
@@ -50,6 +51,7 @@ DEFINE_int32(port, 0, "Server port.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
+using grpc::ServerContext;
 using grpc::testing::Payload;
 using grpc::testing::PayloadType;
 using grpc::testing::SimpleRequest;
@@ -71,7 +73,8 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
 
 class TestServiceImpl : public TestService::Service {
  public:
-  Status UnaryCall(const SimpleRequest* request, SimpleResponse* response) {
+  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
+                   SimpleResponse* response) {
     if (request->has_response_size() && request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {

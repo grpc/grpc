@@ -31,36 +31,19 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_SERVER_SERVER_RPC_HANDLER_H__
-#define __GRPCPP_INTERNAL_SERVER_SERVER_RPC_HANDLER_H__
+#ifndef __GRPCPP_INTERNAL_SERVER_SERVER_CONTEXT_IMPL_H_
+#define __GRPCPP_INTERNAL_SERVER_SERVER_CONTEXT_IMPL_H_
 
-#include <memory>
-
-#include <grpc++/completion_queue.h>
-#include <grpc++/status.h>
+#include <grpc++/server_context.h>
 
 namespace grpc {
 
-class AsyncServerContext;
-class RpcServiceMethod;
-
-class ServerRpcHandler {
+class ServerContextImpl : public ServerContext {
  public:
-  // Takes ownership of async_server_context.
-  ServerRpcHandler(AsyncServerContext* async_server_context,
-                   RpcServiceMethod* method);
-
-  void StartRpc();
-
- private:
-  CompletionQueue::CompletionType WaitForNextEvent();
-  void FinishRpc(const Status& status);
-
-  std::unique_ptr<AsyncServerContext> async_server_context_;
-  RpcServiceMethod* method_;
-  CompletionQueue cq_;
+  ServerContextImpl();
+  ~ServerContextImpl() {}
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_SERVER_SERVER_RPC_HANDLER_H__
+#endif  // __GRPCPP_INTERNAL_SERVER_SERVER_CONTEXT_IMPL_H_

@@ -35,14 +35,15 @@
 
 #include <grpc/support/log.h>
 #include "src/cpp/server/rpc_service_method.h"
+#include "src/cpp/server/server_context_impl.h"
 #include "src/cpp/stream/stream_context.h"
 #include <grpc++/async_server_context.h>
 
 namespace grpc {
 
-ServerRpcHandler::ServerRpcHandler(AsyncServerContext* server_context,
+ServerRpcHandler::ServerRpcHandler(AsyncServerContext* async_server_context,
                                    RpcServiceMethod* method)
-    : server_context_(server_context), method_(method) {}
+    : async_server_context_(async_server_context), method_(method) {}
 
 void ServerRpcHandler::StartRpc() {
   if (method_ == nullptr) {
@@ -52,27 +53,29 @@ void ServerRpcHandler::StartRpc() {
     return;
   }
 
+  ServerContextImpl user_context;
+
   if (method_->method_type() == RpcMethod::NORMAL_RPC) {
     // Start the rpc on this dedicated completion queue.
-    server_context_->Accept(cq_.cq());
+    async_server_context_->Accept(cq_.cq());
 
     // Allocate request and response.
     std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
     std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
 
     // Read request
-    server_context_->StartRead(request.get());
+    async_server_context_->StartRead(request.get());
     auto type = WaitForNextEvent();
     GPR_ASSERT(type == CompletionQueue::SERVER_READ_OK);
 
     // Run the application's rpc handler
     MethodHandler* handler = method_->handler();
-    Status status = handler->RunHandler(
-        MethodHandler::HandlerParameter(request.get(), response.get()));
+    Status status = handler->RunHandler(MethodHandler::HandlerParameter(
+        &user_context, request.get(), response.get()));
 
     if (status.IsOk()) {
       // Send the response if we get an ok status.
-      server_context_->StartWrite(*response, 0);
+      async_server_context_->StartWrite(*response, 0);
       type = WaitForNextEvent();
       if (type != CompletionQueue::SERVER_WRITE_OK) {
         status = Status(StatusCode::INTERNAL, "Error writing response.");
@@ -86,13 +89,13 @@ void ServerRpcHandler::StartRpc() {
     std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
     std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
 
-    StreamContext stream_context(*method_, server_context_->call(), cq_.cq(),
-                                 request.get(), response.get());
+    StreamContext stream_context(*method_, async_server_context_->call(),
+                                 cq_.cq(), request.get(), response.get());
 
     // Run the application's rpc handler
     MethodHandler* handler = method_->handler();
     Status status = handler->RunHandler(MethodHandler::HandlerParameter(
-        request.get(), response.get(), &stream_context));
+        &user_context, request.get(), response.get(), &stream_context));
     if (status.IsOk() &&
         method_->method_type() == RpcMethod::CLIENT_STREAMING) {
       stream_context.Write(response.get(), false);
@@ -107,13 +110,14 @@ CompletionQueue::CompletionType ServerRpcHandler::WaitForNextEvent() {
   CompletionQueue::CompletionType type = cq_.Next(&tag);
   if (type != CompletionQueue::QUEUE_CLOSED &&
       type != CompletionQueue::RPC_END) {
-    GPR_ASSERT(static_cast<AsyncServerContext*>(tag) == server_context_.get());
+    GPR_ASSERT(static_cast<AsyncServerContext*>(tag) ==
+               async_server_context_.get());
   }
   return type;
 }
 
 void ServerRpcHandler::FinishRpc(const Status& status) {
-  server_context_->StartWriteStatus(status);
+  async_server_context_->StartWriteStatus(status);
   CompletionQueue::CompletionType type;
 
   // HALFCLOSE_OK and RPC_END events come in either order.

@@ -103,7 +103,8 @@ string GetHeaderIncludes(const google::protobuf::FileDescriptor* file) {
       "\n"
       "namespace grpc {\n"
       "class ChannelInterface;\n"
-      "class RpcService;\n";
+      "class RpcService;\n"
+      "class ServerContext;\n";
   if (HasClientOnlyStreaming(file)) {
     temp.append("template <class OutMessage> class ClientWriter;\n");
     temp.append("template <class InMessage> class ServerReader;\n");
@@ -170,20 +171,24 @@ void PrintHeaderServerMethod(google::protobuf::io::Printer* printer,
       grpc_cpp_generator::ClassName(method->output_type(), true);
   if (NoStreaming(method)) {
     printer->Print(*vars,
-                   "virtual ::grpc::Status $Method$(const $Request$* request, "
+                   "virtual ::grpc::Status $Method$("
+                   "::grpc::ServerContext* context, const $Request$* request, "
                    "$Response$* response);\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
                    "virtual ::grpc::Status $Method$("
+                   "::grpc::ServerContext* context, "
                    "::grpc::ServerReader<$Request$>* reader, "
                    "$Response$* response);\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
-                   "virtual ::grpc::Status $Method$(const $Request$* request, "
+                   "virtual ::grpc::Status $Method$("
+                   "::grpc::ServerContext* context, const $Request$* request, "
                    "::grpc::ServerWriter<$Response$>* writer);\n");
   } else if (BidiStreaming(method)) {
     printer->Print(*vars,
                    "virtual ::grpc::Status $Method$("
+                   "::grpc::ServerContext* context, "
                    "::grpc::ServerReaderWriter<$Response$, $Request$>* stream);"
                    "\n");
   }
@@ -313,6 +318,7 @@ void PrintSourceServerMethod(google::protobuf::io::Printer* printer,
   if (NoStreaming(method)) {
     printer->Print(*vars,
                    "::grpc::Status $Service$::Service::$Method$("
+                   "::grpc::ServerContext* context, "
                    "const $Request$* request, $Response$* response) {\n");
     printer->Print(
         "  return ::grpc::Status("
@@ -321,6 +327,7 @@ void PrintSourceServerMethod(google::protobuf::io::Printer* printer,
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
                    "::grpc::Status $Service$::Service::$Method$("
+                   "::grpc::ServerContext* context, "
                    "::grpc::ServerReader<$Request$>* reader, "
                    "$Response$* response) {\n");
     printer->Print(
@@ -330,6 +337,7 @@ void PrintSourceServerMethod(google::protobuf::io::Printer* printer,
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
                    "::grpc::Status $Service$::Service::$Method$("
+                   "::grpc::ServerContext* context, "
                    "const $Request$* request, "
                    "::grpc::ServerWriter<$Response$>* writer) {\n");
     printer->Print(
@@ -339,6 +347,7 @@ void PrintSourceServerMethod(google::protobuf::io::Printer* printer,
   } else if (BidiStreaming(method)) {
     printer->Print(*vars,
                    "::grpc::Status $Service$::Service::$Method$("
+                   "::grpc::ServerContext* context, "
                    "::grpc::ServerReaderWriter<$Response$, $Request$>* "
                    "stream) {\n");
     printer->Print(
@@ -392,7 +401,7 @@ void PrintSourceService(google::protobuf::io::Printer* printer,
           "    new ::grpc::RpcMethodHandler<$Service$::Service, $Request$, "
           "$Response$>(\n"
           "        std::function<::grpc::Status($Service$::Service*, "
-          "const $Request$*, $Response$*)>("
+          "::grpc::ServerContext*, const $Request$*, $Response$*)>("
           "&$Service$::Service::$Method$), this),\n"
           "    new $Request$, new $Response$));\n");
     } else if (ClientOnlyStreaming(method)) {
@@ -403,6 +412,7 @@ void PrintSourceService(google::protobuf::io::Printer* printer,
           "    new ::grpc::ClientStreamingHandler<"
           "$Service$::Service, $Request$, $Response$>(\n"
           "        std::function<::grpc::Status($Service$::Service*, "
+          "::grpc::ServerContext*, "
           "::grpc::ServerReader<$Request$>*, $Response$*)>("
           "&$Service$::Service::$Method$), this),\n"
           "    new $Request$, new $Response$));\n");
@@ -414,6 +424,7 @@ void PrintSourceService(google::protobuf::io::Printer* printer,
           "    new ::grpc::ServerStreamingHandler<"
           "$Service$::Service, $Request$, $Response$>(\n"
           "        std::function<::grpc::Status($Service$::Service*, "
+          "::grpc::ServerContext*, "
           "const $Request$*, ::grpc::ServerWriter<$Response$>*)>("
           "&$Service$::Service::$Method$), this),\n"
           "    new $Request$, new $Response$));\n");
@@ -425,6 +436,7 @@ void PrintSourceService(google::protobuf::io::Printer* printer,
           "    new ::grpc::BidiStreamingHandler<"
           "$Service$::Service, $Request$, $Response$>(\n"
           "        std::function<::grpc::Status($Service$::Service*, "
+          "::grpc::ServerContext*, "
           "::grpc::ServerReaderWriter<$Response$, $Request$>*)>("
           "&$Service$::Service::$Method$), this),\n"
           "    new $Request$, new $Response$));\n");
