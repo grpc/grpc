@@ -89,8 +89,10 @@ void StreamContext::Start(bool buffered) {
   } else {
     // TODO(yangg) metadata needs to be added before accept
     // TODO(yangg) correctly set flag to accept
-    grpc_call_error error = grpc_call_accept(call(), cq(), finished_tag(), 0);
-    GPR_ASSERT(GRPC_CALL_OK == error);
+    GPR_ASSERT(grpc_call_server_accept(call(), cq(), finished_tag()) ==
+               GRPC_CALL_OK);
+    GPR_ASSERT(grpc_call_server_end_initial_metadata(call(), 0) ==
+               GRPC_CALL_OK);
   }
 }
 

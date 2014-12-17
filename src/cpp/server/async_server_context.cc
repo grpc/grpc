@@ -54,7 +54,8 @@ AsyncServerContext::AsyncServerContext(
 AsyncServerContext::~AsyncServerContext() { grpc_call_destroy(call_); }
 
 void AsyncServerContext::Accept(grpc_completion_queue* cq) {
-  grpc_call_accept(call_, cq, this, 0);
+  GPR_ASSERT(grpc_call_server_accept(call_, cq, this) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_server_end_initial_metadata(call_, 0) == GRPC_CALL_OK);
 }
 
 bool AsyncServerContext::StartRead(google::protobuf::Message* request) {
