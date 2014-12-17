@@ -352,9 +352,9 @@
       "name": "grpc++_test_util",
       "build": "test",
       "src": [
-        "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/echo.proto",
-        "test/cpp/util/test_ssl_channel.cc"
+        "test/cpp/util/test_ssl_channel.cc",
+        "test/cpp/end2end/async_test_server.cc"
       ],
       "c++": true
     }

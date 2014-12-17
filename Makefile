@@ -1127,9 +1127,9 @@ clean_libgrpc++:
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
-    test/cpp/end2end/async_test_server.cc \
     gens/test/cpp/util/echo.pb.cc \
     test/cpp/util/test_ssl_channel.cc \
+    test/cpp/end2end/async_test_server.cc \
 
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
