@@ -35,7 +35,7 @@
 #define __GRPC_INTERNAL_SECURITY_SECURITY_CONTEXT_H__
 
 #include <grpc/grpc_security.h>
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/security/credentials.h"
 #include "src/core/tsi/transport_security_interface.h"
 

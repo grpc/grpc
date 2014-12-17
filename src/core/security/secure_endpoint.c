@@ -31,14 +31,14 @@
  *
  */
 
-#include "src/core/endpoint/secure_endpoint.h"
-#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/security/secure_endpoint.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
+#include <grpc/support/slice.h>
 #include <grpc/support/string.h>
 #include <grpc/support/sync.h>
+#include "src/core/tsi/transport_security_interface.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -67,7 +67,7 @@ typedef struct {
 static void secure_endpoint_ref(secure_endpoint *ep) { gpr_ref(&ep->ref); }
 
 static void destroy(secure_endpoint *secure_ep) {
-  secure_endpoint *ep = (secure_endpoint *)secure_ep;
+  secure_endpoint *ep = secure_ep;
   grpc_endpoint_destroy(ep->wrapped_ep);
   tsi_frame_protector_destroy(ep->protector);
   gpr_slice_buffer_destroy(&ep->leftover_bytes);

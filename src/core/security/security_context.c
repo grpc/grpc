@@ -35,15 +35,14 @@
 
 #include <string.h>
 
-#include "src/core/endpoint/secure_endpoint.h"
 #include "src/core/security/credentials.h"
+#include "src/core/security/secure_endpoint.h"
 #include "src/core/surface/lame_client.h"
 #include "src/core/transport/chttp2/alpn.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/string.h>
-
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
 

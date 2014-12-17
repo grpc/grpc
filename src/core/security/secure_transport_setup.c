@@ -35,7 +35,7 @@
 
 #include <string.h>
 
-#include "src/core/endpoint/secure_endpoint.h"
+#include "src/core/security/secure_endpoint.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>

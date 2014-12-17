@@ -46,7 +46,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
-#include "test/core/endpoint/endpoint_tests.h"
+#include "test/core/iomgr/endpoint_tests.h"
 
 /*
    General test notes:

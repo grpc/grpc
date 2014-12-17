@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 
 void grpc_endpoint_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
                                   void *user_data, gpr_timespec deadline) {

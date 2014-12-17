@@ -37,7 +37,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;

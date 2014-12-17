@@ -44,7 +44,7 @@
    otherwise specified.
 */
 
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/iomgr_libevent.h"
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192

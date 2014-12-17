@@ -43,7 +43,7 @@
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/channel/http_filter.h"
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/surface/channel.h"

@@ -73,6 +73,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\end2end\data\ca_cert.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\end2end\data\server1_cert.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\end2end\data\server1_key.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\iomgr\endpoint_tests.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\statistics\census_log_tests.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\transport\transport_end2end_tests.c">
+    </ClCompile>
     <ClCompile Include="..\..\test\core\util\grpc_profiler.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\ipv6_posix.c">
@@ -84,20 +98,6 @@
     <ClCompile Include="..\..\test\core\util\slice_splitter.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\test_config.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\end2end\data\server1_cert.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\end2end\data\server1_key.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\end2end\data\ca_cert.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\endpoint\endpoint_tests.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\transport\transport_end2end_tests.c">
-    </ClCompile>
-    <ClCompile Include="..\..\test\core\statistics\census_log_tests.c">
     </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

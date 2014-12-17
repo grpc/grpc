@@ -35,7 +35,7 @@
 
 #include <string.h>
 
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/httpcli/format_request.h"

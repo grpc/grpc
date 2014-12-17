@@ -117,21 +117,21 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\host_port.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\support\log.c">
+    <ClCompile Include="..\..\src\core\support\log_android.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\support\log_posix.c">
+    <ClCompile Include="..\..\src\core\support\log.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\log_linux.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\support\log_android.c">
+    <ClCompile Include="..\..\src\core\support\log_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\log_win32.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\murmur_hash.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\support\slice.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\support\slice_buffer.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\slice.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\string.c">
     </ClCompile>

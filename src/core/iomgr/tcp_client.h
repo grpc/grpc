@@ -34,7 +34,7 @@
 #ifndef __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__
 #define __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__
 
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/sockaddr.h"
 #include <grpc/support/time.h>
 

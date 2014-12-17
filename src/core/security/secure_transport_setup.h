@@ -34,7 +34,7 @@
 #ifndef __GRPC_INTERNAL_SECURITY_SECURE_TRANSPORT_SETUP_H__
 #define __GRPC_INTERNAL_SECURITY_SECURE_TRANSPORT_SETUP_H__
 
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/security/security_context.h"
 
 /* --- Secure transport setup --- */

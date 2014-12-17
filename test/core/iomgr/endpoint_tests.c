@@ -31,7 +31,7 @@
  *
  */
 
-#include "test/core/endpoint/endpoint_tests.h"
+#include "test/core/iomgr/endpoint_tests.h"
 
 #include <sys/types.h>
 

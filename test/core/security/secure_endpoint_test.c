@@ -31,14 +31,14 @@
  *
  */
 
-#include "endpoint_tests.h"
+#include "test/core/iomgr/endpoint_tests.h"
 
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "src/core/endpoint/secure_endpoint.h"
+#include "src/core/security/secure_endpoint.h"
 #include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/iomgr/iomgr.h"
 #include <grpc/support/alloc.h>

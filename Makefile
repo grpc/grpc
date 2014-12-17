@@ -791,14 +791,14 @@ LIBGPR_SRC = \
     src/core/support/cpu_posix.c \
     src/core/support/histogram.c \
     src/core/support/host_port.c \
-    src/core/support/log.c \
-    src/core/support/log_posix.c \
-    src/core/support/log_linux.c \
     src/core/support/log_android.c \
+    src/core/support/log.c \
+    src/core/support/log_linux.c \
+    src/core/support/log_posix.c \
     src/core/support/log_win32.c \
     src/core/support/murmur_hash.c \
-    src/core/support/slice.c \
     src/core/support/slice_buffer.c \
+    src/core/support/slice.c \
     src/core/support/string.c \
     src/core/support/string_posix.c \
     src/core/support/string_win32.c \
@@ -881,12 +881,11 @@ LIBGRPC_SRC = \
     src/core/channel/noop_filter.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
-    src/core/endpoint/endpoint.c \
-    src/core/endpoint/secure_endpoint.c \
     src/core/httpcli/format_request.c \
     src/core/httpcli/httpcli.c \
     src/core/httpcli/httpcli_security_context.c \
     src/core/httpcli/parser.c \
+    src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/iomgr_libevent.c \
     src/core/iomgr/iomgr_libevent_use_threads.c \
@@ -904,14 +903,15 @@ LIBGRPC_SRC = \
     src/core/security/credentials.c \
     src/core/security/google_root_certs.c \
     src/core/security/json_token.c \
+    src/core/security/secure_endpoint.c \
     src/core/security/secure_transport_setup.c \
     src/core/security/security_context.c \
     src/core/security/server_secure_chttp2.c \
     src/core/statistics/census_init.c \
+    src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
     src/core/statistics/census_tracing.c \
     src/core/statistics/hash_table.c \
-    src/core/statistics/census_log.c \
     src/core/statistics/window_stats.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_reader.c \
@@ -1004,19 +1004,19 @@ clean_libgrpc:
 
 
 LIBGRPC_TEST_UTIL_SRC = \
+    test/core/end2end/cq_verifier.c \
+    test/core/end2end/data/ca_cert.c \
+    test/core/end2end/data/server1_cert.c \
+    test/core/end2end/data/server1_key.c \
+    test/core/iomgr/endpoint_tests.c \
+    test/core/statistics/census_log_tests.c \
+    test/core/transport/transport_end2end_tests.c \
     test/core/util/grpc_profiler.c \
     test/core/util/ipv6_posix.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
     test/core/util/slice_splitter.c \
     test/core/util/test_config.c \
-    test/core/end2end/data/server1_cert.c \
-    test/core/end2end/data/server1_key.c \
-    test/core/end2end/data/ca_cert.c \
-    test/core/end2end/cq_verifier.c \
-    test/core/endpoint/endpoint_tests.c \
-    test/core/transport/transport_end2end_tests.c \
-    test/core/statistics/census_log_tests.c \
 
 
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
@@ -1054,37 +1054,37 @@ clean_libgrpc_test_util:
 
 
 LIBGRPC++_SRC = \
+    src/cpp/client/channel.cc \
+    src/cpp/client/client_context.cc \
+    src/cpp/client/create_channel.cc \
+    src/cpp/client/internal_stub.cc \
+    src/cpp/proto/proto_utils.cc \
+    src/cpp/rpc_method.cc \
+    src/cpp/server/async_server.cc \
+    src/cpp/server/async_server_context.cc \
+    src/cpp/server/completion_queue.cc \
+    src/cpp/server/server_builder.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_rpc_handler.cc \
     src/cpp/server/thread_pool.cc \
-    src/cpp/server/async_server_context.cc \
-    src/cpp/server/async_server.cc \
-    src/cpp/server/completion_queue.cc \
-    src/cpp/server/server_builder.cc \
     src/cpp/stream/stream_context.cc \
-    src/cpp/client/create_channel.cc \
-    src/cpp/client/channel.cc \
-    src/cpp/client/client_context.cc \
-    src/cpp/client/internal_stub.cc \
-    src/cpp/util/time.cc \
     src/cpp/util/status.cc \
-    src/cpp/proto/proto_utils.cc \
-    src/cpp/rpc_method.cc \
+    src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
-    include/grpc++/channel_interface.h \
+    include/grpc++/async_server_context.h \
     include/grpc++/async_server.h \
+    include/grpc++/channel_interface.h \
+    include/grpc++/client_context.h \
+    include/grpc++/completion_queue.h \
+    include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/server_builder.h \
-    include/grpc++/thread_pool_interface.h \
-    include/grpc++/stream_context_interface.h \
-    include/grpc++/status.h \
-    include/grpc++/config.h \
-    include/grpc++/completion_queue.h \
-    include/grpc++/stream.h \
-    include/grpc++/async_server_context.h \
     include/grpc++/server.h \
-    include/grpc++/client_context.h \
+    include/grpc++/status.h \
+    include/grpc++/stream_context_interface.h \
+    include/grpc++/stream.h \
+    include/grpc++/thread_pool_interface.h \
 
 LIBGRPC++_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 LIBGRPC++_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIBGRPC++_SRC))))
@@ -1124,9 +1124,9 @@ clean_libgrpc++:
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
-    test/cpp/util/test_ssl_channel.cc \
-    gens/test/cpp/util/echo.pb.cc \
     test/cpp/end2end/async_test_server.cc \
+    gens/test/cpp/util/echo.pb.cc \
+    test/cpp/util/test_ssl_channel.cc \
 
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
@@ -2007,12 +2007,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/noop_filter.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
-    src/core/endpoint/endpoint.c \
-    src/core/endpoint/secure_endpoint.c \
     src/core/httpcli/format_request.c \
     src/core/httpcli/httpcli.c \
     src/core/httpcli/httpcli_security_context.c \
     src/core/httpcli/parser.c \
+    src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/iomgr_libevent.c \
     src/core/iomgr/iomgr_libevent_use_threads.c \
@@ -2026,10 +2025,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/tcp_server_posix.c \
     src/core/iomgr/time_averaged_stats.c \
     src/core/statistics/census_init.c \
+    src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
     src/core/statistics/census_tracing.c \
     src/core/statistics/hash_table.c \
-    src/core/statistics/census_log.c \
     src/core/statistics/window_stats.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_reader.c \
@@ -3959,7 +3958,7 @@ clean_bin_encoder_test:
 
 
 SECURE_ENDPOINT_TEST_SRC = \
-    test/core/endpoint/secure_endpoint_test.c \
+    test/core/security/secure_endpoint_test.c \
 
 SECURE_ENDPOINT_TEST_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(SECURE_ENDPOINT_TEST_SRC))))
 SECURE_ENDPOINT_TEST_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(SECURE_ENDPOINT_TEST_SRC))))

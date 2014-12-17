@@ -34,7 +34,7 @@
 #ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
 #define __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__
 
-#include "src/core/endpoint/endpoint.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/transport.h"
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,

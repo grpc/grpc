@@ -31,17 +31,27 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_ENDPOINT_SECURE_ENDPOINT_H__
-#define __GRPC_INTERNAL_ENDPOINT_SECURE_ENDPOINT_H__
+#ifndef __GRPC_TEST_ENDPOINT_ENDPOINT_TESTS_H__
+#define __GRPC_TEST_ENDPOINT_ENDPOINT_TESTS_H__
 
-#include <grpc/support/slice.h>
-#include "src/core/endpoint/endpoint.h"
+#include <sys/types.h>
 
-struct tsi_frame_protector;
+#include "src/core/iomgr/endpoint.h"
 
-/* Takes ownership of protector and to_wrap, and refs leftover_slices. */
-grpc_endpoint *grpc_secure_endpoint_create(
-    struct tsi_frame_protector *protector, grpc_endpoint *to_wrap,
-    gpr_slice *leftover_slices, size_t leftover_nslices);
+typedef struct grpc_endpoint_test_config grpc_endpoint_test_config;
+typedef struct grpc_endpoint_test_fixture grpc_endpoint_test_fixture;
 
-#endif  /* __GRPC_INTERNAL_ENDPOINT_SECURE_ENDPOINT_H__ */
+struct grpc_endpoint_test_fixture {
+  grpc_endpoint *client_ep;
+  grpc_endpoint *server_ep;
+};
+
+struct grpc_endpoint_test_config {
+  const char *name;
+  grpc_endpoint_test_fixture (*create_fixture)(size_t slice_size);
+  void (*clean_up)();
+};
+
+void grpc_endpoint_tests(grpc_endpoint_test_config config);
+
+#endif  /* __GRPC_TEST_ENDPOINT_ENDPOINT_TESTS_H__ */

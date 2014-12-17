@@ -94,12 +94,12 @@
     <ClInclude Include="..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\src\core\compression\algorithm.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
-    <ClInclude Include="..\..\src\core\endpoint\endpoint.h" />
     <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
     <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
     <ClInclude Include="..\..\src\core\httpcli\httpcli_security_context.h" />
     <ClInclude Include="..\..\src\core\httpcli\parser.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />
+    <ClInclude Include="..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint_pair.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_completion_queue_interface.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr.h" />
@@ -122,9 +122,9 @@
     <ClInclude Include="..\..\src\core\security\secure_transport_setup.h" />
     <ClInclude Include="..\..\src\core\security\security_context.h" />
     <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
+    <ClInclude Include="..\..\src\core\statistics\census_log.h" />
     <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\src\core\statistics\hash_table.h" />
-    <ClInclude Include="..\..\src\core\statistics\census_log.h" />
     <ClInclude Include="..\..\src\core\statistics\window_stats.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
@@ -193,10 +193,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\compression\message_compress.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\endpoint\endpoint.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\endpoint\secure_endpoint.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\format_request.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
@@ -204,6 +200,8 @@
     <ClCompile Include="..\..\src\core\httpcli\httpcli_security_context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\parser.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\endpoint.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\endpoint_pair_posix.c">
     </ClCompile>
@@ -239,6 +237,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\secure_endpoint.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\secure_transport_setup.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\security_context.c">
@@ -247,13 +247,13 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\statistics\census_log.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_rpc_stats.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_tracing.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\hash_table.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\statistics\census_log.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\window_stats.c">
     </ClCompile>
