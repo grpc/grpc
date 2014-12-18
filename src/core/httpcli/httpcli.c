@@ -62,6 +62,9 @@ typedef struct {
   void *user_data;
 } internal_request;
 
+static grpc_httpcli_get_override g_get_override = NULL;
+static grpc_httpcli_post_override g_post_override = NULL;
+
 static void next_address(internal_request *req);
 
 static void finish(internal_request *req, int success) {
@@ -217,7 +220,12 @@ static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
 void grpc_httpcli_get(const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data) {
-  internal_request *req = gpr_malloc(sizeof(internal_request));
+  internal_request *req;
+  if (g_get_override &&
+      g_get_override(request, deadline, on_response, user_data)) {
+    return;
+  }
+  req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
   req->request_text = grpc_httpcli_format_get_request(request);
   grpc_httpcli_parser_init(&req->parser);
@@ -237,7 +245,12 @@ void grpc_httpcli_post(const grpc_httpcli_request *request,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data) {
-  internal_request *req = gpr_malloc(sizeof(internal_request));
+  internal_request *req;
+  if (g_post_override && g_post_override(request, body_bytes, body_size,
+                                         deadline, on_response, user_data)) {
+    return;
+  }
+  req = gpr_malloc(sizeof(internal_request));
   memset(req, 0, sizeof(*req));
   req->request_text =
       grpc_httpcli_format_post_request(request, body_bytes, body_size);
@@ -252,4 +265,10 @@ void grpc_httpcli_post(const grpc_httpcli_request *request,
 
   grpc_resolve_address(request->host, req->use_ssl ? "https" : "http",
                        on_resolved, req);
+}
+
+void grpc_httpcli_set_override(grpc_httpcli_get_override get,
+                               grpc_httpcli_post_override post) {
+  g_get_override = get;
+  g_post_override = post;
 }
