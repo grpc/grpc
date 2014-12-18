@@ -47,6 +47,12 @@ extern VALUE rb_mGoogleRpcCore;
 /* Class used to wrap timeval structs. */
 extern VALUE rb_cTimeVal;
 
+/* rb_sNewServerRpc is the struct that holds new server rpc details. */
+extern VALUE rb_sNewServerRpc;
+
+/* rb_sStruct is the struct that holds status details. */
+extern VALUE rb_sStatus;
+
 /* GC_NOT_MARKED is used in calls to Data_Wrap_Struct to indicate that the
    wrapped struct does not need to participate in ruby gc. */
 extern const RUBY_DATA_FUNC GC_NOT_MARKED;

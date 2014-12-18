@@ -217,18 +217,13 @@ module Google::RPC
         next if ev.nil?
         if ev.type != SERVER_RPC_NEW
           logger.warn("bad evt: got:#{ev.type}, want:#{SERVER_RPC_NEW}")
+          ev.close
           next
         end
         c = new_active_server_call(ev.call, ev.result)
         if !c.nil?
           mth = ev.result.method.to_sym
-
-          # NOTE(temiola): This is necessary to allow the C call struct wrapped
-          # within the active_call created by the event to be GCed; this is
-          # necessary so that other C-level destructors get called in the
-          # required order.
-          ev = nil
-
+          ev.close
           @pool.schedule(c) do |call|
             rpc_descs[mth].run_server_method(call, rpc_handlers[mth])
           end

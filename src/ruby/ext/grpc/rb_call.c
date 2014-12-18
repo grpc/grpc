@@ -38,7 +38,6 @@
 #include <grpc/grpc.h>
 #include "rb_byte_buffer.h"
 #include "rb_completion_queue.h"
-#include "rb_event.h"
 #include "rb_metadata.h"
 #include "rb_grpc.h"
 

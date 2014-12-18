@@ -73,6 +73,7 @@ module Google::RPC
       # wait for the invocation to be accepted
       ev = q.pluck(invoke_accepted, INFINITE_FUTURE)
       raise OutOfTime if ev.nil?
+      ev.close
 
       [finished_tag, client_metadata_read]
     end
@@ -191,11 +192,17 @@ module Google::RPC
     def writes_done(assert_finished=true)
       @call.writes_done(self)
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev, FINISH_ACCEPTED)
-      logger.debug("Writes done: waiting for finish? #{assert_finished}")
+      begin
+        assert_event_type(ev, FINISH_ACCEPTED)
+        logger.debug("Writes done: waiting for finish? #{assert_finished}")
+      ensure
+        ev.close
+      end
+
       if assert_finished
         ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
         raise "unexpected event: #{ev.inspect}" if ev.nil?
+        ev.close
         return @call.status
       end
     end
@@ -206,22 +213,21 @@ module Google::RPC
     # event.
     def finished
       ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
-      raise "unexpected event: #{ev.inspect}" unless ev.type == FINISHED
-      if @call.metadata.nil?
-        @call.metadata = ev.result.metadata
-      else
-        @call.metadata.merge!(ev.result.metadata)
-      end
+      begin
+        raise "unexpected event: #{ev.inspect}" unless ev.type == FINISHED
+        if @call.metadata.nil?
+          @call.metadata = ev.result.metadata
+        else
+          @call.metadata.merge!(ev.result.metadata)
+        end
 
-      if ev.result.code != Core::StatusCodes::OK
-        raise BadStatus.new(ev.result.code, ev.result.details)
+        if ev.result.code != Core::StatusCodes::OK
+          raise BadStatus.new(ev.result.code, ev.result.details)
+        end
+        res = ev.result
+      ensure
+        ev.close
       end
-      res = ev.result
-
-      # NOTE(temiola): This is necessary to allow the C call struct wrapped
-      # within the active_call to be GCed; this is necessary so that other
-      # C-level destructors get called in the required order.
-      ev = nil  # allow the event to be GCed
       res
     end
 
@@ -246,8 +252,11 @@ module Google::RPC
       # call queue#pluck, and wait for WRITE_ACCEPTED, so as not to return
       # until the flow control allows another send on this call.
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev, WRITE_ACCEPTED)
-      ev = nil
+      begin
+        assert_event_type(ev, WRITE_ACCEPTED)
+      ensure
+        ev.close
+      end
     end
 
     # send_status sends a status to the remote endpoint
@@ -260,7 +269,11 @@ module Google::RPC
       assert_queue_is_ready
       @call.start_write_status(code, details, self)
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev, FINISH_ACCEPTED)
+      begin
+        assert_event_type(ev, FINISH_ACCEPTED)
+      ensure
+        ev.close
+      end
       logger.debug("Status sent: #{code}:'#{details}'")
       if assert_finished
         return finished
@@ -283,13 +296,17 @@ module Google::RPC
 
       @call.start_read(self)
       ev = @cq.pluck(self, INFINITE_FUTURE)
-      assert_event_type(ev, READ)
-      logger.debug("received req: #{ev.result.inspect}")
-      if !ev.result.nil?
-        logger.debug("received req.to_s: #{ev.result.to_s}")
-        res = @unmarshal.call(ev.result.to_s)
-        logger.debug("received_req (unmarshalled): #{res.inspect}")
-        return res
+      begin
+        assert_event_type(ev, READ)
+        logger.debug("received req: #{ev.result.inspect}")
+        if !ev.result.nil?
+          logger.debug("received req.to_s: #{ev.result.to_s}")
+          res = @unmarshal.call(ev.result.to_s)
+          logger.debug("received_req (unmarshalled): #{res.inspect}")
+          return res
+        end
+      ensure
+        ev.close
       end
       logger.debug('found nil; the final response has been sent')
       nil
@@ -515,12 +532,15 @@ module Google::RPC
     # confirms that no events are enqueued, and that the queue is not
     # shutdown.
     def assert_queue_is_ready
+      ev = nil
       begin
         ev = @cq.pluck(self, ZERO)
         raise "unexpected event #{ev.inspect}" unless ev.nil?
       rescue OutOfTime
         # expected, nothing should be on the queue and the deadline was ZERO,
         # except things using another tag
+      ensure
+        ev.close unless ev.nil?
       end
     end
 

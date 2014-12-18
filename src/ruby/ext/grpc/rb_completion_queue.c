@@ -141,8 +141,7 @@ static VALUE grpc_rb_completion_queue_next(VALUE self, VALUE timeout) {
   if (next_call.event == NULL) {
     return Qnil;
   }
-  return Data_Wrap_Struct(rb_cEvent, GC_NOT_MARKED, grpc_rb_event_finish,
-                          next_call.event);
+  return grpc_rb_new_event(next_call.event);
 }
 
 /* Blocks until the next event for given tag is available, and returns the
@@ -160,8 +159,7 @@ static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
   if (next_call.event == NULL) {
     return Qnil;
   }
-  return Data_Wrap_Struct(rb_cEvent, GC_NOT_MARKED, grpc_rb_event_finish,
-                          next_call.event);
+  return grpc_rb_new_event(next_call.event);
 }
 
 /* rb_cCompletionQueue is the ruby class that proxies grpc_completion_queue. */

@@ -149,15 +149,27 @@ module Google::RPC
             payload = @marshal.call(req)
             @call.start_write(Core::ByteBuffer.new(payload), write_tag)
             ev = @cq.pluck(write_tag, INFINITE_FUTURE)
-            assert_event_type(ev, WRITE_ACCEPTED)
+            begin
+              assert_event_type(ev, WRITE_ACCEPTED)
+            ensure
+              ev.close
+            end
           end
           if is_client
             @call.writes_done(write_tag)
             ev = @cq.pluck(write_tag, INFINITE_FUTURE)
-            assert_event_type(ev, FINISH_ACCEPTED)
+            begin
+              assert_event_type(ev, FINISH_ACCEPTED)
+            ensure
+              ev.close
+            end
             logger.debug("bidi-client: sent #{count} reqs, waiting to finish")
             ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
-            assert_event_type(ev, FINISHED)
+            begin
+              assert_event_type(ev, FINISHED)
+            ensure
+              ev.close
+            end
             logger.debug('bidi-client: finished received')
           end
         rescue StandardError => e
@@ -180,19 +192,23 @@ module Google::RPC
             count += 1
             @call.start_read(read_tag)
             ev = @cq.pluck(read_tag, INFINITE_FUTURE)
-            assert_event_type(ev, READ)
+            begin
+              assert_event_type(ev, READ)
 
-            # handle the next event.
-            if ev.result.nil?
-              @readq.push(END_OF_READS)
-              logger.debug('done reading!')
-              break
+              # handle the next event.
+              if ev.result.nil?
+                @readq.push(END_OF_READS)
+                logger.debug('done reading!')
+                break
+              end
+
+              # push the latest read onto the queue and continue reading
+              logger.debug("received req.to_s: #{ev.result.to_s}")
+              res = @unmarshal.call(ev.result.to_s)
+              @readq.push(res)
+            ensure
+              ev.close
             end
-
-            # push the latest read onto the queue and continue reading
-            logger.debug("received req.to_s: #{ev.result.to_s}")
-            res = @unmarshal.call(ev.result.to_s)
-            @readq.push(res)
           end
 
         rescue StandardError => e

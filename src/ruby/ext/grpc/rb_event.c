@@ -41,12 +41,49 @@
 #include "rb_call.h"
 #include "rb_metadata.h"
 
+/* grpc_rb_event wraps a grpc_event.  It provides a peer ruby object,
+ * 'mark' to minimize copying when an event is created from ruby. */
+typedef struct grpc_rb_event {
+  /* Holder of ruby objects involved in constructing the channel */
+  VALUE mark;
+  /* The actual event */
+  grpc_event *wrapped;
+} grpc_rb_event;
+
+
 /* rb_mCompletionType is a ruby module that holds the completion type values */
 VALUE rb_mCompletionType = Qnil;
 
-/* Helper function to free an event. */
-void grpc_rb_event_finish(void *p) {
-  grpc_event_finish(p);
+/* Destroys Event instances. */
+static void grpc_rb_event_free(void *p) {
+  grpc_rb_event *ev = NULL;
+  if (p == NULL) {
+    return;
+  };
+  ev = (grpc_rb_event *)p;
+
+  /* Deletes the wrapped object if the mark object is Qnil, which indicates
+   * that no other object is the actual owner. */
+  if (ev->wrapped != NULL && ev->mark == Qnil) {
+    grpc_event_finish(ev->wrapped);
+    rb_warning("event gc: destroyed the c event");
+  } else {
+    rb_warning("event gc: did not destroy the c event");
+  }
+
+  xfree(p);
+}
+
+/* Protects the mark object from GC */
+static void grpc_rb_event_mark(void *p) {
+  grpc_rb_event *event = NULL;
+  if (p == NULL) {
+    return;
+  }
+  event = (grpc_rb_event *)p;
+  if (event->mark != Qnil) {
+    rb_gc_mark(event->mark);
+  }
 }
 
 static VALUE grpc_rb_event_result(VALUE self);
@@ -54,7 +91,14 @@ static VALUE grpc_rb_event_result(VALUE self);
 /* Obtains the type of an event. */
 static VALUE grpc_rb_event_type(VALUE self) {
   grpc_event *event = NULL;
-  Data_Get_Struct(self, grpc_event, event);
+  grpc_rb_event *wrapper = NULL;
+  Data_Get_Struct(self, grpc_rb_event, wrapper);
+  if (wrapper->wrapped == NULL) {
+    rb_raise(rb_eRuntimeError, "finished!");
+    return Qnil;
+  }
+
+  event = wrapper->wrapped;
   switch (event->type) {
     case GRPC_QUEUE_SHUTDOWN:
       return rb_const_get(rb_mCompletionType, rb_intern("QUEUE_SHUTDOWN"));
@@ -94,7 +138,14 @@ static VALUE grpc_rb_event_type(VALUE self) {
 /* Obtains the tag associated with an event. */
 static VALUE grpc_rb_event_tag(VALUE self) {
   grpc_event *event = NULL;
-  Data_Get_Struct(self, grpc_event, event);
+  grpc_rb_event *wrapper = NULL;
+  Data_Get_Struct(self, grpc_rb_event, wrapper);
+  if (wrapper->wrapped == NULL) {
+    rb_raise(rb_eRuntimeError, "finished!");
+    return Qnil;
+  }
+
+  event = wrapper->wrapped;
   if (event->tag == NULL) {
     return Qnil;
   }
@@ -103,10 +154,17 @@ static VALUE grpc_rb_event_tag(VALUE self) {
 
 /* Obtains the call associated with an event. */
 static VALUE grpc_rb_event_call(VALUE self) {
-  grpc_event *ev = NULL;
-  Data_Get_Struct(self, grpc_event, ev);
-  if (ev->call != NULL) {
-    return grpc_rb_wrap_call(ev->call);
+  grpc_event *event = NULL;
+  grpc_rb_event *wrapper = NULL;
+  Data_Get_Struct(self, grpc_rb_event, wrapper);
+  if (wrapper->wrapped == NULL) {
+    rb_raise(rb_eRuntimeError, "finished!");
+    return Qnil;
+  }
+
+  event = wrapper->wrapped;
+  if (event->call != NULL) {
+    return grpc_rb_wrap_call(event->call);
   }
   return Qnil;
 }
@@ -114,6 +172,7 @@ static VALUE grpc_rb_event_call(VALUE self) {
 /* Obtains the metadata associated with an event. */
 static VALUE grpc_rb_event_metadata(VALUE self) {
   grpc_event *event = NULL;
+  grpc_rb_event *wrapper = NULL;
   grpc_metadata *metadata = NULL;
   VALUE key = Qnil;
   VALUE new_ary = Qnil;
@@ -121,9 +180,14 @@ static VALUE grpc_rb_event_metadata(VALUE self) {
   VALUE value = Qnil;
   size_t count = 0;
   size_t i = 0;
+  Data_Get_Struct(self, grpc_rb_event, wrapper);
+  if (wrapper->wrapped == NULL) {
+    rb_raise(rb_eRuntimeError, "finished!");
+    return Qnil;
+  }
 
   /* Figure out which metadata to read. */
-  Data_Get_Struct(self, grpc_event, event);
+  event = wrapper->wrapped;
   switch (event->type) {
 
     case GRPC_CLIENT_METADATA_READ:
@@ -179,7 +243,13 @@ static VALUE grpc_rb_event_metadata(VALUE self) {
 /* Obtains the data associated with an event. */
 static VALUE grpc_rb_event_result(VALUE self) {
   grpc_event *event = NULL;
-  Data_Get_Struct(self, grpc_event, event);
+  grpc_rb_event *wrapper = NULL;
+  Data_Get_Struct(self, grpc_rb_event, wrapper);
+  if (wrapper->wrapped == NULL) {
+    rb_raise(rb_eRuntimeError, "finished!");
+    return Qnil;
+  }
+  event = wrapper->wrapped;
 
   switch (event->type) {
 
@@ -245,11 +315,19 @@ static VALUE grpc_rb_event_result(VALUE self) {
   return Qfalse;
 }
 
-/* rb_sNewServerRpc is the struct that holds new server rpc details. */
-VALUE rb_sNewServerRpc = Qnil;
-
-/* rb_sStatus is the struct that holds status details. */
-VALUE rb_sStatus = Qnil;
+static VALUE grpc_rb_event_finish(VALUE self) {
+  grpc_event *event = NULL;
+  grpc_rb_event *wrapper = NULL;
+  Data_Get_Struct(self, grpc_rb_event, wrapper);
+  if (wrapper->wrapped == NULL) {  /* already closed  */
+    return Qnil;
+  }
+  event = wrapper->wrapped;
+  grpc_event_finish(event);
+  wrapper->wrapped = NULL;
+  wrapper->mark = Qnil;
+  return Qnil;
+}
 
 /* rb_cEvent is the Event class whose instances proxy grpc_event */
 VALUE rb_cEvent = Qnil;
@@ -262,9 +340,6 @@ void Init_google_rpc_event() {
   rb_eEventError = rb_define_class_under(rb_mGoogleRpcCore, "EventError",
                                          rb_eStandardError);
   rb_cEvent = rb_define_class_under(rb_mGoogleRpcCore, "Event", rb_cObject);
-  rb_sNewServerRpc = rb_struct_define("NewServerRpc", "method", "host",
-                                      "deadline", "metadata", NULL);
-  rb_sStatus = rb_struct_define("Status", "code", "details", "metadata", NULL);
 
   /* Prevent allocation or inialization from ruby. */
   rb_define_alloc_func(rb_cEvent, grpc_rb_cannot_alloc);
@@ -276,6 +351,8 @@ void Init_google_rpc_event() {
   rb_define_method(rb_cEvent, "result", grpc_rb_event_result, 0);
   rb_define_method(rb_cEvent, "tag", grpc_rb_event_tag, 0);
   rb_define_method(rb_cEvent, "type", grpc_rb_event_type, 0);
+  rb_define_method(rb_cEvent, "finish", grpc_rb_event_finish, 0);
+  rb_define_alias(rb_cEvent, "close", "finish");
 
   /* Constants representing the completion types */
   rb_mCompletionType = rb_define_module_under(rb_mGoogleRpcCore,
@@ -297,4 +374,12 @@ void Init_google_rpc_event() {
                   INT2NUM(GRPC_SERVER_RPC_NEW));
   rb_define_const(rb_mCompletionType, "RESERVED",
                   INT2NUM(GRPC_COMPLETION_DO_NOT_USE));
+}
+
+VALUE grpc_rb_new_event(grpc_event *ev) {
+  grpc_rb_event *wrapper = ALLOC(grpc_rb_event);
+  wrapper->wrapped = ev;
+  wrapper->mark = Qnil;
+  return Data_Wrap_Struct(rb_cEvent, grpc_rb_event_mark, grpc_rb_event_free,
+                          wrapper);
 }

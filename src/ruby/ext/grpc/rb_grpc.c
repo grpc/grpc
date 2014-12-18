@@ -245,16 +245,27 @@ void grpc_rb_shutdown(void *vm) {
   grpc_shutdown();
 }
 
+/* Initialize the Google RPC module structs */
+
+/* rb_sNewServerRpc is the struct that holds new server rpc details. */
+VALUE rb_sNewServerRpc = Qnil;
+/* rb_sStatus is the struct that holds status details. */
+VALUE rb_sStatus = Qnil;
+
 /* Initialize the Google RPC module. */
 VALUE rb_mGoogle = Qnil;
 VALUE rb_mGoogleRPC = Qnil;
 VALUE rb_mGoogleRpcCore = Qnil;
+
 void Init_grpc() {
   grpc_init();
   ruby_vm_at_exit(grpc_rb_shutdown);
   rb_mGoogle = rb_define_module("Google");
   rb_mGoogleRPC = rb_define_module_under(rb_mGoogle, "RPC");
   rb_mGoogleRpcCore = rb_define_module_under(rb_mGoogleRPC, "Core");
+  rb_sNewServerRpc = rb_struct_define("NewServerRpc", "method", "host",
+                                      "deadline", "metadata", NULL);
+  rb_sStatus = rb_struct_define("Status", "code", "details", "metadata", NULL);
 
   Init_google_rpc_byte_buffer();
   Init_google_rpc_event();

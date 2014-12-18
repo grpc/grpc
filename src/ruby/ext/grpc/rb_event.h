@@ -35,12 +35,7 @@
 #define GRPC_RB_EVENT_H_
 
 #include <ruby.h>
-
-/* rb_sNewServerRpc is the struct that holds new server rpc details. */
-extern VALUE rb_sNewServerRpc;
-
-/* rb_sStruct is the struct that holds status details. */
-extern VALUE rb_sStatus;
+#include <grpc/grpc.h>
 
 /* rb_cEvent is the Event class whose instances proxy grpc_event. */
 extern VALUE rb_cEvent;
@@ -49,8 +44,8 @@ extern VALUE rb_cEvent;
    event processing. */
 extern VALUE rb_eEventError;
 
-/* Helper function to free an event. */
-void grpc_rb_event_finish(void *p);
+/* Used to create new ruby event objects */
+VALUE grpc_rb_new_event(grpc_event *ev);
 
 /* Initializes the Event and EventError classes. */
 void Init_google_rpc_event();
