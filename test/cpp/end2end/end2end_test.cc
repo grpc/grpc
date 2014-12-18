@@ -157,6 +157,27 @@ TEST_F(End2endTest, MultipleRpcs) {
   }
 }
 
+// Set a 10us deadline and make sure proper error is returned.
+TEST_F(End2endTest, RpcDeadlineExpires) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::microseconds(10);
+  context.set_absolute_deadline(deadline);
+  Status s = stub->Echo(&context, request, &response);
+  // TODO(yangg) use correct error code when b/18793983 is fixed.
+  // EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.code());
+  EXPECT_EQ(StatusCode::CANCELLED, s.code());
+
+  delete stub;
+}
+
 TEST_F(End2endTest, UnimplementedRpc) {
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str());
