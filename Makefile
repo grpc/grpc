@@ -1013,7 +1013,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/statistics/census_log_tests.c \
     test/core/transport/transport_end2end_tests.c \
     test/core/util/grpc_profiler.c \
-    test/core/util/ipv6_posix.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
     test/core/util/slice_splitter.c \

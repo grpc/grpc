@@ -40,11 +40,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
-#include "test/core/util/ipv6.h"
 #include "test/core/util/port.h"
 
 int test_client(const char *root, const char *host, int port) {

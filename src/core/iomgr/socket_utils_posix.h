@@ -53,6 +53,16 @@ int grpc_set_socket_reuse_addr(int fd, int reuse);
 /* disable nagle */
 int grpc_set_socket_low_latency(int fd, int low_latency);
 
+/* Returns true if this system can create AF_INET6 sockets bound to ::1.
+   The value is probed once, and cached for the life of the process.
+
+   This is more restrictive than checking for socket(AF_INET6) to succeed,
+   because Linux with "net.ipv6.conf.all.disable_ipv6 = 1" is able to create
+   and bind IPv6 sockets, but cannot connect to a getsockname() of [::]:port
+   without a valid loopback interface.  Rather than expose this half-broken
+   state to library users, we turn off IPv6 sockets. */
+int grpc_ipv6_loopback_available();
+
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
    Currently, this information is only used when a socket is first created, but

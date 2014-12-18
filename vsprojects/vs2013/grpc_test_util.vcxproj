@@ -89,8 +89,6 @@
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\grpc_profiler.c">
     </ClCompile>
-    <ClCompile Include="..\..\test\core\util\ipv6_posix.c">
-    </ClCompile>
     <ClCompile Include="..\..\test\core\util\parse_hexstring.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\port_posix.c">

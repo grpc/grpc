@@ -50,6 +50,7 @@
 #include <grpc/support/string.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 
 /* set a socket to non blocking mode */
 int grpc_set_socket_nonblocking(int fd, int non_blocking) {
@@ -111,6 +112,34 @@ int grpc_set_socket_low_latency(int fd, int low_latency) {
          newval == val;
 }
 
+static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
+static int g_ipv6_loopback_available;
+
+static void probe_ipv6_once() {
+  int fd = socket(AF_INET6, SOCK_STREAM, 0);
+  g_ipv6_loopback_available = 0;
+  if (fd < 0) {
+    gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+  } else {
+    struct sockaddr_in6 addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin6_family = AF_INET6;
+    addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
+    if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
+      g_ipv6_loopback_available = 1;
+    } else {
+      gpr_log(GPR_INFO,
+              "Disabling AF_INET6 sockets because ::1 is not available.");
+    }
+    close(fd);
+  }
+}
+
+int grpc_ipv6_loopback_available() {
+  gpr_once_init(&g_probe_ipv6_once, probe_ipv6_once);
+  return g_ipv6_loopback_available;
+}
+
 /* This should be 0 in production, but it may be enabled for testing or
    debugging purposes, to simulate an environment where IPv6 sockets can't
    also speak IPv4. */
@@ -132,7 +161,13 @@ int grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
                                  int protocol, grpc_dualstack_mode *dsmode) {
   int family = addr->sa_family;
   if (family == AF_INET6) {
-    int fd = socket(family, type, protocol);
+    int fd;
+    if (grpc_ipv6_loopback_available()) {
+      fd = socket(family, type, protocol);
+    } else {
+      fd = -1;
+      errno = EAFNOSUPPORT;
+    }
     /* Check if we've got a valid dualstack socket. */
     if (fd >= 0 && set_socket_dualstack(fd)) {
       *dsmode = GRPC_DSMODE_DUALSTACK;

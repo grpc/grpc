@@ -37,7 +37,6 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/ipv6.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
