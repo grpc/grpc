@@ -78,10 +78,8 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
                                  const google::protobuf::Message& request,
                                  google::protobuf::Message* result) {
   Status status;
-  grpc_call* call =
-      grpc_channel_create_call(c_channel_, method.name(),
-                               // FIXME(yangg)
-                               "localhost", context->RawDeadline());
+  grpc_call* call = grpc_channel_create_call(
+      c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
   grpc_event* ev;
   void* finished_tag = reinterpret_cast<char*>(call);

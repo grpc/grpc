@@ -90,7 +90,6 @@ void AsyncTestServer::MainLoop() {
         gpr_log(GPR_INFO, "SERVER_RPC_NEW %p", server_context);
         if (server_context) {
           EXPECT_EQ(server_context->method(), "/foo");
-          EXPECT_EQ(server_context->host(), "localhost");
           // TODO(ctiller): verify deadline
           server_context->Accept(cq_.cq());
           // Handle only one rpc at a time.
