@@ -1066,6 +1066,7 @@ LIBGRPC++_SRC = \
     src/cpp/server/async_server_context.cc \
     src/cpp/server/completion_queue.cc \
     src/cpp/server/server_builder.cc \
+    src/cpp/server/server_context_impl.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_rpc_handler.cc \
     src/cpp/server/server_credentials.cc \
@@ -1084,6 +1085,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
     include/grpc++/server_builder.h \
+    include/grpc++/server_context.h \
     include/grpc++/server_credentials.h \
     include/grpc++/server.h \
     include/grpc++/status.h \
