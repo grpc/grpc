@@ -98,6 +98,7 @@ struct call_data {
       void (*on_complete)(void *user_data, grpc_op_error error);
       void *on_complete_user_data;
       gpr_uint32 start_flags;
+      grpc_pollset *pollset;
     } waiting;
   } s;
 };
@@ -186,6 +187,7 @@ static void start_rpc(grpc_call_element *elem, grpc_call_op *op) {
     calld->s.waiting.on_complete = op->done_cb;
     calld->s.waiting.on_complete_user_data = op->user_data;
     calld->s.waiting.start_flags = op->flags;
+    calld->s.waiting.pollset = op->data.start.pollset;
     chand->waiting_children[chand->waiting_child_count++] = calld;
     gpr_mu_unlock(&chand->mu);
 
@@ -523,6 +525,7 @@ grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
     call_ops[i].done_cb = waiting_children[i]->s.waiting.on_complete;
     call_ops[i].user_data =
         waiting_children[i]->s.waiting.on_complete_user_data;
+    call_ops[i].data.start.pollset = waiting_children[i]->s.waiting.pollset;
     if (!prepare_activate(waiting_children[i]->elem, chand->active_child)) {
       waiting_children[i] = NULL;
       call_ops[i].done_cb(call_ops[i].user_data, GRPC_OP_ERROR);

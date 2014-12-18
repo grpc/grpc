@@ -31,23 +31,21 @@
  *
  */
 
-#include "src/core/iomgr/endpoint.h"
+#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_H_
+#define __GRPC_INTERNAL_IOMGR_POLLSET_H_
 
-void grpc_endpoint_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
-                                  void *user_data, gpr_timespec deadline) {
-  ep->vtable->notify_on_read(ep, cb, user_data, deadline);
-}
+/* A grpc_pollset is a set of file descriptors that a higher level item is
+   interested in. For example:
+    - a server will typically keep a pollset containing all connected channels,
+      so that it can find new calls to service
+    - a completion queue might keep a pollset with an entry for each transport
+      that is servicing a call that it's tracking */
+/* Eventually different implementations of iomgr will provide their own
+   grpc_pollset structs. As this is just a dummy wrapper to get the API in,
+   we just define a simple type here. */
+typedef struct { char unused; } grpc_pollset;
 
-grpc_endpoint_write_status grpc_endpoint_write(
-    grpc_endpoint *ep, gpr_slice *slices, size_t nslices,
-    grpc_endpoint_write_cb cb, void *user_data, gpr_timespec deadline) {
-  return ep->vtable->write(ep, slices, nslices, cb, user_data, deadline);
-}
+void grpc_pollset_init(grpc_pollset *pollset);
+void grpc_pollset_destroy(grpc_pollset *pollset);
 
-void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
-  ep->vtable->add_to_pollset(ep, pollset);
-}
-
-void grpc_endpoint_shutdown(grpc_endpoint *ep) { ep->vtable->shutdown(ep); }
-
-void grpc_endpoint_destroy(grpc_endpoint *ep) { ep->vtable->destroy(ep); }
+#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_H_ */

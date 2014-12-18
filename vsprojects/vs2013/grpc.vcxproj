@@ -104,6 +104,7 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_completion_queue_interface.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_libevent.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
     <ClInclude Include="..\..\src\core\iomgr\resolve_address.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr_posix.h" />
@@ -208,6 +209,8 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_libevent.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_libevent_use_threads.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\resolve_address_posix.c">
     </ClCompile>

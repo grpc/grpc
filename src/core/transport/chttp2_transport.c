@@ -1696,14 +1696,23 @@ static void run_callbacks(transport *t) {
   }
 }
 
+static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
+  transport *t = (transport *)gt;
+  lock(t);
+  if (t->ep) {
+    grpc_endpoint_add_to_pollset(t->ep, pollset);
+  }
+  unlock(t);
+}
+
 /*
  * INTEGRATION GLUE
  */
 
 static const grpc_transport_vtable vtable = {
     sizeof(stream), init_stream, send_batch, set_allow_window_updates,
-    destroy_stream, abort_stream, goaway, close_transport, send_ping,
-    destroy_transport};
+    add_to_pollset, destroy_stream, abort_stream, goaway, close_transport,
+    send_ping, destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,

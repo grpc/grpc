@@ -108,6 +108,9 @@ typedef struct {
 
   /* Argument data, matching up with grpc_call_op_type names */
   union {
+    struct {
+      grpc_pollset *pollset;
+    } start;
     grpc_byte_buffer *message;
     grpc_mdelem *metadata;
     gpr_timespec deadline;

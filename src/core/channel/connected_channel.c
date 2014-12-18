@@ -132,6 +132,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                                 op->user_data);
       break;
     case GRPC_SEND_START:
+      grpc_transport_add_to_pollset(chand->transport, op->data.start.pollset);
       grpc_sopb_add_metadata_boundary(&calld->outgoing_sopb);
       end_bufferable_op(op, chand, calld, 0);
       break;

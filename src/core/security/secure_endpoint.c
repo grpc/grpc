@@ -325,8 +325,15 @@ static void endpoint_unref(grpc_endpoint *secure_ep) {
   secure_endpoint_unref(ep);
 }
 
+static void endpoint_add_to_pollset(grpc_endpoint *secure_ep,
+                                    grpc_pollset *pollset) {
+  secure_endpoint *ep = (secure_endpoint *)secure_ep;
+  grpc_endpoint_add_to_pollset(ep->wrapped_ep, pollset);
+}
+
 static const grpc_endpoint_vtable vtable = {
-    endpoint_notify_on_read, endpoint_write, endpoint_shutdown, endpoint_unref};
+    endpoint_notify_on_read, endpoint_write, endpoint_add_to_pollset,
+    endpoint_shutdown, endpoint_unref};
 
 grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *transport,

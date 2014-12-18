@@ -107,7 +107,7 @@ char *grpc_call_op_string(grpc_call_op *op) {
               op->data.deadline.tv_nsec);
       break;
     case GRPC_SEND_START:
-      bprintf(&b, "SEND_START");
+      bprintf(&b, "SEND_START pollset=%p", op->data.start.pollset);
       break;
     case GRPC_SEND_MESSAGE:
       bprintf(&b, "SEND_MESSAGE");

@@ -66,6 +66,11 @@ void grpc_transport_set_allow_window_updates(grpc_transport *transport,
   transport->vtable->set_allow_window_updates(transport, stream, allow);
 }
 
+void grpc_transport_add_to_pollset(grpc_transport *transport,
+                                   grpc_pollset *pollset) {
+  transport->vtable->add_to_pollset(transport, pollset);
+}
+
 void grpc_transport_destroy_stream(grpc_transport *transport,
                                    grpc_stream *stream) {
   transport->vtable->destroy_stream(transport, stream);

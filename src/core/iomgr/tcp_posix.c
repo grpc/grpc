@@ -538,9 +538,14 @@ static grpc_endpoint_write_status grpc_tcp_write(
   return status;
 }
 
-static const grpc_endpoint_vtable vtable = {grpc_tcp_notify_on_read,
-                                            grpc_tcp_write, grpc_tcp_shutdown,
-                                            grpc_tcp_destroy};
+static void grpc_tcp_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
+  /* tickle the pollset so we crash if things aren't wired correctly */
+  pollset->unused++;
+}
+
+static const grpc_endpoint_vtable vtable = {
+    grpc_tcp_notify_on_read, grpc_tcp_write, grpc_tcp_add_to_pollset,
+    grpc_tcp_shutdown, grpc_tcp_destroy};
 
 grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));

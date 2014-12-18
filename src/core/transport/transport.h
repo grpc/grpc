@@ -36,6 +36,7 @@
 
 #include <stddef.h>
 
+#include "src/core/iomgr/pollset.h"
 #include "src/core/transport/stream_op.h"
 
 /* forward declarations */
@@ -202,15 +203,18 @@ void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
 void grpc_transport_abort_stream(grpc_transport *transport, grpc_stream *stream,
                                  grpc_status_code status);
 
+void grpc_transport_add_to_pollset(grpc_transport *transport,
+                                   grpc_pollset *pollset);
+
 /* Advise peer of pending connection termination. */
-void grpc_transport_goaway(struct grpc_transport *transport,
-                           grpc_status_code status, gpr_slice debug_data);
+void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,
+                           gpr_slice debug_data);
 
 /* Close a transport. Aborts all open streams. */
-void grpc_transport_close(struct grpc_transport *transport);
+void grpc_transport_close(grpc_transport *transport);
 
 /* Destroy the transport */
-void grpc_transport_destroy(struct grpc_transport *transport);
+void grpc_transport_destroy(grpc_transport *transport);
 
 /* Return type for grpc_transport_setup_callback */
 typedef struct grpc_transport_setup_result {

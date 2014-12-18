@@ -34,6 +34,7 @@
 #ifndef __GRPC_INTERNAL_IOMGR_ENDPOINT_H__
 #define __GRPC_INTERNAL_IOMGR_ENDPOINT_H__
 
+#include "src/core/iomgr/pollset.h"
 #include <grpc/support/slice.h>
 #include <grpc/support/time.h>
 
@@ -69,6 +70,7 @@ struct grpc_endpoint_vtable {
   grpc_endpoint_write_status (*write)(grpc_endpoint *ep, gpr_slice *slices,
                                       size_t nslices, grpc_endpoint_write_cb cb,
                                       void *user_data, gpr_timespec deadline);
+  void (*add_to_pollset)(grpc_endpoint *ep, grpc_pollset *pollset);
   void (*shutdown)(grpc_endpoint *ep);
   void (*destroy)(grpc_endpoint *ep);
 };
@@ -91,6 +93,10 @@ grpc_endpoint_write_status grpc_endpoint_write(
    GRPC_ENDPOINT_CB_SHUTDOWN status */
 void grpc_endpoint_shutdown(grpc_endpoint *ep);
 void grpc_endpoint_destroy(grpc_endpoint *ep);
+
+/* Add an endpoint to a pollset, so that when the pollset is polled, events from
+   this endpoint are considered */
+void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;

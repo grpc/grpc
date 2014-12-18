@@ -66,6 +66,8 @@ struct grpc_completion_queue {
   /* When refs drops to zero, we are in shutdown mode, and will be destroyable
      once all queued events are drained */
   gpr_refcount refs;
+  /* the set of low level i/o things that concern this cq */
+  grpc_pollset pollset;
   /* 0 initially, 1 once we've begun shutting down */
   int shutdown;
   /* Head of a linked list of queued events (prev points to the last element) */
@@ -87,6 +89,7 @@ grpc_completion_queue *grpc_completion_queue_create() {
   memset(cc, 0, sizeof(*cc));
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->refs, 1);
+  grpc_pollset_init(&cc->pollset);
   cc->allow_polling = 1;
   return cc;
 }
@@ -367,6 +370,7 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
 
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
   GPR_ASSERT(cc->queue == NULL);
+  grpc_pollset_destroy(&cc->pollset);
   gpr_free(cc);
 }
 
@@ -391,4 +395,8 @@ void grpc_cq_dump_pending_ops(grpc_completion_queue *cc) {
 
   gpr_log(GPR_INFO, "pending ops:%s", tmp);
 #endif
+}
+
+grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
+  return &cc->pollset;
 }

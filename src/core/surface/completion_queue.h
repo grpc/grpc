@@ -36,6 +36,7 @@
 
 /* Internal API for completion channels */
 
+#include "src/core/iomgr/pollset.h"
 #include <grpc/grpc.h>
 
 /* A finish func is executed whenever the event consumer calls
@@ -100,5 +101,7 @@ void grpc_cq_end_new_rpc(grpc_completion_queue *cc, void *tag, grpc_call *call,
 void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc);
 
 void grpc_cq_dump_pending_ops(grpc_completion_queue *cc);
+
+grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
 #endif  /* __GRPC_INTERNAL_SURFACE_COMPLETION_QUEUE_H__ */

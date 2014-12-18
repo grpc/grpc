@@ -491,6 +491,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
   }
   filters[i] = &grpc_connected_channel_filter;
 
+  grpc_transport_add_to_pollset(transport, grpc_cq_pollset(s->cq));
+
   channel = grpc_channel_create_from_filters(filters, num_filters,
                                              s->channel_args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(

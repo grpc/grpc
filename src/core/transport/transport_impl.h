@@ -53,6 +53,9 @@ typedef struct grpc_transport_vtable {
   void (*set_allow_window_updates)(grpc_transport *self, grpc_stream *stream,
                                    int allow);
 
+  /* implementation of grpc_transport_add_to_pollset */
+  void (*add_to_pollset)(grpc_transport *self, grpc_pollset *pollset);
+
   /* implementation of grpc_transport_destroy_stream */
   void (*destroy_stream)(grpc_transport *self, grpc_stream *stream);
 

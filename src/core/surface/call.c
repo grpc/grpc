@@ -409,6 +409,7 @@ grpc_call_error grpc_call_start_invoke(grpc_call *call,
   op.dir = GRPC_CALL_DOWN;
   op.flags = flags;
   op.done_cb = done_invoke;
+  op.data.start.pollset = grpc_cq_pollset(cq);
   op.user_data = call;
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
@@ -480,6 +481,7 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   op.dir = GRPC_CALL_DOWN;
   op.flags = flags;
   op.done_cb = do_nothing;
+  op.data.start.pollset = grpc_cq_pollset(call->cq);
   op.user_data = NULL;
 
   elem = CALL_ELEM_FROM_CALL(call, 0);

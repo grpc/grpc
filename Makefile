@@ -889,6 +889,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/iomgr_libevent.c \
     src/core/iomgr/iomgr_libevent_use_threads.c \
+    src/core/iomgr/pollset.c \
     src/core/iomgr/resolve_address_posix.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
@@ -2018,6 +2019,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/iomgr_libevent.c \
     src/core/iomgr/iomgr_libevent_use_threads.c \
+    src/core/iomgr/pollset.c \
     src/core/iomgr/resolve_address_posix.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
