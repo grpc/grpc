@@ -214,7 +214,8 @@ static cJSON *parse_json_part_from_jwt(const char *str, size_t len) {
   slice = grpc_base64_decode(b64, 1);
   GPR_ASSERT(!GPR_SLICE_IS_EMPTY(slice));
   decoded = gpr_malloc(GPR_SLICE_LENGTH(slice) + 1);
-  strncpy(decoded, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice));
+  strncpy(decoded, (const char *)GPR_SLICE_START_PTR(slice),
+          GPR_SLICE_LENGTH(slice));
   decoded[GPR_SLICE_LENGTH(slice)] = '\0';
   json = cJSON_Parse(decoded);
   gpr_free(b64);
