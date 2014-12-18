@@ -258,7 +258,6 @@ static void cancel_rpc(grpc_call_element *elem, grpc_call_op *op) {
 static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                     grpc_call_op *op) {
   call_data *calld = elem->call_data;
-  grpc_call_element *child_elem;
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
@@ -277,18 +276,20 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_CANCEL_OP:
       cancel_rpc(elem, op);
       break;
-    default:
-      switch (op->dir) {
-        case GRPC_CALL_UP:
-          grpc_call_next_op(elem, op);
-          break;
-        case GRPC_CALL_DOWN:
-          child_elem =
-              grpc_child_call_get_top_element(calld->s.active.child_call);
-          GPR_ASSERT(calld->state == CALL_ACTIVE);
-          child_elem->filter->call_op(child_elem, elem, op);
-          break;
+    case GRPC_SEND_MESSAGE:
+    case GRPC_SEND_FINISH:
+    case GRPC_REQUEST_DATA:
+      if (calld->state == CALL_ACTIVE) {
+        grpc_call_element *child_elem =
+            grpc_child_call_get_top_element(calld->s.active.child_call);
+        child_elem->filter->call_op(child_elem, elem, op);
+      } else {
+        op->done_cb(op->user_data, GRPC_OP_ERROR);
       }
+      break;
+    default:
+      GPR_ASSERT(op->dir == GRPC_CALL_UP);
+      grpc_call_next_op(elem, op);
       break;
   }
 }
