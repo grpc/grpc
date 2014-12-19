@@ -40,8 +40,17 @@
 
 namespace grpc {
 
-std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
-                                                    bool enable_ssl) {
+// When ssl is enabled, if server is empty, override_hostname is used to
+// create channel. Otherwise, connect to server and override hostname if
+// override_hostname is provided.
+// When ssl is not enabled, override_hostname is ignored.
+// Use examples:
+//   CreateTestChannel("1.1.1.1:12345", "override.hostname.com", true);
+//   CreateTestChannel("test.google.com:443", "", true);
+//   CreateTestChannel("", "test.google.com:443", true);  // same as above
+std::shared_ptr<ChannelInterface> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    bool enable_ssl) {
   ChannelArguments channel_args;
   if (enable_ssl) {
     SslCredentialsOptions ssl_opts = {
@@ -52,11 +61,21 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
     std::unique_ptr<Credentials> creds =
         CredentialsFactory::SslCredentials(ssl_opts);
 
-    channel_args.SetSslTargetNameOverride("foo.test.google.com");
-    return CreateChannel(server, creds, channel_args);
+    if (!server.empty() && !override_hostname.empty()) {
+      channel_args.SetSslTargetNameOverride(override_hostname);
+    }
+    const grpc::string& connect_to =
+        server.empty() ? override_hostname : server;
+    return CreateChannel(connect_to, creds, channel_args);
   } else {
     return CreateChannel(server, channel_args);
   }
+}
+
+// Shortcut for end2end and interop tests.
+std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
+                                                    bool enable_ssl) {
+  return CreateTestChannel(server, "foo.test.google.com", enable_ssl);
 }
 
 }  // namespace grpc
