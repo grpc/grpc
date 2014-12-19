@@ -303,6 +303,7 @@
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}",
       "src": [
         "src/cpp/client/channel.cc",
+        "src/cpp/client/channel_arguments.cc",
         "src/cpp/client/client_context.cc",
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
@@ -325,6 +326,7 @@
       "public_headers": [
         "include/grpc++/async_server_context.h",
         "include/grpc++/async_server.h",
+        "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
         "include/grpc++/completion_queue.h",
@@ -356,7 +358,7 @@
       "build": "test",
       "src": [
         "test/cpp/util/echo.proto",
-        "test/cpp/util/test_ssl_channel.cc",
+        "test/cpp/util/create_test_channel.cc",
         "test/cpp/end2end/async_test_server.cc"
       ],
       "c++": true
@@ -1285,6 +1287,18 @@
         "grpc++",
         "grpc",
         "gpr"
+      ]
+    },
+    {
+      "name": "channel_arguments_test",
+      "build": "test",
+      "c++": true,
+      "src": [
+        "test/cpp/client/channel_arguments_test.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc"
       ]
     },
     {

@@ -35,6 +35,7 @@
 #include "src/cpp/server/rpc_service_method.h"
 #include "test/cpp/util/echo.pb.h"
 #include "net/util/netutil.h"
+#include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -126,7 +127,7 @@ class End2endTest : public ::testing::Test {
 
 static void SendRpc(const grpc::string& server_address, int num_rpcs) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address);
+      CreateChannel(server_address, ChannelArguments());
   TestService::Stub* stub = TestService::NewStub(channel);
   EchoRequest request;
   EchoResponse response;
@@ -160,7 +161,7 @@ TEST_F(End2endTest, MultipleRpcs) {
 // Set a 10us deadline and make sure proper error is returned.
 TEST_F(End2endTest, RpcDeadlineExpires) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str());
+      CreateChannel(server_address_.str(), ChannelArguments());
   TestService::Stub* stub = TestService::NewStub(channel);
   EchoRequest request;
   EchoResponse response;
@@ -180,7 +181,7 @@ TEST_F(End2endTest, RpcDeadlineExpires) {
 
 TEST_F(End2endTest, UnimplementedRpc) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str());
+      CreateChannel(server_address_.str(), ChannelArguments());
   TestService::Stub* stub = TestService::NewStub(channel);
   EchoRequest request;
   EchoResponse response;
@@ -198,7 +199,7 @@ TEST_F(End2endTest, UnimplementedRpc) {
 
 TEST_F(End2endTest, RequestStreamOneRequest) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str());
+      CreateChannel(server_address_.str(), ChannelArguments());
   TestService::Stub* stub = TestService::NewStub(channel);
   EchoRequest request;
   EchoResponse response;
@@ -218,7 +219,7 @@ TEST_F(End2endTest, RequestStreamOneRequest) {
 
 TEST_F(End2endTest, RequestStreamTwoRequests) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str());
+      CreateChannel(server_address_.str(), ChannelArguments());
   TestService::Stub* stub = TestService::NewStub(channel);
   EchoRequest request;
   EchoResponse response;
@@ -239,7 +240,7 @@ TEST_F(End2endTest, RequestStreamTwoRequests) {
 
 TEST_F(End2endTest, ResponseStream) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str());
+      CreateChannel(server_address_.str(), ChannelArguments());
   TestService::Stub* stub = TestService::NewStub(channel);
   EchoRequest request;
   EchoResponse response;
@@ -264,7 +265,7 @@ TEST_F(End2endTest, ResponseStream) {
 
 TEST_F(End2endTest, BidiStream) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str());
+      CreateChannel(server_address_.str(), ChannelArguments());
   TestService::Stub* stub = TestService::NewStub(channel);
   EchoRequest request;
   EchoResponse response;

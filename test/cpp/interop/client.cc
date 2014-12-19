@@ -40,12 +40,13 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <google/gflags.h>
+#include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/cpp/util/test_ssl_channel.h"
+#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/interop/test.pb.h"
 #include "test/cpp/interop/empty.pb.h"
 #include "test/cpp/interop/messages.pb.h"
@@ -67,8 +68,7 @@ DEFINE_string(test_case, "large_unary",
 
 using grpc::ChannelInterface;
 using grpc::ClientContext;
-using grpc::CreateChannel;
-using grpc::TestSslChannel;
+using grpc::CreateTestChannel;
 using grpc::testing::ResponseParameters;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
@@ -86,17 +86,6 @@ const int kNumResponseMessages = 2000;
 const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;
 }  // namespace
-
-std::shared_ptr<ChannelInterface> CreateTestChannel(
-    const grpc::string& server) {
-  std::shared_ptr<ChannelInterface> channel;
-  if (FLAGS_enable_ssl) {
-    channel.reset(new TestSslChannel(server));
-  } else {
-    channel = CreateChannel(server);
-  }
-  return channel;
-}
 
 void DoEmpty(std::shared_ptr<ChannelInterface> channel) {
   gpr_log(GPR_INFO, "Sending an empty rpc...");
@@ -146,9 +135,9 @@ int main(int argc, char** argv) {
            FLAGS_server_port);
 
   if (FLAGS_test_case == "empty_unary") {
-    DoEmpty(CreateTestChannel(host_port));
+    DoEmpty(CreateTestChannel(host_port, FLAGS_enable_ssl));
   } else if (FLAGS_test_case == "large_unary") {
-    DoLargeUnary(CreateTestChannel(host_port));
+    DoLargeUnary(CreateTestChannel(host_port, FLAGS_enable_ssl));
   } else {
     gpr_log(
         GPR_ERROR,

@@ -34,17 +34,24 @@
 #ifndef __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
 #define __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
 
+#include <memory>
+
 #include <grpc++/channel_interface.h>
 #include <grpc++/config.h>
 
 struct grpc_channel;
 
 namespace grpc {
+class ChannelArguments;
+class Credentials;
 class StreamContextInterface;
 
 class Channel : public ChannelInterface {
  public:
-  explicit Channel(const grpc::string& target);
+  Channel(const grpc::string& target, const ChannelArguments& args);
+  Channel(const grpc::string& target, const std::unique_ptr<Credentials>& creds,
+          const ChannelArguments& args);
+
   ~Channel() override;
 
   Status StartBlockingRpc(const RpcMethod& method, ClientContext* context,
@@ -55,11 +62,6 @@ class Channel : public ChannelInterface {
                                        ClientContext* context,
                                        const google::protobuf::Message* request,
                                        google::protobuf::Message* result) override;
-
- protected:
-  // TODO(yangg) remove this section when we have the general ssl channel API
-  Channel() {}
-  void set_c_channel(grpc_channel* channel) { c_channel_ = channel; }
 
  private:
   const grpc::string target_;

@@ -31,28 +31,32 @@
  *
  */
 
-#include "test/cpp/util/test_ssl_channel.h"
-
-#include <grpc/support/log.h>
-
-#include <grpc/grpc_security.h>
+#include "test/cpp/util/create_test_channel.h"
 
 #include "test/core/end2end/data/ssl_test_data.h"
+#include <grpc++/channel_arguments.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
 
 namespace grpc {
 
-TestSslChannel::TestSslChannel(const grpc::string& target) {
-  grpc_credentials* ssl_creds = grpc_ssl_credentials_create(
-      test_ca_cert, test_ca_cert_size, NULL, 0, NULL, 0);
-  grpc_arg ssl_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.com")}};
-  grpc_channel_args client_args = {1, &ssl_name_override};
-  set_c_channel(
-      grpc_secure_channel_create(ssl_creds, target.c_str(), &client_args));
-  grpc_credentials_release(ssl_creds);
+std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
+                                                    bool enable_ssl) {
+  ChannelArguments channel_args;
+  if (enable_ssl) {
+    SslCredentialsOptions ssl_opts = {
+        {reinterpret_cast<const char*>(test_ca_cert), test_ca_cert_size},
+        "",
+        ""};
+
+    std::unique_ptr<Credentials> creds =
+        CredentialsFactory::SslCredentials(ssl_opts);
+
+    channel_args.SetSslTargetNameOverride("foo.test.google.com");
+    return CreateChannel(server, creds, channel_args);
+  } else {
+    return CreateChannel(server, channel_args);
+  }
 }
 
 }  // namespace grpc
-

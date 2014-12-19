@@ -43,11 +43,9 @@
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <google/gflags.h>
-#include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
 #include <grpc++/status.h>
-#include "test/cpp/util/test_ssl_channel.h"
+#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/interop/test.pb.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
@@ -75,22 +73,10 @@ DEFINE_int32(payload_size, 1, "Payload size in bytes");
 DEFINE_string(workload, "", "Workload parameters");
 
 using grpc::ChannelInterface;
-using grpc::CreateChannel;
-using grpc::TestSslChannel;
+using grpc::CreateTestChannel;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
 using grpc::testing::TestService;
-
-std::shared_ptr<ChannelInterface> CreateTestChannel(
-    const grpc::string& server) {
-  std::shared_ptr<ChannelInterface> channel;
-  if (FLAGS_enable_ssl) {
-    channel.reset(new TestSslChannel(server));
-  } else {
-    channel = CreateChannel(server);
-  }
-  return channel;
-}
 
 static double now() {
   gpr_timespec tv = gpr_now();
@@ -116,7 +102,7 @@ void RunTest(const int client_threads, const int client_channels,
   class ClientChannelInfo {
    public:
     explicit ClientChannelInfo(const grpc::string &server)
-        : channel_(CreateTestChannel(server)),
+        : channel_(CreateTestChannel(server, FLAGS_enable_ssl)),
           stub_(TestService::NewStub(channel_)) {}
     ChannelInterface *get_channel() { return channel_.get(); }
     TestService::Stub *get_stub() { return stub_.get(); }

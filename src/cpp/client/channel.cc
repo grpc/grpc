@@ -34,24 +34,42 @@
 #include "src/cpp/client/channel.h"
 
 #include <chrono>
-#include <string>
+#include <memory>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
 #include "src/cpp/rpc_method.h"
 #include "src/cpp/proto/proto_utils.h"
 #include "src/cpp/stream/stream_context.h"
-#include <grpc++/config.h>
-#include <google/protobuf/message.h>
+#include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
+#include <grpc++/config.h>
+#include <grpc++/credentials.h>
 #include <grpc++/status.h>
+#include <google/protobuf/message.h>
 
 namespace grpc {
 
-Channel::Channel(const grpc::string& target) : target_(target) {
-  c_channel_ = grpc_channel_create(target_.c_str(), nullptr);
+Channel::Channel(const grpc::string& target, const ChannelArguments& args)
+    : target_(target) {
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
+  c_channel_ = grpc_channel_create(
+      target_.c_str(), channel_args.num_args > 0 ? &channel_args : nullptr);
+}
+
+Channel::Channel(const grpc::string& target,
+                 const std::unique_ptr<Credentials>& creds,
+                 const ChannelArguments& args)
+    : target_(target) {
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
+  c_channel_ = grpc_secure_channel_create(
+      creds->GetRawCreds(), target_.c_str(),
+      channel_args.num_args > 0 ? &channel_args : nullptr);
 }
 
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }

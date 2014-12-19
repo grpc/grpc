@@ -31,25 +31,43 @@
  *
  */
 
-#ifndef __GRPCPP_TEST_UTIL_TEST_SSL_CHANNEL_H__
-#define __GRPCPP_TEST_UTIL_TEST_SSL_CHANNEL_H__
+#include <grpc++/channel_arguments.h>
 
-#include <string>
-
-#include "src/cpp/client/channel.h"
-
-struct grpc_channel;
+#include <grpc/grpc_security.h>
 
 namespace grpc {
-class StreamContextInterface;
 
-// The channel is used to test against test gfe or interop binaries with ssl
-// support.
-class TestSslChannel : public Channel {
- public:
-  explicit TestSslChannel(const grpc::string& target);
-};
+void ChannelArguments::SetSslTargetNameOverride(const grpc::string& name) {
+  SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
+}
+
+void ChannelArguments::SetInt(const grpc::string& key, int value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  strings_.push_back(key);
+  arg.key = const_cast<char*>(strings_.back().c_str());
+  arg.value.integer = value;
+
+  args_.push_back(arg);
+}
+
+void ChannelArguments::SetString(const grpc::string& key,
+                                 const grpc::string& value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_STRING;
+  strings_.push_back(key);
+  arg.key = const_cast<char*>(strings_.back().c_str());
+  strings_.push_back(value);
+  arg.value.string = const_cast<char*>(strings_.back().c_str());
+
+  args_.push_back(arg);
+}
+
+void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
+  channel_args->num_args = args_.size();
+  if (channel_args->num_args > 0) {
+    channel_args->args = const_cast<grpc_arg*>(&args_[0]);
+  }
+}
 
 }  // namespace grpc
-
-#endif  // __GRPCPP_TEST_UTIL_TEST_SSL_CHANNEL_H__

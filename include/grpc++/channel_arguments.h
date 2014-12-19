@@ -31,23 +31,52 @@
  *
  */
 
-#include <memory>
+#ifndef __GRPCPP_CHANNEL_ARGUMENTS_H_
+#define __GRPCPP_CHANNEL_ARGUMENTS_H_
 
-#include "src/cpp/client/channel.h"
-#include <grpc++/channel_interface.h>
-#include <grpc++/create_channel.h>
+#include <vector>
+#include <list>
+
+#include <grpc++/config.h>
+#include <grpc/grpc.h>
 
 namespace grpc {
-class ChannelArguments;
+namespace testing {
+class ChannelArgumentsTest;
+}  // namespace testing
 
-std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string& target,
-                                                const ChannelArguments& args) {
-  return std::shared_ptr<ChannelInterface>(new Channel(target, args));
-}
+// Options for channel creation. The user can use generic setters to pass
+// key value pairs down to c channel creation code. For grpc related options,
+// concrete setters are provided.
+class ChannelArguments {
+ public:
+  ChannelArguments() {}
+  ~ChannelArguments() {}
 
-std::shared_ptr<ChannelInterface> CreateChannel(
-    const grpc::string& target, const std::unique_ptr<Credentials>& creds,
-    const ChannelArguments& args) {
-  return std::shared_ptr<ChannelInterface>(new Channel(target, creds, args));
-}
+  // grpc specific channel argument setters
+  // Set target name override for SSL host name checking.
+  void SetSslTargetNameOverride(const grpc::string& name);
+  // TODO(yangg) add flow control options
+
+  // Generic channel argument setters. Only for advanced use cases.
+  void SetInt(const grpc::string& key, int value);
+  void SetString(const grpc::string& key, const grpc::string& value);
+
+ private:
+  friend class Channel;
+  friend class testing::ChannelArgumentsTest;
+
+  // TODO(yangg) implement copy and assign
+  ChannelArguments(const ChannelArguments&);
+  ChannelArguments& operator=(const ChannelArguments&);
+
+  // Populates given channel_args with args_, does not take ownership.
+  void SetChannelArgs(grpc_channel_args* channel_args) const;
+
+  std::vector<grpc_arg> args_;
+  std::list<grpc::string> strings_;
+};
+
 }  // namespace grpc
+
+#endif  // __GRPCPP_CHANNEL_ARGUMENTS_H_

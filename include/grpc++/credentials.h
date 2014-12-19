@@ -52,12 +52,11 @@ class Credentials final {
   // TODO(abhikumar): Specify a plugin API here to be implemented by
   // credentials that do not have a corresponding implementation in C.
 
- protected:
-  explicit Credentials(grpc_credentials*);
-
  private:
+  explicit Credentials(grpc_credentials*);
   grpc_credentials* GetRawCreds();
 
+  friend class Channel;
   friend class CredentialsFactory;
 
   grpc_credentials* creds_;

@@ -43,6 +43,7 @@
 #include "src/cpp/rpc_method.h"
 #include "test/cpp/util/echo.pb.h"
 #include "net/util/netutil.h"
+#include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -86,7 +87,8 @@ class End2endTest : public ::testing::Test {
     // Setup client
     oss.str("");
     oss << "127.0.0.1:" << port;
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(oss.str());
+    std::shared_ptr<ChannelInterface> channel =
+        CreateChannel(oss.str(), ChannelArguments());
     stub_.set_channel(channel);
   }
 

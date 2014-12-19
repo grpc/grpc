@@ -40,13 +40,15 @@
 #include <grpc++/credentials.h>
 
 namespace grpc {
+class ChannelArguments;
 class ChannelInterface;
 
-std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string& target);
+std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string& target,
+                                                const ChannelArguments& args);
 
 std::shared_ptr<ChannelInterface> CreateChannel(
-    const grpc::string& target,
-    const std::unique_ptr<grpc::Credentials>& creds);
+    const grpc::string& target, const std::unique_ptr<Credentials>& creds,
+    const ChannelArguments& args);
 
 }  // namespace grpc
 

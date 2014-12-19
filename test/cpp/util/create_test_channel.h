@@ -31,23 +31,19 @@
  *
  */
 
+#ifndef __GRPCPP_TEST_UTIL_CREATE_TEST_CHANNEL_H_
+#define __GRPCPP_TEST_UTIL_CREATE_TEST_CHANNEL_H_
+
 #include <memory>
 
-#include "src/cpp/client/channel.h"
-#include <grpc++/channel_interface.h>
-#include <grpc++/create_channel.h>
+#include <grpc++/config.h>
 
 namespace grpc {
-class ChannelArguments;
+class ChannelInterface;
 
-std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string& target,
-                                                const ChannelArguments& args) {
-  return std::shared_ptr<ChannelInterface>(new Channel(target, args));
-}
+std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
+                                                    bool enable_ssl);
 
-std::shared_ptr<ChannelInterface> CreateChannel(
-    const grpc::string& target, const std::unique_ptr<Credentials>& creds,
-    const ChannelArguments& args) {
-  return std::shared_ptr<ChannelInterface>(new Channel(target, creds, args));
-}
 }  // namespace grpc
+
+#endif  // __GRPCPP_TEST_UTIL_CREATE_TEST_CHANNEL_H_
