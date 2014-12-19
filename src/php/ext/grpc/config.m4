@@ -5,7 +5,7 @@ if test "$PHP_GRPC" != "no"; then
   dnl Write more examples of tests here...
 
   dnl # --with-grpc -> check with-path
-  SEARCH_PATH="/usr/local /usr $HOME/grpc_dev"     # you might want to change this
+  SEARCH_PATH="/usr/local /usr"     # you might want to change this
   SEARCH_FOR="include/grpc/grpc.h"  # you most likely want to change this
   if test -r $PHP_GRPC/$SEARCH_FOR; then # path given as parameter
     GRPC_DIR=$PHP_GRPC
