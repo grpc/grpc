@@ -296,8 +296,14 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
   grpc_call_element *elem;
   grpc_call_op op;
 
-  if (call->state >= CALL_FINISHED) {
-    return GRPC_CALL_ERROR_ALREADY_FINISHED;
+  if (call->is_client) {
+    if (call->state >= CALL_STARTED) {
+      return GRPC_CALL_ERROR_ALREADY_INVOKED;
+    }
+  } else {
+    if (call->state >= CALL_FINISHED) {
+      return GRPC_CALL_ERROR_ALREADY_FINISHED;
+    }
   }
 
   op.type = GRPC_SEND_METADATA;
