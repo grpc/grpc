@@ -291,10 +291,27 @@ void grpc_call_execute_op(grpc_call *call, grpc_call_op *op) {
   elem->filter->call_op(elem, NULL, op);
 }
 
-grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
-                                       gpr_uint32 flags) {
+void grpc_call_add_mdelem(grpc_call *call, grpc_mdelem *mdelem,
+                          gpr_uint32 flags) {
   grpc_call_element *elem;
   grpc_call_op op;
+
+  GPR_ASSERT(call->state < CALL_FINISHED);
+
+  op.type = GRPC_SEND_METADATA;
+  op.dir = GRPC_CALL_DOWN;
+  op.flags = flags;
+  op.done_cb = do_nothing;
+  op.user_data = NULL;
+  op.data.metadata = mdelem;
+
+  elem = CALL_ELEM_FROM_CALL(call, 0);
+  elem->filter->call_op(elem, NULL, &op);
+}
+
+grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
+                                       gpr_uint32 flags) {
+  grpc_mdelem *mdelem;
 
   if (call->is_client) {
     if (call->state >= CALL_STARTED) {
@@ -306,18 +323,10 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
     }
   }
 
-  op.type = GRPC_SEND_METADATA;
-  op.dir = GRPC_CALL_DOWN;
-  op.flags = flags;
-  op.done_cb = do_nothing;
-  op.user_data = NULL;
-  op.data.metadata = grpc_mdelem_from_string_and_buffer(
+  mdelem = grpc_mdelem_from_string_and_buffer(
       call->metadata_context, metadata->key, (gpr_uint8 *)metadata->value,
       metadata->value_length);
-
-  elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, NULL, &op);
-
+  grpc_call_add_mdelem(call, mdelem, flags);
   return GRPC_CALL_OK;
 }
 

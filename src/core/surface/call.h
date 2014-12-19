@@ -70,4 +70,7 @@ grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
 /* Get the metadata buffer. */
 grpc_metadata_buffer *grpc_call_get_metadata_buffer(grpc_call *call);
 
+void grpc_call_add_mdelem(grpc_call *call, grpc_mdelem *mdelem,
+                          gpr_uint32 flags);
+
 #endif  /* __GRPC_INTERNAL_SURFACE_CALL_H__ */

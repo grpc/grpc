@@ -34,11 +34,14 @@
 #include "src/core/channel/http_client_filter.h"
 #include <grpc/support/log.h>
 
-typedef struct call_data {
-  int unused; /* C89 requires at least one struct element */
-} call_data;
+typedef struct call_data { int sent_headers; } call_data;
 
-typedef struct channel_data { grpc_mdelem *te_trailers; } channel_data;
+typedef struct channel_data {
+  grpc_mdelem *te_trailers;
+  grpc_mdelem *method;
+  grpc_mdelem *scheme;
+  grpc_mdelem *content_type;
+} channel_data;
 
 /* used to silence 'variable not used' warnings */
 static void ignore_unused(void *ignored) {}
@@ -58,9 +61,26 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
   ignore_unused(calld);
 
   switch (op->type) {
+    case GRPC_SEND_METADATA:
+      if (!calld->sent_headers) {
+        /* Send : prefixed headers, which have to be before any application
+         * layer headers. */
+        calld->sent_headers = 1;
+        grpc_call_element_send_metadata(elem, channeld->method);
+        grpc_call_element_send_metadata(elem, channeld->scheme);
+      }
+      grpc_call_next_op(elem, op);
+      break;
     case GRPC_SEND_START:
-      /* just prior to starting, add a te: trailers header */
+      if (!calld->sent_headers) {
+        /* Send : prefixed headers, if we haven't already */
+        calld->sent_headers = 1;
+        grpc_call_element_send_metadata(elem, channeld->method);
+        grpc_call_element_send_metadata(elem, channeld->scheme);
+      }
+      /* Send non : prefixed headers */
       grpc_call_element_send_metadata(elem, channeld->te_trailers);
+      grpc_call_element_send_metadata(elem, channeld->content_type);
       grpc_call_next_op(elem, op);
       break;
     default:
@@ -97,7 +117,7 @@ static void init_call_elem(grpc_call_element *elem,
   ignore_unused(channeld);
 
   /* initialize members */
-  calld->unused = 0;
+  calld->sent_headers = 0;
 }
 
 /* Destructor for call_data */
@@ -125,6 +145,10 @@ static void init_channel_elem(grpc_channel_element *elem,
 
   /* initialize members */
   channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
+  channeld->method = grpc_mdelem_from_strings(mdctx, ":method", "POST");
+  channeld->scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
+  channeld->content_type =
+      grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 }
 
 /* Destructor for channel data */
@@ -133,6 +157,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *channeld = elem->channel_data;
 
   grpc_mdelem_unref(channeld->te_trailers);
+  grpc_mdelem_unref(channeld->method);
+  grpc_mdelem_unref(channeld->scheme);
+  grpc_mdelem_unref(channeld->content_type);
 }
 
 const grpc_channel_filter grpc_http_client_filter = {

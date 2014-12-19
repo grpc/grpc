@@ -47,6 +47,8 @@ struct grpc_channel {
   grpc_mdctx *metadata_context;
   grpc_mdstr *grpc_status_string;
   grpc_mdstr *grpc_message_string;
+  grpc_mdstr *path_string;
+  grpc_mdstr *authority_string;
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c)+1))
@@ -63,6 +65,8 @@ grpc_channel *grpc_channel_create_from_filters(
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message");
+  channel->path_string = grpc_mdstr_from_string(mdctx, ":path");
+  channel->authority_string = grpc_mdstr_from_string(mdctx, ":authority");
   grpc_channel_stack_init(filters, num_filters, args, channel->metadata_context,
                           CHANNEL_STACK_FROM_CHANNEL(channel));
   return channel;
@@ -74,7 +78,8 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel, const char *method,
                                     const char *host,
                                     gpr_timespec absolute_deadline) {
   grpc_call *call;
-  grpc_metadata md;
+  grpc_mdelem *path_mdelem;
+  grpc_mdelem *authority_mdelem;
 
   if (!channel->is_client) {
     gpr_log(GPR_ERROR, "Cannot create a call on the server.");
@@ -83,18 +88,21 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel, const char *method,
 
   call = grpc_call_create(channel, NULL);
 
-#define ADDMD(k, v)                       \
-  do {                                    \
-    md.key = (k);                         \
-    md.value = (char *)(v);               \
-    md.value_length = strlen((v));        \
-    grpc_call_add_metadata(call, &md, 0); \
-  } while (0)
-  ADDMD(":method", "POST");
-  ADDMD(":scheme", "grpc");
-  ADDMD(":path", method);
-  ADDMD(":authority", host);
-  ADDMD("content-type", "application/grpc");
+  /* Add :path and :authority headers. */
+  /* TODO(klempner): Consider optimizing this by stashing mdelems for common
+     values of method and host. */
+  grpc_mdstr_ref(channel->path_string);
+  path_mdelem = grpc_mdelem_from_metadata_strings(
+      channel->metadata_context, channel->path_string,
+      grpc_mdstr_from_string(channel->metadata_context, method));
+  grpc_call_add_mdelem(call, path_mdelem, 0);
+
+  grpc_mdstr_ref(channel->authority_string);
+  authority_mdelem = grpc_mdelem_from_metadata_strings(
+      channel->metadata_context, channel->authority_string,
+      grpc_mdstr_from_string(channel->metadata_context, host));
+  grpc_call_add_mdelem(call, authority_mdelem, 0);
+
   if (0 != gpr_time_cmp(absolute_deadline, gpr_inf_future)) {
     grpc_call_op op;
     op.type = GRPC_SEND_DEADLINE;
@@ -118,6 +126,8 @@ void grpc_channel_internal_unref(grpc_channel *channel) {
     grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
     grpc_mdstr_unref(channel->grpc_status_string);
     grpc_mdstr_unref(channel->grpc_message_string);
+    grpc_mdstr_unref(channel->path_string);
+    grpc_mdstr_unref(channel->authority_string);
     grpc_mdctx_orphan(channel->metadata_context);
     gpr_free(channel);
   }
