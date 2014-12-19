@@ -58,6 +58,10 @@ const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0};
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
 
+/* --- Override for testing. --- */
+
+static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override = NULL;
+
 /* --- grpc_auth_json_key. --- */
 
 static const char *json_get_string_property(cJSON *json,
@@ -79,7 +83,7 @@ static int set_json_key_string_property(cJSON *json, const char *prop_name,
   return 1;
 }
 
-int grpc_auth_json_key_is_valid(grpc_auth_json_key *json_key) {
+int grpc_auth_json_key_is_valid(const grpc_auth_json_key *json_key) {
   return (json_key != NULL) &&
          strcmp(json_key->type, GRPC_AUTH_JSON_KEY_TYPE_INVALID);
 }
@@ -277,14 +281,23 @@ end:
 
 char *grpc_jwt_encode_and_sign(const grpc_auth_json_key *json_key,
                                const char *scope, gpr_timespec token_lifetime) {
-  const char *sig_algo = GRPC_JWT_RSA_SHA256_ALGORITHM;
-  char *to_sign = dot_concat_and_free_strings(
-      encoded_jwt_header(sig_algo),
-      encoded_jwt_claim(json_key, scope, token_lifetime));
-  char *sig = compute_and_encode_signature(json_key, sig_algo, to_sign);
-  if (sig == NULL) {
-    gpr_free(to_sign);
-    return NULL;
+  if (g_jwt_encode_and_sign_override != NULL) {
+    return g_jwt_encode_and_sign_override(json_key, scope, token_lifetime);
+  } else {
+    const char *sig_algo = GRPC_JWT_RSA_SHA256_ALGORITHM;
+    char *to_sign = dot_concat_and_free_strings(
+        encoded_jwt_header(sig_algo),
+        encoded_jwt_claim(json_key, scope, token_lifetime));
+    char *sig = compute_and_encode_signature(json_key, sig_algo, to_sign);
+    if (sig == NULL) {
+      gpr_free(to_sign);
+      return NULL;
+    }
+    return dot_concat_and_free_strings(to_sign, sig);
   }
-  return dot_concat_and_free_strings(to_sign, sig);
+}
+
+void grpc_jwt_encode_and_sign_set_override(
+    grpc_jwt_encode_and_sign_override func) {
+  g_jwt_encode_and_sign_override = func;
 }

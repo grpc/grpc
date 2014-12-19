@@ -109,7 +109,8 @@ const grpc_credentials_array *grpc_composite_credentials_get_credentials(
     grpc_credentials *composite_creds);
 
 /* Exposed for testing only. */
-grpc_credentials_status grpc_compute_engine_credentials_parse_server_response(
+grpc_credentials_status
+grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_httpcli_response *response, grpc_mdctx *ctx,
     grpc_mdelem **token_elem, gpr_timespec *token_lifetime);
 

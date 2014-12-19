@@ -37,7 +37,7 @@
 #include <grpc/support/slice.h>
 #include <openssl/rsa.h>
 
-/* --- auth_json_key parsing. Exposed for testing only. --- */
+/* --- auth_json_key parsing. --- */
 
 typedef struct {
   char *type;
@@ -48,7 +48,7 @@ typedef struct {
 } grpc_auth_json_key;
 
 /* Returns 1 if the object is valid, 0 otherwise. */
-int grpc_auth_json_key_is_valid(grpc_auth_json_key *json_key);
+int grpc_auth_json_key_is_valid(const grpc_auth_json_key *json_key);
 
 /* Creates a json_key object from string. Returns an invalid object if a parsing
    error has been encountered. */
@@ -64,5 +64,14 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key);
    NULL on invalid input. */
 char *grpc_jwt_encode_and_sign(const grpc_auth_json_key *json_key,
                                const char *scope, gpr_timespec token_lifetime);
+
+/* Override encode_and_sign function for testing. */
+typedef char *(*grpc_jwt_encode_and_sign_override)(
+    const grpc_auth_json_key *json_key, const char *scope,
+    gpr_timespec token_lifetime);
+
+/* Set a custom encode_and_sign override for testing. */
+void grpc_jwt_encode_and_sign_set_override(
+    grpc_jwt_encode_and_sign_override func);
 
 #endif /* __GRPC_INTERNAL_SECURITY_JSON_TOKEN_H_ */
