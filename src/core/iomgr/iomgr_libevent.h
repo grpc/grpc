@@ -201,14 +201,6 @@ struct grpc_fd {
   void *on_done_user_data;
 };
 
-/* gRPC alarm handle.
-   The handle is used to add an alarm which expires after specified timeout. */
-struct grpc_alarm {
-  grpc_libevent_task task; /* Include the base class */
-
-  gpr_atm triggered; /* To be used atomically if alarm triggered */
-};
-
 void grpc_iomgr_ref_address_resolution(int delta);
 
 #endif /* __GRPC_INTERNAL_IOMGR_IOMGR_LIBEVENT_H__ */

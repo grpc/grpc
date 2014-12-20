@@ -38,23 +38,25 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-typedef struct grpc_alarm grpc_alarm;
-
-/* One of the following headers should provide struct grpc_alarm */
-#ifdef GPR_LIBEVENT
-#include "src/core/iomgr/iomgr_libevent.h"
-#endif
+typedef struct grpc_alarm {
+  gpr_timespec deadline;
+  gpr_uint32 heap_index; /* INVALID_HEAP_INDEX if not in heap */
+  struct grpc_alarm *next;
+  struct grpc_alarm *prev;
+  int triggered;
+  grpc_iomgr_cb_func cb;
+  void *cb_arg;
+} grpc_alarm;
 
 /* Initialize *alarm. When expired or canceled, alarm_cb will be called with
    *alarm_cb_arg and status to indicate if it expired (SUCCESS) or was
    canceled (CANCELLED). alarm_cb is guaranteed to be called exactly once,
    and application code should check the status to determine how it was
    invoked. The application callback is also responsible for maintaining
-   information about when to free up any user-level state.
-   Returns 1 on success, 0 on failure. */
-int grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
-                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg,
-                    gpr_timespec now);
+   information about when to free up any user-level state. */
+void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
+                     grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg,
+                     gpr_timespec now);
 
 /* Note that there is no alarm destroy function. This is because the
    alarm is a one-time occurrence with a guarantee that the callback will
@@ -75,7 +77,13 @@ int grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
    exactly once from either the cancellation (with status CANCELLED)
    or from the activation (with status SUCCESS)
 
+   Note carefully that the callback function MAY occur in the same callstack
+   as grpc_alarm_cancel. It's expected that most alarms will be cancelled (their
+   primary use is to implement deadlines), and so this code is optimized such
+   that cancellation costs as little as possible. Making callbacks run inline
+   matches this aim.
+
    Requires:  cancel() must happen after add() on a given alarm */
-int grpc_alarm_cancel(grpc_alarm *alarm);
+void grpc_alarm_cancel(grpc_alarm *alarm);
 
 #endif /* __GRPC_INTERNAL_IOMGR_ALARM_H__ */

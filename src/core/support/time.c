@@ -47,6 +47,14 @@ int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   return cmp;
 }
 
+gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b) {
+  return gpr_time_cmp(a, b) < 0 ? a : b;
+}
+
+gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b) {
+  return gpr_time_cmp(a, b) > 0 ? a : b;
+}
+
 /* There's no standard TIME_T_MIN and TIME_T_MAX, so we construct them.  The
    following assumes that signed types are two's-complement and that bytes are
    8 bits.  */

@@ -37,6 +37,7 @@
 #include <fcntl.h>
 
 #include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/alarm_internal.h"
 #include <grpc/support/atm.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -131,6 +132,10 @@ static void maybe_free_fds() {
   }
 }
 
+/* TODO(ctiller): this is racy. In non-libevent implementations, use a pipe
+   or eventfd */
+void grpc_kick_poller() { event_base_loopbreak(g_event_base); }
+
 /* Spend some time doing polling and libevent maintenance work if no other
    thread is. This includes both polling for events and destroying/closing file
    descriptor objects.
@@ -162,8 +167,20 @@ static int maybe_do_polling_work(struct timeval delay) {
   return 1;
 }
 
+static int maybe_do_alarm_work(gpr_timespec now, gpr_timespec next) {
+  int r = 0;
+  if (gpr_time_cmp(next, now) < 0) {
+    gpr_mu_unlock(&grpc_iomgr_mu);
+    r = grpc_alarm_check(now);
+    gpr_mu_lock(&grpc_iomgr_mu);
+  }
+  return r;
+}
+
 int grpc_iomgr_work(gpr_timespec deadline) {
-  gpr_timespec delay_timespec = gpr_time_sub(deadline, gpr_now());
+  gpr_timespec now = gpr_now();
+  gpr_timespec next = grpc_alarm_list_next_timeout();
+  gpr_timespec delay_timespec = gpr_time_sub(deadline, now);
   /* poll for no longer than one second */
   gpr_timespec max_delay = {1, 0};
   struct timeval delay;
@@ -178,7 +195,8 @@ int grpc_iomgr_work(gpr_timespec deadline) {
 
   delay = gpr_timeval_from_timespec(delay_timespec);
 
-  if (maybe_do_queue_work() || maybe_do_polling_work(delay)) {
+  if (maybe_do_queue_work() || maybe_do_alarm_work(now, next) ||
+      maybe_do_polling_work(delay)) {
     g_last_poll_completed = gpr_now();
     return 1;
   }
@@ -189,7 +207,7 @@ int grpc_iomgr_work(gpr_timespec deadline) {
 static void backup_poller_thread(void *p) {
   int backup_poller_engaged = 0;
   /* allow no pollers for 100 milliseconds, then engage backup polling */
-  gpr_timespec allow_no_pollers = gpr_time_from_micros(100 * 1000);
+  gpr_timespec allow_no_pollers = gpr_time_from_millis(100);
 
   gpr_mu_lock(&grpc_iomgr_mu);
   while (!g_shutdown_backup_poller) {
@@ -203,8 +221,13 @@ static void backup_poller_thread(void *p) {
           backup_poller_engaged = 1;
         }
         if (!maybe_do_queue_work()) {
-          struct timeval tv = {1, 0};
-          maybe_do_polling_work(tv);
+          gpr_timespec next = grpc_alarm_list_next_timeout();
+          if (!maybe_do_alarm_work(now, next)) {
+            gpr_timespec deadline =
+                gpr_time_min(next, gpr_time_add(now, gpr_time_from_seconds(1)));
+            maybe_do_polling_work(
+                gpr_timeval_from_timespec(gpr_time_sub(deadline, now)));
+          }
         }
       } else {
         if (backup_poller_engaged) {
@@ -235,6 +258,8 @@ void grpc_iomgr_init() {
     gpr_log(GPR_ERROR, "Failed to initialize libevent thread support!");
     abort();
   }
+
+  grpc_alarm_list_init(gpr_now());
 
   gpr_mu_init(&grpc_iomgr_mu);
   gpr_cv_init(&grpc_iomgr_cv);
@@ -295,6 +320,8 @@ void grpc_iomgr_shutdown() {
 
   gpr_event_wait(&g_backup_poller_done, gpr_inf_future);
 
+  grpc_alarm_list_shutdown();
+
   /* drain pending work */
   gpr_mu_lock(&grpc_iomgr_mu);
   while (maybe_do_queue_work())
@@ -329,84 +356,6 @@ static void add_task(grpc_libevent_activation_data *adata) {
   }
   gpr_cv_broadcast(&grpc_iomgr_cv);
   gpr_mu_unlock(&grpc_iomgr_mu);
-}
-
-/* ===============grpc_alarm implementation==================== */
-
-/* The following function frees up the alarm's libevent structure and
-   should always be invoked just before calling the alarm's callback */
-static void alarm_ev_destroy(grpc_alarm *alarm) {
-  grpc_libevent_activation_data *adata =
-      &alarm->task.activation[GRPC_EM_TA_ONLY];
-  if (adata->ev != NULL) {
-    /* TODO(klempner): Is this safe to do when we're cancelling? */
-    event_free(adata->ev);
-    adata->ev = NULL;
-  }
-}
-/* Proxy callback triggered by alarm->ev to call alarm->cb */
-static void libevent_alarm_cb(int fd, short what, void *arg /*=alarm*/) {
-  grpc_alarm *alarm = arg;
-  grpc_libevent_activation_data *adata =
-      &alarm->task.activation[GRPC_EM_TA_ONLY];
-  int trigger_old;
-
-  /* First check if this alarm has been canceled, atomically */
-  trigger_old =
-      gpr_atm_full_fetch_add(&alarm->triggered, ALARM_TRIGGER_INCREMENT);
-  if (trigger_old == ALARM_TRIGGER_INIT) {
-    /* Before invoking user callback, destroy the libevent structure */
-    alarm_ev_destroy(alarm);
-    adata->status = GRPC_CALLBACK_SUCCESS;
-    add_task(adata);
-  }
-}
-
-int grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
-                    grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg,
-                    gpr_timespec now) {
-  grpc_libevent_activation_data *adata =
-      &alarm->task.activation[GRPC_EM_TA_ONLY];
-  gpr_timespec delay_timespec = gpr_time_sub(deadline, now);
-  struct timeval delay = gpr_timeval_from_timespec(delay_timespec);
-  alarm->task.type = GRPC_EM_TASK_ALARM;
-  gpr_atm_rel_store(&alarm->triggered, ALARM_TRIGGER_INIT);
-  adata->cb = alarm_cb;
-  adata->arg = alarm_cb_arg;
-  adata->prev = NULL;
-  adata->next = NULL;
-  adata->ev = evtimer_new(g_event_base, libevent_alarm_cb, alarm);
-  /* Set the trigger field to untriggered. Do this as the last store since
-     it is a release of previous stores. */
-  gpr_atm_rel_store(&alarm->triggered, ALARM_TRIGGER_INIT);
-
-  return adata->ev != NULL && evtimer_add(adata->ev, &delay) == 0;
-}
-
-int grpc_alarm_cancel(grpc_alarm *alarm) {
-  grpc_libevent_activation_data *adata =
-      &alarm->task.activation[GRPC_EM_TA_ONLY];
-  int trigger_old;
-
-  /* First check if this alarm has been triggered, atomically */
-  trigger_old =
-      gpr_atm_full_fetch_add(&alarm->triggered, ALARM_TRIGGER_INCREMENT);
-  if (trigger_old == ALARM_TRIGGER_INIT) {
-    /* We need to make sure that we only invoke the callback if it hasn't
-       already been invoked */
-    /* First remove this event from libevent. This returns success even if the
-       event has gone active or invoked its callback. */
-    if (evtimer_del(adata->ev) != 0) {
-      /* The delete was unsuccessful for some reason. */
-      gpr_log(GPR_ERROR, "Attempt to delete alarm event was unsuccessful");
-      return 0;
-    }
-    /* Free up the event structure before invoking callback */
-    alarm_ev_destroy(alarm);
-    adata->status = GRPC_CALLBACK_CANCELLED;
-    add_task(adata);
-  }
-  return 1;
 }
 
 static void grpc_fd_impl_destroy(grpc_fd *impl) {

@@ -78,6 +78,9 @@ gpr_timespec gpr_now(void);
    respectively.  */
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b);
 
+gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b);
+gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
+
 /* Add and subtract times.  Calculations saturate at infinities. */
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
 gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
