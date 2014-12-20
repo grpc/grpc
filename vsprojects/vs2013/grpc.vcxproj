@@ -99,6 +99,8 @@
     <ClInclude Include="..\..\src\core\httpcli\httpcli_security_context.h" />
     <ClInclude Include="..\..\src\core\httpcli\parser.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />
+    <ClInclude Include="..\..\src\core\iomgr\alarm_heap.h" />
+    <ClInclude Include="..\..\src\core\iomgr\alarm_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint_pair.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_completion_queue_interface.h" />
@@ -201,6 +203,10 @@
     <ClCompile Include="..\..\src\core\httpcli\httpcli_security_context.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\parser.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\alarm.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\alarm_heap.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\endpoint.c">
     </ClCompile>
