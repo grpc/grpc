@@ -84,9 +84,11 @@ HOST_LDXX = $(LDXX)
 ifeq ($(DEBUG),)
 CPPFLAGS += -O2
 DEFINES += NDEBUG
+TGTDIR = opt
 else
 CPPFLAGS += -O0
 DEFINES += _DEBUG DEBUG
+TGTDIR = dbg
 endif
 
 CFLAGS += -std=c89 -pedantic
@@ -213,7 +215,7 @@ ifeq ($(DEP_MISSING),)
 all: static shared\
 % for tgt in targets:
 % if tgt.build == 'all':
- bins/${tgt.name}\
+ bins/$(TGTDIR)/${tgt.name}\
 % endif
 % endfor
 
@@ -268,6 +270,10 @@ openssl_dep_message:
 stop:
 	@false
 
+% for tgt in targets:
+${tgt.name}: bins/$(TGTDIR)/${tgt.name}
+% endfor
+
 run_dep_checks:
 	$(EVENT2_CHECK_CMD) || true
 	$(OPENSSL_ALPN_CHECK_CMD) || true
@@ -286,7 +292,7 @@ static: static_c static_cxx
 static_c: dep_c\
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
- libs/lib${lib.name}.a\
+ libs/$(TGTDIR)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -294,7 +300,7 @@ static_c: dep_c\
 static_cxx: dep_cxx\
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
- libs/lib${lib.name}.a\
+ libs/$(TGTDIR)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -304,7 +310,7 @@ shared: shared_c shared_cxx
 shared_c: dep_c\
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
- libs/lib${lib.name}.so.$(VERSION)\
+ libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)\
 % endif
 % endfor
 
@@ -312,7 +318,7 @@ shared_c: dep_c\
 shared_cxx: dep_cxx\
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
- libs/lib${lib.name}.so.$(VERSION)\
+ libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)\
 % endif
 % endfor
 
@@ -322,7 +328,7 @@ privatelibs: privatelibs_c privatelibs_cxx
 privatelibs_c: dep_c\
 % for lib in libs:
 % if lib.build == 'private':
- libs/lib${lib.name}.a\
+ libs/$(TGTDIR)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -330,7 +336,7 @@ privatelibs_c: dep_c\
 privatelibs_cxx: dep_cxx\
 % for lib in libs:
 % if lib.build == 'private':
- libs/lib${lib.name}.a\
+ libs/$(TGTDIR)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -340,7 +346,7 @@ buildtests: buildtests_c buildtests_cxx
 buildtests_c: bins_dep_c privatelibs_c\
 % for tgt in targets:
 % if tgt.build == 'test' and not tgt.get('c++', False):
- bins/${tgt.name}\
+ bins/$(TGTDIR)/${tgt.name}\
 % endif
 % endfor
 
@@ -359,7 +365,7 @@ test_c: buildtests_c
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('run', True) and not tgt.get('c++', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
-	$(Q) ./bins/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+	$(Q) ./bins/$(TGTDIR)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
 % endfor
 
@@ -368,7 +374,7 @@ test_cxx: buildtests_cxx
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('run', True) and tgt.get('c++', False):
 	$(E) "[RUN]     Testing ${tgt.name}"
-	$(Q) ./bins/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+	$(Q) ./bins/$(TGTDIR)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
 % endfor
 
@@ -376,7 +382,7 @@ test_cxx: buildtests_cxx
 tools: privatelibs\
 % for tgt in targets:
 % if tgt.build == 'tool':
- bins/${tgt.name}\
+ bins/$(TGTDIR)/${tgt.name}\
 % endif
 % endfor
 
@@ -384,7 +390,7 @@ tools: privatelibs\
 protoc_plugins:\
 % for tgt in targets:
 % if tgt.build == 'protoc':
- bins/${tgt.name}\
+ bins/$(TGTDIR)/${tgt.name}\
 % endif
 % endfor
 
@@ -392,7 +398,7 @@ protoc_plugins:\
 buildbenchmarks: privatelibs\
 % for tgt in targets:
 % if tgt.build == 'benchmark':
- bins/${tgt.name}\
+ bins/$(TGTDIR)/${tgt.name}\
 % endif
 % endfor
 
@@ -410,7 +416,7 @@ strip-static_c: static_c
 % if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
-	$(Q) $(STRIP) libs/lib${lib.name}.a
+	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -420,7 +426,7 @@ strip-static_cxx: static_cxx
 % if lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
-	$(Q) $(STRIP) libs/lib${lib.name}.a
+	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -430,7 +436,7 @@ strip-shared_c: shared_c
 % if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-	$(Q) $(STRIP) libs/lib${lib.name}.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)
 % endif
 % endif
 % endfor
@@ -440,49 +446,49 @@ strip-shared_cxx: shared_cxx
 % if lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-	$(Q) $(STRIP) libs/lib${lib.name}.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)
 % endif
 % endif
 % endfor
 
 % for p in protos:
-deps/gens/${p}.pb.dep:
+deps/$(TGTDIR)/gens/${p}.pb.dep:
 	$(Q) mkdir -p `dirname $@`
 	$(Q) touch $@
 
 gens/${p}.pb.cc: ${p}.proto protoc_plugins
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(TGTDIR)/cpp_plugin $<
 
 % endfor
 
-deps/%.dep : %.c
+deps/$(TGTDIR)/%.dep : %.c
 	$(E) "[DEP]     Generating dependencies for $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
 
-deps/%.dep : %.cc
+deps/$(TGTDIR)/%.dep : %.cc
 	$(E) "[DEP]     Generating dependencies for $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
 
-objs/%.o : %.c
+objs/$(TGTDIR)/%.o : %.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-objs/%.o : gens/%.pb.cc
+objs/$(TGTDIR)/%.o : gens/%.pb.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-objs/src/compiler/%.o : src/compiler/%.cc
+objs/$(TGTDIR)/src/compiler/%.o : src/compiler/%.cc
 	$(E) "[HOSTCXX] Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -c -o $@ $<
 
-objs/%.o : %.cc
+objs/$(TGTDIR)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
@@ -544,7 +550,7 @@ install-static_c: static_c strip-static_c
 % if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
-	$(Q) $(INSTALL) libs/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -554,7 +560,7 @@ install-static_cxx: static_cxx strip-static_cxx
 % if lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
-	$(Q) $(INSTALL) libs/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -564,7 +570,7 @@ install-shared_c: shared_c strip-shared_c
 % if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.so"
-	$(Q) $(INSTALL) libs/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
 % endif
 % endif
 % endfor
@@ -574,7 +580,7 @@ install-shared_cxx: shared_cxx strip-shared_cxx
 % if lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.so"
-	$(Q) $(INSTALL) libs/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
 % endif
 % endif
 % endfor
@@ -625,36 +631,36 @@ PUBLIC_HEADERS_C += \\
 % endfor
 % endif
 
-LIB${lib.name.upper()}_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
-LIB${lib.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
+LIB${lib.name.upper()}_OBJS = $(addprefix objs/$(TGTDIR)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
+LIB${lib.name.upper()}_DEPS = $(addprefix deps/$(TGTDIR)/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
 
 % if lib.get('secure', True):
 ifeq ($(NO_SECURE),true)
 
-libs/lib${lib.name}.a: openssl_dep_error
+libs/$(TGTDIR)/lib${lib.name}.a: openssl_dep_error
 
 else
 
-libs/lib${lib.name}.a: $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
+libs/$(TGTDIR)/lib${lib.name}.a: $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
 % else:
-libs/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
+libs/$(TGTDIR)/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
 % endif
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(AR) rcs libs/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
+	$(Q) $(AR) rcs libs/$(TGTDIR)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 % if lib.get('baselib', False):
 % if lib.get('secure', True):
 	$(Q) mkdir tmp-merge
-	$(Q) ( cd tmp-merge ; $(AR) x ../libs/lib${lib.name}.a )
+	$(Q) ( cd tmp-merge ; $(AR) x ../libs/$(TGTDIR)/lib${lib.name}.a )
 	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; <%text>ar x ../$${l}</%text> ) ; done
-	$(Q) rm -f libs/lib${lib.name}.a tmp-merge/__.SYMDEF*
-	$(Q) ar rcs libs/lib${lib.name}.a tmp-merge/*
+	$(Q) rm -f libs/$(TGTDIR)/lib${lib.name}.a tmp-merge/__.SYMDEF*
+	$(Q) ar rcs libs/$(TGTDIR)/lib${lib.name}.a tmp-merge/*
 	$(Q) rm -rf tmp-merge
 % endif
 % endif
 
 % if lib.build == "all":
-libs/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
+libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 % if lib.get('c++', False):
@@ -662,7 +668,7 @@ libs/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
 % else:
 	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} \
 % endif
--o libs/lib${lib.name}.so.$(VERSION) $(LIB${lib.name.upper()}_OBJS) $(LDLIBS)\
+-o libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION) $(LIB${lib.name.upper()}_OBJS) $(LDLIBS)\
 % if lib.get('secure', True):
  $(LDLIBS_SECURE)\
 % endif
@@ -689,8 +695,8 @@ clean_lib${lib.name}:
 	$(E) "[CLEAN]   Cleaning lib${lib.name} files"
 	$(Q) $(RM) $(LIB${lib.name.upper()}_OBJS)
 	$(Q) $(RM) $(LIB${lib.name.upper()}_DEPS)
-	$(Q) $(RM) libs/lib${lib.name}.a
-	$(Q) $(RM) libs/lib${lib.name}.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/lib${lib.name}.a
+	$(Q) $(RM) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)
 </%def>
 
 <%def name="maketarget(tgt)">
@@ -701,20 +707,20 @@ ${tgt.name.upper()}_SRC = \\
 
 % endfor
 
-${tgt.name.upper()}_OBJS = $(addprefix objs/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-${tgt.name.upper()}_DEPS = $(addprefix deps/, $(addsuffix .dep, $(basename $(${tgt.name.upper()}_SRC))))
+${tgt.name.upper()}_OBJS = $(addprefix objs/$(TGTDIR)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
+${tgt.name.upper()}_DEPS = $(addprefix deps/$(TGTDIR)/, $(addsuffix .dep, $(basename $(${tgt.name.upper()}_SRC))))
 
 % if tgt.get('secure', True):
 ifeq ($(NO_SECURE),true)
 
-bins/${tgt.name}: openssl_dep_error
+bins/$(TGTDIR)/${tgt.name}: openssl_dep_error
 
 else
 
 % endif
-bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
+bins/$(TGTDIR)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % for dep in tgt.deps:
- libs/lib${dep}.a\
+ libs/$(TGTDIR)/lib${dep}.a\
 % endfor
 
 % if tgt.get("c++", False):
@@ -730,11 +736,11 @@ bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % if tgt.build == 'test':
  $(GTEST_LIB)\
 % endif
- -Llibs\
+ -Llibs/$(TGTDIR)\
 % else:
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) -Llibs\
+	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) -Llibs/$(TGTDIR)\
 % endif
 % for dep in tgt.deps:
  -l${dep}\
@@ -756,7 +762,7 @@ bins/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % elif tgt.get('secure', True):
  $(LDLIBS_SECURE)\
 % endif
- -o bins/${tgt.name}
+ -o bins/$(TGTDIR)/${tgt.name}
 % if tgt.get('secure', True):
 
 endif
@@ -778,7 +784,7 @@ clean_${tgt.name}:
 	$(E) "[CLEAN]   Cleaning ${tgt.name} files"
 	$(Q) $(RM) $(${tgt.name.upper()}_OBJS)
 	$(Q) $(RM) $(${tgt.name.upper()}_DEPS)
-	$(Q) $(RM) bins/${tgt.name}
+	$(Q) $(RM) bins/$(TGTDIR)/${tgt.name}
 </%def>
 
 .PHONY: all strip tools \
