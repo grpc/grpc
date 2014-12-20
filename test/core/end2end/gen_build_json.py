@@ -61,7 +61,8 @@ def main():
               'name': 'end2end_certs',
               'build': 'private',
               'src': [
-                  "test/core/end2end/data/ca_cert.c",
+                  "test/core/end2end/data/test_root_cert.c",
+                  "test/core/end2end/data/prod_roots_certs.c",
                   "test/core/end2end/data/server1_cert.c",
                   "test/core/end2end/data/server1_key.c"
               ]

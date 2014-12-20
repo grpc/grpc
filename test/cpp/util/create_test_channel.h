@@ -48,6 +48,10 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
 std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
                                                     bool enable_ssl);
 
+std::shared_ptr<ChannelInterface> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    bool enable_ssl, bool use_prod_roots);
+
 }  // namespace grpc
 
 #endif  // __GRPCPP_TEST_UTIL_CREATE_TEST_CHANNEL_H_

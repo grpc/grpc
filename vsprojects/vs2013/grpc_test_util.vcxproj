@@ -75,7 +75,9 @@
   <ItemGroup>
     <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
     </ClCompile>
-    <ClCompile Include="..\..\test\core\end2end\data\ca_cert.c">
+    <ClCompile Include="..\..\test\core\end2end\data\test_root_cert.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\end2end\data\prod_roots_certs.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_cert.c">
     </ClCompile>

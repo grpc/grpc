@@ -99,7 +99,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 static void chttp2_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   grpc_credentials *ssl_creds = grpc_ssl_credentials_create(
-      test_ca_cert, test_ca_cert_size, NULL, 0, NULL, 0);
+      test_root_cert, test_root_cert_size, NULL, 0, NULL, 0);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.com"}};

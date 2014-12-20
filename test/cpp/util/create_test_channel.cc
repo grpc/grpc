@@ -44,19 +44,23 @@ namespace grpc {
 // create channel. Otherwise, connect to server and override hostname if
 // override_hostname is provided.
 // When ssl is not enabled, override_hostname is ignored.
+// Set use_prod_root to true to use the SSL root for production GFE. Otherwise,
+// root for test SSL cert will be used.
 // Use examples:
-//   CreateTestChannel("1.1.1.1:12345", "override.hostname.com", true);
-//   CreateTestChannel("test.google.com:443", "", true);
-//   CreateTestChannel("", "test.google.com:443", true);  // same as above
+//   CreateTestChannel("1.1.1.1:12345", "override.hostname.com", true, false);
+//   CreateTestChannel("test.google.com:443", "", true, true);
+//   CreateTestChannel("", "test.google.com:443", true, true);  // same as above
 std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl) {
+    bool enable_ssl, bool use_prod_roots) {
   ChannelArguments channel_args;
   if (enable_ssl) {
-    SslCredentialsOptions ssl_opts = {
-        {reinterpret_cast<const char*>(test_ca_cert), test_ca_cert_size},
-        "",
-        ""};
+    const char* roots_certs =
+        use_prod_roots ? reinterpret_cast<const char*>(prod_roots_certs)
+                       : reinterpret_cast<const char*>(test_root_cert);
+    unsigned int roots_certs_size =
+        use_prod_roots ? prod_roots_certs_size : test_root_cert_size;
+    SslCredentialsOptions ssl_opts = {{roots_certs, roots_certs_size}, "", ""};
 
     std::unique_ptr<Credentials> creds =
         CredentialsFactory::SslCredentials(ssl_opts);
@@ -75,7 +79,7 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
 // Shortcut for end2end and interop tests.
 std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
                                                     bool enable_ssl) {
-  return CreateTestChannel(server, "foo.test.google.com", enable_ssl);
+  return CreateTestChannel(server, "foo.test.google.com", enable_ssl, false);
 }
 
 }  // namespace grpc

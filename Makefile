@@ -1012,7 +1012,8 @@ clean_libgrpc:
 
 LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/cq_verifier.c \
-    test/core/end2end/data/ca_cert.c \
+    test/core/end2end/data/test_root_cert.c \
+    test/core/end2end/data/prod_roots_certs.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
     test/core/iomgr/endpoint_tests.c \
@@ -1965,7 +1966,8 @@ clean_libend2end_test_writes_done_hangs_with_pending_read:
 
 
 LIBEND2END_CERTS_SRC = \
-    test/core/end2end/data/ca_cert.c \
+    test/core/end2end/data/test_root_cert.c \
+    test/core/end2end/data/prod_roots_certs.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
 
