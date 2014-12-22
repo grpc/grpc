@@ -64,11 +64,13 @@ Channel::Channel(const grpc::string& target, const ChannelArguments& args)
 Channel::Channel(const grpc::string& target,
                  const std::unique_ptr<Credentials>& creds,
                  const ChannelArguments& args)
-    : target_(target) {
+    : target_(args.GetSslTargetNameOverride().empty()
+                  ? target
+                  : args.GetSslTargetNameOverride()) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
   c_channel_ = grpc_secure_channel_create(
-      creds->GetRawCreds(), target_.c_str(),
+      creds->GetRawCreds(), target.c_str(),
       channel_args.num_args > 0 ? &channel_args : nullptr);
 }
 

@@ -70,6 +70,9 @@ class ChannelArguments {
   ChannelArguments(const ChannelArguments&);
   ChannelArguments& operator=(const ChannelArguments&);
 
+  // Returns empty string when it is not set.
+  grpc::string GetSslTargetNameOverride() const;
+
   // Populates given channel_args with args_, does not take ownership.
   void SetChannelArgs(grpc_channel_args* channel_args) const;
 
