@@ -42,7 +42,7 @@ void ChannelArguments::SetSslTargetNameOverride(const grpc::string& name) {
 }
 
 grpc::string ChannelArguments::GetSslTargetNameOverride() const {
-  for (int i = 0; i < args_.size(); i++) {
+  for (unsigned int i = 0; i < args_.size(); i++) {
     if (grpc::string(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == args_[i].key) {
       return args_[i].value.string;
     }
