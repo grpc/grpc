@@ -99,7 +99,6 @@ LDFLAGS += -g -pthread -fPIC
 INCLUDES = . include gens
 LIBS = rt m z event event_pthreads pthread
 LIBSXX = protobuf
-LIBS_SECURE = ssl crypto dl
 LIBS_PROTOC = protoc protobuf
 
 ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
@@ -124,7 +123,6 @@ CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
 LDFLAGS += $(ARCH_FLAGS)
 LDLIBS += $(addprefix -l, $(LIBS))
 LDLIBSXX += $(addprefix -l, $(LIBSXX))
-LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 HOST_CPPFLAGS = $(CPPFLAGS)
@@ -140,6 +138,16 @@ HOST_LDLIBS = $(LDLIBS)
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 ifeq ($(SYSTEM),)
 SYSTEM = $(HOST_SYSTEM)
+endif
+
+ifeq ($(SYSTEM),MINGW32)
+SHARED_EXT = dll
+endif
+ifeq ($(SYSTEM),Darwin)
+SHARED_EXT = dylib
+endif
+ifeq ($(SHARED_EXT),)
+SHARED_EXT = so.$(VERSION)
 endif
 
 ifeq ($(wildcard .git),)
@@ -196,10 +204,15 @@ OPENSSL_DEP = third_party/openssl/libssl.a
 OPENSSL_MERGE_LIBS += third_party/openssl/libssl.a third_party/openssl/libcrypto.a
 CPPFLAGS += -Ithird_party/openssl/include
 LDFLAGS += -Lthird_party/openssl
+LIBS_SECURE = dl
 else
 NO_SECURE = true
 endif
+else
+LIBS_SECURE = ssl crypto dl
 endif
+
+LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 
 ifneq ($(DEP_MISSING),)
 NO_DEPS = true
@@ -310,7 +323,7 @@ shared: shared_c shared_cxx
 shared_c: dep_c\
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
- libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)\
+ libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT)\
 % endif
 % endfor
 
@@ -318,7 +331,7 @@ shared_c: dep_c\
 shared_cxx: dep_cxx\
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
- libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)\
+ libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT)\
 % endif
 % endfor
 
@@ -436,7 +449,7 @@ strip-shared_c: shared_c
 % if not lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT)
 % endif
 % endif
 % endfor
@@ -446,7 +459,7 @@ strip-shared_cxx: shared_cxx
 % if lib.get("c++", False):
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT)
 % endif
 % endif
 % endfor
@@ -569,21 +582,49 @@ install-shared_c: shared_c strip-shared_c
 % for lib in libs:
 % if not lib.get("c++", False):
 % if lib.build == "all":
-	$(E) "[INSTALL] Installing lib${lib.name}.so"
-	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+else
+	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
+endif
+endif
 % endif
 % endif
 % endfor
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig
+endif
+endif
 
 install-shared_cxx: shared_cxx strip-shared_cxx
 % for lib in libs:
 % if lib.get("c++", False):
 % if lib.build == "all":
-	$(E) "[INSTALL] Installing lib${lib.name}.so"
-	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION) $(prefix)/lib/lib${lib.name}.so.$(VERSION)
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+else
+	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
+endif
+endif
 % endif
 % endif
 % endfor
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig
+endif
+endif
 
 clean:\
 % for lib in libs:
@@ -639,6 +680,14 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/lib${lib.name}.a: openssl_dep_error
 
+% if lib.build == "all":
+ifeq ($(SYSTEM),MINGW32)
+libs/$(TGTDIR)/${lib.name}.$(SHARED_EXT): openssl_dep_error
+else
+libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT): openssl_dep_error
+endif
+% endif
+
 else
 
 libs/$(TGTDIR)/lib${lib.name}.a: $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
@@ -659,19 +708,51 @@ libs/$(TGTDIR)/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
 % endif
 % endif
 
+<%
+  if lib.get('c++', False):
+    ld = '$(LDXX)'
+  else:
+    ld = '$(LD)'
+
+  out_base = 'libs/$(TGTDIR)/' + lib.name
+  out_libbase = 'libs/$(TGTDIR)/lib' + lib.name
+
+  common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
+
+  libs = ''
+  lib_deps = ''
+  mingw_libs = ''
+  mingw_lib_deps = ''
+  for dep in lib.get('deps', []):
+    libs = libs + ' -l' + dep
+    lib_deps = lib_deps + 'libs/$(TGTDIR)/lib' + dep + '.$(SHARED_EXT)'
+    mingw_libs = mingw_libs + ' -l' + dep + '-imp'
+    mingw_lib_deps = mingw_lib_deps + 'libs/$(TGTDIR)/' + dep + '.$(SHARED_EXT)'
+
+  if lib.get('secure', True):
+    common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    lib_deps = lib_deps + ' $(OPENSSL_DEP)'
+    mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
+
+%>
+
 % if lib.build == "all":
-libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION): $(LIB${lib.name.upper()}_OBJS)
+ifeq ($(SYSTEM),MINGW32)
+${out_base}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-% if lib.get('c++', False):
-	$(Q) $(LDXX) $(LDFLAGS) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} \
-% else:
-	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} \
-% endif
--o libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION) $(LIB${lib.name.upper()}_OBJS) $(LDLIBS)\
-% if lib.get('secure', True):
- $(LDLIBS_SECURE)\
-% endif
+	$(Q) ${ld} $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,--output-def=${out_base}.def -Wl,--out-implib=${out_libbase}-imp.a -o ${out_base}.$(SHARED_EXT) ${common}${mingw_libs}
+else
+${out_libbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ${ld} $(LDFLAGS) -Llibs/$(TGTDIR) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+else
+	$(Q) ${ld} $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so
+endif
+endif
 % endif
 
 % if lib.get('secure', True):
@@ -696,7 +777,7 @@ clean_lib${lib.name}:
 	$(Q) $(RM) $(LIB${lib.name.upper()}_OBJS)
 	$(Q) $(RM) $(LIB${lib.name.upper()}_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/lib${lib.name}.a
-	$(Q) $(RM) libs/$(TGTDIR)/lib${lib.name}.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/lib${lib.name}.$(SHARED_EXT)
 </%def>
 
 <%def name="maketarget(tgt)">
@@ -736,14 +817,13 @@ bins/$(TGTDIR)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % if tgt.build == 'test':
  $(GTEST_LIB)\
 % endif
- -Llibs/$(TGTDIR)\
 % else:
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS) -Llibs/$(TGTDIR)\
+	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
 % endif
 % for dep in tgt.deps:
- -l${dep}\
+ libs/$(TGTDIR)/lib${dep}.a\
 % endfor
 % if tgt.get("c++", False):
 % if tgt.build == 'protoc':

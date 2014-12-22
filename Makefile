@@ -42,7 +42,6 @@ LDFLAGS += -g -pthread -fPIC
 INCLUDES = . include gens
 LIBS = rt m z event event_pthreads pthread
 LIBSXX = protobuf
-LIBS_SECURE = ssl crypto dl
 LIBS_PROTOC = protoc protobuf
 
 ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
@@ -67,7 +66,6 @@ CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
 LDFLAGS += $(ARCH_FLAGS)
 LDLIBS += $(addprefix -l, $(LIBS))
 LDLIBSXX += $(addprefix -l, $(LIBSXX))
-LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 HOST_CPPFLAGS = $(CPPFLAGS)
@@ -83,6 +81,16 @@ HOST_LDLIBS = $(LDLIBS)
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 ifeq ($(SYSTEM),)
 SYSTEM = $(HOST_SYSTEM)
+endif
+
+ifeq ($(SYSTEM),MINGW32)
+SHARED_EXT = dll
+endif
+ifeq ($(SYSTEM),Darwin)
+SHARED_EXT = dylib
+endif
+ifeq ($(SHARED_EXT),)
+SHARED_EXT = so.$(VERSION)
 endif
 
 ifeq ($(wildcard .git),)
@@ -139,10 +147,15 @@ OPENSSL_DEP = third_party/openssl/libssl.a
 OPENSSL_MERGE_LIBS += third_party/openssl/libssl.a third_party/openssl/libcrypto.a
 CPPFLAGS += -Ithird_party/openssl/include
 LDFLAGS += -Lthird_party/openssl
+LIBS_SECURE = dl
 else
 NO_SECURE = true
 endif
+else
+LIBS_SECURE = ssl crypto dl
 endif
+
+LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 
 ifneq ($(DEP_MISSING),)
 NO_DEPS = true
@@ -429,9 +442,9 @@ static_cxx: dep_cxx libs/$(TGTDIR)/libgrpc++.a
 
 shared: shared_c shared_cxx
 
-shared_c: dep_c libs/$(TGTDIR)/libgpr.so.$(VERSION) libs/$(TGTDIR)/libgrpc.so.$(VERSION) libs/$(TGTDIR)/libgrpc_unsecure.so.$(VERSION)
+shared_c: dep_c libs/$(TGTDIR)/libgpr.$(SHARED_EXT) libs/$(TGTDIR)/libgrpc.$(SHARED_EXT) libs/$(TGTDIR)/libgrpc_unsecure.$(SHARED_EXT)
 
-shared_cxx: dep_cxx libs/$(TGTDIR)/libgrpc++.so.$(VERSION)
+shared_cxx: dep_cxx libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
@@ -857,15 +870,15 @@ strip-static_cxx: static_cxx
 
 strip-shared_c: shared_c
 	$(E) "[STRIP]   Stripping libgpr.so"
-	$(Q) $(STRIP) libs/$(TGTDIR)/libgpr.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/libgpr.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc.so"
-	$(Q) $(STRIP) libs/$(TGTDIR)/libgrpc.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/libgrpc.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
-	$(Q) $(STRIP) libs/$(TGTDIR)/libgrpc_unsecure.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/libgrpc_unsecure.$(SHARED_EXT)
 
 strip-shared_cxx: shared_cxx
 	$(E) "[STRIP]   Stripping libgrpc++.so"
-	$(Q) $(STRIP) libs/$(TGTDIR)/libgrpc++.so.$(VERSION)
+	$(Q) $(STRIP) libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT)
 
 deps/$(TGTDIR)/gens/test/cpp/interop/empty.pb.dep:
 	$(Q) mkdir -p `dirname $@`
@@ -975,16 +988,62 @@ install-static_cxx: static_cxx strip-static_cxx
 	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc++.a $(prefix)/lib/libgrpc++.a
 
 install-shared_c: shared_c strip-shared_c
-	$(E) "[INSTALL] Installing libgpr.so"
-	$(Q) $(INSTALL) libs/$(TGTDIR)/libgpr.so.$(VERSION) $(prefix)/lib/libgpr.so.$(VERSION)
-	$(E) "[INSTALL] Installing libgrpc.so"
-	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc.so.$(VERSION) $(prefix)/lib/libgrpc.so.$(VERSION)
-	$(E) "[INSTALL] Installing libgrpc_unsecure.so"
-	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc_unsecure.so.$(VERSION) $(prefix)/lib/libgrpc_unsecure.so.$(VERSION)
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing gpr.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/gpr.$(SHARED_EXT) $(prefix)/lib/gpr.$(SHARED_EXT)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgpr-imp.a $(prefix)/lib/libgpr-imp.a
+else
+	$(E) "[INSTALL] Installing libgpr.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgpr.$(SHARED_EXT) $(prefix)/lib/libgpr.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgpr.$(SHARED_EXT) $(prefix)/lib/libgpr.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing grpc.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/grpc.$(SHARED_EXT) $(prefix)/lib/grpc.$(SHARED_EXT)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc-imp.a $(prefix)/lib/libgrpc-imp.a
+else
+	$(E) "[INSTALL] Installing libgrpc.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing grpc_unsecure.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/grpc_unsecure.$(SHARED_EXT) $(prefix)/lib/grpc_unsecure.$(SHARED_EXT)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc_unsecure-imp.a $(prefix)/lib/libgrpc_unsecure-imp.a
+else
+	$(E) "[INSTALL] Installing libgrpc_unsecure.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so
+endif
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig
+endif
+endif
 
 install-shared_cxx: shared_cxx strip-shared_cxx
-	$(E) "[INSTALL] Installing libgrpc++.so"
-	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc++.so.$(VERSION) $(prefix)/lib/libgrpc++.so.$(VERSION)
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing grpc++.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/grpc++.$(SHARED_EXT) $(prefix)/lib/grpc++.$(SHARED_EXT)
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc++-imp.a $(prefix)/lib/libgrpc++-imp.a
+else
+	$(E) "[INSTALL] Installing libgrpc++.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
+endif
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig
+endif
+endif
 
 clean: clean_libgpr clean_libgrpc clean_libgrpc_test_util clean_libgrpc++ clean_libgrpc++_test_util clean_libend2end_fixture_chttp2_fake_security clean_libend2end_fixture_chttp2_fullstack clean_libend2end_fixture_chttp2_simple_ssl_fullstack clean_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack clean_libend2end_fixture_chttp2_socket_pair clean_libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time clean_libend2end_test_cancel_after_accept clean_libend2end_test_cancel_after_accept_and_writes_closed clean_libend2end_test_cancel_after_invoke clean_libend2end_test_cancel_before_invoke clean_libend2end_test_cancel_in_a_vacuum clean_libend2end_test_disappearing_server clean_libend2end_test_early_server_shutdown_finishes_inflight_calls clean_libend2end_test_early_server_shutdown_finishes_tags clean_libend2end_test_invoke_large_request clean_libend2end_test_max_concurrent_streams clean_libend2end_test_no_op clean_libend2end_test_ping_pong_streaming clean_libend2end_test_request_response_with_binary_metadata_and_payload clean_libend2end_test_request_response_with_metadata_and_payload clean_libend2end_test_request_response_with_payload clean_libend2end_test_request_response_with_trailing_metadata_and_payload clean_libend2end_test_simple_delayed_request clean_libend2end_test_simple_request clean_libend2end_test_thread_stress clean_libend2end_test_writes_done_hangs_with_pending_read clean_libend2end_certs clean_libgrpc_unsecure clean_gen_hpack_tables clean_cpp_plugin clean_ruby_plugin clean_grpc_byte_buffer_reader_test clean_gpr_cancellable_test clean_gpr_log_test clean_gpr_useful_test clean_gpr_cmdline_test clean_gpr_histogram_test clean_gpr_host_port_test clean_gpr_slice_buffer_test clean_gpr_slice_test clean_gpr_string_test clean_gpr_sync_test clean_gpr_thd_test clean_gpr_time_test clean_murmur_hash_test clean_grpc_stream_op_test clean_alpn_test clean_time_averaged_stats_test clean_chttp2_stream_encoder_test clean_hpack_table_test clean_chttp2_stream_map_test clean_hpack_parser_test clean_transport_metadata_test clean_chttp2_status_conversion_test clean_chttp2_transport_end2end_test clean_tcp_posix_test clean_dualstack_socket_test clean_no_server_test clean_resolve_address_test clean_sockaddr_utils_test clean_tcp_server_posix_test clean_tcp_client_posix_test clean_grpc_channel_stack_test clean_metadata_buffer_test clean_grpc_completion_queue_test clean_grpc_completion_queue_benchmark clean_census_window_stats_test clean_census_statistics_quick_test clean_census_statistics_small_log_test clean_census_statistics_performance_test clean_census_statistics_multiple_writers_test clean_census_statistics_multiple_writers_circular_buffer_test clean_census_stub_test clean_census_hash_table_test clean_fling_server clean_fling_client clean_fling_test clean_echo_server clean_echo_client clean_echo_test clean_low_level_ping_pong_benchmark clean_message_compress_test clean_bin_encoder_test clean_secure_endpoint_test clean_httpcli_format_request_test clean_httpcli_parser_test clean_httpcli_test clean_grpc_credentials_test clean_grpc_fetch_oauth2 clean_grpc_base64_test clean_grpc_json_token_test clean_timeout_encoding_test clean_fd_posix_test clean_fling_stream_test clean_lame_client_test clean_thread_pool_test clean_status_test clean_sync_client_async_server_test clean_qps_client clean_qps_server clean_interop_server clean_interop_client clean_end2end_test clean_channel_arguments_test clean_alarm_test clean_alarm_list_test clean_alarm_heap_test clean_time_test clean_chttp2_fake_security_cancel_after_accept_test clean_chttp2_fake_security_cancel_after_accept_and_writes_closed_test clean_chttp2_fake_security_cancel_after_invoke_test clean_chttp2_fake_security_cancel_before_invoke_test clean_chttp2_fake_security_cancel_in_a_vacuum_test clean_chttp2_fake_security_disappearing_server_test clean_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_fake_security_early_server_shutdown_finishes_tags_test clean_chttp2_fake_security_invoke_large_request_test clean_chttp2_fake_security_max_concurrent_streams_test clean_chttp2_fake_security_no_op_test clean_chttp2_fake_security_ping_pong_streaming_test clean_chttp2_fake_security_request_response_with_binary_metadata_and_payload_test clean_chttp2_fake_security_request_response_with_metadata_and_payload_test clean_chttp2_fake_security_request_response_with_payload_test clean_chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test clean_chttp2_fake_security_simple_delayed_request_test clean_chttp2_fake_security_simple_request_test clean_chttp2_fake_security_thread_stress_test clean_chttp2_fake_security_writes_done_hangs_with_pending_read_test clean_chttp2_fullstack_cancel_after_accept_test clean_chttp2_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_fullstack_cancel_after_invoke_test clean_chttp2_fullstack_cancel_before_invoke_test clean_chttp2_fullstack_cancel_in_a_vacuum_test clean_chttp2_fullstack_disappearing_server_test clean_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_fullstack_invoke_large_request_test clean_chttp2_fullstack_max_concurrent_streams_test clean_chttp2_fullstack_no_op_test clean_chttp2_fullstack_ping_pong_streaming_test clean_chttp2_fullstack_request_response_with_binary_metadata_and_payload_test clean_chttp2_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_fullstack_request_response_with_payload_test clean_chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test clean_chttp2_fullstack_simple_delayed_request_test clean_chttp2_fullstack_simple_request_test clean_chttp2_fullstack_thread_stress_test clean_chttp2_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_simple_ssl_fullstack_cancel_after_accept_test clean_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_simple_ssl_fullstack_cancel_after_invoke_test clean_chttp2_simple_ssl_fullstack_cancel_before_invoke_test clean_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test clean_chttp2_simple_ssl_fullstack_disappearing_server_test clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_simple_ssl_fullstack_invoke_large_request_test clean_chttp2_simple_ssl_fullstack_max_concurrent_streams_test clean_chttp2_simple_ssl_fullstack_no_op_test clean_chttp2_simple_ssl_fullstack_ping_pong_streaming_test clean_chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test clean_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_simple_ssl_fullstack_request_response_with_payload_test clean_chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test clean_chttp2_simple_ssl_fullstack_simple_delayed_request_test clean_chttp2_simple_ssl_fullstack_simple_request_test clean_chttp2_simple_ssl_fullstack_thread_stress_test clean_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test clean_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test clean_chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test clean_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test clean_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test clean_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test clean_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test clean_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test clean_chttp2_socket_pair_cancel_after_accept_test clean_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test clean_chttp2_socket_pair_cancel_after_invoke_test clean_chttp2_socket_pair_cancel_before_invoke_test clean_chttp2_socket_pair_cancel_in_a_vacuum_test clean_chttp2_socket_pair_disappearing_server_test clean_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_socket_pair_early_server_shutdown_finishes_tags_test clean_chttp2_socket_pair_invoke_large_request_test clean_chttp2_socket_pair_max_concurrent_streams_test clean_chttp2_socket_pair_no_op_test clean_chttp2_socket_pair_ping_pong_streaming_test clean_chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test clean_chttp2_socket_pair_request_response_with_metadata_and_payload_test clean_chttp2_socket_pair_request_response_with_payload_test clean_chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test clean_chttp2_socket_pair_simple_delayed_request_test clean_chttp2_socket_pair_simple_request_test clean_chttp2_socket_pair_thread_stress_test clean_chttp2_socket_pair_writes_done_hangs_with_pending_read_test clean_chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test clean_chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test clean_chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test clean_chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test clean_chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test clean_chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test clean_chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test clean_chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test clean_chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test clean_chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test clean_chttp2_socket_pair_one_byte_at_a_time_no_op_test clean_chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test clean_chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test clean_chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test clean_chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test clean_chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test clean_chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test clean_chttp2_socket_pair_one_byte_at_a_time_simple_request_test clean_chttp2_socket_pair_one_byte_at_a_time_thread_stress_test clean_chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test
 	$(Q) $(RM) -r deps objs libs bins gens
@@ -1055,10 +1114,25 @@ libs/$(TGTDIR)/libgpr.a: $(LIBGPR_OBJS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libgpr.a $(LIBGPR_OBJS)
 
-libs/$(TGTDIR)/libgpr.so.$(VERSION): $(LIBGPR_OBJS)
+
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(TGTDIR)/gpr.$(SHARED_EXT): $(LIBGPR_OBJS) 
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,libgpr.so.0 -o libs/$(TGTDIR)/libgpr.so.$(VERSION) $(LIBGPR_OBJS) $(LDLIBS)
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,--output-def=libs/$(TGTDIR)/gpr.def -Wl,--out-implib=libs/$(TGTDIR)/libgpr-imp.a -o libs/$(TGTDIR)/gpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
+else
+libs/$(TGTDIR)/libgpr.$(SHARED_EXT): $(LIBGPR_OBJS) 
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -dynamiclib -o libs/$(TGTDIR)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
+else
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,-soname,libgpr.so.0 -o libs/$(TGTDIR)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
+	$(Q) ln -sf libgpr.$(SHARED_EXT) libs/$(TGTDIR)/libgpr.so
+endif
+endif
+
 
 deps_libgpr: $(LIBGPR_DEPS)
 
@@ -1071,7 +1145,7 @@ clean_libgpr:
 	$(Q) $(RM) $(LIBGPR_OBJS)
 	$(Q) $(RM) $(LIBGPR_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libgpr.a
-	$(Q) $(RM) libs/$(TGTDIR)/libgpr.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libgpr.$(SHARED_EXT)
 
 
 LIBGRPC_SRC = \
@@ -1179,6 +1253,12 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libgrpc.a: openssl_dep_error
 
+ifeq ($(SYSTEM),MINGW32)
+libs/$(TGTDIR)/grpc.$(SHARED_EXT): openssl_dep_error
+else
+libs/$(TGTDIR)/libgrpc.$(SHARED_EXT): openssl_dep_error
+endif
+
 else
 
 libs/$(TGTDIR)/libgrpc.a: $(OPENSSL_DEP) $(LIBGRPC_OBJS)
@@ -1192,10 +1272,25 @@ libs/$(TGTDIR)/libgrpc.a: $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) ar rcs libs/$(TGTDIR)/libgrpc.a tmp-merge/*
 	$(Q) rm -rf tmp-merge
 
-libs/$(TGTDIR)/libgrpc.so.$(VERSION): $(LIBGRPC_OBJS)
+
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(TGTDIR)/grpc.$(SHARED_EXT): $(LIBGRPC_OBJS) libs/$(TGTDIR)/gpr.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,libgrpc.so.0 -o libs/$(TGTDIR)/libgrpc.so.$(VERSION) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE)
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,--output-def=libs/$(TGTDIR)/grpc.def -Wl,--out-implib=libs/$(TGTDIR)/libgrpc-imp.a -o libs/$(TGTDIR)/grpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr-imp
+else
+libs/$(TGTDIR)/libgrpc.$(SHARED_EXT): $(LIBGRPC_OBJS) libs/$(TGTDIR)/libgpr.$(SHARED_EXT) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -dynamiclib -o libs/$(TGTDIR)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
+else
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,-soname,libgrpc.so.0 -o libs/$(TGTDIR)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
+	$(Q) ln -sf libgrpc.$(SHARED_EXT) libs/$(TGTDIR)/libgrpc.so
+endif
+endif
+
 
 endif
 
@@ -1212,7 +1307,7 @@ clean_libgrpc:
 	$(Q) $(RM) $(LIBGRPC_OBJS)
 	$(Q) $(RM) $(LIBGRPC_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libgrpc.a
-	$(Q) $(RM) libs/$(TGTDIR)/libgrpc.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libgrpc.$(SHARED_EXT)
 
 
 LIBGRPC_TEST_UTIL_SRC = \
@@ -1238,12 +1333,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libgrpc_test_util.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libgrpc_test_util.a: $(OPENSSL_DEP) $(LIBGRPC_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS)
+
+
 
 
 
@@ -1262,7 +1360,7 @@ clean_libgrpc_test_util:
 	$(Q) $(RM) $(LIBGRPC_TEST_UTIL_OBJS)
 	$(Q) $(RM) $(LIBGRPC_TEST_UTIL_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libgrpc_test_util.a
-	$(Q) $(RM) libs/$(TGTDIR)/libgrpc_test_util.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libgrpc_test_util.$(SHARED_EXT)
 
 
 LIBGRPC++_SRC = \
@@ -1312,6 +1410,12 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libgrpc++.a: openssl_dep_error
 
+ifeq ($(SYSTEM),MINGW32)
+libs/$(TGTDIR)/grpc++.$(SHARED_EXT): openssl_dep_error
+else
+libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT): openssl_dep_error
+endif
+
 else
 
 libs/$(TGTDIR)/libgrpc++.a: $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
@@ -1319,10 +1423,25 @@ libs/$(TGTDIR)/libgrpc++.a: $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libgrpc++.a $(LIBGRPC++_OBJS)
 
-libs/$(TGTDIR)/libgrpc++.so.$(VERSION): $(LIBGRPC++_OBJS)
+
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(TGTDIR)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS) libs/$(TGTDIR)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -shared -Wl,-soname,libgrpc++.so.0 -o libs/$(TGTDIR)/libgrpc++.so.$(VERSION) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE)
+	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,--output-def=libs/$(TGTDIR)/grpc++.def -Wl,--out-implib=libs/$(TGTDIR)/libgrpc++-imp.a -o libs/$(TGTDIR)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc-imp
+else
+libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS) libs/$(TGTDIR)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(TGTDIR) -dynamiclib -o libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+else
+	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,-soname,libgrpc++.so.0 -o libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+	$(Q) ln -sf libgrpc++.$(SHARED_EXT) libs/$(TGTDIR)/libgrpc++.so
+endif
+endif
+
 
 endif
 
@@ -1339,7 +1458,7 @@ clean_libgrpc++:
 	$(Q) $(RM) $(LIBGRPC++_OBJS)
 	$(Q) $(RM) $(LIBGRPC++_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libgrpc++.a
-	$(Q) $(RM) libs/$(TGTDIR)/libgrpc++.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libgrpc++.$(SHARED_EXT)
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
@@ -1355,12 +1474,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libgrpc++_test_util.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libgrpc++_test_util.a: $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
+
+
 
 
 
@@ -1379,7 +1501,7 @@ clean_libgrpc++_test_util:
 	$(Q) $(RM) $(LIBGRPC++_TEST_UTIL_OBJS)
 	$(Q) $(RM) $(LIBGRPC++_TEST_UTIL_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libgrpc++_test_util.a
-	$(Q) $(RM) libs/$(TGTDIR)/libgrpc++_test_util.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libgrpc++_test_util.$(SHARED_EXT)
 
 
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
@@ -1393,12 +1515,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
+
+
 
 
 
@@ -1417,7 +1542,7 @@ clean_libend2end_fixture_chttp2_fake_security:
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.$(SHARED_EXT)
 
 
 LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC = \
@@ -1431,12 +1556,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
+
+
 
 
 
@@ -1455,7 +1583,7 @@ clean_libend2end_fixture_chttp2_fullstack:
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.$(SHARED_EXT)
 
 
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC = \
@@ -1469,12 +1597,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
+
+
 
 
 
@@ -1493,7 +1624,7 @@ clean_libend2end_fixture_chttp2_simple_ssl_fullstack:
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.$(SHARED_EXT)
 
 
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC = \
@@ -1507,12 +1638,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
+
+
 
 
 
@@ -1531,7 +1665,7 @@ clean_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack:
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.$(SHARED_EXT)
 
 
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC = \
@@ -1545,12 +1679,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
+
+
 
 
 
@@ -1569,7 +1706,7 @@ clean_libend2end_fixture_chttp2_socket_pair:
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.$(SHARED_EXT)
 
 
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC = \
@@ -1583,12 +1720,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
+
+
 
 
 
@@ -1607,7 +1747,7 @@ clean_libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time:
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC = \
@@ -1624,6 +1764,8 @@ libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a: $(LIBEND2END_TEST_CANCEL_A
 
 
 
+
+
 deps_libend2end_test_cancel_after_accept: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1635,7 +1777,7 @@ clean_libend2end_test_cancel_after_accept:
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_accept.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_accept.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_SRC = \
@@ -1652,6 +1794,8 @@ libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a: $(LIBEND
 
 
 
+
+
 deps_libend2end_test_cancel_after_accept_and_writes_closed: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1663,7 +1807,7 @@ clean_libend2end_test_cancel_after_accept_and_writes_closed:
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC = \
@@ -1680,6 +1824,8 @@ libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a: $(LIBEND2END_TEST_CANCEL_A
 
 
 
+
+
 deps_libend2end_test_cancel_after_invoke: $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1691,7 +1837,7 @@ clean_libend2end_test_cancel_after_invoke:
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC = \
@@ -1708,6 +1854,8 @@ libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a: $(LIBEND2END_TEST_CANCEL_
 
 
 
+
+
 deps_libend2end_test_cancel_before_invoke: $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1719,7 +1867,7 @@ clean_libend2end_test_cancel_before_invoke:
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC = \
@@ -1736,6 +1884,8 @@ libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a: $(LIBEND2END_TEST_CANCEL_IN
 
 
 
+
+
 deps_libend2end_test_cancel_in_a_vacuum: $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1747,7 +1897,7 @@ clean_libend2end_test_cancel_in_a_vacuum:
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_DISAPPEARING_SERVER_SRC = \
@@ -1764,6 +1914,8 @@ libs/$(TGTDIR)/libend2end_test_disappearing_server.a: $(LIBEND2END_TEST_DISAPPEA
 
 
 
+
+
 deps_libend2end_test_disappearing_server: $(LIBEND2END_TEST_DISAPPEARING_SERVER_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1775,7 +1927,7 @@ clean_libend2end_test_disappearing_server:
 	$(Q) $(RM) $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_DISAPPEARING_SERVER_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_disappearing_server.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_disappearing_server.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_disappearing_server.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_SRC = \
@@ -1792,6 +1944,8 @@ libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a: 
 
 
 
+
+
 deps_libend2end_test_early_server_shutdown_finishes_inflight_calls: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1803,7 +1957,7 @@ clean_libend2end_test_early_server_shutdown_finishes_inflight_calls:
 	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_SRC = \
@@ -1820,6 +1974,8 @@ libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a: $(LIBEND2E
 
 
 
+
+
 deps_libend2end_test_early_server_shutdown_finishes_tags: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1831,7 +1987,7 @@ clean_libend2end_test_early_server_shutdown_finishes_tags:
 	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC = \
@@ -1848,6 +2004,8 @@ libs/$(TGTDIR)/libend2end_test_invoke_large_request.a: $(LIBEND2END_TEST_INVOKE_
 
 
 
+
+
 deps_libend2end_test_invoke_large_request: $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1859,7 +2017,7 @@ clean_libend2end_test_invoke_large_request:
 	$(Q) $(RM) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_invoke_large_request.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_invoke_large_request.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_invoke_large_request.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC = \
@@ -1876,6 +2034,8 @@ libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a: $(LIBEND2END_TEST_MAX_C
 
 
 
+
+
 deps_libend2end_test_max_concurrent_streams: $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1887,7 +2047,7 @@ clean_libend2end_test_max_concurrent_streams:
 	$(Q) $(RM) $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_NO_OP_SRC = \
@@ -1904,6 +2064,8 @@ libs/$(TGTDIR)/libend2end_test_no_op.a: $(LIBEND2END_TEST_NO_OP_OBJS)
 
 
 
+
+
 deps_libend2end_test_no_op: $(LIBEND2END_TEST_NO_OP_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1915,7 +2077,7 @@ clean_libend2end_test_no_op:
 	$(Q) $(RM) $(LIBEND2END_TEST_NO_OP_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_NO_OP_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_no_op.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_no_op.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_no_op.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_PING_PONG_STREAMING_SRC = \
@@ -1932,6 +2094,8 @@ libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a: $(LIBEND2END_TEST_PING_PON
 
 
 
+
+
 deps_libend2end_test_ping_pong_streaming: $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1943,7 +2107,7 @@ clean_libend2end_test_ping_pong_streaming:
 	$(Q) $(RM) $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_SRC = \
@@ -1960,6 +2124,8 @@ libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload
 
 
 
+
+
 deps_libend2end_test_request_response_with_binary_metadata_and_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1971,7 +2137,7 @@ clean_libend2end_test_request_response_with_binary_metadata_and_payload:
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_SRC = \
@@ -1988,6 +2154,8 @@ libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a: $(L
 
 
 
+
+
 deps_libend2end_test_request_response_with_metadata_and_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -1999,7 +2167,7 @@ clean_libend2end_test_request_response_with_metadata_and_payload:
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_SRC = \
@@ -2016,6 +2184,8 @@ libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a: $(LIBEND2END_TES
 
 
 
+
+
 deps_libend2end_test_request_response_with_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -2027,7 +2197,7 @@ clean_libend2end_test_request_response_with_payload:
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_payload.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_payload.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_SRC = \
@@ -2044,6 +2214,8 @@ libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_paylo
 
 
 
+
+
 deps_libend2end_test_request_response_with_trailing_metadata_and_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -2055,7 +2227,7 @@ clean_libend2end_test_request_response_with_trailing_metadata_and_payload:
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC = \
@@ -2072,6 +2244,8 @@ libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a: $(LIBEND2END_TEST_SIMPL
 
 
 
+
+
 deps_libend2end_test_simple_delayed_request: $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -2083,7 +2257,7 @@ clean_libend2end_test_simple_delayed_request:
 	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_simple_delayed_request.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_simple_delayed_request.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_SIMPLE_REQUEST_SRC = \
@@ -2100,6 +2274,8 @@ libs/$(TGTDIR)/libend2end_test_simple_request.a: $(LIBEND2END_TEST_SIMPLE_REQUES
 
 
 
+
+
 deps_libend2end_test_simple_request: $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -2111,7 +2287,7 @@ clean_libend2end_test_simple_request:
 	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_simple_request.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_simple_request.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_simple_request.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_THREAD_STRESS_SRC = \
@@ -2128,6 +2304,8 @@ libs/$(TGTDIR)/libend2end_test_thread_stress.a: $(LIBEND2END_TEST_THREAD_STRESS_
 
 
 
+
+
 deps_libend2end_test_thread_stress: $(LIBEND2END_TEST_THREAD_STRESS_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -2139,7 +2317,7 @@ clean_libend2end_test_thread_stress:
 	$(Q) $(RM) $(LIBEND2END_TEST_THREAD_STRESS_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_THREAD_STRESS_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_thread_stress.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_thread_stress.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_thread_stress.$(SHARED_EXT)
 
 
 LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_SRC = \
@@ -2156,6 +2334,8 @@ libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a: $(LIBEND2E
 
 
 
+
+
 deps_libend2end_test_writes_done_hangs_with_pending_read: $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
 
 ifneq ($(NO_DEPS),true)
@@ -2167,7 +2347,7 @@ clean_libend2end_test_writes_done_hangs_with_pending_read:
 	$(Q) $(RM) $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
 	$(Q) $(RM) $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.$(SHARED_EXT)
 
 
 LIBEND2END_CERTS_SRC = \
@@ -2184,12 +2364,15 @@ ifeq ($(NO_SECURE),true)
 
 libs/$(TGTDIR)/libend2end_certs.a: openssl_dep_error
 
+
 else
 
 libs/$(TGTDIR)/libend2end_certs.a: $(OPENSSL_DEP) $(LIBEND2END_CERTS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libend2end_certs.a $(LIBEND2END_CERTS_OBJS)
+
+
 
 
 
@@ -2208,7 +2391,7 @@ clean_libend2end_certs:
 	$(Q) $(RM) $(LIBEND2END_CERTS_OBJS)
 	$(Q) $(RM) $(LIBEND2END_CERTS_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libend2end_certs.a
-	$(Q) $(RM) libs/$(TGTDIR)/libend2end_certs.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libend2end_certs.$(SHARED_EXT)
 
 
 LIBGRPC_UNSECURE_SRC = \
@@ -2305,10 +2488,25 @@ libs/$(TGTDIR)/libgrpc_unsecure.a: $(LIBGRPC_UNSECURE_OBJS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(AR) rcs libs/$(TGTDIR)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)
 
-libs/$(TGTDIR)/libgrpc_unsecure.so.$(VERSION): $(LIBGRPC_UNSECURE_OBJS)
+
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(TGTDIR)/grpc_unsecure.$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS) libs/$(TGTDIR)/gpr.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -shared -Wl,-soname,libgrpc_unsecure.so.0 -o libs/$(TGTDIR)/libgrpc_unsecure.so.$(VERSION) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS)
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,--output-def=libs/$(TGTDIR)/grpc_unsecure.def -Wl,--out-implib=libs/$(TGTDIR)/libgrpc_unsecure-imp.a -o libs/$(TGTDIR)/grpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr-imp
+else
+libs/$(TGTDIR)/libgrpc_unsecure.$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS) libs/$(TGTDIR)/libgpr.$(SHARED_EXT)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -dynamiclib -o libs/$(TGTDIR)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
+else
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(TGTDIR) -shared -Wl,-soname,libgrpc_unsecure.so.0 -o libs/$(TGTDIR)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
+	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) libs/$(TGTDIR)/libgrpc_unsecure.so
+endif
+endif
+
 
 deps_libgrpc_unsecure: $(LIBGRPC_UNSECURE_DEPS)
 
@@ -2321,7 +2519,7 @@ clean_libgrpc_unsecure:
 	$(Q) $(RM) $(LIBGRPC_UNSECURE_OBJS)
 	$(Q) $(RM) $(LIBGRPC_UNSECURE_DEPS)
 	$(Q) $(RM) libs/$(TGTDIR)/libgrpc_unsecure.a
-	$(Q) $(RM) libs/$(TGTDIR)/libgrpc_unsecure.so.$(VERSION)
+	$(Q) $(RM) libs/$(TGTDIR)/libgrpc_unsecure.$(SHARED_EXT)
 
 
 
@@ -2343,7 +2541,7 @@ else
 bins/$(TGTDIR)/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a libs/$(TGTDIR)/libgrpc.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr -lgrpc $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gen_hpack_tables
+	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a libs/$(TGTDIR)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gen_hpack_tables
 
 endif
 
@@ -2372,7 +2570,7 @@ CPP_PLUGIN_DEPS = $(addprefix deps/$(TGTDIR)/, $(addsuffix .dep, $(basename $(CP
 bins/$(TGTDIR)/cpp_plugin: $(CPP_PLUGIN_OBJS)
 	$(E) "[HOSTLD]  Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(CPP_PLUGIN_OBJS) -Llibs/$(TGTDIR) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(TGTDIR)/cpp_plugin
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(CPP_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(TGTDIR)/cpp_plugin
 
 deps_cpp_plugin: $(CPP_PLUGIN_DEPS)
 
@@ -2397,7 +2595,7 @@ RUBY_PLUGIN_DEPS = $(addprefix deps/$(TGTDIR)/, $(addsuffix .dep, $(basename $(R
 bins/$(TGTDIR)/ruby_plugin: $(RUBY_PLUGIN_OBJS)
 	$(E) "[HOSTLD]  Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(RUBY_PLUGIN_OBJS) -Llibs/$(TGTDIR) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(TGTDIR)/ruby_plugin
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(RUBY_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(TGTDIR)/ruby_plugin
 
 deps_ruby_plugin: $(RUBY_PLUGIN_DEPS)
 
@@ -2427,7 +2625,7 @@ else
 bins/$(TGTDIR)/grpc_byte_buffer_reader_test: $(GRPC_BYTE_BUFFER_READER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_BYTE_BUFFER_READER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_byte_buffer_reader_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_BYTE_BUFFER_READER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_byte_buffer_reader_test
 
 endif
 
@@ -2461,7 +2659,7 @@ else
 bins/$(TGTDIR)/gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_CANCELLABLE_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_cancellable_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_CANCELLABLE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_cancellable_test
 
 endif
 
@@ -2495,7 +2693,7 @@ else
 bins/$(TGTDIR)/gpr_log_test: $(GPR_LOG_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_LOG_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_log_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_LOG_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_log_test
 
 endif
 
@@ -2529,7 +2727,7 @@ else
 bins/$(TGTDIR)/gpr_useful_test: $(GPR_USEFUL_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_USEFUL_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_useful_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_USEFUL_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_useful_test
 
 endif
 
@@ -2563,7 +2761,7 @@ else
 bins/$(TGTDIR)/gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_CMDLINE_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_cmdline_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_CMDLINE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_cmdline_test
 
 endif
 
@@ -2597,7 +2795,7 @@ else
 bins/$(TGTDIR)/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_histogram_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_histogram_test
 
 endif
 
@@ -2631,7 +2829,7 @@ else
 bins/$(TGTDIR)/gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_HOST_PORT_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_host_port_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_HOST_PORT_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_host_port_test
 
 endif
 
@@ -2665,7 +2863,7 @@ else
 bins/$(TGTDIR)/gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_slice_buffer_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_BUFFER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_slice_buffer_test
 
 endif
 
@@ -2699,7 +2897,7 @@ else
 bins/$(TGTDIR)/gpr_slice_test: $(GPR_SLICE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_slice_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SLICE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_slice_test
 
 endif
 
@@ -2733,7 +2931,7 @@ else
 bins/$(TGTDIR)/gpr_string_test: $(GPR_STRING_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_STRING_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_string_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_STRING_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_string_test
 
 endif
 
@@ -2767,7 +2965,7 @@ else
 bins/$(TGTDIR)/gpr_sync_test: $(GPR_SYNC_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_SYNC_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_sync_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_SYNC_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_sync_test
 
 endif
 
@@ -2801,7 +2999,7 @@ else
 bins/$(TGTDIR)/gpr_thd_test: $(GPR_THD_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_THD_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_thd_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_THD_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_thd_test
 
 endif
 
@@ -2835,7 +3033,7 @@ else
 bins/$(TGTDIR)/gpr_time_test: $(GPR_TIME_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_TIME_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_time_test
+	$(Q) $(LD) $(LDFLAGS) $(GPR_TIME_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/gpr_time_test
 
 endif
 
@@ -2869,7 +3067,7 @@ else
 bins/$(TGTDIR)/murmur_hash_test: $(MURMUR_HASH_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(MURMUR_HASH_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/murmur_hash_test
+	$(Q) $(LD) $(LDFLAGS) $(MURMUR_HASH_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/murmur_hash_test
 
 endif
 
@@ -2903,7 +3101,7 @@ else
 bins/$(TGTDIR)/grpc_stream_op_test: $(GRPC_STREAM_OP_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_STREAM_OP_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_stream_op_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_STREAM_OP_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_stream_op_test
 
 endif
 
@@ -2937,7 +3135,7 @@ else
 bins/$(TGTDIR)/alpn_test: $(ALPN_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ALPN_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alpn_test
+	$(Q) $(LD) $(LDFLAGS) $(ALPN_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alpn_test
 
 endif
 
@@ -2971,7 +3169,7 @@ else
 bins/$(TGTDIR)/time_averaged_stats_test: $(TIME_AVERAGED_STATS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TIME_AVERAGED_STATS_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/time_averaged_stats_test
+	$(Q) $(LD) $(LDFLAGS) $(TIME_AVERAGED_STATS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/time_averaged_stats_test
 
 endif
 
@@ -3005,7 +3203,7 @@ else
 bins/$(TGTDIR)/chttp2_stream_encoder_test: $(CHTTP2_STREAM_ENCODER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STREAM_ENCODER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_stream_encoder_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STREAM_ENCODER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_stream_encoder_test
 
 endif
 
@@ -3039,7 +3237,7 @@ else
 bins/$(TGTDIR)/hpack_table_test: $(HPACK_TABLE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HPACK_TABLE_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/hpack_table_test
+	$(Q) $(LD) $(LDFLAGS) $(HPACK_TABLE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/hpack_table_test
 
 endif
 
@@ -3073,7 +3271,7 @@ else
 bins/$(TGTDIR)/chttp2_stream_map_test: $(CHTTP2_STREAM_MAP_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STREAM_MAP_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_stream_map_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STREAM_MAP_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_stream_map_test
 
 endif
 
@@ -3107,7 +3305,7 @@ else
 bins/$(TGTDIR)/hpack_parser_test: $(HPACK_PARSER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HPACK_PARSER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/hpack_parser_test
+	$(Q) $(LD) $(LDFLAGS) $(HPACK_PARSER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/hpack_parser_test
 
 endif
 
@@ -3141,7 +3339,7 @@ else
 bins/$(TGTDIR)/transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_METADATA_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/transport_metadata_test
+	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_METADATA_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/transport_metadata_test
 
 endif
 
@@ -3175,7 +3373,7 @@ else
 bins/$(TGTDIR)/chttp2_status_conversion_test: $(CHTTP2_STATUS_CONVERSION_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STATUS_CONVERSION_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_status_conversion_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_STATUS_CONVERSION_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_status_conversion_test
 
 endif
 
@@ -3209,7 +3407,7 @@ else
 bins/$(TGTDIR)/chttp2_transport_end2end_test: $(CHTTP2_TRANSPORT_END2END_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_TRANSPORT_END2END_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_transport_end2end_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_TRANSPORT_END2END_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_transport_end2end_test
 
 endif
 
@@ -3243,7 +3441,7 @@ else
 bins/$(TGTDIR)/tcp_posix_test: $(TCP_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TCP_POSIX_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/tcp_posix_test
+	$(Q) $(LD) $(LDFLAGS) $(TCP_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/tcp_posix_test
 
 endif
 
@@ -3277,7 +3475,7 @@ else
 bins/$(TGTDIR)/dualstack_socket_test: $(DUALSTACK_SOCKET_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(DUALSTACK_SOCKET_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/dualstack_socket_test
+	$(Q) $(LD) $(LDFLAGS) $(DUALSTACK_SOCKET_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/dualstack_socket_test
 
 endif
 
@@ -3311,7 +3509,7 @@ else
 bins/$(TGTDIR)/no_server_test: $(NO_SERVER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(NO_SERVER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/no_server_test
+	$(Q) $(LD) $(LDFLAGS) $(NO_SERVER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/no_server_test
 
 endif
 
@@ -3345,7 +3543,7 @@ else
 bins/$(TGTDIR)/resolve_address_test: $(RESOLVE_ADDRESS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(RESOLVE_ADDRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/resolve_address_test
+	$(Q) $(LD) $(LDFLAGS) $(RESOLVE_ADDRESS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/resolve_address_test
 
 endif
 
@@ -3379,7 +3577,7 @@ else
 bins/$(TGTDIR)/sockaddr_utils_test: $(SOCKADDR_UTILS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SOCKADDR_UTILS_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/sockaddr_utils_test
+	$(Q) $(LD) $(LDFLAGS) $(SOCKADDR_UTILS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/sockaddr_utils_test
 
 endif
 
@@ -3413,7 +3611,7 @@ else
 bins/$(TGTDIR)/tcp_server_posix_test: $(TCP_SERVER_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TCP_SERVER_POSIX_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/tcp_server_posix_test
+	$(Q) $(LD) $(LDFLAGS) $(TCP_SERVER_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/tcp_server_posix_test
 
 endif
 
@@ -3447,7 +3645,7 @@ else
 bins/$(TGTDIR)/tcp_client_posix_test: $(TCP_CLIENT_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TCP_CLIENT_POSIX_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/tcp_client_posix_test
+	$(Q) $(LD) $(LDFLAGS) $(TCP_CLIENT_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/tcp_client_posix_test
 
 endif
 
@@ -3481,7 +3679,7 @@ else
 bins/$(TGTDIR)/grpc_channel_stack_test: $(GRPC_CHANNEL_STACK_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_CHANNEL_STACK_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_channel_stack_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CHANNEL_STACK_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_channel_stack_test
 
 endif
 
@@ -3515,7 +3713,7 @@ else
 bins/$(TGTDIR)/metadata_buffer_test: $(METADATA_BUFFER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(METADATA_BUFFER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/metadata_buffer_test
+	$(Q) $(LD) $(LDFLAGS) $(METADATA_BUFFER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/metadata_buffer_test
 
 endif
 
@@ -3549,7 +3747,7 @@ else
 bins/$(TGTDIR)/grpc_completion_queue_test: $(GRPC_COMPLETION_QUEUE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_COMPLETION_QUEUE_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_completion_queue_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_COMPLETION_QUEUE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_completion_queue_test
 
 endif
 
@@ -3583,7 +3781,7 @@ else
 bins/$(TGTDIR)/grpc_completion_queue_benchmark: $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_completion_queue_benchmark
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_completion_queue_benchmark
 
 endif
 
@@ -3617,7 +3815,7 @@ else
 bins/$(TGTDIR)/census_window_stats_test: $(CENSUS_WINDOW_STATS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_WINDOW_STATS_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_window_stats_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_WINDOW_STATS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_window_stats_test
 
 endif
 
@@ -3651,7 +3849,7 @@ else
 bins/$(TGTDIR)/census_statistics_quick_test: $(CENSUS_STATISTICS_QUICK_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_QUICK_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_quick_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_QUICK_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_quick_test
 
 endif
 
@@ -3685,7 +3883,7 @@ else
 bins/$(TGTDIR)/census_statistics_small_log_test: $(CENSUS_STATISTICS_SMALL_LOG_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_SMALL_LOG_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_small_log_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_SMALL_LOG_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_small_log_test
 
 endif
 
@@ -3719,7 +3917,7 @@ else
 bins/$(TGTDIR)/census_statistics_performance_test: $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_performance_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_performance_test
 
 endif
 
@@ -3753,7 +3951,7 @@ else
 bins/$(TGTDIR)/census_statistics_multiple_writers_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_multiple_writers_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_multiple_writers_test
 
 endif
 
@@ -3787,7 +3985,7 @@ else
 bins/$(TGTDIR)/census_statistics_multiple_writers_circular_buffer_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_multiple_writers_circular_buffer_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_statistics_multiple_writers_circular_buffer_test
 
 endif
 
@@ -3821,7 +4019,7 @@ else
 bins/$(TGTDIR)/census_stub_test: $(CENSUS_STUB_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STUB_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_stub_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_STUB_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_stub_test
 
 endif
 
@@ -3855,7 +4053,7 @@ else
 bins/$(TGTDIR)/census_hash_table_test: $(CENSUS_HASH_TABLE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_HASH_TABLE_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_hash_table_test
+	$(Q) $(LD) $(LDFLAGS) $(CENSUS_HASH_TABLE_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/census_hash_table_test
 
 endif
 
@@ -3889,7 +4087,7 @@ else
 bins/$(TGTDIR)/fling_server: $(FLING_SERVER_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(FLING_SERVER_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_server
+	$(Q) $(LD) $(LDFLAGS) $(FLING_SERVER_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_server
 
 endif
 
@@ -3923,7 +4121,7 @@ else
 bins/$(TGTDIR)/fling_client: $(FLING_CLIENT_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(FLING_CLIENT_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_client
+	$(Q) $(LD) $(LDFLAGS) $(FLING_CLIENT_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_client
 
 endif
 
@@ -3957,7 +4155,7 @@ else
 bins/$(TGTDIR)/fling_test: $(FLING_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(FLING_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_test
+	$(Q) $(LD) $(LDFLAGS) $(FLING_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_test
 
 endif
 
@@ -3991,7 +4189,7 @@ else
 bins/$(TGTDIR)/echo_server: $(ECHO_SERVER_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ECHO_SERVER_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/echo_server
+	$(Q) $(LD) $(LDFLAGS) $(ECHO_SERVER_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/echo_server
 
 endif
 
@@ -4025,7 +4223,7 @@ else
 bins/$(TGTDIR)/echo_client: $(ECHO_CLIENT_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ECHO_CLIENT_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/echo_client
+	$(Q) $(LD) $(LDFLAGS) $(ECHO_CLIENT_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/echo_client
 
 endif
 
@@ -4059,7 +4257,7 @@ else
 bins/$(TGTDIR)/echo_test: $(ECHO_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ECHO_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/echo_test
+	$(Q) $(LD) $(LDFLAGS) $(ECHO_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/echo_test
 
 endif
 
@@ -4093,7 +4291,7 @@ else
 bins/$(TGTDIR)/low_level_ping_pong_benchmark: $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/low_level_ping_pong_benchmark
+	$(Q) $(LD) $(LDFLAGS) $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/low_level_ping_pong_benchmark
 
 endif
 
@@ -4127,7 +4325,7 @@ else
 bins/$(TGTDIR)/message_compress_test: $(MESSAGE_COMPRESS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(MESSAGE_COMPRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/message_compress_test
+	$(Q) $(LD) $(LDFLAGS) $(MESSAGE_COMPRESS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/message_compress_test
 
 endif
 
@@ -4161,7 +4359,7 @@ else
 bins/$(TGTDIR)/bin_encoder_test: $(BIN_ENCODER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BIN_ENCODER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/bin_encoder_test
+	$(Q) $(LD) $(LDFLAGS) $(BIN_ENCODER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/bin_encoder_test
 
 endif
 
@@ -4195,7 +4393,7 @@ else
 bins/$(TGTDIR)/secure_endpoint_test: $(SECURE_ENDPOINT_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SECURE_ENDPOINT_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/secure_endpoint_test
+	$(Q) $(LD) $(LDFLAGS) $(SECURE_ENDPOINT_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/secure_endpoint_test
 
 endif
 
@@ -4229,7 +4427,7 @@ else
 bins/$(TGTDIR)/httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/httpcli_format_request_test
+	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/httpcli_format_request_test
 
 endif
 
@@ -4263,7 +4461,7 @@ else
 bins/$(TGTDIR)/httpcli_parser_test: $(HTTPCLI_PARSER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_PARSER_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/httpcli_parser_test
+	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_PARSER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/httpcli_parser_test
 
 endif
 
@@ -4297,7 +4495,7 @@ else
 bins/$(TGTDIR)/httpcli_test: $(HTTPCLI_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/httpcli_test
+	$(Q) $(LD) $(LDFLAGS) $(HTTPCLI_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/httpcli_test
 
 endif
 
@@ -4331,7 +4529,7 @@ else
 bins/$(TGTDIR)/grpc_credentials_test: $(GRPC_CREDENTIALS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_CREDENTIALS_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_credentials_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CREDENTIALS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_credentials_test
 
 endif
 
@@ -4365,7 +4563,7 @@ else
 bins/$(TGTDIR)/grpc_fetch_oauth2: $(GRPC_FETCH_OAUTH2_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_FETCH_OAUTH2_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_fetch_oauth2
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_FETCH_OAUTH2_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_fetch_oauth2
 
 endif
 
@@ -4399,7 +4597,7 @@ else
 bins/$(TGTDIR)/grpc_base64_test: $(GRPC_BASE64_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_BASE64_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_base64_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_BASE64_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_base64_test
 
 endif
 
@@ -4433,7 +4631,7 @@ else
 bins/$(TGTDIR)/grpc_json_token_test: $(GRPC_JSON_TOKEN_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_JSON_TOKEN_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_json_token_test
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_JSON_TOKEN_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/grpc_json_token_test
 
 endif
 
@@ -4467,7 +4665,7 @@ else
 bins/$(TGTDIR)/timeout_encoding_test: $(TIMEOUT_ENCODING_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TIMEOUT_ENCODING_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/timeout_encoding_test
+	$(Q) $(LD) $(LDFLAGS) $(TIMEOUT_ENCODING_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/timeout_encoding_test
 
 endif
 
@@ -4501,7 +4699,7 @@ else
 bins/$(TGTDIR)/fd_posix_test: $(FD_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(FD_POSIX_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fd_posix_test
+	$(Q) $(LD) $(LDFLAGS) $(FD_POSIX_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fd_posix_test
 
 endif
 
@@ -4535,7 +4733,7 @@ else
 bins/$(TGTDIR)/fling_stream_test: $(FLING_STREAM_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(FLING_STREAM_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_stream_test
+	$(Q) $(LD) $(LDFLAGS) $(FLING_STREAM_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/fling_stream_test
 
 endif
 
@@ -4569,7 +4767,7 @@ else
 bins/$(TGTDIR)/lame_client_test: $(LAME_CLIENT_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(LAME_CLIENT_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/lame_client_test
+	$(Q) $(LD) $(LDFLAGS) $(LAME_CLIENT_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/lame_client_test
 
 endif
 
@@ -4603,7 +4801,7 @@ else
 bins/$(TGTDIR)/thread_pool_test: $(THREAD_POOL_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_POOL_TEST_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/thread_pool_test
+	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_POOL_TEST_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/thread_pool_test
 
 endif
 
@@ -4637,7 +4835,7 @@ else
 bins/$(TGTDIR)/status_test: $(STATUS_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_TEST_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/status_test
+	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_TEST_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/status_test
 
 endif
 
@@ -4671,7 +4869,7 @@ else
 bins/$(TGTDIR)/sync_client_async_server_test: $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/sync_client_async_server_test
+	$(Q) $(LDXX) $(LDFLAGS) $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/sync_client_async_server_test
 
 endif
 
@@ -4708,7 +4906,7 @@ else
 bins/$(TGTDIR)/qps_client: $(QPS_CLIENT_OBJS) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc++_test_util -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/qps_client
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/qps_client
 
 endif
 
@@ -4745,7 +4943,7 @@ else
 bins/$(TGTDIR)/qps_server: $(QPS_SERVER_OBJS) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc++_test_util -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/qps_server
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/qps_server
 
 endif
 
@@ -4782,7 +4980,7 @@ else
 bins/$(TGTDIR)/interop_server: $(INTEROP_SERVER_OBJS) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_SERVER_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc++_test_util -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/interop_server
+	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_SERVER_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/interop_server
 
 endif
 
@@ -4819,7 +5017,7 @@ else
 bins/$(TGTDIR)/interop_client: $(INTEROP_CLIENT_OBJS) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_CLIENT_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc++_test_util -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/interop_client
+	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_CLIENT_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc++_test_util.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/interop_client
 
 endif
 
@@ -4853,7 +5051,7 @@ else
 bins/$(TGTDIR)/end2end_test: $(END2END_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(END2END_TEST_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc++ -lgrpc -lgpr $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/end2end_test
+	$(Q) $(LDXX) $(LDFLAGS) $(END2END_TEST_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/end2end_test
 
 endif
 
@@ -4887,7 +5085,7 @@ else
 bins/$(TGTDIR)/channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS) libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(GTEST_LIB) -Llibs/$(TGTDIR) -lgrpc++ -lgrpc $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/channel_arguments_test
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(GTEST_LIB) libs/$(TGTDIR)/libgrpc++.a libs/$(TGTDIR)/libgrpc.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/channel_arguments_test
 
 endif
 
@@ -4921,7 +5119,7 @@ else
 bins/$(TGTDIR)/alarm_test: $(ALARM_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ALARM_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alarm_test
+	$(Q) $(LD) $(LDFLAGS) $(ALARM_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alarm_test
 
 endif
 
@@ -4955,7 +5153,7 @@ else
 bins/$(TGTDIR)/alarm_list_test: $(ALARM_LIST_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ALARM_LIST_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alarm_list_test
+	$(Q) $(LD) $(LDFLAGS) $(ALARM_LIST_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alarm_list_test
 
 endif
 
@@ -4989,7 +5187,7 @@ else
 bins/$(TGTDIR)/alarm_heap_test: $(ALARM_HEAP_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ALARM_HEAP_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alarm_heap_test
+	$(Q) $(LD) $(LDFLAGS) $(ALARM_HEAP_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/alarm_heap_test
 
 endif
 
@@ -5023,7 +5221,7 @@ else
 bins/$(TGTDIR)/time_test: $(TIME_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TIME_TEST_OBJS) -Llibs/$(TGTDIR) -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/time_test
+	$(Q) $(LD) $(LDFLAGS) $(TIME_TEST_OBJS) libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/time_test
 
 endif
 
@@ -5056,7 +5254,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_cancel_after_accept_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_after_accept_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_after_accept_test
 
 endif
 
@@ -5089,7 +5287,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test
 
 endif
 
@@ -5122,7 +5320,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_cancel_after_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_after_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_after_invoke_test
 
 endif
 
@@ -5155,7 +5353,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_cancel_before_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_before_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_before_invoke_test
 
 endif
 
@@ -5188,7 +5386,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_cancel_in_a_vacuum_test: $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_in_a_vacuum_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_cancel_in_a_vacuum_test
 
 endif
 
@@ -5221,7 +5419,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_disappearing_server_test: $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_disappearing_server -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_disappearing_server_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_disappearing_server_test
 
 endif
 
@@ -5254,7 +5452,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test
 
 endif
 
@@ -5287,7 +5485,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_early_server_shutdown_finishes_tags_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_early_server_shutdown_finishes_tags_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_early_server_shutdown_finishes_tags_test
 
 endif
 
@@ -5320,7 +5518,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_invoke_large_request_test: $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_invoke_large_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_invoke_large_request_test
 
 endif
 
@@ -5353,7 +5551,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_max_concurrent_streams_test: $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_max_concurrent_streams_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_max_concurrent_streams_test
 
 endif
 
@@ -5386,7 +5584,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_no_op_test: $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_no_op_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_no_op_test
 
 endif
 
@@ -5419,7 +5617,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_ping_pong_streaming_test: $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_ping_pong_streaming_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_ping_pong_streaming_test
 
 endif
 
@@ -5452,7 +5650,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_request_response_with_binary_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test
 
 endif
 
@@ -5485,7 +5683,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_request_response_with_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_metadata_and_payload_test
 
 endif
 
@@ -5518,7 +5716,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_request_response_with_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_payload_test
 
 endif
 
@@ -5551,7 +5749,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_request_response_with_trailing_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test
 
 endif
 
@@ -5584,7 +5782,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_simple_delayed_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_simple_delayed_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_simple_delayed_request_test
 
 endif
 
@@ -5617,7 +5815,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_simple_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_simple_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_simple_request_test
 
 endif
 
@@ -5650,7 +5848,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_thread_stress_test: $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_thread_stress -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_thread_stress_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_thread_stress_test
 
 endif
 
@@ -5683,7 +5881,7 @@ else
 bins/$(TGTDIR)/chttp2_fake_security_writes_done_hangs_with_pending_read_test: $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fake_security -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_writes_done_hangs_with_pending_read_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fake_security.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fake_security_writes_done_hangs_with_pending_read_test
 
 endif
 
@@ -5716,7 +5914,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_cancel_after_accept_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_after_accept_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_after_accept_test
 
 endif
 
@@ -5749,7 +5947,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test
 
 endif
 
@@ -5782,7 +5980,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_after_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_after_invoke_test
 
 endif
 
@@ -5815,7 +6013,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_before_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_before_invoke_test
 
 endif
 
@@ -5848,7 +6046,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_in_a_vacuum_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_cancel_in_a_vacuum_test
 
 endif
 
@@ -5881,7 +6079,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_disappearing_server_test: $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_disappearing_server -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_disappearing_server_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_disappearing_server_test
 
 endif
 
@@ -5914,7 +6112,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test
 
 endif
 
@@ -5947,7 +6145,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_early_server_shutdown_finishes_tags_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_early_server_shutdown_finishes_tags_test
 
 endif
 
@@ -5980,7 +6178,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_invoke_large_request_test: $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_invoke_large_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_invoke_large_request_test
 
 endif
 
@@ -6013,7 +6211,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_max_concurrent_streams_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_max_concurrent_streams_test
 
 endif
 
@@ -6046,7 +6244,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_no_op_test: $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_no_op_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_no_op_test
 
 endif
 
@@ -6079,7 +6277,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_ping_pong_streaming_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_ping_pong_streaming_test
 
 endif
 
@@ -6112,7 +6310,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_request_response_with_binary_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test
 
 endif
 
@@ -6145,7 +6343,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_metadata_and_payload_test
 
 endif
 
@@ -6178,7 +6376,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_request_response_with_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_payload_test
 
 endif
 
@@ -6211,7 +6409,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_request_response_with_trailing_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test
 
 endif
 
@@ -6244,7 +6442,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_simple_delayed_request_test: $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_simple_delayed_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_simple_delayed_request_test
 
 endif
 
@@ -6277,7 +6475,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_simple_request_test: $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_simple_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_simple_request_test
 
 endif
 
@@ -6310,7 +6508,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_thread_stress_test: $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_thread_stress -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_thread_stress_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_thread_stress_test
 
 endif
 
@@ -6343,7 +6541,7 @@ else
 bins/$(TGTDIR)/chttp2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_fullstack -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_writes_done_hangs_with_pending_read_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_fullstack.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_fullstack_writes_done_hangs_with_pending_read_test
 
 endif
 
@@ -6376,7 +6574,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_accept_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_accept_test
 
 endif
 
@@ -6409,7 +6607,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test
 
 endif
 
@@ -6442,7 +6640,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test
 
 endif
 
@@ -6475,7 +6673,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test
 
 endif
 
@@ -6508,7 +6706,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test
 
 endif
 
@@ -6541,7 +6739,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_disappearing_server_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_disappearing_server -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_disappearing_server_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_disappearing_server_test
 
 endif
 
@@ -6574,7 +6772,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test
 
 endif
 
@@ -6607,7 +6805,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test
 
 endif
 
@@ -6640,7 +6838,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_invoke_large_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_invoke_large_request_test
 
 endif
 
@@ -6673,7 +6871,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test
 
 endif
 
@@ -6706,7 +6904,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_no_op_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_no_op_test
 
 endif
 
@@ -6739,7 +6937,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test
 
 endif
 
@@ -6772,7 +6970,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_request_response_with_binary_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test
 
 endif
 
@@ -6805,7 +7003,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test
 
 endif
 
@@ -6838,7 +7036,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_payload_test
 
 endif
 
@@ -6871,7 +7069,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_request_response_with_trailing_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test
 
 endif
 
@@ -6904,7 +7102,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_simple_delayed_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_simple_delayed_request_test
 
 endif
 
@@ -6937,7 +7135,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_simple_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_simple_request_test
 
 endif
 
@@ -6970,7 +7168,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_thread_stress_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_thread_stress -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_thread_stress_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_thread_stress_test
 
 endif
 
@@ -7003,7 +7201,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_fullstack -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test
 
 endif
 
@@ -7036,7 +7234,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test
 
 endif
 
@@ -7069,7 +7267,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test
 
 endif
 
@@ -7102,7 +7300,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test
 
 endif
 
@@ -7135,7 +7333,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test
 
 endif
 
@@ -7168,7 +7366,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test
 
 endif
 
@@ -7201,7 +7399,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_disappearing_server -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test
 
 endif
 
@@ -7234,7 +7432,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test
 
 endif
 
@@ -7267,7 +7465,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test
 
 endif
 
@@ -7300,7 +7498,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test
 
 endif
 
@@ -7333,7 +7531,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test
 
 endif
 
@@ -7366,7 +7564,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test
 
 endif
 
@@ -7399,7 +7597,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test
 
 endif
 
@@ -7432,7 +7630,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_request_response_with_binary_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test
 
 endif
 
@@ -7465,7 +7663,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test
 
 endif
 
@@ -7498,7 +7696,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test
 
 endif
 
@@ -7531,7 +7729,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_request_response_with_trailing_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test
 
 endif
 
@@ -7564,7 +7762,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test
 
 endif
 
@@ -7597,7 +7795,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test
 
 endif
 
@@ -7630,7 +7828,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_thread_stress -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test
 
 endif
 
@@ -7663,7 +7861,7 @@ else
 bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test
 
 endif
 
@@ -7696,7 +7894,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_accept_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_accept_test
 
 endif
 
@@ -7729,7 +7927,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test
 
 endif
 
@@ -7762,7 +7960,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_after_invoke_test
 
 endif
 
@@ -7795,7 +7993,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_before_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_before_invoke_test
 
 endif
 
@@ -7828,7 +8026,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_in_a_vacuum_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_cancel_in_a_vacuum_test
 
 endif
 
@@ -7861,7 +8059,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_disappearing_server_test: $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_disappearing_server -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_disappearing_server_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_disappearing_server_test
 
 endif
 
@@ -7894,7 +8092,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test
 
 endif
 
@@ -7927,7 +8125,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test
 
 endif
 
@@ -7960,7 +8158,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_invoke_large_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_invoke_large_request_test
 
 endif
 
@@ -7993,7 +8191,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_max_concurrent_streams_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_max_concurrent_streams_test
 
 endif
 
@@ -8026,7 +8224,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_no_op_test: $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_no_op_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_no_op_test
 
 endif
 
@@ -8059,7 +8257,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_ping_pong_streaming_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_ping_pong_streaming_test
 
 endif
 
@@ -8092,7 +8290,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_request_response_with_binary_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test
 
 endif
 
@@ -8125,7 +8323,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_metadata_and_payload_test
 
 endif
 
@@ -8158,7 +8356,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_payload_test
 
 endif
 
@@ -8191,7 +8389,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_request_response_with_trailing_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test
 
 endif
 
@@ -8224,7 +8422,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_simple_delayed_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_simple_delayed_request_test
 
 endif
 
@@ -8257,7 +8455,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_simple_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_simple_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_simple_request_test
 
 endif
 
@@ -8290,7 +8488,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_thread_stress_test: $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_thread_stress -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_thread_stress_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_thread_stress_test
 
 endif
 
@@ -8323,7 +8521,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test
 
 endif
 
@@ -8356,7 +8554,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_cancel_after_accept -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test
 
 endif
 
@@ -8389,7 +8587,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_cancel_after_accept_and_writes_closed -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test
 
 endif
 
@@ -8422,7 +8620,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_cancel_after_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_after_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test
 
 endif
 
@@ -8455,7 +8653,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_cancel_before_invoke -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_before_invoke.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test
 
 endif
 
@@ -8488,7 +8686,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_cancel_in_a_vacuum -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_cancel_in_a_vacuum.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test
 
 endif
 
@@ -8521,7 +8719,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_disappearing_server -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_disappearing_server.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test
 
 endif
 
@@ -8554,7 +8752,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_early_server_shutdown_finishes_inflight_calls -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test
 
 endif
 
@@ -8587,7 +8785,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_early_server_shutdown_finishes_tags -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test
 
 endif
 
@@ -8620,7 +8818,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_invoke_large_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_invoke_large_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test
 
 endif
 
@@ -8653,7 +8851,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_max_concurrent_streams -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_max_concurrent_streams.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test
 
 endif
 
@@ -8686,7 +8884,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_no_op_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_no_op -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_no_op_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_no_op.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_no_op_test
 
 endif
 
@@ -8719,7 +8917,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_ping_pong_streaming -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_ping_pong_streaming.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test
 
 endif
 
@@ -8752,7 +8950,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_request_response_with_binary_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test
 
 endif
 
@@ -8785,7 +8983,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_request_response_with_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test
 
 endif
 
@@ -8818,7 +9016,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_request_response_with_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test
 
 endif
 
@@ -8851,7 +9049,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_request_response_with_trailing_metadata_and_payload -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test
 
 endif
 
@@ -8884,7 +9082,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_simple_delayed_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_simple_delayed_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test
 
 endif
 
@@ -8917,7 +9115,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_simple_request -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_simple_request.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test
 
 endif
 
@@ -8950,7 +9148,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_thread_stress -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_thread_stress.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test
 
 endif
 
@@ -8983,7 +9181,7 @@ else
 bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) -Llibs/$(TGTDIR) -lend2end_fixture_chttp2_socket_pair_one_byte_at_a_time -lend2end_test_writes_done_hangs_with_pending_read -lend2end_certs -lgrpc_test_util -lgrpc -lgpr $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) libs/$(TGTDIR)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(TGTDIR)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(TGTDIR)/libend2end_certs.a libs/$(TGTDIR)/libgrpc_test_util.a libs/$(TGTDIR)/libgrpc.a libs/$(TGTDIR)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(TGTDIR)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test
 
 endif
 

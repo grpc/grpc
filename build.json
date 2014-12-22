@@ -278,6 +278,9 @@
         "src/core/tsi/transport_security.h",
         "src/core/tsi/transport_security_interface.h",
         "src/core/tsi/transport_security_test_lib.h"
+      ],
+      "deps": [
+        "gpr"
       ]
     },
     {
@@ -356,6 +359,9 @@
         "src/cpp/server/thread_pool.h",
         "src/cpp/stream/stream_context.h",
         "src/cpp/util/time.h"
+      ],
+      "deps": [
+        "grpc"
       ]
     },
     {
