@@ -52,8 +52,11 @@
 #include "test/cpp/interop/messages.pb.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
+DEFINE_bool(use_prod_roots, false, "True to use SSL roots for production GFE");
 DEFINE_int32(server_port, 0, "Server port.");
-DEFINE_string(server_host, "127.0.0.1", "Server host.");
+DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
+DEFINE_string(server_host_override, "foo.test.google.com",
+              "Override the server host which is sent in HTTP header");
 DEFINE_string(test_case, "large_unary",
               "Configure different test cases. Valid options are: "
               "empty_unary : empty (zero bytes) request and response; "
@@ -85,6 +88,8 @@ const std::vector<int> response_stream_sizes = {31415, 9, 2653, 58979};
 const int kNumResponseMessages = 2000;
 const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;
+const int kLargeRequestSize = 314159;
+const int kLargeResponseSize = 271812;
 }  // namespace
 
 void DoEmpty(std::shared_ptr<ChannelInterface> channel) {
@@ -109,16 +114,17 @@ void DoLargeUnary(std::shared_ptr<ChannelInterface> channel) {
   SimpleResponse response;
   ClientContext context;
   request.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
-  request.set_response_size(314159);
-  grpc::string payload(271828, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), 271828);
+  request.set_response_size(kLargeResponseSize);
+  grpc::string payload(kLargeRequestSize, '\0');
+  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
   grpc::Status s = stub->UnaryCall(&context, request, &response);
 
   GPR_ASSERT(s.IsOk());
   GPR_ASSERT(response.payload().type() ==
-         grpc::testing::PayloadType::COMPRESSABLE);
-  GPR_ASSERT(response.payload().body() == grpc::string(314159, '\0'));
+             grpc::testing::PayloadType::COMPRESSABLE);
+  GPR_ASSERT(response.payload().body() ==
+             grpc::string(kLargeResponseSize, '\0'));
   gpr_log(GPR_INFO, "Large unary done.");
 }
 
@@ -134,10 +140,14 @@ int main(int argc, char** argv) {
   snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
            FLAGS_server_port);
 
+  std::shared_ptr<ChannelInterface> channel(
+      CreateTestChannel(host_port, FLAGS_server_host_override, FLAGS_enable_ssl,
+                        FLAGS_use_prod_roots));
+
   if (FLAGS_test_case == "empty_unary") {
-    DoEmpty(CreateTestChannel(host_port, FLAGS_enable_ssl));
+    DoEmpty(channel);
   } else if (FLAGS_test_case == "large_unary") {
-    DoLargeUnary(CreateTestChannel(host_port, FLAGS_enable_ssl));
+    DoLargeUnary(channel);
   } else {
     gpr_log(
         GPR_ERROR,
@@ -146,6 +156,7 @@ int main(int argc, char** argv) {
         FLAGS_test_case.c_str());
   }
 
+  channel.reset();
   grpc_shutdown();
   return 0;
 }
