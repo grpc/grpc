@@ -66,6 +66,8 @@ static int g_shutdown_backup_poller;
 static gpr_event g_backup_poller_done;
 /* activated to break out of the event loop early */
 static struct event *g_timeout_ev;
+/* activated to safely break polling from other threads */
+static struct event *g_break_ev;
 static grpc_fd *g_fds_to_free;
 
 int evthread_use_threads(void);
@@ -115,6 +117,10 @@ static void timer_callback(int fd, short events, void *context) {
   event_base_loopbreak((struct event_base *)context);
 }
 
+static void break_callback(int fd, short events, void *context) {
+  event_base_loopbreak((struct event_base *)context);
+}
+
 static void free_fd_list(grpc_fd *impl) {
   while (impl != NULL) {
     grpc_fd *current = impl;
@@ -132,9 +138,7 @@ static void maybe_free_fds() {
   }
 }
 
-/* TODO(ctiller): this is racy. In non-libevent implementations, use a pipe
-   or eventfd */
-void grpc_kick_poller() { event_base_loopbreak(g_event_base); }
+void grpc_kick_poller() { event_active(g_break_ev, EV_READ, 0); }
 
 /* Spend some time doing polling and libevent maintenance work if no other
    thread is. This includes both polling for events and destroying/closing file
@@ -181,8 +185,8 @@ int grpc_iomgr_work(gpr_timespec deadline) {
   gpr_timespec now = gpr_now();
   gpr_timespec next = grpc_alarm_list_next_timeout();
   gpr_timespec delay_timespec = gpr_time_sub(deadline, now);
-  /* poll for no longer than one second */
-  gpr_timespec max_delay = {1, 0};
+  /* poll for no longer than 100 millis */
+  gpr_timespec max_delay = {0, 1000};
   struct timeval delay;
 
   if (gpr_time_cmp(delay_timespec, gpr_time_0) <= 0) {
@@ -275,6 +279,7 @@ void grpc_iomgr_init() {
 
   g_event_base = NULL;
   g_timeout_ev = NULL;
+  g_break_ev = NULL;
 
   g_event_base = event_base_new();
   if (!g_event_base) {
@@ -288,6 +293,10 @@ void grpc_iomgr_init() {
   }
 
   g_timeout_ev = evtimer_new(g_event_base, timer_callback, g_event_base);
+  g_break_ev = event_new(g_event_base, -1, EV_READ | EV_PERSIST, break_callback,
+                         g_event_base);
+
+  event_add(g_break_ev, NULL);
 
   gpr_thd_new(&backup_poller_id, backup_poller_thread, NULL, NULL);
 }
@@ -336,6 +345,10 @@ void grpc_iomgr_shutdown() {
 
   if (g_timeout_ev != NULL) {
     event_free(g_timeout_ev);
+  }
+
+  if (g_break_ev != NULL) {
+    event_free(g_break_ev);
   }
 
   if (g_event_base != NULL) {
