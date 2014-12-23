@@ -33,17 +33,23 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_CPU_POSIX
+#ifdef GPR_CPU_LINUX
 
 #include "src/core/support/cpu.h"
+
+#define _GNU_SOURCE
+#define __USE_GNU
+#define __USE_MISC
+#include <sched.h>
+#undef _GNU_SOURCE
+#undef __USE_GNU
+#undef __USE_MISC
 
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
-
-static __thread char magic_thread_local;
 
 int gpr_cpu_num_cores() {
   static int ncpus = 0;
@@ -57,18 +63,13 @@ int gpr_cpu_num_cores() {
   return ncpus;
 }
 
-/* This is a cheap, but good enough, pointer hash for sharding things: */
-static size_t shard_ptr(const void *info) {
-  size_t x = (size_t)info;
-  return ((x >> 4) ^ (x >> 9) ^ (x >> 14)) % gpr_cpu_num_cores();
-}
-
 int gpr_cpu_current_cpu() {
-  /* NOTE: there's no way I know to return the actual cpu index portably...
-     most code that's using this is using it to shard across work queues though,
-     so here we use thread identity instead to achieve a similar though not
-     identical effect */
-  return shard_ptr(&magic_thread_local);
+  int cpu = sched_getcpu();
+  if (cpu < 0) {
+    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
+    return 0;
+  }
+  return cpu;
 }
 
 #endif /* GPR_CPU_LINUX */

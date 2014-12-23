@@ -1056,6 +1056,7 @@ LIBGPR_SRC = \
     src/core/support/alloc.c \
     src/core/support/cancellable.c \
     src/core/support/cmdline.c \
+    src/core/support/cpu_linux.c \
     src/core/support/cpu_posix.c \
     src/core/support/histogram.c \
     src/core/support/host_port.c \

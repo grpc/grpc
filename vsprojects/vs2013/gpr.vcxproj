@@ -111,6 +111,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\cmdline.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\cpu_linux.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\histogram.c">

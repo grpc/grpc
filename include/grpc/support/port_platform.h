@@ -51,6 +51,7 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_ANDROID 1
 #define GPR_ARCH_32 1
+#define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
 #define GPR_LIBEVENT 1
 #define GPR_POSIX_SOCKET 1
@@ -60,6 +61,7 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #elif defined(__linux__)
+#define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_LIBEVENT 1
 #define GPR_LINUX 1
@@ -74,6 +76,7 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__APPLE__)
+#define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_LIBEVENT 1
 #define GPR_POSIX_LOG 1
@@ -118,6 +121,10 @@
 
 #if defined(GPR_ARCH_32) + defined(GPR_ARCH_64) != 1
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
+#endif
+
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) != 1
+#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX
 #endif
 
 typedef int16_t gpr_int16;
