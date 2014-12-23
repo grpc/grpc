@@ -185,8 +185,8 @@ int grpc_iomgr_work(gpr_timespec deadline) {
   gpr_timespec now = gpr_now();
   gpr_timespec next = grpc_alarm_list_next_timeout();
   gpr_timespec delay_timespec = gpr_time_sub(deadline, now);
-  /* poll for no longer than 100 millis */
-  gpr_timespec max_delay = {0, 1000};
+  /* poll for no longer than one second */
+  gpr_timespec max_delay = gpr_time_from_seconds(1);
   struct timeval delay;
 
   if (gpr_time_cmp(delay_timespec, gpr_time_0) <= 0) {
@@ -196,6 +196,10 @@ int grpc_iomgr_work(gpr_timespec deadline) {
   if (gpr_time_cmp(delay_timespec, max_delay) > 0) {
     delay_timespec = max_delay;
   }
+
+  /* Adjust delay to account for the next alarm, if applicable. */
+  delay_timespec = gpr_time_min(
+      delay_timespec, gpr_time_sub(grpc_alarm_list_next_timeout(), now));
 
   delay = gpr_timeval_from_timespec(delay_timespec);
 
