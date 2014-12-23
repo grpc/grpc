@@ -157,8 +157,8 @@ IS_GIT_FOLDER = true
 endif
 
 EVENT2_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/event2.c -levent $(LDFLAGS)
-OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -levent $(LDFLAGS) $(LDLIBS_SECURE)
-ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/event2.c -levent $(LDFLAGS)
+OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -lssl -lcrypto -ldl $(LDFLAGS)
+ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
 
 HAS_SYSTEM_EVENT2 = $(shell $(EVENT2_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
