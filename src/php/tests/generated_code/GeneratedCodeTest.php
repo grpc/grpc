@@ -1,7 +1,5 @@
 <?php
-require __DIR__ . '/../../lib/Grpc/ActiveCall.php';
-require __DIR__ . '/../../lib/Grpc/SurfaceActiveCall.php';
-require __DIR__ . '/../../lib/Grpc/BaseStub.php';
+require_once realpath(dirname(__FILE__) . '/../../lib/autoload.php');
 require 'DrSlump/Protobuf.php';
 \DrSlump\Protobuf::autoload();
 require 'math.php';
