@@ -62,7 +62,11 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $server_call = $event->get_call();
     $this->assertNotNull($server_call);
     $this->assertEquals(Grpc\CALL_OK,
-                        $server_call->accept($this->server_queue, $server_tag));
+                        $server_call->server_accept($this->server_queue,
+                                                    $server_tag));
+
+    $this->assertEquals(Grpc\CALL_OK,
+                        $server_call->server_end_initial_metadata());
 
     // the server sends the status
     $this->assertEquals(Grpc\CALL_OK,
@@ -135,7 +139,11 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $server_call = $event->get_call();
     $this->assertNotNull($server_call);
     $this->assertEquals(Grpc\CALL_OK,
-                        $server_call->accept($this->server_queue, $server_tag));
+                        $server_call->server_accept($this->server_queue,
+                                                    $server_tag));
+
+    $this->assertEquals(Grpc\CALL_OK,
+                        $server_call->server_end_initial_metadata());
 
     // start the server read
     $this->assertEquals(Grpc\CALL_OK, $server_call->start_read($server_tag));

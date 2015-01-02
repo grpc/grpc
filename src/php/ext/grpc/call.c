@@ -292,19 +292,17 @@ PHP_METHOD(Call, start_invoke){
  * (optional)
  * @return long Error code
  */
-PHP_METHOD(Call, accept){
+PHP_METHOD(Call, server_accept){
   long tag;
   zval *queue_obj;
-  long flags = 0;
-  /* "Ol|l" == 1 Object, 1 mandatory long, 1 optional long */
+  /* "Ol|l" == 1 Object, 1 long */
   if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "Ol|l",
+                           "Ol",
                            &queue_obj, grpc_ce_completion_queue,
-                           &tag,
-                           &flags) == FAILURE){
+                           &tag) == FAILURE){
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
-        "accept expects a CompletionQueue, a long, and an optional long",
+        "server_accept expects a CompletionQueue, a long, and an optional long",
         1 TSRMLS_CC);
     return;
   }
@@ -314,10 +312,25 @@ PHP_METHOD(Call, accept){
   wrapped_grpc_completion_queue *queue =
     (wrapped_grpc_completion_queue*)zend_object_store_get_object(
         queue_obj TSRMLS_CC);
-  RETURN_LONG(grpc_call_accept(call->wrapped,
-                               queue->wrapped,
-                               (void*)tag,
-                               (gpr_uint32)flags));
+  RETURN_LONG(grpc_call_server_accept(call->wrapped,
+                                      queue->wrapped,
+                                      (void*)tag));
+}
+
+PHP_METHOD(Call, server_end_initial_metadata) {
+  long flags = 0;
+  /* "|l" == 1 optional long */
+  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
+                           "|l",
+                           &flags) == FAILURE) {
+    zend_throw_exception(
+        spl_ce_InvalidArgumentException,
+        "server_end_initial_metadata expects an optional long",
+        1 TSRMLS_CC);
+  }
+  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
+      getThis() TSRMLS_CC);
+  RETURN_LONG(grpc_call_server_end_initial_metadata(call->wrapped, flags));
 }
 
 /**
@@ -435,7 +448,8 @@ PHP_METHOD(Call, start_read){
 
 static zend_function_entry call_methods[] = {
   PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-  PHP_ME(Call, accept, NULL, ZEND_ACC_PUBLIC)
+  PHP_ME(Call, server_accept, NULL, ZEND_ACC_PUBLIC)
+  PHP_ME(Call, server_end_initial_metadata, NULL, ZEND_ACC_PUBLIC)
   PHP_ME(Call, add_metadata, NULL, ZEND_ACC_PUBLIC)
   PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
   PHP_ME(Call, start_invoke, NULL, ZEND_ACC_PUBLIC)
