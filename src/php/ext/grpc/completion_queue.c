@@ -99,7 +99,7 @@ PHP_METHOD(CompletionQueue, next){
   if(event == NULL){
     RETURN_NULL();
   }
-  zval *wrapped_event = grpc_php_wrap_event(event);
+  zval *wrapped_event = grpc_php_convert_event(event);
   RETURN_DESTROY_ZVAL(wrapped_event);
 }
 
@@ -126,7 +126,7 @@ PHP_METHOD(CompletionQueue, pluck){
   if(event == NULL){
     RETURN_NULL();
   }
-  zval *wrapped_event = grpc_php_wrap_event(event);
+  zval *wrapped_event = grpc_php_convert_event(event);
   RETURN_DESTROY_ZVAL(wrapped_event);
 }
 

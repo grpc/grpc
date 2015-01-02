@@ -12,20 +12,7 @@
 
 #include "grpc/grpc.h"
 
-/* Class entry for the PHP Event class */
-zend_class_entry *grpc_ce_event;
-
-/* Struct wrapping grpc_event that can be associated with a PHP object */
-typedef struct wrapped_grpc_event {
-  zend_object std;
-
-  grpc_event *wrapped;
-} wrapped_grpc_event;
-
-/* Initialize the Event class */
-void grpc_init_event(TSRMLS_D);
-
 /* Create a new Event object that wraps an existing grpc_event struct */
-zval *grpc_php_wrap_event(grpc_event *wrapped);
+zval *grpc_php_convert_event(grpc_event *event);
 
 #endif /* NET_GRPC_PHP_GRPC_COMPLETION_CHANNEL_H */

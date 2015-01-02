@@ -35,7 +35,7 @@ class ActiveCall {
                                    Timeval::inf_future());
     $metadata_event = $this->completion_queue->pluck(CLIENT_METADATA_READ,
                                                      Timeval::inf_future());
-    $this->metadata = $metadata_event->get_data();
+    $this->metadata = $metadata_event->data;
   }
 
   /**
@@ -59,7 +59,7 @@ class ActiveCall {
   public function read() {
     $this->call->start_read(READ);
     $read_event = $this->completion_queue->pluck(READ, Timeval::inf_future());
-    return $read_event->get_data();
+    return $read_event->data;
   }
 
   /**
@@ -93,6 +93,6 @@ class ActiveCall {
   public function getStatus() {
     $status_event = $this->completion_queue->pluck(FINISHED,
                                                    Timeval::inf_future());
-    return $status_event->get_data();
+    return $status_event->data;
   }
 }

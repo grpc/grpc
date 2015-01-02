@@ -26,7 +26,7 @@
 /* Frees and destroys an instance of wrapped_grpc_call */
 void free_wrapped_grpc_call(void *object TSRMLS_DC){
   wrapped_grpc_call *call = (wrapped_grpc_call*)object;
-  if(call->wrapped != NULL){
+  if(call->owned && call->wrapped != NULL){
     grpc_call_destroy(call->wrapped);
   }
   efree(call);
@@ -53,7 +53,9 @@ zend_object_value create_wrapped_grpc_call(
   return retval;
 }
 
-zval *grpc_php_wrap_call(grpc_call *wrapped){
+/* Wraps a grpc_call struct in a PHP object. Owned indicates whether the struct
+   should be destroyed at the end of the object's lifecycle */
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned){
   zval *call_object;
   MAKE_STD_ZVAL(call_object);
   object_init_ex(call_object, grpc_ce_call);

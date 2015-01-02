@@ -196,7 +196,6 @@ PHP_MINIT_FUNCTION(grpc)
     grpc_init_channel(TSRMLS_C);
     grpc_init_server(TSRMLS_C);
     grpc_init_completion_queue(TSRMLS_C);
-    grpc_init_event(TSRMLS_C);
     grpc_init_timeval(TSRMLS_C);
     grpc_init_credentials(TSRMLS_C);
     grpc_init_server_credentials(TSRMLS_C);
