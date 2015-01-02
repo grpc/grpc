@@ -121,6 +121,7 @@ PHP_METHOD(Server, __construct){
  * @return Void
  */
 PHP_METHOD(Server, request_call){
+  grpc_call_error error_code;
   wrapped_grpc_server *server =
     (wrapped_grpc_server*)zend_object_store_get_object(getThis() TSRMLS_CC);
   long tag_new;
@@ -133,7 +134,8 @@ PHP_METHOD(Server, request_call){
                          1 TSRMLS_CC);
     return;
   }
-  grpc_server_request_call(server->wrapped, (void*)tag_new);
+  error_code = grpc_server_request_call(server->wrapped, (void*)tag_new);
+  MAYBE_THROW_CALL_ERROR(request_call, error_code);
 }
 
 /**

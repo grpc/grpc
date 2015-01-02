@@ -9,10 +9,29 @@ class CallTest extends PHPUnit_Framework_TestCase{
   }
 
   public function setUp() {
+    $this->cq = new Grpc\CompletionQueue();
     $this->channel = new Grpc\Channel('localhost:9001', []);
     $this->call = new Grpc\Call($this->channel,
                                 '/foo',
                                 Grpc\Timeval::inf_future());
+  }
+
+  /**
+   * @expectedException LogicException
+   * @expectedExceptionCode Grpc\CALL_ERROR_INVALID_FLAGS
+   * @expectedExceptionMessage start_invoke
+   */
+  public function testStartInvokeRejectsBadFlags() {
+    $this->call->start_invoke($this->cq, 0, 0, 0, 0xDEADBEEF);
+  }
+
+  /**
+   * @expectedException LogicException
+   * @expectedExceptionCode Grpc\CALL_ERROR_NOT_ON_CLIENT
+   * @expectedExceptionMessage server_accept
+   */
+  public function testServerAcceptFailsCorrectly() {
+    $this->call->server_accept($this->cq, 0);
   }
 
   /* These test methods with assertTrue(true) at the end just check that the

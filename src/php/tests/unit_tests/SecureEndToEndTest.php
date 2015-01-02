@@ -48,14 +48,14 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertNotNull($event);
     $this->assertEquals(Grpc\INVOKE_ACCEPTED, $event->type);
 
-    $this->assertEquals(Grpc\CALL_OK, $call->writes_done($tag));
+    $call->writes_done($tag);
     $event = $this->client_queue->next($deadline);
     $this->assertNotNull($event);
     $this->assertEquals(Grpc\FINISH_ACCEPTED, $event->type);
     $this->assertEquals(Grpc\OP_OK, $event->data);
 
     // check that a server rpc new was received
-    $this->assertEquals(Grpc\CALL_OK, $this->server->request_call($server_tag));
+    $this->server->request_call($server_tag);
     $event = $this->server_queue->next($deadline);
     $this->assertNotNull($event);
     $this->assertEquals(Grpc\SERVER_RPC_NEW, $event->type);
@@ -126,13 +126,13 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertEquals(Grpc\INVOKE_ACCEPTED, $event->type);
 
     // the client writes
-    $this->assertEquals(Grpc\CALL_OK, $call->start_write($req_text, $tag));
+    $call->start_write($req_text, $tag);
     $event = $this->client_queue->next($deadline);
     $this->assertNotNull($event);
     $this->assertEquals(Grpc\WRITE_ACCEPTED, $event->type);
 
     // check that a server rpc new was received
-    $this->assertEquals(Grpc\CALL_OK, $this->server->request_call($server_tag));
+    $this->server->request_call($server_tag);
     $event = $this->server_queue->next($deadline);
     $this->assertNotNull($event);
     $this->assertEquals(Grpc\SERVER_RPC_NEW, $event->type);
@@ -146,7 +146,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
                         $server_call->server_end_initial_metadata());
 
     // start the server read
-    $this->assertEquals(Grpc\CALL_OK, $server_call->start_read($server_tag));
+    $server_call->start_read($server_tag);
     $event = $this->server_queue->next($deadline);
     $this->assertNotNull($event);
     $this->assertEquals(Grpc\READ, $event->type);
@@ -165,14 +165,14 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertEquals(Grpc\CLIENT_METADATA_READ, $event->type);
 
     // the client reads the reply
-    $this->assertEquals(Grpc\CALL_OK, $call->start_read($tag));
+    $call->start_read($tag);
     $event = $this->client_queue->next($deadline);
     $this->assertNotNull($event);
     $this->assertEquals(Grpc\READ, $event->type);
     $this->assertEquals($reply_text, $event->data);
 
     // the client sends writes done
-    $this->assertEquals(Grpc\CALL_OK, $call->writes_done($tag));
+    $call->writes_done($tag);
     $event = $this->client_queue->next($deadline);
     $this->assertEquals(Grpc\FINISH_ACCEPTED, $event->type);
     $this->assertEquals(Grpc\OP_OK, $event->data);

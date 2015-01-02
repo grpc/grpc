@@ -126,6 +126,7 @@ int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC,
                                           int num_args,
                                           va_list args,
                                           zend_hash_key *hash_key){
+  grpc_call_error error_code;
   zval **data = (zval**)elem;
   grpc_metadata metadata;
   grpc_call *call = va_arg(args, grpc_call*);
@@ -146,7 +147,8 @@ int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC,
       metadata.key = (char*)key;
       metadata.value = Z_STRVAL_P(*data);
       metadata.value_length = Z_STRLEN_P(*data);
-      grpc_call_add_metadata(call, &metadata, 0u);
+      error_code = grpc_call_add_metadata(call, &metadata, 0u);
+      MAYBE_THROW_CALL_ERROR(add_metadata, error_code);
       break;
     case IS_ARRAY:
       inner_hash = Z_ARRVAL_P(*data);
@@ -248,9 +250,10 @@ PHP_METHOD(Call, add_metadata){
  * @param long $finished_tag The tag to associate with the finished event
  * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
  * (optional)
- * @return long Error code
+ * @return Void
  */
 PHP_METHOD(Call, start_invoke){
+  grpc_call_error error_code;
   long tag1;
   long tag2;
   long tag3;
@@ -276,12 +279,13 @@ PHP_METHOD(Call, start_invoke){
   wrapped_grpc_completion_queue *queue =
     (wrapped_grpc_completion_queue*)zend_object_store_get_object(
         queue_obj TSRMLS_CC);
-  RETURN_LONG(grpc_call_start_invoke(call->wrapped,
-                                     queue->wrapped,
-                                     (void*)tag1,
-                                     (void*)tag2,
-                                     (void*)tag3,
-                                     (gpr_uint32)flags));
+  error_code = grpc_call_start_invoke(call->wrapped,
+                                      queue->wrapped,
+                                      (void*)tag1,
+                                      (void*)tag2,
+                                      (void*)tag3,
+                                      (gpr_uint32)flags);
+  MAYBE_THROW_CALL_ERROR(start_invoke, error_code);
 }
 
 /**
@@ -292,11 +296,12 @@ PHP_METHOD(Call, start_invoke){
  * @param long $finished_tag The tag to associate with the finished event
  * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
  * (optional)
- * @return long Error code
+ * @return Void
  */
 PHP_METHOD(Call, server_accept){
   long tag;
   zval *queue_obj;
+  grpc_call_error error_code;
   /* "Ol|l" == 1 Object, 1 long */
   if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
                            "Ol",
@@ -314,12 +319,14 @@ PHP_METHOD(Call, server_accept){
   wrapped_grpc_completion_queue *queue =
     (wrapped_grpc_completion_queue*)zend_object_store_get_object(
         queue_obj TSRMLS_CC);
-  RETURN_LONG(grpc_call_server_accept(call->wrapped,
-                                      queue->wrapped,
-                                      (void*)tag));
+  error_code = grpc_call_server_accept(call->wrapped,
+                                       queue->wrapped,
+                                       (void*)tag);
+  MAYBE_THROW_CALL_ERROR(server_accept, error_code);
 }
 
 PHP_METHOD(Call, server_end_initial_metadata) {
+  grpc_call_error error_code;
   long flags = 0;
   /* "|l" == 1 optional long */
   if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
@@ -332,17 +339,19 @@ PHP_METHOD(Call, server_end_initial_metadata) {
   }
   wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
       getThis() TSRMLS_CC);
-  RETURN_LONG(grpc_call_server_end_initial_metadata(call->wrapped, flags));
+  error_code = grpc_call_server_end_initial_metadata(call->wrapped, flags);
+  MAYBE_THROW_CALL_ERROR(server_end_initial_metadata, error_code);
 }
 
 /**
  * Called by clients to cancel an RPC on the server.
- * @return long Error code
+ * @return Void
  */
 PHP_METHOD(Call, cancel){
   wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
       getThis() TSRMLS_CC);
-  RETURN_LONG(grpc_call_cancel(call->wrapped));
+  grpc_call_error error_code = grpc_call_cancel(call->wrapped);
+  MAYBE_THROW_CALL_ERROR(cancel, error_code);
 }
 
 /**
@@ -351,9 +360,10 @@ PHP_METHOD(Call, cancel){
  * @param long $tag The tag to associate with this write
  * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
  * (optional)
- * @return long Error code
+ * @return Void
  */
 PHP_METHOD(Call, start_write){
+  grpc_call_error error_code;
   wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
       getThis() TSRMLS_CC);
   char *buffer;
@@ -372,10 +382,11 @@ PHP_METHOD(Call, start_write){
         1 TSRMLS_CC);
     return;
   }
-  RETURN_LONG(grpc_call_start_write(call->wrapped,
-                                    string_to_byte_buffer(buffer, buffer_len),
-                                    (void*)tag,
-                                    (gpr_uint32)flags));
+  error_code = grpc_call_start_write(call->wrapped,
+                                     string_to_byte_buffer(buffer, buffer_len),
+                                     (void*)tag,
+                                     (gpr_uint32)flags);
+  MAYBE_THROW_CALL_ERROR(start_write, error_code);
 }
 
 /**
@@ -383,9 +394,10 @@ PHP_METHOD(Call, start_write){
  * @param long $status_code The status code to send
  * @param string $status_details The status details to send
  * @param long $tag The tag to associate with this status
- * @return long Error code
+ * @return Void
  */
 PHP_METHOD(Call, start_write_status){
+  grpc_call_error error_code;
   wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
       getThis() TSRMLS_CC);
   long status_code;
@@ -404,17 +416,19 @@ PHP_METHOD(Call, start_write_status){
         1 TSRMLS_CC);
     return;
   }
-  RETURN_LONG(grpc_call_start_write_status(call->wrapped,
-                                           (grpc_status_code)status_code,
-                                           status_details,
-                                           (void*)tag));
+  error_code = grpc_call_start_write_status(call->wrapped,
+                                            (grpc_status_code)status_code,
+                                            status_details,
+                                            (void*)tag);
+  MAYBE_THROW_CALL_ERROR(start_write_status, error_code);
 }
 
 /**
  * Indicate that there are no more messages to send
- * @return long Error code
+ * @return Void
  */
 PHP_METHOD(Call, writes_done){
+  grpc_call_error error_code;
   wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
       getThis() TSRMLS_CC);
   long tag;
@@ -425,16 +439,18 @@ PHP_METHOD(Call, writes_done){
                          1 TSRMLS_CC);
     return;
   }
-  RETURN_LONG(grpc_call_writes_done(call->wrapped, (void*)tag));
+  error_code = grpc_call_writes_done(call->wrapped, (void*)tag);
+  MAYBE_THROW_CALL_ERROR(writes_done, error_code);
 }
 
 /**
  * Initiate a read on a call. Output event contains a byte buffer with the
  * result of the read
  * @param long $tag The tag to associate with this read
- * @return long Error code
+ * @return Void
  */
 PHP_METHOD(Call, start_read){
+  grpc_call_error error_code;
   wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
       getThis() TSRMLS_CC);
   long tag;
@@ -445,7 +461,8 @@ PHP_METHOD(Call, start_read){
                          1 TSRMLS_CC);
     return;
   }
-  RETURN_LONG(grpc_call_start_read(call->wrapped, (void*)tag));
+  error_code = grpc_call_start_read(call->wrapped, (void*)tag);
+  MAYBE_THROW_CALL_ERROR(start_read, error_code);
 }
 
 static zend_function_entry call_methods[] = {
