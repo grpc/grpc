@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -80,6 +81,9 @@ int main(int argc, char **argv) {
   pid_t svr;
   int ret;
   int do_ipv6 = 1;
+  /* seed rng with pid, so we don't end up with the same random numbers as a
+     concurrently running test binary */
+  srand(getpid());
   if (!grpc_ipv6_loopback_available()) {
     gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
     do_ipv6 = 0;

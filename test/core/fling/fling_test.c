@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -53,6 +54,9 @@ int main(int argc, char **argv) {
   char *args[10];
   int status;
   pid_t svr, cli;
+  /* seed rng with pid, so we don't end up with the same random numbers as a
+     concurrently running test binary */
+  srand(getpid());
   /* figure out where we are */
   if (lslash) {
     memcpy(root, me, lslash - me);

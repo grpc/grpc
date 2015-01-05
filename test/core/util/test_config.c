@@ -33,4 +33,11 @@
 
 #include "test/core/util/test_config.h"
 
-void grpc_test_init(int argc, char **argv) {}
+#include <stdlib.h>
+#include <unistd.h>
+
+void grpc_test_init(int argc, char **argv) {
+  /* seed rng with pid, so we don't end up with the same random numbers as a
+     concurrently running test binary */
+  srand(getpid());
+}
