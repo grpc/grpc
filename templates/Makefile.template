@@ -18,16 +18,67 @@
     return 'gens/' + m.group(1) + '.pb.cc'
 %>
 
+# Configurations
+
+VALID_CONFIG_opt = 1
+CC_opt = gcc
+CXX_opt = g++
+LD_opt = gcc
+LDXX_opt = g++
+CPPFLAGS_opt = -O2
+LDFLAGS_opt =
+DEFINES_opt = NDEBUG
+
+VALID_CONFIG_dbg = 1
+CC_dbg = gcc
+CXX_dbg = g++
+LD_dbg = gcc
+LDXX_dbg = g++
+CPPFLAGS_dbg = -O0
+LDFLAGS_dbg =
+DEFINES_dbg = _DEBUG DEBUG
+
+VALID_CONFIG_tsan = 1
+CC_tsan = clang
+CXX_tsan = clang++
+LD_tsan = clang
+LDXX_tsan = clang++
+CPPFLAGS_tsan = -O1 -fsanitize=thread -fno-omit-frame-pointer
+LDFLAGS_tsan = -fsanitize=thread
+DEFINES_tsan = NDEBUG
+
+VALID_CONFIG_asan = 1
+CC_asan = clang
+CXX_asan = clang++
+LD_asan = clang
+LDXX_asan = clang++
+CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
+LDFLAGS_asan = -fsanitize=address
+DEFINES_asan = NDEBUG
+
+VALID_CONFIG_msan = 1
+CC_msan = clang
+CXX_msan = clang++
+LD_msan = clang
+LDXX_msan = clang++
+CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer
+LDFLAGS_msan = -fsanitize=memory
+DEFINES_msan = NDEBUG
+
+ifndef VALID_CONFIG_$(CONFIG)
+$(error Invalid CONFIG value '$(CONFIG)')
+endif
+
 # General settings.
 # You may want to change these depending on your system.
 
 prefix ?= /usr/local
 
 PROTOC = protoc
-CC = gcc
-CXX = g++
-LD = gcc
-LDXX = g++
+CC = $(CC_$(CONFIG))
+CXX = $(CXX_$(CONFIG))
+LD = $(LD_$(CONFIG))
+LDXX = $(LDXX_$(CONFIG))
 AR = ar
 STRIP = strip --strip-unneeded
 INSTALL = install -D
@@ -40,20 +91,9 @@ HOST_LDXX = $(LDXX)
 
 CONFIG ?= opt
 
-VALID_CONFIG_opt = 1
-CPPFLAGS_opt = -O2
-DEFINES_opt = NDEBUG
-
-VALID_CONFIG_dbg = 1
-CPPFLAGS_dbg = -O0
-DEFINES_dbg = _DEBUG DEBUG
-
-ifndef VALID_CONFIG_$(CONFIG)
-$(error Invalid CONFIG value '$(CONFIG)')
-endif
-
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 DEFINES += $(DEFINES_$(CONFIG))
+LDFLAGS += $(LDFLAGS_$(CONFIG))
 
 CFLAGS += -std=c89 -pedantic
 CXXFLAGS += -std=c++11
