@@ -31,13 +31,13 @@
  *
  */
 
-#include <grpc/support/cmdline.h>
+#include "net/grpc/c/public/support/cmdline.h"
 
 #include <string.h>
 
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
-#include "test/core/util/test_config.h"
+#include "net/grpc/c/public/support/log.h"
+#include "net/grpc/c/public/support/useful.h"
+#include "net/grpc/c/test/util/test_config.h"
 
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 

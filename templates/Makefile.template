@@ -1,10 +1,9 @@
 # GRPC global makefile
 # This currently builds C and C++ code.
 <%!
-  from copy import deepcopy
   import re
 
-  proto_re = re.compile('(.*)\.proto')
+  proto_re = re.compile('(.*)\\.proto')
 
   def excluded(filename, exclude_res):
     for r in exclude_res:
@@ -17,48 +16,6 @@
     if not m:
       return filename
     return 'gens/' + m.group(1) + '.pb.cc'
-%>
-
-<%
-  altlibs = []
-  for lib in libs:
-    for alt in lib.get('alternates', []):
-      new = deepcopy(lib)
-      new.name = alt.name
-      new.alternates = []
-      exclude_res = [re.compile(str) for str in alt.get('exclude_res', [])]
-
-      src = [file for file in new.get('src', []) if not excluded(file, exclude_res)]
-      src.extend(alt.get('include_src', []))
-      new.src = src
-
-      headers = [file for file in new.get('headers', []) if not excluded(file, exclude_res)]
-      headers.extend(alt.get('include_headers', []))
-      new.headers = headers
-
-      public_headers = [file for file in new.get('public_headers', []) if not excluded(file, exclude_res)]
-      public_headers.extend(alt.get('include_public_headers', []))
-      new.public_headers = public_headers
-
-      for prop in alt.properties:
-        new[prop.name] = prop.value
-
-      altlibs.append(new)
-  libs.extend(altlibs)
-
-  protos = set()
-  for lib in libs:
-    for src in lib.src:
-      m = proto_re.match(src)
-      if m:
-        protos.add(m.group(1))
-  for tgt in targets:
-    for src in tgt.src:
-      m = proto_re.match(src)
-      if m:
-        protos.add(m.group(1))
-
-  protos = sorted(protos)
 %>
 
 # General settings.
