@@ -2,12 +2,22 @@ syntax = "proto2";
 
 package grpc.cpp.test.util;
 
+message RequestParams {
+  optional bool echo_deadline = 1;
+}
+
 message EchoRequest {
   optional string message = 1;
+  optional RequestParams param = 2;
+}
+
+message ResponseParams {
+  optional int64 request_deadline = 1;
 }
 
 message EchoResponse {
   optional string message = 1;
+  optional ResponseParams param = 2;
 }
 
 service TestService {
@@ -15,6 +25,5 @@ service TestService {
   rpc RequestStream(stream EchoRequest) returns (EchoResponse);
   rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
   rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
-  rpc Unimplemented(EchoRequest) returns (EchoResponse) {
-  }
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
 }

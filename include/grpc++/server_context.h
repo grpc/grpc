@@ -34,12 +34,16 @@
 #ifndef __GRPCPP_SERVER_CONTEXT_H_
 #define __GRPCPP_SERVER_CONTEXT_H_
 
+#include <chrono>
+
 namespace grpc {
 
 // Interface of server side rpc context.
 class ServerContext {
  public:
   virtual ~ServerContext() {}
+
+  virtual std::chrono::system_clock::time_point absolute_deadline() const = 0;
 };
 
 }  // namespace grpc

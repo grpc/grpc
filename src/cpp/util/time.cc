@@ -53,6 +53,9 @@ void Timepoint2Timespec(const system_clock::time_point& from,
 }
 
 system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
+  if (gpr_time_cmp(t, gpr_inf_future) == 0) {
+    return system_clock::time_point::max();
+  }
   system_clock::time_point tp;
   tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
   tp +=

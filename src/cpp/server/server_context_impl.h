@@ -36,12 +36,24 @@
 
 #include <grpc++/server_context.h>
 
+#include <chrono>
+
+#include <grpc/support/time.h>
+
 namespace grpc {
 
 class ServerContextImpl : public ServerContext {
  public:
-  ServerContextImpl();
+  explicit ServerContextImpl(std::chrono::system_clock::time_point deadline)
+      : absolute_deadline_(deadline) {}
   ~ServerContextImpl() {}
+
+  std::chrono::system_clock::time_point absolute_deadline() const {
+    return absolute_deadline_;
+  }
+
+ private:
+  std::chrono::system_clock::time_point absolute_deadline_;
 };
 
 }  // namespace grpc

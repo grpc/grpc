@@ -35,6 +35,4 @@
 
 namespace grpc {
 
-ServerContextImpl::ServerContextImpl() {}
-
 }  // namespace grpc

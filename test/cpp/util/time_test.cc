@@ -62,5 +62,11 @@ TEST_F(TimeTest, AbsolutePointTest) {
   EXPECT_TRUE(tp == tp_converted_2);
 }
 
+// gpr_inf_future is treated specially and mapped to time_point::max()
+TEST_F(TimeTest, InfFuture) {
+  EXPECT_EQ(system_clock::time_point::max(),
+            Timespec2Timepoint(gpr_inf_future));
+}
+
 }  // namespace
 }  // namespace grpc

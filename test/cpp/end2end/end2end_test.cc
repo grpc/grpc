@@ -31,10 +31,12 @@
  *
  */
 
+#include <chrono>
 #include <thread>
-#include "src/cpp/server/rpc_service_method.h"
+
 #include "test/cpp/util/echo.pb.h"
-#include "net/util/netutil.h"
+#include "src/cpp/server/rpc_service_method.h"
+#include "src/cpp/util/time.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -44,22 +46,43 @@
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include "net/util/netutil.h"
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
 using grpc::cpp::test::util::TestService;
+using std::chrono::system_clock;
 
 namespace grpc {
+namespace testing {
+
+namespace {
+
+// When echo_deadline is requested, deadline seen in the ServerContext is set in
+// the response in seconds.
+void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
+                       EchoResponse* response) {
+  if (request->has_param() && request->param().echo_deadline()) {
+    gpr_timespec deadline = gpr_inf_future;
+    if (context->absolute_deadline() != system_clock::time_point::max()) {
+      Timepoint2Timespec(context->absolute_deadline(), &deadline);
+    }
+    response->mutable_param()->set_request_deadline(deadline.tv_sec);
+  }
+}
+}  // namespace
 
 class TestServiceImpl : public TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) {
     response->set_message(request->message());
+    MaybeEchoDeadline(context, request, response);
     return Status::OK;
   }
 
@@ -175,6 +198,71 @@ TEST_F(End2endTest, RpcDeadlineExpires) {
   // TODO(yangg) use correct error code when b/18793983 is fixed.
   // EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.code());
   EXPECT_EQ(StatusCode::CANCELLED, s.code());
+
+  delete stub;
+}
+
+// Set a long but finite deadline.
+TEST_F(End2endTest, RpcLongDeadline) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str(), ChannelArguments());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::hours(1);
+  context.set_absolute_deadline(deadline);
+  Status s = stub->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.IsOk());
+
+  delete stub;
+}
+
+// Ask server to echo back the deadline it sees.
+TEST_F(End2endTest, EchoDeadline) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str(), ChannelArguments());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_deadline(true);
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::seconds(100);
+  context.set_absolute_deadline(deadline);
+  Status s = stub->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.IsOk());
+  gpr_timespec sent_deadline;
+  Timepoint2Timespec(deadline, &sent_deadline);
+  // Allow 1 second error.
+  EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 1);
+  EXPECT_GE(response.param().request_deadline() - sent_deadline.tv_sec, -1);
+
+  delete stub;
+}
+
+// Ask server to echo back the deadline it sees. The rpc has no deadline.
+TEST_F(End2endTest, EchoDeadlineForNoDeadlineRpc) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str(), ChannelArguments());
+  TestService::Stub* stub = TestService::NewStub(channel);
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_deadline(true);
+
+  ClientContext context;
+  Status s = stub->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.IsOk());
+  EXPECT_EQ(response.param().request_deadline(), gpr_inf_future.tv_sec);
 
   delete stub;
 }
@@ -300,6 +388,7 @@ TEST_F(End2endTest, BidiStream) {
   delete stub;
 }
 
+}  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
