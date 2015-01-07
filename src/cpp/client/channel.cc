@@ -170,10 +170,8 @@ StreamContextInterface* Channel::CreateStream(const RpcMethod& method,
                                               ClientContext* context,
                                               const google::protobuf::Message* request,
                                               google::protobuf::Message* result) {
-  grpc_call* call =
-      grpc_channel_create_call(c_channel_, method.name(),
-                               // FIXME(yangg)
-                               "localhost", context->RawDeadline());
+  grpc_call* call = grpc_channel_create_call(
+      c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
   grpc_completion_queue* cq = grpc_completion_queue_create();
   context->set_cq(cq);
