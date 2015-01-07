@@ -55,16 +55,19 @@ class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
                 const string& parameter,
                 google::protobuf::compiler::GeneratorContext* context,
                 string* error) const override {
+    string code = grpc_ruby_generator::GetServices(file);
+    if (code.size() == 0) {
+      return true;  // don't generate a file if there are no services
+    }
+
     // Get output file name.
     string file_name;
     if (!grpc_ruby_generator::ServicesFilename(file, &file_name)) {
       return false;
     }
-
     std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
     google::protobuf::io::CodedOutputStream coded_out(output.get());
-    string code = grpc_ruby_generator::GetServices(file);
     coded_out.WriteRaw(code.data(), code.size());
     return true;
   }
