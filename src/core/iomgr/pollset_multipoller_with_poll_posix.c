@@ -166,7 +166,9 @@ static int multipoll_with_poll_pollset_maybe_work(
 
   r = poll(h->pfds, h->pfd_count, timeout);
   if (r < 0) {
-    gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    if (errno != EINTR) {
+      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    }
   } else if (r == 0) {
     /* do nothing */
   } else {
