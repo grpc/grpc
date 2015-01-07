@@ -45,7 +45,7 @@
 */
 
 #include "src/core/iomgr/endpoint.h"
-#include "src/core/iomgr/iomgr_libevent.h"
+#include "src/core/iomgr/fd_posix.h"
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 

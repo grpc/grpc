@@ -371,7 +371,12 @@ void cq_verify_empty(cq_verifier *v) {
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
 
   ev = grpc_completion_queue_next(v->cq, deadline);
-  GPR_ASSERT(ev == NULL);
+  if (ev != NULL) {
+    char *s = grpc_event_string(ev);
+    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s", s);
+    gpr_free(s);
+    abort();
+  }
 }
 
 static expectation *add(cq_verifier *v, grpc_completion_type type, void *tag) {

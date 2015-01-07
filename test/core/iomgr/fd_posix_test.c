@@ -31,8 +31,7 @@
  *
  */
 
-/* Test gRPC event manager with a simple TCP upload server and client. */
-#include "src/core/iomgr/iomgr_libevent.h"
+#include "src/core/iomgr/fd_posix.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -85,7 +84,7 @@ static void create_test_socket(int port, int *socket_fd,
 }
 
 /* Dummy gRPC callback */
-void no_op_cb(void *arg, enum grpc_em_cb_status status) {}
+void no_op_cb(void *arg, int success) {}
 
 /* =======An upload server to test notify_on_read===========
    The server simply reads and counts a stream of bytes. */
@@ -117,10 +116,10 @@ typedef struct {
 /* Called when an upload session can be safely shutdown.
    Close session FD and start to shutdown listen FD. */
 static void session_shutdown_cb(void *arg, /*session*/
-                                enum grpc_em_cb_status status) {
+                                int success) {
   session *se = arg;
   server *sv = se->sv;
-  grpc_fd_destroy(se->em_fd, NULL, NULL);
+  grpc_fd_orphan(se->em_fd, NULL, NULL);
   gpr_free(se);
   /* Start to shutdown listen fd. */
   grpc_fd_shutdown(sv->em_fd);
@@ -128,15 +127,15 @@ static void session_shutdown_cb(void *arg, /*session*/
 
 /* Called when data become readable in a session. */
 static void session_read_cb(void *arg, /*session*/
-                            enum grpc_em_cb_status status) {
+                            int success) {
   session *se = arg;
-  int fd = grpc_fd_get(se->em_fd);
+  int fd = se->em_fd->fd;
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
 
-  if (status == GRPC_CALLBACK_CANCELLED) {
-    session_shutdown_cb(arg, GRPC_CALLBACK_SUCCESS);
+  if (!success) {
+    session_shutdown_cb(arg, 1);
     return;
   }
 
@@ -151,8 +150,7 @@ static void session_read_cb(void *arg, /*session*/
      It is possible to read nothing due to spurious edge event or data has
      been drained, In such a case, read() returns -1 and set errno to EAGAIN. */
   if (read_once == 0) {
-    grpc_fd_shutdown(se->em_fd);
-    grpc_fd_notify_on_read(se->em_fd, session_read_cb, se, gpr_inf_future);
+    session_shutdown_cb(arg, 1);
   } else if (read_once == -1) {
     if (errno == EAGAIN) {
       /* An edge triggered event is cached in the kernel until next poll.
@@ -163,8 +161,7 @@ static void session_read_cb(void *arg, /*session*/
          TODO(chenw): in multi-threaded version, callback and polling can be
          run in different threads. polling may catch a persist read edge event
          before notify_on_read is called.  */
-      GPR_ASSERT(grpc_fd_notify_on_read(se->em_fd, session_read_cb, se,
-                                        gpr_inf_future));
+      grpc_fd_notify_on_read(se->em_fd, session_read_cb, se);
     } else {
       gpr_log(GPR_ERROR, "Unhandled read error %s", strerror(errno));
       GPR_ASSERT(0);
@@ -174,11 +171,10 @@ static void session_read_cb(void *arg, /*session*/
 
 /* Called when the listen FD can be safely shutdown.
    Close listen FD and signal that server can be shutdown. */
-static void listen_shutdown_cb(void *arg /*server*/,
-                               enum grpc_em_cb_status status) {
+static void listen_shutdown_cb(void *arg /*server*/, int success) {
   server *sv = arg;
 
-  grpc_fd_destroy(sv->em_fd, NULL, NULL);
+  grpc_fd_orphan(sv->em_fd, NULL, NULL);
 
   gpr_mu_lock(&sv->mu);
   sv->done = 1;
@@ -188,21 +184,21 @@ static void listen_shutdown_cb(void *arg /*server*/,
 
 /* Called when a new TCP connection request arrives in the listening port. */
 static void listen_cb(void *arg, /*=sv_arg*/
-                      enum grpc_em_cb_status status) {
+                      int success) {
   server *sv = arg;
   int fd;
   int flags;
   session *se;
   struct sockaddr_storage ss;
   socklen_t slen = sizeof(ss);
-  struct grpc_fd *listen_em_fd = sv->em_fd;
+  grpc_fd *listen_em_fd = sv->em_fd;
 
-  if (status == GRPC_CALLBACK_CANCELLED) {
-    listen_shutdown_cb(arg, GRPC_CALLBACK_SUCCESS);
+  if (!success) {
+    listen_shutdown_cb(arg, 1);
     return;
   }
 
-  fd = accept(grpc_fd_get(listen_em_fd), (struct sockaddr *)&ss, &slen);
+  fd = accept(listen_em_fd->fd, (struct sockaddr *)&ss, &slen);
   GPR_ASSERT(fd >= 0);
   GPR_ASSERT(fd < FD_SETSIZE);
   flags = fcntl(fd, F_GETFL, 0);
@@ -210,11 +206,9 @@ static void listen_cb(void *arg, /*=sv_arg*/
   se = gpr_malloc(sizeof(*se));
   se->sv = sv;
   se->em_fd = grpc_fd_create(fd);
-  GPR_ASSERT(
-      grpc_fd_notify_on_read(se->em_fd, session_read_cb, se, gpr_inf_future));
+  grpc_fd_notify_on_read(se->em_fd, session_read_cb, se);
 
-  GPR_ASSERT(
-      grpc_fd_notify_on_read(listen_em_fd, listen_cb, sv, gpr_inf_future));
+  grpc_fd_notify_on_read(listen_em_fd, listen_cb, sv);
 }
 
 /* Max number of connections pending to be accepted by listen(). */
@@ -239,7 +233,7 @@ static int server_start(server *sv) {
 
   sv->em_fd = grpc_fd_create(fd);
   /* Register to be interested in reading from listen_fd. */
-  GPR_ASSERT(grpc_fd_notify_on_read(sv->em_fd, listen_cb, sv, gpr_inf_future));
+  grpc_fd_notify_on_read(sv->em_fd, listen_cb, sv);
 
   return port;
 }
@@ -285,25 +279,24 @@ static void client_init(client *cl) {
 }
 
 /* Called when a client upload session is ready to shutdown. */
-static void client_session_shutdown_cb(void *arg /*client*/,
-                                       enum grpc_em_cb_status status) {
+static void client_session_shutdown_cb(void *arg /*client*/, int success) {
   client *cl = arg;
-  grpc_fd_destroy(cl->em_fd, NULL, NULL);
-  gpr_mu_lock(&cl->mu);
+  grpc_fd_orphan(cl->em_fd, NULL, NULL);
   cl->done = 1;
   gpr_cv_signal(&cl->done_cv);
-  gpr_mu_unlock(&cl->mu);
 }
 
 /* Write as much as possible, then register notify_on_write. */
 static void client_session_write(void *arg, /*client*/
-                                 enum grpc_em_cb_status status) {
+                                 int success) {
   client *cl = arg;
-  int fd = grpc_fd_get(cl->em_fd);
+  int fd = cl->em_fd->fd;
   ssize_t write_once = 0;
 
-  if (status == GRPC_CALLBACK_CANCELLED) {
-    client_session_shutdown_cb(arg, GRPC_CALLBACK_SUCCESS);
+  if (!success) {
+    gpr_mu_lock(&cl->mu);
+    client_session_shutdown_cb(arg, 1);
+    gpr_mu_unlock(&cl->mu);
     return;
   }
 
@@ -315,14 +308,10 @@ static void client_session_write(void *arg, /*client*/
   if (errno == EAGAIN) {
     gpr_mu_lock(&cl->mu);
     if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-      GPR_ASSERT(grpc_fd_notify_on_write(cl->em_fd, client_session_write, cl,
-                                         gpr_inf_future));
+      grpc_fd_notify_on_write(cl->em_fd, client_session_write, cl);
       cl->client_write_cnt++;
     } else {
-      close(fd);
-      grpc_fd_shutdown(cl->em_fd);
-      grpc_fd_notify_on_write(cl->em_fd, client_session_write, cl,
-                              gpr_inf_future);
+      client_session_shutdown_cb(arg, 1);
     }
     gpr_mu_unlock(&cl->mu);
   } else {
@@ -344,7 +333,7 @@ static void client_start(client *cl, int port) {
 
   cl->em_fd = grpc_fd_create(fd);
 
-  client_session_write(cl, GRPC_CALLBACK_SUCCESS);
+  client_session_write(cl, 1);
 }
 
 /* Wait for the signal to shutdown a client. */
@@ -378,7 +367,7 @@ static void test_grpc_fd() {
 typedef struct fd_change_data {
   gpr_mu mu;
   gpr_cv cv;
-  void (*cb_that_ran)(void *, enum grpc_em_cb_status);
+  void (*cb_that_ran)(void *, int success);
 } fd_change_data;
 
 void init_change_data(fd_change_data *fdc) {
@@ -392,8 +381,7 @@ void destroy_change_data(fd_change_data *fdc) {
   gpr_cv_destroy(&fdc->cv);
 }
 
-static void first_read_callback(void *arg /* fd_change_data */,
-                                enum grpc_em_cb_status status) {
+static void first_read_callback(void *arg /* fd_change_data */, int success) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(&fdc->mu);
@@ -402,8 +390,7 @@ static void first_read_callback(void *arg /* fd_change_data */,
   gpr_mu_unlock(&fdc->mu);
 }
 
-static void second_read_callback(void *arg /* fd_change_data */,
-                                 enum grpc_em_cb_status status) {
+static void second_read_callback(void *arg /* fd_change_data */, int success) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(&fdc->mu);
@@ -436,7 +423,7 @@ static void test_grpc_fd_change() {
   em_fd = grpc_fd_create(sv[0]);
 
   /* Register the first callback, then make its FD readable */
-  grpc_fd_notify_on_read(em_fd, first_read_callback, &a, gpr_inf_future);
+  grpc_fd_notify_on_read(em_fd, first_read_callback, &a);
   data = 0;
   result = write(sv[1], &data, 1);
   GPR_ASSERT(result == 1);
@@ -455,7 +442,7 @@ static void test_grpc_fd_change() {
 
   /* Now register a second callback with distinct change data, and do the same
      thing again. */
-  grpc_fd_notify_on_read(em_fd, second_read_callback, &b, gpr_inf_future);
+  grpc_fd_notify_on_read(em_fd, second_read_callback, &b);
   data = 0;
   result = write(sv[1], &data, 1);
   GPR_ASSERT(result == 1);
@@ -468,48 +455,9 @@ static void test_grpc_fd_change() {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(&b.mu);
 
-  grpc_fd_destroy(em_fd, NULL, NULL);
+  grpc_fd_orphan(em_fd, NULL, NULL);
   destroy_change_data(&a);
   destroy_change_data(&b);
-  close(sv[0]);
-  close(sv[1]);
-}
-
-void timeout_callback(void *arg, enum grpc_em_cb_status status) {
-  if (status == GRPC_CALLBACK_TIMED_OUT) {
-    gpr_event_set(arg, (void *)1);
-  } else {
-    gpr_event_set(arg, (void *)2);
-  }
-}
-
-void test_grpc_fd_notify_timeout() {
-  grpc_fd *em_fd;
-  gpr_event ev;
-  int flags;
-  int sv[2];
-  gpr_timespec timeout;
-  gpr_timespec deadline;
-
-  gpr_event_init(&ev);
-
-  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
-  flags = fcntl(sv[0], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
-  flags = fcntl(sv[1], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-
-  em_fd = grpc_fd_create(sv[0]);
-
-  timeout = gpr_time_from_micros(1000000);
-  deadline = gpr_time_add(gpr_now(), timeout);
-
-  grpc_fd_notify_on_read(em_fd, timeout_callback, &ev, deadline);
-
-  GPR_ASSERT(gpr_event_wait(&ev, gpr_time_add(deadline, timeout)));
-
-  GPR_ASSERT(gpr_event_get(&ev) == (void *)1);
-  grpc_fd_destroy(em_fd, NULL, NULL);
   close(sv[1]);
 }
 
@@ -518,7 +466,6 @@ int main(int argc, char **argv) {
   grpc_iomgr_init();
   test_grpc_fd();
   test_grpc_fd_change();
-  test_grpc_fd_notify_timeout();
   grpc_iomgr_shutdown();
   return 0;
 }

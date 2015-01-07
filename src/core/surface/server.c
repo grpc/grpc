@@ -52,7 +52,7 @@ typedef enum { PENDING_START, ALL_CALLS, CALL_LIST_COUNT } call_list;
 
 typedef struct listener {
   void *arg;
-  void (*start)(grpc_server *server, void *arg);
+  void (*start)(grpc_server *server, void *arg, grpc_pollset *pollset);
   void (*destroy)(grpc_server *server, void *arg);
   struct listener *next;
 } listener;
@@ -192,7 +192,7 @@ static void orphan_channel(channel_data *chand) {
   chand->next = chand->prev = chand;
 }
 
-static void finish_destroy_channel(void *cd, grpc_iomgr_cb_status status) {
+static void finish_destroy_channel(void *cd, int success) {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
   /*gpr_log(GPR_INFO, "destroy channel %p", chand->channel);*/
@@ -247,7 +247,7 @@ static void start_new_rpc(grpc_call_element *elem) {
   gpr_mu_unlock(&server->mu);
 }
 
-static void kill_zombie(void *elem, grpc_iomgr_cb_status status) {
+static void kill_zombie(void *elem, int success) {
   grpc_call_destroy(grpc_call_from_top_element(elem));
 }
 
@@ -336,7 +336,7 @@ static void channel_op(grpc_channel_element *elem,
   }
 }
 
-static void finish_shutdown_channel(void *cd, grpc_iomgr_cb_status status) {
+static void finish_shutdown_channel(void *cd, int success) {
   channel_data *chand = cd;
   grpc_channel_op op;
   op.type = GRPC_CHANNEL_DISCONNECT;
@@ -468,7 +468,7 @@ void grpc_server_start(grpc_server *server) {
   listener *l;
 
   for (l = server->listeners; l; l = l->next) {
-    l->start(server, l->arg);
+    l->start(server, l->arg, grpc_cq_pollset(server->cq));
   }
 }
 
@@ -596,7 +596,8 @@ void grpc_server_destroy(grpc_server *server) {
 }
 
 void grpc_server_add_listener(grpc_server *server, void *arg,
-                              void (*start)(grpc_server *server, void *arg),
+                              void (*start)(grpc_server *server, void *arg,
+                                            grpc_pollset *pollset),
                               void (*destroy)(grpc_server *server, void *arg)) {
   listener *l = gpr_malloc(sizeof(listener));
   l->arg = arg;

@@ -66,7 +66,7 @@ static void test_no_op() {
 static void test_no_op_with_start() {
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST();
-  grpc_tcp_server_start(s, on_connect, NULL);
+  grpc_tcp_server_start(s, NULL, on_connect, NULL);
   grpc_tcp_server_destroy(s);
 }
 
@@ -93,7 +93,7 @@ static void test_no_op_with_port_and_start() {
   GPR_ASSERT(
       grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
-  grpc_tcp_server_start(s, on_connect, NULL);
+  grpc_tcp_server_start(s, NULL, on_connect, NULL);
 
   grpc_tcp_server_destroy(s);
 }
@@ -120,7 +120,7 @@ static void test_connect(int n) {
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
   GPR_ASSERT(addr_len <= sizeof(addr));
 
-  grpc_tcp_server_start(s, on_connect, NULL);
+  grpc_tcp_server_start(s, NULL, on_connect, NULL);
 
   for (i = 0; i < n; i++) {
     deadline = gpr_time_add(gpr_now(), gpr_time_from_micros(10000000));

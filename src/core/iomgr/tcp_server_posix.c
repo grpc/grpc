@@ -45,7 +45,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "src/core/iomgr/iomgr_libevent.h"
+#include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/iomgr/tcp_posix.h"
@@ -97,13 +97,8 @@ grpc_tcp_server *grpc_tcp_server_create() {
   return s;
 }
 
-static void done_destroy(void *p, grpc_iomgr_cb_status status) {
-  gpr_event_set(p, (void *)1);
-}
-
 void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   size_t i;
-  gpr_event fd_done;
   gpr_mu_lock(&s->mu);
   /* shutdown all fd's */
   for (i = 0; i < s->nports; i++) {
@@ -118,9 +113,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   /* delete ALL the things */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    gpr_event_init(&fd_done);
-    grpc_fd_destroy(sp->emfd, done_destroy, &fd_done);
-    gpr_event_wait(&fd_done, gpr_inf_future);
+    grpc_fd_orphan(sp->emfd, NULL, NULL);
   }
   gpr_free(s->ports);
   gpr_free(s);
@@ -196,10 +189,10 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(void *arg, grpc_iomgr_cb_status status) {
+static void on_read(void *arg, int success) {
   server_port *sp = arg;
 
-  if (status != GRPC_CALLBACK_SUCCESS) {
+  if (!success) {
     goto error;
   }
 
@@ -215,7 +208,7 @@ static void on_read(void *arg, grpc_iomgr_cb_status status) {
         case EINTR:
           continue;
         case EAGAIN:
-          grpc_fd_notify_on_read(sp->emfd, on_read, sp, gpr_inf_future);
+          grpc_fd_notify_on_read(sp->emfd, on_read, sp);
           return;
         default:
           gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
@@ -254,15 +247,10 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     s->ports = gpr_realloc(s->ports, sizeof(server_port *) * s->port_capacity);
   }
   sp = &s->ports[s->nports++];
-  sp->emfd = grpc_fd_create(fd);
-  sp->fd = fd;
   sp->server = s;
-  /* initialize the em desc */
-  if (sp->emfd == NULL) {
-    s->nports--;
-    gpr_mu_unlock(&s->mu);
-    return 0;
-  }
+  sp->fd = fd;
+  sp->emfd = grpc_fd_create(fd);
+  GPR_ASSERT(sp->emfd);
   gpr_mu_unlock(&s->mu);
 
   return 1;
@@ -319,8 +307,8 @@ int grpc_tcp_server_get_fd(grpc_tcp_server *s, int index) {
   return (0 <= index && index < s->nports) ? s->ports[index].fd : -1;
 }
 
-void grpc_tcp_server_start(grpc_tcp_server *s, grpc_tcp_server_cb cb,
-                           void *cb_arg) {
+void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset *pollset,
+                           grpc_tcp_server_cb cb, void *cb_arg) {
   size_t i;
   GPR_ASSERT(cb);
   gpr_mu_lock(&s->mu);
@@ -329,8 +317,10 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_tcp_server_cb cb,
   s->cb = cb;
   s->cb_arg = cb_arg;
   for (i = 0; i < s->nports; i++) {
-    grpc_fd_notify_on_read(s->ports[i].emfd, on_read, &s->ports[i],
-                           gpr_inf_future);
+    if (pollset) {
+      grpc_pollset_add_fd(pollset, s->ports[i].emfd);
+    }
+    grpc_fd_notify_on_read(s->ports[i].emfd, on_read, &s->ports[i]);
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);

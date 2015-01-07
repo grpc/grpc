@@ -166,8 +166,7 @@ int grpc_client_setup_request_should_continue(grpc_client_setup_request *r) {
   return result;
 }
 
-static void backoff_alarm_done(void *arg /* grpc_client_setup */,
-                               grpc_iomgr_cb_status status) {
+static void backoff_alarm_done(void *arg /* grpc_client_setup */, int success) {
   grpc_client_setup *s = arg;
   grpc_client_setup_request *r = gpr_malloc(sizeof(grpc_client_setup_request));
   r->setup = s;
@@ -177,7 +176,7 @@ static void backoff_alarm_done(void *arg /* grpc_client_setup */,
   gpr_mu_lock(&s->mu);
   s->active_request = r;
   s->in_alarm = 0;
-  if (status != GRPC_CALLBACK_SUCCESS) {
+  if (!success) {
     if (0 == --s->refs) {
       gpr_mu_unlock(&s->mu);
       destroy_setup(s);

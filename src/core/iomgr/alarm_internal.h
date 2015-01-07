@@ -34,9 +34,12 @@
 #ifndef __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_
 #define __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_
 
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 /* iomgr internal api for dealing with alarms */
 
-int grpc_alarm_check(gpr_timespec now);
+int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next);
 
 void grpc_alarm_list_init(gpr_timespec now);
 void grpc_alarm_list_shutdown();
