@@ -301,7 +301,9 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
 
   r = poll(pfd, GPR_ARRAY_SIZE(pfd), timeout);
   if (r < 0) {
-    gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    if (errno != EINTR) {
+      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    }
   } else if (r == 0) {
     /* do nothing */
   } else {
