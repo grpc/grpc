@@ -84,7 +84,7 @@ CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
 LDFLAGS += -g -pthread -fPIC
 
 INCLUDES = . include gens
-LIBS = rt m z event event_pthreads pthread
+LIBS = rt m z pthread
 LIBSXX = protobuf
 LIBS_PROTOC = protoc protobuf
 
@@ -143,19 +143,11 @@ else
 IS_GIT_FOLDER = true
 endif
 
-EVENT2_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/event2.c -levent $(LDFLAGS)
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -lssl -lcrypto -ldl $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
 
-HAS_SYSTEM_EVENT2 = $(shell $(EVENT2_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
-
-ifeq ($(wildcard third_party/libevent/include/event2/event.h),)
-HAS_EMBEDDED_EVENT2 = false
-else
-HAS_EMBEDDED_EVENT2 = true
-endif
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
@@ -167,12 +159,6 @@ ifeq ($(wildcard third_party/zlib/zlib.h),)
 HAS_EMBEDDED_ZLIB = false
 else
 HAS_EMBEDDED_ZLIB = true
-endif
-
-ifneq ($(SYSTEM),MINGW32)
-ifeq ($(HAS_SYSTEM_EVENT2),false)
-DEP_MISSING += libevent
-endif
 endif
 
 ifeq ($(HAS_SYSTEM_ZLIB),false)
@@ -466,7 +452,6 @@ chttp2_socket_pair_one_byte_at_a_time_thread_stress_test: bins/$(CONFIG)/chttp2_
 chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test
 
 run_dep_checks:
-	$(EVENT2_CHECK_CMD) || true
 	$(OPENSSL_ALPN_CHECK_CMD) || true
 	$(ZLIB_CHECK_CMD) || true
 
