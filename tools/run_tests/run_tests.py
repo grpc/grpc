@@ -6,8 +6,10 @@ import glob
 import itertools
 import multiprocessing
 import sys
+import time
 
 import jobset
+import watch_dirs
 
 # flags required for make for each configuration
 _CONFIGS = ['dbg', 'opt', 'tsan', 'msan', 'asan']
@@ -20,6 +22,10 @@ argp.add_argument('-c', '--config',
                   default=['all'])
 argp.add_argument('-t', '--test-filter', nargs='*', default=['*'])
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
+argp.add_argument('-f', '--forever',
+                  default=False,
+                  action='store_const',
+                  const=True)
 args = argp.parse_args()
 
 # grab config
@@ -29,21 +35,38 @@ configs = [cfg
                for x in args.config)]
 filters = args.test_filter
 runs_per_test = args.runs_per_test
+forever = args.forever
 
-# build latest, sharing cpu between the various makes
-if not jobset.run(
-    ['make',
-     '-j', '%d' % max(multiprocessing.cpu_count() / len(configs), 1),
-     'buildtests_c',
-     'CONFIG=%s' % cfg]
-    for cfg in configs):
-  sys.exit(1)
 
-# run all the tests
-jobset.run([x]
-           for x in itertools.chain.from_iterable(
-               itertools.chain.from_iterable(itertools.repeat(
-                   glob.glob('bins/%s/%s_test' % (config, filt)),
-                   runs_per_test))
-               for config in configs
-               for filt in filters))
+def _build_and_run(check_cancelled):
+  """Do one pass of building & running tests."""
+  # build latest, sharing cpu between the various makes
+  if not jobset.run(
+      (['make',
+        '-j', '%d' % max(multiprocessing.cpu_count() / len(configs), 1),
+        'buildtests_c',
+        'CONFIG=%s' % cfg]
+       for cfg in configs), check_cancelled):
+    sys.exit(1)
+
+  # run all the tests
+  jobset.run(([x]
+              for x in itertools.chain.from_iterable(
+                  itertools.chain.from_iterable(itertools.repeat(
+                      glob.glob('bins/%s/%s_test' % (config, filt)),
+                      runs_per_test))
+                  for config in configs
+                  for filt in filters)), check_cancelled)
+
+
+if forever:
+  while True:
+    dw = watch_dirs.DirWatcher(['src', 'include', 'test'])
+    initial_time = dw.most_recent_change()
+    have_files_changed = lambda: dw.most_recent_change() != initial_time
+    _build_and_run(have_files_changed)
+    while not have_files_changed():
+      time.sleep(1)
+else:
+  _build_and_run(lambda: False)
+
