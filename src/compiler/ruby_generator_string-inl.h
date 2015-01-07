@@ -93,12 +93,11 @@ inline bool ReplacePrefix(string* s, const string& from, const string& to) {
   return true;
 }
 
-// CapitalizeString capitalizes a string.
-inline string CapitalizeString(string s) {
-  if (!s.empty()) {
+// CapitalizeFirst capitalizes the first char in a string.
+inline string CapitalizeFirst(string s) {
+  if (s.empty()) {
     return s;
   }
-  transform(s.begin(), s.end(), s.begin(), ::tolower);
   s[0] = ::toupper(s[0]);
   return s;
 }
@@ -117,7 +116,7 @@ inline string RubyTypeOf(const string& a_type, const string& package) {
         res += "::";  // switch '.' to the ruby module delim
       }
       if (i < prefixes_and_type.size() - 1) {
-        res += CapitalizeString(prefixes_and_type[i]);  // capitalize pkgs
+        res += CapitalizeFirst(prefixes_and_type[i]);  // capitalize pkgs
       } else {
         res += prefixes_and_type[i];
       }

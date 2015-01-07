@@ -62,7 +62,7 @@ class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
     }
 
     std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
-        context->OpenForInsert(file_name, "module_scope"));
+        context->Open(file_name));
     google::protobuf::io::CodedOutputStream coded_out(output.get());
     string code = grpc_ruby_generator::GetServices(file);
     coded_out.WriteRaw(code.data(), code.size());
