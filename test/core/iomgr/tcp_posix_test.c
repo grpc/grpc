@@ -154,7 +154,7 @@ static void read_cb(void *user_data, gpr_slice *slices, size_t nslices,
   if (state->read_bytes >= state->target_read_bytes) {
     gpr_cv_signal(&state->cv);
   } else {
-    grpc_endpoint_notify_on_read(state->ep, read_cb, state, gpr_inf_future);
+    grpc_endpoint_notify_on_read(state->ep, read_cb, state);
   }
   gpr_mu_unlock(&state->mu);
 }
@@ -183,7 +183,7 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
 
-  grpc_endpoint_notify_on_read(ep, read_cb, &state, gpr_inf_future);
+  grpc_endpoint_notify_on_read(ep, read_cb, &state);
 
   gpr_mu_lock(&state.mu);
   for (;;) {
@@ -225,7 +225,7 @@ static void large_read_test(ssize_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
 
-  grpc_endpoint_notify_on_read(ep, read_cb, &state, gpr_inf_future);
+  grpc_endpoint_notify_on_read(ep, read_cb, &state);
 
   gpr_mu_lock(&state.mu);
   for (;;) {
@@ -363,8 +363,8 @@ static void write_test(ssize_t num_bytes, ssize_t slice_size) {
 
   slices = allocate_blocks(num_bytes, slice_size, &num_blocks, &current_data);
 
-  if (grpc_endpoint_write(ep, slices, num_blocks, write_done, &state,
-                          gpr_inf_future) == GRPC_ENDPOINT_WRITE_DONE) {
+  if (grpc_endpoint_write(ep, slices, num_blocks, write_done, &state) ==
+      GRPC_ENDPOINT_WRITE_DONE) {
     /* Write completed immediately */
     read_bytes = drain_socket(sv[0]);
     GPR_ASSERT(read_bytes == num_bytes);
@@ -421,15 +421,13 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
 
   slices = allocate_blocks(num_bytes, slice_size, &num_blocks, &current_data);
 
-  switch (grpc_endpoint_write(ep, slices, num_blocks, write_done, &state,
-                              gpr_inf_future)) {
+  switch (grpc_endpoint_write(ep, slices, num_blocks, write_done, &state)) {
     case GRPC_ENDPOINT_WRITE_DONE:
     case GRPC_ENDPOINT_WRITE_ERROR:
       /* Write completed immediately */
       break;
     case GRPC_ENDPOINT_WRITE_PENDING:
-      grpc_endpoint_notify_on_read(ep, read_done_for_write_error, NULL,
-                                   gpr_inf_future);
+      grpc_endpoint_notify_on_read(ep, read_done_for_write_error, NULL);
       gpr_mu_lock(&state.mu);
       for (;;) {
         if (state.write_done) {

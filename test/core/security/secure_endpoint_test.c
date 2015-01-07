@@ -153,8 +153,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   int verified = 0;
   gpr_log(GPR_INFO, "Start test left over");
 
-  grpc_endpoint_notify_on_read(f.client_ep, verify_leftover, &verified,
-                               gpr_inf_future);
+  grpc_endpoint_notify_on_read(f.client_ep, verify_leftover, &verified);
   GPR_ASSERT(verified == 1);
 
   grpc_endpoint_shutdown(f.client_ep);
@@ -187,7 +186,7 @@ static void test_destroy_ep_early(grpc_endpoint_test_config config,
   grpc_endpoint_test_fixture f = config.create_fixture(slice_size);
   gpr_log(GPR_INFO, "Start test destroy early");
 
-  grpc_endpoint_notify_on_read(f.client_ep, destroy_early, &f, gpr_inf_future);
+  grpc_endpoint_notify_on_read(f.client_ep, destroy_early, &f);
 
   grpc_endpoint_shutdown(f.server_ep);
   grpc_endpoint_destroy(f.server_ep);

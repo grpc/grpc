@@ -1229,9 +1229,11 @@ LIBGRPC_SRC = \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
-    src/core/iomgr/iomgr_libevent.c \
-    src/core/iomgr/iomgr_libevent_use_threads.c \
-    src/core/iomgr/pollset.c \
+    src/core/iomgr/fd_posix.c \
+    src/core/iomgr/iomgr.c \
+    src/core/iomgr/iomgr_posix.c \
+    src/core/iomgr/pollset_multipoller_with_poll_posix.c \
+    src/core/iomgr/pollset_posix.c \
     src/core/iomgr/resolve_address_posix.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
@@ -1277,8 +1279,8 @@ LIBGRPC_SRC = \
     src/core/transport/chttp2/stream_encoder.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
-    src/core/transport/chttp2_transport.c \
     src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2_transport.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
     src/core/transport/transport.c \
@@ -1379,9 +1381,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
-    src/core/iomgr/iomgr_libevent.c \
-    src/core/iomgr/iomgr_libevent_use_threads.c \
-    src/core/iomgr/pollset.c \
+    src/core/iomgr/fd_posix.c \
+    src/core/iomgr/iomgr.c \
+    src/core/iomgr/iomgr_posix.c \
+    src/core/iomgr/pollset_multipoller_with_poll_posix.c \
+    src/core/iomgr/pollset_posix.c \
     src/core/iomgr/resolve_address_posix.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
@@ -1427,8 +1431,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/chttp2/stream_encoder.c \
     src/core/transport/chttp2/stream_map.c \
     src/core/transport/chttp2/timeout_encoding.c \
-    src/core/transport/chttp2_transport.c \
     src/core/transport/chttp2/varint.c \
+    src/core/transport/chttp2_transport.c \
     src/core/transport/metadata.c \
     src/core/transport/stream_op.c \
     src/core/transport/transport.c \

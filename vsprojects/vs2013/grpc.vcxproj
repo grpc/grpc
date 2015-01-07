@@ -115,10 +115,12 @@
     <ClInclude Include="..\..\src\core\iomgr\alarm_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint_pair.h" />
-    <ClInclude Include="..\..\src\core\iomgr\iomgr_completion_queue_interface.h" />
+    <ClInclude Include="..\..\src\core\iomgr\fd_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr.h" />
-    <ClInclude Include="..\..\src\core\iomgr\iomgr_libevent.h" />
+    <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
+    <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\resolve_address.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr_posix.h" />
@@ -143,9 +145,9 @@
     <ClInclude Include="..\..\src\core\surface\server.h" />
     <ClInclude Include="..\..\src\core\surface\surface_trace.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_data.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_goaway.h" />
-    <ClInclude Include="..\..\src\core\transport\chttp2\frame.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_ping.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_rst_stream.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_settings.h" />
@@ -158,8 +160,8 @@
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_encoder.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\stream_map.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\timeout_encoding.h" />
-    <ClInclude Include="..\..\src\core\transport\chttp2_transport.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\varint.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2_transport.h" />
     <ClInclude Include="..\..\src\core\transport\metadata.h" />
     <ClInclude Include="..\..\src\core\transport\stream_op.h" />
     <ClInclude Include="..\..\src\core\transport\transport.h" />
@@ -236,11 +238,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\endpoint_pair_posix.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\iomgr_libevent.c">
+    <ClCompile Include="..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\iomgr_libevent_use_threads.c">
+    <ClCompile Include="..\..\src\core\iomgr\iomgr.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset.c">
+    <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\resolve_address_posix.c">
     </ClCompile>
@@ -332,9 +338,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\timeout_encoding.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\varint.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\metadata.c">
     </ClCompile>

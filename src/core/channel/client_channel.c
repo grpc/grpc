@@ -294,14 +294,6 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
   }
 }
 
-static void finally_destroy_channel(void *arg, grpc_iomgr_cb_status status) {
-  grpc_child_channel_destroy(arg);
-}
-
-static void destroy_channel_later(grpc_child_channel *channel) {
-  grpc_iomgr_add_callback(finally_destroy_channel, channel);
-}
-
 static void channel_op(grpc_channel_element *elem,
                        grpc_channel_element *from_elem, grpc_channel_op *op) {
   channel_data *chand = elem->channel_data;
@@ -317,7 +309,7 @@ static void channel_op(grpc_channel_element *elem,
       gpr_mu_unlock(&chand->mu);
       if (child_channel) {
         grpc_child_channel_handle_op(child_channel, op);
-        destroy_channel_later(child_channel);
+        grpc_child_channel_destroy(child_channel, 1);
       } else {
         gpr_slice_unref(op->data.goaway.message);
       }
@@ -329,7 +321,7 @@ static void channel_op(grpc_channel_element *elem,
       chand->active_child = NULL;
       gpr_mu_unlock(&chand->mu);
       if (child_channel) {
-        destroy_channel_later(child_channel);
+        grpc_child_channel_destroy(child_channel, 1);
       }
       break;
     case GRPC_TRANSPORT_GOAWAY:
@@ -344,7 +336,7 @@ static void channel_op(grpc_channel_element *elem,
       }
       gpr_mu_unlock(&chand->mu);
       if (child_channel) {
-        destroy_channel_later(child_channel);
+        grpc_child_channel_destroy(child_channel, 0);
       }
       gpr_slice_unref(op->data.goaway.message);
       break;
@@ -360,7 +352,7 @@ static void channel_op(grpc_channel_element *elem,
       }
       gpr_mu_unlock(&chand->mu);
       if (child_channel) {
-        destroy_channel_later(child_channel);
+        grpc_child_channel_destroy(child_channel, 0);
       }
       break;
     default:
@@ -445,7 +437,7 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   grpc_transport_setup_cancel(chand->transport_setup);
 
   if (chand->active_child) {
-    grpc_child_channel_destroy(chand->active_child);
+    grpc_child_channel_destroy(chand->active_child, 1);
     chand->active_child = NULL;
   }
 
@@ -549,7 +541,7 @@ grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
   gpr_free(child_filters);
 
   if (old_active) {
-    grpc_child_channel_destroy(old_active);
+    grpc_child_channel_destroy(old_active, 1);
   }
 
   return result;

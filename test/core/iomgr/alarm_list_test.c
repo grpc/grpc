@@ -41,13 +41,13 @@
 
 #define MAX_CB 30
 
-static int cb_called[MAX_CB][GRPC_CALLBACK_DO_NOT_USE];
+static int cb_called[MAX_CB][2];
 static int kicks;
 
 void grpc_kick_poller() { ++kicks; }
 
-static void cb(void *arg, grpc_iomgr_cb_status status) {
-  cb_called[(gpr_intptr)arg][status]++;
+static void cb(void *arg, int success) {
+  cb_called[(gpr_intptr)arg][success]++;
 }
 
 static void add_test() {
@@ -72,36 +72,36 @@ static void add_test() {
 
   /* collect alarms.  Only the first batch should be ready. */
   GPR_ASSERT(10 ==
-             grpc_alarm_check(gpr_time_add(start, gpr_time_from_millis(500))));
+             grpc_alarm_check(
+                 NULL, gpr_time_add(start, gpr_time_from_millis(500)), NULL));
   for (i = 0; i < 20; i++) {
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_SUCCESS] == (i < 10));
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_CANCELLED] == 0);
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_TIMED_OUT] == 0);
+    GPR_ASSERT(cb_called[i][1] == (i < 10));
+    GPR_ASSERT(cb_called[i][0] == 0);
   }
 
   GPR_ASSERT(0 ==
-             grpc_alarm_check(gpr_time_add(start, gpr_time_from_millis(600))));
+             grpc_alarm_check(
+                 NULL, gpr_time_add(start, gpr_time_from_millis(600)), NULL));
   for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_SUCCESS] == (i < 10));
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_CANCELLED] == 0);
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_TIMED_OUT] == 0);
+    GPR_ASSERT(cb_called[i][1] == (i < 10));
+    GPR_ASSERT(cb_called[i][0] == 0);
   }
 
   /* collect the rest of the alarms */
   GPR_ASSERT(10 ==
-             grpc_alarm_check(gpr_time_add(start, gpr_time_from_millis(1500))));
+             grpc_alarm_check(
+                 NULL, gpr_time_add(start, gpr_time_from_millis(1500)), NULL));
   for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_SUCCESS] == (i < 20));
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_CANCELLED] == 0);
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_TIMED_OUT] == 0);
+    GPR_ASSERT(cb_called[i][1] == (i < 20));
+    GPR_ASSERT(cb_called[i][0] == 0);
   }
 
   GPR_ASSERT(0 ==
-             grpc_alarm_check(gpr_time_add(start, gpr_time_from_millis(1600))));
+             grpc_alarm_check(
+                 NULL, gpr_time_add(start, gpr_time_from_millis(1600)), NULL));
   for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_SUCCESS] == (i < 20));
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_CANCELLED] == 0);
-    GPR_ASSERT(cb_called[i][GRPC_CALLBACK_TIMED_OUT] == 0);
+    GPR_ASSERT(cb_called[i][1] == (i < 20));
+    GPR_ASSERT(cb_called[i][0] == 0);
   }
 
   grpc_alarm_list_shutdown();
@@ -124,16 +124,16 @@ void destruction_test() {
                   (void *)(gpr_intptr)3, gpr_time_0);
   grpc_alarm_init(&alarms[4], gpr_time_from_millis(1), cb,
                   (void *)(gpr_intptr)4, gpr_time_0);
-  GPR_ASSERT(1 == grpc_alarm_check(gpr_time_from_millis(2)));
-  GPR_ASSERT(1 == cb_called[4][GRPC_CALLBACK_SUCCESS]);
+  GPR_ASSERT(1 == grpc_alarm_check(NULL, gpr_time_from_millis(2), NULL));
+  GPR_ASSERT(1 == cb_called[4][1]);
   grpc_alarm_cancel(&alarms[0]);
   grpc_alarm_cancel(&alarms[3]);
-  GPR_ASSERT(1 == cb_called[0][GRPC_CALLBACK_CANCELLED]);
-  GPR_ASSERT(1 == cb_called[3][GRPC_CALLBACK_CANCELLED]);
+  GPR_ASSERT(1 == cb_called[0][0]);
+  GPR_ASSERT(1 == cb_called[3][0]);
 
   grpc_alarm_list_shutdown();
-  GPR_ASSERT(1 == cb_called[1][GRPC_CALLBACK_CANCELLED]);
-  GPR_ASSERT(1 == cb_called[2][GRPC_CALLBACK_CANCELLED]);
+  GPR_ASSERT(1 == cb_called[1][0]);
+  GPR_ASSERT(1 == cb_called[2][0]);
 }
 
 int main(int argc, char **argv) {

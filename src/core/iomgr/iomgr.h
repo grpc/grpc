@@ -34,17 +34,8 @@
 #ifndef __GRPC_INTERNAL_IOMGR_IOMGR_H__
 #define __GRPC_INTERNAL_IOMGR_IOMGR_H__
 
-/* Status passed to callbacks for grpc_em_fd_notify_on_read and
-   grpc_em_fd_notify_on_write.  */
-typedef enum grpc_em_cb_status {
-  GRPC_CALLBACK_SUCCESS = 0,
-  GRPC_CALLBACK_TIMED_OUT,
-  GRPC_CALLBACK_CANCELLED,
-  GRPC_CALLBACK_DO_NOT_USE
-} grpc_iomgr_cb_status;
-
 /* gRPC Callback definition */
-typedef void (*grpc_iomgr_cb_func)(void *arg, grpc_iomgr_cb_status status);
+typedef void (*grpc_iomgr_cb_func)(void *arg, int success);
 
 void grpc_iomgr_init();
 void grpc_iomgr_shutdown();

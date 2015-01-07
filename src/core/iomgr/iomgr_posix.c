@@ -31,26 +31,8 @@
  *
  */
 
-/* Posix grpc event manager support code. */
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <event2/thread.h>
+#include "src/core/iomgr/iomgr_posix.h"
 
-static int error_code = 0;
-static gpr_once threads_once = GPR_ONCE_INIT;
-static void evthread_threads_initialize(void) {
-  error_code = evthread_use_pthreads();
-  if (error_code) {
-    gpr_log(GPR_ERROR, "Failed to initialize libevent thread support!");
-  }
-}
+void grpc_iomgr_platform_init() { grpc_pollset_global_init(); }
 
-/* Notify LibEvent that Posix pthread is used. */
-int evthread_use_threads() {
-  gpr_once_init(&threads_once, &evthread_threads_initialize);
-  /* For Pthreads or Windows threads, Libevent provides simple APIs to set
-     mutexes and conditional variables to support cross thread operations.
-     For other platforms, LibEvent provide callback APIs to hook mutexes and
-     conditional variables. */
-  return error_code;
-}
+void grpc_iomgr_platform_shutdown() { grpc_pollset_global_shutdown(); }

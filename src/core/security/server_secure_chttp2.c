@@ -77,9 +77,9 @@ static void on_accept(void *server, grpc_endpoint *tcp) {
 /* Note: the following code is the same with server_chttp2.c */
 
 /* Server callback: start listening on our ports */
-static void start(grpc_server *server, void *tcpp) {
+static void start(grpc_server *server, void *tcpp, grpc_pollset *pollset) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start(tcp, on_accept, server);
+  grpc_tcp_server_start(tcp, pollset, on_accept, server);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further

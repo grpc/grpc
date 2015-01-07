@@ -711,7 +711,7 @@ static void unlock(transport *t) {
   /* write some bytes if necessary */
   while (start_write) {
     switch (grpc_endpoint_write(ep, t->outbuf.slices, t->outbuf.count,
-                                finish_write, t, gpr_inf_future)) {
+                                finish_write, t)) {
       case GRPC_ENDPOINT_WRITE_DONE:
         /* grab the lock directly without wrappers since we just want to
            continue writes if we loop: no need to check read callbacks again */
@@ -1617,7 +1617,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
     case GRPC_ENDPOINT_CB_SHUTDOWN:
     case GRPC_ENDPOINT_CB_EOF:
     case GRPC_ENDPOINT_CB_ERROR:
-    case GRPC_ENDPOINT_CB_TIMED_OUT:
       lock(t);
       drop_connection(t);
       t->reading = 0;
@@ -1642,7 +1641,7 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
   for (i = 0; i < nslices; i++) gpr_slice_unref(slices[i]);
 
   if (keep_reading) {
-    grpc_endpoint_notify_on_read(t->ep, recv_data, t, gpr_inf_future);
+    grpc_endpoint_notify_on_read(t->ep, recv_data, t);
   }
 }
 
