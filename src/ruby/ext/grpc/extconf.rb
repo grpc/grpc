@@ -33,37 +33,25 @@ LIBDIR = RbConfig::CONFIG['libdir']
 INCLUDEDIR = RbConfig::CONFIG['includedir']
 
 HEADER_DIRS = [
-    # First search the local development dir
-    ENV['HOME'] + '/grpc_dev/include',
-
-    # Then search /opt/local (Mac)
+    # Search /opt/local (Mac source install)
     '/opt/local/include',
 
-    # Then search /usr/local (Source install)
+    # Search /usr/local (Source install)
     '/usr/local/include',
 
     # Check the ruby install locations
     INCLUDEDIR,
-
-    # Finally fall back to /usr
-    '/usr/include'
 ]
 
 LIB_DIRS = [
-    # First search the local development dir
-    ENV['HOME'] + '/grpc_dev/lib',
-
-    # Then search /opt/local for (Mac)
+    # Search /opt/local (Mac source install)
     '/opt/local/lib',
 
-    # Then search /usr/local (Source install)
+    # Search /usr/local (Source install)
     '/usr/local/lib',
 
     # Check the ruby install locations
     LIBDIR,
-
-    # Finally fall back to /usr
-    '/usr/lib'
 ]
 
 def crash(msg)
@@ -80,9 +68,7 @@ $CFLAGS << ' -Wno-return-type '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -pedantic '
 
-$LDFLAGS << ' -lgrpc -lgpr -levent -levent_pthreads -levent_core '
-$LDFLAGS << ' -lssl -lcrypto '
-$DLDFLAGS << ' -Wl,-rpath,/usr/local/ssl/lib '
+$LDFLAGS << ' -lgrpc -lgpr -levent -levent_pthreads -levent_core'
 
 # crash('need grpc lib') unless have_library('grpc', 'grpc_channel_destroy')
 #
