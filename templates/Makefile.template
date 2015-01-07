@@ -65,16 +65,13 @@ CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer
 LDFLAGS_msan = -fsanitize=memory
 DEFINES_msan = NDEBUG
 
-ifndef VALID_CONFIG_$(CONFIG)
-$(error Invalid CONFIG value '$(CONFIG)')
-endif
-
 # General settings.
 # You may want to change these depending on your system.
 
 prefix ?= /usr/local
 
 PROTOC = protoc
+CONFIG ?= opt
 CC = $(CC_$(CONFIG))
 CXX = $(CXX_$(CONFIG))
 LD = $(LD_$(CONFIG))
@@ -84,12 +81,14 @@ STRIP = strip --strip-unneeded
 INSTALL = install -D
 RM = rm -f
 
+ifndef VALID_CONFIG_$(CONFIG)
+$(error Invalid CONFIG value '$(CONFIG)')
+endif
+
 HOST_CC = $(CC)
 HOST_CXX = $(CXX)
 HOST_LD = $(LD)
 HOST_LDXX = $(LDXX)
-
-CONFIG ?= opt
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 DEFINES += $(DEFINES_$(CONFIG))
