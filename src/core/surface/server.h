@@ -47,8 +47,7 @@ grpc_server *grpc_server_create_from_filters(grpc_completion_queue *cq,
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */
 void grpc_server_add_listener(grpc_server *server, void *listener,
-                              void (*start)(grpc_server *server, void *arg,
-                                            grpc_pollset *pollset),
+                              void (*start)(grpc_server *server, void *arg),
                               void (*destroy)(grpc_server *server, void *arg));
 
 /* Setup a transport - creates a channel stack, binds the transport to the

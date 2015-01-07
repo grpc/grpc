@@ -184,7 +184,8 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
 }
 
 static void endpoint_notify_on_read(grpc_endpoint *secure_ep,
-                                    grpc_endpoint_read_cb cb, void *user_data) {
+                                    grpc_endpoint_read_cb cb, void *user_data,
+                                    gpr_timespec deadline) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   ep->read_cb = cb;
   ep->read_user_data = user_data;
@@ -199,7 +200,7 @@ static void endpoint_notify_on_read(grpc_endpoint *secure_ep,
     return;
   }
 
-  grpc_endpoint_notify_on_read(ep->wrapped_ep, on_read, ep);
+  grpc_endpoint_notify_on_read(ep->wrapped_ep, on_read, ep, deadline);
 }
 
 static void flush_write_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
@@ -216,11 +217,9 @@ static void on_write(void *data, grpc_endpoint_cb_status error) {
   secure_endpoint_unref(ep);
 }
 
-static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
-                                                 gpr_slice *slices,
-                                                 size_t nslices,
-                                                 grpc_endpoint_write_cb cb,
-                                                 void *user_data) {
+static grpc_endpoint_write_status endpoint_write(
+    grpc_endpoint *secure_ep, gpr_slice *slices, size_t nslices,
+    grpc_endpoint_write_cb cb, void *user_data, gpr_timespec deadline) {
   int i = 0;
   int output_buffer_count = 0;
   tsi_result result = TSI_OK;
@@ -309,7 +308,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
   /* Need to keep the endpoint alive across a transport */
   secure_endpoint_ref(ep);
   status = grpc_endpoint_write(ep->wrapped_ep, ep->output_buffer.slices,
-                               output_buffer_count, on_write, ep);
+                               output_buffer_count, on_write, ep, deadline);
   if (status != GRPC_ENDPOINT_WRITE_PENDING) {
     secure_endpoint_unref(ep);
   }

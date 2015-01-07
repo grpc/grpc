@@ -40,7 +40,7 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
-require 'math_services'
+require 'math.pb'
 require 'optparse'
 
 include GRPC::Core::TimeConsts
@@ -111,8 +111,8 @@ def main
     'secure' => false
   }
   OptionParser.new do |opts|
-    opts.banner = 'Usage: [--host <hostname>:<port>] [--secure|-s]'
-    opts.on('--host HOST', '<hostname>:<port>') do |v|
+    opts.banner = 'Usage: [--host|-h <hostname>:<port>] [--secure|-s]'
+    opts.on('-h', '--host', '<hostname>:<port>') do |v|
       options['host'] = v
     end
     opts.on('-s', '--secure', 'access using test creds') do |v|

@@ -31,12 +31,7 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_POSIX_H_
-#define __GRPC_INTERNAL_IOMGR_IOMGR_POSIX_H_
+#include "src/core/iomgr/pollset.h"
 
-#include "src/core/iomgr/iomgr_internal.h"
-
-void grpc_pollset_global_init();
-void grpc_pollset_global_shutdown();
-
-#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_POSIX_H_ */
+void grpc_pollset_init(grpc_pollset *pollset) { pollset->unused = 0; }
+void grpc_pollset_destroy(grpc_pollset *pollset) {}

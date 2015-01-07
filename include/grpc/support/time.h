@@ -94,8 +94,6 @@ gpr_timespec gpr_time_from_seconds(long x);
 gpr_timespec gpr_time_from_minutes(long x);
 gpr_timespec gpr_time_from_hours(long x);
 
-gpr_int32 gpr_time_to_millis(gpr_timespec timespec);
-
 /* Return 1 if two times are equal or within threshold of each other,
    0 otherwise */
 int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);

@@ -85,19 +85,19 @@ static void lb_channel_op(grpc_channel_element *elem,
                           grpc_channel_op *op) {
   lb_channel_data *chand = elem->channel_data;
   grpc_channel_element *back;
-  int calling_back = 0;
 
   switch (op->dir) {
     case GRPC_CALL_UP:
       gpr_mu_lock(&chand->mu);
       back = chand->back;
-      if (back) {
-        chand->calling_back++;
-        calling_back = 1;
-      }
+      if (back) chand->calling_back++;
       gpr_mu_unlock(&chand->mu);
       if (back) {
         back->filter->channel_op(chand->back, elem, op);
+        gpr_mu_lock(&chand->mu);
+        chand->calling_back--;
+        gpr_cv_broadcast(&chand->cv);
+        gpr_mu_unlock(&chand->mu);
       } else if (op->type == GRPC_TRANSPORT_GOAWAY) {
         gpr_slice_unref(op->data.goaway.message);
       }
@@ -107,27 +107,23 @@ static void lb_channel_op(grpc_channel_element *elem,
       break;
   }
 
-  gpr_mu_lock(&chand->mu);
   switch (op->type) {
     case GRPC_TRANSPORT_CLOSED:
+      gpr_mu_lock(&chand->mu);
       chand->disconnected = 1;
       maybe_destroy_channel(grpc_channel_stack_from_top_element(elem));
+      gpr_mu_unlock(&chand->mu);
       break;
     case GRPC_CHANNEL_GOAWAY:
+      gpr_mu_lock(&chand->mu);
       chand->sent_goaway = 1;
+      gpr_mu_unlock(&chand->mu);
       break;
     case GRPC_CHANNEL_DISCONNECT:
     case GRPC_TRANSPORT_GOAWAY:
     case GRPC_ACCEPT_CALL:
       break;
   }
-
-  if (calling_back) {
-    chand->calling_back--;
-    gpr_cv_signal(&chand->cv);
-    maybe_destroy_channel(grpc_channel_stack_from_top_element(elem));
-  }
-  gpr_mu_unlock(&chand->mu);
 }
 
 /* Constructor for call_data */
@@ -181,9 +177,7 @@ const grpc_channel_filter grpc_child_channel_top_filter = {
 
 #define LINK_BACK_ELEM_FROM_CALL(call) grpc_call_stack_element((call), 0)
 
-static void finally_destroy_channel(void *c, int success) {
-  /* ignore success or not... this is a destruction callback and will only
-     happen once - the only purpose here is to release resources */
+static void finally_destroy_channel(void *c, grpc_iomgr_cb_status status) {
   grpc_child_channel *channel = c;
   lb_channel_data *chand = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
   /* wait for the initiator to leave the mutex */
@@ -193,7 +187,7 @@ static void finally_destroy_channel(void *c, int success) {
   gpr_free(channel);
 }
 
-static void send_farewells(void *c, int success) {
+static void send_farewells(void *c, grpc_iomgr_cb_status status) {
   grpc_child_channel *channel = c;
   grpc_channel_element *lbelem = LINK_BACK_ELEM_FROM_CHANNEL(channel);
   lb_channel_data *chand = lbelem->channel_data;
@@ -227,7 +221,7 @@ static void send_farewells(void *c, int success) {
 static void maybe_destroy_channel(grpc_child_channel *channel) {
   lb_channel_data *chand = LINK_BACK_ELEM_FROM_CHANNEL(channel)->channel_data;
   if (chand->destroyed && chand->disconnected && chand->active_calls == 0 &&
-      !chand->sending_farewell && !chand->calling_back) {
+      !chand->sending_farewell) {
     grpc_iomgr_add_callback(finally_destroy_channel, channel);
   } else if (chand->destroyed && !chand->disconnected &&
              chand->active_calls == 0 && !chand->sending_farewell &&
@@ -255,16 +249,14 @@ grpc_child_channel *grpc_child_channel_create(
   return stk;
 }
 
-void grpc_child_channel_destroy(grpc_child_channel *channel,
-                                int wait_for_callbacks) {
+void grpc_child_channel_destroy(grpc_child_channel *channel) {
   grpc_channel_element *lbelem = LINK_BACK_ELEM_FROM_CHANNEL(channel);
   lb_channel_data *chand = lbelem->channel_data;
 
   gpr_mu_lock(&chand->mu);
-  while (wait_for_callbacks && chand->calling_back) {
+  while (chand->calling_back) {
     gpr_cv_wait(&chand->cv, &chand->mu, gpr_inf_future);
   }
-
   chand->back = NULL;
   chand->destroyed = 1;
   maybe_destroy_channel(channel);

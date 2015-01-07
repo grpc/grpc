@@ -37,68 +37,36 @@ lib_dir = File.join(File.dirname(this_dir), 'lib')
 $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
-require 'optparse'
 
-class NoProtoMsg
-  def self.marshal(o)
+class EchoMsg
+  def marshal
     ''
   end
 
   def self.unmarshal(o)
-    NoProtoMsg.new
+    EchoMsg.new
   end
 end
 
-class NoProtoService
+class EchoService
   include GRPC::GenericService
-  rpc :AnRPC, NoProtoMsg, NoProtoMsg
+  rpc :AnRPC, EchoMsg, EchoMsg
+
+  def initialize(default_var='ignored')
+  end
+
+  def an_rpc(req, call)
+    logger.info('echo service received a request')
+    req
+  end
 end
 
-NoProtoStub = NoProtoService.rpc_stub_class
-
-def load_test_certs
-  this_dir = File.expand_path(File.dirname(__FILE__))
-  data_dir = File.join(File.dirname(this_dir), 'spec/testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(data_dir, f)).read }
-end
-
-def test_creds
-  certs = load_test_certs
-  creds = GRPC::Core::Credentials.new(certs[0])
-end
+EchoStub = EchoService.rpc_stub_class
 
 def main
-  options = {
-    'host' => 'localhost:7071',
-    'secure' => false
-  }
-  OptionParser.new do |opts|
-    opts.banner = 'Usage: [--host <hostname>:<port>] [--secure|-s]'
-    opts.on('--host HOST', '<hostname>:<port>') do |v|
-      options['host'] = v
-    end
-    opts.on('-s', '--secure', 'access using test creds') do |v|
-      options['secure'] = true
-    end
-  end.parse!
-
-  if options['secure']
-    stub_opts = {
-      :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com',
-    }
-    p stub_opts
-    p options['host']
-    stub = NoProtoStub.new(options['host'], **stub_opts)
-    logger.info("... connecting securely on #{options['host']}")
-  else
-    stub = NoProtoStub.new(options['host'])
-    logger.info("... connecting insecurely on #{options['host']}")
-  end
-
-  logger.info('sending a NoProto rpc')
-  resp = stub.an_rpc(NoProtoMsg.new)
+  stub = EchoStub.new('localhost:9090')
+  logger.info('sending an rpc')
+  resp = stub.an_rpc(EchoMsg.new)
   logger.info("got a response: #{resp}")
 end
 

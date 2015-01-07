@@ -41,7 +41,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/iomgr_libevent.h"
 #include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/alloc.h>
@@ -201,7 +201,7 @@ static void do_request(void *rp) {
   gpr_free(r->default_port);
   gpr_free(r);
   cb(arg, resolved);
-  grpc_iomgr_unref();
+  grpc_iomgr_ref_address_resolution(-1);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
@@ -213,7 +213,7 @@ void grpc_resolve_address(const char *name, const char *default_port,
                           grpc_resolve_cb cb, void *arg) {
   request *r = gpr_malloc(sizeof(request));
   gpr_thd_id id;
-  grpc_iomgr_ref();
+  grpc_iomgr_ref_address_resolution(1);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->cb = cb;

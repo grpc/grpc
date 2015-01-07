@@ -249,18 +249,3 @@ gpr_timespec gpr_timespec_from_timeval(struct timeval t) {
   ts.tv_nsec = t.tv_usec * 1000;
   return ts;
 }
-
-gpr_int32 gpr_time_to_millis(gpr_timespec t) {
-  if (t.tv_sec >= 2147483) {
-    if (t.tv_sec == 2147483 && t.tv_nsec < 648 * GPR_NS_PER_MS) {
-      return 2147483 * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
-    }
-    return 2147483647;
-  } else if (t.tv_sec <= -2147483) {
-    /* TODO(ctiller): correct handling here (it's so far in the past do we
-       care?) */
-    return -2147483648;
-  } else {
-    return t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
-  }
-}

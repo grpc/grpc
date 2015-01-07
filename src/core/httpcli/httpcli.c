@@ -101,11 +101,12 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
 
   switch (status) {
     case GRPC_ENDPOINT_CB_OK:
-      grpc_endpoint_notify_on_read(req->ep, on_read, req);
+      grpc_endpoint_notify_on_read(req->ep, on_read, req, gpr_inf_future);
       break;
     case GRPC_ENDPOINT_CB_EOF:
     case GRPC_ENDPOINT_CB_ERROR:
     case GRPC_ENDPOINT_CB_SHUTDOWN:
+    case GRPC_ENDPOINT_CB_TIMED_OUT:
       if (!req->have_read_byte) {
         next_address(req);
       } else {
@@ -122,7 +123,7 @@ done:
 
 static void on_written(internal_request *req) {
   gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
-  grpc_endpoint_notify_on_read(req->ep, on_read, req);
+  grpc_endpoint_notify_on_read(req->ep, on_read, req, gpr_inf_future);
 }
 
 static void done_write(void *arg, grpc_endpoint_cb_status status) {
@@ -135,6 +136,7 @@ static void done_write(void *arg, grpc_endpoint_cb_status status) {
     case GRPC_ENDPOINT_CB_EOF:
     case GRPC_ENDPOINT_CB_SHUTDOWN:
     case GRPC_ENDPOINT_CB_ERROR:
+    case GRPC_ENDPOINT_CB_TIMED_OUT:
       next_address(req);
       break;
   }
@@ -143,8 +145,8 @@ static void done_write(void *arg, grpc_endpoint_cb_status status) {
 static void start_write(internal_request *req) {
   gpr_slice_ref(req->request_text);
   gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
-  switch (
-      grpc_endpoint_write(req->ep, &req->request_text, 1, done_write, req)) {
+  switch (grpc_endpoint_write(req->ep, &req->request_text, 1, done_write, req,
+                              gpr_inf_future)) {
     case GRPC_ENDPOINT_WRITE_DONE:
       on_written(req);
       break;

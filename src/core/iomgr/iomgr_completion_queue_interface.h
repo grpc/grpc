@@ -31,21 +31,15 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_INTERNAL_H_
-#define __GRPC_INTERNAL_IOMGR_IOMGR_INTERNAL_H_
+#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_COMPLETION_QUEUE_INTERFACE_H_
+#define __GRPC_INTERNAL_IOMGR_IOMGR_COMPLETION_QUEUE_INTERFACE_H_
 
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/iomgr_internal.h"
-#include <grpc/support/sync.h>
+/* Internals of iomgr that are exposed only to be used for completion queue
+   implementation */
 
-int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success);
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_cb_func cb, void *cb_arg,
-                                     int success);
+extern gpr_mu grpc_iomgr_mu;
+extern gpr_cv grpc_iomgr_cv;
 
-void grpc_iomgr_ref();
-void grpc_iomgr_unref();
+int grpc_iomgr_work(gpr_timespec deadline);
 
-void grpc_iomgr_platform_init();
-void grpc_iomgr_platform_shutdown();
-
-#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_INTERNAL_H_ */
+#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_COMPLETION_QUEUE_INTERFACE_H_ */

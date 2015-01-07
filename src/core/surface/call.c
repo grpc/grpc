@@ -878,9 +878,9 @@ grpc_metadata_buffer *grpc_call_get_metadata_buffer(grpc_call *call) {
   return &call->incoming_metadata;
 }
 
-static void call_alarm(void *arg, int success) {
+static void call_alarm(void *arg, grpc_iomgr_cb_status status) {
   grpc_call *call = arg;
-  if (success) {
+  if (status == GRPC_CALLBACK_SUCCESS) {
     grpc_call_cancel(call);
   }
   grpc_call_internal_unref(call);

@@ -51,10 +51,8 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-#define SUCCESS_NOT_SET (-1)
-
 /* Dummy gRPC callback */
-void no_op_cb(void *arg, int success) {}
+void no_op_cb(void *arg, grpc_iomgr_cb_status status) {}
 
 typedef struct {
   gpr_cv cv;
@@ -64,25 +62,27 @@ typedef struct {
   int done_cancel_ctr;
   int done;
   gpr_event fcb_arg;
-  int success;
+  grpc_iomgr_cb_status status;
 } alarm_arg;
 
-static void followup_cb(void *arg, int success) {
+static void followup_cb(void *arg, grpc_iomgr_cb_status status) {
   gpr_event_set((gpr_event *)arg, arg);
 }
 
 /* Called when an alarm expires. */
-static void alarm_cb(void *arg /* alarm_arg */, int success) {
+static void alarm_cb(void *arg /* alarm_arg */, grpc_iomgr_cb_status status) {
   alarm_arg *a = arg;
   gpr_mu_lock(&a->mu);
-  if (success) {
+  if (status == GRPC_CALLBACK_SUCCESS) {
     a->counter++;
     a->done_success_ctr++;
-  } else {
+  } else if (status == GRPC_CALLBACK_CANCELLED) {
     a->done_cancel_ctr++;
+  } else {
+    GPR_ASSERT(0);
   }
   a->done = 1;
-  a->success = success;
+  a->status = status;
   gpr_cv_signal(&a->cv);
   gpr_mu_unlock(&a->mu);
   grpc_iomgr_add_callback(followup_cb, &a->fcb_arg);
@@ -105,7 +105,7 @@ static void test_grpc_alarm() {
   grpc_iomgr_init();
 
   arg.counter = 0;
-  arg.success = SUCCESS_NOT_SET;
+  arg.status = GRPC_CALLBACK_DO_NOT_USE;
   arg.done_success_ctr = 0;
   arg.done_cancel_ctr = 0;
   arg.done = 0;
@@ -138,7 +138,7 @@ static void test_grpc_alarm() {
   } else if (arg.done_cancel_ctr != 0) {
     gpr_log(GPR_ERROR, "Alarm done callback called with cancel");
     GPR_ASSERT(0);
-  } else if (arg.success == SUCCESS_NOT_SET) {
+  } else if (arg.status == GRPC_CALLBACK_DO_NOT_USE) {
     gpr_log(GPR_ERROR, "Alarm callback without status");
     GPR_ASSERT(0);
   } else {
@@ -154,7 +154,7 @@ static void test_grpc_alarm() {
   gpr_mu_destroy(&arg.mu);
 
   arg2.counter = 0;
-  arg2.success = SUCCESS_NOT_SET;
+  arg2.status = GRPC_CALLBACK_DO_NOT_USE;
   arg2.done_success_ctr = 0;
   arg2.done_cancel_ctr = 0;
   arg2.done = 0;
@@ -188,7 +188,7 @@ static void test_grpc_alarm() {
   } else if (arg2.done_cancel_ctr + arg2.done_success_ctr != 1) {
     gpr_log(GPR_ERROR, "Alarm done callback called incorrect number of times");
     GPR_ASSERT(0);
-  } else if (arg2.success == SUCCESS_NOT_SET) {
+  } else if (arg2.status == GRPC_CALLBACK_DO_NOT_USE) {
     gpr_log(GPR_ERROR, "Alarm callback without status");
     GPR_ASSERT(0);
   } else if (arg2.done_success_ctr) {

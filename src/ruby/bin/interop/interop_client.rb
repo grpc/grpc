@@ -47,11 +47,9 @@ require 'minitest'
 require 'minitest/assertions'
 
 require 'grpc'
-require 'google/protobuf'
 
-require 'test/cpp/interop/test_services'
-require 'test/cpp/interop/messages'
-require 'test/cpp/interop/empty'
+require 'third_party/stubby/testing/proto/test.pb'
+require 'third_party/stubby/testing/proto/messages.pb'
 
 # loads the certificates used to access the test server securely.
 def load_test_certs
@@ -81,7 +79,7 @@ end
 # produces a string of null chars (\0) of length l.
 def nulls(l)
   raise 'requires #{l} to be +ve' if l < 0
-  [].pack('x' * l).force_encoding('utf-8')
+  [].pack('x' * l)
 end
 
 # a PingPongPlayer implements the ping pong bidi test.
@@ -107,11 +105,10 @@ class PingPongPlayer
       req_size, resp_size = m
       req = req_cls.new(:payload => Payload.new(:body => nulls(req_size)),
                         :response_type => COMPRESSABLE,
-                        :response_parameters => [p_cls.new(:size => resp_size)])
+                        :response_parameters => p_cls.new(:size => resp_size))
       yield req
       resp = @queue.pop
-      assert_equal(PayloadType.lookup(COMPRESSABLE), resp.payload.type,
-                   'payload type is wrong')
+      assert_equal(COMPRESSABLE, resp.payload.type, 'payload type is wrong')
       assert_equal(resp_size, resp.payload.body.length,
                    'payload body #{i} has the wrong length')
       p "OK: ping_pong #{count}"
@@ -135,10 +132,10 @@ class NamedTests
   # TESTING
   # PASSED
   # FAIL
-  #   ruby server: fails protobuf-ruby can't pass an empty message
+  #   ruby server: fails beefcake throws on deserializing the 0-length message
   def empty_unary
-    resp = @stub.empty_call(Empty.new)
-    assert resp.is_a?(Empty), 'empty_unary: invalid response'
+    resp = @stub.empty_call(Proto2::Empty.new)
+    assert resp.is_a?(Proto::Empty), 'empty_unary: invalid response'
     p 'OK: empty_unary'
   end
 
@@ -189,8 +186,7 @@ class NamedTests
     resps = @stub.streaming_output_call(req)
     resps.each_with_index do |r, i|
       assert i < msg_sizes.length, 'too many responses'
-      assert_equal(PayloadType.lookup(COMPRESSABLE), r.payload.type,
-                   'payload type is wrong')
+      assert_equal(COMPRESSABLE, r.payload.type, 'payload type is wrong')
       assert_equal(msg_sizes[i], r.payload.body.length,
                    'payload body #{i} has the wrong length')
     end
@@ -201,6 +197,9 @@ class NamedTests
   # PASSED
   #   ruby server
   # FAILED
+  #
+  # TODO(temiola): update this test to stay consistent with the java test's
+  # interpretation of the test spec.
   def ping_pong
     msg_sizes = [[27182, 31415], [8, 9], [1828, 2653], [45904, 58979]]
     ppp = PingPongPlayer.new(msg_sizes)

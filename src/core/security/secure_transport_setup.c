@@ -105,7 +105,6 @@ static void check_peer(grpc_secure_transport_setup *s) {
   grpc_security_status peer_status;
   tsi_peer peer;
   tsi_result result = tsi_handshaker_extract_peer(s->handshaker, &peer);
-
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Peer extraction failed with error %s",
             tsi_result_to_string(result));
@@ -153,8 +152,9 @@ static void send_handshake_bytes_to_peer(grpc_secure_transport_setup *s) {
       gpr_slice_from_copied_buffer((const char *)s->handshake_buffer, offset);
   /* TODO(klempner,jboeuf): This should probably use the client setup
          deadline */
-  write_status = grpc_endpoint_write(s->endpoint, &to_send, 1,
-                                     on_handshake_data_sent_to_peer, s);
+  write_status =
+      grpc_endpoint_write(s->endpoint, &to_send, 1,
+                          on_handshake_data_sent_to_peer, s, gpr_inf_future);
   if (write_status == GRPC_ENDPOINT_WRITE_ERROR) {
     gpr_log(GPR_ERROR, "Could not send handshake data to peer.");
     secure_transport_setup_done(s, 0);
@@ -200,7 +200,8 @@ static void on_handshake_data_received_from_peer(
       /* TODO(klempner,jboeuf): This should probably use the client setup
          deadline */
       grpc_endpoint_notify_on_read(s->endpoint,
-                                   on_handshake_data_received_from_peer, setup);
+                                   on_handshake_data_received_from_peer, setup,
+                                   gpr_inf_future);
       cleanup_slices(slices, nslices);
       return;
     } else {
@@ -257,7 +258,8 @@ static void on_handshake_data_sent_to_peer(void *setup,
     /* TODO(klempner,jboeuf): This should probably use the client setup
        deadline */
     grpc_endpoint_notify_on_read(s->endpoint,
-                                 on_handshake_data_received_from_peer, setup);
+                                 on_handshake_data_received_from_peer, setup,
+                                 gpr_inf_future);
   } else {
     check_peer(s);
   }

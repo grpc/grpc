@@ -71,8 +71,8 @@ static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_mu */
 static shard_type *g_shard_queue[NUM_SHARDS];
 
-static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
-                                   gpr_timespec *next, int success);
+static int run_some_expired_alarms(gpr_timespec now,
+                                   grpc_iomgr_cb_status status);
 
 static gpr_timespec compute_min_deadline(shard_type *shard) {
   return grpc_alarm_heap_is_empty(&shard->heap)
@@ -102,7 +102,7 @@ void grpc_alarm_list_init(gpr_timespec now) {
 
 void grpc_alarm_list_shutdown() {
   int i;
-  while (run_some_expired_alarms(NULL, gpr_inf_future, NULL, 0))
+  while (run_some_expired_alarms(gpr_inf_future, GRPC_CALLBACK_CANCELLED))
     ;
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
@@ -233,7 +233,7 @@ void grpc_alarm_cancel(grpc_alarm *alarm) {
   gpr_mu_unlock(&shard->mu);
 
   if (triggered) {
-    alarm->cb(alarm->cb_arg, 0);
+    alarm->cb(alarm->cb_arg, GRPC_CALLBACK_CANCELLED);
   }
 }
 
@@ -299,8 +299,8 @@ static size_t pop_alarms(shard_type *shard, gpr_timespec now,
   return n;
 }
 
-static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
-                                   gpr_timespec *next, int success) {
+static int run_some_expired_alarms(gpr_timespec now,
+                                   grpc_iomgr_cb_status status) {
   size_t n = 0;
   size_t i;
   grpc_alarm *alarms[MAX_ALARMS_PER_CHECK];
@@ -329,35 +329,19 @@ static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
       note_deadline_change(g_shard_queue[0]);
     }
 
-    if (next) {
-      *next = gpr_time_min(*next, g_shard_queue[0]->min_deadline);
-    }
-
     gpr_mu_unlock(&g_mu);
     gpr_mu_unlock(&g_checker_mu);
-  } else if (next) {
-    gpr_mu_lock(&g_mu);
-    *next = gpr_time_min(*next, g_shard_queue[0]->min_deadline);
-    gpr_mu_unlock(&g_mu);
-  }
-
-  if (n && drop_mu) {
-    gpr_mu_unlock(drop_mu);
   }
 
   for (i = 0; i < n; i++) {
-    alarms[i]->cb(alarms[i]->cb_arg, success);
-  }
-
-  if (n && drop_mu) {
-    gpr_mu_lock(drop_mu);
+    alarms[i]->cb(alarms[i]->cb_arg, status);
   }
 
   return n;
 }
 
-int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next) {
-  return run_some_expired_alarms(drop_mu, now, next, 1);
+int grpc_alarm_check(gpr_timespec now) {
+  return run_some_expired_alarms(now, GRPC_CALLBACK_SUCCESS);
 }
 
 gpr_timespec grpc_alarm_list_next_timeout() {

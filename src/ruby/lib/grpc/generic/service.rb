@@ -93,8 +93,6 @@ module Google::RPC
       # The Dsl verifies that the types in the descriptor have both the
       # unmarshal and marshal methods.
       attr_writer(:marshal_class_method, :unmarshal_class_method)
-
-      # This allows configuration of the service name.
       attr_accessor(:service_name)
 
       # Adds an RPC spec.
@@ -119,8 +117,8 @@ module Google::RPC
       end
 
       def inherited(subclass)
-        # Each subclass should have a distinct class variable with its own
-        # rpc_descs
+        # Each subclass should have distinct class variable with its own
+        # rpc_descs.
         subclass.rpc_descs.merge!(rpc_descs)
         subclass.service_name = service_name
       end
@@ -229,9 +227,8 @@ module Google::RPC
     def self.included(o)
       o.extend(Dsl)
 
-      # Update to the use the service name including module. Proivde a default
-      # that can be nil e,g. when modules are declared dynamically.
-      return unless o.service_name.nil?
+      # Update to the use the name including module.  This can be nil e,g. when
+      # modules are declared dynamically.
       if o.name.nil?
         o.service_name = 'GenericService'
       else

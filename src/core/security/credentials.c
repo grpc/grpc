@@ -555,11 +555,12 @@ static int fake_oauth2_has_request_metadata_only(
   return 1;
 }
 
-void on_simulated_token_fetch_done(void *user_data, int success) {
+void on_simulated_token_fetch_done(void *user_data,
+                                   grpc_iomgr_cb_status status) {
   grpc_credentials_metadata_request *r =
       (grpc_credentials_metadata_request *)user_data;
   grpc_fake_oauth2_credentials *c = (grpc_fake_oauth2_credentials *)r->creds;
-  GPR_ASSERT(success);
+  GPR_ASSERT(status == GRPC_CALLBACK_SUCCESS);
   r->cb(r->user_data, &c->access_token_md, 1, GRPC_CREDENTIALS_OK);
   grpc_credentials_metadata_request_destroy(r);
 }

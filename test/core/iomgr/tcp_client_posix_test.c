@@ -44,7 +44,7 @@
 #include <grpc/support/time.h>
 
 static gpr_timespec test_deadline() {
-  return gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
+  return gpr_time_add(gpr_now(), gpr_time_from_micros(1000000));
 }
 
 static void must_succeed(void *arg, grpc_endpoint *tcp) {

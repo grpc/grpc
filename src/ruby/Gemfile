@@ -1,4 +1,12 @@
 source 'https://rubygems.org'
 
+# Modify this when working locally, see README.md
+# e.g,
+# gem 'beefcake', path: "/usr/local/google/repos/beefcake"
+#
+# The default value is what's used for gRPC ruby's GCE configuration
+#
+gem 'beefcake', path: "/var/local/git/beefcake"
+
 # Specify your gem's dependencies in grpc.gemspec
 gemspec
