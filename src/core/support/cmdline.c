@@ -31,15 +31,15 @@
  *
  */
 
-#include "net/grpc/c/public/support/cmdline.h"
+#include <grpc/support/cmdline.h>
 
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "net/grpc/c/public/support/alloc.h"
-#include "net/grpc/c/public/support/log.h"
-#include "net/grpc/c/public/support/string.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string.h>
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 
