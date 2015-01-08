@@ -47,8 +47,9 @@ require 'optparse'
 
 require 'grpc'
 
-require 'third_party/stubby/testing/proto/test.pb'
-require 'third_party/stubby/testing/proto/messages.pb'
+require 'test/cpp/interop/test_services'
+require 'test/cpp/interop/messages'
+require 'test/cpp/interop/empty'
 
 # loads the certificates by the test server.
 def load_test_certs
@@ -67,7 +68,7 @@ end
 # produces a string of null chars (\0) of length l.
 def nulls(l)
   raise 'requires #{l} to be +ve' if l < 0
-  [].pack('x' * l)
+  [].pack('x' * l).force_encoding('utf-8')
 end
 
 # A EnumeratorQueue wraps a Queue yielding the items added to it via each_item.
@@ -98,7 +99,7 @@ class TestTarget < Grpc::Testing::TestService::Service
   include Grpc::Testing::PayloadType
 
   def empty_call(empty, call)
-    Proto::Empty.new
+    Empty.new
   end
 
   def unary_call(simple_req, call)
