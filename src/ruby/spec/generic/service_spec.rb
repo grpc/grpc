@@ -108,6 +108,39 @@ describe GenericService do
       expect(c.rpc_descs[:AnRpc]).to be_a(GRPC::RpcDesc)
     end
 
+    it 'adds a default service name' do
+      c = Class.new do
+        include GenericService
+      end
+      expect(c.service_name).to eq('GenericService')
+    end
+
+    it 'adds a default service name to subclasses' do
+      base = Class.new do
+        include GenericService
+      end
+      c = Class.new(base) do
+      end
+      expect(c.service_name).to eq('GenericService')
+    end
+
+    it 'adds the specified service name' do
+      c = Class.new do
+        include GenericService
+        self.service_name = 'test.service.TestService'
+      end
+      expect(c.service_name).to eq('test.service.TestService')
+    end
+
+    it 'adds the specified service name to subclasses' do
+      base = Class.new do
+        include GenericService
+        self.service_name = 'test.service.TestService'
+      end
+      c = Class.new(base) do
+      end
+      expect(c.service_name).to eq('test.service.TestService')
+    end
   end
 
   describe '#include' do
