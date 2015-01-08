@@ -104,6 +104,11 @@ void PrintService(const ServiceDescriptor* service, const string& package,
   out->Print("\n");
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");
+  map<string, string> pkg_vars = ListToDict({
+      "service.name", service->name(),
+      "pkg.name", package,
+  });
+  out->Print(pkg_vars, "self.service_name = '$pkg.name$.$service.name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintMethod(service->method(i), package, out);
