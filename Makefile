@@ -965,6 +965,24 @@ gens/test/cpp/util/echo.pb.cc: test/cpp/util/echo.proto protoc_plugins
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
+deps/$(CONFIG)/gens/test/cpp/util/echo_duplicate.pb.dep:
+	$(Q) mkdir -p `dirname $@`
+	$(Q) touch $@
+
+gens/test/cpp/util/echo_duplicate.pb.cc: test/cpp/util/echo_duplicate.proto protoc_plugins
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+
+deps/$(CONFIG)/gens/test/cpp/util/messages.pb.dep:
+	$(Q) mkdir -p `dirname $@`
+	$(Q) touch $@
+
+gens/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto protoc_plugins
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+
 
 deps/$(CONFIG)/%.dep : %.c
 	$(E) "[DEP]     Generating dependencies for $<"
@@ -1643,7 +1661,9 @@ clean_libgrpc++:
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
+    gens/test/cpp/util/messages.pb.cc \
     gens/test/cpp/util/echo.pb.cc \
+    gens/test/cpp/util/echo_duplicate.pb.cc \
     test/cpp/util/create_test_channel.cc \
     test/cpp/end2end/async_test_server.cc \
 
@@ -5199,10 +5219,10 @@ bins/$(CONFIG)/end2end_test: openssl_dep_error
 
 else
 
-bins/$(CONFIG)/end2end_test: $(END2END_TEST_OBJS) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
+bins/$(CONFIG)/end2end_test: $(END2END_TEST_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(END2END_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/end2end_test
+	$(Q) $(LDXX) $(LDFLAGS) $(END2END_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/end2end_test
 
 endif
 
