@@ -44,6 +44,7 @@ module Grpc
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
+        self.service_name = 'grpc.testing.TestService'
 
         rpc :EmptyCall, Empty, Empty
         rpc :UnaryCall, SimpleRequest, SimpleResponse

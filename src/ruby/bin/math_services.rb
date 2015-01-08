@@ -43,6 +43,7 @@ module Math
 
       self.marshal_class_method = :encode
       self.unmarshal_class_method = :decode
+      self.service_name = 'math.Math'
 
       rpc :Div, DivArgs, DivReply
       rpc :DivMany, stream(DivArgs), stream(DivReply)
