@@ -141,6 +141,7 @@
         "src/core/statistics/census_interface.h",
         "src/core/statistics/census_log.h",
         "src/core/statistics/census_rpc_stats.h",
+        "src/core/statistics/census_tracing.h",
         "src/core/statistics/hash_table.h",
         "src/core/statistics/window_stats.h",
         "src/core/surface/call.h",
@@ -840,6 +841,30 @@
       "build": "benchmark",
       "src": [
         "test/core/surface/completion_queue_benchmark.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "census_trace_store_test",
+      "build": "executable",
+      "src": [
+        "test/core/statistics/trace_test.c"
+      ],
+     "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "census_stats_store_test",
+      "build": "executable",
+      "src": [
+        "test/core/statistics/rpc_stats_test.c"
       ],
       "deps": [
         "grpc_test_util",

@@ -31,47 +31,29 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
+#define __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
 
-#include "src/core/statistics/census_interface.h"
-#include "src/core/statistics/census_rpc_stats.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include "test/core/util/test_config.h"
+/* Opaque structure for trace object */
+typedef struct trace_obj trace_obj;
 
-/* Tests census noop stubs in a simulated rpc flow */
-void test_census_stubs() {
-  census_op_id op_id;
-  census_rpc_stats* stats = census_rpc_stats_create_empty();
-  census_aggregated_rpc_stats data_map = {0, NULL};
+/* Initializes trace store. This function is thread safe. */
+void census_tracing_init();
 
-  /* Initializes census library at server start up time. */
-  census_init();
-  /* Starts tracing at the beginning of a rpc. */
-  op_id = census_tracing_start_op();
-  /* Appends custom annotations on a trace object. */
-  census_tracing_print(op_id, "annotation foo");
-  census_tracing_print(op_id, "annotation bar");
-  /* Appends method tag on the trace object. */
-  census_add_method_tag(op_id, "service_foo/method.bar");
-  /* Either record client side stats or server side stats associated with the
-     op_id. Here for testing purpose, we record both. */
-  census_record_rpc_client_stats(op_id, stats);
-  census_record_rpc_server_stats(op_id, stats);
-  /* Ends a tracing. */
-  census_tracing_end_op(op_id);
-  /* In process stats queries. */
-  census_get_server_stats(&data_map);
-  census_aggregated_rpc_stats_set_empty(&data_map);
-  census_get_client_stats(&data_map);
-  census_aggregated_rpc_stats_set_empty(&data_map);
-  gpr_free(stats);
-  census_shutdown();
-}
+/* Shutsdown trace store. This function is thread safe. */
+void census_tracing_shutdown();
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  test_census_stubs();
-  return 0;
-}
+/* Gets trace obj corresponding to the input op_id. Returns NULL if trace store
+   is not initialized or trace obj is not found. Requires trace store being
+   locked before calling this function. */
+trace_obj* census_get_trace_obj_locked(census_op_id op_id);
+
+/* The following two functions acquire and release the trace store global lock.
+   They are for census internal use only. */
+void census_internal_lock_trace_store();
+void census_internal_unlock_trace_store();
+
+/* Gets method tag name associated with the input trace object. */
+const char* census_get_trace_method_name(const trace_obj* trace);
+
+#endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_ */

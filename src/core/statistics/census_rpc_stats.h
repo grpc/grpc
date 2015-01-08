@@ -37,6 +37,10 @@
 #include "src/core/statistics/census_interface.h"
 #include <grpc/support/port_platform.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct census_rpc_stats {
   gpr_uint64 cnt;
   gpr_uint64 rpc_error_cnt;
@@ -51,19 +55,20 @@ struct census_rpc_stats {
 /* Creates an empty rpc stats object on heap. */
 census_rpc_stats* census_rpc_stats_create_empty();
 
-typedef struct census_per_service_per_method_rpc_stats {
-  const char* service;
+typedef struct census_per_method_rpc_stats {
   const char* method;
-  census_rpc_stats data;
-} census_per_service_per_method_rpc_stats;
+  census_rpc_stats minute_stats; /* cumulative stats in the past minute */
+  census_rpc_stats hour_stats;   /* cumulative stats in the past hour */
+  census_rpc_stats total_stats;  /* cumulative stats from last gc */
+} census_per_method_rpc_stats;
 
 typedef struct census_aggregated_rpc_stats {
   int num_entries;
-  census_per_service_per_method_rpc_stats* stats;
+  census_per_method_rpc_stats* stats;
 } census_aggregated_rpc_stats;
 
-/* Deletes aggregated data. */
-void census_aggregated_rpc_stats_destroy(census_aggregated_rpc_stats* data);
+/* Initializes an aggregated rpc stats object to an empty state. */
+void census_aggregated_rpc_stats_set_empty(census_aggregated_rpc_stats* data);
 
 /* Records client side stats of a rpc. */
 void census_record_rpc_client_stats(census_op_id op_id,
@@ -85,5 +90,12 @@ void census_get_server_stats(census_aggregated_rpc_stats* data_map);
    stats.
    DO NOT CALL from outside of grpc code. */
 void census_get_client_stats(census_aggregated_rpc_stats* data_map);
+
+void census_stats_store_init();
+void census_stats_store_shutdown();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* __GRPC_INTERNAL_STATISTICS_CENSUS_RPC_STATS_H__ */

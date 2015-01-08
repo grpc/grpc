@@ -264,3 +264,7 @@ gpr_int32 gpr_time_to_millis(gpr_timespec t) {
     return t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
   }
 }
+
+double gpr_timespec_to_micros(gpr_timespec t) {
+  return t.tv_sec * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
+}
