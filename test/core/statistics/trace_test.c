@@ -98,7 +98,7 @@ typedef struct thd_arg {
 
 static void mimic_trace_op_sequences(void* arg) {
   census_op_id id;
-  char method_name[200];
+  const char* method_name = "service_foo/method_bar";
   int i = 0;
   const int num_iter = 200;
   thd_arg* args = (thd_arg*)arg;
