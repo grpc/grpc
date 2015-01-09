@@ -59,7 +59,7 @@ static void read_records(size_t record_size, const char* buffer,
   GPR_ASSERT(buffer_size % record_size == 0);
   *num_records = buffer_size / record_size;
   for (ix = 0; ix < *num_records; ++ix) {
-    gpr_int32 jx;
+    size_t jx;
     const char* record = buffer + (record_size * ix);
     char data = (gpr_uintptr)record % 255;
     for (jx = 0; jx < record_size; ++jx) {
