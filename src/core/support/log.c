@@ -34,6 +34,10 @@
 #include <grpc/support/log.h>
 
 #include <stdio.h>
+#include <string.h>
+
+extern void gpr_default_log(gpr_log_func_args *args);
+static gpr_log_func g_log_func = gpr_default_log;
 
 const char *gpr_log_severity_string(gpr_log_severity severity) {
   switch (severity) {
@@ -47,12 +51,15 @@ const char *gpr_log_severity_string(gpr_log_severity severity) {
   return "UNKNOWN";
 }
 
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
-  va_list args;
-  va_start(args, format);
-
-  gpr_vlog(file, line, severity, format, args);
-
-  va_end(args);
+void gpr_log_message(const char *file, int line, gpr_log_severity severity,
+                     const char *message) {
+  gpr_log_func_args lfargs;
+  memset(&lfargs, 0, sizeof(lfargs));
+  lfargs.file = file;
+  lfargs.line = line;
+  lfargs.severity = severity;
+  lfargs.message = message;
+  g_log_func(&lfargs);
 }
+
+void gpr_set_log_function(gpr_log_func f) { g_log_func = f; }
