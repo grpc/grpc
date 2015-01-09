@@ -1597,6 +1597,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
+    include/grpc++/impl/internal_stub.h \
+    include/grpc++/impl/rpc_method.h \
+    include/grpc++/impl/rpc_service_method.h \
     include/grpc++/server_builder.h \
     include/grpc++/server_context.h \
     include/grpc++/server_credentials.h \
