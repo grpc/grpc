@@ -1370,6 +1370,18 @@
       ]
     },
     {
+      "name": "credentials_test",
+      "build": "test",
+      "c++": true,
+      "src": [
+        "test/cpp/client/credentials_test.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc"
+      ]
+    },
+    {
       "name": "alarm_test",
       "build": "test",
       "src": [

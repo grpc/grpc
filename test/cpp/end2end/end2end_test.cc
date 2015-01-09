@@ -42,6 +42,7 @@
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -399,6 +400,38 @@ TEST_F(End2endTest, DiffPackageServices) {
   s = dup_pkg_stub->Echo(&context2, request, &response);
   EXPECT_EQ("no package", response.message());
   EXPECT_TRUE(s.IsOk());
+}
+
+// rpc and stream should fail on bad credentials.
+TEST_F(End2endTest, BadCredentials) {
+  std::unique_ptr<Credentials> bad_creds =
+      CredentialsFactory::ServiceAccountCredentials("", "",
+                                                    std::chrono::seconds(1));
+  EXPECT_EQ(nullptr, bad_creds.get());
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
+  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
+      grpc::cpp::test::util::TestService::NewStub(channel));
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  grpc::string msg("hello");
+
+  Status s = stub->Echo(&context, request, &response);
+  EXPECT_EQ("", response.message());
+  EXPECT_FALSE(s.IsOk());
+  EXPECT_EQ(StatusCode::UNKNOWN, s.code());
+  EXPECT_EQ("Rpc sent on a lame channel.", s.details());
+
+  ClientContext context2;
+  ClientReaderWriter<EchoRequest, EchoResponse>* stream =
+      stub->BidiStream(&context2);
+  s = stream->Wait();
+  EXPECT_FALSE(s.IsOk());
+  EXPECT_EQ(StatusCode::UNKNOWN, s.code());
+  EXPECT_EQ("Rpc sent on a lame channel.", s.details());
+
+  delete stream;
 }
 
 }  // namespace testing

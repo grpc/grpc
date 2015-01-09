@@ -85,6 +85,10 @@ void StreamContext::Start(bool buffered) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     grpc_event* invoke_ev =
         grpc_completion_queue_pluck(cq(), invoke_tag(), gpr_inf_future);
+    if (invoke_ev->data.invoke_accepted != GRPC_OP_OK) {
+      peer_halfclosed_ = true;
+      self_halfclosed_ = true;
+    }
     grpc_event_finish(invoke_ev);
   } else {
     // TODO(yangg) metadata needs to be added before accept

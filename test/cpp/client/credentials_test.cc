@@ -31,26 +31,43 @@
  *
  */
 
-#ifndef __GRPCPP_CREATE_CHANNEL_H__
-#define __GRPCPP_CREATE_CHANNEL_H__
+#include <grpc++/credentials.h>
 
 #include <memory>
 
-#include <grpc++/config.h>
-#include <grpc++/credentials.h>
+#include <grpc/grpc.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
-class ChannelArguments;
-class ChannelInterface;
+namespace testing {
 
-std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string& target,
-                                                const ChannelArguments& args);
+class CredentialsTest : public ::testing::Test {
+ protected:
+};
 
-// If creds does not hold an object or is invalid, a lame channel is returned.
-std::shared_ptr<ChannelInterface> CreateChannel(
-    const grpc::string& target, const std::unique_ptr<Credentials>& creds,
-    const ChannelArguments& args);
+TEST_F(CredentialsTest, InvalidSslCreds) {
+  std::unique_ptr<Credentials> bad1 =
+      CredentialsFactory::SslCredentials({"", "", ""});
+  EXPECT_EQ(nullptr, bad1.get());
+  std::unique_ptr<Credentials> bad2 =
+      CredentialsFactory::SslCredentials({"", "bla", "bla"});
+  EXPECT_EQ(nullptr, bad2.get());
+}
 
+TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
+  std::unique_ptr<Credentials> bad1 =
+      CredentialsFactory::ServiceAccountCredentials("", "",
+                                                    std::chrono::seconds(1));
+  EXPECT_EQ(nullptr, bad1.get());
+}
+
+}  // namespace testing
 }  // namespace grpc
 
-#endif  // __GRPCPP_CREATE_CHANNEL_H__
+int main(int argc, char **argv) {
+
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
+}
