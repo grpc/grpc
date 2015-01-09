@@ -126,7 +126,7 @@
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
 #endif
 
-#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) != 1
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) != 1
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX
 #endif
 
