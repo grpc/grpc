@@ -13,13 +13,14 @@ import watch_dirs
 
 # flags required for make for each configuration
 _CONFIGS = ['dbg', 'opt', 'tsan', 'msan', 'asan']
+_DEFAULT = ['dbg', 'opt']
 
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
                   choices=['all'] + _CONFIGS,
                   nargs='+',
-                  default=['all'])
+                  default=_DEFAULT)
 argp.add_argument('-t', '--test-filter', nargs='*', default=['*'])
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
 argp.add_argument('-f', '--forever',
