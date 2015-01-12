@@ -64,15 +64,20 @@ static gpr_slice create_test_slice(size_t length) {
 static void verify_sopb(size_t window_available, int eof,
                         size_t expect_window_used, const char *expected) {
   gpr_slice_buffer output;
+  grpc_stream_op_buffer encops;
   gpr_slice merged;
   gpr_slice expect = parse_hexstring(expected);
   gpr_slice_buffer_init(&output);
+  grpc_sopb_init(&encops);
   GPR_ASSERT(expect_window_used ==
-             grpc_chttp2_encode_some(g_sopb.ops, &g_sopb.nops, eof, &output,
-                                     window_available, 0xdeadbeef,
-                                     &g_compressor));
+             grpc_chttp2_preencode(g_sopb.ops, &g_sopb.nops, window_available,
+                                   &encops));
+  grpc_chttp2_encode(encops.ops, encops.nops, eof, 0xdeadbeef, &g_compressor,
+                     &output);
+  encops.nops = 0;
   merged = grpc_slice_merge(output.slices, output.count);
   gpr_slice_buffer_destroy(&output);
+  grpc_sopb_destroy(&encops);
 
   if (0 != gpr_slice_cmp(merged, expect)) {
     char *expect_str =
@@ -240,21 +245,25 @@ static void test_decode_random_headers_inner(int max_len) {
   test_decode_random_header_state st;
   gpr_slice_buffer output;
   gpr_slice merged;
+  grpc_stream_op_buffer encops;
   grpc_chttp2_hpack_parser parser;
 
   grpc_chttp2_hpack_parser_init(&parser, g_mdctx);
+  grpc_sopb_init(&encops);
 
   gpr_log(GPR_INFO, "max_len = %d", max_len);
 
-  for (i = 0; i < 100000; i++) {
+  for (i = 0; i < 10000; i++) {
     randstr(st.key, max_len);
     randstr(st.value, max_len);
 
     add_sopb_header(st.key, st.value);
     gpr_slice_buffer_init(&output);
-    GPR_ASSERT(0 == grpc_chttp2_encode_some(g_sopb.ops, &g_sopb.nops, 0,
-                                            &output, 0, 0xdeadbeef,
-                                            &g_compressor));
+    GPR_ASSERT(0 ==
+               grpc_chttp2_preencode(g_sopb.ops, &g_sopb.nops, 0, &encops));
+    grpc_chttp2_encode(encops.ops, encops.nops, 0, 0xdeadbeef, &g_compressor,
+                       &output);
+    encops.nops = 0;
     merged = grpc_slice_merge(output.slices, output.count);
     gpr_slice_buffer_destroy(&output);
 
@@ -269,6 +278,7 @@ static void test_decode_random_headers_inner(int max_len) {
   }
 
   grpc_chttp2_hpack_parser_destroy(&parser);
+  grpc_sopb_destroy(&encops);
 }
 
 #define DECL_TEST_DECODE_RANDOM_HEADERS(n)       \
