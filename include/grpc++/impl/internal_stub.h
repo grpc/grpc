@@ -31,59 +31,30 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef __GRPCPP_IMPL_INTERNAL_STUB_H__
+#define __GRPCPP_IMPL_INTERNAL_STUB_H__
 
-#ifdef GPR_ANDROID
+#include <memory>
 
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <android/log.h>
+#include <grpc++/channel_interface.h>
 
-static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
-  switch (severity) {
-    case GPR_LOG_SEVERITY_DEBUG:
-      return ANDROID_LOG_DEBUG;
-    case GPR_LOG_SEVERITY_INFO:
-      return ANDROID_LOG_INFO;
-    case GPR_LOG_SEVERITY_ERROR:
-      return ANDROID_LOG_ERROR;
+namespace grpc {
+
+class InternalStub {
+ public:
+  InternalStub() {}
+  virtual ~InternalStub() {}
+
+  void set_channel(const std::shared_ptr<ChannelInterface>& channel) {
+    channel_ = channel;
   }
-  return ANDROID_LOG_DEFAULT;
-}
 
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
-  char *message = NULL;
-  va_list args;
-  va_start(args, format);
-  vasprintf(&message, format, args);
-  va_end(args);
-  gpr_log_message(file, line, severity, message);
-  free(message);
-}
+  ChannelInterface* channel() { return channel_.get(); }
 
-void gpr_default_log(gpr_log_func_args *args) {
-  char *final_slash;
-  const char *display_file;
-  char *output = NULL;
+ private:
+  std::shared_ptr<ChannelInterface> channel_;
+};
 
-  final_slash = strrchr(args->file, '/');
-  if (final_slash == NULL)
-    display_file = file;
-  else
-    display_file = final_slash + 1;
+}  // namespace grpc
 
-  asprintf(&prefix, "%s:%d] %s", display_file, args->line, args->message);
-
-  __android_log_write(severity_to_log_priority(args->severity), "GRPC", output);
-
-  /* allocated by asprintf => use free, not gpr_free */
-  free(prefix);
-  free(suffix);
-  free(output);
-}
-
-#endif /* GPR_ANDROID */
+#endif  // __GRPCPP_IMPL_INTERNAL_STUB_H__

@@ -60,13 +60,11 @@ static void init_rpc_stats(census_rpc_stats* stats) {
   stats->cnt = 1;
 }
 
-static double gpr_timespec_to_micros(gpr_timespec t) {
-  return t.tv_sec * GPR_US_PER_SEC + t.tv_nsec * 1e-3;
-}
-
 static void extract_and_annotate_method_tag(grpc_call_op* op, call_data* calld,
                                             channel_data* chand) {
   if (op->data.metadata->key == chand->path_str) {
+    gpr_log(GPR_DEBUG,
+            (const char*)GPR_SLICE_START_PTR(op->data.metadata->value->slice));
     census_add_method_tag(calld->op_id, (const char*)GPR_SLICE_START_PTR(
                                             op->data.metadata->value->slice));
   }
@@ -78,7 +76,7 @@ static void client_call_op(grpc_call_element* elem,
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(calld != NULL);
   GPR_ASSERT(chand != NULL);
-  GPR_ASSERT((calld->op_id.upper != 0) && (calld->op_id.lower != 0));
+  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   switch (op->type) {
     case GRPC_SEND_METADATA:
       extract_and_annotate_method_tag(op, calld, chand);
@@ -99,7 +97,7 @@ static void server_call_op(grpc_call_element* elem,
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(calld != NULL);
   GPR_ASSERT(chand != NULL);
-  GPR_ASSERT((calld->op_id.upper != 0) && (calld->op_id.lower != 0));
+  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   switch (op->type) {
     case GRPC_RECV_METADATA:
       extract_and_annotate_method_tag(op, calld, chand);
@@ -171,7 +169,13 @@ static void init_channel_elem(grpc_channel_element* elem,
   chand->path_str = grpc_mdstr_from_string(mdctx, ":path");
 }
 
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void destroy_channel_elem(grpc_channel_element* elem) {
+  channel_data* chand = elem->channel_data;
+  GPR_ASSERT(chand != NULL);
+  if (chand->path_str != NULL) {
+    grpc_mdstr_unref(chand->path_str);
+  }
+}
 
 const grpc_channel_filter grpc_client_census_filter = {
     client_call_op, channel_op,

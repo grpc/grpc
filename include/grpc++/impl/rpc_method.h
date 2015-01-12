@@ -31,6 +31,39 @@
  *
  */
 
-#include "src/cpp/rpc_method.h"
+#ifndef __GRPCPP_IMPL_RPC_METHOD_H__
+#define __GRPCPP_IMPL_RPC_METHOD_H__
 
-namespace grpc {}  // namespace grpc
+namespace google {
+namespace protobuf {
+class Message;
+}
+}
+
+namespace grpc {
+
+class RpcMethod {
+ public:
+  enum RpcType {
+    NORMAL_RPC = 0,
+    CLIENT_STREAMING,  // request streaming
+    SERVER_STREAMING,  // response streaming
+    BIDI_STREAMING
+  };
+
+  explicit RpcMethod(const char* name)
+      : name_(name), method_type_(NORMAL_RPC) {}
+  RpcMethod(const char* name, RpcType type) : name_(name), method_type_(type) {}
+
+  const char* name() const { return name_; }
+
+  RpcType method_type() const { return method_type_; }
+
+ private:
+  const char* name_;
+  const RpcType method_type_;
+};
+
+}  // namespace grpc
+
+#endif  // __GRPCPP_IMPL_RPC_METHOD_H__

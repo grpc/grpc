@@ -134,6 +134,7 @@
     <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\src\core\statistics\census_log.h" />
     <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
+    <ClInclude Include="..\..\src\core\statistics\census_tracing.h" />
     <ClInclude Include="..\..\src\core\statistics\hash_table.h" />
     <ClInclude Include="..\..\src\core\statistics\window_stats.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />

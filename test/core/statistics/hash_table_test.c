@@ -123,7 +123,8 @@ static void test_value_and_key_deleter() {
                           &free_data, &free_data};
   census_ht* ht = census_ht_create(&opt);
   census_ht_key key;
-  char* val;
+  char* val = NULL;
+  char* val2 = NULL;
   key.ptr = gpr_malloc(100);
   val = gpr_malloc(10);
   strcpy(val, "value");
@@ -132,6 +133,17 @@ static void test_value_and_key_deleter() {
   GPR_ASSERT(census_ht_get_size(ht) == 0);
   census_ht_insert(ht, key, val);
   GPR_ASSERT(census_ht_get_size(ht) == 1);
+  val = census_ht_find(ht, key);
+  GPR_ASSERT(val != NULL);
+  GPR_ASSERT(strcmp(val, "value") == 0);
+  /* Insert same key different value, old value is overwritten. */
+  val2 = gpr_malloc(10);
+  strcpy(val2, "v2");
+  census_ht_insert(ht, key, val2);
+  GPR_ASSERT(census_ht_get_size(ht) == 1);
+  val2 = census_ht_find(ht, key);
+  GPR_ASSERT(val2 != NULL);
+  GPR_ASSERT(strcmp(val2, "v2") == 0);
   census_ht_destroy(ht);
 }
 

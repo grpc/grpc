@@ -1,0 +1,12 @@
+// This is a partial copy of echo.proto with a different package name.
+
+syntax = "proto2";
+
+import "test/cpp/util/messages.proto";
+
+package grpc.cpp.test.util.duplicate;
+
+service TestService {
+  rpc Echo(grpc.cpp.test.util.EchoRequest)
+      returns (grpc.cpp.test.util.EchoResponse);
+}

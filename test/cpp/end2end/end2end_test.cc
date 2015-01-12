@@ -34,13 +34,14 @@
 #include <chrono>
 #include <thread>
 
+#include "net/grpc/cpp/echo_duplicate_proto_cc.pb.h"
 #include "test/cpp/util/echo.pb.h"
-#include "src/cpp/server/rpc_service_method.h"
 #include "src/cpp/util/time.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -55,7 +56,6 @@
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
-using grpc::cpp::test::util::TestService;
 using std::chrono::system_clock;
 
 namespace grpc {
@@ -77,10 +77,10 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 }
 }  // namespace
 
-class TestServiceImpl : public TestService::Service {
+class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) {
+              EchoResponse* response) override {
     response->set_message(request->message());
     MaybeEchoDeadline(context, request, response);
     return Status::OK;
@@ -90,7 +90,7 @@ class TestServiceImpl : public TestService::Service {
 
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) {
+                       EchoResponse* response) override {
     EchoRequest request;
     response->set_message("");
     while (reader->Read(&request)) {
@@ -102,7 +102,7 @@ class TestServiceImpl : public TestService::Service {
   // Return 3 messages.
   // TODO(yangg) make it generic by adding a parameter into EchoRequest
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) {
+                        ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     response.set_message(request->message() + "0");
     writer->Write(response);
@@ -114,8 +114,9 @@ class TestServiceImpl : public TestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -123,6 +124,16 @@ class TestServiceImpl : public TestService::Service {
       response.set_message(request.message());
       stream->Write(response);
     }
+    return Status::OK;
+  }
+};
+
+class TestServiceImplDupPkg
+    : public ::grpc::cpp::test::util::duplicate::TestService::Service {
+ public:
+  Status Echo(ServerContext* context, const EchoRequest* request,
+              EchoResponse* response) override {
+    response->set_message("no package");
     return Status::OK;
   }
 };
@@ -136,6 +147,7 @@ class End2endTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddPort(server_address_.str());
     builder.RegisterService(service_.service());
+    builder.RegisterService(dup_pkg_service_.service());
     server_ = builder.BuildAndStart();
   }
 
@@ -143,15 +155,21 @@ class End2endTest : public ::testing::Test {
     server_->Shutdown();
   }
 
+  void ResetStub() {
+    std::shared_ptr<ChannelInterface> channel =
+        CreateChannel(server_address_.str(), ChannelArguments());
+    stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
+  }
+
+  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
+  TestServiceImplDupPkg dup_pkg_service_;
 };
 
-static void SendRpc(const grpc::string& server_address, int num_rpcs) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address, ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
+                    int num_rpcs) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -162,18 +180,18 @@ static void SendRpc(const grpc::string& server_address, int num_rpcs) {
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.IsOk());
   }
-
-  delete stub;
 }
 
 TEST_F(End2endTest, SimpleRpc) {
-  SendRpc(server_address_.str(), 1);
+  ResetStub();
+  SendRpc(stub_.get(), 1);
 }
 
 TEST_F(End2endTest, MultipleRpcs) {
+  ResetStub();
   vector<std::thread*> threads;
   for (int i = 0; i < 10; ++i) {
-    threads.push_back(new std::thread(SendRpc, server_address_.str(), 10));
+    threads.push_back(new std::thread(SendRpc, stub_.get(), 10));
   }
   for (int i = 0; i < 10; ++i) {
     threads[i]->join();
@@ -183,9 +201,7 @@ TEST_F(End2endTest, MultipleRpcs) {
 
 // Set a 10us deadline and make sure proper error is returned.
 TEST_F(End2endTest, RpcDeadlineExpires) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -194,19 +210,15 @@ TEST_F(End2endTest, RpcDeadlineExpires) {
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::microseconds(10);
   context.set_absolute_deadline(deadline);
-  Status s = stub->Echo(&context, request, &response);
+  Status s = stub_->Echo(&context, request, &response);
   // TODO(yangg) use correct error code when b/18793983 is fixed.
   // EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.code());
   EXPECT_EQ(StatusCode::CANCELLED, s.code());
-
-  delete stub;
 }
 
 // Set a long but finite deadline.
 TEST_F(End2endTest, RpcLongDeadline) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -215,18 +227,14 @@ TEST_F(End2endTest, RpcLongDeadline) {
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::hours(1);
   context.set_absolute_deadline(deadline);
-  Status s = stub->Echo(&context, request, &response);
+  Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.IsOk());
-
-  delete stub;
 }
 
 // Ask server to echo back the deadline it sees.
 TEST_F(End2endTest, EchoDeadline) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -236,7 +244,7 @@ TEST_F(End2endTest, EchoDeadline) {
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::seconds(100);
   context.set_absolute_deadline(deadline);
-  Status s = stub->Echo(&context, request, &response);
+  Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.IsOk());
   gpr_timespec sent_deadline;
@@ -244,56 +252,44 @@ TEST_F(End2endTest, EchoDeadline) {
   // Allow 1 second error.
   EXPECT_LE(response.param().request_deadline() - sent_deadline.tv_sec, 1);
   EXPECT_GE(response.param().request_deadline() - sent_deadline.tv_sec, -1);
-
-  delete stub;
 }
 
 // Ask server to echo back the deadline it sees. The rpc has no deadline.
 TEST_F(End2endTest, EchoDeadlineForNoDeadlineRpc) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
   request.mutable_param()->set_echo_deadline(true);
 
   ClientContext context;
-  Status s = stub->Echo(&context, request, &response);
+  Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.IsOk());
   EXPECT_EQ(response.param().request_deadline(), gpr_inf_future.tv_sec);
-
-  delete stub;
 }
 
 TEST_F(End2endTest, UnimplementedRpc) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
 
   ClientContext context;
-  Status s = stub->Unimplemented(&context, request, &response);
+  Status s = stub_->Unimplemented(&context, request, &response);
   EXPECT_FALSE(s.IsOk());
   EXPECT_EQ(s.code(), grpc::StatusCode::UNIMPLEMENTED);
   EXPECT_EQ(s.details(), "");
   EXPECT_EQ(response.message(), "");
-
-  delete stub;
 }
 
 TEST_F(End2endTest, RequestStreamOneRequest) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
 
-  ClientWriter<EchoRequest>* stream = stub->RequestStream(&context, &response);
+  ClientWriter<EchoRequest>* stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   stream->WritesDone();
@@ -302,18 +298,15 @@ TEST_F(End2endTest, RequestStreamOneRequest) {
   EXPECT_TRUE(s.IsOk());
 
   delete stream;
-  delete stub;
 }
 
 TEST_F(End2endTest, RequestStreamTwoRequests) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
 
-  ClientWriter<EchoRequest>* stream = stub->RequestStream(&context, &response);
+  ClientWriter<EchoRequest>* stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->Write(request));
@@ -323,19 +316,17 @@ TEST_F(End2endTest, RequestStreamTwoRequests) {
   EXPECT_TRUE(s.IsOk());
 
   delete stream;
-  delete stub;
 }
 
 TEST_F(End2endTest, ResponseStream) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
   request.set_message("hello");
 
-  ClientReader<EchoResponse>* stream = stub->ResponseStream(&context, &request);
+  ClientReader<EchoResponse>* stream =
+      stub_->ResponseStream(&context, &request);
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message() + "0");
   EXPECT_TRUE(stream->Read(&response));
@@ -348,20 +339,17 @@ TEST_F(End2endTest, ResponseStream) {
   EXPECT_TRUE(s.IsOk());
 
   delete stream;
-  delete stub;
 }
 
 TEST_F(End2endTest, BidiStream) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
-  TestService::Stub* stub = TestService::NewStub(channel);
+  ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
   grpc::string msg("hello");
 
   ClientReaderWriter<EchoRequest, EchoResponse>* stream =
-      stub->BidiStream(&context);
+      stub_->BidiStream(&context);
 
   request.set_message(msg + "0");
   EXPECT_TRUE(stream->Write(request));
@@ -385,7 +373,64 @@ TEST_F(End2endTest, BidiStream) {
   EXPECT_TRUE(s.IsOk());
 
   delete stream;
-  delete stub;
+}
+
+// Talk to the two services with the same name but different package names.
+// The two stubs are created on the same channel.
+TEST_F(End2endTest, DiffPackageServices) {
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str(), ChannelArguments());
+
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+
+  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
+      grpc::cpp::test::util::TestService::NewStub(channel));
+  ClientContext context;
+  Status s = stub->Echo(&context, request, &response);
+  EXPECT_EQ(response.message(), request.message());
+  EXPECT_TRUE(s.IsOk());
+
+  std::unique_ptr<grpc::cpp::test::util::duplicate::TestService::Stub>
+      dup_pkg_stub(
+          grpc::cpp::test::util::duplicate::TestService::NewStub(channel));
+  ClientContext context2;
+  s = dup_pkg_stub->Echo(&context2, request, &response);
+  EXPECT_EQ("no package", response.message());
+  EXPECT_TRUE(s.IsOk());
+}
+
+// rpc and stream should fail on bad credentials.
+TEST_F(End2endTest, BadCredentials) {
+  std::unique_ptr<Credentials> bad_creds =
+      CredentialsFactory::ServiceAccountCredentials("", "",
+                                                    std::chrono::seconds(1));
+  EXPECT_EQ(nullptr, bad_creds.get());
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
+  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
+      grpc::cpp::test::util::TestService::NewStub(channel));
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  grpc::string msg("hello");
+
+  Status s = stub->Echo(&context, request, &response);
+  EXPECT_EQ("", response.message());
+  EXPECT_FALSE(s.IsOk());
+  EXPECT_EQ(StatusCode::UNKNOWN, s.code());
+  EXPECT_EQ("Rpc sent on a lame channel.", s.details());
+
+  ClientContext context2;
+  ClientReaderWriter<EchoRequest, EchoResponse>* stream =
+      stub->BidiStream(&context2);
+  s = stream->Wait();
+  EXPECT_FALSE(s.IsOk());
+  EXPECT_EQ(StatusCode::UNKNOWN, s.code());
+  EXPECT_EQ("Rpc sent on a lame channel.", s.details());
+
+  delete stream;
 }
 
 }  // namespace testing

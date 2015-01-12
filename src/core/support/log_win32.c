@@ -39,12 +39,42 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *message) {
+  const char *message = NULL;
+  va_list args;
+  int ret;
+
+  /* Determine the length. */
+  va_start(args, format);
+  ret = _vscprintf(format, args);
+  va_end(args);
+  if (!(0 <= ret && ret < ~(size_t)0)) {
+    message = NULL;
+  } else {
+    /* Allocate a new buffer, with space for the NUL terminator. */
+    strp_buflen = (size_t)ret + 1;
+    message = gpr_malloc(strp_buflen);
+
+    /* Print to the buffer. */
+    va_start(args, format);
+    ret = vsnprintf_s(message, strp_buflen, _TRUNCATE, format, args);
+    va_end(args);
+    if (ret != strp_buflen - 1) {
+      /* This should never happen. */
+      gpr_free(message);
+      message = NULL;
+    }
+  }
+
+  gpr_log_message(file, line, severity, message);
+  gpr_free(message);
+}
+
 /* Simple starter implementation */
-void gpr_vlog(const char *file, int line, gpr_log_severity severity,
-              const char *format, va_list args) {
-  fprintf(stderr, "%s %s:%d: ", gpr_log_severity_string(severity), file, line);
-  vfprintf(stderr, format, args);
-  fputc('\n', stderr);
+void gpr_default_log(gpr_log_func_args *args) {
+  fprintf(stderr, "%s %s:%d: %s\n", gpr_log_severity_string(severity),
+          args->file, args->line, args->message);
 }
 
 #endif

@@ -451,7 +451,7 @@ static grpc_channel *grpc_ssl_channel_create(grpc_credentials *creds,
   grpc_security_status status = GRPC_SECURITY_OK;
   size_t i = 0;
   const char *secure_peer_name = target;
-  for (i = 0; i < args->num_args; i++) {
+  for (i = 0; args && i < args->num_args; i++) {
     grpc_arg *arg = &args->args[i];
     if (!strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) &&
         arg->type == GRPC_ARG_STRING) {
@@ -492,12 +492,17 @@ static grpc_channel *grpc_channel_create_from_composite_creds(
     return grpc_ssl_channel_create(
         composite_creds, grpc_ssl_credentials_get_config(creds), target, args);
   }
-  return NULL; /* TODO(ctiller): return lame channel. */
+  gpr_log(GPR_ERROR, "Credentials is insufficient to create a secure channel.");
+  return grpc_lame_client_channel_create();
 }
 
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
                                          const char *target,
                                          const grpc_channel_args *args) {
+  if (creds == NULL) {
+    gpr_log(GPR_ERROR, "No credentials to create a secure channel.");
+    return grpc_lame_client_channel_create();
+  }
   if (grpc_credentials_has_request_metadata_only(creds)) {
     gpr_log(GPR_ERROR,
             "Credentials is insufficient to create a secure channel.");
@@ -518,7 +523,8 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
     return grpc_channel_create_from_composite_creds(creds, target, args);
   } else {
     gpr_log(GPR_ERROR,
-            "Unknown credentials type %s for creating a secure channel.");
+            "Unknown credentials type %s for creating a secure channel.",
+            creds->type);
     return grpc_lame_client_channel_create();
   }
 }

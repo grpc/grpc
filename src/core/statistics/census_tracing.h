@@ -31,39 +31,29 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_RPC_METHOD_H__
-#define __GRPCPP_INTERNAL_RPC_METHOD_H__
+#ifndef __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
+#define __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
 
-namespace google {
-namespace protobuf {
-class Message;
-}
-}
+/* Opaque structure for trace object */
+typedef struct trace_obj trace_obj;
 
-namespace grpc {
+/* Initializes trace store. This function is thread safe. */
+void census_tracing_init();
 
-class RpcMethod {
- public:
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING
-  };
+/* Shutsdown trace store. This function is thread safe. */
+void census_tracing_shutdown();
 
-  explicit RpcMethod(const char* name)
-      : name_(name), method_type_(NORMAL_RPC) {}
-  RpcMethod(const char* name, RpcType type) : name_(name), method_type_(type) {}
+/* Gets trace obj corresponding to the input op_id. Returns NULL if trace store
+   is not initialized or trace obj is not found. Requires trace store being
+   locked before calling this function. */
+trace_obj* census_get_trace_obj_locked(census_op_id op_id);
 
-  const char *name() const { return name_; }
+/* The following two functions acquire and release the trace store global lock.
+   They are for census internal use only. */
+void census_internal_lock_trace_store();
+void census_internal_unlock_trace_store();
 
-  RpcType method_type() const { return method_type_; }
+/* Gets method tag name associated with the input trace object. */
+const char* census_get_trace_method_name(const trace_obj* trace);
 
- private:
-  const char *name_;
-  const RpcType method_type_;
-};
-
-}  // namespace grpc
-
-#endif  // __GRPCPP_INTERNAL_RPC_METHOD_H__
+#endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_ */

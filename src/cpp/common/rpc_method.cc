@@ -31,59 +31,6 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include <grpc++/impl/rpc_method.h>
 
-#ifdef GPR_ANDROID
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <android/log.h>
-
-static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
-  switch (severity) {
-    case GPR_LOG_SEVERITY_DEBUG:
-      return ANDROID_LOG_DEBUG;
-    case GPR_LOG_SEVERITY_INFO:
-      return ANDROID_LOG_INFO;
-    case GPR_LOG_SEVERITY_ERROR:
-      return ANDROID_LOG_ERROR;
-  }
-  return ANDROID_LOG_DEFAULT;
-}
-
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...) {
-  char *message = NULL;
-  va_list args;
-  va_start(args, format);
-  vasprintf(&message, format, args);
-  va_end(args);
-  gpr_log_message(file, line, severity, message);
-  free(message);
-}
-
-void gpr_default_log(gpr_log_func_args *args) {
-  char *final_slash;
-  const char *display_file;
-  char *output = NULL;
-
-  final_slash = strrchr(args->file, '/');
-  if (final_slash == NULL)
-    display_file = file;
-  else
-    display_file = final_slash + 1;
-
-  asprintf(&prefix, "%s:%d] %s", display_file, args->line, args->message);
-
-  __android_log_write(severity_to_log_priority(args->severity), "GRPC", output);
-
-  /* allocated by asprintf => use free, not gpr_free */
-  free(prefix);
-  free(suffix);
-  free(output);
-}
-
-#endif /* GPR_ANDROID */
+namespace grpc {}  // namespace grpc

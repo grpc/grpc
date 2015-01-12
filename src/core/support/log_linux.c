@@ -49,17 +49,27 @@
 
 static long gettid() { return syscall(__NR_gettid); }
 
-void gpr_vlog(const char *file, int line, gpr_log_severity severity,
-              const char *format, va_list args) {
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *format, ...) {
+  char *message = NULL;
+  va_list args;
+  va_start(args, format);
+  vasprintf(&message, format, args);
+  va_end(args);
+  gpr_log_message(file, line, severity, message);
+  free(message);
+}
+
+void gpr_default_log(gpr_log_func_args *args) {
   char *final_slash;
   const char *display_file;
   char time_buffer[64];
   gpr_timespec now = gpr_now();
   struct tm tm;
 
-  final_slash = strrchr(file, '/');
+  final_slash = strrchr(args->file, '/');
   if (final_slash == NULL)
-    display_file = file;
+    display_file = args->file;
   else
     display_file = final_slash + 1;
 
@@ -70,12 +80,10 @@ void gpr_vlog(const char *file, int line, gpr_log_severity severity,
     strcpy(time_buffer, "error:strftime");
   }
 
-  flockfile(stderr);
-  fprintf(stderr, "%s%s.%09d %7ld %s:%d] ", gpr_log_severity_string(severity),
-          time_buffer, (int)(now.tv_nsec), gettid(), display_file, line);
-  vfprintf(stderr, format, args);
-  fputc('\n', stderr);
-  funlockfile(stderr);
+  fprintf(stderr, "%s%s.%09d %7ld %s:%d] %s\n",
+          gpr_log_severity_string(args->severity), time_buffer,
+          (int)(now.tv_nsec), gettid(), display_file, args->line,
+          args->message);
 }
 
 #endif

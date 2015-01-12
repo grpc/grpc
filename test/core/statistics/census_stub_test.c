@@ -44,7 +44,8 @@
 void test_census_stubs() {
   census_op_id op_id;
   census_rpc_stats* stats = census_rpc_stats_create_empty();
-  census_aggregated_rpc_stats data_map;
+  census_aggregated_rpc_stats data_map = {0, NULL};
+
   /* Initializes census library at server start up time. */
   census_init();
   /* Starts tracing at the beginning of a rpc. */
@@ -62,8 +63,9 @@ void test_census_stubs() {
   census_tracing_end_op(op_id);
   /* In process stats queries. */
   census_get_server_stats(&data_map);
+  census_aggregated_rpc_stats_set_empty(&data_map);
   census_get_client_stats(&data_map);
-  census_aggregated_rpc_stats_destroy(&data_map);
+  census_aggregated_rpc_stats_set_empty(&data_map);
   gpr_free(stats);
   census_shutdown();
 }

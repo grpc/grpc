@@ -141,6 +141,7 @@
         "src/core/statistics/census_interface.h",
         "src/core/statistics/census_log.h",
         "src/core/statistics/census_rpc_stats.h",
+        "src/core/statistics/census_tracing.h",
         "src/core/statistics/hash_table.h",
         "src/core/statistics/window_stats.h",
         "src/core/surface/call.h",
@@ -334,7 +335,7 @@
         "src/cpp/client/credentials.cc",
         "src/cpp/client/internal_stub.cc",
         "src/cpp/proto/proto_utils.cc",
-        "src/cpp/rpc_method.cc",
+        "src/cpp/common/rpc_method.cc",
         "src/cpp/server/async_server.cc",
         "src/cpp/server/async_server_context.cc",
         "src/cpp/server/completion_queue.cc",
@@ -358,6 +359,9 @@
         "include/grpc++/config.h",
         "include/grpc++/create_channel.h",
         "include/grpc++/credentials.h",
+        "include/grpc++/impl/internal_stub.h",
+        "include/grpc++/impl/rpc_method.h",
+        "include/grpc++/impl/rpc_service_method.h",
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
@@ -368,10 +372,7 @@
       ],
       "headers": [
         "src/cpp/client/channel.h",
-        "src/cpp/client/internal_stub.h",
         "src/cpp/proto/proto_utils.h",
-        "src/cpp/rpc_method.h",
-        "src/cpp/server/rpc_service_method.h",
         "src/cpp/server/server_rpc_handler.h",
         "src/cpp/server/thread_pool.h",
         "src/cpp/stream/stream_context.h",
@@ -385,7 +386,9 @@
       "name": "grpc++_test_util",
       "build": "test",
       "src": [
+        "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
+        "test/cpp/util/echo_duplicate.proto",
         "test/cpp/util/create_test_channel.cc",
         "test/cpp/end2end/async_test_server.cc"
       ],
@@ -435,6 +438,24 @@
         "src/compiler/cpp_generator_helpers-inl.h",
         "src/compiler/cpp_generator_map-inl.h",
         "src/compiler/cpp_generator_string-inl.h"
+      ],
+      "deps": []
+    },
+
+    {
+      "name": "go_plugin",
+      "build": "protoc",
+      "c++": true,
+      "secure": false,
+      "src": [
+        "src/compiler/go_plugin.cpp",
+        "src/compiler/go_generator.cpp"
+      ],
+      "headers": [
+        "src/compiler/go_generator.h",
+        "src/compiler/go_generator_helpers-inl.h",
+        "src/compiler/go_generator_map-inl.h",
+        "src/compiler/go_generator_string-inl.h"
       ],
       "deps": []
     },
@@ -840,6 +861,30 @@
       "build": "benchmark",
       "src": [
         "test/core/surface/completion_queue_benchmark.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "census_trace_store_test",
+      "build": "executable",
+      "src": [
+        "test/core/statistics/trace_test.c"
+      ],
+     "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "census_stats_store_test",
+      "build": "executable",
+      "src": [
+        "test/core/statistics/rpc_stats_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1323,6 +1368,7 @@
         "test/cpp/end2end/end2end_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1335,6 +1381,18 @@
       "c++": true,
       "src": [
         "test/cpp/client/channel_arguments_test.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc"
+      ]
+    },
+    {
+      "name": "credentials_test",
+      "build": "test",
+      "c++": true,
+      "src": [
+        "test/cpp/client/credentials_test.cc"
       ],
       "deps": [
         "grpc++",

@@ -1,7 +1,6 @@
 """Helper to watch a (set) of directories for modifications."""
 
 import os
-import threading
 import time
 
 
@@ -11,7 +10,6 @@ class DirWatcher(object):
   def __init__(self, paths):
     if isinstance(paths, basestring):
       paths = [paths]
-    self._mu = threading.Lock()
     self._done = False
     self.paths = list(paths)
     self.lastrun = time.time()
@@ -35,12 +33,8 @@ class DirWatcher(object):
     return most_recent_change
 
   def most_recent_change(self):
-    self._mu.acquire()
-    try:
-      if time.time() - self.lastrun > 1:
-        self._cache = self._calculate()
-        self.lastrun = time.time()
-      return self._cache
-    finally:
-      self._mu.release()
+    if time.time() - self.lastrun > 1:
+      self._cache = self._calculate()
+      self.lastrun = time.time()
+    return self._cache
 

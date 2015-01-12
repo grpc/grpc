@@ -41,13 +41,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/cpp/rpc_method.h"
 #include "src/cpp/proto/proto_utils.h"
 #include "src/cpp/stream/stream_context.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
 #include <grpc++/config.h>
 #include <grpc++/credentials.h>
+#include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <google/protobuf/message.h>
 
@@ -69,8 +69,9 @@ Channel::Channel(const grpc::string& target,
                   : args.GetSslTargetNameOverride()) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
+  grpc_credentials* c_creds = creds ? creds->GetRawCreds() : nullptr;
   c_channel_ = grpc_secure_channel_create(
-      creds->GetRawCreds(), target.c_str(),
+      c_creds, target.c_str(),
       channel_args.num_args > 0 ? &channel_args : nullptr);
 }
 
@@ -118,10 +119,15 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
                                     finished_tag,
                                     GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   ev = grpc_completion_queue_pluck(cq, invoke_tag, gpr_inf_future);
+  bool success = ev->data.invoke_accepted == GRPC_OP_OK;
   grpc_event_finish(ev);
+  if (!success) {
+    GetFinalStatus(cq, finished_tag, &status);
+    return status;
+  }
   // write request
   grpc_byte_buffer* write_buffer = nullptr;
-  bool success = SerializeProto(request, &write_buffer);
+  success = SerializeProto(request, &write_buffer);
   if (!success) {
     grpc_call_cancel(call);
     status =

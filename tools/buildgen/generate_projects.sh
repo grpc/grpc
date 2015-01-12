@@ -1,13 +1,13 @@
 #!/bin/bash
 
-set -ex
+set -x
 
 if [ "x$TEST" == "x" ] ; then
   TEST=false
 fi
 
 
-cd `dirname $0`/..
+cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
 gen_build_json=test/core/end2end/gen_build_json.py
 
@@ -33,8 +33,6 @@ for dir in . ; do
     if [ $TEST == true ] ; then
       actual_out=$out
       out=`mktemp`
-    else
-      g4 open $out || true
     fi
     $mako_renderer $plugins $data -o $out $file
     if [ $TEST == true ] ; then

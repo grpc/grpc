@@ -37,11 +37,11 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include "src/cpp/server/rpc_service_method.h"
 #include "src/cpp/server/server_rpc_handler.h"
 #include "src/cpp/server/thread_pool.h"
 #include <grpc++/async_server_context.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/server_credentials.h>
 
 namespace grpc {

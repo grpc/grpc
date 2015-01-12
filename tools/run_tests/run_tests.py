@@ -76,7 +76,7 @@ def _build_and_run(check_cancelled):
         '-j', '%d' % (multiprocessing.cpu_count() + 1),
         'buildtests_c',
         'CONFIG=%s' % cfg]
-       for cfg in build_configs), check_cancelled):
+       for cfg in build_configs), check_cancelled, maxjobs=1):
     sys.exit(1)
 
   # run all the tests

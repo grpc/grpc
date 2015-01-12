@@ -31,30 +31,43 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_CLIENT_INTERNAL_STUB_H__
-#define __GRPCPP_INTERNAL_CLIENT_INTERNAL_STUB_H__
+#include <grpc++/credentials.h>
 
 #include <memory>
 
-#include <grpc++/channel_interface.h>
+#include <grpc/grpc.h>
+#include <gtest/gtest.h>
 
 namespace grpc {
+namespace testing {
 
-class InternalStub {
- public:
-  InternalStub() {}
-  virtual ~InternalStub() {}
-
-  void set_channel(const std::shared_ptr<ChannelInterface>& channel) {
-    channel_ = channel;
-  }
-
-  ChannelInterface* channel() { return channel_.get(); }
-
- private:
-  std::shared_ptr<ChannelInterface> channel_;
+class CredentialsTest : public ::testing::Test {
+ protected:
 };
 
+TEST_F(CredentialsTest, InvalidSslCreds) {
+  std::unique_ptr<Credentials> bad1 =
+      CredentialsFactory::SslCredentials({"", "", ""});
+  EXPECT_EQ(nullptr, bad1.get());
+  std::unique_ptr<Credentials> bad2 =
+      CredentialsFactory::SslCredentials({"", "bla", "bla"});
+  EXPECT_EQ(nullptr, bad2.get());
+}
+
+TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
+  std::unique_ptr<Credentials> bad1 =
+      CredentialsFactory::ServiceAccountCredentials("", "",
+                                                    std::chrono::seconds(1));
+  EXPECT_EQ(nullptr, bad1.get());
+}
+
+}  // namespace testing
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_CLIENT_INTERNAL_STUB_H__
+int main(int argc, char **argv) {
+
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
+}

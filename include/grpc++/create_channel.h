@@ -46,6 +46,7 @@ class ChannelInterface;
 std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string& target,
                                                 const ChannelArguments& args);
 
+// If creds does not hold an object or is invalid, a lame channel is returned.
 std::shared_ptr<ChannelInterface> CreateChannel(
     const grpc::string& target, const std::unique_ptr<Credentials>& creds,
     const ChannelArguments& args);

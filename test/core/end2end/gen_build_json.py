@@ -21,6 +21,7 @@ END2END_TESTS = [
     'cancel_after_invoke',
     'cancel_before_invoke',
     'cancel_in_a_vacuum',
+    'census_simple_request',
     'disappearing_server',
     'early_server_shutdown_finishes_inflight_calls',
     'early_server_shutdown_finishes_tags',

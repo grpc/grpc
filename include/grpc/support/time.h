@@ -107,6 +107,8 @@ struct timeval gpr_timeval_from_timespec(gpr_timespec t);
 
 gpr_timespec gpr_timespec_from_timeval(struct timeval t);
 
+double gpr_timespec_to_micros(gpr_timespec t);
+
 #ifdef __cplusplus
 }
 #endif

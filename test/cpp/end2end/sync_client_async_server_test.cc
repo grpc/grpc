@@ -39,17 +39,17 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
-#include "src/cpp/client/internal_stub.h"
-#include "src/cpp/rpc_method.h"
 #include "test/cpp/util/echo.pb.h"
-#include "net/util/netutil.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/impl/internal_stub.h>
+#include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/end2end/async_test_server.h"
+#include "net/util/netutil.h"
 #include <gtest/gtest.h>
 
 using grpc::cpp::test::util::EchoRequest;
