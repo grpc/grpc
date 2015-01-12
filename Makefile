@@ -1574,7 +1574,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/credentials.cc \
     src/cpp/client/internal_stub.cc \
     src/cpp/proto/proto_utils.cc \
-    src/cpp/rpc_method.cc \
+    src/cpp/common/rpc_method.cc \
     src/cpp/server/async_server.cc \
     src/cpp/server/async_server_context.cc \
     src/cpp/server/completion_queue.cc \
