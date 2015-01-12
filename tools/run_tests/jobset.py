@@ -8,7 +8,7 @@ import tempfile
 import time
 
 
-_MAX_JOBS = 16 * multiprocessing.cpu_count()
+_MAX_JOBS = 3
 
 
 def shuffle_iteratable(it):
@@ -108,6 +108,7 @@ class Jobset(object):
     self._check_cancelled = check_cancelled
     self._cancelled = False
     self._failures = 0
+    self._completed = 0
 
   def start(self, cmdline):
     """Start a job. Return True on success, False on failure."""
@@ -128,9 +129,11 @@ class Jobset(object):
         if st == _FAILURE: self._failures += 1
         dead.add(job)
       for job in dead:
+        self._completed += 1
         self._running.remove(job)
       if dead: return
-      message('WAITING', '%d jobs left' % len(self._running))
+      message('WAITING', '%d jobs running, %d complete' % (
+          len(self._running), self._completed))
       time.sleep(0.1)
 
   def cancelled(self):
