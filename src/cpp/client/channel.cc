@@ -41,13 +41,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-#include "src/cpp/rpc_method.h"
 #include "src/cpp/proto/proto_utils.h"
 #include "src/cpp/stream/stream_context.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
 #include <grpc++/config.h>
 #include <grpc++/credentials.h>
+#include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <google/protobuf/message.h>
 

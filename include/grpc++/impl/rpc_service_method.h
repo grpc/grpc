@@ -31,18 +31,18 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_SERVER_RPC_SERVICE_METHOD_H__
-#define __GRPCPP_INTERNAL_SERVER_RPC_SERVICE_METHOD_H__
+#ifndef __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__
+#define __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__
 
 #include <functional>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "src/cpp/rpc_method.h"
-#include <google/protobuf/message.h>
+#include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include <google/protobuf/message.h>
 
 namespace grpc {
 class ServerContext;
@@ -200,9 +200,7 @@ class RpcService {
     methods_.push_back(std::unique_ptr<RpcServiceMethod>(method));
   }
 
-  RpcServiceMethod* GetMethod(int i) {
-    return methods_[i].get();
-  }
+  RpcServiceMethod* GetMethod(int i) { return methods_[i].get(); }
   int GetMethodCount() const { return methods_.size(); }
 
  private:
@@ -211,4 +209,4 @@ class RpcService {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_SERVER_RPC_SERVICE_METHOD_H__
+#endif  // __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__

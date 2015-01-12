@@ -141,10 +141,10 @@ static gpr_int32 find_bucket_idx(const census_ht* ht, census_ht_key key) {
 
 static int keys_match(const census_ht_option* opt, const ht_entry* p,
                       const census_ht_key key) {
+  GPR_ASSERT(opt->key_type == CENSUS_HT_UINT64 ||
+             opt->key_type == CENSUS_HT_POINTER);
   if (opt->key_type == CENSUS_HT_UINT64) return p->key.val == key.val;
-  if (opt->key_type == CENSUS_HT_POINTER)
-    return !opt->compare_keys((p->key).ptr, key.ptr);
-  return 0;
+  return !opt->compare_keys((p->key).ptr, key.ptr);
 }
 
 static entry_locator ht_find(const census_ht* ht, census_ht_key key) {

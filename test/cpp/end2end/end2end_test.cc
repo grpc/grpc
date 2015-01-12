@@ -36,7 +36,6 @@
 
 #include "net/grpc/cpp/echo_duplicate_proto_cc.pb.h"
 #include "test/cpp/util/echo.pb.h"
-#include "src/cpp/server/rpc_service_method.h"
 #include "src/cpp/util/time.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>

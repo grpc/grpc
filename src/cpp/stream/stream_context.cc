@@ -34,11 +34,11 @@
 #include "src/cpp/stream/stream_context.h"
 
 #include <grpc/support/log.h>
-#include "src/cpp/rpc_method.h"
 #include "src/cpp/proto/proto_utils.h"
 #include "src/cpp/util/time.h"
 #include <grpc++/client_context.h>
 #include <grpc++/config.h>
+#include <grpc++/impl/rpc_method.h>
 #include <google/protobuf/message.h>
 
 namespace grpc {

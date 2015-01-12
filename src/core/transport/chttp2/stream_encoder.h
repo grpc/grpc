@@ -78,9 +78,16 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *mdctx);
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c);
 
-gpr_uint32 grpc_chttp2_encode_some(grpc_stream_op *ops, size_t *ops_count,
-                                   int eof, gpr_slice_buffer *output,
-                                   gpr_uint32 max_bytes, gpr_uint32 stream_id,
-                                   grpc_chttp2_hpack_compressor *compressor);
+/* select stream ops to be encoded, moving them from inops to outops, and
+   moving subsequent ops in inops forward in the queue */
+gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
+                                 gpr_uint32 max_flow_controlled_bytes,
+                                 grpc_stream_op_buffer *outops);
+
+/* encode stream ops to output */
+void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
+                        gpr_uint32 stream_id,
+                        grpc_chttp2_hpack_compressor *compressor,
+                        gpr_slice_buffer *output);
 
 #endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_STREAM_ENCODER_H__ */

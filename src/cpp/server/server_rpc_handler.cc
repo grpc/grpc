@@ -34,10 +34,10 @@
 #include "src/cpp/server/server_rpc_handler.h"
 
 #include <grpc/support/log.h>
-#include "src/cpp/server/rpc_service_method.h"
 #include "src/cpp/server/server_context_impl.h"
 #include "src/cpp/stream/stream_context.h"
 #include <grpc++/async_server_context.h>
+#include <grpc++/impl/rpc_service_method.h>
 
 namespace grpc {
 

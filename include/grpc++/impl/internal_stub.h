@@ -31,39 +31,30 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_RPC_METHOD_H__
-#define __GRPCPP_INTERNAL_RPC_METHOD_H__
+#ifndef __GRPCPP_IMPL_INTERNAL_STUB_H__
+#define __GRPCPP_IMPL_INTERNAL_STUB_H__
 
-namespace google {
-namespace protobuf {
-class Message;
-}
-}
+#include <memory>
+
+#include <grpc++/channel_interface.h>
 
 namespace grpc {
 
-class RpcMethod {
+class InternalStub {
  public:
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING
-  };
+  InternalStub() {}
+  virtual ~InternalStub() {}
 
-  explicit RpcMethod(const char* name)
-      : name_(name), method_type_(NORMAL_RPC) {}
-  RpcMethod(const char* name, RpcType type) : name_(name), method_type_(type) {}
+  void set_channel(const std::shared_ptr<ChannelInterface>& channel) {
+    channel_ = channel;
+  }
 
-  const char *name() const { return name_; }
-
-  RpcType method_type() const { return method_type_; }
+  ChannelInterface* channel() { return channel_.get(); }
 
  private:
-  const char *name_;
-  const RpcType method_type_;
+  std::shared_ptr<ChannelInterface> channel_;
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_RPC_METHOD_H__
+#endif  // __GRPCPP_IMPL_INTERNAL_STUB_H__

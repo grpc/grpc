@@ -333,6 +333,45 @@ grpc_interop_test_args() {
   }
 }
 
+grpc_update_docker_images_args() {
+  [[ -n $1 ]] && {  # host
+    host=$1
+    shift
+  } || {
+    echo "$FUNCNAME: missing arg: host" 1>&2
+    return 1
+  }
+}
+
+# Updates all the known docker images on a host..
+#
+# call-seq;
+#   grpc_update_docker_images <server_name>
+#
+# Updates the GCE docker instance <server_name>
+grpc_update_docker_images() {
+  # declare vars local so that they don't pollute the shell environment
+  # where they this func is used.
+  local grpc_zone grpc_project dry_run  # set by grpc_set_project_and_zone
+  # set by grpc_update_docker_images_args
+  local host
+
+  # set the project zone and check that all necessary args are provided
+  grpc_set_project_and_zone -f grpc_update_docker_images_args "$@" || return 1
+  gce_has_instance $grpc_project $host || return 1;
+
+  local func_lib="/var/local/startup_scripts/shared_startup_funcs.sh"
+  local cmd="source $func_lib && grpc_docker_pull_known"
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  local ssh_cmd="bash -l -c \"$cmd\""
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+}
+
 grpc_launch_server_args() {
   [[ -n $1 ]] && {  # host
     host=$1

@@ -31,6 +31,21 @@
  *
  */
 
-#include <grpc++/impl/internal_stub.h>
+#ifndef NET_GRPC_COMPILER_GO_GENERATOR_H_
+#define NET_GRPC_COMPILER_GO_GENERATOR_H_
 
-namespace grpc {}  // namespace grpc
+#include <string>
+
+namespace google {
+namespace protobuf {
+class FileDescriptor;
+}  // namespace protobuf
+}  // namespace google
+
+namespace grpc_go_generator {
+
+string GetServices(const google::protobuf::FileDescriptor* file);
+
+}  // namespace grpc_go_generator
+
+#endif  // NET_GRPC_COMPILER_GO_GENERATOR_H_
