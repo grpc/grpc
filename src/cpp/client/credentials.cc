@@ -34,7 +34,7 @@
 
 #include <string>
 
-#include <grpc/grpc_security_google.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
 #include <grpc++/credentials.h>

@@ -282,8 +282,7 @@
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_interface.h",
-        "src/core/tsi/transport_security_test_lib.h"
+        "src/core/tsi/transport_security_interface.h"
       ],
       "deps": [
         "gpr"
