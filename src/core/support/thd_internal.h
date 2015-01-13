@@ -36,4 +36,4 @@
 
 /* Internal interfaces between modules within the gpr support library.  */
 
-#endif  /* __GRPC_INTERNAL_SUPPORT_THD_INTERNAL_H__ */
+#endif /* __GRPC_INTERNAL_SUPPORT_THD_INTERNAL_H__ */

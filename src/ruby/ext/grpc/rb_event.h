@@ -50,4 +50,4 @@ VALUE grpc_rb_new_event(grpc_event *ev);
 /* Initializes the Event and EventError classes. */
 void Init_google_rpc_event();
 
-#endif  /* GRPC_RB_EVENT_H_ */
+#endif /* GRPC_RB_EVENT_H_ */

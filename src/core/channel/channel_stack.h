@@ -302,4 +302,4 @@ void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
   } while (0)
 #endif
 
-#endif  /* __GRPC_INTERNAL_CHANNEL_CHANNEL_STACK_H__ */
+#endif /* __GRPC_INTERNAL_CHANNEL_CHANNEL_STACK_H__ */

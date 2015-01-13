@@ -46,4 +46,4 @@ extern const grpc_channel_filter grpc_connected_channel_filter;
 grpc_transport_setup_result grpc_connected_channel_bind_transport(
     grpc_channel_stack *channel_stack, grpc_transport *transport);
 
-#endif  /* __GRPC_INTERNAL_CHANNEL_CONNECTED_CHANNEL_H__ */
+#endif /* __GRPC_INTERNAL_CHANNEL_CONNECTED_CHANNEL_H__ */

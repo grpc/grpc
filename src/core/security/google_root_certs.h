@@ -37,4 +37,4 @@
 extern unsigned char grpc_google_root_certs[];
 extern unsigned int grpc_google_root_certs_size;
 
-#endif  /* __GRPC_INTERNAL_SECURITY_GOOGLE_ROOT_CERTS_H__ */
+#endif /* __GRPC_INTERNAL_SECURITY_GOOGLE_ROOT_CERTS_H__ */

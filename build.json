@@ -282,8 +282,7 @@
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_interface.h",
-        "src/core/tsi/transport_security_test_lib.h"
+        "src/core/tsi/transport_security_interface.h"
       ],
       "deps": [
         "gpr"
@@ -1342,6 +1341,7 @@
         "test/cpp/end2end/sync_client_async_server_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1354,9 +1354,7 @@
       "build": "test",
       "c++": true,
       "src": [
-        "test/cpp/interop/empty.proto",
-        "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
+        "test/cpp/qps/qpstest.proto",
         "test/cpp/qps/client.cc"
       ],
       "deps": [
@@ -1373,9 +1371,7 @@
       "build": "test",
       "c++": true,
       "src": [
-        "test/cpp/interop/empty.proto",
-        "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
+        "test/cpp/qps/qpstest.proto",
         "test/cpp/qps/server.cc"
       ],
       "deps": [
@@ -1452,7 +1448,8 @@
       ],
       "deps": [
         "grpc++",
-        "grpc"
+        "grpc",
+        "gpr"
       ]
     },
     {
@@ -1464,7 +1461,8 @@
       ],
       "deps": [
         "grpc++",
-        "grpc"
+        "grpc",
+        "gpr"
       ]
     },
     {

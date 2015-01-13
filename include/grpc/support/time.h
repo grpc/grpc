@@ -113,4 +113,4 @@ double gpr_timespec_to_micros(gpr_timespec t);
 }
 #endif
 
-#endif  /* __GRPC_SUPPORT_TIME_H__ */
+#endif /* __GRPC_SUPPORT_TIME_H__ */
