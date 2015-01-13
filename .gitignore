@@ -1,0 +1,6 @@
+*.pyc
+bins
+deps
+gens
+objs
+libs
