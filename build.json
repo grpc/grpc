@@ -448,25 +448,6 @@
       ],
       "deps": []
     },
-
-    {
-      "name": "go_plugin",
-      "build": "protoc",
-      "c++": true,
-      "secure": false,
-      "src": [
-        "src/compiler/go_plugin.cpp",
-        "src/compiler/go_generator.cpp"
-      ],
-      "headers": [
-        "src/compiler/go_generator.h",
-        "src/compiler/go_generator_helpers-inl.h",
-        "src/compiler/go_generator_map-inl.h",
-        "src/compiler/go_generator_string-inl.h"
-      ],
-      "deps": []
-    },
-
     {
       "name": "grpc_byte_buffer_reader_test",
       "build": "test",
