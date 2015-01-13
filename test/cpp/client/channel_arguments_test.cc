@@ -69,15 +69,12 @@ TEST_F(ChannelArgumentsTest, SetInt) {
   key = "";
   SetChannelArgs(channel_args, &args);
   EXPECT_EQ(2, args.num_args);
-  bool found[2] = {false, false};
   // We do not enforce order on the arguments.
-  for (int i = 0; i < args.num_args; i++) {
+  for (size_t i = 0; i < args.num_args; i++) {
     EXPECT_EQ(GRPC_ARG_INTEGER, args.args[i].type);
     if (grpc::string(args.args[i].key) == "key0") {
-      found[0] = true;
       EXPECT_EQ(0, args.args[i].value.integer);
     } else if (grpc::string(args.args[i].key) == "key1") {
-      found[1] = true;
       EXPECT_EQ(1, args.args[i].value.integer);
     }
   }
@@ -107,15 +104,12 @@ TEST_F(ChannelArgumentsTest, SetString) {
   channel_args.SetString(key, val);
   SetChannelArgs(channel_args, &args);
   EXPECT_EQ(2, args.num_args);
-  bool found[2] = {false, false};
   // We do not enforce order on the arguments.
-  for (int i = 0; i < args.num_args; i++) {
+  for (size_t i = 0; i < args.num_args; i++) {
     EXPECT_EQ(GRPC_ARG_STRING, args.args[i].type);
     if (grpc::string(args.args[i].key) == "key0") {
-      found[0] = true;
       EXPECT_STREQ("val0", args.args[i].value.string);
     } else if (grpc::string(args.args[i].key) == "key1") {
-      found[1] = true;
       EXPECT_STREQ("val1", args.args[i].value.string);
     }
   }
@@ -125,6 +119,6 @@ TEST_F(ChannelArgumentsTest, SetString) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-
+  ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -35,6 +35,7 @@
 #define __GRPC_INTERNAL_IOMGR_POLLSET_H_
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 /* A grpc_pollset is a set of file descriptors that a higher level item is
    interested in. For example:
