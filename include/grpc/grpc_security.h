@@ -97,7 +97,6 @@ grpc_credentials *grpc_fake_transport_security_credentials_create(void);
 grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
                                               const char *authority_selector);
 
-
 /* --- Secure channel creation. --- */
 
 /* The caller of the secure_channel_create functions may override the target
@@ -151,7 +150,6 @@ grpc_server_credentials *grpc_ssl_server_credentials_create(
 /* Creates a fake server transport security credentials object for testing. */
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void);
-
 
 /* --- Secure server creation. --- */
 

@@ -819,6 +819,26 @@ const grpc_credentials_array *grpc_composite_credentials_get_credentials(
   return &c->inner;
 }
 
+grpc_credentials *grpc_credentials_contains_type(
+    grpc_credentials *creds, const char *type,
+    grpc_credentials **composite_creds) {
+  size_t i;
+  if (!strcmp(creds->type, type)) {
+    if (composite_creds != NULL) *composite_creds = NULL;
+    return creds;
+  } else if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE)) {
+    const grpc_credentials_array *inner_creds_array =
+        grpc_composite_credentials_get_credentials(creds);
+    for (i = 0; i < inner_creds_array->num_creds; i++) {
+      if (!strcmp(type, inner_creds_array->creds_array[i]->type)) {
+        if (composite_creds != NULL) *composite_creds = creds;
+        return inner_creds_array->creds_array[i];
+      }
+    }
+  }
+  return NULL;
+}
+
 /* -- IAM credentials. -- */
 
 typedef struct {
@@ -877,4 +897,3 @@ grpc_credentials *grpc_iam_credentials_create(const char *token,
 /* -- Default credentials TODO(jboeuf). -- */
 
 grpc_credentials *grpc_default_credentials_create(void) { return NULL; }
-
