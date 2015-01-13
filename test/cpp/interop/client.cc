@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <chrono>
 #include <memory>
 #include <string>

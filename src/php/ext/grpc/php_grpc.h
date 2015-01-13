@@ -7,14 +7,15 @@
 extern zend_module_entry grpc_module_entry;
 #define phpext_grpc_ptr &grpc_module_entry
 
-#define PHP_GRPC_VERSION "0.1.0" /* Replace with version number for your extension */
+#define PHP_GRPC_VERSION \
+  "0.1.0" /* Replace with version number for your extension */
 
 #ifdef PHP_WIN32
-#	define PHP_GRPC_API __declspec(dllexport)
+#define PHP_GRPC_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
-#	define PHP_GRPC_API __attribute__ ((visibility("default")))
+#define PHP_GRPC_API __attribute__((visibility("default")))
 #else
-#	define PHP_GRPC_API
+#define PHP_GRPC_API
 #endif
 
 #ifdef ZTS
@@ -25,11 +26,9 @@ extern zend_module_entry grpc_module_entry;
 
 #include "grpc/grpc.h"
 
-#define RETURN_DESTROY_ZVAL(val)                        \
-  RETURN_ZVAL(                                          \
-      val,                                              \
-      false /* Don't execute copy constructor */,       \
-      true /* Dealloc original before returning */)
+#define RETURN_DESTROY_ZVAL(val)                               \
+  RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
+              true /* Dealloc original before returning */)
 
 /* These are all function declarations */
 /* Code that runs at module initialization */
@@ -40,8 +39,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc);
 PHP_MINFO_FUNCTION(grpc);
 
 /*
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:
+        Declare any global variables you may need between the BEGIN
+        and END macros here:
 
 ZEND_BEGIN_MODULE_GLOBALS(grpc)
 ZEND_END_MODULE_GLOBALS(grpc)
@@ -63,4 +62,4 @@ ZEND_END_MODULE_GLOBALS(grpc)
 #define GRPC_G(v) (grpc_globals.v)
 #endif
 
-#endif	/* PHP_GRPC_H */
+#endif /* PHP_GRPC_H */

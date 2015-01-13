@@ -94,4 +94,4 @@ typedef struct {
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_TABLE_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_TABLE_H__ */

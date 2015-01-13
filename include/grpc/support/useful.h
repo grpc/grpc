@@ -45,4 +45,4 @@
 
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
 
-#endif  /* __GRPC_SUPPORT_USEFUL_H__ */
+#endif /* __GRPC_SUPPORT_USEFUL_H__ */

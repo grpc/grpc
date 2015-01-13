@@ -43,4 +43,4 @@ typedef struct gpr_timespec {
   long tv_nsec;
 } gpr_timespec;
 
-#endif  /* __GRPC_SUPPORT_TIME_WIN32_H__ */
+#endif /* __GRPC_SUPPORT_TIME_WIN32_H__ */

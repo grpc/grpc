@@ -112,7 +112,6 @@ class CredentialsFactory {
       const grpc::string& authorization_token,
       const grpc::string& authority_selector);
 
-
   // Combines two credentials objects into a composite credentials
   static std::unique_ptr<Credentials> ComposeCredentials(
       const std::unique_ptr<Credentials>& creds1,

@@ -98,18 +98,16 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   const char *want = " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
 
   switch (TYPE(time)) {
-
     case T_DATA:
       if (CLASS_OF(time) == rb_cTimeVal) {
         Data_Get_Struct(time, gpr_timespec, time_const);
         t = *time_const;
       } else if (CLASS_OF(time) == rb_cTime) {
-        t.tv_sec =  NUM2INT(rb_funcall(time, id_tv_sec, 0));
+        t.tv_sec = NUM2INT(rb_funcall(time, id_tv_sec, 0));
         t.tv_nsec = NUM2INT(rb_funcall(time, id_tv_nsec, 0));
       } else {
-        rb_raise(rb_eTypeError,
-                 "bad input: (%s)->c_timeval, got <%s>,%s",
-                 tstr, rb_obj_classname(time), want);
+        rb_raise(rb_eTypeError, "bad input: (%s)->c_timeval, got <%s>,%s", tstr,
+                 rb_obj_classname(time), want);
       }
       break;
 
@@ -136,7 +134,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
           rb_raise(rb_eRangeError, "%f out of Time range",
                    RFLOAT(time)->float_value);
         }
-        t.tv_nsec = (time_t)(d*1e9+0.5);
+        t.tv_nsec = (time_t)(d * 1e9 + 0.5);
       }
       break;
 
@@ -148,9 +146,8 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
       break;
 
     default:
-      rb_raise(rb_eTypeError,
-               "bad input: (%s)->c_timeval, got <%s>,%s",
-               tstr, rb_obj_classname(time), want);
+      rb_raise(rb_eTypeError, "bad input: (%s)->c_timeval, got <%s>,%s", tstr,
+               rb_obj_classname(time), want);
       break;
   }
   return t;
@@ -158,8 +155,8 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
 
 void Init_google_status_codes() {
   /* Constants representing the status codes or grpc_status_code in status.h */
-  VALUE rb_mStatusCodes = rb_define_module_under(rb_mGoogleRpcCore,
-                                                 "StatusCodes");
+  VALUE rb_mStatusCodes =
+      rb_define_module_under(rb_mGoogleRpcCore, "StatusCodes");
   rb_define_const(rb_mStatusCodes, "OK", INT2NUM(GRPC_STATUS_OK));
   rb_define_const(rb_mStatusCodes, "CANCELLED", INT2NUM(GRPC_STATUS_CANCELLED));
   rb_define_const(rb_mStatusCodes, "UNKNOWN", INT2NUM(GRPC_STATUS_UNKNOWN));
@@ -218,19 +215,19 @@ VALUE grpc_rb_time_val_to_s(VALUE self) {
 
 /* Adds a module with constants that map to gpr's static timeval structs. */
 void Init_google_time_consts() {
-  VALUE rb_mTimeConsts = rb_define_module_under(rb_mGoogleRpcCore,
-                                                "TimeConsts");
-  rb_cTimeVal = rb_define_class_under(rb_mGoogleRpcCore, "TimeSpec",
-                                      rb_cObject);
+  VALUE rb_mTimeConsts =
+      rb_define_module_under(rb_mGoogleRpcCore, "TimeConsts");
+  rb_cTimeVal =
+      rb_define_class_under(rb_mGoogleRpcCore, "TimeSpec", rb_cObject);
   rb_define_const(rb_mTimeConsts, "ZERO",
-                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED,
-                                   GC_DONT_FREE, (void *)&gpr_time_0));
+                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+                                   (void *)&gpr_time_0));
   rb_define_const(rb_mTimeConsts, "INFINITE_FUTURE",
-                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED,
-                                   GC_DONT_FREE, (void *)&gpr_inf_future));
+                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+                                   (void *)&gpr_inf_future));
   rb_define_const(rb_mTimeConsts, "INFINITE_PAST",
-                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED,
-                                   GC_DONT_FREE, (void *)&gpr_inf_past));
+                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+                                   (void *)&gpr_inf_past));
   rb_define_method(rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
   rb_define_method(rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
   rb_define_method(rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);
@@ -241,9 +238,7 @@ void Init_google_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
-void grpc_rb_shutdown(void *vm) {
-  grpc_shutdown();
-}
+void grpc_rb_shutdown(void *vm) { grpc_shutdown(); }
 
 /* Initialize the Google RPC module structs */
 

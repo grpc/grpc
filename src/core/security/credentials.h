@@ -143,4 +143,4 @@ struct grpc_server_credentials {
 const grpc_ssl_config *grpc_ssl_server_credentials_get_config(
     const grpc_server_credentials *ssl_creds);
 
-#endif  /* __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__ */
+#endif /* __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__ */

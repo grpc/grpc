@@ -46,4 +46,4 @@ typedef enum {
 const char *grpc_compression_algorithm_name(
     grpc_compression_algorithm algorithm);
 
-#endif  /* __GRPC_INTERNAL_COMPRESSION_ALGORITHM_H__ */
+#endif /* __GRPC_INTERNAL_COMPRESSION_ALGORITHM_H__ */

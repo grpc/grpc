@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <string>
 
 #include <grpc/grpc_security.h>
@@ -111,7 +110,6 @@ std::unique_ptr<Credentials> CredentialsFactory::IAMCredentials(
       c_creds == nullptr ? nullptr : new Credentials(c_creds));
   return cpp_creds;
 }
-
 
 // Combines two credentials objects into a composite credentials.
 std::unique_ptr<Credentials> CredentialsFactory::ComposeCredentials(

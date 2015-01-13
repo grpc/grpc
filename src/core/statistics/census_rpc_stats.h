@@ -98,4 +98,4 @@ void census_stats_store_shutdown();
 }
 #endif
 
-#endif  /* __GRPC_INTERNAL_STATISTICS_CENSUS_RPC_STATS_H__ */
+#endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_RPC_STATS_H__ */

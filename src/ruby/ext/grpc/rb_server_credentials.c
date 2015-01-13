@@ -40,7 +40,6 @@
 
 #include "rb_grpc.h"
 
-
 /* grpc_rb_server_credentials wraps a grpc_server_credentials.  It provides a
    peer ruby object, 'mark' to minimize copying when a server credential is
    created from ruby. */
@@ -91,8 +90,7 @@ static VALUE grpc_rb_server_credentials_alloc(VALUE cls) {
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
   return Data_Wrap_Struct(cls, grpc_rb_server_credentials_mark,
-                          grpc_rb_server_credentials_free,
-                          wrapper);
+                          grpc_rb_server_credentials_free, wrapper);
 }
 
 /* Clones ServerCredentials instances.
@@ -122,7 +120,6 @@ static VALUE grpc_rb_server_credentials_init_copy(VALUE copy, VALUE orig) {
   MEMCPY(copy_ch, orig_ch, grpc_rb_server_credentials, 1);
   return copy;
 }
-
 
 /* The attribute used on the mark object to hold the pem_root_certs. */
 static ID id_pem_root_certs;
@@ -188,9 +185,8 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
 VALUE rb_cServerCredentials = Qnil;
 
 void Init_google_rpc_server_credentials() {
-  rb_cServerCredentials = rb_define_class_under(rb_mGoogleRpcCore,
-                                                "ServerCredentials",
-                                                rb_cObject);
+  rb_cServerCredentials =
+      rb_define_class_under(rb_mGoogleRpcCore, "ServerCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cServerCredentials, grpc_rb_server_credentials_alloc);
@@ -199,8 +195,7 @@ void Init_google_rpc_server_credentials() {
   rb_define_method(rb_cServerCredentials, "initialize",
                    grpc_rb_server_credentials_init, 3);
   rb_define_method(rb_cServerCredentials, "initialize_copy",
-                   grpc_rb_server_credentials_init_copy,
-                   1);
+                   grpc_rb_server_credentials_init_copy, 1);
 
   id_pem_cert_chain = rb_intern("__pem_cert_chain");
   id_pem_private_key = rb_intern("__pem_private_key");
@@ -208,7 +203,7 @@ void Init_google_rpc_server_credentials() {
 }
 
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
-grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v) {
+grpc_server_credentials *grpc_rb_get_wrapped_server_credentials(VALUE v) {
   grpc_rb_server_credentials *wrapper = NULL;
   Data_Get_Struct(v, grpc_rb_server_credentials, wrapper);
   return wrapper->wrapped;

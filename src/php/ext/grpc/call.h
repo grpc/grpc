@@ -13,15 +13,14 @@
 #include "grpc/grpc.h"
 
 // Throw an exception if error_code is not OK
-#define MAYBE_THROW_CALL_ERROR(func_name, error_code)                   \
-  do{                                                                   \
-    if(error_code != GRPC_CALL_OK) {                                    \
-      zend_throw_exception(spl_ce_LogicException,                       \
-                           #func_name " was called incorrectly",        \
-                           (long)error_code TSRMLS_CC);                 \
-    }                                                                   \
-  } while(0)
-
+#define MAYBE_THROW_CALL_ERROR(func_name, error_code)            \
+  do {                                                           \
+    if (error_code != GRPC_CALL_OK) {                            \
+      zend_throw_exception(spl_ce_LogicException,                \
+                           #func_name " was called incorrectly", \
+                           (long)error_code TSRMLS_CC);          \
+    }                                                            \
+  } while (0)
 
 /* Class entry for the Call PHP class */
 zend_class_entry *grpc_ce_call;
