@@ -1454,7 +1454,7 @@
       "deps": [
         "grpc++",
         "grpc",
-	"gpr"
+        "gpr"
       ]
     },
     {
@@ -1467,7 +1467,7 @@
       "deps": [
         "grpc++",
         "grpc",
-	"gpr"
+        "gpr"
       ]
     },
     {
