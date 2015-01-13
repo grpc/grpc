@@ -31,21 +31,27 @@
  *
  */
 
-#define _POSIX_SOURCE
+
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112L
+#endif
+
 #define _GNU_SOURCE
 #include <grpc/support/port_platform.h>
 
 #if defined(GPR_POSIX_LOG)
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 #include <time.h>
 #include <pthread.h>
 
-static long gettid() { return pthread_self(); }
+static long gettid() { return (long)(gpr_intptr)pthread_self(); }
 
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {
@@ -55,7 +61,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   int ret;
   va_list args;
   va_start(args, format);
-  ret = vsnprintf(buf, format, args);
+  ret = vsnprintf(buf, sizeof(buf), format, args);
   va_end(args);
   if (ret < 0) {
     message = NULL;
@@ -64,7 +70,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   } else {
     message = allocated = gpr_malloc(ret + 1);
     va_start(args, format);
-    vsnprintf(message, format, args);
+    vsnprintf(message, ret, format, args);
     va_end(args);
   }
   gpr_log_message(file, line, severity, message);
