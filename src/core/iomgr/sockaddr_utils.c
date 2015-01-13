@@ -153,3 +153,31 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
   errno = save_errno;
   return ret;
 }
+
+int grpc_sockaddr_get_port(const struct sockaddr *addr) {
+  switch (addr->sa_family) {
+    case AF_INET:
+      return ntohs(((struct sockaddr_in *)addr)->sin_port);
+    case AF_INET6:
+      return ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
+    default:
+      gpr_log(GPR_ERROR, "Unknown socket family %d in %s", addr->sa_family,
+              __FUNCTION__);
+      return 0;
+  }
+}
+
+int grpc_sockaddr_set_port(const struct sockaddr *addr, int port) {
+  switch (addr->sa_family) {
+    case AF_INET:
+      ((struct sockaddr_in *)addr)->sin_port = htons(port);
+      return 1;
+    case AF_INET6:
+      ((struct sockaddr_in6 *)addr)->sin6_port = htons(port);
+      return 1;
+    default:
+      gpr_log(GPR_ERROR, "Unknown socket family %d in %s", addr->sa_family,
+              __FUNCTION__);
+      return 0;
+  }
+}
