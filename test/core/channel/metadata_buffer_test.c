@@ -78,7 +78,7 @@ static void expect_call_op(grpc_call_element *elem,
   GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
   GPR_ASSERT(op->flags == *n);
   GPR_ASSERT(op->done_cb == do_nothing);
-  GPR_ASSERT(op->user_data == (void *)(gpr_uintptr) * n);
+  GPR_ASSERT(op->user_data == (void *)(gpr_uintptr)*n);
   GPR_ASSERT(0 == gpr_slice_cmp(op->data.metadata->key->slice, key));
   GPR_ASSERT(0 == gpr_slice_cmp(op->data.metadata->value->slice, value));
 
@@ -148,7 +148,7 @@ static void test_case(size_t key_prefix_len, size_t value_prefix_len,
     op.flags = i;
     op.data.metadata = grpc_mdelem_from_slices(mdctx, key, value);
     op.done_cb = do_nothing;
-    op.user_data = (void *)(gpr_uintptr) i;
+    op.user_data = (void *)(gpr_uintptr)i;
 
     grpc_metadata_buffer_queue(&buffer, &op);
   }

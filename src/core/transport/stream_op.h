@@ -125,4 +125,4 @@ void grpc_sopb_add_flow_ctl_cb(grpc_stream_op_buffer *sopb,
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_STREAM_OP_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_STREAM_OP_H__ */

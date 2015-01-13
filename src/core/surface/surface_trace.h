@@ -51,4 +51,4 @@
   } while (0)
 #endif
 
-#endif  /* __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__ */
+#endif /* __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__ */

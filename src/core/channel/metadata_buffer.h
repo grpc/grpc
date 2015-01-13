@@ -67,4 +67,4 @@ grpc_metadata *grpc_metadata_buffer_extract_elements(
     grpc_metadata_buffer *buffer);
 void grpc_metadata_buffer_cleanup_elements(void *elements, grpc_op_error error);
 
-#endif  /* __GRPC_INTERNAL_CHANNEL_METADATA_BUFFER_H__ */
+#endif /* __GRPC_INTERNAL_CHANNEL_METADATA_BUFFER_H__ */

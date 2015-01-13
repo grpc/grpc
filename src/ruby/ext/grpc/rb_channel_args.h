@@ -49,5 +49,4 @@
 void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
                                           grpc_channel_args* dst);
 
-
-#endif  /* GRPC_RB_CHANNEL_ARGS_H_ */
+#endif /* GRPC_RB_CHANNEL_ARGS_H_ */

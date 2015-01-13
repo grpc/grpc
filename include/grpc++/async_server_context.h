@@ -87,7 +87,7 @@ class AsyncServerContext {
   system_clock::time_point absolute_deadline_;
 
   google::protobuf::Message* request_;  // not owned
-  grpc_call* call_;           // owned
+  grpc_call* call_;                     // owned
 };
 
 }  // namespace grpc

@@ -54,9 +54,10 @@ class CppGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
                         google::protobuf::compiler::GeneratorContext* context,
                         string* error) const {
     if (file->options().cc_generic_services()) {
-      *error = "cpp grpc proto compiler plugin does not work with generic "
-               "services. To generate cpp grpc APIs, please set \""
-               "cc_generic_service = false\".";
+      *error =
+          "cpp grpc proto compiler plugin does not work with generic "
+          "services. To generate cpp grpc APIs, please set \""
+          "cc_generic_service = false\".";
       return false;
     }
 

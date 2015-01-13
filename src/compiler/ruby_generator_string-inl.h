@@ -45,7 +45,7 @@ using std::transform;
 namespace grpc_ruby_generator {
 
 // Split splits a string using char into elems.
-inline vector<string> &Split(const string &s, char delim,
+inline vector<string>& Split(const string& s, char delim,
                              vector<string>* elems) {
   stringstream ss(s);
   string item;
@@ -56,7 +56,7 @@ inline vector<string> &Split(const string &s, char delim,
 }
 
 // Split splits a string using char, returning the result in a vector.
-inline vector<string> Split(const string &s, char delim) {
+inline vector<string> Split(const string& s, char delim) {
   vector<string> elems;
   Split(s, delim, &elems);
   return elems;
@@ -106,7 +106,7 @@ inline string CapitalizeFirst(string s) {
 inline string RubyTypeOf(const string& a_type, const string& package) {
   string res(a_type);
   ReplacePrefix(&res, package, "");  // remove the leading package if present
-  ReplacePrefix(&res, ".", "");  // remove the leading . (no package)
+  ReplacePrefix(&res, ".", "");      // remove the leading . (no package)
   if (res.find('.') == string::npos) {
     return res;
   } else {

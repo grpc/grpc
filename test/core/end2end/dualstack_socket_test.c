@@ -215,7 +215,6 @@ int main(int argc, char **argv) {
         test_connect("::1", "127.0.0.1", port, 0);
         test_connect("127.0.0.1", "::1", port, 0);
       }
-
     }
   }
 

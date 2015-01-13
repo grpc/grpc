@@ -45,33 +45,28 @@ typedef struct next_call_stack {
   grpc_completion_queue *cq;
   grpc_event *event;
   gpr_timespec timeout;
-  void* tag;
+  void *tag;
 } next_call_stack;
 
 /* Calls grpc_completion_queue_next without holding the ruby GIL */
-static void *grpc_rb_completion_queue_next_no_gil(
-    next_call_stack *next_call) {
-  next_call->event = grpc_completion_queue_next(next_call->cq,
-                                                next_call->timeout);
+static void *grpc_rb_completion_queue_next_no_gil(next_call_stack *next_call) {
+  next_call->event =
+      grpc_completion_queue_next(next_call->cq, next_call->timeout);
   return NULL;
 }
 
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
-static void *grpc_rb_completion_queue_pluck_no_gil(
-    next_call_stack *next_call) {
-  next_call->event = grpc_completion_queue_pluck(next_call->cq,
-                                                 next_call->tag,
+static void *grpc_rb_completion_queue_pluck_no_gil(next_call_stack *next_call) {
+  next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag,
                                                  next_call->timeout);
   return NULL;
 }
-
 
 /* Shuts down and drains the completion queue if necessary.
  *
  * This is done when the ruby completion queue object is about to be GCed.
  */
-static void grpc_rb_completion_queue_shutdown_drain(
-    grpc_completion_queue* cq) {
+static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
   next_call_stack next_call;
   grpc_completion_type type;
   int drained = 0;
@@ -120,13 +115,12 @@ static void grpc_rb_completion_queue_destroy(void *p) {
 
 /* Allocates a completion queue. */
 static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
-  grpc_completion_queue* cq = grpc_completion_queue_create();
+  grpc_completion_queue *cq = grpc_completion_queue_create();
   if (cq == NULL) {
-    rb_raise(rb_eArgError,
-             "could not create a completion queue: not sure why");
+    rb_raise(rb_eArgError, "could not create a completion queue: not sure why");
   }
-  return Data_Wrap_Struct(cls, GC_NOT_MARKED,
-                          grpc_rb_completion_queue_destroy, cq);
+  return Data_Wrap_Struct(cls, GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
+                          cq);
 }
 
 /* Blocks until the next event is available, and returns the event. */
@@ -166,9 +160,8 @@ static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
 VALUE rb_cCompletionQueue = Qnil;
 
 void Init_google_rpc_completion_queue() {
-  rb_cCompletionQueue = rb_define_class_under(rb_mGoogleRpcCore,
-                                              "CompletionQueue",
-                                              rb_cObject);
+  rb_cCompletionQueue =
+      rb_define_class_under(rb_mGoogleRpcCore, "CompletionQueue", rb_cObject);
 
   /* constructor: uses an alloc func without an initializer. Using a simple
      alloc func works here as the grpc header does not specify any args for
@@ -176,16 +169,16 @@ void Init_google_rpc_completion_queue() {
   rb_define_alloc_func(rb_cCompletionQueue, grpc_rb_completion_queue_alloc);
 
   /* Add the next method that waits for the next event. */
-  rb_define_method(rb_cCompletionQueue, "next",
-                   grpc_rb_completion_queue_next, 1);
+  rb_define_method(rb_cCompletionQueue, "next", grpc_rb_completion_queue_next,
+                   1);
 
   /* Add the pluck method that waits for the next event of given tag */
-  rb_define_method(rb_cCompletionQueue, "pluck",
-                   grpc_rb_completion_queue_pluck, 2);
+  rb_define_method(rb_cCompletionQueue, "pluck", grpc_rb_completion_queue_pluck,
+                   2);
 }
 
 /* Gets the wrapped completion queue from the ruby wrapper */
-grpc_completion_queue* grpc_rb_get_wrapped_completion_queue(VALUE v) {
+grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v) {
   grpc_completion_queue *cq = NULL;
   Data_Get_Struct(v, grpc_completion_queue, cq);
   return cq;

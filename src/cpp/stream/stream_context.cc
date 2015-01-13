@@ -61,7 +61,8 @@ StreamContext::StreamContext(const RpcMethod& method, ClientContext* context,
 // Server only ctor
 StreamContext::StreamContext(const RpcMethod& method, grpc_call* call,
                              grpc_completion_queue* cq,
-                             google::protobuf::Message* request, google::protobuf::Message* result)
+                             google::protobuf::Message* request,
+                             google::protobuf::Message* result)
     : is_client_(false),
       method_(&method),
       call_(call),

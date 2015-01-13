@@ -65,4 +65,4 @@ typedef struct grpc_transport_test_config {
 /* Run the test suite on one configuration */
 void grpc_transport_end2end_tests(grpc_transport_test_config *config);
 
-#endif  /* __GRPC_TEST_TRANSPORT_TRANSPORT_END2END_TESTS_H__ */
+#endif /* __GRPC_TEST_TRANSPORT_TRANSPORT_END2END_TESTS_H__ */

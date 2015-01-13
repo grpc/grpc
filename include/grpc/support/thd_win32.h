@@ -41,4 +41,4 @@
 
 typedef int gpr_thd_id;
 
-#endif  /* __GRPC_SUPPORT_THD_WIN32_H__ */
+#endif /* __GRPC_SUPPORT_THD_WIN32_H__ */

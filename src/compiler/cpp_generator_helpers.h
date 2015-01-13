@@ -85,7 +85,8 @@ inline string DotsToUnderscores(const string& name) {
   return StringReplace(name, ".", "_");
 }
 
-inline string ClassName(const google::protobuf::Descriptor* descriptor, bool qualified) {
+inline string ClassName(const google::protobuf::Descriptor* descriptor,
+                        bool qualified) {
   // Find "outer", the descriptor of the top-level message in which
   // "descriptor" is embedded.
   const google::protobuf::Descriptor* outer = descriptor;

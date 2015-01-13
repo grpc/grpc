@@ -172,10 +172,10 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
   return status;
 }
 
-StreamContextInterface* Channel::CreateStream(const RpcMethod& method,
-                                              ClientContext* context,
-                                              const google::protobuf::Message* request,
-                                              google::protobuf::Message* result) {
+StreamContextInterface* Channel::CreateStream(
+    const RpcMethod& method, ClientContext* context,
+    const google::protobuf::Message* request,
+    google::protobuf::Message* result) {
   grpc_call* call = grpc_channel_create_call(
       c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);

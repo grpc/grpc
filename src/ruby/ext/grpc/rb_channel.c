@@ -137,7 +137,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
     ch = grpc_secure_channel_create(creds, target_chars, &args);
   }
   if (args.args != NULL) {
-    xfree(args.args);   /* Allocated by grpc_rb_hash_convert_to_channel_args */
+    xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
   }
   if (ch == NULL) {
     rb_raise(rb_eRuntimeError, "could not create an rpc channel to target:%s",
@@ -256,7 +256,7 @@ void Init_google_rpc_channel() {
 }
 
 /* Gets the wrapped channel from the ruby wrapper */
-grpc_channel* grpc_rb_get_wrapped_channel(VALUE v) {
+grpc_channel *grpc_rb_get_wrapped_channel(VALUE v) {
   grpc_rb_channel *wrapper = NULL;
   Data_Get_Struct(v, grpc_rb_channel, wrapper);
   return wrapper->wrapped;

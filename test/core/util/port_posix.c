@@ -147,4 +147,4 @@ int grpc_pick_unused_port_or_die() {
   return port;
 }
 
-#endif  /* GPR_POSIX_SOCKET */
+#endif /* GPR_POSIX_SOCKET */

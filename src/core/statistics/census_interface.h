@@ -73,4 +73,4 @@ census_op_id census_tracing_start_op();
 /* Ends tracing. Calling this function will invalidate the input op_id. */
 void census_tracing_end_op(census_op_id op_id);
 
-#endif  /* __GRPC_INTERNAL_STATISTICS_CENSUS_INTERFACE_H__ */
+#endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_INTERFACE_H__ */

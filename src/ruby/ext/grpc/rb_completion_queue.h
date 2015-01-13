@@ -47,4 +47,4 @@ extern VALUE rb_cCompletionQueue;
 /* Initializes the CompletionQueue class. */
 void Init_google_rpc_completion_queue();
 
-#endif  /* GRPC_RB_COMPLETION_QUEUE_H_ */
+#endif /* GRPC_RB_COMPLETION_QUEUE_H_ */

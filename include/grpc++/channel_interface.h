@@ -57,10 +57,10 @@ class ChannelInterface {
                                   const google::protobuf::Message& request,
                                   google::protobuf::Message* result) = 0;
 
-  virtual StreamContextInterface* CreateStream(const RpcMethod& method,
-                                               ClientContext* context,
-                                               const google::protobuf::Message* request,
-                                               google::protobuf::Message* result) = 0;
+  virtual StreamContextInterface* CreateStream(
+      const RpcMethod& method, ClientContext* context,
+      const google::protobuf::Message* request,
+      google::protobuf::Message* result) = 0;
 };
 
 }  // namespace grpc
