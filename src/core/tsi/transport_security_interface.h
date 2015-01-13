@@ -180,23 +180,6 @@ void tsi_frame_protector_destroy(tsi_frame_protector* self);
 /* This property is of type TSI_PEER_PROPERTY_STRING.  */
 #define TSI_CERTIFICATE_TYPE_PEER_PROPERTY "certificate_type"
 
-/* This property is of type TSI_PEER_PROPERTY_STRING.  */
-#define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
-
-/* This property is of type TSI_PEER_PROPERTY_LIST and the children contain
-   unnamed (name == NULL) properties of type TSI_PEER_PROPERTY_STRING.  */
-#define TSI_X509_SUBJECT_ALTERNATIVE_NAMES_PEER_PROPERTY \
-  "x509_subject_alternative_names"
-
-/* This property is of type TSI_PEER_PROPERTY_STRING. */
-#define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
-
-/* This property is of type TSI_PEER_PROPERTY_STRING.  */
-#define TSI_MDB_USER_NAME_PEER_PROPERTY "mdb_user_name"
-
-/* This property is of type TSI_PEER_PROPERTY_SIGNED_INTEGER.  */
-#define TSI_MDB_GAIA_ID_PEER_PROPERTY "mdb_gaia_id"
-
 /* Properties of type TSI_PEER_PROPERTY_TYPE_STRING may contain NULL characters
    just like C++ strings. The length field gives the length of the string.  */
 typedef enum {
