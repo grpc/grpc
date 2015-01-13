@@ -257,6 +257,7 @@
         "src/core/security/auth.c",
         "src/core/security/base64.c",
         "src/core/security/credentials.c",
+        "src/core/security/factories.c",
         "src/core/security/google_root_certs.c",
         "src/core/security/json_token.c",
         "src/core/security/secure_endpoint.c",
