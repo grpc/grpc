@@ -58,10 +58,10 @@ class Channel : public ChannelInterface {
                           const google::protobuf::Message& request,
                           google::protobuf::Message* result) override;
 
-  StreamContextInterface* CreateStream(const RpcMethod& method,
-                                       ClientContext* context,
-                                       const google::protobuf::Message* request,
-                                       google::protobuf::Message* result) override;
+  StreamContextInterface* CreateStream(
+      const RpcMethod& method, ClientContext* context,
+      const google::protobuf::Message* request,
+      google::protobuf::Message* result) override;
 
  private:
   const grpc::string target_;

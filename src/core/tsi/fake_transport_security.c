@@ -83,7 +83,6 @@ typedef struct {
   uint32_t max_frame_size;
 } tsi_fake_frame_protector;
 
-
 /* --- Utils. ---*/
 
 static const char* tsi_fake_handshake_message_strings[] = {
@@ -120,7 +119,7 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
   buf[3] = (unsigned char)(value >> 24) & 0xFF;
   buf[2] = (unsigned char)(value >> 16) & 0xFF;
   buf[1] = (unsigned char)(value >> 8) & 0xFF;
-  buf[0] = (unsigned char)(value) & 0xFF;
+  buf[0] = (unsigned char)(value)&0xFF;
 }
 
 static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
@@ -246,8 +245,8 @@ static tsi_result fake_protector_protect(
   /* Try to drain first. */
   if (frame->needs_draining) {
     drained_size = saved_output_size - *num_bytes_written;
-    result = drain_frame_to_bytes(protected_output_frames,
-                                  &drained_size, frame);
+    result =
+        drain_frame_to_bytes(protected_output_frames, &drained_size, frame);
     *num_bytes_written += drained_size;
     protected_output_frames += drained_size;
     if (result != TSI_OK) {
@@ -273,8 +272,8 @@ static tsi_result fake_protector_protect(
       return result;
     }
   }
-  result = fill_frame_from_bytes(unprotected_bytes, unprotected_bytes_size,
-                                 frame);
+  result =
+      fill_frame_from_bytes(unprotected_bytes, unprotected_bytes_size, frame);
   if (result != TSI_OK) {
     if (result == TSI_INCOMPLETE_DATA) result = TSI_OK;
     return result;
@@ -301,7 +300,7 @@ static tsi_result fake_protector_protect_flush(
     frame->size = frame->offset;
     frame->offset = 0;
     frame->needs_draining = 1;
-    store32_little_endian(frame->size, frame->data);  /* Overwrite header. */
+    store32_little_endian(frame->size, frame->data); /* Overwrite header. */
   }
   result = drain_frame_to_bytes(protected_output_frames,
                                 protected_output_frames_size, frame);
@@ -327,8 +326,7 @@ static tsi_result fake_protector_unprotect(
     /* Go past the header if needed. */
     if (frame->offset == 0) frame->offset = TSI_FAKE_FRAME_HEADER_SIZE;
     drained_size = saved_output_size - *num_bytes_written;
-    result = drain_frame_to_bytes(unprotected_bytes, &drained_size,
-                                  frame);
+    result = drain_frame_to_bytes(unprotected_bytes, &drained_size, frame);
     unprotected_bytes += drained_size;
     *num_bytes_written += drained_size;
     if (result != TSI_OK) {
@@ -352,7 +350,7 @@ static tsi_result fake_protector_unprotect(
   /* Try to drain again. */
   if (!frame->needs_draining) return TSI_INTERNAL_ERROR;
   if (frame->offset != 0) return TSI_INTERNAL_ERROR;
-  frame->offset = TSI_FAKE_FRAME_HEADER_SIZE;  /* Go past the header. */
+  frame->offset = TSI_FAKE_FRAME_HEADER_SIZE; /* Go past the header. */
   drained_size = saved_output_size - *num_bytes_written;
   result = drain_frame_to_bytes(unprotected_bytes, &drained_size, frame);
   *num_bytes_written += drained_size;
@@ -481,10 +479,8 @@ static void fake_handshaker_destroy(tsi_handshaker* self) {
 
 static const tsi_handshaker_vtable handshaker_vtable = {
     fake_handshaker_get_bytes_to_send_to_peer,
-    fake_handshaker_process_bytes_from_peer,
-    fake_handshaker_get_result,
-    fake_handshaker_extract_peer,
-    fake_handshaker_create_frame_protector,
+    fake_handshaker_process_bytes_from_peer, fake_handshaker_get_result,
+    fake_handshaker_extract_peer, fake_handshaker_create_frame_protector,
     fake_handshaker_destroy,
 };
 

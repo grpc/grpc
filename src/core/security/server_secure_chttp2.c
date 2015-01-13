@@ -70,8 +70,7 @@ static void on_accept(void *server, grpc_endpoint *tcp) {
   const grpc_channel_args *args = grpc_server_get_channel_args(server);
   grpc_security_context *ctx = grpc_find_security_context_in_args(args);
   GPR_ASSERT(ctx);
-  grpc_setup_secure_transport(ctx, tcp, on_secure_transport_setup_done,
-                              server);
+  grpc_setup_secure_transport(ctx, tcp, on_secure_transport_setup_done, server);
 }
 
 /* Note: the following code is the same with server_chttp2.c */

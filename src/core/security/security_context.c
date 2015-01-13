@@ -100,8 +100,7 @@ grpc_arg grpc_security_context_to_arg(grpc_security_context *ctx) {
   return result;
 }
 
-grpc_security_context *grpc_security_context_from_arg(
-    const grpc_arg *arg) {
+grpc_security_context *grpc_security_context_from_arg(const grpc_arg *arg) {
   if (strcmp(arg->key, GRPC_SECURITY_CONTEXT_ARG)) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
@@ -140,9 +139,7 @@ static void fake_channel_destroy(grpc_security_context *ctx) {
   gpr_free(ctx);
 }
 
-static void fake_server_destroy(grpc_security_context *ctx) {
-  gpr_free(ctx);
-}
+static void fake_server_destroy(grpc_security_context *ctx) { gpr_free(ctx); }
 
 static grpc_security_status fake_channel_create_handshaker(
     grpc_security_context *ctx, tsi_handshaker **handshaker) {
@@ -234,8 +231,7 @@ static void ssl_channel_destroy(grpc_security_context *ctx) {
 }
 
 static void ssl_server_destroy(grpc_security_context *ctx) {
-  grpc_ssl_server_security_context *c =
-      (grpc_ssl_server_security_context *)ctx;
+  grpc_ssl_server_security_context *c = (grpc_ssl_server_security_context *)ctx;
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
@@ -267,8 +263,7 @@ static grpc_security_status ssl_channel_create_handshaker(
 
 static grpc_security_status ssl_server_create_handshaker(
     grpc_security_context *ctx, tsi_handshaker **handshaker) {
-  grpc_ssl_server_security_context *c =
-      (grpc_ssl_server_security_context *)ctx;
+  grpc_ssl_server_security_context *c = (grpc_ssl_server_security_context *)ctx;
   return ssl_create_handshaker(c->handshaker_factory, 0, NULL, handshaker);
 }
 

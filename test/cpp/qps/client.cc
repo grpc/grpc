@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <cassert>
 #include <memory>
 #include <string>
@@ -156,17 +155,14 @@ void RunTest(const int client_threads, const int client_channels,
 
   gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);
   GPR_ASSERT(hist != NULL);
-  for (auto& t : threads) {
+  for (auto &t : threads) {
     t.join();
   }
   for (int i = 0; i < client_threads; i++) {
     gpr_histogram *h = thread_stats[i];
-    gpr_log(GPR_INFO, "latency at thread %d (50/95/99/99.9): %f/%f/%f/%f",
-            i,
-            gpr_histogram_percentile(h, 50),
-            gpr_histogram_percentile(h, 95),
-            gpr_histogram_percentile(h, 99),
-            gpr_histogram_percentile(h, 99.9));
+    gpr_log(GPR_INFO, "latency at thread %d (50/95/99/99.9): %f/%f/%f/%f", i,
+            gpr_histogram_percentile(h, 50), gpr_histogram_percentile(h, 95),
+            gpr_histogram_percentile(h, 99), gpr_histogram_percentile(h, 99.9));
     gpr_histogram_merge(hist, h);
     gpr_histogram_destroy(h);
   }

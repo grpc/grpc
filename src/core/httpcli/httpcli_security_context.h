@@ -40,4 +40,4 @@ grpc_security_status grpc_httpcli_ssl_channel_security_context_create(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
     const char *secure_peer_name, grpc_channel_security_context **ctx);
 
-#endif  /* __GRPC_INTERNAL_HTTPCLI_HTTPCLI_SECURITY_CONTEXT_H__ */
+#endif /* __GRPC_INTERNAL_HTTPCLI_HTTPCLI_SECURITY_CONTEXT_H__ */

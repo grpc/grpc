@@ -46,4 +46,4 @@ struct grpc_byte_buffer_reader {
   } current;
 };
 
-#endif  /* __GRPC_BYTE_BUFFER_READER_H__ */
+#endif /* __GRPC_BYTE_BUFFER_READER_H__ */

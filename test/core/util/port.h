@@ -41,4 +41,4 @@ int grpc_pick_unused_port();
    on failure. */
 int grpc_pick_unused_port_or_die();
 
-#endif  /* __GRPC_TEST_UTIL_PORT_H__ */
+#endif /* __GRPC_TEST_UTIL_PORT_H__ */

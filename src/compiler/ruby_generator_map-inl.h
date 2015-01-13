@@ -40,7 +40,6 @@
 #include <string>
 #include <vector>
 
-
 using std::initializer_list;
 using std::map;
 using std::vector;
@@ -51,11 +50,12 @@ namespace grpc_ruby_generator {
 // into a map of key* to value*. Is merely a readability helper for later code.
 inline map<string, string> ListToDict(const initializer_list<string>& values) {
   if (values.size() % 2 != 0) {
-    // MOE: insert     std::cerr << "Not every 'key' has a value in `values`." << std::endl;
+    // MOE: insert     std::cerr << "Not every 'key' has a value in `values`."
+    // << std::endl;
   }
   map<string, string> value_map;
   auto value_iter = values.begin();
-  for (unsigned i = 0; i < values.size()/2; ++i) {
+  for (unsigned i = 0; i < values.size() / 2; ++i) {
     string key = *value_iter;
     ++value_iter;
     string value = *value_iter;

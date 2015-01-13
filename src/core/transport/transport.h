@@ -254,4 +254,4 @@ void grpc_transport_setup_initiate(grpc_transport_setup *setup);
    used as a destruction call by setup). */
 void grpc_transport_setup_cancel(grpc_transport_setup *setup);
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_TRANSPORT_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_TRANSPORT_H__ */

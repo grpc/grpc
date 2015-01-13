@@ -105,4 +105,4 @@ void gpr_set_log_function(gpr_log_func func);
 }
 #endif
 
-#endif  /* __GRPC_SUPPORT_LOG_H__ */
+#endif /* __GRPC_SUPPORT_LOG_H__ */

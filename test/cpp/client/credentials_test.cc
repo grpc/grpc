@@ -65,7 +65,6 @@ TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
 }  // namespace grpc
 
 int main(int argc, char **argv) {
-
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

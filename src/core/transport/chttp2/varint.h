@@ -70,4 +70,4 @@ void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
     }                                                                         \
   } while (0)
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_VARINT_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_VARINT_H__ */
