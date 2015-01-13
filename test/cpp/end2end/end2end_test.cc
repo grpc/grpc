@@ -34,7 +34,7 @@
 #include <chrono>
 #include <thread>
 
-#include "net/grpc/cpp/echo_duplicate_proto_cc.pb.h"
+#include "test/cpp/util/echo_duplicate.pb.h"
 #include "test/cpp/util/echo.pb.h"
 #include "src/cpp/util/time.h"
 #include <grpc++/channel_arguments.h>
@@ -47,7 +47,7 @@
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "net/util/netutil.h"
+#include "test/core/util/port.h"
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -141,7 +141,7 @@ class TestServiceImplDupPkg
 class End2endTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    int port = PickUnusedPortOrDie();
+    int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
@@ -187,7 +187,7 @@ TEST_F(End2endTest, SimpleRpc) {
 
 TEST_F(End2endTest, MultipleRpcs) {
   ResetStub();
-  vector<std::thread*> threads;
+  std::vector<std::thread*> threads;
   for (int i = 0; i < 10; ++i) {
     threads.push_back(new std::thread(SendRpc, stub_.get(), 10));
   }

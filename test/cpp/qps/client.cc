@@ -45,7 +45,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/status.h>
 #include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/interop/test.pb.h"
+#include "test/cpp/qps/qpstest.pb.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(server_port, 0, "Server port.");
@@ -73,8 +73,10 @@ DEFINE_string(workload, "", "Workload parameters");
 
 using grpc::ChannelInterface;
 using grpc::CreateTestChannel;
+using grpc::testing::ServerStats;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
+using grpc::testing::StatsRequest;
 using grpc::testing::TestService;
 
 static double now() {
@@ -119,6 +121,14 @@ void RunTest(const int client_threads, const int client_channels,
   std::vector<std::thread> threads;  // Will add threads when ready to execute
   std::vector<::gpr_histogram *> thread_stats(client_threads);
 
+  TestService::Stub *stub_stats = channels[0].get_stub();
+  grpc::ClientContext context_stats_begin;
+  StatsRequest stats_request;
+  ServerStats server_stats_begin;
+  stats_request.set_test_num(0);
+  grpc::Status status_beg = stub_stats->CollectServerStats(
+      &context_stats_begin, stats_request, &server_stats_begin);
+
   for (int i = 0; i < client_threads; i++) {
     gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);
     GPR_ASSERT(hist != NULL);
@@ -160,9 +170,10 @@ void RunTest(const int client_threads, const int client_channels,
   }
   for (int i = 0; i < client_threads; i++) {
     gpr_histogram *h = thread_stats[i];
-    gpr_log(GPR_INFO, "latency at thread %d (50/95/99/99.9): %f/%f/%f/%f", i,
-            gpr_histogram_percentile(h, 50), gpr_histogram_percentile(h, 95),
-            gpr_histogram_percentile(h, 99), gpr_histogram_percentile(h, 99.9));
+    gpr_log(GPR_INFO, "latency at thread %d (50/90/95/99/99.9): %f/%f/%f/%f/%f",
+            i, gpr_histogram_percentile(h, 50), gpr_histogram_percentile(h, 90),
+            gpr_histogram_percentile(h, 95), gpr_histogram_percentile(h, 99),
+            gpr_histogram_percentile(h, 99.9));
     gpr_histogram_merge(hist, h);
     gpr_histogram_destroy(h);
   }
@@ -170,11 +181,32 @@ void RunTest(const int client_threads, const int client_channels,
   gpr_log(
       GPR_INFO,
       "latency across %d threads with %d channels and %d payload "
-      "(50/95/99/99.9): %f / %f / %f / %f",
+      "(50/90/95/99/99.9): %f / %f / %f / %f / %f",
       client_threads, client_channels, payload_size,
-      gpr_histogram_percentile(hist, 50), gpr_histogram_percentile(hist, 95),
-      gpr_histogram_percentile(hist, 99), gpr_histogram_percentile(hist, 99.9));
+      gpr_histogram_percentile(hist, 50), gpr_histogram_percentile(hist, 90),
+      gpr_histogram_percentile(hist, 95), gpr_histogram_percentile(hist, 99),
+      gpr_histogram_percentile(hist, 99.9));
   gpr_histogram_destroy(hist);
+
+  grpc::ClientContext context_stats_end;
+  ServerStats server_stats_end;
+  grpc::Status status_end = stub_stats->CollectServerStats(
+      &context_stats_end, stats_request, &server_stats_end);
+
+  double elapsed = server_stats_end.time_now() - server_stats_begin.time_now();
+  int total_rpcs = client_threads * num_rpcs;
+  double utime = server_stats_end.time_user() - server_stats_begin.time_user();
+  double stime =
+      server_stats_end.time_system() - server_stats_begin.time_system();
+  gpr_log(GPR_INFO,
+          "Elapsed time: %.3f\n"
+          "RPC Count: %d\n"
+          "QPS: %.3f\n"
+          "System time: %.3f\n"
+          "User time: %.3f\n"
+          "Resource usage: %.1f%%\n",
+          elapsed, total_rpcs, total_rpcs / elapsed, stime, utime,
+          (stime + utime) / elapsed * 100.0);
 }
 
 int main(int argc, char **argv) {
