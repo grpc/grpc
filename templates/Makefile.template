@@ -762,6 +762,18 @@ endif
 endif
 % endif
 
+% for src in lib.src:
+% if not proto_re.match(src):
+objs/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
+% for src2 in lib.src:
+% if proto_re.match(src2):
+    ${proto_to_cc(src2)}\
+% endif
+% endfor
+% endif
+
+% endfor
+
 clean_lib${lib.name}:
 	$(E) "[CLEAN]   Cleaning lib${lib.name} files"
 	$(Q) $(RM) $(LIB${lib.name.upper()}_OBJS)

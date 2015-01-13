@@ -1212,6 +1212,33 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGPR_DEPS)
 endif
 
+objs/$(CONFIG)/src/core/support/alloc.o: 
+objs/$(CONFIG)/src/core/support/cancellable.o: 
+objs/$(CONFIG)/src/core/support/cmdline.o: 
+objs/$(CONFIG)/src/core/support/cpu_linux.o: 
+objs/$(CONFIG)/src/core/support/cpu_posix.o: 
+objs/$(CONFIG)/src/core/support/histogram.o: 
+objs/$(CONFIG)/src/core/support/host_port.o: 
+objs/$(CONFIG)/src/core/support/log_android.o: 
+objs/$(CONFIG)/src/core/support/log.o: 
+objs/$(CONFIG)/src/core/support/log_linux.o: 
+objs/$(CONFIG)/src/core/support/log_posix.o: 
+objs/$(CONFIG)/src/core/support/log_win32.o: 
+objs/$(CONFIG)/src/core/support/murmur_hash.o: 
+objs/$(CONFIG)/src/core/support/slice_buffer.o: 
+objs/$(CONFIG)/src/core/support/slice.o: 
+objs/$(CONFIG)/src/core/support/string.o: 
+objs/$(CONFIG)/src/core/support/string_posix.o: 
+objs/$(CONFIG)/src/core/support/string_win32.o: 
+objs/$(CONFIG)/src/core/support/sync.o: 
+objs/$(CONFIG)/src/core/support/sync_posix.o: 
+objs/$(CONFIG)/src/core/support/sync_win32.o: 
+objs/$(CONFIG)/src/core/support/thd_posix.o: 
+objs/$(CONFIG)/src/core/support/thd_win32.o: 
+objs/$(CONFIG)/src/core/support/time.o: 
+objs/$(CONFIG)/src/core/support/time_posix.o: 
+objs/$(CONFIG)/src/core/support/time_win32.o: 
+
 clean_libgpr:
 	$(E) "[CLEAN]   Cleaning libgpr files"
 	$(Q) $(RM) $(LIBGPR_OBJS)
@@ -1377,6 +1404,98 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+objs/$(CONFIG)/src/core/security/auth.o: 
+objs/$(CONFIG)/src/core/security/base64.o: 
+objs/$(CONFIG)/src/core/security/credentials.o: 
+objs/$(CONFIG)/src/core/security/google_root_certs.o: 
+objs/$(CONFIG)/src/core/security/json_token.o: 
+objs/$(CONFIG)/src/core/security/secure_endpoint.o: 
+objs/$(CONFIG)/src/core/security/secure_transport_setup.o: 
+objs/$(CONFIG)/src/core/security/security_context.o: 
+objs/$(CONFIG)/src/core/security/server_secure_chttp2.o: 
+objs/$(CONFIG)/src/core/tsi/fake_transport_security.o: 
+objs/$(CONFIG)/src/core/tsi/ssl_transport_security.o: 
+objs/$(CONFIG)/src/core/tsi/transport_security.o: 
+objs/$(CONFIG)/src/core/channel/call_op_string.o: 
+objs/$(CONFIG)/src/core/channel/census_filter.o: 
+objs/$(CONFIG)/src/core/channel/channel_args.o: 
+objs/$(CONFIG)/src/core/channel/channel_stack.o: 
+objs/$(CONFIG)/src/core/channel/child_channel.o: 
+objs/$(CONFIG)/src/core/channel/client_channel.o: 
+objs/$(CONFIG)/src/core/channel/client_setup.o: 
+objs/$(CONFIG)/src/core/channel/connected_channel.o: 
+objs/$(CONFIG)/src/core/channel/http_client_filter.o: 
+objs/$(CONFIG)/src/core/channel/http_filter.o: 
+objs/$(CONFIG)/src/core/channel/http_server_filter.o: 
+objs/$(CONFIG)/src/core/channel/metadata_buffer.o: 
+objs/$(CONFIG)/src/core/channel/noop_filter.o: 
+objs/$(CONFIG)/src/core/compression/algorithm.o: 
+objs/$(CONFIG)/src/core/compression/message_compress.o: 
+objs/$(CONFIG)/src/core/httpcli/format_request.o: 
+objs/$(CONFIG)/src/core/httpcli/httpcli.o: 
+objs/$(CONFIG)/src/core/httpcli/httpcli_security_context.o: 
+objs/$(CONFIG)/src/core/httpcli/parser.o: 
+objs/$(CONFIG)/src/core/iomgr/alarm.o: 
+objs/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
+objs/$(CONFIG)/src/core/iomgr/endpoint.o: 
+objs/$(CONFIG)/src/core/iomgr/endpoint_pair_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/fd_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/iomgr.o: 
+objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
+objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
+objs/$(CONFIG)/src/core/iomgr/socket_utils_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_client_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_server_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/time_averaged_stats.o: 
+objs/$(CONFIG)/src/core/statistics/census_init.o: 
+objs/$(CONFIG)/src/core/statistics/census_log.o: 
+objs/$(CONFIG)/src/core/statistics/census_rpc_stats.o: 
+objs/$(CONFIG)/src/core/statistics/census_tracing.o: 
+objs/$(CONFIG)/src/core/statistics/hash_table.o: 
+objs/$(CONFIG)/src/core/statistics/window_stats.o: 
+objs/$(CONFIG)/src/core/surface/byte_buffer.o: 
+objs/$(CONFIG)/src/core/surface/byte_buffer_reader.o: 
+objs/$(CONFIG)/src/core/surface/call.o: 
+objs/$(CONFIG)/src/core/surface/channel.o: 
+objs/$(CONFIG)/src/core/surface/channel_create.o: 
+objs/$(CONFIG)/src/core/surface/client.o: 
+objs/$(CONFIG)/src/core/surface/completion_queue.o: 
+objs/$(CONFIG)/src/core/surface/event_string.o: 
+objs/$(CONFIG)/src/core/surface/init.o: 
+objs/$(CONFIG)/src/core/surface/lame_client.o: 
+objs/$(CONFIG)/src/core/surface/secure_channel_create.o: 
+objs/$(CONFIG)/src/core/surface/secure_server_create.o: 
+objs/$(CONFIG)/src/core/surface/server.o: 
+objs/$(CONFIG)/src/core/surface/server_chttp2.o: 
+objs/$(CONFIG)/src/core/surface/server_create.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/alpn.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/bin_encoder.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_data.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_goaway.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_ping.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_rst_stream.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_settings.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_window_update.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/hpack_parser.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/hpack_table.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/huffsyms.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/status_conversion.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/stream_encoder.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/stream_map.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/timeout_encoding.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/varint.o: 
+objs/$(CONFIG)/src/core/transport/chttp2_transport.o: 
+objs/$(CONFIG)/src/core/transport/metadata.o: 
+objs/$(CONFIG)/src/core/transport/stream_op.o: 
+objs/$(CONFIG)/src/core/transport/transport.o: 
+objs/$(CONFIG)/third_party/cJSON/cJSON.o: 
+
 clean_libgrpc:
 	$(E) "[CLEAN]   Cleaning libgrpc files"
 	$(Q) $(RM) $(LIBGRPC_OBJS)
@@ -1506,6 +1625,86 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_UNSECURE_DEPS)
 endif
 
+objs/$(CONFIG)/src/core/channel/call_op_string.o: 
+objs/$(CONFIG)/src/core/channel/census_filter.o: 
+objs/$(CONFIG)/src/core/channel/channel_args.o: 
+objs/$(CONFIG)/src/core/channel/channel_stack.o: 
+objs/$(CONFIG)/src/core/channel/child_channel.o: 
+objs/$(CONFIG)/src/core/channel/client_channel.o: 
+objs/$(CONFIG)/src/core/channel/client_setup.o: 
+objs/$(CONFIG)/src/core/channel/connected_channel.o: 
+objs/$(CONFIG)/src/core/channel/http_client_filter.o: 
+objs/$(CONFIG)/src/core/channel/http_filter.o: 
+objs/$(CONFIG)/src/core/channel/http_server_filter.o: 
+objs/$(CONFIG)/src/core/channel/metadata_buffer.o: 
+objs/$(CONFIG)/src/core/channel/noop_filter.o: 
+objs/$(CONFIG)/src/core/compression/algorithm.o: 
+objs/$(CONFIG)/src/core/compression/message_compress.o: 
+objs/$(CONFIG)/src/core/httpcli/format_request.o: 
+objs/$(CONFIG)/src/core/httpcli/httpcli.o: 
+objs/$(CONFIG)/src/core/httpcli/httpcli_security_context.o: 
+objs/$(CONFIG)/src/core/httpcli/parser.o: 
+objs/$(CONFIG)/src/core/iomgr/alarm.o: 
+objs/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
+objs/$(CONFIG)/src/core/iomgr/endpoint.o: 
+objs/$(CONFIG)/src/core/iomgr/endpoint_pair_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/fd_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/iomgr.o: 
+objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
+objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
+objs/$(CONFIG)/src/core/iomgr/socket_utils_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_client_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_server_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/time_averaged_stats.o: 
+objs/$(CONFIG)/src/core/statistics/census_init.o: 
+objs/$(CONFIG)/src/core/statistics/census_log.o: 
+objs/$(CONFIG)/src/core/statistics/census_rpc_stats.o: 
+objs/$(CONFIG)/src/core/statistics/census_tracing.o: 
+objs/$(CONFIG)/src/core/statistics/hash_table.o: 
+objs/$(CONFIG)/src/core/statistics/window_stats.o: 
+objs/$(CONFIG)/src/core/surface/byte_buffer.o: 
+objs/$(CONFIG)/src/core/surface/byte_buffer_reader.o: 
+objs/$(CONFIG)/src/core/surface/call.o: 
+objs/$(CONFIG)/src/core/surface/channel.o: 
+objs/$(CONFIG)/src/core/surface/channel_create.o: 
+objs/$(CONFIG)/src/core/surface/client.o: 
+objs/$(CONFIG)/src/core/surface/completion_queue.o: 
+objs/$(CONFIG)/src/core/surface/event_string.o: 
+objs/$(CONFIG)/src/core/surface/init.o: 
+objs/$(CONFIG)/src/core/surface/lame_client.o: 
+objs/$(CONFIG)/src/core/surface/secure_channel_create.o: 
+objs/$(CONFIG)/src/core/surface/secure_server_create.o: 
+objs/$(CONFIG)/src/core/surface/server.o: 
+objs/$(CONFIG)/src/core/surface/server_chttp2.o: 
+objs/$(CONFIG)/src/core/surface/server_create.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/alpn.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/bin_encoder.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_data.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_goaway.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_ping.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_rst_stream.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_settings.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/frame_window_update.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/hpack_parser.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/hpack_table.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/huffsyms.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/status_conversion.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/stream_encoder.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/stream_map.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/timeout_encoding.o: 
+objs/$(CONFIG)/src/core/transport/chttp2/varint.o: 
+objs/$(CONFIG)/src/core/transport/chttp2_transport.o: 
+objs/$(CONFIG)/src/core/transport/metadata.o: 
+objs/$(CONFIG)/src/core/transport/stream_op.o: 
+objs/$(CONFIG)/src/core/transport/transport.o: 
+objs/$(CONFIG)/third_party/cJSON/cJSON.o: 
+
 clean_libgrpc_unsecure:
 	$(E) "[CLEAN]   Cleaning libgrpc_unsecure files"
 	$(Q) $(RM) $(LIBGRPC_UNSECURE_OBJS)
@@ -1558,6 +1757,20 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_TEST_UTIL_DEPS)
 endif
 endif
+
+objs/$(CONFIG)/test/core/end2end/cq_verifier.o: 
+objs/$(CONFIG)/test/core/end2end/data/test_root_cert.o: 
+objs/$(CONFIG)/test/core/end2end/data/prod_roots_certs.o: 
+objs/$(CONFIG)/test/core/end2end/data/server1_cert.o: 
+objs/$(CONFIG)/test/core/end2end/data/server1_key.o: 
+objs/$(CONFIG)/test/core/iomgr/endpoint_tests.o: 
+objs/$(CONFIG)/test/core/statistics/census_log_tests.o: 
+objs/$(CONFIG)/test/core/transport/transport_end2end_tests.o: 
+objs/$(CONFIG)/test/core/util/grpc_profiler.o: 
+objs/$(CONFIG)/test/core/util/parse_hexstring.o: 
+objs/$(CONFIG)/test/core/util/port_posix.o: 
+objs/$(CONFIG)/test/core/util/slice_splitter.o: 
+objs/$(CONFIG)/test/core/util/test_config.o: 
 
 clean_libgrpc_test_util:
 	$(E) "[CLEAN]   Cleaning libgrpc_test_util files"
@@ -1660,6 +1873,27 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+objs/$(CONFIG)/src/cpp/client/channel.o: 
+objs/$(CONFIG)/src/cpp/client/channel_arguments.o: 
+objs/$(CONFIG)/src/cpp/client/client_context.o: 
+objs/$(CONFIG)/src/cpp/client/create_channel.o: 
+objs/$(CONFIG)/src/cpp/client/credentials.o: 
+objs/$(CONFIG)/src/cpp/client/internal_stub.o: 
+objs/$(CONFIG)/src/cpp/proto/proto_utils.o: 
+objs/$(CONFIG)/src/cpp/common/rpc_method.o: 
+objs/$(CONFIG)/src/cpp/server/async_server.o: 
+objs/$(CONFIG)/src/cpp/server/async_server_context.o: 
+objs/$(CONFIG)/src/cpp/server/completion_queue.o: 
+objs/$(CONFIG)/src/cpp/server/server_builder.o: 
+objs/$(CONFIG)/src/cpp/server/server_context_impl.o: 
+objs/$(CONFIG)/src/cpp/server/server.o: 
+objs/$(CONFIG)/src/cpp/server/server_rpc_handler.o: 
+objs/$(CONFIG)/src/cpp/server/server_credentials.o: 
+objs/$(CONFIG)/src/cpp/server/thread_pool.o: 
+objs/$(CONFIG)/src/cpp/stream/stream_context.o: 
+objs/$(CONFIG)/src/cpp/util/status.o: 
+objs/$(CONFIG)/src/cpp/util/time.o: 
+
 clean_libgrpc++:
 	$(E) "[CLEAN]   Cleaning libgrpc++ files"
 	$(Q) $(RM) $(LIBGRPC++_OBJS)
@@ -1705,6 +1939,12 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+
+
+
+objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
+objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
+
 clean_libgrpc++_test_util:
 	$(E) "[CLEAN]   Cleaning libgrpc++_test_util files"
 	$(Q) $(RM) $(LIBGRPC++_TEST_UTIL_OBJS)
@@ -1745,6 +1985,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS)
 endif
 endif
+
+objs/$(CONFIG)/test/core/end2end/fixtures/chttp2_fake_security.o: 
 
 clean_libend2end_fixture_chttp2_fake_security:
 	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_fake_security files"
@@ -1787,6 +2029,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+objs/$(CONFIG)/test/core/end2end/fixtures/chttp2_fullstack.o: 
+
 clean_libend2end_fixture_chttp2_fullstack:
 	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_fullstack files"
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
@@ -1827,6 +2071,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS)
 endif
 endif
+
+objs/$(CONFIG)/test/core/end2end/fixtures/chttp2_simple_ssl_fullstack.o: 
 
 clean_libend2end_fixture_chttp2_simple_ssl_fullstack:
 	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_simple_ssl_fullstack files"
@@ -1869,6 +2115,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+objs/$(CONFIG)/test/core/end2end/fixtures/chttp2_simple_ssl_with_oauth2_fullstack.o: 
+
 clean_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack:
 	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack files"
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
@@ -1909,6 +2157,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS)
 endif
 endif
+
+objs/$(CONFIG)/test/core/end2end/fixtures/chttp2_socket_pair.o: 
 
 clean_libend2end_fixture_chttp2_socket_pair:
 	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_socket_pair files"
@@ -1951,6 +2201,8 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+objs/$(CONFIG)/test/core/end2end/fixtures/chttp2_socket_pair_one_byte_at_a_time.o: 
+
 clean_libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time:
 	$(E) "[CLEAN]   Cleaning libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time files"
 	$(Q) $(RM) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
@@ -1980,6 +2232,8 @@ deps_libend2end_test_cancel_after_accept: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/cancel_after_accept.o: 
 
 clean_libend2end_test_cancel_after_accept:
 	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_after_accept files"
@@ -2011,6 +2265,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/cancel_after_accept_and_writes_closed.o: 
+
 clean_libend2end_test_cancel_after_accept_and_writes_closed:
 	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_after_accept_and_writes_closed files"
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
@@ -2040,6 +2296,8 @@ deps_libend2end_test_cancel_after_invoke: $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/cancel_after_invoke.o: 
 
 clean_libend2end_test_cancel_after_invoke:
 	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_after_invoke files"
@@ -2071,6 +2329,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/cancel_before_invoke.o: 
+
 clean_libend2end_test_cancel_before_invoke:
 	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_before_invoke files"
 	$(Q) $(RM) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
@@ -2100,6 +2360,8 @@ deps_libend2end_test_cancel_in_a_vacuum: $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DE
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/cancel_in_a_vacuum.o: 
 
 clean_libend2end_test_cancel_in_a_vacuum:
 	$(E) "[CLEAN]   Cleaning libend2end_test_cancel_in_a_vacuum files"
@@ -2131,6 +2393,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/census_simple_request.o: 
+
 clean_libend2end_test_census_simple_request:
 	$(E) "[CLEAN]   Cleaning libend2end_test_census_simple_request files"
 	$(Q) $(RM) $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
@@ -2160,6 +2424,8 @@ deps_libend2end_test_disappearing_server: $(LIBEND2END_TEST_DISAPPEARING_SERVER_
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_DISAPPEARING_SERVER_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/disappearing_server.o: 
 
 clean_libend2end_test_disappearing_server:
 	$(E) "[CLEAN]   Cleaning libend2end_test_disappearing_server files"
@@ -2191,6 +2457,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/early_server_shutdown_finishes_inflight_calls.o: 
+
 clean_libend2end_test_early_server_shutdown_finishes_inflight_calls:
 	$(E) "[CLEAN]   Cleaning libend2end_test_early_server_shutdown_finishes_inflight_calls files"
 	$(Q) $(RM) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
@@ -2220,6 +2488,8 @@ deps_libend2end_test_early_server_shutdown_finishes_tags: $(LIBEND2END_TEST_EARL
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/early_server_shutdown_finishes_tags.o: 
 
 clean_libend2end_test_early_server_shutdown_finishes_tags:
 	$(E) "[CLEAN]   Cleaning libend2end_test_early_server_shutdown_finishes_tags files"
@@ -2251,6 +2521,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/invoke_large_request.o: 
+
 clean_libend2end_test_invoke_large_request:
 	$(E) "[CLEAN]   Cleaning libend2end_test_invoke_large_request files"
 	$(Q) $(RM) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
@@ -2280,6 +2552,8 @@ deps_libend2end_test_max_concurrent_streams: $(LIBEND2END_TEST_MAX_CONCURRENT_ST
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/max_concurrent_streams.o: 
 
 clean_libend2end_test_max_concurrent_streams:
 	$(E) "[CLEAN]   Cleaning libend2end_test_max_concurrent_streams files"
@@ -2311,6 +2585,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_NO_OP_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/no_op.o: 
+
 clean_libend2end_test_no_op:
 	$(E) "[CLEAN]   Cleaning libend2end_test_no_op files"
 	$(Q) $(RM) $(LIBEND2END_TEST_NO_OP_OBJS)
@@ -2340,6 +2616,8 @@ deps_libend2end_test_ping_pong_streaming: $(LIBEND2END_TEST_PING_PONG_STREAMING_
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/ping_pong_streaming.o: 
 
 clean_libend2end_test_ping_pong_streaming:
 	$(E) "[CLEAN]   Cleaning libend2end_test_ping_pong_streaming files"
@@ -2371,6 +2649,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/request_response_with_binary_metadata_and_payload.o: 
+
 clean_libend2end_test_request_response_with_binary_metadata_and_payload:
 	$(E) "[CLEAN]   Cleaning libend2end_test_request_response_with_binary_metadata_and_payload files"
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS)
@@ -2400,6 +2680,8 @@ deps_libend2end_test_request_response_with_metadata_and_payload: $(LIBEND2END_TE
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/request_response_with_metadata_and_payload.o: 
 
 clean_libend2end_test_request_response_with_metadata_and_payload:
 	$(E) "[CLEAN]   Cleaning libend2end_test_request_response_with_metadata_and_payload files"
@@ -2431,6 +2713,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/request_response_with_payload.o: 
+
 clean_libend2end_test_request_response_with_payload:
 	$(E) "[CLEAN]   Cleaning libend2end_test_request_response_with_payload files"
 	$(Q) $(RM) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
@@ -2460,6 +2744,8 @@ deps_libend2end_test_request_response_with_trailing_metadata_and_payload: $(LIBE
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/request_response_with_trailing_metadata_and_payload.o: 
 
 clean_libend2end_test_request_response_with_trailing_metadata_and_payload:
 	$(E) "[CLEAN]   Cleaning libend2end_test_request_response_with_trailing_metadata_and_payload files"
@@ -2491,6 +2777,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/simple_delayed_request.o: 
+
 clean_libend2end_test_simple_delayed_request:
 	$(E) "[CLEAN]   Cleaning libend2end_test_simple_delayed_request files"
 	$(Q) $(RM) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
@@ -2520,6 +2808,8 @@ deps_libend2end_test_simple_request: $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/simple_request.o: 
 
 clean_libend2end_test_simple_request:
 	$(E) "[CLEAN]   Cleaning libend2end_test_simple_request files"
@@ -2551,6 +2841,8 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_THREAD_STRESS_DEPS)
 endif
 
+objs/$(CONFIG)/test/core/end2end/tests/thread_stress.o: 
+
 clean_libend2end_test_thread_stress:
 	$(E) "[CLEAN]   Cleaning libend2end_test_thread_stress files"
 	$(Q) $(RM) $(LIBEND2END_TEST_THREAD_STRESS_OBJS)
@@ -2580,6 +2872,8 @@ deps_libend2end_test_writes_done_hangs_with_pending_read: $(LIBEND2END_TEST_WRIT
 ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
 endif
+
+objs/$(CONFIG)/test/core/end2end/tests/writes_done_hangs_with_pending_read.o: 
 
 clean_libend2end_test_writes_done_hangs_with_pending_read:
 	$(E) "[CLEAN]   Cleaning libend2end_test_writes_done_hangs_with_pending_read files"
@@ -2624,6 +2918,11 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBEND2END_CERTS_DEPS)
 endif
 endif
+
+objs/$(CONFIG)/test/core/end2end/data/test_root_cert.o: 
+objs/$(CONFIG)/test/core/end2end/data/prod_roots_certs.o: 
+objs/$(CONFIG)/test/core/end2end/data/server1_cert.o: 
+objs/$(CONFIG)/test/core/end2end/data/server1_key.o: 
 
 clean_libend2end_certs:
 	$(E) "[CLEAN]   Cleaning libend2end_certs files"
