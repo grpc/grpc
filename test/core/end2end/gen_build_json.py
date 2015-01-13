@@ -80,6 +80,7 @@ def main():
                   'end2end_certs',
                   'grpc_test_util',
                   'grpc',
+                  'gpr_test_util',
                   'gpr'
               ]
           }
