@@ -51,7 +51,8 @@ class RpcMethod;
 class StreamContext : public StreamContextInterface {
  public:
   StreamContext(const RpcMethod& method, ClientContext* context,
-                const google::protobuf::Message* request, google::protobuf::Message* result);
+                const google::protobuf::Message* request,
+                google::protobuf::Message* result);
   StreamContext(const RpcMethod& method, grpc_call* call,
                 grpc_completion_queue* cq, google::protobuf::Message* request,
                 google::protobuf::Message* result);
@@ -81,11 +82,11 @@ class StreamContext : public StreamContextInterface {
   grpc_completion_queue* cq() { return cq_; }
 
   bool is_client_;
-  const RpcMethod* method_;         // not owned
-  grpc_call* call_;                 // not owned
-  grpc_completion_queue* cq_;       // not owned
-  google::protobuf::Message* request_;        // first request, not owned
-  google::protobuf::Message* result_;         // last response, not owned
+  const RpcMethod* method_;             // not owned
+  grpc_call* call_;                     // not owned
+  grpc_completion_queue* cq_;           // not owned
+  google::protobuf::Message* request_;  // first request, not owned
+  google::protobuf::Message* result_;   // last response, not owned
 
   bool peer_halfclosed_;
   bool self_halfclosed_;

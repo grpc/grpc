@@ -41,4 +41,4 @@
    customize for their own filters */
 extern const grpc_channel_filter grpc_no_op_filter;
 
-#endif  /* __GRPC_INTERNAL_CHANNEL_NOOP_FILTER_H__ */
+#endif /* __GRPC_INTERNAL_CHANNEL_NOOP_FILTER_H__ */

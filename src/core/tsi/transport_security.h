@@ -109,10 +109,10 @@ tsi_result tsi_construct_list_peer_property(const char* name,
                                             tsi_peer_property* property);
 
 /* Utils. */
-char* tsi_strdup(const char* src);  /* Sadly, no strdup in C89. */
+char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* __TRANSPORT_SECURITY_H_ */
+#endif /* __TRANSPORT_SECURITY_H_ */

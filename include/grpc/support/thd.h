@@ -76,4 +76,4 @@ gpr_thd_options gpr_thd_options_default(void);
 }
 #endif
 
-#endif  /* __GRPC_SUPPORT_THD_H__ */
+#endif /* __GRPC_SUPPORT_THD_H__ */

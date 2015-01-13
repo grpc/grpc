@@ -33,6 +33,4 @@
 
 #include "src/cpp/server/server_context_impl.h"
 
-namespace grpc {
-
-}  // namespace grpc
+namespace grpc {}  // namespace grpc

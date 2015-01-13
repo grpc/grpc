@@ -74,4 +74,4 @@ int gpr_asprintf(char **strp, const char *format, ...);
 }
 #endif
 
-#endif  /* __GRPC_SUPPORT_STRING_H__ */
+#endif /* __GRPC_SUPPORT_STRING_H__ */

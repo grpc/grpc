@@ -44,7 +44,7 @@ class FileDescriptor;
 
 namespace grpc_go_generator {
 
-string GetServices(const google::protobuf::FileDescriptor* file);
+std::string GetServices(const google::protobuf::FileDescriptor* file);
 
 }  // namespace grpc_go_generator
 

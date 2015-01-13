@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 # Copyright 2014, Google Inc.
 # All rights reserved.
 #
@@ -27,8 +29,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#!/usr/bin/env ruby
-#
+
 # Sample app that accesses a Calc service running on a Ruby gRPC server and
 # helps validate RpcServer as a gRPC server using proto2 serialization.
 #

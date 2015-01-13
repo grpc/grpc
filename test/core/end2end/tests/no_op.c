@@ -106,7 +106,4 @@ static void test_no_op(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-
-void grpc_end2end_tests(grpc_end2end_test_config config) {
-  test_no_op(config);
-}
+void grpc_end2end_tests(grpc_end2end_test_config config) { test_no_op(config); }

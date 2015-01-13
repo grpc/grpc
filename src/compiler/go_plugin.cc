@@ -61,8 +61,8 @@ class GoGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
     string file_name;
     if (file->name().size() > 6 &&
         file->name().find_last_of(".proto") == file->name().size() - 1) {
-      file_name = file->name().substr(0, file->name().size() - 6) +
-          "_grpc.pb.go";
+      file_name =
+          file->name().substr(0, file->name().size() - 6) + "_grpc.pb.go";
     } else {
       *error = "Invalid proto file name. Proto file must end with .proto";
       return false;

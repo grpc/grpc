@@ -61,4 +61,4 @@ void grpc_httpcli_parser_destroy(grpc_httpcli_parser *parser);
 int grpc_httpcli_parser_parse(grpc_httpcli_parser *parser, gpr_slice slice);
 int grpc_httpcli_parser_eof(grpc_httpcli_parser *parser);
 
-#endif  /* __GRPC_INTERNAL_HTTPCLI_PARSER_H__ */
+#endif /* __GRPC_INTERNAL_HTTPCLI_PARSER_H__ */

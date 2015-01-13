@@ -453,4 +453,4 @@ void grpc_server_destroy(grpc_server *server);
 }
 #endif
 
-#endif  /* __GRPC_GRPC_H__ */
+#endif /* __GRPC_GRPC_H__ */

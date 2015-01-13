@@ -38,4 +38,4 @@
 
 gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 stream_id, gpr_uint32 code);
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_RST_STREAM_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_RST_STREAM_H__ */
