@@ -60,7 +60,6 @@ typedef enum {
 
 const char* tsi_result_to_string(tsi_result result);
 
-
 /* --- tsi_frame_protector object ---
 
   This object protects and unprotects buffers once the handshake is done.
@@ -121,12 +120,11 @@ typedef struct tsi_frame_protector tsi_frame_protector;
 
    if (result != TSI_OK) HandleError(result);
    ------------------------------------------------------------------------  */
-tsi_result tsi_frame_protector_protect(
-    tsi_frame_protector* self,
-    const unsigned char* unprotected_bytes,
-    uint32_t* unprotected_bytes_size,
-    unsigned char* protected_output_frames,
-    uint32_t* protected_output_frames_size);
+tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
+                                       const unsigned char* unprotected_bytes,
+                                       uint32_t* unprotected_bytes_size,
+                                       unsigned char* protected_output_frames,
+                                       uint32_t* protected_output_frames_size);
 
 /* Indicates that we need to flush the bytes buffered in the protector and get
    the resulting frame.
@@ -137,10 +135,8 @@ tsi_result tsi_frame_protector_protect(
    - still_pending_bytes is an output parameter indicating the number of bytes
      that still need to be flushed from the protector.*/
 tsi_result tsi_frame_protector_protect_flush(
-    tsi_frame_protector* self,
-    unsigned char* protected_output_frames,
-    uint32_t* protected_output_frames_size,
-    uint32_t* still_pending_size);
+    tsi_frame_protector* self, unsigned char* protected_output_frames,
+    uint32_t* protected_output_frames_size, uint32_t* still_pending_size);
 
 /* Outputs unprotected bytes.
    - protected_frames_bytes is an input only parameter and points to the
@@ -163,15 +159,12 @@ tsi_result tsi_frame_protector_protect_flush(
      needs to be read before new protected data can be processed in which case
      protected_frames_size will be set to 0.  */
 tsi_result tsi_frame_protector_unprotect(
-    tsi_frame_protector* self,
-    const unsigned char* protected_frames_bytes,
-    uint32_t* protected_frames_bytes_size,
-    unsigned char* unprotected_bytes,
+    tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
+    uint32_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
     uint32_t* unprotected_bytes_size);
 
 /* Destroys the tsi_frame_protector object.  */
 void tsi_frame_protector_destroy(tsi_frame_protector* self);
-
 
 /* --- tsi_peer objects ---
 
@@ -333,7 +326,6 @@ tsi_result tsi_handshaker_get_result(tsi_handshaker* self);
 #define tsi_handshaker_is_in_progress(h) \
   (tsi_handshaker_get_result((h)) == TSI_HANDSHAKE_IN_PROGRESS)
 
-
 /* This method may return TSI_FAILED_PRECONDITION if
    tsi_handshaker_is_in_progress returns 1, it returns TSI_OK otherwise
    assuming the handshaker is not in a fatal error state.
@@ -357,8 +349,7 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer);
    the handshaker is not in a fatal error state.
    The caller is responsible for destroying the protector.  */
 tsi_result tsi_handshaker_create_frame_protector(
-    tsi_handshaker* self,
-    uint32_t* max_output_protected_frame_size,
+    tsi_handshaker* self, uint32_t* max_output_protected_frame_size,
     tsi_frame_protector** protector);
 
 /* This method releases the tsi_handshaker object. After this method is called,
@@ -369,4 +360,4 @@ void tsi_handshaker_destroy(tsi_handshaker* self);
 }
 #endif
 
-#endif  /* __TRANSPORT_SECURITY_INTERFACE_H_ */
+#endif /* __TRANSPORT_SECURITY_INTERFACE_H_ */

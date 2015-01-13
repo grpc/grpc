@@ -11,7 +11,6 @@ import time
 import jobset
 import watch_dirs
 
-
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
   def __init__(self, config):
@@ -43,6 +42,7 @@ _CONFIGS = {
 
 
 _DEFAULT = ['dbg', 'opt']
+_MAKE_TEST_TARGETS = ['buildtests_c', 'buildtests_cxx']
 
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
@@ -75,9 +75,11 @@ def _build_and_run(check_cancelled):
   if not jobset.run(
       (['make',
         '-j', '%d' % (multiprocessing.cpu_count() + 1),
-        'buildtests_c',
+        target,
         'CONFIG=%s' % cfg]
-       for cfg in build_configs), check_cancelled, maxjobs=1):
+       for cfg in build_configs
+       for target in _MAKE_TEST_TARGETS),
+      check_cancelled, maxjobs=1):
     sys.exit(1)
 
   # run all the tests

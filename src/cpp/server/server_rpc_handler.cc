@@ -60,8 +60,10 @@ void ServerRpcHandler::StartRpc() {
     async_server_context_->Accept(cq_.cq());
 
     // Allocate request and response.
-    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
-    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+    std::unique_ptr<google::protobuf::Message> request(
+        method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(
+        method_->AllocateResponseProto());
 
     // Read request
     async_server_context_->StartRead(request.get());
@@ -86,8 +88,10 @@ void ServerRpcHandler::StartRpc() {
   } else {
     // Allocate request and response.
     // TODO(yangg) maybe not allocate both when not needed?
-    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
-    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+    std::unique_ptr<google::protobuf::Message> request(
+        method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(
+        method_->AllocateResponseProto());
 
     StreamContext stream_context(*method_, async_server_context_->call(),
                                  cq_.cq(), request.get(), response.get());

@@ -92,4 +92,4 @@ void gpr_cmdline_destroy(gpr_cmdline *cl);
 }
 #endif
 
-#endif  /* __GRPC_SUPPORT_CMDLINE_H__ */
+#endif /* __GRPC_SUPPORT_CMDLINE_H__ */

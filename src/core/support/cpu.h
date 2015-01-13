@@ -46,4 +46,4 @@ int gpr_cpu_num_cores();
    [0, gpr_cpu_num_cores() - 1] */
 int gpr_cpu_current_cpu();
 
-#endif  /* __GRPC_INTERNAL_SUPPORT_CPU_H__ */
+#endif /* __GRPC_INTERNAL_SUPPORT_CPU_H__ */

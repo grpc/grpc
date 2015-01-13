@@ -47,4 +47,4 @@ struct grpc_byte_buffer {
   } data;
 };
 
-#endif  /* __GRPC_BYTE_BUFFER_H__ */
+#endif /* __GRPC_BYTE_BUFFER_H__ */

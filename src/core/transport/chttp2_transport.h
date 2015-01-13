@@ -44,4 +44,4 @@ void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   size_t nslices, grpc_mdctx *metadata_context,
                                   int is_client);
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_TRANSPORT_H__ */

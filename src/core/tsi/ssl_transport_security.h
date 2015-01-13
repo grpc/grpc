@@ -162,9 +162,8 @@ void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory* self);
 /* Util that checks that an ssl peer matches a specific name. */
 int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
 
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* __SSL_TRANSPORT_SECURITY_H_ */
+#endif /* __SSL_TRANSPORT_SECURITY_H_ */

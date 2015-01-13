@@ -128,7 +128,7 @@ static VALUE grpc_rb_server_init(int argc, VALUE *argv, VALUE self) {
   }
 
   if (args.args != NULL) {
-    xfree(args.args);  /* Allocated by grpc_rb_hash_convert_to_channel_args */
+    xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
   }
   if (srv == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a gRPC server, not sure why");
@@ -240,8 +240,8 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
                StringValueCStr(port));
     }
   } else if (TYPE(is_secure) != T_FALSE) {
-    added_ok = grpc_server_add_secure_http2_port(s->wrapped,
-                                                 StringValueCStr(port));
+    added_ok =
+        grpc_server_add_secure_http2_port(s->wrapped, StringValueCStr(port));
     if (added_ok == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add secure port %s to server, not sure why",
@@ -271,7 +271,7 @@ void Init_google_rpc_server() {
 }
 
 /* Gets the wrapped server from the ruby wrapper */
-grpc_server* grpc_rb_get_wrapped_server(VALUE v) {
+grpc_server *grpc_rb_get_wrapped_server(VALUE v) {
   grpc_rb_server *wrapper = NULL;
   Data_Get_Struct(v, grpc_rb_server, wrapper);
   return wrapper->wrapped;
