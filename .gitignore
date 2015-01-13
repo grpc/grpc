@@ -1,6 +1,6 @@
 bins
 deps
 gens
-objs
 libs
+objs
 *.pyc
