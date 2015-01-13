@@ -960,6 +960,15 @@ gens/test/cpp/interop/test.pb.cc: test/cpp/interop/test.proto protoc_plugins
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
+deps/$(CONFIG)/gens/test/cpp/qps/qpstest.pb.dep:
+	$(Q) mkdir -p `dirname $@`
+	$(Q) touch $@
+
+gens/test/cpp/qps/qpstest.pb.cc: test/cpp/qps/qpstest.proto protoc_plugins
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+
 deps/$(CONFIG)/gens/test/cpp/util/echo.pb.dep:
 	$(Q) mkdir -p `dirname $@`
 	$(Q) touch $@
@@ -5584,9 +5593,7 @@ clean_sync_client_async_server_test:
 
 
 QPS_CLIENT_SRC = \
-    gens/test/cpp/interop/empty.pb.cc \
-    gens/test/cpp/interop/messages.pb.cc \
-    gens/test/cpp/interop/test.pb.cc \
+    gens/test/cpp/qps/qpstest.pb.cc \
     test/cpp/qps/client.cc \
 
 QPS_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_CLIENT_SRC))))
@@ -5605,9 +5612,7 @@ bins/$(CONFIG)/qps_client: $(QPS_CLIENT_OBJS) libs/$(CONFIG)/libgrpc++_test_util
 
 endif
 
-objs/$(CONFIG)/test/cpp/interop/empty.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 objs/$(CONFIG)/test/cpp/qps/client.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
 deps_qps_client: $(QPS_CLIENT_DEPS)
@@ -5626,9 +5631,7 @@ clean_qps_client:
 
 
 QPS_SERVER_SRC = \
-    gens/test/cpp/interop/empty.pb.cc \
-    gens/test/cpp/interop/messages.pb.cc \
-    gens/test/cpp/interop/test.pb.cc \
+    gens/test/cpp/qps/qpstest.pb.cc \
     test/cpp/qps/server.cc \
 
 QPS_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_SERVER_SRC))))
@@ -5647,9 +5650,7 @@ bins/$(CONFIG)/qps_server: $(QPS_SERVER_OBJS) libs/$(CONFIG)/libgrpc++_test_util
 
 endif
 
-objs/$(CONFIG)/test/cpp/interop/empty.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 objs/$(CONFIG)/test/cpp/qps/server.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
 deps_qps_server: $(QPS_SERVER_DEPS)
