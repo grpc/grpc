@@ -1,0 +1,72 @@
+var assert = require('assert');
+var grpc = require('../build/Release/grpc');
+
+describe('end-to-end', function() {
+  it('should start and end a request without error', function() {
+    var event;
+    var client_queue = new grpc.CompletionQueue();
+    var server_queue = new grpc.CompletionQueue();
+    var server = new grpc.Server(server_queue);
+    server.addHttp2Port('localhost:9000');
+    var channel = new grpc.Channel('localhost:9000');
+    var deadline = Infinity;
+    var status_text = 'xyz';
+    var call = new grpc.Call(channel, 'dummy_method', deadline);
+    var tag = 1;
+    assert.strictEqual(call.startInvoke(client_queue, tag, tag, tag),
+                       grpc.callError.OK);
+    var server_tag = 2;
+
+    // the client invocation was accepted
+    event = client_queue.next(deadline);
+    assert.notEqual(event, null);
+    assert.strictEqual(event->getType(), grpc.completionType.INVOKE_ACCEPTED);
+
+    assert.strictEqual(call.writesDone(tag), grpc.callError.CALL_OK);
+    event = client_queue.next(deadline);
+    assert.notEqual(event, null);
+    assert.strictEqual(event.getType(), grpc.completionType.FINISH_ACCEPTED);
+    assert.strictEqual(event.getData(), grpc.opError.OK);
+
+    // check that a server rpc new was recieved
+    assert(server.start());
+    assert.strictEqual(server.requestCall(server_tag, server_tag),
+                       grpc.callError.OK);
+    event = server_queue.next(deadline);
+    assert.notEqual(event, null);
+    assert.strictEqual(event.getType(), grpc.completionType.SERVER_RPC_NEW);
+    var server_call = event.getCall();
+    assert.notEqual(server_call, null);
+    assert.strictEqual(server_call.accept(server_queue, server_tag),
+                       grpc.callError.OK);
+
+    // the server sends the status
+    assert.strictEqual(server_call.start_write_status(grpc.status.OK,
+                                                      status_text,
+                                                      server_tag),
+                       grpc.callError.OK);
+    event = server_queue.next(deadline);
+    assert.notEqual(event, null);
+    assert.strictEqual(event.getType(), grpc.completionType.FINISH_ACCEPTED);
+    assert.strictEqual(event.getData(), grpc.opError.OK);
+
+    // the client gets CLIENT_METADATA_READ
+    event = client_queue.next(deadline);
+    assert.notEqual(event, null);
+    assert.strictEqual(event.getType(),
+                       grpc.completionType.CLIENT_METADATA_READ);
+
+    // the client gets FINISHED
+    event = client_queue.next(deadline);
+    assert.notEqual(event, null);
+    assert.strictEqual(event.getType(), grpc.completionType.FINISHED);
+    var status = event.getData();
+    assert.strictEqual(status.code, grpc.status.OK);
+    assert.strictEqual(status.details, status_text);
+
+    // the server gets FINISHED
+    event = client_queue.next(deadline);
+    assert.notEqual(event, null);
+    assert.strictEqual(event.getType(), grpc.completionType.FINISHED);
+  });
+});

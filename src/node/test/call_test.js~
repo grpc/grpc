@@ -1,0 +1,6 @@
+var assert = require('assert');
+var grpc = require('../build/Release/grpc');
+
+describe('call', function() {
+  describe('constructor', function() {
+    it('should reject anything less than 4 arguments', function() {

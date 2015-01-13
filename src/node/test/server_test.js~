@@ -1,0 +1,22 @@
+var assert = require('assert');
+var grpc = require('./build/Debug/grpc');
+var Server = require('server');
+
+function echoHandler(arg_iter) {
+  return {
+    'next' : function(write) {
+      arg_iter.next(function(err, value) {
+        write(err, value);
+      });
+    }
+  }
+}
+
+describe('echo server', function() {
+  it('should echo inputs as responses', function(done) {
+    var server = new Server('localhost:5000');
+    server.register('echo', echoHandler);
+    server.start();
+
+  });
+});

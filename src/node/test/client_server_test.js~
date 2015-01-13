@@ -1,0 +1,59 @@
+var assert = require('assert');
+var grpc = require('../build/Debug/grpc');
+var Server = require('../server');
+var client = require('../client');
+var port_picker = require('../port_picker');
+var iterators = require('async-iterators');
+
+/**
+ * General function to process an event by checking that there was no error and
+ * calling the callback passed as a tag.
+ * @param {*} err Truthy values indicate an error (in this case, that there was
+ *     no event available).
+ * @param {grpc.Event} event The event to process.
+ */
+function processEvent(err, event) {
+  assert.ifError(err);
+  assert.notEqual(event, null);
+  event.getTag()(event);
+}
+
+/**
+ * Responds to every request with the same data as a response
+ * @param {{next:function(function(*, Buffer))}} arg_iter The async iterator of
+ *     arguments.
+ * @return {{next:function(function(*, Buffer))}} The async iterator of results
+ */
+function echoHandler(arg_iter) {
+  return {
+    'next' : function(write) {
+      arg_iter.next(function(err, value) {
+        if (value == undefined) {
+          write({
+            'code' : grpc.status.OK,
+            'details' : 'OK'
+          });
+        } else {
+          write(err, value);
+        }
+      });
+    }
+  };
+}
+
+describe('echo client server', function() {
+  it('should recieve echo responses', function(done) {
+    port_picker.nextAvailablePort(function(port) {
+      var server = new Server(port);
+      server.register('echo', echoHandler);
+      server.start();
+
+      var messages = ['echo1', 'echo2', 'echo3'];
+      var channel = new grpc.Channel(port);
+      var responses = client.makeRequest(channel,
+                                         'echo',
+                                         iterators.fromArray(messages));
+      assert.equal(messages, iterators.toArray(responses));
+    });
+  });
+});
