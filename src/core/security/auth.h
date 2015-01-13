@@ -38,4 +38,4 @@
 
 extern const grpc_channel_filter grpc_client_auth_filter;
 
-#endif  /* __GRPC_INTERNAL_SECURITY_AUTH_H__ */
+#endif /* __GRPC_INTERNAL_SECURITY_AUTH_H__ */

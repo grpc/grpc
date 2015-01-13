@@ -55,8 +55,8 @@ static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
 }
 
 static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  /* InterlockedCompareExchangePointerNoFence() not available on vista or
-     windows7 */
+/* InterlockedCompareExchangePointerNoFence() not available on vista or
+   windows7 */
 #ifdef GPR_ARCH_64
   return o == (gpr_atm)InterlockedCompareExchangeAcquire64(p, n, o);
 #else

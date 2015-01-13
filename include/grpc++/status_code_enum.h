@@ -34,7 +34,6 @@
 #ifndef __GRPCPP_STATUS_CODE_ENUM_H__
 #define __GRPCPP_STATUS_CODE_ENUM_H__
 
-
 namespace grpc {
 
 enum StatusCode {

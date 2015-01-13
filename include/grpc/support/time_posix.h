@@ -40,4 +40,4 @@
 
 typedef struct timespec gpr_timespec;
 
-#endif  /* __GRPC_SUPPORT_TIME_POSIX_H__ */
+#endif /* __GRPC_SUPPORT_TIME_POSIX_H__ */

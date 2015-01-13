@@ -50,7 +50,6 @@ typedef struct grpc_rb_event {
   grpc_event *wrapped;
 } grpc_rb_event;
 
-
 /* rb_mCompletionType is a ruby module that holds the completion type values */
 VALUE rb_mCompletionType = Qnil;
 
@@ -107,15 +106,15 @@ static VALUE grpc_rb_event_type(VALUE self) {
       return rb_const_get(rb_mCompletionType, rb_intern("READ"));
 
     case GRPC_INVOKE_ACCEPTED:
-      grpc_rb_event_result(self);  /* validates the result */
+      grpc_rb_event_result(self); /* validates the result */
       return rb_const_get(rb_mCompletionType, rb_intern("INVOKE_ACCEPTED"));
 
     case GRPC_WRITE_ACCEPTED:
-      grpc_rb_event_result(self);  /* validates the result */
+      grpc_rb_event_result(self); /* validates the result */
       return rb_const_get(rb_mCompletionType, rb_intern("WRITE_ACCEPTED"));
 
     case GRPC_FINISH_ACCEPTED:
-      grpc_rb_event_result(self);  /* validates the result */
+      grpc_rb_event_result(self); /* validates the result */
       return rb_const_get(rb_mCompletionType, rb_intern("FINISH_ACCEPTED"));
 
     case GRPC_CLIENT_METADATA_READ:
@@ -129,8 +128,8 @@ static VALUE grpc_rb_event_type(VALUE self) {
       return rb_const_get(rb_mCompletionType, rb_intern("SERVER_RPC_NEW"));
 
     default:
-      rb_raise(rb_eRuntimeError,
-               "unrecognized event code for an rpc event:%d", event->type);
+      rb_raise(rb_eRuntimeError, "unrecognized event code for an rpc event:%d",
+               event->type);
   }
   return Qnil; /* should not be reached */
 }
@@ -189,7 +188,6 @@ static VALUE grpc_rb_event_metadata(VALUE self) {
   /* Figure out which metadata to read. */
   event = wrapper->wrapped;
   switch (event->type) {
-
     case GRPC_CLIENT_METADATA_READ:
       count = event->data.client_metadata_read.count;
       metadata = event->data.client_metadata_read.elements;
@@ -218,22 +216,18 @@ static VALUE grpc_rb_event_metadata(VALUE self) {
     key = rb_str_new2(metadata[i].key);
     value = rb_hash_aref(result, key);
     if (value == Qnil) {
-      value = rb_str_new(
-          metadata[i].value,
-          metadata[i].value_length);
+      value = rb_str_new(metadata[i].value, metadata[i].value_length);
       rb_hash_aset(result, key, value);
     } else if (TYPE(value) == T_ARRAY) {
       /* Add the string to the returned array */
-      rb_ary_push(value, rb_str_new(
-          metadata[i].value,
-          metadata[i].value_length));
+      rb_ary_push(value,
+                  rb_str_new(metadata[i].value, metadata[i].value_length));
     } else {
       /* Add the current value with this key and the new one to an array */
       new_ary = rb_ary_new();
       rb_ary_push(new_ary, value);
-      rb_ary_push(new_ary, rb_str_new(
-          metadata[i].value,
-          metadata[i].value_length));
+      rb_ary_push(new_ary,
+                  rb_str_new(metadata[i].value, metadata[i].value_length));
       rb_hash_aset(result, key, new_ary);
     }
   }
@@ -252,7 +246,6 @@ static VALUE grpc_rb_event_result(VALUE self) {
   event = wrapper->wrapped;
 
   switch (event->type) {
-
     case GRPC_QUEUE_SHUTDOWN:
       return Qnil;
 
@@ -287,29 +280,24 @@ static VALUE grpc_rb_event_result(VALUE self) {
       return grpc_rb_event_metadata(self);
 
     case GRPC_FINISHED:
-      return rb_struct_new(
-          rb_sStatus,
-          UINT2NUM(event->data.finished.status),
-          (event->data.finished.details == NULL ?
-           Qnil : rb_str_new2(event->data.finished.details)),
-          grpc_rb_event_metadata(self),
-          NULL);
+      return rb_struct_new(rb_sStatus, UINT2NUM(event->data.finished.status),
+                           (event->data.finished.details == NULL
+                                ? Qnil
+                                : rb_str_new2(event->data.finished.details)),
+                           grpc_rb_event_metadata(self), NULL);
       break;
 
     case GRPC_SERVER_RPC_NEW:
       return rb_struct_new(
-          rb_sNewServerRpc,
-          rb_str_new2(event->data.server_rpc_new.method),
+          rb_sNewServerRpc, rb_str_new2(event->data.server_rpc_new.method),
           rb_str_new2(event->data.server_rpc_new.host),
-          Data_Wrap_Struct(
-              rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
-              (void *)&event->data.server_rpc_new.deadline),
-          grpc_rb_event_metadata(self),
-          NULL);
+          Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+                           (void *)&event->data.server_rpc_new.deadline),
+          grpc_rb_event_metadata(self), NULL);
 
     default:
-      rb_raise(rb_eRuntimeError,
-               "unrecognized event code for an rpc event:%d", event->type);
+      rb_raise(rb_eRuntimeError, "unrecognized event code for an rpc event:%d",
+               event->type);
   }
 
   return Qfalse;
@@ -319,7 +307,7 @@ static VALUE grpc_rb_event_finish(VALUE self) {
   grpc_event *event = NULL;
   grpc_rb_event *wrapper = NULL;
   Data_Get_Struct(self, grpc_rb_event, wrapper);
-  if (wrapper->wrapped == NULL) {  /* already closed  */
+  if (wrapper->wrapped == NULL) { /* already closed  */
     return Qnil;
   }
   event = wrapper->wrapped;
@@ -337,8 +325,8 @@ VALUE rb_cEvent = Qnil;
 VALUE rb_eEventError = Qnil;
 
 void Init_google_rpc_event() {
-  rb_eEventError = rb_define_class_under(rb_mGoogleRpcCore, "EventError",
-                                         rb_eStandardError);
+  rb_eEventError =
+      rb_define_class_under(rb_mGoogleRpcCore, "EventError", rb_eStandardError);
   rb_cEvent = rb_define_class_under(rb_mGoogleRpcCore, "Event", rb_cObject);
 
   /* Prevent allocation or inialization from ruby. */
@@ -355,8 +343,8 @@ void Init_google_rpc_event() {
   rb_define_alias(rb_cEvent, "close", "finish");
 
   /* Constants representing the completion types */
-  rb_mCompletionType = rb_define_module_under(rb_mGoogleRpcCore,
-                                              "CompletionType");
+  rb_mCompletionType =
+      rb_define_module_under(rb_mGoogleRpcCore, "CompletionType");
   rb_define_const(rb_mCompletionType, "QUEUE_SHUTDOWN",
                   INT2NUM(GRPC_QUEUE_SHUTDOWN));
   rb_define_const(rb_mCompletionType, "READ", INT2NUM(GRPC_READ));
@@ -368,8 +356,7 @@ void Init_google_rpc_event() {
                   INT2NUM(GRPC_FINISH_ACCEPTED));
   rb_define_const(rb_mCompletionType, "CLIENT_METADATA_READ",
                   INT2NUM(GRPC_CLIENT_METADATA_READ));
-  rb_define_const(rb_mCompletionType, "FINISHED",
-                  INT2NUM(GRPC_FINISHED));
+  rb_define_const(rb_mCompletionType, "FINISHED", INT2NUM(GRPC_FINISHED));
   rb_define_const(rb_mCompletionType, "SERVER_RPC_NEW",
                   INT2NUM(GRPC_SERVER_RPC_NEW));
   rb_define_const(rb_mCompletionType, "RESERVED",

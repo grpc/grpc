@@ -50,4 +50,4 @@ void grpc_setup_secure_transport(grpc_security_context *ctx,
                                  grpc_secure_transport_setup_done_cb cb,
                                  void *user_data);
 
-#endif  /* __GRPC_INTERNAL_SECURITY_SECURE_TRANSPORT_SETUP_H__ */
+#endif /* __GRPC_INTERNAL_SECURITY_SECURE_TRANSPORT_SETUP_H__ */

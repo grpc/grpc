@@ -44,4 +44,4 @@ void grpc_test_init(int argc, char **argv);
 }
 #endif /*  __cplusplus */
 
-#endif  /* __GRPC_TEST_UTIL_TEST_CONFIG_H__ */
+#endif /* __GRPC_TEST_UTIL_TEST_CONFIG_H__ */

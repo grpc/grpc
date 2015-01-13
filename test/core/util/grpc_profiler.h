@@ -45,4 +45,4 @@ void grpc_profiler_stop();
 }
 #endif /*  __cplusplus */
 
-#endif  /* __GRPC_TEST_UTIL_GRPC_PROFILER_H__ */
+#endif /* __GRPC_TEST_UTIL_GRPC_PROFILER_H__ */

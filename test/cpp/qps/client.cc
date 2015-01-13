@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <cassert>
 #include <memory>
 #include <string>
@@ -166,7 +165,7 @@ void RunTest(const int client_threads, const int client_channels,
 
   gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);
   GPR_ASSERT(hist != NULL);
-  for (auto& t : threads) {
+  for (auto &t : threads) {
     t.join();
   }
   for (int i = 0; i < client_threads; i++) {

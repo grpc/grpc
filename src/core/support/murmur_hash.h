@@ -41,4 +41,4 @@
 /* compute the hash of key (length len) */
 gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed);
 
-#endif  /* __GRPC_INTERNAL_SUPPORT_MURMUR_HASH_H__ */
+#endif /* __GRPC_INTERNAL_SUPPORT_MURMUR_HASH_H__ */

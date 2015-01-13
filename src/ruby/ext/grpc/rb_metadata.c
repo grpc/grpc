@@ -48,7 +48,6 @@ typedef struct grpc_rb_metadata {
   grpc_metadata *wrapped;
 } grpc_rb_metadata;
 
-
 /* Destroys Metadata instances. */
 static void grpc_rb_metadata_free(void *p) {
   if (p == NULL) {
@@ -102,7 +101,7 @@ static VALUE grpc_rb_metadata_init(VALUE self, VALUE key, VALUE value) {
   wrapper->wrapped = md;
   if (TYPE(key) == T_SYMBOL) {
     md->key = (char *)rb_id2name(SYM2ID(key));
-  } else {  /* StringValueCStr does all other type exclusions for us */
+  } else { /* StringValueCStr does all other type exclusions for us */
     md->key = StringValueCStr(key);
   }
   md->value = RSTRING_PTR(value);
@@ -189,8 +188,8 @@ static VALUE grpc_rb_metadata_value(VALUE self) {
 /* rb_cMetadata is the Metadata class whose instances proxy grpc_metadata. */
 VALUE rb_cMetadata = Qnil;
 void Init_google_rpc_metadata() {
-  rb_cMetadata = rb_define_class_under(rb_mGoogleRpcCore, "Metadata",
-                                       rb_cObject);
+  rb_cMetadata =
+      rb_define_class_under(rb_mGoogleRpcCore, "Metadata", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cMetadata, grpc_rb_metadata_alloc);
@@ -209,7 +208,7 @@ void Init_google_rpc_metadata() {
 }
 
 /* Gets the wrapped metadata from the ruby wrapper */
-grpc_metadata* grpc_rb_get_wrapped_metadata(VALUE v) {
+grpc_metadata *grpc_rb_get_wrapped_metadata(VALUE v) {
   grpc_rb_metadata *wrapper = NULL;
   Data_Get_Struct(v, grpc_rb_metadata, wrapper);
   return wrapper->wrapped;

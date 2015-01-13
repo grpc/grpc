@@ -46,7 +46,6 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
   grpc_channel_args* args;
 
   switch (TYPE(key)) {
-
     case T_STRING:
       the_key = StringValuePtr(key);
       break;
@@ -68,13 +67,12 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
     return ST_STOP;
   }
 
-  args->args[args->num_args - 1].key = (char *)the_key;
+  args->args[args->num_args - 1].key = (char*)the_key;
   switch (TYPE(val)) {
-
     case T_SYMBOL:
       args->args[args->num_args - 1].type = GRPC_ARG_STRING;
       args->args[args->num_args - 1].value.string =
-          (char *)rb_id2name(SYM2ID(val));
+          (char*)rb_id2name(SYM2ID(val));
       --args->num_args;
       return ST_CONTINUE;
 
@@ -109,11 +107,10 @@ typedef struct channel_convert_params {
   grpc_channel_args* dst;
 } channel_convert_params;
 
-
 static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
   ID id_size = rb_intern("size");
   VALUE rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
-  channel_convert_params* params = (channel_convert_params *)as_value;
+  channel_convert_params* params = (channel_convert_params*)as_value;
   size_t num_args = 0;
 
   if (!NIL_P(params->src_hash) && TYPE(params->src_hash) != T_HASH) {
@@ -146,7 +143,7 @@ void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
   /* Make a protected call to grpc_rb_hash_convert_channel_args */
   params.src_hash = src_hash;
   params.dst = dst;
-  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE) &params, &status);
+  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE)&params, &status);
   if (status != 0) {
     if (dst->args != NULL) {
       /* Free any allocated memory before propagating the error */

@@ -44,7 +44,7 @@ char* tsi_strdup(const char* src) {
   if (!src) return NULL;
   len = strlen(src) + 1;
   dst = malloc(len);
-  if (!dst)  return NULL;
+  if (!dst) return NULL;
   memcpy(dst, src, len);
   return dst;
 }
@@ -84,17 +84,15 @@ const char* tsi_result_to_string(tsi_result result) {
   }
 }
 
-
 /* --- tsi_frame_protector common implementation. ---
 
    Calls specific implementation after state/input validation. */
 
-tsi_result tsi_frame_protector_protect(
-    tsi_frame_protector* self,
-    const unsigned char* unprotected_bytes,
-    uint32_t* unprotected_bytes_size,
-    unsigned char* protected_output_frames,
-    uint32_t* protected_output_frames_size) {
+tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
+                                       const unsigned char* unprotected_bytes,
+                                       uint32_t* unprotected_bytes_size,
+                                       unsigned char* protected_output_frames,
+                                       uint32_t* protected_output_frames_size) {
   if (self == NULL || unprotected_bytes == NULL ||
       unprotected_bytes_size == NULL || protected_output_frames == NULL ||
       protected_output_frames_size == NULL) {
@@ -106,10 +104,8 @@ tsi_result tsi_frame_protector_protect(
 }
 
 tsi_result tsi_frame_protector_protect_flush(
-    tsi_frame_protector* self,
-    unsigned char* protected_output_frames,
-    uint32_t* protected_output_frames_size,
-    uint32_t* still_pending_size) {
+    tsi_frame_protector* self, unsigned char* protected_output_frames,
+    uint32_t* protected_output_frames_size, uint32_t* still_pending_size) {
   if (self == NULL || protected_output_frames == NULL ||
       protected_output_frames == NULL || still_pending_size == NULL) {
     return TSI_INVALID_ARGUMENT;
@@ -120,10 +116,8 @@ tsi_result tsi_frame_protector_protect_flush(
 }
 
 tsi_result tsi_frame_protector_unprotect(
-    tsi_frame_protector* self,
-    const unsigned char* protected_frames_bytes,
-    uint32_t* protected_frames_bytes_size,
-    unsigned char* unprotected_bytes,
+    tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
+    uint32_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
     uint32_t* unprotected_bytes_size) {
   if (self == NULL || protected_frames_bytes == NULL ||
       protected_frames_bytes_size == NULL || unprotected_bytes == NULL ||
@@ -140,7 +134,6 @@ void tsi_frame_protector_destroy(tsi_frame_protector* self) {
   self->vtable->destroy(self);
 }
 
-
 /* --- tsi_handshaker common implementation. ---
 
    Calls specific implementation after state/input validation. */
@@ -152,7 +145,6 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   return self->vtable->get_bytes_to_send_to_peer(self, bytes, bytes_size);
 }
-
 
 tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
                                                   const unsigned char* bytes,
@@ -179,8 +171,7 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer) {
 }
 
 tsi_result tsi_handshaker_create_frame_protector(
-    tsi_handshaker* self,
-    uint32_t* max_protected_frame_size,
+    tsi_handshaker* self, uint32_t* max_protected_frame_size,
     tsi_frame_protector** protector) {
   tsi_result result;
   if (self == NULL || protector == NULL) return TSI_INVALID_ARGUMENT;
@@ -200,7 +191,6 @@ void tsi_handshaker_destroy(tsi_handshaker* self) {
   if (self == NULL) return;
   self->vtable->destroy(self);
 }
-
 
 /* --- tsi_peer implementation. --- */
 
@@ -226,7 +216,6 @@ tsi_peer_property tsi_init_peer_property(void) {
   memset(&property, 0, sizeof(tsi_peer_property));
   return property;
 }
-
 
 static void tsi_peer_destroy_list_property(tsi_peer_property* children,
                                            uint32_t child_count) {
@@ -254,7 +243,7 @@ void tsi_peer_property_destruct(tsi_peer_property* property) {
       /* Nothing to free. */
       break;
   }
-  *property = tsi_init_peer_property();  /* Reset everything to 0. */
+  *property = tsi_init_peer_property(); /* Reset everything to 0. */
 }
 
 void tsi_peer_destruct(tsi_peer* self) {

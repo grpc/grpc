@@ -78,7 +78,7 @@ void grpc_rb_call_destroy(void *p) {
 
   ref_count = rb_hash_aref(hash_all_calls, OFFT2NUM((VALUE)call));
   if (ref_count == Qnil) {
-    return;  /* No longer in the hash, so already deleted */
+    return; /* No longer in the hash, so already deleted */
   } else if (NUM2UINT(ref_count) == 1) {
     rb_hash_delete(hash_all_calls, OFFT2NUM((VALUE)call));
     grpc_call_destroy(call);
@@ -92,9 +92,9 @@ void grpc_rb_call_destroy(void *p) {
 VALUE rb_error_code_details;
 
 /* Obtains the error detail string for given error code */
-const char* grpc_call_error_detail_of(grpc_call_error err) {
+const char *grpc_call_error_detail_of(grpc_call_error err) {
   VALUE detail_ref = rb_hash_aref(rb_error_code_details, UINT2NUM(err));
-  const char* detail = "unknown error code!";
+  const char *detail = "unknown error code!";
   if (detail_ref != Qnil) {
     detail = StringValueCStr(detail_ref);
   }
@@ -164,7 +164,7 @@ static VALUE grpc_rb_call_add_metadata(int argc, VALUE *argv, VALUE self) {
   /* "11" == 1 mandatory args, 1 (flags) is optional */
   rb_scan_args(argc, argv, "11", &metadata, &flags);
   if (NIL_P(flags)) {
-    flags = UINT2NUM(0);  /* Default to no flags */
+    flags = UINT2NUM(0); /* Default to no flags */
   }
   if (TYPE(metadata) != T_HASH) {
     rb_raise(rb_eTypeError, "add metadata failed: metadata should be a hash");
@@ -217,14 +217,13 @@ static VALUE grpc_rb_call_start_invoke(int argc, VALUE *argv, VALUE self) {
   rb_scan_args(argc, argv, "41", &cqueue, &invoke_accepted_tag,
                &metadata_read_tag, &finished_tag, &flags);
   if (NIL_P(flags)) {
-    flags = UINT2NUM(0);  /* Default to no flags */
+    flags = UINT2NUM(0); /* Default to no flags */
   }
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_start_invoke(call, cq, ROBJECT(invoke_accepted_tag),
                                ROBJECT(metadata_read_tag),
-                               ROBJECT(finished_tag),
-                               NUM2UINT(flags));
+                               ROBJECT(finished_tag), NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "invoke failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -329,7 +328,7 @@ static VALUE grpc_rb_call_start_write(int argc, VALUE *argv, VALUE self) {
   /* "21" == 2 mandatory args, 1 (flags) is optional */
   rb_scan_args(argc, argv, "21", &byte_buffer, &tag, &flags);
   if (NIL_P(flags)) {
-    flags = UINT2NUM(0);  /* Default to no flags */
+    flags = UINT2NUM(0); /* Default to no flags */
   }
   bfr = grpc_rb_get_wrapped_byte_buffer(byte_buffer);
   Data_Get_Struct(self, grpc_call, call);
@@ -405,7 +404,7 @@ static VALUE grpc_rb_call_server_end_initial_metadata(int argc, VALUE *argv,
   /* "01" == 1 (flags) is optional */
   rb_scan_args(argc, argv, "01", &flags);
   if (NIL_P(flags)) {
-    flags = UINT2NUM(0);  /* Default to no flags */
+    flags = UINT2NUM(0); /* Default to no flags */
   }
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_server_end_initial_metadata(call, NUM2UINT(flags));
@@ -445,7 +444,6 @@ static VALUE grpc_rb_call_server_accept(VALUE self, VALUE cqueue,
   return Qnil;
 }
 
-
 /* rb_cCall is the ruby class that proxies grpc_call. */
 VALUE rb_cCall = Qnil;
 
@@ -477,8 +475,8 @@ void Init_google_rpc_error_codes() {
 
   /* Add the detail strings to a Hash */
   rb_error_code_details = rb_hash_new();
-  rb_hash_aset(rb_error_code_details,
-               UINT2NUM(GRPC_CALL_OK), rb_str_new2("ok"));
+  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_OK),
+               rb_str_new2("ok"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR),
                rb_str_new2("unknown error"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_NOT_ON_SERVER),
@@ -506,8 +504,8 @@ void Init_google_rpc_error_codes() {
 
 void Init_google_rpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
-  rb_eCallError = rb_define_class_under(rb_mGoogleRpcCore, "CallError",
-                                        rb_eException);
+  rb_eCallError =
+      rb_define_class_under(rb_mGoogleRpcCore, "CallError", rb_eException);
   rb_cCall = rb_define_class_under(rb_mGoogleRpcCore, "Call", rb_cObject);
 
   /* Prevent allocation or inialization of the Call class */
@@ -519,8 +517,7 @@ void Init_google_rpc_call() {
   rb_define_method(rb_cCall, "server_accept", grpc_rb_call_server_accept, 2);
   rb_define_method(rb_cCall, "server_end_initial_metadata",
                    grpc_rb_call_server_end_initial_metadata, -1);
-  rb_define_method(rb_cCall, "add_metadata", grpc_rb_call_add_metadata,
-                   -1);
+  rb_define_method(rb_cCall, "add_metadata", grpc_rb_call_add_metadata, -1);
   rb_define_method(rb_cCall, "cancel", grpc_rb_call_cancel, 0);
   rb_define_method(rb_cCall, "start_invoke", grpc_rb_call_start_invoke, -1);
   rb_define_method(rb_cCall, "start_read", grpc_rb_call_start_read, 1);
@@ -551,25 +548,24 @@ void Init_google_rpc_call() {
 }
 
 /* Gets the call from the ruby object */
-grpc_call* grpc_rb_get_wrapped_call(VALUE v) {
+grpc_call *grpc_rb_get_wrapped_call(VALUE v) {
   grpc_call *c = NULL;
   Data_Get_Struct(v, grpc_call, c);
   return c;
 }
 
 /* Obtains the wrapped object for a given call */
-VALUE grpc_rb_wrap_call(grpc_call* c) {
+VALUE grpc_rb_wrap_call(grpc_call *c) {
   VALUE obj = Qnil;
   if (c == NULL) {
     return Qnil;
   }
   obj = rb_hash_aref(hash_all_calls, OFFT2NUM((VALUE)c));
-  if (obj == Qnil) {  /* Not in the hash add it */
+  if (obj == Qnil) { /* Not in the hash add it */
     rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c), UINT2NUM(1));
   } else {
     rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c),
                  UINT2NUM(NUM2UINT(obj) + 1));
   }
-  return Data_Wrap_Struct(rb_cCall, GC_NOT_MARKED, grpc_rb_call_destroy,
-                          c);
+  return Data_Wrap_Struct(rb_cCall, GC_NOT_MARKED, grpc_rb_call_destroy, c);
 }

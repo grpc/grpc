@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <chrono>
 #include <memory>
 #include <sstream>
@@ -97,9 +96,7 @@ class End2endTest : public ::testing::Test {
     EXPECT_TRUE(gpr_thd_new(&id, ServerLoop, server_.get(), NULL));
   }
 
-  void TearDown() override {
-    server_->Shutdown();
-  }
+  void TearDown() override { server_->Shutdown(); }
 
   std::unique_ptr<AsyncTestServer> server_;
   InternalStub stub_;

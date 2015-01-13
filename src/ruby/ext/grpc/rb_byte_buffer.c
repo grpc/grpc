@@ -49,7 +49,6 @@ typedef struct grpc_rb_byte_buffer {
   grpc_byte_buffer *wrapped;
 } grpc_rb_byte_buffer;
 
-
 /* Destroys ByteBuffer instances. */
 static void grpc_rb_byte_buffer_free(void *p) {
   grpc_rb_byte_buffer *bb = NULL;
@@ -169,7 +168,6 @@ static VALUE grpc_rb_byte_buffer_to_s(VALUE self) {
   return output_obj;
 }
 
-
 /* Initializes ByteBuffer instances. */
 static VALUE grpc_rb_byte_buffer_init(VALUE self, VALUE src) {
   gpr_slice a_slice;
@@ -205,8 +203,8 @@ static VALUE grpc_rb_byte_buffer_init(VALUE self, VALUE src) {
 VALUE rb_cByteBuffer = Qnil;
 
 void Init_google_rpc_byte_buffer() {
-  rb_cByteBuffer = rb_define_class_under(rb_mGoogleRpcCore, "ByteBuffer",
-                                         rb_cObject);
+  rb_cByteBuffer =
+      rb_define_class_under(rb_mGoogleRpcCore, "ByteBuffer", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cByteBuffer, grpc_rb_byte_buffer_alloc);
@@ -223,7 +221,7 @@ void Init_google_rpc_byte_buffer() {
   id_empty = rb_intern("");
 }
 
-VALUE grpc_rb_byte_buffer_create_with_mark(VALUE mark, grpc_byte_buffer* bb) {
+VALUE grpc_rb_byte_buffer_create_with_mark(VALUE mark, grpc_byte_buffer *bb) {
   grpc_rb_byte_buffer *byte_buffer = NULL;
   if (bb == NULL) {
     return Qnil;
@@ -236,7 +234,7 @@ VALUE grpc_rb_byte_buffer_create_with_mark(VALUE mark, grpc_byte_buffer* bb) {
 }
 
 /* Gets the wrapped byte_buffer from the ruby wrapper */
-grpc_byte_buffer* grpc_rb_get_wrapped_byte_buffer(VALUE v) {
+grpc_byte_buffer *grpc_rb_get_wrapped_byte_buffer(VALUE v) {
   grpc_rb_byte_buffer *wrapper = NULL;
   Data_Get_Struct(v, grpc_rb_byte_buffer, wrapper);
   return wrapper->wrapped;

@@ -43,7 +43,6 @@ static void test_format_get_request() {
   grpc_httpcli_request req;
   gpr_slice slice;
 
-
   memset(&req, 0, sizeof(req));
   req.host = "example.com";
   req.path = "/index.html";
