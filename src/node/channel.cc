@@ -63,8 +63,7 @@ Persistent<Function> Channel::constructor;
 Persistent<FunctionTemplate> Channel::fun_tpl;
 
 Channel::Channel(grpc_channel *channel, NanUtf8String *host)
-    : wrapped_channel(channel), host(host) {
-}
+    : wrapped_channel(channel), host(host) {}
 
 Channel::~Channel() {
   if (wrapped_channel != NULL) {
@@ -90,13 +89,9 @@ bool Channel::HasInstance(Handle<Value> val) {
   return NanHasInstance(fun_tpl, val);
 }
 
-grpc_channel *Channel::GetWrappedChannel() {
-  return this->wrapped_channel;
-}
+grpc_channel *Channel::GetWrappedChannel() { return this->wrapped_channel; }
 
-char *Channel::GetHost() {
-  return **this->host;
-}
+char *Channel::GetHost() { return **this->host; }
 
 NAN_METHOD(Channel::New) {
   NanScope();
@@ -119,20 +114,20 @@ NAN_METHOD(Channel::New) {
           return NanThrowTypeError(
               "credentials arg must be a Credentials object");
         }
-        Credentials *creds_object = ObjectWrap::Unwrap<Credentials>(
-            creds_value->ToObject());
+        Credentials *creds_object =
+            ObjectWrap::Unwrap<Credentials>(creds_value->ToObject());
         creds = creds_object->GetWrappedCredentials();
         args_hash->Delete(NanNew("credentials"));
       }
       Handle<Array> keys(args_hash->GetOwnPropertyNames());
       grpc_channel_args channel_args;
       channel_args.num_args = keys->Length();
-      channel_args.args = reinterpret_cast<grpc_arg*>(
+      channel_args.args = reinterpret_cast<grpc_arg *>(
           calloc(channel_args.num_args, sizeof(grpc_arg)));
       /* These are used to keep all strings until then end of the block, then
          destroy them */
-      std::vector<NanUtf8String*> key_strings(keys->Length());
-      std::vector<NanUtf8String*> value_strings(keys->Length());
+      std::vector<NanUtf8String *> key_strings(keys->Length());
+      std::vector<NanUtf8String *> value_strings(keys->Length());
       for (unsigned int i = 0; i < channel_args.num_args; i++) {
         Handle<String> current_key(keys->Get(i)->ToString());
         Handle<Value> current_value(args_hash->Get(current_key));
@@ -153,9 +148,8 @@ NAN_METHOD(Channel::New) {
       if (creds == NULL) {
         wrapped_channel = grpc_channel_create(**host, &channel_args);
       } else {
-        wrapped_channel = grpc_secure_channel_create(creds,
-                                                     **host,
-                                                     &channel_args);
+        wrapped_channel =
+            grpc_secure_channel_create(creds, **host, &channel_args);
       }
       free(channel_args.args);
     } else {
@@ -166,7 +160,7 @@ NAN_METHOD(Channel::New) {
     NanReturnValue(args.This());
   } else {
     const int argc = 2;
-    Local<Value> argv[argc] = { args[0], args[1] };
+    Local<Value> argv[argc] = {args[0], args[1]};
     NanReturnValue(constructor->NewInstance(argc, argv));
   }
 }

@@ -61,8 +61,8 @@ class Channel : public ::node::ObjectWrap {
   ~Channel();
 
   // Prevent copying
-  Channel(const Channel&);
-  Channel& operator=(const Channel&);
+  Channel(const Channel &);
+  Channel &operator=(const Channel &);
 
   static NAN_METHOD(New);
   static NAN_METHOD(Close);

@@ -58,8 +58,8 @@ class Server : public ::node::ObjectWrap {
   ~Server();
 
   // Prevent copying
-  Server(const Server&);
-  Server& operator=(const Server&);
+  Server(const Server &);
+  Server &operator=(const Server &);
 
   static NAN_METHOD(New);
   static NAN_METHOD(RequestCall);

@@ -46,8 +46,7 @@ using v8::Value;
 
 struct tag {
   tag(Persistent<Value> *tag, Persistent<Value> *call)
-      : persist_tag(tag), persist_call(call) {
-  }
+      : persist_tag(tag), persist_call(call) {}
 
   ~tag() {
     persist_tag->Dispose();
@@ -71,24 +70,24 @@ void *CreateTag(Handle<Value> tag, Handle<Value> call) {
     NanAssignPersistent(*persist_call, call);
   }
   struct tag *tag_struct = new struct tag(persist_tag, persist_call);
-  return reinterpret_cast<void*>(tag_struct);
+  return reinterpret_cast<void *>(tag_struct);
 }
 
 Handle<Value> GetTagHandle(void *tag) {
   NanEscapableScope();
-  struct tag *tag_struct = reinterpret_cast<struct tag*>(tag);
+  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
   Handle<Value> tag_value = NanNew<Value>(*tag_struct->persist_tag);
   return NanEscapeScope(tag_value);
 }
 
 bool TagHasCall(void *tag) {
-  struct tag *tag_struct = reinterpret_cast<struct tag*>(tag);
+  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
   return tag_struct->persist_call != NULL;
 }
 
 Handle<Value> TagGetCall(void *tag) {
   NanEscapableScope();
-  struct tag *tag_struct = reinterpret_cast<struct tag*>(tag);
+  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
   if (tag_struct->persist_call == NULL) {
     return NanEscapeScope(NanNull());
   }
@@ -96,9 +95,7 @@ Handle<Value> TagGetCall(void *tag) {
   return NanEscapeScope(call_value);
 }
 
-void DestroyTag(void *tag) {
-  delete reinterpret_cast<struct tag*>(tag);
-}
+void DestroyTag(void *tag) { delete reinterpret_cast<struct tag *>(tag); }
 
 }  // namespace node
 }  // namespace grpc

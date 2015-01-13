@@ -60,8 +60,7 @@ Persistent<Function> ServerCredentials::constructor;
 Persistent<FunctionTemplate> ServerCredentials::fun_tpl;
 
 ServerCredentials::ServerCredentials(grpc_server_credentials *credentials)
-    : wrapped_credentials(credentials) {
-}
+    : wrapped_credentials(credentials) {}
 
 ServerCredentials::~ServerCredentials() {
   gpr_log(GPR_DEBUG, "Destroying server credentials object");
@@ -95,7 +94,7 @@ Handle<Value> ServerCredentials::WrapStruct(
   }
   const int argc = 1;
   Handle<Value> argv[argc] = {
-    External::New(reinterpret_cast<void*>(credentials)) };
+      External::New(reinterpret_cast<void *>(credentials))};
   return NanEscapeScope(constructor->NewInstance(argc, argv));
 }
 
@@ -112,13 +111,13 @@ NAN_METHOD(ServerCredentials::New) {
           "ServerCredentials can only be created with the provide functions");
     }
     grpc_server_credentials *creds_value =
-        reinterpret_cast<grpc_server_credentials*>(External::Unwrap(args[0]));
+        reinterpret_cast<grpc_server_credentials *>(External::Unwrap(args[0]));
     ServerCredentials *credentials = new ServerCredentials(creds_value);
     credentials->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
     const int argc = 1;
-    Local<Value> argv[argc] = { args[0] };
+    Local<Value> argv[argc] = {args[0]};
     NanReturnValue(constructor->NewInstance(argc, argv));
   }
 }
@@ -137,27 +136,25 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
         "createSSl's first argument must be a Buffer if provided");
   }
   if (!Buffer::HasInstance(args[1])) {
-    return NanThrowTypeError(
-        "createSsl's second argument must be a Buffer");
+    return NanThrowTypeError("createSsl's second argument must be a Buffer");
   }
   private_key = Buffer::Data(args[1]);
   private_key_length = Buffer::Length(args[1]);
   if (!Buffer::HasInstance(args[2])) {
-    return NanThrowTypeError(
-        "createSsl's third argument must be a Buffer");
+    return NanThrowTypeError("createSsl's third argument must be a Buffer");
   }
   cert_chain = Buffer::Data(args[2]);
   cert_chain_length = Buffer::Length(args[2]);
   NanReturnValue(WrapStruct(grpc_ssl_server_credentials_create(
-      reinterpret_cast<unsigned char*>(root_certs), root_certs_length,
-      reinterpret_cast<unsigned char*>(private_key), private_key_length,
-      reinterpret_cast<unsigned char*>(cert_chain), cert_chain_length)));
+      reinterpret_cast<unsigned char *>(root_certs), root_certs_length,
+      reinterpret_cast<unsigned char *>(private_key), private_key_length,
+      reinterpret_cast<unsigned char *>(cert_chain), cert_chain_length)));
 }
 
 NAN_METHOD(ServerCredentials::CreateFake) {
   NanScope();
-  NanReturnValue(WrapStruct(
-      grpc_fake_transport_security_server_credentials_create()));
+  NanReturnValue(
+      WrapStruct(grpc_fake_transport_security_server_credentials_create()));
 }
 
 }  // namespace node

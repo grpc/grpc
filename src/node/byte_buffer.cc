@@ -65,12 +65,12 @@ Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     NanReturnNull();
   }
   size_t length = grpc_byte_buffer_length(buffer);
-  char *result = reinterpret_cast<char*>(calloc(length, sizeof(char)));
+  char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));
   size_t offset = 0;
   grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
   gpr_slice next;
   while (grpc_byte_buffer_reader_next(reader, &next) != 0) {
-    memcpy(result+offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
+    memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
   }
   return NanEscapeScope(NanNewBufferHandle(result, length));
