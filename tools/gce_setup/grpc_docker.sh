@@ -18,6 +18,20 @@
 #  * on startup, some of the docker images will be regenerated automatically
 # - used grpc_update_image to update images via that instance
 
+
+# Creates the ssh key file expect by 'gcloud compute ssh' if it does not exist.
+#
+# Allows gcloud ssh commands to run on freshly started docker instances.
+_grpc_ensure_gcloud_ssh() {
+  local default_key_file="$HOME/.ssh/google_compute_engine"
+  [ -f $default_key_file ] || {
+    ssh-keygen -f $default_key_file -N '' > /dev/null || {
+      echo "could not precreate $default_key_file" 1>&2
+      return 1
+    }
+  }
+}
+
 # Pushes a dockerfile dir to cloud storage.
 #
 # dockerfile is expected to the parent directory to a nunber of directoies each
@@ -50,6 +64,7 @@ grpc_push_dockerfiles() {
 # Adds the user to docker group on a GCE instance, and restarts the docker
 # daemon
 grpc_add_docker_user() {
+  _grpc_ensure_gcloud_ssh || return 1;
   local host=$1
   [[ -n $host ]] || {
     echo "$FUNCNAME: missing arg: host" 1>&2
@@ -81,6 +96,7 @@ grpc_add_docker_user() {
 # grpc_update_image gs://bucket/path/to/dockerfile parent \.
 #   image_label path/to/docker_dir docker_gce_instance [project] [zone]
 grpc_update_image() {
+  _grpc_ensure_gcloud_ssh || return 1;
   local gs_root_uri=$1
   [[ -n $gs_root_uri ]] || {
     echo "$FUNCNAME: missing arg: gs_root_uri" 1>&2
@@ -350,6 +366,8 @@ grpc_update_docker_images_args() {
 #
 # Updates the GCE docker instance <server_name>
 grpc_update_docker_images() {
+  _grpc_ensure_gcloud_ssh || return 1;
+
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
   local grpc_zone grpc_project dry_run  # set by grpc_set_project_and_zone
@@ -469,6 +487,7 @@ grpc_launch_server() {
 #
 # --server_host=<svr_addr>  --server_port=<svr_port> --test_case=<...>
 grpc_interop_test() {
+  _grpc_ensure_gcloud_ssh || return 1;
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
 
