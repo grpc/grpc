@@ -54,7 +54,10 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   char *message = NULL;
   va_list args;
   va_start(args, format);
-  vasprintf(&message, format, args);
+  if (vasprintf(&message, format, args) == -1) {
+    va_end(args);
+    return;
+  }
   va_end(args);
   gpr_log_message(file, line, severity, message);
   free(message);
