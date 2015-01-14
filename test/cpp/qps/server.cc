@@ -80,9 +80,6 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
 }
 
 class TestServiceImpl : public TestService::Service {
- private:
-  int num_rpcs;
-
  public:
   Status CollectServerStats(ServerContext* context, const StatsRequest*,
                             ServerStats* response) {
