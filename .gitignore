@@ -1,5 +1,7 @@
 bins
+coverage
 deps
+*.gcno
 gens
 libs
 objs

@@ -36,6 +36,7 @@ _CONFIGS = {
   'tsan': SimpleConfig('tsan'),
   'msan': SimpleConfig('msan'),
   'asan': SimpleConfig('asan'),
+  'gcov': SimpleConfig('gcov'),
   'valgrind': ValgrindConfig('dbg'),
   }
 
