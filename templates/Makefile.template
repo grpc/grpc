@@ -66,6 +66,15 @@ CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer
 LDFLAGS_msan = -fsanitize=memory
 DEFINES_msan = NDEBUG
 
+VALID_CONFIG_gcov = 1
+CC_gcov = gcc
+CXX_gcov = g++
+LD_gcov = gcc
+LDXX_gcov = g++
+CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
+LDFLAGS_gcov = -fprofile-arcs -ftest-coverage
+DEFINES_gcov = NDEBUG
+
 # General settings.
 # You may want to change these depending on your system.
 
