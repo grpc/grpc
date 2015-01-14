@@ -34,9 +34,12 @@
 #include "test/core/util/test_config.h"
 
 #include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
 
 void grpc_test_init(int argc, char **argv) {
+  /* disable SIGPIPE */
+  signal(SIGPIPE, SIG_IGN);
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(getpid());
