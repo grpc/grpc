@@ -128,9 +128,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata(c, &meta, 0));
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_invoke(c, f.client_cq, tag(1), tag(2), tag(3), 0));
-  cq_expect_invoke_accepted(v_client, tag(1), GRPC_OP_OK);
-  cq_verify(v_client);
+             grpc_call_invoke(c, f.client_cq, tag(2), tag(3), 0));
 
   cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
                            deadline, "key", meta.value, NULL);

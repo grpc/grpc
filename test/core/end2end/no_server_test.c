@@ -57,10 +57,9 @@ int main(int argc, char **argv) {
   /* create a call, channel to a non existant server */
   chan = grpc_channel_create("nonexistant:54321", NULL);
   call = grpc_channel_create_call(chan, "/foo", "nonexistant", deadline);
-  GPR_ASSERT(grpc_call_start_invoke(call, cq, tag(1), tag(2), tag(3), 0) ==
+  GPR_ASSERT(grpc_call_invoke(call, cq, tag(2), tag(3), 0) ==
              GRPC_CALL_OK);
   /* verify that all tags get completed */
-  cq_expect_invoke_accepted(cqv, tag(1), GRPC_OP_ERROR);
   cq_expect_client_metadata_read(cqv, tag(2), NULL);
   cq_expect_finished_with_status(cqv, tag(3), GRPC_STATUS_CANCELLED, NULL,
                                  NULL);

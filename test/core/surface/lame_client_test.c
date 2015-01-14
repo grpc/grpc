@@ -63,10 +63,9 @@ int main(int argc, char **argv) {
 
   /* and invoke the call */
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_invoke(call, cq, tag(1), tag(2), tag(3), 0));
+             grpc_call_invoke(call, cq, tag(2), tag(3), 0));
 
   /* the call should immediately fail */
-  cq_expect_invoke_accepted(cqv, tag(1), GRPC_OP_ERROR);
   cq_expect_client_metadata_read(cqv, tag(2), NULL);
   cq_expect_finished(cqv, tag(3), NULL);
   cq_verify(cqv);
