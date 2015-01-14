@@ -654,7 +654,7 @@ grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
     } else {
       call->read_tag = tag;
       call->have_read = 1;
-      request_more = 1;
+      request_more = call->received_start;
     }
   } else if (prq_is_empty(&call->prq) && call->received_finish) {
     finish_call(call);
