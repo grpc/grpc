@@ -465,6 +465,8 @@ static void call_started(void *user_data, grpc_op_error error) {
       done_writes_done(call, error);
     }
   }
+
+  grpc_call_internal_unref(call);
 }
 
 grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
@@ -531,6 +533,7 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   op.done_cb = call_started;
   op.data.start.pollset = grpc_cq_pollset(cq);
   op.user_data = call;
+  grpc_call_internal_ref(call);
 
   elem = CALL_ELEM_FROM_CALL(call, 0);
   elem->filter->call_op(elem, NULL, &op);
