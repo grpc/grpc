@@ -178,6 +178,7 @@ struct grpc_call {
   gpr_uint8 received_metadata;
   gpr_uint8 have_read;
   gpr_uint8 have_alarm;
+  gpr_uint8 got_status_code;
   /* The current outstanding read message tag (only valid if have_read == 1) */
   void *read_tag;
   void *metadata_tag;
@@ -225,6 +226,7 @@ grpc_call *grpc_call_create(grpc_channel *channel,
   call->have_write = 0;
   call->have_alarm = 0;
   call->received_metadata = 0;
+  call->got_status_code = 0;
   call->status_code =
       server_transport_data != NULL ? GRPC_STATUS_OK : GRPC_STATUS_UNKNOWN;
   call->status_details = NULL;
@@ -799,15 +801,18 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_call_op *op) {
   grpc_call *call = CALL_FROM_TOP_ELEM(elem);
   grpc_mdelem *md = op->data.metadata;
   grpc_mdstr *key = md->key;
+  gpr_log(GPR_DEBUG, "call %p got metadata %s %s", call, grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
   if (key == grpc_channel_get_status_string(call->channel)) {
-    call->status_code = decode_status(md);
+    if (!call->got_status_code) {
+      call->status_code = decode_status(md);
+      call->got_status_code = 1;
+    }
     grpc_mdelem_unref(md);
     op->done_cb(op->user_data, GRPC_OP_OK);
   } else if (key == grpc_channel_get_message_string(call->channel)) {
-    if (call->status_details) {
-      grpc_mdstr_unref(call->status_details);
+    if (!call->status_details) {
+      call->status_details = grpc_mdstr_ref(md->value);
     }
-    call->status_details = grpc_mdstr_ref(md->value);
     grpc_mdelem_unref(md);
     op->done_cb(op->user_data, GRPC_OP_OK);
   } else {
