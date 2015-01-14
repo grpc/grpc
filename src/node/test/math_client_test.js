@@ -105,7 +105,7 @@ var MathClient = makeConstructor({
     client_stream: true,
     server_stream: true
   }
-}, '/Math');
+}, '/Math/');
 
 /**
  * Channel to use to make requests to a running server.

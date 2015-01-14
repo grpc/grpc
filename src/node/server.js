@@ -73,6 +73,7 @@ function GrpcServerStream(call, options) {
    * @param {Error} err The error object
    */
   function setStatus(err) {
+    console.log('Server setting status to', err);
     var code = grpc.status.INTERNAL;
     var details = 'Unknown Error';
 
