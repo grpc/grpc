@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include "src/core/channel/channel_args.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_endpoint.h"
 #include "src/core/surface/lame_client.h"
@@ -444,6 +445,8 @@ grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
   grpc_security_status status = GRPC_SECURITY_OK;
   size_t i = 0;
   const char *secure_peer_name = target;
+  grpc_arg arg;
+  grpc_channel_args *new_args;
 
   for (i = 0; args && i < args->num_args; i++) {
     grpc_arg *arg = &args->args[i];
@@ -459,8 +462,13 @@ grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
   if (status != GRPC_SECURITY_OK) {
     return grpc_lame_client_channel_create();
   }
-  channel = grpc_secure_channel_create_internal(target, args, ctx);
+  arg.type = GRPC_ARG_STRING;
+  arg.key = "grpc.scheme";
+  arg.value.string = "https";
+  new_args = grpc_channel_args_copy_and_add(args, &arg);
+  channel = grpc_secure_channel_create_internal(target, new_args, ctx);
   grpc_security_context_unref(&ctx->base);
+  grpc_channel_args_destroy(new_args);
   return channel;
 }
 
