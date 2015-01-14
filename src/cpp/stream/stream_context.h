@@ -76,7 +76,6 @@ class StreamContext : public StreamContextInterface {
   void* read_tag() { return reinterpret_cast<char*>(this) + 1; }
   void* write_tag() { return reinterpret_cast<char*>(this) + 2; }
   void* halfclose_tag() { return reinterpret_cast<char*>(this) + 3; }
-  void* invoke_tag() { return reinterpret_cast<char*>(this) + 4; }
   void* client_metadata_read_tag() { return reinterpret_cast<char*>(this) + 5; }
   grpc_call* call() { return call_; }
   grpc_completion_queue* cq() { return cq_; }

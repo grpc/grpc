@@ -80,17 +80,10 @@ void StreamContext::Start(bool buffered) {
   if (is_client_) {
     // TODO(yangg) handle metadata send path
     int flag = buffered ? GRPC_WRITE_BUFFER_HINT : 0;
-    grpc_call_error error = grpc_call_start_invoke(call(), cq(), invoke_tag(),
+    grpc_call_error error = grpc_call_invoke(call(), cq(), 
                                                    client_metadata_read_tag(),
                                                    finished_tag(), flag);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    grpc_event* invoke_ev =
-        grpc_completion_queue_pluck(cq(), invoke_tag(), gpr_inf_future);
-    if (invoke_ev->data.invoke_accepted != GRPC_OP_OK) {
-      peer_halfclosed_ = true;
-      self_halfclosed_ = true;
-    }
-    grpc_event_finish(invoke_ev);
   } else {
     // TODO(yangg) metadata needs to be added before accept
     // TODO(yangg) correctly set flag to accept
