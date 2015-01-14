@@ -66,6 +66,15 @@ CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer
 LDFLAGS_msan = -fsanitize=memory
 DEFINES_msan = NDEBUG
 
+VALID_CONFIG_gcov = 1
+CC_gcov = gcc
+CXX_gcov = g++
+LD_gcov = gcc
+LDXX_gcov = g++
+CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
+LDFLAGS_gcov = -fprofile-arcs -ftest-coverage
+DEFINES_gcov = NDEBUG
+
 # General settings.
 # You may want to change these depending on your system.
 
@@ -329,7 +338,7 @@ privatelibs: privatelibs_c privatelibs_cxx
 
 privatelibs_c: dep_c\
 % for lib in libs:
-% if lib.build == 'private':
+% if lib.build == 'private' and not lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
@@ -337,7 +346,7 @@ privatelibs_c: dep_c\
 
 privatelibs_cxx: dep_cxx\
 % for lib in libs:
-% if lib.build == 'private':
+% if lib.build == 'private' and lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor

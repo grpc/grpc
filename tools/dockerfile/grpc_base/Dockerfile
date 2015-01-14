@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y \
   libc6 \
   libc6-dbg \
   libc6-dev \
-  libevent-dev \
   libtool \
   make \
   strace \

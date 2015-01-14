@@ -32,13 +32,14 @@
  */
 
 var assert = require('assert');
-var client = require('../surface_client.js');
 var ProtoBuf = require('protobufjs');
 var port_picker = require('../port_picker');
 
 var builder = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
 var math = builder.build('math');
 
+var client = require('../surface_client.js');
+var makeConstructor = client.makeClientConstructor;
 /**
  * Get a function that deserializes a specific type of protobuf.
  * @param {function()} cls The constructor of the message type to deserialize
@@ -56,78 +57,60 @@ function deserializeCls(cls) {
 }
 
 /**
- * Serialize an object to a buffer
- * @param {*} arg The object to serialize
- * @return {Buffer} The serialized object
+ * Get a function that serializes objects to a buffer by protobuf class.
+ * @param {function()} Cls The constructor of the message type to serialize
+ * @return {function(Cls):Buffer} The serialization function
  */
-function serialize(arg) {
-  return new Buffer(arg.encode().toBuffer());
+function serializeCls(Cls) {
+  /**
+   * Serialize an object to a Buffer
+   * @param {Object} arg The object to serialize
+   * @return {Buffer} The serialized object
+   */
+  return function serialize(arg) {
+    return new Buffer(new Cls(arg).encode().toBuffer());
+  };
 }
 
-/**
- * Sends a Div request on the channel.
- * @param {client.Channel} channel The channel on which to make the request
- * @param {DivArg} argument The argument to the call. Should be serializable
- *     with serialize
- * @param {function(?Error, value=)} The callback to for when the response is
- *     received
- * @param {array=} Array of metadata key/value pairs to add to the call
- * @param {(number|Date)=} deadline The deadline for processing this request.
- *     Defaults to infinite future
- * @return {EventEmitter} An event emitter for stream related events
- */
-var div = client.makeUnaryRequestFunction(
-    '/Math/Div',
-    serialize,
-    deserializeCls(math.DivReply));
-
-/**
- * Sends a Fib request on the channel.
- * @param {client.Channel} channel The channel on which to make the request
- * @param {*} argument The argument to the call. Should be serializable with
- *     serialize
- * @param {array=} Array of metadata key/value pairs to add to the call
- * @param {(number|Date)=} deadline The deadline for processing this request.
- *     Defaults to infinite future
- * @return {EventEmitter} An event emitter for stream related events
- */
-var fib = client.makeServerStreamRequestFunction(
-    '/Math/Fib',
-    serialize,
-    deserializeCls(math.Num));
-
-/**
- * Sends a Sum request on the channel.
- * @param {client.Channel} channel The channel on which to make the request
- * @param {function(?Error, value=)} The callback to for when the response is
- *     received
- * @param {array=} Array of metadata key/value pairs to add to the call
- * @param {(number|Date)=} deadline The deadline for processing this request.
- *     Defaults to infinite future
- * @return {EventEmitter} An event emitter for stream related events
- */
-var sum = client.makeClientStreamRequestFunction(
-    '/Math/Sum',
-    serialize,
-    deserializeCls(math.Num));
-
-/**
- * Sends a DivMany request on the channel.
- * @param {client.Channel} channel The channel on which to make the request
- * @param {array=} Array of metadata key/value pairs to add to the call
- * @param {(number|Date)=} deadline The deadline for processing this request.
- *     Defaults to infinite future
- * @return {EventEmitter} An event emitter for stream related events
- */
-var divMany = client.makeBidiStreamRequestFunction(
-    '/Math/DivMany',
-    serialize,
-    deserializeCls(math.DivReply));
+/* This function call creates a client constructor for clients that expose the
+ * four specified methods. This specifies how to serialize messages that the
+ * client sends and deserialize messages that the server sends, and whether the
+ * client or the server will send a stream of messages, for each method. This
+ * also specifies a prefix that will be added to method names when sending them
+ * on the wire. This function call and all of the preceding code in this file
+ * are intended to approximate what the generated code will look like for the
+ * math client */
+var MathClient = makeConstructor({
+  Div: {
+    serialize: serializeCls(math.DivArgs),
+    deserialize: deserializeCls(math.DivReply),
+    client_stream: false,
+    server_stream: false
+  },
+  Fib: {
+    serialize: serializeCls(math.FibArgs),
+    deserialize: deserializeCls(math.Num),
+    client_stream: false,
+    server_stream: true
+  },
+  Sum: {
+    serialize: serializeCls(math.Num),
+    deserialize: deserializeCls(math.Num),
+    client_stream: true,
+    server_stream: false
+  },
+  DivMany: {
+    serialize: serializeCls(math.DivArgs),
+    deserialize: deserializeCls(math.DivReply),
+    client_stream: true,
+    server_stream: true
+  }
+}, '/Math/');
 
 /**
  * Channel to use to make requests to a running server.
  */
-var channel;
+var math_client;
 
 /**
  * Server to test against
@@ -139,7 +122,7 @@ describe('Math client', function() {
   before(function(done) {
     port_picker.nextAvailablePort(function(port) {
       server.bind(port).listen();
-      channel = new client.Channel(port);
+      math_client = new MathClient(port);
       done();
     });
   });
@@ -147,11 +130,11 @@ describe('Math client', function() {
     server.shutdown();
   });
   it('should handle a single request', function(done) {
-    var arg = new math.DivArgs({dividend: 7, divisor: 4});
-    var call = div(channel, arg, function handleDivResult(err, value) {
+    var arg = {dividend: 7, divisor: 4};
+    var call = math_client.Div(arg, function handleDivResult(err, value) {
       assert.ifError(err);
-      assert.equal(value.get('quotient'), 1);
-      assert.equal(value.get('remainder'), 3);
+      assert.equal(value.quotient, 1);
+      assert.equal(value.remainder, 3);
     });
     call.on('status', function checkStatus(status) {
       assert.strictEqual(status.code, client.status.OK);
@@ -159,12 +142,11 @@ describe('Math client', function() {
     });
   });
   it('should handle a server streaming request', function(done) {
-    var arg = new math.FibArgs({limit: 7});
-    var call = fib(channel, arg);
+    var call = math_client.Fib({limit: 7});
     var expected_results = [1, 1, 2, 3, 5, 8, 13];
     var next_expected = 0;
     call.on('data', function checkResponse(value) {
-      assert.equal(value.get('num'), expected_results[next_expected]);
+      assert.equal(value.num, expected_results[next_expected]);
       next_expected += 1;
     });
     call.on('status', function checkStatus(status) {
@@ -173,12 +155,12 @@ describe('Math client', function() {
     });
   });
   it('should handle a client streaming request', function(done) {
-    var call = sum(channel, function handleSumResult(err, value) {
+    var call = math_client.Sum(function handleSumResult(err, value) {
       assert.ifError(err);
-      assert.equal(value.get('num'), 21);
+      assert.equal(value.num, 21);
     });
     for (var i = 0; i < 7; i++) {
-      call.write(new math.Num({'num': i}));
+      call.write({'num': i});
     }
     call.end();
     call.on('status', function checkStatus(status) {
@@ -188,17 +170,17 @@ describe('Math client', function() {
   });
   it('should handle a bidirectional streaming request', function(done) {
     function checkResponse(index, value) {
-      assert.equal(value.get('quotient'), index);
-      assert.equal(value.get('remainder'), 1);
+      assert.equal(value.quotient, index);
+      assert.equal(value.remainder, 1);
     }
-    var call = divMany(channel);
+    var call = math_client.DivMany();
     var response_index = 0;
     call.on('data', function(value) {
       checkResponse(response_index, value);
       response_index += 1;
     });
     for (var i = 0; i < 7; i++) {
-      call.write(new math.DivArgs({dividend: 2 * i + 1, divisor: 2}));
+      call.write({dividend: 2 * i + 1, divisor: 2});
     }
     call.end();
     call.on('status', function checkStatus(status) {
