@@ -58,8 +58,8 @@ class Credentials : public ::node::ObjectWrap {
   ~Credentials();
 
   // Prevent copying
-  Credentials(const Credentials&);
-  Credentials& operator=(const Credentials&);
+  Credentials(const Credentials &);
+  Credentials &operator=(const Credentials &);
 
   static NAN_METHOD(New);
   static NAN_METHOD(CreateDefault);

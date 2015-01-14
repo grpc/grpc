@@ -67,12 +67,9 @@ using v8::Value;
 Persistent<Function> Server::constructor;
 Persistent<FunctionTemplate> Server::fun_tpl;
 
-Server::Server(grpc_server *server) : wrapped_server(server) {
-}
+Server::Server(grpc_server *server) : wrapped_server(server) {}
 
-Server::~Server() {
-  grpc_server_destroy(wrapped_server);
-}
+Server::~Server() { grpc_server_destroy(wrapped_server); }
 
 void Server::Init(Handle<Object> exports) {
   NanScope();
@@ -85,9 +82,9 @@ void Server::Init(Handle<Object> exports) {
   NanSetPrototypeTemplate(tpl, "addHttp2Port",
                           FunctionTemplate::New(AddHttp2Port)->GetFunction());
 
-  NanSetPrototypeTemplate(tpl, "addSecureHttp2Port",
-                          FunctionTemplate::New(
-                              AddSecureHttp2Port)->GetFunction());
+  NanSetPrototypeTemplate(
+      tpl, "addSecureHttp2Port",
+      FunctionTemplate::New(AddSecureHttp2Port)->GetFunction());
 
   NanSetPrototypeTemplate(tpl, "start",
                           FunctionTemplate::New(Start)->GetFunction());
@@ -111,7 +108,7 @@ NAN_METHOD(Server::New) {
      the result */
   if (!args.IsConstructCall()) {
     const int argc = 1;
-    Local<Value> argv[argc] = { args[0] };
+    Local<Value> argv[argc] = {args[0]};
     NanReturnValue(constructor->NewInstance(argc, argv));
   }
   grpc_server *wrapped_server;
@@ -127,20 +124,20 @@ NAN_METHOD(Server::New) {
         return NanThrowTypeError(
             "credentials arg must be a ServerCredentials object");
       }
-      ServerCredentials *creds_object = ObjectWrap::Unwrap<ServerCredentials>(
-          creds_value->ToObject());
+      ServerCredentials *creds_object =
+          ObjectWrap::Unwrap<ServerCredentials>(creds_value->ToObject());
       creds = creds_object->GetWrappedServerCredentials();
       args_hash->Delete(NanNew("credentials"));
     }
     Handle<Array> keys(args_hash->GetOwnPropertyNames());
     grpc_channel_args channel_args;
     channel_args.num_args = keys->Length();
-    channel_args.args = reinterpret_cast<grpc_arg*>(
+    channel_args.args = reinterpret_cast<grpc_arg *>(
         calloc(channel_args.num_args, sizeof(grpc_arg)));
     /* These are used to keep all strings until then end of the block, then
        destroy them */
-    std::vector<NanUtf8String*> key_strings(keys->Length());
-    std::vector<NanUtf8String*> value_strings(keys->Length());
+    std::vector<NanUtf8String *> key_strings(keys->Length());
+    std::vector<NanUtf8String *> value_strings(keys->Length());
     for (unsigned int i = 0; i < channel_args.num_args; i++) {
       Handle<String> current_key(keys->Get(i)->ToString());
       Handle<Value> current_value(args_hash->Get(current_key));
@@ -159,12 +156,9 @@ NAN_METHOD(Server::New) {
       }
     }
     if (creds == NULL) {
-      wrapped_server = grpc_server_create(queue,
-                                          &channel_args);
+      wrapped_server = grpc_server_create(queue, &channel_args);
     } else {
-      wrapped_server = grpc_secure_server_create(creds,
-                                                 queue,
-                                                 &channel_args);
+      wrapped_server = grpc_secure_server_create(creds, queue, &channel_args);
     }
     free(channel_args.args);
   } else {
@@ -182,8 +176,7 @@ NAN_METHOD(Server::RequestCall) {
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
   grpc_call_error error = grpc_server_request_call(
-      server->wrapped_server,
-      CreateTag(args[0], NanNull()));
+      server->wrapped_server, CreateTag(args[0], NanNull()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
   } else {
@@ -202,8 +195,7 @@ NAN_METHOD(Server::AddHttp2Port) {
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
   NanReturnValue(NanNew<Boolean>(grpc_server_add_http2_port(
-      server->wrapped_server,
-      *NanUtf8String(args[0]))));
+      server->wrapped_server, *NanUtf8String(args[0]))));
 }
 
 NAN_METHOD(Server::AddSecureHttp2Port) {
@@ -217,8 +209,7 @@ NAN_METHOD(Server::AddSecureHttp2Port) {
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
   NanReturnValue(NanNew<Boolean>(grpc_server_add_secure_http2_port(
-      server->wrapped_server,
-      *NanUtf8String(args[0]))));
+      server->wrapped_server, *NanUtf8String(args[0]))));
 }
 
 NAN_METHOD(Server::Start) {

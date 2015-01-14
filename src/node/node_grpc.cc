@@ -124,8 +124,7 @@ void InitCallErrorConstants(Handle<Object> exports) {
   call_error->Set(NanNew("ALREADY_FINISHED"), ALREADY_FINISHED);
   Handle<Value> TOO_MANY_OPERATIONS(
       NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS));
-  call_error->Set(NanNew("TOO_MANY_OPERATIONS"),
-                  TOO_MANY_OPERATIONS);
+  call_error->Set(NanNew("TOO_MANY_OPERATIONS"), TOO_MANY_OPERATIONS);
   Handle<Value> INVALID_FLAGS(
       NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_INVALID_FLAGS));
   call_error->Set(NanNew("INVALID_FLAGS"), INVALID_FLAGS);
@@ -157,8 +156,7 @@ void InitCompletionTypeConstants(Handle<Object> exports) {
   completion_type->Set(NanNew("FINISH_ACCEPTED"), FINISH_ACCEPTED);
   Handle<Value> CLIENT_METADATA_READ(
       NanNew<Uint32, uint32_t>(GRPC_CLIENT_METADATA_READ));
-  completion_type->Set(NanNew("CLIENT_METADATA_READ"),
-                       CLIENT_METADATA_READ);
+  completion_type->Set(NanNew("CLIENT_METADATA_READ"), CLIENT_METADATA_READ);
   Handle<Value> FINISHED(NanNew<Uint32, uint32_t>(GRPC_FINISHED));
   completion_type->Set(NanNew("FINISHED"), FINISHED);
   Handle<Value> SERVER_RPC_NEW(NanNew<Uint32, uint32_t>(GRPC_SERVER_RPC_NEW));

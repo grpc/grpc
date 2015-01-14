@@ -58,8 +58,8 @@ class ServerCredentials : public ::node::ObjectWrap {
   ~ServerCredentials();
 
   // Prevent copying
-  ServerCredentials(const ServerCredentials&);
-  ServerCredentials& operator=(const ServerCredentials&);
+  ServerCredentials(const ServerCredentials &);
+  ServerCredentials &operator=(const ServerCredentials &);
 
   static NAN_METHOD(New);
   static NAN_METHOD(CreateSsl);

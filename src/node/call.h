@@ -56,8 +56,8 @@ class Call : public ::node::ObjectWrap {
   ~Call();
 
   // Prevent copying
-  Call(const Call&);
-  Call& operator=(const Call&);
+  Call(const Call &);
+  Call &operator=(const Call &);
 
   static NAN_METHOD(New);
   static NAN_METHOD(AddMetadata);

@@ -51,20 +51,16 @@ using v8::Value;
 
 grpc_completion_queue *CompletionQueueAsyncWorker::queue;
 
-CompletionQueueAsyncWorker::CompletionQueueAsyncWorker() :
-    NanAsyncWorker(NULL) {
-}
+CompletionQueueAsyncWorker::CompletionQueueAsyncWorker()
+    : NanAsyncWorker(NULL) {}
 
-CompletionQueueAsyncWorker::~CompletionQueueAsyncWorker() {
-}
+CompletionQueueAsyncWorker::~CompletionQueueAsyncWorker() {}
 
 void CompletionQueueAsyncWorker::Execute() {
   result = grpc_completion_queue_next(queue, gpr_inf_future);
 }
 
-grpc_completion_queue *CompletionQueueAsyncWorker::GetQueue() {
-  return queue;
-}
+grpc_completion_queue *CompletionQueueAsyncWorker::GetQueue() { return queue; }
 
 void CompletionQueueAsyncWorker::Next() {
   NanScope();
@@ -80,9 +76,7 @@ void CompletionQueueAsyncWorker::Init(Handle<Object> exports) {
 void CompletionQueueAsyncWorker::HandleOKCallback() {
   NanScope();
   NanCallback event_callback(GetTagHandle(result->tag).As<Function>());
-  Handle<Value> argv[] = {
-    CreateEventObject(result)
-  };
+  Handle<Value> argv[] = {CreateEventObject(result)};
 
   DestroyTag(result->tag);
   grpc_event_finish(result);
