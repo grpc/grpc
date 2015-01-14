@@ -114,9 +114,8 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
   // add_metadata from context
   //
   // invoke
-  GPR_ASSERT(grpc_call_invoke(call, cq, metadata_read_tag,
-                                    finished_tag,
-                                    GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_invoke(call, cq, metadata_read_tag, finished_tag,
+                              GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   // write request
   grpc_byte_buffer* write_buffer = nullptr;
   bool success = SerializeProto(request, &write_buffer);
