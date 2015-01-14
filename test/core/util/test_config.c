@@ -38,16 +38,12 @@
 
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
-static int seed() {
-  return getpid();
-}
+static int seed() { return getpid(); }
 #endif
 
 #if GPR_GETPID_IN_PROCESS_H
 #include <process.h>
-static int seed(void) {
-  return _getpid();
-}
+static int seed(void) { return _getpid(); }
 #endif
 
 void grpc_test_init(int argc, char **argv) {
