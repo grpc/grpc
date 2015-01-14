@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package math;
+
+message DivArgs {
+  required int64 dividend = 1;
+  required int64 divisor = 2;
+}
+
+message DivReply {
+  required int64 quotient = 1;
+  required int64 remainder = 2;
+}
+
+message FibArgs {
+  optional int64 limit = 1;
+}
+
+message Num {
+  required int64 num = 1;
+}
+
+message FibReply {
+  required int64 count = 1;
+}

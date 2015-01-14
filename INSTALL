@@ -12,8 +12,7 @@ Note that the Makefile makes it much easier for you to compile from sources
 if you were to clone recursively our git repository.
 
 
-grpc core currently depends on zlib and OpenSSL 1.0.2beta3, and also requires
-libevent2 for the Linux port.
+grpc core currently depends on zlib and OpenSSL 1.0.2beta3.
 
 grpc++'s tests depends on protobuf 3.0.0, gtests and gflags.
 
@@ -46,7 +45,7 @@ and let the Makefile build them itself.
 You may also install the dependencies yourself, from the sources, or from
 your distribution's package manager.
 
-The development packages needed for grpc are libevent2 under Linux, and zlib.
+The only development package needed for grpc is zlib.
 The development packages needed for grpc++'s tests are gtests, and gflags.
 
 To the best of our knowledge, no distribution has an OpenSSL package that
