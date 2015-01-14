@@ -268,7 +268,7 @@ static void multiple_writers_single_reader(int circular_log) {
   /* Sleep interval between read iterations. */
   static const gpr_int32 READ_ITERATION_INTERVAL_IN_MSEC = 10;
   /* Number of records written by each writer. */
-  static const gpr_int32 NUM_RECORDS_PER_WRITER = 10 * 1024 * 1024;
+  static const gpr_int32 NUM_RECORDS_PER_WRITER = 1024 * 1024;
   /* Maximum record size. */
   static const size_t MAX_RECORD_SIZE = 10;
   int ix;
