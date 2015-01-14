@@ -53,7 +53,6 @@
 #define GPR_ARCH_32 1
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
-#define GPR_LIBEVENT 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
 #define GPR_POSIX_SOCKET 1
 #define GPR_POSIX_SOCKETADDR 1
@@ -64,7 +63,6 @@
 #elif defined(__linux__)
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_LIBEVENT 1
 #define GPR_LINUX 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
 #define GPR_POSIX_SOCKET 1
@@ -80,7 +78,6 @@
 #elif defined(__APPLE__)
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_LIBEVENT 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
 #define GPR_POSIX_SOCKET 1
