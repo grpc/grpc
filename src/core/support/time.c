@@ -259,7 +259,7 @@ gpr_int32 gpr_time_to_millis(gpr_timespec t) {
   } else if (t.tv_sec <= -2147483) {
     /* TODO(ctiller): correct handling here (it's so far in the past do we
        care?) */
-    return -2147483648;
+    return -2147483647;
   } else {
     return t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
   }
