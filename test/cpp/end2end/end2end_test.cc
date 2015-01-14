@@ -34,6 +34,7 @@
 #include <chrono>
 #include <thread>
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.pb.h"
 #include "test/cpp/util/echo.pb.h"
 #include "src/cpp/util/time.h"
@@ -435,6 +436,7 @@ TEST_F(End2endTest, BadCredentials) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
