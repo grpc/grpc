@@ -78,17 +78,20 @@ def _build_and_run(check_cancelled):
         'CONFIG=%s' % cfg] + _MAKE_TEST_TARGETS
        for cfg in build_configs),
       check_cancelled, maxjobs=1):
-    sys.exit(1)
+    return 1
 
   # run all the tests
-  jobset.run((
+  if not jobset.run((
       config.run_command(x)
       for config in run_configs
       for filt in filters
       for x in itertools.chain.from_iterable(itertools.repeat(
           glob.glob('bins/%s/%s_test' % (
               config.build_config, filt)),
-          runs_per_test))), check_cancelled)
+          runs_per_test))), check_cancelled):
+    return 2
+
+  return 0
 
 
 if forever:
@@ -100,5 +103,5 @@ if forever:
     while not have_files_changed():
       time.sleep(1)
 else:
-  _build_and_run(lambda: False)
+  sys.exit(_build_and_run(lambda: False))
 
