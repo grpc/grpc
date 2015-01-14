@@ -107,9 +107,6 @@ grpc_transport_test_config fixture_configs[] = {
 int main(int argc, char **argv) {
   size_t i;
 
-  /* disable SIGPIPE */
-  signal(SIGPIPE, SIG_IGN);
-
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
 
