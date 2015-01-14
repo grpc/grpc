@@ -155,7 +155,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_call *s1;
   grpc_call *s2;
   int live_call;
-  grpc_call *live_call_obj;
   gpr_timespec deadline;
   cq_verifier *v_client;
   cq_verifier *v_server;
@@ -204,7 +203,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* The /alpha or /beta calls started above could be invoked (but NOT both);
    * check this here */
   live_call = (int)(gpr_intptr)ev->tag;
-  live_call_obj = live_call == 300 ? c1 : c2;
   grpc_event_finish(ev);
 
   cq_expect_server_rpc_new(v_server, &s1, tag(100),
@@ -227,7 +225,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   cq_expect_finished_with_status(v_client, tag(live_call + 2),
                                  GRPC_STATUS_UNIMPLEMENTED, "xyz", NULL);
   live_call = (live_call == 300) ? 400 : 300;
-  live_call_obj = live_call == 300 ? c1 : c2;
   cq_expect_finish_accepted(v_client, tag(live_call + 3), GRPC_OP_OK);
   cq_verify(v_client);
 
