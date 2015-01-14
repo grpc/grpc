@@ -329,7 +329,7 @@ privatelibs: privatelibs_c privatelibs_cxx
 
 privatelibs_c: dep_c\
 % for lib in libs:
-% if lib.build == 'private':
+% if lib.build == 'private' and not lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
@@ -337,7 +337,7 @@ privatelibs_c: dep_c\
 
 privatelibs_cxx: dep_cxx\
 % for lib in libs:
-% if lib.build == 'private':
+% if lib.build == 'private' and lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
