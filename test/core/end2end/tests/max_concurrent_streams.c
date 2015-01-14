@@ -225,8 +225,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* first request is finished, we should be able to start the second */
   cq_expect_finished_with_status(v_client, tag(live_call + 2),
                                  GRPC_STATUS_UNIMPLEMENTED, "xyz", NULL);
-  live_call = (live_call == 300) ? 400 : 300;
   cq_expect_finish_accepted(v_client, tag(live_call + 3), GRPC_OP_OK);
+  live_call = (live_call == 300) ? 400 : 300;
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, tag(200)));
