@@ -531,6 +531,7 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
   call->state = CALL_BOUNDCQ;
   call->cq = cq;
   call->finished_tag = finished_tag;
+  call->received_start = 1;
   if (prq_is_empty(&call->prq) && call->received_finish) {
     finish_call(call);
 
