@@ -35,6 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
@@ -51,6 +52,8 @@ static int seed(void) {
 #endif
 
 void grpc_test_init(int argc, char **argv) {
+  /* disable SIGPIPE */
+  signal(SIGPIPE, SIG_IGN);
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());
