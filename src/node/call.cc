@@ -67,12 +67,9 @@ using v8::Value;
 Persistent<Function> Call::constructor;
 Persistent<FunctionTemplate> Call::fun_tpl;
 
-Call::Call(grpc_call *call) : wrapped_call(call) {
-}
+Call::Call(grpc_call *call) : wrapped_call(call) {}
 
-Call::~Call() {
-  grpc_call_destroy(wrapped_call);
-}
+Call::~Call() { grpc_call_destroy(wrapped_call); }
 
 void Call::Init(Handle<Object> exports) {
   NanScope();
@@ -86,8 +83,7 @@ void Call::Init(Handle<Object> exports) {
   NanSetPrototypeTemplate(tpl, "serverAccept",
                           FunctionTemplate::New(ServerAccept)->GetFunction());
   NanSetPrototypeTemplate(
-      tpl,
-      "serverEndInitialMetadata",
+      tpl, "serverEndInitialMetadata",
       FunctionTemplate::New(ServerEndInitialMetadata)->GetFunction());
   NanSetPrototypeTemplate(tpl, "cancel",
                           FunctionTemplate::New(Cancel)->GetFunction());
@@ -122,7 +118,7 @@ Handle<Value> Call::WrapStruct(grpc_call *call) {
     return NanEscapeScope(NanNull());
   }
   const int argc = 1;
-  Handle<Value> argv[argc] = { External::New(reinterpret_cast<void*>(call)) };
+  Handle<Value> argv[argc] = {External::New(reinterpret_cast<void *>(call))};
   return NanEscapeScope(constructor->NewInstance(argc, argv));
 }
 
@@ -133,8 +129,8 @@ NAN_METHOD(Call::New) {
     Call *call;
     if (args[0]->IsExternal()) {
       // This option is used for wrapping an existing call
-      grpc_call *call_value = reinterpret_cast<grpc_call*>(
-          External::Unwrap(args[0]));
+      grpc_call *call_value =
+          reinterpret_cast<grpc_call *>(External::Unwrap(args[0]));
       call = new Call(call_value);
     } else {
       if (!Channel::HasInstance(args[0])) {
@@ -155,11 +151,9 @@ NAN_METHOD(Call::New) {
       NanUtf8String method(args[1]);
       double deadline = args[2]->NumberValue();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
-      grpc_call *wrapped_call = grpc_channel_create_call(
-          wrapped_channel,
-          *method,
-          channel->GetHost(),
-          MillisecondsToTimespec(deadline));
+      grpc_call *wrapped_call =
+          grpc_channel_create_call(wrapped_channel, *method, channel->GetHost(),
+                                   MillisecondsToTimespec(deadline));
       call = new Call(wrapped_call);
       args.This()->SetHiddenValue(String::NewSymbol("channel_"),
                                   channel_object);
@@ -168,7 +162,7 @@ NAN_METHOD(Call::New) {
     NanReturnValue(args.This());
   } else {
     const int argc = 4;
-    Local<Value> argv[argc] = { args[0], args[1], args[2], args[3] };
+    Local<Value> argv[argc] = {args[0], args[1], args[2], args[3]};
     NanReturnValue(constructor->NewInstance(argc, argv));
   }
 }
@@ -176,11 +170,10 @@ NAN_METHOD(Call::New) {
 NAN_METHOD(Call::AddMetadata) {
   NanScope();
   if (!HasInstance(args.This())) {
-    return NanThrowTypeError(
-        "addMetadata can only be called on Call objects");
+    return NanThrowTypeError("addMetadata can only be called on Call objects");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  for (int i=0; !args[i]->IsUndefined(); i++) {
+  for (int i = 0; !args[i]->IsUndefined(); i++) {
     if (!args[i]->IsObject()) {
       return NanThrowTypeError(
           "addMetadata arguments must be objects with key and value");
@@ -201,9 +194,8 @@ NAN_METHOD(Call::AddMetadata) {
     metadata.key = *utf8_key;
     metadata.value = Buffer::Data(value);
     metadata.value_length = Buffer::Length(value);
-    grpc_call_error error = grpc_call_add_metadata(call->wrapped_call,
-                                                   &metadata,
-                                                   0);
+    grpc_call_error error =
+        grpc_call_add_metadata(call->wrapped_call, &metadata, 0);
     if (error != GRPC_CALL_OK) {
       return NanThrowError("addMetadata failed", error);
     }
@@ -217,16 +209,14 @@ NAN_METHOD(Call::StartInvoke) {
     return NanThrowTypeError("startInvoke can only be called on Call objects");
   }
   if (!args[0]->IsFunction()) {
-    return NanThrowTypeError(
-        "StartInvoke's first argument must be a function");
+    return NanThrowTypeError("StartInvoke's first argument must be a function");
   }
   if (!args[1]->IsFunction()) {
     return NanThrowTypeError(
         "StartInvoke's second argument must be a function");
   }
   if (!args[2]->IsFunction()) {
-    return NanThrowTypeError(
-        "StartInvoke's third argument must be a function");
+    return NanThrowTypeError("StartInvoke's third argument must be a function");
   }
   if (!args[3]->IsUint32()) {
     return NanThrowTypeError(
@@ -235,12 +225,9 @@ NAN_METHOD(Call::StartInvoke) {
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   unsigned int flags = args[3]->Uint32Value();
   grpc_call_error error = grpc_call_start_invoke(
-      call->wrapped_call,
-      CompletionQueueAsyncWorker::GetQueue(),
-      CreateTag(args[0], args.This()),
-      CreateTag(args[1], args.This()),
-      CreateTag(args[2], args.This()),
-      flags);
+      call->wrapped_call, CompletionQueueAsyncWorker::GetQueue(),
+      CreateTag(args[0], args.This()), CreateTag(args[1], args.This()),
+      CreateTag(args[2], args.This()), flags);
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
     CompletionQueueAsyncWorker::Next();
@@ -257,13 +244,11 @@ NAN_METHOD(Call::ServerAccept) {
     return NanThrowTypeError("accept can only be called on Call objects");
   }
   if (!args[0]->IsFunction()) {
-    return NanThrowTypeError(
-        "accept's first argument must be a function");
+    return NanThrowTypeError("accept's first argument must be a function");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   grpc_call_error error = grpc_call_server_accept(
-      call->wrapped_call,
-      CompletionQueueAsyncWorker::GetQueue(),
+      call->wrapped_call, CompletionQueueAsyncWorker::GetQueue(),
       CreateTag(args[0], args.This()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
@@ -285,9 +270,8 @@ NAN_METHOD(Call::ServerEndInitialMetadata) {
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   unsigned int flags = args[1]->Uint32Value();
-  grpc_call_error error = grpc_call_server_end_initial_metadata(
-      call->wrapped_call,
-      flags);
+  grpc_call_error error =
+      grpc_call_server_end_initial_metadata(call->wrapped_call, flags);
   if (error != GRPC_CALL_OK) {
     return NanThrowError("serverEndInitialMetadata failed", error);
   }
@@ -313,12 +297,10 @@ NAN_METHOD(Call::StartWrite) {
     return NanThrowTypeError("startWrite can only be called on Call objects");
   }
   if (!Buffer::HasInstance(args[0])) {
-    return NanThrowTypeError(
-        "startWrite's first argument must be a Buffer");
+    return NanThrowTypeError("startWrite's first argument must be a Buffer");
   }
   if (!args[1]->IsFunction()) {
-    return NanThrowTypeError(
-        "startWrite's second argument must be a function");
+    return NanThrowTypeError("startWrite's second argument must be a function");
   }
   if (!args[2]->IsUint32()) {
     return NanThrowTypeError(
@@ -327,10 +309,8 @@ NAN_METHOD(Call::StartWrite) {
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   grpc_byte_buffer *buffer = BufferToByteBuffer(args[0]);
   unsigned int flags = args[2]->Uint32Value();
-  grpc_call_error error = grpc_call_start_write(call->wrapped_call,
-                                                buffer,
-                                                CreateTag(args[1], args.This()),
-                                                flags);
+  grpc_call_error error = grpc_call_start_write(
+      call->wrapped_call, buffer, CreateTag(args[1], args.This()), flags);
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
   } else {
@@ -360,9 +340,7 @@ NAN_METHOD(Call::StartWriteStatus) {
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   NanUtf8String details(args[1]);
   grpc_call_error error = grpc_call_start_write_status(
-      call->wrapped_call,
-      (grpc_status_code)args[0]->Uint32Value(),
-      *details,
+      call->wrapped_call, (grpc_status_code)args[0]->Uint32Value(), *details,
       CreateTag(args[2], args.This()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
@@ -378,13 +356,11 @@ NAN_METHOD(Call::WritesDone) {
     return NanThrowTypeError("writesDone can only be called on Call objects");
   }
   if (!args[0]->IsFunction()) {
-    return NanThrowTypeError(
-        "writesDone's first argument must be a function");
+    return NanThrowTypeError("writesDone's first argument must be a function");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   grpc_call_error error = grpc_call_writes_done(
-      call->wrapped_call,
-      CreateTag(args[0], args.This()));
+      call->wrapped_call, CreateTag(args[0], args.This()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
   } else {
@@ -399,12 +375,11 @@ NAN_METHOD(Call::StartRead) {
     return NanThrowTypeError("startRead can only be called on Call objects");
   }
   if (!args[0]->IsFunction()) {
-    return NanThrowTypeError(
-        "startRead's first argument must be a function");
+    return NanThrowTypeError("startRead's first argument must be a function");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  grpc_call_error error = grpc_call_start_read(call->wrapped_call,
-                                               CreateTag(args[0], args.This()));
+  grpc_call_error error =
+      grpc_call_start_read(call->wrapped_call, CreateTag(args[0], args.This()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
   } else {
