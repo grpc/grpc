@@ -51,7 +51,7 @@
 #include <time.h>
 #include <pthread.h>
 
-static long gettid() { return (long)(gpr_intptr)pthread_self(); }
+static gpr_intptr gettid() { return (gpr_intptr)pthread_self(); }
 
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {
@@ -97,7 +97,7 @@ void gpr_default_log(gpr_log_func_args *args) {
     strcpy(time_buffer, "error:strftime");
   }
 
-  fprintf(stderr, "%s%s.%09d %7ld %s:%d] %s\n",
+  fprintf(stderr, "%s%s.%09d %7tu %s:%d] %s\n",
           gpr_log_severity_string(args->severity), time_buffer,
           (int)(now.tv_nsec), gettid(), display_file, args->line,
           args->message);
