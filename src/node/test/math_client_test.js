@@ -76,7 +76,7 @@ function serializeCls(Cls) {
  * four specified methods. This specifies how to serialize messages that the
  * client sends and deserialize messages that the server sends, and whether the
  * client or the server will send a stream of messages, for each method. This
- * also specifies a prefix tha twill be added to method names when sending them
+ * also specifies a prefix that will be added to method names when sending them
  * on the wire. This function call and all of the preceding code in this file
  * are intended to approximate what the generated code will look like for the
  * math client */
