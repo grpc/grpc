@@ -182,11 +182,12 @@ void PrintHeaderServerMethod(google::protobuf::io::Printer* printer,
                    "::grpc::ServerContext* context, const $Request$* request, "
                    "::grpc::ServerWriter< $Response$>* writer);\n");
   } else if (BidiStreaming(method)) {
-    printer->Print(*vars,
-                   "virtual ::grpc::Status $Method$("
-                   "::grpc::ServerContext* context, "
-                   "::grpc::ServerReaderWriter< $Response$, $Request$>* stream);"
-                   "\n");
+    printer->Print(
+        *vars,
+        "virtual ::grpc::Status $Method$("
+        "::grpc::ServerContext* context, "
+        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream);"
+        "\n");
   }
 }
 
@@ -269,9 +270,10 @@ void PrintSourceClientMethod(google::protobuf::io::Printer* printer,
                    "context, request, response);\n"
                    "}\n\n");
   } else if (ClientOnlyStreaming(method)) {
-    printer->Print(*vars,
-                   "::grpc::ClientWriter< $Request$>* $Service$::Stub::$Method$("
-                   "::grpc::ClientContext* context, $Response$* response) {\n");
+    printer->Print(
+        *vars,
+        "::grpc::ClientWriter< $Request$>* $Service$::Stub::$Method$("
+        "::grpc::ClientContext* context, $Response$* response) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientWriter< $Request$>("
                    "channel()->CreateStream("
@@ -361,13 +363,14 @@ void PrintSourceService(google::protobuf::io::Printer* printer,
                         const google::protobuf::ServiceDescriptor* service,
                         map<string, string>* vars) {
   (*vars)["Service"] = service->name();
-  printer->Print(*vars,
-                 "$Service$::Stub* $Service$::NewStub("
-                 "const std::shared_ptr< ::grpc::ChannelInterface>& channel) {\n"
-                 "  $Service$::Stub* stub = new $Service$::Stub();\n"
-                 "  stub->set_channel(channel);\n"
-                 "  return stub;\n"
-                 "};\n\n");
+  printer->Print(
+      *vars,
+      "$Service$::Stub* $Service$::NewStub("
+      "const std::shared_ptr< ::grpc::ChannelInterface>& channel) {\n"
+      "  $Service$::Stub* stub = new $Service$::Stub();\n"
+      "  stub->set_channel(channel);\n"
+      "  return stub;\n"
+      "};\n\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintSourceClientMethod(printer, service->method(i), vars);
   }
