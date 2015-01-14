@@ -45,9 +45,11 @@
 #if defined(_WIN64) || defined(WIN64)
 #define GPR_WIN32 1
 #define GPR_ARCH_64 1
+#define GPR_GETPID_IN_PROCESS_H 1
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_ARCH_32 1
 #define GPR_WIN32 1
+#define GPR_GETPID_IN_PROCESS_H 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_ANDROID 1
 #define GPR_ARCH_32 1
@@ -61,6 +63,7 @@
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #elif defined(__linux__)
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
@@ -72,6 +75,7 @@
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -89,6 +93,7 @@
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
