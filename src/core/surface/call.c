@@ -829,8 +829,6 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_call_op *op) {
   grpc_call *call = CALL_FROM_TOP_ELEM(elem);
   grpc_mdelem *md = op->data.metadata;
   grpc_mdstr *key = md->key;
-  gpr_log(GPR_DEBUG, "call %p got metadata %s %s", call,
-          grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
   if (key == grpc_channel_get_status_string(call->channel)) {
     maybe_set_status_code(call, decode_status(md));
     grpc_mdelem_unref(md);
