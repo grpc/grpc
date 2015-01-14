@@ -131,12 +131,12 @@ static void destroy_call_elem(grpc_call_element *elem) {
   ignore_unused(channeld);
 }
 
-static char *scheme_from_args(const grpc_channel_args *args) {
+static const char *scheme_from_args(const grpc_channel_args *args) {
   int i;
   if (args != NULL) {
     for (i = 0; i < args->num_args; ++i) {
       if (args->args[i].type == GRPC_ARG_STRING &&
-          strcmp(args->args[i].key, "grpc.scheme") == 0) {
+          strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME) == 0) {
         return args->args[i].value.string;
       }
     }

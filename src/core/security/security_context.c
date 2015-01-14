@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "src/core/channel/channel_args.h"
+#include "src/core/channel/http_client_filter.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_endpoint.h"
 #include "src/core/surface/lame_client.h"
@@ -463,7 +464,7 @@ grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
     return grpc_lame_client_channel_create();
   }
   arg.type = GRPC_ARG_STRING;
-  arg.key = "grpc.scheme";
+  arg.key = GRPC_ARG_HTTP2_SCHEME;
   arg.value.string = "https";
   new_args = grpc_channel_args_copy_and_add(args, &arg);
   channel = grpc_secure_channel_create_internal(target, new_args, ctx);
