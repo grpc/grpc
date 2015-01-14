@@ -52,7 +52,8 @@ grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices) {
 grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
   switch (bb->type) {
     case GRPC_BB_SLICE_BUFFER:
-      return grpc_byte_buffer_create(bb->data.slice_buffer.slices, bb->data.slice_buffer.count);
+      return grpc_byte_buffer_create(bb->data.slice_buffer.slices,
+                                     bb->data.slice_buffer.count);
   }
   gpr_log(GPR_INFO, "should never get here");
   abort();

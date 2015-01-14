@@ -357,10 +357,12 @@ grpc_call_error grpc_call_start_invoke(grpc_call *call,
                                        void *invoke_accepted_tag,
                                        void *metadata_read_tag,
                                        void *finished_tag, gpr_uint32 flags) {
-  grpc_call_error err = grpc_call_invoke(call, cq, metadata_read_tag, finished_tag, flags);
+  grpc_call_error err =
+      grpc_call_invoke(call, cq, metadata_read_tag, finished_tag, flags);
   if (err == GRPC_CALL_OK) {
     grpc_cq_begin_op(call->cq, call, GRPC_INVOKE_ACCEPTED);
-    grpc_cq_end_invoke_accepted(call->cq, invoke_accepted_tag, call, do_nothing, NULL, GRPC_OP_OK);
+    grpc_cq_end_invoke_accepted(call->cq, invoke_accepted_tag, call, do_nothing,
+                                NULL, GRPC_OP_OK);
   }
   return err;
 }
@@ -421,11 +423,11 @@ static void call_started(void *user_data, grpc_op_error error) {
   }
   if (pending_writes_done) {
     if (ok) {
-  op.type = GRPC_SEND_FINISH;
-  op.dir = GRPC_CALL_DOWN;
-  op.flags = 0;
-  op.done_cb = done_writes_done;
-  op.user_data = call;
+      op.type = GRPC_SEND_FINISH;
+      op.dir = GRPC_CALL_DOWN;
+      op.flags = 0;
+      op.done_cb = done_writes_done;
+      op.user_data = call;
 
       elem = CALL_ELEM_FROM_CALL(call, 0);
       elem->filter->call_op(elem, NULL, &op);
@@ -435,10 +437,9 @@ static void call_started(void *user_data, grpc_op_error error) {
   }
 }
 
-grpc_call_error grpc_call_invoke(grpc_call *call,
-                                 grpc_completion_queue *cq,
-                                 void *metadata_read_tag,
-                                 void *finished_tag, gpr_uint32 flags) {
+grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
+                                 void *metadata_read_tag, void *finished_tag,
+                                 gpr_uint32 flags) {
   grpc_call_element *elem;
   grpc_call_op op;
 
@@ -708,15 +709,15 @@ grpc_call_error grpc_call_start_write(grpc_call *call,
   } else {
     gpr_mu_unlock(&call->read_mu);
 
-  op.type = GRPC_SEND_MESSAGE;
-  op.dir = GRPC_CALL_DOWN;
-  op.flags = flags;
-  op.done_cb = done_write;
-  op.user_data = call;
-  op.data.message = byte_buffer;
+    op.type = GRPC_SEND_MESSAGE;
+    op.dir = GRPC_CALL_DOWN;
+    op.flags = flags;
+    op.done_cb = done_write;
+    op.user_data = call;
+    op.data.message = byte_buffer;
 
-  elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, NULL, &op);
+    elem = CALL_ELEM_FROM_CALL(call, 0);
+    elem->filter->call_op(elem, NULL, &op);
   }
 
   return GRPC_CALL_OK;
@@ -757,14 +758,14 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
   } else {
     gpr_mu_unlock(&call->read_mu);
 
-  op.type = GRPC_SEND_FINISH;
-  op.dir = GRPC_CALL_DOWN;
-  op.flags = 0;
-  op.done_cb = done_writes_done;
-  op.user_data = call;
+    op.type = GRPC_SEND_FINISH;
+    op.dir = GRPC_CALL_DOWN;
+    op.flags = 0;
+    op.done_cb = done_writes_done;
+    op.user_data = call;
 
-  elem = CALL_ELEM_FROM_CALL(call, 0);
-  elem->filter->call_op(elem, NULL, &op);
+    elem = CALL_ELEM_FROM_CALL(call, 0);
+    elem->filter->call_op(elem, NULL, &op);
   }
 
   return GRPC_CALL_OK;

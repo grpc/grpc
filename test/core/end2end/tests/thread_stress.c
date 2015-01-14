@@ -118,9 +118,8 @@ static void start_request() {
   g_active_requests++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_invoke(call, g_fixture.client_cq,
                                                     NULL, NULL, NULL, 0));
-            GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(call, NULL));
-            GPR_ASSERT(GRPC_CALL_OK ==
-                       grpc_call_start_write(call, buf, NULL, 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(call, NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write(call, buf, NULL, 0));
 
   grpc_byte_buffer_destroy(buf);
 }

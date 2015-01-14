@@ -62,8 +62,7 @@ int main(int argc, char **argv) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata(call, &md, 0));
 
   /* and invoke the call */
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke(call, cq, tag(2), tag(3), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(call, cq, tag(2), tag(3), 0));
 
   /* the call should immediately fail */
   cq_expect_client_metadata_read(cqv, tag(2), NULL);

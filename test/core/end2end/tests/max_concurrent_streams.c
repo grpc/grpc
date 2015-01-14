@@ -189,10 +189,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, tag(100)));
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(c1, f.client_cq,
-                                                    tag(301), tag(302), 0));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(c2, f.client_cq,
-                                                    tag(401), tag(402), 0));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_invoke(c1, f.client_cq, tag(301), tag(302), 0));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_invoke(c2, f.client_cq, tag(401), tag(402), 0));
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c1, tag(303)));
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c2, tag(303)));
 
