@@ -178,7 +178,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
   /**
    * Make a unary request with this method on the given channel with the given
    * argument, callback, etc.
-   * @param {client.Channel} channel The channel on which to make the request
+   * @this {SurfaceClient} Client object. Must have a channel member.
    * @param {*} argument The argument to the call. Should be serializable with
    *     serialize
    * @param {function(?Error, value=)} callback The callback to for when the
@@ -189,8 +189,8 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
    *     Defaults to infinite future
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeUnaryRequest(channel, argument, callback, metadata, deadline) {
-    var stream = client.makeRequest(channel, method, metadata, deadline);
+  function makeUnaryRequest(argument, callback, metadata, deadline) {
+    var stream = client.makeRequest(this.channel, method, metadata, deadline);
     var emitter = new EventEmitter();
     forwardEvent(stream, emitter, 'status');
     forwardEvent(stream, emitter, 'metadata');
@@ -220,7 +220,7 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
   /**
    * Make a client stream request with this method on the given channel with the
    * given callback, etc.
-   * @param {client.Channel} channel The channel on which to make the request
+   * @this {SurfaceClient} Client object. Must have a channel member.
    * @param {function(?Error, value=)} callback The callback to for when the
    *     response is received
    * @param {array=} metadata Array of metadata key/value pairs to add to the
@@ -229,8 +229,8 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
    *     Defaults to infinite future
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeClientStreamRequest(channel, callback, metadata, deadline) {
-    var stream = client.makeRequest(channel, method, metadata, deadline);
+  function makeClientStreamRequest(callback, metadata, deadline) {
+    var stream = client.makeRequest(this.channel, method, metadata, deadline);
     var obj_stream = new ClientWritableObjectStream(stream, serialize, {});
     stream.on('data', function forwardData(chunk) {
       try {
@@ -256,7 +256,7 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
   /**
    * Make a server stream request with this method on the given channel with the
    * given argument, etc.
-   * @param {client.Channel} channel The channel on which to make the request
+   * @this {SurfaceClient} Client object. Must have a channel member.
    * @param {*} argument The argument to the call. Should be serializable with
    *     serialize
    * @param {array=} metadata Array of metadata key/value pairs to add to the
@@ -265,8 +265,8 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
    *     Defaults to infinite future
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeServerStreamRequest(channel, argument, metadata, deadline) {
-    var stream = client.makeRequest(channel, method, metadata, deadline);
+  function makeServerStreamRequest(argument, metadata, deadline) {
+    var stream = client.makeRequest(this.channel, method, metadata, deadline);
     var obj_stream = new ClientReadableObjectStream(stream, deserialize, {});
     stream.write(serialize(argument));
     stream.end();
@@ -287,15 +287,15 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
 function makeBidiStreamRequestFunction(method, serialize, deserialize) {
   /**
    * Make a bidirectional stream request with this method on the given channel.
-   * @param {client.Channel} channel The channel on which to make the request
+   * @this {SurfaceClient} Client object. Must have a channel member.
    * @param {array=} metadata Array of metadata key/value pairs to add to the
    *     call
    * @param {(number|Date)=} deadline The deadline for processing this request.
    *     Defaults to infinite future
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeBidiStreamRequest(channel, metadata, deadline) {
-    var stream = client.makeRequest(channel, method, metadata, deadline);
+  function makeBidiStreamRequest(metadata, deadline) {
+    var stream = client.makeRequest(this.channel, method, metadata, deadline);
     var obj_stream = new ClientBidiObjectStream(stream,
                                                 serialize,
                                                 deserialize,
@@ -306,29 +306,63 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
 }
 
 /**
- * See docs for makeUnaryRequestFunction
+ * Map with short names for each of the requester maker functions. Used in
+ * makeClientConstructor
  */
-exports.makeUnaryRequestFunction = makeUnaryRequestFunction;
+var requester_makers = {
+  unary: makeUnaryRequestFunction,
+  server_stream: makeServerStreamRequestFunction,
+  client_stream: makeClientStreamRequestFunction,
+  bidi: makeBidiStreamRequestFunction
+}
 
 /**
- * See docs for makeClientStreamRequestFunction
+ * Creates a constructor for clients with a service defined by the methods
+ * object. The methods object has string keys and values of this form:
+ * {serialize: function, deserialize: function, client_stream: bool,
+ *  server_stream: bool}
+ * @param {!Object<string, Object>} methods Method descriptor for each method
+ *     the client should expose
+ * @param {string} prefix The prefix to prepend to each method name
+ * @return {function(string, Object)} New client constructor
  */
-exports.makeClientStreamRequestFunction = makeClientStreamRequestFunction;
+function makeClientConstructor(methods, prefix) {
+  /**
+   * Create a client with the given methods
+   * @constructor
+   * @param {string} address The address of the server to connect to
+   * @param {Object} options Options to pass to the underlying channel
+   */
+  function SurfaceClient(address, options) {
+    this.channel = new client.Channel(address, options);
+  }
 
-/**
- * See docs for makeServerStreamRequestFunction
- */
-exports.makeServerStreamRequestFunction = makeServerStreamRequestFunction;
+  _.each(methods, function(method, name) {
+    var method_type;
+    if (method.client_stream) {
+      if (method.server_stream) {
+        method_type = 'bidi';
+      } else {
+        method_type = 'client_stream';
+      }
+    } else {
+      if (method.server_stream) {
+        method_type = 'server_stream';
+      } else {
+        method_type = 'unary';
+      }
+    }
+    SurfaceClient.prototype[name] = requester_makers[method_type](
+        prefix + name,
+        method.serialize,
+        method.deserialize);
+  });
 
-/**
- * See docs for makeBidiStreamRequestFunction
- */
-exports.makeBidiStreamRequestFunction = makeBidiStreamRequestFunction;
+  return SurfaceClient;
+}
 
-/**
- * See docs for client.Channel
- */
-exports.Channel = client.Channel;
+exports.makeClientConstructor = makeClientConstructor;
+
 /**
  * See docs for client.status
  */
