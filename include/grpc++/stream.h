@@ -96,7 +96,7 @@ class ClientReader : public ClientStreamingInterface,
 
   virtual bool Read(R* msg) { return context_->Read(msg); }
 
-  virtual void Cancel() { context_->FinishStream(Status::Cancelled, true); }
+  virtual void Cancel() { context_->Cancel(); }
 
   virtual const Status& Wait() { return context_->Wait(); }
 
@@ -122,7 +122,7 @@ class ClientWriter : public ClientStreamingInterface,
 
   virtual void WritesDone() { context_->Write(nullptr, true); }
 
-  virtual void Cancel() { context_->FinishStream(Status::Cancelled, true); }
+  virtual void Cancel() { context_->Cancel(); }
 
   // Read the final response and wait for the final status.
   virtual const Status& Wait() {
@@ -165,7 +165,7 @@ class ClientReaderWriter : public ClientStreamingInterface,
 
   virtual void WritesDone() { context_->Write(nullptr, true); }
 
-  virtual void Cancel() { context_->FinishStream(Status::Cancelled, true); }
+  virtual void Cancel() { context_->Cancel(); }
 
   virtual const Status& Wait() { return context_->Wait(); }
 

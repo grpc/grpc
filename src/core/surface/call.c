@@ -270,6 +270,19 @@ void grpc_call_destroy(grpc_call *c) {
   grpc_call_internal_unref(c);
 }
 
+static void maybe_set_status_code(grpc_call *call, gpr_uint32 status) {
+  if (!call->got_status_code) {
+    call->status_code = status;
+    call->got_status_code = 1;
+  }
+}
+
+static void maybe_set_status_details(grpc_call *call, grpc_mdstr *status) {
+    if (!call->status_details) {
+      call->status_details = grpc_mdstr_ref(status);
+    }
+}
+
 grpc_call_error grpc_call_cancel(grpc_call *c) {
   grpc_call_element *elem;
   grpc_call_op op;
@@ -284,6 +297,17 @@ grpc_call_error grpc_call_cancel(grpc_call *c) {
   elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
+}
+
+grpc_call_error grpc_call_cancel_with_status(grpc_call *c, grpc_status_code status, const char *description) {
+  grpc_mdstr *details = description? grpc_mdstr_from_string(c->metadata_context, description) : NULL;
+  gpr_mu_lock(&c->read_mu);
+  maybe_set_status_code(c, status);
+  if (details) {
+    maybe_set_status_details(c, details);
+  }
+  gpr_mu_unlock(&c->read_mu);
+  return grpc_call_cancel(c);
 }
 
 void grpc_call_execute_op(grpc_call *call, grpc_call_op *op) {
@@ -803,16 +827,11 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_call_op *op) {
   grpc_mdstr *key = md->key;
   gpr_log(GPR_DEBUG, "call %p got metadata %s %s", call, grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
   if (key == grpc_channel_get_status_string(call->channel)) {
-    if (!call->got_status_code) {
-      call->status_code = decode_status(md);
-      call->got_status_code = 1;
-    }
+    maybe_set_status_code(call, decode_status(md));
     grpc_mdelem_unref(md);
     op->done_cb(op->user_data, GRPC_OP_OK);
   } else if (key == grpc_channel_get_message_string(call->channel)) {
-    if (!call->status_details) {
-      call->status_details = grpc_mdstr_ref(md->value);
-    }
+    maybe_set_status_details(call, md->value);
     grpc_mdelem_unref(md);
     op->done_cb(op->user_data, GRPC_OP_OK);
   } else {
