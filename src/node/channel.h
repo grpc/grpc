@@ -31,30 +31,49 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_CLIENT_INTERNAL_STUB_H__
-#define __GRPCPP_INTERNAL_CLIENT_INTERNAL_STUB_H__
+#ifndef NET_GRPC_NODE_CHANNEL_H_
+#define NET_GRPC_NODE_CHANNEL_H_
 
-#include <memory>
-
-#include <grpc++/channel_interface.h>
+#include <node.h>
+#include <nan.h>
+#include "grpc/grpc.h"
 
 namespace grpc {
+namespace node {
 
-class InternalStub {
+/* Wrapper class for grpc_channel structs */
+class Channel : public ::node::ObjectWrap {
  public:
-  InternalStub() {}
-  virtual ~InternalStub() {}
+  static void Init(v8::Handle<v8::Object> exports);
+  static bool HasInstance(v8::Handle<v8::Value> val);
+  /* This is used to typecheck javascript objects before converting them to
+     this type */
+  static v8::Persistent<v8::Value> prototype;
 
-  void set_channel(const std::shared_ptr<ChannelInterface>& channel) {
-    channel_ = channel;
-  }
+  /* Returns the grpc_channel struct that this object wraps */
+  grpc_channel *GetWrappedChannel();
 
-  ChannelInterface* channel() { return channel_.get(); }
+  /* Return the hostname that this channel connects to */
+  char *GetHost();
 
  private:
-  std::shared_ptr<ChannelInterface> channel_;
+  explicit Channel(grpc_channel *channel, NanUtf8String *host);
+  ~Channel();
+
+  // Prevent copying
+  Channel(const Channel &);
+  Channel &operator=(const Channel &);
+
+  static NAN_METHOD(New);
+  static NAN_METHOD(Close);
+  static v8::Persistent<v8::Function> constructor;
+  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
+
+  grpc_channel *wrapped_channel;
+  NanUtf8String *host;
 };
 
+}  // namespace node
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_CLIENT_INTERNAL_STUB_H__
+#endif  // NET_GRPC_NODE_CHANNEL_H_

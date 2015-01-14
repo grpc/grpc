@@ -43,6 +43,17 @@ extern "C" {
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
 #define TSI_X509_CERTIFICATE_TYPE "X509"
 
+/* This property is of type TSI_PEER_PROPERTY_STRING.  */
+#define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
+
+/* This property is of type TSI_PEER_PROPERTY_LIST and the children contain
+   unnamed (name == NULL) properties of type TSI_PEER_PROPERTY_STRING.  */
+#define TSI_X509_SUBJECT_ALTERNATIVE_NAMES_PEER_PROPERTY \
+  "x509_subject_alternative_names"
+
+/* This property is of type TSI_PEER_PROPERTY_STRING. */
+#define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
+
 /* --- tsi_ssl_handshaker_factory object ---
 
    This object creates tsi_handshaker objects implemented in terms of the
@@ -151,9 +162,8 @@ void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory* self);
 /* Util that checks that an ssl peer matches a specific name. */
 int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
 
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* __SSL_TRANSPORT_SECURITY_H_ */
+#endif /* __SSL_TRANSPORT_SECURITY_H_ */

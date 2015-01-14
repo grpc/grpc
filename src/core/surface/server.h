@@ -60,4 +60,4 @@ grpc_transport_setup_result grpc_server_setup_transport(
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 
-#endif  /* __GRPC_INTERNAL_SURFACE_SERVER_H__ */
+#endif /* __GRPC_INTERNAL_SURFACE_SERVER_H__ */

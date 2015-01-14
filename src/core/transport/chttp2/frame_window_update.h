@@ -52,4 +52,4 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     void *parser, grpc_chttp2_parse_state *state, gpr_slice slice, int is_last);
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H__ */

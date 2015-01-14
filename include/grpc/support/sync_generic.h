@@ -52,4 +52,4 @@ typedef struct { gpr_atm value; } gpr_stats_counter;
 #define GPR_STATS_INIT \
   { 0 }
 
-#endif  /* __GRPC_SUPPORT_SYNC_GENERIC_H__ */
+#endif /* __GRPC_SUPPORT_SYNC_GENERIC_H__ */

@@ -118,7 +118,7 @@ grpc_security_context *grpc_find_security_context_in_args(
 typedef struct grpc_channel_security_context grpc_channel_security_context;
 
 struct grpc_channel_security_context {
-  grpc_security_context base;  /* requires is_client_side to be non 0. */
+  grpc_security_context base; /* requires is_client_side to be non 0. */
   grpc_credentials *request_metadata_creds;
 };
 
@@ -159,17 +159,41 @@ grpc_security_status grpc_ssl_channel_security_context_create(
 grpc_security_status grpc_ssl_server_security_context_create(
     const grpc_ssl_config *config, grpc_security_context **ctx);
 
-
 /* --- Creation of high level objects. --- */
 
 /* Secure client channel creation. */
+
+grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
+                                      grpc_credentials *request_metadata_creds,
+                                      const char *target,
+                                      const grpc_channel_args *args);
+
+grpc_channel *grpc_fake_transport_security_channel_create(
+    grpc_credentials *fake_creds, grpc_credentials *request_metadata_creds,
+    const char *target, const grpc_channel_args *args);
+
 grpc_channel *grpc_secure_channel_create_internal(
     const char *target, const grpc_channel_args *args,
     grpc_channel_security_context *ctx);
 
-/* Secure server creation. */
-grpc_server *grpc_secure_server_create_internal(
-    grpc_completion_queue *cq, const grpc_channel_args *args,
-    grpc_security_context *ctx);
+typedef grpc_channel *(*grpc_secure_channel_factory_func)(
+    grpc_credentials *transport_security_creds,
+    grpc_credentials *request_metadata_creds, const char *target,
+    const grpc_channel_args *args);
 
-#endif  /* __GRPC_INTERNAL_SECURITY_SECURITY_CONTEXT_H__ */
+typedef struct {
+  const char *creds_type;
+  grpc_secure_channel_factory_func factory;
+} grpc_secure_channel_factory;
+
+grpc_channel *grpc_secure_channel_create_with_factories(
+    const grpc_secure_channel_factory *factories, size_t num_factories,
+    grpc_credentials *creds, const char *target, const grpc_channel_args *args);
+
+/* Secure server creation. */
+
+grpc_server *grpc_secure_server_create_internal(grpc_completion_queue *cq,
+                                                const grpc_channel_args *args,
+                                                grpc_security_context *ctx);
+
+#endif /* __GRPC_INTERNAL_SECURITY_SECURITY_CONTEXT_H__ */

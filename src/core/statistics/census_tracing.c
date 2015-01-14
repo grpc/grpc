@@ -47,8 +47,8 @@
 
 /* Struct for a trace annotation. */
 typedef struct annotation {
-  gpr_uint64 ts;                          /* timestamp of the annotation */
-  char txt[CENSUS_MAX_ANNOTATION_LENGTH]; /* actual txt annotation */
+  gpr_timespec ts;                            /* timestamp of the annotation */
+  char txt[CENSUS_MAX_ANNOTATION_LENGTH + 1]; /* actual txt annotation */
   struct annotation* next;
 } annotation;
 
@@ -107,8 +107,8 @@ census_op_id census_tracing_start_op() {
     ret->rpc_stats.cnt = 1;
     ret->ts = gpr_now();
     census_ht_insert(g_trace_store, op_id_as_key(&ret->id), (void*)ret);
+    gpr_log(GPR_DEBUG, "Start tracing for id %lu", g_id);
     gpr_mu_unlock(&g_mu);
-    gpr_log(GPR_DEBUG, "Start tracing for id %lu\n", g_id);
     return ret->id;
   }
 }
@@ -127,7 +127,27 @@ int census_add_method_tag(census_op_id op_id, const char* method) {
   return ret;
 }
 
-void census_tracing_print(census_op_id op_id, const char* annotation) {}
+void census_tracing_print(census_op_id op_id, const char* anno_txt) {
+  trace_obj* trace = NULL;
+  gpr_mu_lock(&g_mu);
+  trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
+  if (trace != NULL) {
+    annotation* anno = gpr_malloc(sizeof(annotation));
+    anno->ts = gpr_now();
+    {
+      char* d = anno->txt;
+      const char* s = anno_txt;
+      int n = 0;
+      for (; n < CENSUS_MAX_ANNOTATION_LENGTH && *s != '\0'; ++n) {
+        *d++ = *s++;
+      }
+      *d = '\0';
+    }
+    anno->next = trace->annotations;
+    trace->annotations = anno;
+  }
+  gpr_mu_unlock(&g_mu);
+}
 
 void census_tracing_end_op(census_op_id op_id) {
   trace_obj* trace = NULL;
@@ -136,7 +156,7 @@ void census_tracing_end_op(census_op_id op_id) {
   if (trace != NULL) {
     trace->rpc_stats.elapsed_time_ms =
         gpr_timespec_to_micros(gpr_time_sub(gpr_now(), trace->ts));
-    gpr_log(GPR_DEBUG, "End tracing for id %lu, method %s, latency %f us\n",
+    gpr_log(GPR_DEBUG, "End tracing for id %lu, method %s, latency %f us",
             op_id_2_uint64(&op_id), trace->method,
             trace->rpc_stats.elapsed_time_ms);
     census_ht_erase(g_trace_store, op_id_as_key(&op_id));

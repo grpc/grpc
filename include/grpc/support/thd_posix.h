@@ -39,4 +39,4 @@
 
 typedef pthread_t gpr_thd_id;
 
-#endif  /* __GRPC_SUPPORT_THD_POSIX_H__ */
+#endif /* __GRPC_SUPPORT_THD_POSIX_H__ */

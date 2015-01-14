@@ -31,6 +31,6 @@
  *
  */
 
-#include "src/cpp/client/internal_stub.h"
+#include <grpc++/impl/internal_stub.h>
 
 namespace grpc {}  // namespace grpc

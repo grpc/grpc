@@ -53,4 +53,4 @@ typedef struct {
   struct gpr_cancellable_list_ waiters;
 } gpr_cancellable;
 
-#endif  /* __GRPC_SUPPORT_CANCELLABLE_PLATFORM_H__ */
+#endif /* __GRPC_SUPPORT_CANCELLABLE_PLATFORM_H__ */

@@ -100,8 +100,7 @@ grpc_arg grpc_security_context_to_arg(grpc_security_context *ctx) {
   return result;
 }
 
-grpc_security_context *grpc_security_context_from_arg(
-    const grpc_arg *arg) {
+grpc_security_context *grpc_security_context_from_arg(const grpc_arg *arg) {
   if (strcmp(arg->key, GRPC_SECURITY_CONTEXT_ARG)) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
@@ -140,9 +139,7 @@ static void fake_channel_destroy(grpc_security_context *ctx) {
   gpr_free(ctx);
 }
 
-static void fake_server_destroy(grpc_security_context *ctx) {
-  gpr_free(ctx);
-}
+static void fake_server_destroy(grpc_security_context *ctx) { gpr_free(ctx); }
 
 static grpc_security_status fake_channel_create_handshaker(
     grpc_security_context *ctx, tsi_handshaker **handshaker) {
@@ -234,8 +231,7 @@ static void ssl_channel_destroy(grpc_security_context *ctx) {
 }
 
 static void ssl_server_destroy(grpc_security_context *ctx) {
-  grpc_ssl_server_security_context *c =
-      (grpc_ssl_server_security_context *)ctx;
+  grpc_ssl_server_security_context *c = (grpc_ssl_server_security_context *)ctx;
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
@@ -267,8 +263,7 @@ static grpc_security_status ssl_channel_create_handshaker(
 
 static grpc_security_status ssl_server_create_handshaker(
     grpc_security_context *ctx, tsi_handshaker **handshaker) {
-  grpc_ssl_server_security_context *c =
-      (grpc_ssl_server_security_context *)ctx;
+  grpc_ssl_server_security_context *c = (grpc_ssl_server_security_context *)ctx;
   return ssl_create_handshaker(c->handshaker_factory, 0, NULL, handshaker);
 }
 
@@ -438,20 +433,19 @@ error:
   return GRPC_SECURITY_ERROR;
 }
 
-
-
 /* -- High level objects. -- */
 
-static grpc_channel *grpc_ssl_channel_create(grpc_credentials *creds,
-                                             const grpc_ssl_config *config,
-                                             const char *target,
-                                             const grpc_channel_args *args) {
+grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
+                                      grpc_credentials *request_metadata_creds,
+                                      const char *target,
+                                      const grpc_channel_args *args) {
   grpc_channel_security_context *ctx = NULL;
   grpc_channel *channel = NULL;
   grpc_security_status status = GRPC_SECURITY_OK;
   size_t i = 0;
   const char *secure_peer_name = target;
-  for (i = 0; i < args->num_args; i++) {
+
+  for (i = 0; args && i < args->num_args; i++) {
     grpc_arg *arg = &args->args[i];
     if (!strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) &&
         arg->type == GRPC_ARG_STRING) {
@@ -459,8 +453,9 @@ static grpc_channel *grpc_ssl_channel_create(grpc_credentials *creds,
       break;
     }
   }
-  status = grpc_ssl_channel_security_context_create(creds, config,
-                                                    secure_peer_name, &ctx);
+  status = grpc_ssl_channel_security_context_create(
+      request_metadata_creds, grpc_ssl_credentials_get_config(ssl_creds),
+      secure_peer_name, &ctx);
   if (status != GRPC_SECURITY_OK) {
     return grpc_lame_client_channel_create();
   }
@@ -469,89 +464,51 @@ static grpc_channel *grpc_ssl_channel_create(grpc_credentials *creds,
   return channel;
 }
 
-
-static grpc_credentials *get_creds_from_composite(
-    grpc_credentials *composite_creds, const char *type) {
-  size_t i;
-  const grpc_credentials_array *inner_creds_array =
-      grpc_composite_credentials_get_credentials(composite_creds);
-  for (i = 0; i < inner_creds_array->num_creds; i++) {
-    if (!strcmp(type, inner_creds_array->creds_array[i]->type)) {
-      return inner_creds_array->creds_array[i];
-    }
-  }
-  return NULL;
+grpc_channel *grpc_fake_transport_security_channel_create(
+    grpc_credentials *fake_creds, grpc_credentials *request_metadata_creds,
+    const char *target, const grpc_channel_args *args) {
+  grpc_channel_security_context *ctx =
+      grpc_fake_channel_security_context_create(request_metadata_creds);
+  grpc_channel *channel =
+      grpc_secure_channel_create_internal(target, args, ctx);
+  grpc_security_context_unref(&ctx->base);
+  return channel;
 }
 
-static grpc_channel *grpc_channel_create_from_composite_creds(
-    grpc_credentials *composite_creds, const char *target,
+grpc_channel *grpc_secure_channel_create_with_factories(
+    const grpc_secure_channel_factory *factories, size_t num_factories,
+    grpc_credentials *creds, const char *target,
     const grpc_channel_args *args) {
-  grpc_credentials *creds =
-      get_creds_from_composite(composite_creds, GRPC_CREDENTIALS_TYPE_SSL);
-  if (creds != NULL) {
-    return grpc_ssl_channel_create(
-        composite_creds, grpc_ssl_credentials_get_config(creds), target, args);
+  size_t i;
+  if (creds == NULL) {
+    gpr_log(GPR_ERROR, "No credentials to create a secure channel.");
+    return grpc_lame_client_channel_create();
   }
-  return NULL; /* TODO(ctiller): return lame channel. */
-}
-
-grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
-                                         const char *target,
-                                         const grpc_channel_args *args) {
   if (grpc_credentials_has_request_metadata_only(creds)) {
     gpr_log(GPR_ERROR,
             "Credentials is insufficient to create a secure channel.");
     return grpc_lame_client_channel_create();
   }
-  if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
-    return grpc_ssl_channel_create(NULL, grpc_ssl_credentials_get_config(creds),
-                                   target, args);
-  } else if (!strcmp(creds->type,
-                     GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY)) {
-    grpc_channel_security_context *ctx =
-        grpc_fake_channel_security_context_create(NULL);
-    grpc_channel *channel =
-        grpc_secure_channel_create_internal(target, args, ctx);
-    grpc_security_context_unref(&ctx->base);
-    return channel;
-  } else if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE)) {
-    return grpc_channel_create_from_composite_creds(creds, target, args);
-  } else {
-    gpr_log(GPR_ERROR,
-            "Unknown credentials type %s for creating a secure channel.");
-    return grpc_lame_client_channel_create();
+
+  for (i = 0; i < num_factories; i++) {
+    grpc_credentials *composite_creds = NULL;
+    grpc_credentials *transport_security_creds = NULL;
+    transport_security_creds = grpc_credentials_contains_type(
+        creds, factories[i].creds_type, &composite_creds);
+    if (transport_security_creds != NULL) {
+      return factories[i].factory(transport_security_creds, composite_creds,
+                                  target, args);
+    }
   }
+
+  gpr_log(GPR_ERROR,
+          "Unknown credentials type %s for creating a secure channel.",
+          creds->type);
+  return grpc_lame_client_channel_create();
 }
 
 grpc_channel *grpc_default_secure_channel_create(
     const char *target, const grpc_channel_args *args) {
   return grpc_secure_channel_create(grpc_default_credentials_create(), target,
                                     args);
-}
-
-grpc_server *grpc_secure_server_create(grpc_server_credentials *creds,
-                                       grpc_completion_queue *cq,
-                                       const grpc_channel_args *args) {
-  grpc_security_status status = GRPC_SECURITY_ERROR;
-  grpc_security_context *ctx = NULL;
-  grpc_server *server = NULL;
-  if (creds == NULL) return NULL; /* TODO(ctiller): Return lame server. */
-  if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
-    status = grpc_ssl_server_security_context_create(
-        grpc_ssl_server_credentials_get_config(creds), &ctx);
-  } else if (!strcmp(creds->type,
-                     GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY)) {
-    ctx = grpc_fake_server_security_context_create();
-    status = GRPC_SECURITY_OK;
-  } else {
-    gpr_log(GPR_ERROR,
-            "Unable to create secure server with credentials of type %s.",
-            creds->type);
-  }
-  if (status != GRPC_SECURITY_OK) {
-    return NULL; /* TODO(ctiller): Return lame server. */
-  }
-  server = grpc_secure_server_create_internal(cq, args, ctx);
-  grpc_security_context_unref(ctx);
-  return server;
 }

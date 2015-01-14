@@ -46,4 +46,4 @@ void Init_google_rpc_channel();
 /* Gets the wrapped channel from the ruby wrapper */
 grpc_channel* grpc_rb_get_wrapped_channel(VALUE v);
 
-#endif  /* GRPC_RB_CHANNEL_H_ */
+#endif /* GRPC_RB_CHANNEL_H_ */

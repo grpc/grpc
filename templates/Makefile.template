@@ -2,6 +2,7 @@
 # This currently builds C and C++ code.
 <%!
   import re
+  import os
 
   proto_re = re.compile('(.*)\\.proto')
 
@@ -355,7 +356,7 @@ buildtests_c: bins_dep_c privatelibs_c\
 buildtests_cxx: bins_dep_cxx privatelibs_cxx\
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('c++', False):
- bins/${tgt.name}\
+ bins/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
@@ -687,6 +688,7 @@ libs/$(CONFIG)/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
 	$(Q) $(AR) rcs libs/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 % if lib.get('baselib', False):
 % if lib.get('secure', True):
+	$(Q) rm -rf tmp-merge
 	$(Q) mkdir tmp-merge
 	$(Q) ( cd tmp-merge ; $(AR) x ../libs/$(CONFIG)/lib${lib.name}.a )
 	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; <%text>ar x ../$${l}</%text> ) ; done
@@ -759,6 +761,18 @@ endif
 % if lib.get('secure', True):
 endif
 % endif
+
+% for src in lib.src:
+% if not proto_re.match(src):
+objs/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
+% for src2 in lib.src:
+% if proto_re.match(src2):
+    ${proto_to_cc(src2)}\
+% endif
+% endfor
+% endif
+
+% endfor
 
 clean_lib${lib.name}:
 	$(E) "[CLEAN]   Cleaning lib${lib.name} files"
@@ -835,6 +849,14 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 
 endif
 % endif
+
+% for src in tgt.src:
+objs/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
+% for dep in tgt.deps:
+ libs/$(CONFIG)/lib${dep}.a\
+% endfor
+
+% endfor
 
 deps_${tgt.name}: $(${tgt.name.upper()}_DEPS)
 

@@ -41,6 +41,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
 /* Ensure all possible state transitions are called without causing problem */
@@ -130,10 +131,12 @@ static void test_concurrency() {
   for (i = 0; i < NUM_THREADS; ++i) {
     gpr_thd_new(tid + i, mimic_trace_op_sequences, &arg, NULL);
   }
+  gpr_mu_lock(&arg.mu);
   while (arg.num_done < NUM_THREADS) {
     gpr_log(GPR_INFO, "num done %d", arg.num_done);
     gpr_cv_wait(&arg.done, &arg.mu, gpr_inf_future);
   }
+  gpr_mu_unlock(&arg.mu);
   census_tracing_shutdown();
 #undef NUM_THREADS
 }
@@ -147,6 +150,28 @@ static void test_add_method_tag_to_unknown_op_id() {
   census_tracing_shutdown();
 }
 
+static void test_trace_print() {
+  census_op_id id;
+  int i;
+  const char* annotation_txt[4] = {"abc", "", "$%^ *()_"};
+  char long_txt[CENSUS_MAX_ANNOTATION_LENGTH + 10];
+
+  memset(long_txt, 'a', GPR_ARRAY_SIZE(long_txt));
+  long_txt[CENSUS_MAX_ANNOTATION_LENGTH + 9] = '\0';
+  annotation_txt[3] = long_txt;
+
+  census_tracing_init();
+  id = census_tracing_start_op();
+  /* Adds large number of annotations to each trace */
+  for (i = 0; i < 1000; i++) {
+    census_tracing_print(id,
+                         annotation_txt[i % GPR_ARRAY_SIZE(annotation_txt)]);
+  }
+  census_tracing_end_op(id);
+
+  census_tracing_shutdown();
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_init_shutdown();
@@ -154,5 +179,6 @@ int main(int argc, char** argv) {
   test_get_trace_method_name();
   test_concurrency();
   test_add_method_tag_to_unknown_op_id();
+  test_trace_print();
   return 0;
 }

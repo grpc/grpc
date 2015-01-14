@@ -54,25 +54,31 @@ static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
   return ANDROID_LOG_DEFAULT;
 }
 
-void gpr_vlog(const char *file, int line, gpr_log_severity severity,
-              const char *format, va_list args) {
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *format, ...) {
+  char *message = NULL;
+  va_list args;
+  va_start(args, format);
+  vasprintf(&message, format, args);
+  va_end(args);
+  gpr_log_message(file, line, severity, message);
+  free(message);
+}
+
+void gpr_default_log(gpr_log_func_args *args) {
   char *final_slash;
   const char *display_file;
-  char *prefix = NULL;
-  char *suffix = NULL;
   char *output = NULL;
 
-  final_slash = strrchr(file, '/');
+  final_slash = strrchr(args->file, '/');
   if (final_slash == NULL)
     display_file = file;
   else
     display_file = final_slash + 1;
 
-  asprintf(&prefix, "%s:%d] ", display_file, line);
-  vasprintf(&suffix, format, args);
-  asprintf(&output, "%s%s", prefix, suffix);
+  asprintf(&prefix, "%s:%d] %s", display_file, args->line, args->message);
 
-  __android_log_write(severity_to_log_priority(severity), "GRPC", output);
+  __android_log_write(severity_to_log_priority(args->severity), "GRPC", output);
 
   /* allocated by asprintf => use free, not gpr_free */
   free(prefix);

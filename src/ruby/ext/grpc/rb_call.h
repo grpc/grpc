@@ -56,4 +56,4 @@ extern VALUE rb_eCallError;
 /* Initializes the Call class. */
 void Init_google_rpc_call();
 
-#endif  /* GRPC_RB_CALL_H_ */
+#endif /* GRPC_RB_CALL_H_ */

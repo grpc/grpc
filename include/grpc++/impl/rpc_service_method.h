@@ -31,18 +31,18 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_SERVER_RPC_SERVICE_METHOD_H__
-#define __GRPCPP_INTERNAL_SERVER_RPC_SERVICE_METHOD_H__
+#ifndef __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__
+#define __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__
 
 #include <functional>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "src/cpp/rpc_method.h"
-#include <google/protobuf/message.h>
+#include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include <google/protobuf/message.h>
 
 namespace grpc {
 class ServerContext;
@@ -55,14 +55,17 @@ class MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
-    HandlerParameter(ServerContext* context, const google::protobuf::Message* req,
+    HandlerParameter(ServerContext* context,
+                     const google::protobuf::Message* req,
                      google::protobuf::Message* resp)
         : server_context(context),
           request(req),
           response(resp),
           stream_context(nullptr) {}
-    HandlerParameter(ServerContext* context, const google::protobuf::Message* req,
-                     google::protobuf::Message* resp, StreamContextInterface* stream)
+    HandlerParameter(ServerContext* context,
+                     const google::protobuf::Message* req,
+                     google::protobuf::Message* resp,
+                     StreamContextInterface* stream)
         : server_context(context),
           request(req),
           response(resp),
@@ -171,7 +174,8 @@ class RpcServiceMethod : public RpcMethod {
  public:
   // Takes ownership of the handler and two prototype objects.
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
-                   MethodHandler* handler, google::protobuf::Message* request_prototype,
+                   MethodHandler* handler,
+                   google::protobuf::Message* request_prototype,
                    google::protobuf::Message* response_prototype)
       : RpcMethod(name, type),
         handler_(handler),
@@ -180,7 +184,9 @@ class RpcServiceMethod : public RpcMethod {
 
   MethodHandler* handler() { return handler_.get(); }
 
-  google::protobuf::Message* AllocateRequestProto() { return request_prototype_->New(); }
+  google::protobuf::Message* AllocateRequestProto() {
+    return request_prototype_->New();
+  }
   google::protobuf::Message* AllocateResponseProto() {
     return response_prototype_->New();
   }
@@ -200,9 +206,7 @@ class RpcService {
     methods_.push_back(std::unique_ptr<RpcServiceMethod>(method));
   }
 
-  RpcServiceMethod* GetMethod(int i) {
-    return methods_[i].get();
-  }
+  RpcServiceMethod* GetMethod(int i) { return methods_[i].get(); }
   int GetMethodCount() const { return methods_.size(); }
 
  private:
@@ -211,4 +215,4 @@ class RpcService {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_SERVER_RPC_SERVICE_METHOD_H__
+#endif  // __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__

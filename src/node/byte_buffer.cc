@@ -31,39 +31,49 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_RPC_METHOD_H__
-#define __GRPCPP_INTERNAL_RPC_METHOD_H__
+#include <string.h>
+#include <malloc.h>
 
-namespace google {
-namespace protobuf {
-class Message;
-}
-}
+#include <node.h>
+#include <nan.h>
+#include "grpc/grpc.h"
+#include "grpc/support/slice.h"
 
 namespace grpc {
+namespace node {
 
-class RpcMethod {
- public:
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING
-  };
+#include "byte_buffer.h"
 
-  explicit RpcMethod(const char* name)
-      : name_(name), method_type_(NORMAL_RPC) {}
-  RpcMethod(const char* name, RpcType type) : name_(name), method_type_(type) {}
+using ::node::Buffer;
+using v8::Handle;
+using v8::Value;
 
-  const char *name() const { return name_; }
+grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
+  NanScope();
+  int length = Buffer::Length(buffer);
+  char *data = Buffer::Data(buffer);
+  gpr_slice slice = gpr_slice_malloc(length);
+  memcpy(GPR_SLICE_START_PTR(slice), data, length);
+  grpc_byte_buffer *byte_buffer(grpc_byte_buffer_create(&slice, 1));
+  gpr_slice_unref(slice);
+  return byte_buffer;
+}
 
-  RpcType method_type() const { return method_type_; }
-
- private:
-  const char *name_;
-  const RpcType method_type_;
-};
-
+Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
+  NanEscapableScope();
+  if (buffer == NULL) {
+    NanReturnNull();
+  }
+  size_t length = grpc_byte_buffer_length(buffer);
+  char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));
+  size_t offset = 0;
+  grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
+  gpr_slice next;
+  while (grpc_byte_buffer_reader_next(reader, &next) != 0) {
+    memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
+    offset += GPR_SLICE_LENGTH(next);
+  }
+  return NanEscapeScope(NanNewBufferHandle(result, length));
+}
+}  // namespace node
 }  // namespace grpc
-
-#endif  // __GRPCPP_INTERNAL_RPC_METHOD_H__

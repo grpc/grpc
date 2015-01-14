@@ -31,6 +31,18 @@
  *
  */
 
-#include "src/cpp/rpc_method.h"
+#ifndef NET_GRPC_NODE_TIMEVAL_H_
+#define NET_GRPC_NODE_TIMEVAL_H_
 
-namespace grpc {}  // namespace grpc
+#include "grpc/support/time.h"
+
+namespace grpc {
+namespace node {
+
+double TimespecToMilliseconds(gpr_timespec time);
+gpr_timespec MillisecondsToTimespec(double millis);
+
+}  // namespace node
+}  // namespace grpc
+
+#endif  // NET_GRPC_NODE_TIMEVAL_H_

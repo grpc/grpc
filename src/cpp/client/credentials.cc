@@ -31,10 +31,10 @@
  *
  */
 
-
 #include <string>
 
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 
 #include <grpc++/credentials.h>
 
@@ -58,6 +58,9 @@ std::unique_ptr<Credentials> CredentialsFactory::SslCredentials(
       options.pem_root_certs.empty() ? nullptr
                                      : reinterpret_cast<const unsigned char*>(
                                            options.pem_root_certs.c_str());
+  if (pem_root_certs == nullptr) {
+    return std::unique_ptr<Credentials>();
+  }
   const unsigned char* pem_private_key =
       options.pem_private_key.empty() ? nullptr
                                       : reinterpret_cast<const unsigned char*>(
@@ -71,17 +74,42 @@ std::unique_ptr<Credentials> CredentialsFactory::SslCredentials(
       pem_root_certs, options.pem_root_certs.size(), pem_private_key,
       options.pem_private_key.size(), pem_cert_chain,
       options.pem_cert_chain.size());
-  std::unique_ptr<Credentials> cpp_creds(new Credentials(c_creds));
+  std::unique_ptr<Credentials> cpp_creds(
+      c_creds == nullptr ? nullptr : new Credentials(c_creds));
   return cpp_creds;
 }
 
 // Builds credentials for use when running in GCE
 std::unique_ptr<Credentials> CredentialsFactory::ComputeEngineCredentials() {
   grpc_credentials* c_creds = grpc_compute_engine_credentials_create();
-  std::unique_ptr<Credentials> cpp_creds(new Credentials(c_creds));
+  std::unique_ptr<Credentials> cpp_creds(
+      c_creds == nullptr ? nullptr : new Credentials(c_creds));
   return cpp_creds;
 }
 
+// Builds service account credentials.
+std::unique_ptr<Credentials> CredentialsFactory::ServiceAccountCredentials(
+    const grpc::string& json_key, const grpc::string& scope,
+    std::chrono::seconds token_lifetime) {
+  gpr_timespec lifetime = gpr_time_from_seconds(
+      token_lifetime.count() > 0 ? token_lifetime.count() : 0);
+  grpc_credentials* c_creds = grpc_service_account_credentials_create(
+      json_key.c_str(), scope.c_str(), lifetime);
+  std::unique_ptr<Credentials> cpp_creds(
+      c_creds == nullptr ? nullptr : new Credentials(c_creds));
+  return cpp_creds;
+}
+
+// Builds IAM credentials.
+std::unique_ptr<Credentials> CredentialsFactory::IAMCredentials(
+    const grpc::string& authorization_token,
+    const grpc::string& authority_selector) {
+  grpc_credentials* c_creds = grpc_iam_credentials_create(
+      authorization_token.c_str(), authority_selector.c_str());
+  std::unique_ptr<Credentials> cpp_creds(
+      c_creds == nullptr ? nullptr : new Credentials(c_creds));
+  return cpp_creds;
+}
 
 // Combines two credentials objects into a composite credentials.
 std::unique_ptr<Credentials> CredentialsFactory::ComposeCredentials(
@@ -93,7 +121,8 @@ std::unique_ptr<Credentials> CredentialsFactory::ComposeCredentials(
   // refcounts incremented.
   grpc_credentials* c_creds = grpc_composite_credentials_create(
       creds1->GetRawCreds(), creds2->GetRawCreds());
-  std::unique_ptr<Credentials> cpp_creds(new Credentials(c_creds));
+  std::unique_ptr<Credentials> cpp_creds(
+      c_creds == nullptr ? nullptr : new Credentials(c_creds));
   return cpp_creds;
 }
 

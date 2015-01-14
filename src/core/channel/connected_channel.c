@@ -69,7 +69,7 @@ typedef struct {
 /* We perform a small hack to locate transport data alongside the connected
    channel data in call allocations, to allow everything to be pulled in minimal
    cache line requests */
-#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) ((grpc_stream *)((calld)+1))
+#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) ((grpc_stream *)((calld) + 1))
 #define CALL_DATA_FROM_TRANSPORT_STREAM(transport_stream) \
   (((call_data *)(transport_stream)) - 1)
 
@@ -257,9 +257,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_connected_channel_filter = {
-    call_op,              channel_op,
+    call_op, channel_op,
 
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
+    sizeof(call_data), init_call_elem, destroy_call_elem,
 
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
 
@@ -289,12 +289,8 @@ static void accept_stream(void *user_data, grpc_transport *transport,
 }
 
 static void recv_error(channel_data *chand, call_data *calld, int line,
-                       const char *fmt, ...) {
-  va_list a;
-
-  va_start(a, fmt);
-  gpr_vlog(__FILE__, line, GPR_LOG_SEVERITY_ERROR, fmt, a);
-  va_end(a);
+                       const char *message) {
+  gpr_log_message(__FILE__, line, GPR_LOG_SEVERITY_ERROR, message);
 
   if (chand->transport) {
     grpc_transport_abort_stream(chand->transport,
@@ -388,19 +384,23 @@ static void recv_batch(void *user_data, grpc_transport *transport,
       case GRPC_OP_BEGIN_MESSAGE:
         /* can't begin a message when we're still reading a message */
         if (calld->reading_message) {
-          recv_error(chand, calld, __LINE__,
-                     "Message terminated early; read %d bytes, expected %d",
-                     calld->incoming_message.length,
-                     calld->incoming_message_length);
+          char message[128];
+          sprintf(message,
+                  "Message terminated early; read %d bytes, expected %d",
+                  (int)calld->incoming_message.length,
+                  (int)calld->incoming_message_length);
+          recv_error(chand, calld, __LINE__, message);
           return;
         }
         /* stash away parameters, and prepare for incoming slices */
         length = stream_op->data.begin_message.length;
         if (length > calld->max_message_length) {
-          recv_error(
-              chand, calld, __LINE__,
+          char message[128];
+          sprintf(
+              message,
               "Maximum message length of %d exceeded by a message of length %d",
               calld->max_message_length, length);
+          recv_error(chand, calld, __LINE__, message);
         } else if (length > 0) {
           calld->reading_message = 1;
           calld->incoming_message_length = length;
@@ -423,10 +423,12 @@ static void recv_batch(void *user_data, grpc_transport *transport,
         gpr_slice_buffer_add(&calld->incoming_message, stream_op->data.slice);
         if (calld->incoming_message.length > calld->incoming_message_length) {
           /* if we got too many bytes, complain */
-          recv_error(chand, calld, __LINE__,
-                     "Receiving message overflow; read %d bytes, expected %d",
-                     calld->incoming_message.length,
-                     calld->incoming_message_length);
+          char message[128];
+          sprintf(message,
+                  "Receiving message overflow; read %d bytes, expected %d",
+                  (int)calld->incoming_message.length,
+                  (int)calld->incoming_message_length);
+          recv_error(chand, calld, __LINE__, message);
           return;
         } else if (calld->incoming_message.length ==
                    calld->incoming_message_length) {
@@ -439,10 +441,11 @@ static void recv_batch(void *user_data, grpc_transport *transport,
                                  final_state == GRPC_STREAM_CLOSED)) {
     calld->got_read_close = 1;
     if (calld->reading_message) {
-      recv_error(chand, calld, __LINE__,
-                 "Last message truncated; read %d bytes, expected %d",
-                 calld->incoming_message.length,
-                 calld->incoming_message_length);
+      char message[128];
+      sprintf(message, "Last message truncated; read %d bytes, expected %d",
+              (int)calld->incoming_message.length,
+              (int)calld->incoming_message_length);
+      recv_error(chand, calld, __LINE__, message);
     }
     call_op.type = GRPC_RECV_HALF_CLOSE;
     call_op.dir = GRPC_CALL_UP;

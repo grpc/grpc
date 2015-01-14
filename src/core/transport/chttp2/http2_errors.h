@@ -53,4 +53,4 @@ typedef enum {
   GRPC_CHTTP2__ERROR_DO_NOT_USE = -1
 } grpc_chttp2_error_code;
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_HTTP2_ERRORS_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_HTTP2_ERRORS_H__ */

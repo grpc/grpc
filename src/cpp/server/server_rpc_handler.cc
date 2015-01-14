@@ -34,10 +34,10 @@
 #include "src/cpp/server/server_rpc_handler.h"
 
 #include <grpc/support/log.h>
-#include "src/cpp/server/rpc_service_method.h"
 #include "src/cpp/server/server_context_impl.h"
 #include "src/cpp/stream/stream_context.h"
 #include <grpc++/async_server_context.h>
+#include <grpc++/impl/rpc_service_method.h>
 
 namespace grpc {
 
@@ -60,8 +60,10 @@ void ServerRpcHandler::StartRpc() {
     async_server_context_->Accept(cq_.cq());
 
     // Allocate request and response.
-    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
-    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+    std::unique_ptr<google::protobuf::Message> request(
+        method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(
+        method_->AllocateResponseProto());
 
     // Read request
     async_server_context_->StartRead(request.get());
@@ -86,8 +88,10 @@ void ServerRpcHandler::StartRpc() {
   } else {
     // Allocate request and response.
     // TODO(yangg) maybe not allocate both when not needed?
-    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
-    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+    std::unique_ptr<google::protobuf::Message> request(
+        method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(
+        method_->AllocateResponseProto());
 
     StreamContext stream_context(*method_, async_server_context_->call(),
                                  cq_.cq(), request.get(), response.get());

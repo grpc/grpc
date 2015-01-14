@@ -108,6 +108,14 @@ typedef struct {
 const grpc_credentials_array *grpc_composite_credentials_get_credentials(
     grpc_credentials *composite_creds);
 
+/* Returns creds if creds is of the specified type or the inner creds of the
+   specified type (if found), if the creds is of type COMPOSITE.
+   If composite_creds is not NULL, *composite_creds will point to creds if of
+   type COMPOSITE in case of success. */
+grpc_credentials *grpc_credentials_contains_type(
+    grpc_credentials *creds, const char *type,
+    grpc_credentials **composite_creds);
+
 /* Exposed for testing only. */
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -117,7 +125,6 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(
     const char *token_md_value, int is_async);
-
 
 /* --- grpc_server_credentials. --- */
 
@@ -136,5 +143,4 @@ struct grpc_server_credentials {
 const grpc_ssl_config *grpc_ssl_server_credentials_get_config(
     const grpc_server_credentials *ssl_creds);
 
-
-#endif  /* __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__ */
+#endif /* __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__ */

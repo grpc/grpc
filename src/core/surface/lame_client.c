@@ -33,6 +33,8 @@
 
 #include "src/core/surface/lame_client.h"
 
+#include <string.h>
+
 #include "src/core/channel/channel_stack.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/call.h"
@@ -42,16 +44,28 @@
 
 typedef struct { void *unused; } call_data;
 
-typedef struct { void *unused; } channel_data;
+typedef struct { grpc_mdelem *message; } channel_data;
+
+static void do_nothing(void *data, grpc_op_error error) {}
 
 static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                     grpc_call_op *op) {
+  channel_data *channeld = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
   switch (op->type) {
-    case GRPC_SEND_START:
+    case GRPC_SEND_START: {
+      grpc_call_op set_status_op;
+      grpc_mdelem_ref(channeld->message);
+      memset(&set_status_op, 0, sizeof(grpc_call_op));
+      set_status_op.dir = GRPC_CALL_UP;
+      set_status_op.type = GRPC_RECV_METADATA;
+      set_status_op.done_cb = do_nothing;
+      set_status_op.data.metadata = channeld->message;
+      grpc_call_recv_metadata(elem, &set_status_op);
       grpc_call_recv_finish(elem, 1);
       break;
+    }
     case GRPC_SEND_METADATA:
       grpc_mdelem_unref(op->data.metadata);
       break;
@@ -81,11 +95,20 @@ static void destroy_call_elem(grpc_call_element *elem) {}
 static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
+  channel_data *channeld = elem->channel_data;
+
   GPR_ASSERT(is_first);
   GPR_ASSERT(is_last);
+
+  channeld->message = grpc_mdelem_from_strings(mdctx, "grpc-message",
+                                               "Rpc sent on a lame channel.");
 }
 
-static void destroy_channel_elem(grpc_channel_element *elem) {}
+static void destroy_channel_elem(grpc_channel_element *elem) {
+  channel_data *channeld = elem->channel_data;
+
+  grpc_mdelem_unref(channeld->message);
+}
 
 static const grpc_channel_filter lame_filter = {
     call_op, channel_op,

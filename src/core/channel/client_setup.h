@@ -64,4 +64,4 @@ gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r);
 
 grpc_mdctx *grpc_client_setup_get_mdctx(grpc_client_setup_request *r);
 
-#endif  /* __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__ */
+#endif /* __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__ */

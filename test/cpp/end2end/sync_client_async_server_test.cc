@@ -31,7 +31,6 @@
  *
  */
 
-
 #include <chrono>
 #include <memory>
 #include <sstream>
@@ -39,17 +38,17 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
-#include "src/cpp/client/internal_stub.h"
-#include "src/cpp/rpc_method.h"
 #include "test/cpp/util/echo.pb.h"
-#include "net/util/netutil.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/impl/internal_stub.h>
+#include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/end2end/async_test_server.h"
+#include "test/core/util/port.h"
 #include <gtest/gtest.h>
 
 using grpc::cpp::test::util::EchoRequest;
@@ -73,7 +72,7 @@ void ServerLoop(void* s) {
 class End2endTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    int port = PickUnusedPortOrDie();
+    int port = grpc_pick_unused_port_or_die();
     // TODO(yangg) protobuf has a StringPrintf, maybe use that
     std::ostringstream oss;
     oss << "[::]:" << port;
@@ -97,9 +96,7 @@ class End2endTest : public ::testing::Test {
     EXPECT_TRUE(gpr_thd_new(&id, ServerLoop, server_.get(), NULL));
   }
 
-  void TearDown() override {
-    server_->Shutdown();
-  }
+  void TearDown() override { server_->Shutdown(); }
 
   std::unique_ptr<AsyncTestServer> server_;
   InternalStub stub_;

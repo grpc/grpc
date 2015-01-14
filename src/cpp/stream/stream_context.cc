@@ -34,11 +34,11 @@
 #include "src/cpp/stream/stream_context.h"
 
 #include <grpc/support/log.h>
-#include "src/cpp/rpc_method.h"
 #include "src/cpp/proto/proto_utils.h"
 #include "src/cpp/util/time.h"
 #include <grpc++/client_context.h>
 #include <grpc++/config.h>
+#include <grpc++/impl/rpc_method.h>
 #include <google/protobuf/message.h>
 
 namespace grpc {
@@ -61,7 +61,8 @@ StreamContext::StreamContext(const RpcMethod& method, ClientContext* context,
 // Server only ctor
 StreamContext::StreamContext(const RpcMethod& method, grpc_call* call,
                              grpc_completion_queue* cq,
-                             google::protobuf::Message* request, google::protobuf::Message* result)
+                             google::protobuf::Message* request,
+                             google::protobuf::Message* result)
     : is_client_(false),
       method_(&method),
       call_(call),
@@ -85,6 +86,10 @@ void StreamContext::Start(bool buffered) {
     GPR_ASSERT(GRPC_CALL_OK == error);
     grpc_event* invoke_ev =
         grpc_completion_queue_pluck(cq(), invoke_tag(), gpr_inf_future);
+    if (invoke_ev->data.invoke_accepted != GRPC_OP_OK) {
+      peer_halfclosed_ = true;
+      self_halfclosed_ = true;
+    }
     grpc_event_finish(invoke_ev);
   } else {
     // TODO(yangg) metadata needs to be added before accept
