@@ -624,15 +624,8 @@ ifneq ($(SYSTEM),Darwin)
 endif
 endif
 
-clean:\
-% for lib in libs:
- clean_lib${lib.name}\
-% endfor
-% for tgt in targets:
- clean_${tgt.name}\
-% endfor
-
-	$(Q) $(RM) -r deps objs libs bins gens
+clean:
+	$(Q) $(RM) -rf deps objs libs bins gens
 
 
 # The various libraries
