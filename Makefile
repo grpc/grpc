@@ -186,7 +186,7 @@ endif
 
 ifeq ($(HAS_SYSTEM_ZLIB),false)
 ifeq ($(HAS_EMBEDDED_ZLIB),true)
-ZLIB_DEP = third_party/zlib/libz.a
+ZLIB_DEP = libs/$(CONFIG)/zlib/libz.a
 CPPFLAGS += -Ithird_party/zlib
 LDFLAGS += -Lthird_party/zlib
 else
@@ -487,9 +487,12 @@ run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
 	$(ZLIB_CHECK_CMD) || true
 
-third_party/zlib/libz.a:
-	(cd third_party/zlib ; CFLAGS="-fPIC -fvisibility=hidden" ./configure --static)
+libs/$(CONFIG)/zlib/libz.a:
+	(cd third_party/zlib ; CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
+	$(MAKE) -c third_party/zlib clean
 	$(MAKE) -C third_party/zlib
+	mkdir -p libs/$(CONFIG)/zlib
+	cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
 
 libs/$(CONFIG)/openssl/libssl.a:
 	(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
