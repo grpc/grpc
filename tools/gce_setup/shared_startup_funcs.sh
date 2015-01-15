@@ -423,10 +423,8 @@ grpc_dockerfile_install() {
 # requires: $2 is a local directory containing a Dockerfile
 # requires: there is a docker registry running on 5000, e.g, grpc_docker_launch_registry was run
 #
-# invokes pull_dockerfiles to refresh them all from cloud storage, then grpc_dockerfile_install
-#
-# grpc_dockerfile_refresh "grpc/mylabel" /var/local/dockerfile/dir_containing_my_dockerfile
+# call-seq:
+#   grpc_dockerfile_refresh "grpc/mylabel" /var/local/dockerfile/dir_containing_my_dockerfile
 grpc_dockerfile_refresh() {
-  grpc_dockerfile_pull || return 1
   grpc_dockerfile_install "$@"
 }
