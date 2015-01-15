@@ -232,6 +232,7 @@ grpc_call *grpc_call_create(grpc_channel *channel,
   call->have_alarm = 0;
   call->received_metadata = 0;
   call->got_status_code = 0;
+  call->start_ok = 0;
   call->status_code =
       server_transport_data != NULL ? GRPC_STATUS_OK : GRPC_STATUS_UNKNOWN;
   call->status_details = NULL;
