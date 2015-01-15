@@ -754,7 +754,7 @@ libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
   mingw_lib_deps = ' $(ZLIB_DEP)'
   for dep in lib.get('deps', []):
     libs = libs + ' -l' + dep
-    lib_deps = lib_deps + 'libs/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
+    lib_deps = lib_deps + ' libs/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
     mingw_libs = mingw_libs + ' -l' + dep + '-imp'
     mingw_lib_deps = mingw_lib_deps + 'libs/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
