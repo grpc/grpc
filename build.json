@@ -422,8 +422,8 @@
       "c++": true,
       "secure": false,
       "src": [
-        "src/compiler/cpp_plugin.cpp",
-        "src/compiler/cpp_generator.cpp"
+        "src/compiler/cpp_plugin.cc",
+        "src/compiler/cpp_generator.cc"
       ],
       "headers": [
         "src/compiler/cpp_generator.h",
@@ -437,8 +437,8 @@
       "c++": true,
       "secure": false,
       "src": [
-        "src/compiler/ruby_plugin.cpp",
-        "src/compiler/ruby_generator.cpp"
+        "src/compiler/ruby_plugin.cc",
+        "src/compiler/ruby_generator.cc"
       ],
       "headers": [
         "src/compiler/cpp_generator.h",
