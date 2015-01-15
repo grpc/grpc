@@ -115,7 +115,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
                            deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, f->server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_server_accept(s, f->server_cq, tag(102)));
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);

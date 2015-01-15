@@ -124,7 +124,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
                            deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, f->server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_server_accept(s, f->server_cq, tag(102)));
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
