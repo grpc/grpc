@@ -822,6 +822,6 @@ install-static install-static_c install-static_cxx \
 strip strip-shared strip-static \
 strip_c strip-shared_c strip-static_c \
 strip_cxx strip-shared_cxx strip-static_cxx \
-dep_c dep_cxx bins_dep_c bins_dep_cxx\
+dep_c dep_cxx bins_dep_c bins_dep_cxx \
 clean
 
