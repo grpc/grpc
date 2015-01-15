@@ -73,34 +73,25 @@ void test_connect(const char *server_host, const char *client_host, int port,
   cq_verifier *v_client;
   cq_verifier *v_server;
   gpr_timespec deadline;
-  int got_port;
 
+  gpr_join_host_port(&client_hostport, client_host, port);
   gpr_join_host_port(&server_hostport, server_host, port);
+  gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
+          server_hostport, client_hostport, expect_ok ? "success" : "failure");
 
   /* Create server. */
   server_cq = grpc_completion_queue_create();
   server = grpc_server_create(server_cq, NULL);
-  GPR_ASSERT((got_port = grpc_server_add_http2_port(server, server_hostport)) >
-             0);
-  if (port == 0) {
-    port = got_port;
-  } else {
-    GPR_ASSERT(port == got_port);
-  }
+  GPR_ASSERT(grpc_server_add_http2_port(server, server_hostport));
   grpc_server_start(server);
+  gpr_free(server_hostport);
   v_server = cq_verifier_create(server_cq);
 
   /* Create client. */
-  gpr_join_host_port(&client_hostport, client_host, port);
   client_cq = grpc_completion_queue_create();
   client = grpc_channel_create(client_hostport, NULL);
-  v_client = cq_verifier_create(client_cq);
-
-  gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
-          server_hostport, client_hostport, expect_ok ? "success" : "failure");
-
   gpr_free(client_hostport);
-  gpr_free(server_hostport);
+  v_client = cq_verifier_create(client_cq);
 
   if (expect_ok) {
     /* Normal deadline, shouldn't be reached. */
@@ -115,10 +106,14 @@ void test_connect(const char *server_host, const char *client_host, int port,
   c = grpc_channel_create_call(client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(c, client_cq, tag(2), tag(3), 0));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(4)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_invoke(c, client_cq, tag(1), tag(2), tag(3), 0));
   if (expect_ok) {
     /* Check for a successful request. */
+    cq_expect_invoke_accepted(v_client, tag(1), GRPC_OP_OK);
+    cq_verify(v_client);
+
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(4)));
     cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_OK);
     cq_verify(v_client);
 
@@ -147,10 +142,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
     grpc_call_destroy(s);
   } else {
     /* Check for a failed connection. */
+    cq_expect_invoke_accepted(v_client, tag(1), GRPC_OP_ERROR);
     cq_expect_client_metadata_read(v_client, tag(2), NULL);
     cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_CANCELLED,
                                    NULL, NULL);
-    cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_ERROR);
     cq_verify(v_client);
 
     grpc_call_destroy(c);
@@ -175,7 +170,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
 int main(int argc, char **argv) {
   int do_ipv6 = 1;
-  int fixed_port;
+  int i;
+  int port = grpc_pick_unused_port_or_die();
 
   grpc_test_init(argc, argv);
   grpc_init();
@@ -185,33 +181,30 @@ int main(int argc, char **argv) {
     do_ipv6 = 0;
   }
 
-  for (fixed_port = 0; fixed_port <= 1; fixed_port++) {
-    int port = fixed_port ? grpc_pick_unused_port_or_die() : 0;
-
+  for (i = 0; i <= 1; i++) {
     /* For coverage, test with and without dualstack sockets. */
-    for (grpc_forbid_dualstack_sockets_for_testing = 0;
-         grpc_forbid_dualstack_sockets_for_testing <= 1;
-         grpc_forbid_dualstack_sockets_for_testing++) {
-      /* :: and 0.0.0.0 are handled identically. */
-      test_connect("::", "127.0.0.1", port, 1);
-      test_connect("::", "::ffff:127.0.0.1", port, 1);
-      test_connect("::", "localhost", port, 1);
-      test_connect("0.0.0.0", "127.0.0.1", port, 1);
-      test_connect("0.0.0.0", "::ffff:127.0.0.1", port, 1);
-      test_connect("0.0.0.0", "localhost", port, 1);
-      if (do_ipv6) {
-        test_connect("::", "::1", port, 1);
-        test_connect("0.0.0.0", "::1", port, 1);
-      }
+    grpc_forbid_dualstack_sockets_for_testing = i;
 
-      /* These only work when the families agree. */
-      test_connect("127.0.0.1", "127.0.0.1", port, 1);
-      if (do_ipv6) {
-        test_connect("::1", "::1", port, 1);
-        test_connect("::1", "127.0.0.1", port, 0);
-        test_connect("127.0.0.1", "::1", port, 0);
-      }
+    /* :: and 0.0.0.0 are handled identically. */
+    test_connect("::", "127.0.0.1", port, 1);
+    test_connect("::", "::ffff:127.0.0.1", port, 1);
+    test_connect("::", "localhost", port, 1);
+    test_connect("0.0.0.0", "127.0.0.1", port, 1);
+    test_connect("0.0.0.0", "::ffff:127.0.0.1", port, 1);
+    test_connect("0.0.0.0", "localhost", port, 1);
+    if (do_ipv6) {
+      test_connect("::", "::1", port, 1);
+      test_connect("0.0.0.0", "::1", port, 1);
     }
+
+    /* These only work when the families agree. */
+    test_connect("127.0.0.1", "127.0.0.1", port, 1);
+    if (do_ipv6) {
+      test_connect("::1", "::1", port, 1);
+      test_connect("::1", "127.0.0.1", port, 0);
+      test_connect("127.0.0.1", "::1", port, 0);
+    }
+
   }
 
   grpc_shutdown();
