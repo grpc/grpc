@@ -179,6 +179,33 @@ grpc_update_image() {
   gcloud compute $project_opt ssh $zone_opt $host --command "$ssh_cmd"
 }
 
+# gce_has_instance checks if a project contains a named instance
+#
+# call-seq:
+#   gce_has_instance <project> <instance_name>
+gce_has_instance() {
+  local project=$1
+  [[ -n $project ]] || { echo "$FUNCNAME: missing arg: project" 1>&2; return 1; }
+  local checked_instance=$2
+  [[ -n $checked_instance ]] || {
+    echo "$FUNCNAME: missing arg: checked_instance" 1>&2
+    return 1
+  }
+
+  instances=$(gcloud --project $project compute instances list \
+    | sed -e 's/ \+/ /g' | cut -d' ' -f 1)
+  for i in $instances
+  do
+    if [[ $i == $checked_instance ]]
+    then
+      return 0
+    fi
+  done
+
+  echo "instance '$checked_instance' not found in compute project $project" 1>&2
+  return 1
+}
+
 # gce_find_internal_ip finds the ip address of a instance if it is present in
 # the project.
 #
@@ -365,45 +392,47 @@ grpc_interop_test_args() {
   }
 }
 
-grpc_update_docker_images_args() {
-  [[ -n $1 ]] && {  # host
-    host=$1
-    shift
-  } || {
-    echo "$FUNCNAME: missing arg: host" 1>&2
+grpc_sync_images_args() {
+  [[ $# -lt 1  ]] && {
+    echo "$FUNCNAME: missing arg: host1 [host2 ... hostN]" 1>&2
     return 1
   }
+  grpc_hosts="$@"
 }
 
 # Updates all the known docker images on a host..
 #
 # call-seq;
-#   grpc_update_docker_images <server_name>
+#   grpc_sync_images <server_name1>, <server_name2> .. <server_name3>
 #
 # Updates the GCE docker instance <server_name>
-grpc_update_docker_images() {
+grpc_sync_images() {
   _grpc_ensure_gcloud_ssh || return 1;
 
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
-  # set by grpc_update_docker_images_args
-  local host
+  # set by grpc_sync_images
+  local grpc_hosts
 
   # set the project zone and check that all necessary args are provided
-  _grpc_set_project_and_zone -f grpc_update_docker_images_args "$@" || return 1
-  gce_has_instance $grpc_project $host || return 1;
+  _grpc_set_project_and_zone -f grpc_sync_images_args "$@" || return 1
 
   local func_lib="/var/local/startup_scripts/shared_startup_funcs.sh"
   local cmd="source $func_lib && grpc_docker_pull_known"
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  local host
+  for host in $grpc_hosts
+  do
+    gce_has_instance $grpc_project $h || return 1;
+    local ssh_cmd="bash -l -c \"$cmd\""
+    echo "will run:"
+    echo "  $ssh_cmd"
+    echo "on $host"
+    [[ $dry_run == 1 ]] && continue  # don't run the command on a dry run
+    gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  done
 }
 
 grpc_launch_server_args() {
