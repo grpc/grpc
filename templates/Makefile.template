@@ -219,6 +219,13 @@ endif
 
 .SECONDARY = %.pb.h %.pb.cc
 
+PROTOC_PLUGINS=\
+% for tgt in targets:
+% if tgt.build == 'protoc':
+ bins/$(CONFIG)/${tgt.name}\
+% endif
+% endfor
+
 ifeq ($(DEP_MISSING),)
 all: static shared\
 % for tgt in targets:
@@ -394,14 +401,6 @@ tools: privatelibs\
 % endfor
 
 
-protoc_plugins:\
-% for tgt in targets:
-% if tgt.build == 'protoc':
- bins/$(CONFIG)/${tgt.name}\
-% endif
-% endfor
-
-
 buildbenchmarks: privatelibs\
 % for tgt in targets:
 % if tgt.build == 'benchmark':
@@ -459,7 +458,7 @@ strip-shared_cxx: shared_cxx
 % endfor
 
 % for p in protos:
-gens/${p}.pb.cc: ${p}.proto protoc_plugins
+gens/${p}.pb.cc: ${p}.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<

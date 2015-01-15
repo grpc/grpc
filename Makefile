@@ -202,6 +202,7 @@ endif
 
 .SECONDARY = %.pb.h %.pb.cc
 
+PROTOC_PLUGINS= bins/$(CONFIG)/cpp_plugin bins/$(CONFIG)/ruby_plugin
 ifeq ($(DEP_MISSING),)
 all: static shared
 dep_error:
@@ -901,8 +902,6 @@ test_cxx: buildtests_cxx
 
 tools: privatelibs bins/$(CONFIG)/gen_hpack_tables bins/$(CONFIG)/grpc_fetch_oauth2
 
-protoc_plugins: bins/$(CONFIG)/cpp_plugin bins/$(CONFIG)/ruby_plugin
-
 buildbenchmarks: privatelibs bins/$(CONFIG)/grpc_completion_queue_benchmark bins/$(CONFIG)/low_level_ping_pong_benchmark
 
 benchmarks: buildbenchmarks
@@ -937,37 +936,37 @@ strip-shared_cxx: shared_cxx
 	$(E) "[STRIP]   Stripping libgrpc++.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc++.$(SHARED_EXT)
 
-gens/test/cpp/interop/empty.pb.cc: test/cpp/interop/empty.proto protoc_plugins
+gens/test/cpp/interop/empty.pb.cc: test/cpp/interop/empty.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
-gens/test/cpp/interop/messages.pb.cc: test/cpp/interop/messages.proto protoc_plugins
+gens/test/cpp/interop/messages.pb.cc: test/cpp/interop/messages.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
-gens/test/cpp/interop/test.pb.cc: test/cpp/interop/test.proto protoc_plugins
+gens/test/cpp/interop/test.pb.cc: test/cpp/interop/test.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
-gens/test/cpp/qps/qpstest.pb.cc: test/cpp/qps/qpstest.proto protoc_plugins
+gens/test/cpp/qps/qpstest.pb.cc: test/cpp/qps/qpstest.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
-gens/test/cpp/util/echo.pb.cc: test/cpp/util/echo.proto protoc_plugins
+gens/test/cpp/util/echo.pb.cc: test/cpp/util/echo.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
-gens/test/cpp/util/echo_duplicate.pb.cc: test/cpp/util/echo_duplicate.proto protoc_plugins
+gens/test/cpp/util/echo_duplicate.pb.cc: test/cpp/util/echo_duplicate.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
-gens/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto protoc_plugins
+gens/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
