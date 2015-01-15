@@ -31,6 +31,8 @@
  *
  */
 
+var _ = require('underscore');
+
 var grpc = require('bindings')('grpc.node');
 
 var common = require('./common');
@@ -176,6 +178,10 @@ function Server(options) {
    * @this Server
    */
   this.start = function() {
+    console.log('Server starting');
+    _.each(handlers, function(handler, handler_name) {
+      console.log('Serving', handler_name);
+    });
     if (this.started) {
       throw 'Server is already running';
     }

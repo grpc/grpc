@@ -31,32 +31,68 @@
  *
  */
 
-var _ = require('highland');
-
 /**
- * When the given stream finishes without error, call the callback once. This
- * will not be called until something begins to consume the stream.
- * @param {function} callback The callback to call at stream end
- * @param {stream} source The stream to watch
- * @return {stream} The stream with the callback attached
+ * Get a function that deserializes a specific type of protobuf.
+ * @param {function()} cls The constructor of the message type to deserialize
+ * @return {function(Buffer):cls} The deserialization function
  */
-function onSuccessfulStreamEnd(callback, source) {
-  var error = false;
-  return source.consume(function(err, x, push, next) {
-    if (x === _.nil) {
-      if (!error) {
-        callback();
-      }
-      push(null, x);
-    } else if (err) {
-      error = true;
-      push(err);
-      next();
-    } else {
-      push(err, x);
-      next();
-    }
-  });
+function deserializeCls(cls) {
+  /**
+   * Deserialize a buffer to a message object
+   * @param {Buffer} arg_buf The buffer to deserialize
+   * @return {cls} The resulting object
+   */
+  return function deserialize(arg_buf) {
+    return cls.decode(arg_buf);
+  };
 }
 
-exports.onSuccessfulStreamEnd = onSuccessfulStreamEnd;
+/**
+ * Get a function that serializes objects to a buffer by protobuf class.
+ * @param {function()} Cls The constructor of the message type to serialize
+ * @return {function(Cls):Buffer} The serialization function
+ */
+function serializeCls(Cls) {
+  /**
+   * Serialize an object to a Buffer
+   * @param {Object} arg The object to serialize
+   * @return {Buffer} The serialized object
+   */
+  return function serialize(arg) {
+    return new Buffer(new Cls(arg).encode().toBuffer());
+  };
+}
+
+/**
+ * Get the fully qualified (dotted) name of a ProtoBuf.Reflect value.
+ * @param {ProtoBuf.Reflect.Namespace} value The value to get the name of
+ * @return {string} The fully qualified name of the value
+ */
+function fullyQualifiedName(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  var name = value.name;
+  if (value.hasOwnProperty('parent')) {
+    var parent_name = fullyQualifiedName(value.parent);
+    if (parent_name !== '') {
+      name = parent_name + '.' + name;
+    }
+  }
+  return name;
+}
+
+/**
+ * See docs for deserializeCls
+ */
+exports.deserializeCls = deserializeCls;
+
+/**
+ * See docs for serializeCls
+ */
+exports.serializeCls = serializeCls;
+
+/**
+ * See docs for fullyQualifiedName
+ */
+exports.fullyQualifiedName = fullyQualifiedName;
