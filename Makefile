@@ -1145,7 +1145,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/useful.h \
 
 LIBGPR_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))
-LIBGPR_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBGPR_SRC))))
 
 libs/$(CONFIG)/libgpr.a: $(LIBGPR_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -1172,10 +1171,8 @@ endif
 endif
 
 
-deps_libgpr: $(LIBGPR_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBGPR_DEPS)
+-include $(LIBGPR_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/src/core/support/alloc.o: 
@@ -1308,7 +1305,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/status.h \
 
 LIBGRPC_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
-LIBGRPC_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBGRPC_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -1356,11 +1352,9 @@ endif
 
 endif
 
-deps_libgrpc: $(LIBGRPC_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBGRPC_DEPS)
+-include $(LIBGRPC_OBJS:.o=.dep)
 endif
 endif
 
@@ -1546,7 +1540,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/status.h \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
-LIBGRPC_UNSECURE_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
 libs/$(CONFIG)/libgrpc_unsecure.a: $(LIBGRPC_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -1573,10 +1566,8 @@ endif
 endif
 
 
-deps_libgrpc_unsecure: $(LIBGRPC_UNSECURE_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBGRPC_UNSECURE_DEPS)
+-include $(LIBGRPC_UNSECURE_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/src/core/channel/call_op_string.o: 
@@ -1665,7 +1656,6 @@ LIBGPR_TEST_UTIL_SRC = \
 
 
 LIBGPR_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_TEST_UTIL_SRC))))
-LIBGPR_TEST_UTIL_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBGPR_TEST_UTIL_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -1685,11 +1675,9 @@ libs/$(CONFIG)/libgpr_test_util.a: $(OPENSSL_DEP) $(LIBGPR_TEST_UTIL_OBJS)
 
 endif
 
-deps_libgpr_test_util: $(LIBGPR_TEST_UTIL_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBGPR_TEST_UTIL_DEPS)
+-include $(LIBGPR_TEST_UTIL_OBJS:.o=.dep)
 endif
 endif
 
@@ -1712,7 +1700,6 @@ LIBGRPC_TEST_UTIL_SRC = \
 
 
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
-LIBGRPC_TEST_UTIL_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -1732,11 +1719,9 @@ libs/$(CONFIG)/libgrpc_test_util.a: $(OPENSSL_DEP) $(LIBGRPC_TEST_UTIL_OBJS)
 
 endif
 
-deps_libgrpc_test_util: $(LIBGRPC_TEST_UTIL_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBGRPC_TEST_UTIL_DEPS)
+-include $(LIBGRPC_TEST_UTIL_OBJS:.o=.dep)
 endif
 endif
 
@@ -1798,7 +1783,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/stream.h \
 
 LIBGRPC++_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
-LIBGRPC++_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBGRPC++_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -1839,11 +1823,9 @@ endif
 
 endif
 
-deps_libgrpc++: $(LIBGRPC++_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBGRPC++_DEPS)
+-include $(LIBGRPC++_OBJS:.o=.dep)
 endif
 endif
 
@@ -1878,7 +1860,6 @@ LIBGRPC++_TEST_UTIL_SRC = \
 
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
-LIBGRPC++_TEST_UTIL_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -1898,11 +1879,9 @@ libs/$(CONFIG)/libgrpc++_test_util.a: $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
 
 endif
 
-deps_libgrpc++_test_util: $(LIBGRPC++_TEST_UTIL_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBGRPC++_TEST_UTIL_DEPS)
+-include $(LIBGRPC++_TEST_UTIL_OBJS:.o=.dep)
 endif
 endif
 
@@ -1918,7 +1897,6 @@ LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
 
 
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC))))
-LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -1938,11 +1916,9 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a: $(OPENSSL_DEP) $(LIBEN
 
 endif
 
-deps_libend2end_fixture_chttp2_fake_security: $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_DEPS)
+-include $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS:.o=.dep)
 endif
 endif
 
@@ -1954,7 +1930,6 @@ LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC = \
 
 
 LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC))))
-LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -1974,11 +1949,9 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a: $(OPENSSL_DEP) $(LIBEND2EN
 
 endif
 
-deps_libend2end_fixture_chttp2_fullstack: $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_DEPS)
+-include $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS:.o=.dep)
 endif
 endif
 
@@ -1990,7 +1963,6 @@ LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC = \
 
 
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC))))
-LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2010,11 +1982,9 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(OPENSSL_DEP) 
 
 endif
 
-deps_libend2end_fixture_chttp2_simple_ssl_fullstack: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_DEPS)
+-include $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS:.o=.dep)
 endif
 endif
 
@@ -2026,7 +1996,6 @@ LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC = \
 
 
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC))))
-LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2046,11 +2015,9 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(O
 
 endif
 
-deps_libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack: $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DEPS)
+-include $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS:.o=.dep)
 endif
 endif
 
@@ -2062,7 +2029,6 @@ LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC = \
 
 
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC))))
-LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2082,11 +2048,9 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a: $(OPENSSL_DEP) $(LIBEND2
 
 endif
 
-deps_libend2end_fixture_chttp2_socket_pair: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_DEPS)
+-include $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS:.o=.dep)
 endif
 endif
 
@@ -2098,7 +2062,6 @@ LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC = \
 
 
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC))))
-LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2118,11 +2081,9 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(OPE
 
 endif
 
-deps_libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time: $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DEPS)
+-include $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS:.o=.dep)
 endif
 endif
 
@@ -2134,7 +2095,6 @@ LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC = \
 
 
 LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC))))
-LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_SRC))))
 
 libs/$(CONFIG)/libend2end_test_cancel_after_accept.a: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2145,10 +2105,8 @@ libs/$(CONFIG)/libend2end_test_cancel_after_accept.a: $(LIBEND2END_TEST_CANCEL_A
 
 
 
-deps_libend2end_test_cancel_after_accept: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_DEPS)
+-include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/cancel_after_accept.o: 
@@ -2159,7 +2117,6 @@ LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_SRC = \
 
 
 LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_SRC))))
-LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_SRC))))
 
 libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2170,10 +2127,8 @@ libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a: $(LIBEND
 
 
 
-deps_libend2end_test_cancel_after_accept_and_writes_closed: $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_DEPS)
+-include $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/cancel_after_accept_and_writes_closed.o: 
@@ -2184,7 +2139,6 @@ LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC = \
 
 
 LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC))))
-LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_SRC))))
 
 libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a: $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2195,10 +2149,8 @@ libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a: $(LIBEND2END_TEST_CANCEL_A
 
 
 
-deps_libend2end_test_cancel_after_invoke: $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_DEPS)
+-include $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/cancel_after_invoke.o: 
@@ -2209,7 +2161,6 @@ LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC = \
 
 
 LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC))))
-LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_SRC))))
 
 libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a: $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2220,10 +2171,8 @@ libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a: $(LIBEND2END_TEST_CANCEL_
 
 
 
-deps_libend2end_test_cancel_before_invoke: $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_DEPS)
+-include $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/cancel_before_invoke.o: 
@@ -2234,7 +2183,6 @@ LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC = \
 
 
 LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC))))
-LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_SRC))))
 
 libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a: $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2245,10 +2193,8 @@ libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a: $(LIBEND2END_TEST_CANCEL_IN
 
 
 
-deps_libend2end_test_cancel_in_a_vacuum: $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_DEPS)
+-include $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/cancel_in_a_vacuum.o: 
@@ -2259,7 +2205,6 @@ LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_SRC = \
 
 
 LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_SRC))))
-LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_SRC))))
 
 libs/$(CONFIG)/libend2end_test_census_simple_request.a: $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2270,10 +2215,8 @@ libs/$(CONFIG)/libend2end_test_census_simple_request.a: $(LIBEND2END_TEST_CENSUS
 
 
 
-deps_libend2end_test_census_simple_request: $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_DEPS)
+-include $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/census_simple_request.o: 
@@ -2284,7 +2227,6 @@ LIBEND2END_TEST_DISAPPEARING_SERVER_SRC = \
 
 
 LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_DISAPPEARING_SERVER_SRC))))
-LIBEND2END_TEST_DISAPPEARING_SERVER_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_DISAPPEARING_SERVER_SRC))))
 
 libs/$(CONFIG)/libend2end_test_disappearing_server.a: $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2295,10 +2237,8 @@ libs/$(CONFIG)/libend2end_test_disappearing_server.a: $(LIBEND2END_TEST_DISAPPEA
 
 
 
-deps_libend2end_test_disappearing_server: $(LIBEND2END_TEST_DISAPPEARING_SERVER_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_DISAPPEARING_SERVER_DEPS)
+-include $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/disappearing_server.o: 
@@ -2309,7 +2249,6 @@ LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_SRC = \
 
 
 LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_SRC))))
-LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_SRC))))
 
 libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2320,10 +2259,8 @@ libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a: 
 
 
 
-deps_libend2end_test_early_server_shutdown_finishes_inflight_calls: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_DEPS)
+-include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/early_server_shutdown_finishes_inflight_calls.o: 
@@ -2334,7 +2271,6 @@ LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_SRC = \
 
 
 LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_SRC))))
-LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_SRC))))
 
 libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2345,10 +2281,8 @@ libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a: $(LIBEND2E
 
 
 
-deps_libend2end_test_early_server_shutdown_finishes_tags: $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_DEPS)
+-include $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/early_server_shutdown_finishes_tags.o: 
@@ -2359,7 +2293,6 @@ LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC = \
 
 
 LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC))))
-LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC))))
 
 libs/$(CONFIG)/libend2end_test_invoke_large_request.a: $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2370,10 +2303,8 @@ libs/$(CONFIG)/libend2end_test_invoke_large_request.a: $(LIBEND2END_TEST_INVOKE_
 
 
 
-deps_libend2end_test_invoke_large_request: $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_DEPS)
+-include $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/invoke_large_request.o: 
@@ -2384,7 +2315,6 @@ LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC = \
 
 
 LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC))))
-LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_SRC))))
 
 libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a: $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2395,10 +2325,8 @@ libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a: $(LIBEND2END_TEST_MAX_C
 
 
 
-deps_libend2end_test_max_concurrent_streams: $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_DEPS)
+-include $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/max_concurrent_streams.o: 
@@ -2409,7 +2337,6 @@ LIBEND2END_TEST_NO_OP_SRC = \
 
 
 LIBEND2END_TEST_NO_OP_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_NO_OP_SRC))))
-LIBEND2END_TEST_NO_OP_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_NO_OP_SRC))))
 
 libs/$(CONFIG)/libend2end_test_no_op.a: $(LIBEND2END_TEST_NO_OP_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2420,10 +2347,8 @@ libs/$(CONFIG)/libend2end_test_no_op.a: $(LIBEND2END_TEST_NO_OP_OBJS)
 
 
 
-deps_libend2end_test_no_op: $(LIBEND2END_TEST_NO_OP_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_NO_OP_DEPS)
+-include $(LIBEND2END_TEST_NO_OP_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/no_op.o: 
@@ -2434,7 +2359,6 @@ LIBEND2END_TEST_PING_PONG_STREAMING_SRC = \
 
 
 LIBEND2END_TEST_PING_PONG_STREAMING_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_PING_PONG_STREAMING_SRC))))
-LIBEND2END_TEST_PING_PONG_STREAMING_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_PING_PONG_STREAMING_SRC))))
 
 libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a: $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2445,10 +2369,8 @@ libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a: $(LIBEND2END_TEST_PING_PON
 
 
 
-deps_libend2end_test_ping_pong_streaming: $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_PING_PONG_STREAMING_DEPS)
+-include $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/ping_pong_streaming.o: 
@@ -2459,7 +2381,6 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_SRC = \
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_SRC))))
-LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_SRC))))
 
 libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2470,10 +2391,8 @@ libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload
 
 
 
-deps_libend2end_test_request_response_with_binary_metadata_and_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_DEPS)
+-include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/request_response_with_binary_metadata_and_payload.o: 
@@ -2484,7 +2403,6 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_SRC = \
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_SRC))))
-LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_SRC))))
 
 libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2495,10 +2413,8 @@ libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a: $(L
 
 
 
-deps_libend2end_test_request_response_with_metadata_and_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_DEPS)
+-include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/request_response_with_metadata_and_payload.o: 
@@ -2509,7 +2425,6 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_SRC = \
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_SRC))))
-LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_SRC))))
 
 libs/$(CONFIG)/libend2end_test_request_response_with_payload.a: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2520,10 +2435,8 @@ libs/$(CONFIG)/libend2end_test_request_response_with_payload.a: $(LIBEND2END_TES
 
 
 
-deps_libend2end_test_request_response_with_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_DEPS)
+-include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/request_response_with_payload.o: 
@@ -2534,7 +2447,6 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_SRC = \
 
 
 LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_SRC))))
-LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_SRC))))
 
 libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2545,10 +2457,8 @@ libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_paylo
 
 
 
-deps_libend2end_test_request_response_with_trailing_metadata_and_payload: $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_DEPS)
+-include $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/request_response_with_trailing_metadata_and_payload.o: 
@@ -2559,7 +2469,6 @@ LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC = \
 
 
 LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC))))
-LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_SRC))))
 
 libs/$(CONFIG)/libend2end_test_simple_delayed_request.a: $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2570,10 +2479,8 @@ libs/$(CONFIG)/libend2end_test_simple_delayed_request.a: $(LIBEND2END_TEST_SIMPL
 
 
 
-deps_libend2end_test_simple_delayed_request: $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_DEPS)
+-include $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/simple_delayed_request.o: 
@@ -2584,7 +2491,6 @@ LIBEND2END_TEST_SIMPLE_REQUEST_SRC = \
 
 
 LIBEND2END_TEST_SIMPLE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_SIMPLE_REQUEST_SRC))))
-LIBEND2END_TEST_SIMPLE_REQUEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_SIMPLE_REQUEST_SRC))))
 
 libs/$(CONFIG)/libend2end_test_simple_request.a: $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2595,10 +2501,8 @@ libs/$(CONFIG)/libend2end_test_simple_request.a: $(LIBEND2END_TEST_SIMPLE_REQUES
 
 
 
-deps_libend2end_test_simple_request: $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_SIMPLE_REQUEST_DEPS)
+-include $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/simple_request.o: 
@@ -2609,7 +2513,6 @@ LIBEND2END_TEST_THREAD_STRESS_SRC = \
 
 
 LIBEND2END_TEST_THREAD_STRESS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_THREAD_STRESS_SRC))))
-LIBEND2END_TEST_THREAD_STRESS_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_THREAD_STRESS_SRC))))
 
 libs/$(CONFIG)/libend2end_test_thread_stress.a: $(LIBEND2END_TEST_THREAD_STRESS_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2620,10 +2523,8 @@ libs/$(CONFIG)/libend2end_test_thread_stress.a: $(LIBEND2END_TEST_THREAD_STRESS_
 
 
 
-deps_libend2end_test_thread_stress: $(LIBEND2END_TEST_THREAD_STRESS_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_THREAD_STRESS_DEPS)
+-include $(LIBEND2END_TEST_THREAD_STRESS_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/thread_stress.o: 
@@ -2634,7 +2535,6 @@ LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_SRC = \
 
 
 LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_SRC))))
-LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_SRC))))
 
 libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a: $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2645,10 +2545,8 @@ libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a: $(LIBEND2E
 
 
 
-deps_libend2end_test_writes_done_hangs_with_pending_read: $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
-
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_DEPS)
+-include $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS:.o=.dep)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/writes_done_hangs_with_pending_read.o: 
@@ -2662,7 +2560,6 @@ LIBEND2END_CERTS_SRC = \
 
 
 LIBEND2END_CERTS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_CERTS_SRC))))
-LIBEND2END_CERTS_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIBEND2END_CERTS_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2682,11 +2579,9 @@ libs/$(CONFIG)/libend2end_certs.a: $(OPENSSL_DEP) $(LIBEND2END_CERTS_OBJS)
 
 endif
 
-deps_libend2end_certs: $(LIBEND2END_CERTS_DEPS)
-
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LIBEND2END_CERTS_DEPS)
+-include $(LIBEND2END_CERTS_OBJS:.o=.dep)
 endif
 endif
 
@@ -2704,7 +2599,6 @@ GEN_HPACK_TABLES_SRC = \
     src/core/transport/chttp2/gen_hpack_tables.c \
 
 GEN_HPACK_TABLES_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
-GEN_HPACK_TABLES_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GEN_HPACK_TABLES_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2721,11 +2615,11 @@ endif
 
 objs/$(CONFIG)/src/core/transport/chttp2/gen_hpack_tables.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgpr.a libs/$(CONFIG)/libgrpc.a
 
-deps_gen_hpack_tables: $(GEN_HPACK_TABLES_DEPS)
+deps_gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GEN_HPACK_TABLES_DEPS)
+-include $(GEN_HPACK_TABLES_OBJS:.o=.dep)
 endif
 endif
 
@@ -2735,7 +2629,6 @@ CPP_PLUGIN_SRC = \
     src/compiler/cpp_generator.cpp \
 
 CPP_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CPP_PLUGIN_SRC))))
-CPP_PLUGIN_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CPP_PLUGIN_SRC))))
 
 bins/$(CONFIG)/cpp_plugin: $(CPP_PLUGIN_OBJS)
 	$(E) "[HOSTLD]  Linking $@"
@@ -2745,10 +2638,10 @@ bins/$(CONFIG)/cpp_plugin: $(CPP_PLUGIN_OBJS)
 objs/$(CONFIG)/src/compiler/cpp_plugin.o: 
 objs/$(CONFIG)/src/compiler/cpp_generator.o: 
 
-deps_cpp_plugin: $(CPP_PLUGIN_DEPS)
+deps_cpp_plugin: $(CPP_PLUGIN_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
--include $(CPP_PLUGIN_DEPS)
+-include $(CPP_PLUGIN_OBJS:.o=.dep)
 endif
 
 
@@ -2757,7 +2650,6 @@ RUBY_PLUGIN_SRC = \
     src/compiler/ruby_generator.cpp \
 
 RUBY_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(RUBY_PLUGIN_SRC))))
-RUBY_PLUGIN_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(RUBY_PLUGIN_SRC))))
 
 bins/$(CONFIG)/ruby_plugin: $(RUBY_PLUGIN_OBJS)
 	$(E) "[HOSTLD]  Linking $@"
@@ -2767,10 +2659,10 @@ bins/$(CONFIG)/ruby_plugin: $(RUBY_PLUGIN_OBJS)
 objs/$(CONFIG)/src/compiler/ruby_plugin.o: 
 objs/$(CONFIG)/src/compiler/ruby_generator.o: 
 
-deps_ruby_plugin: $(RUBY_PLUGIN_DEPS)
+deps_ruby_plugin: $(RUBY_PLUGIN_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
--include $(RUBY_PLUGIN_DEPS)
+-include $(RUBY_PLUGIN_OBJS:.o=.dep)
 endif
 
 
@@ -2778,7 +2670,6 @@ GRPC_BYTE_BUFFER_READER_TEST_SRC = \
     test/core/surface/byte_buffer_reader_test.c \
 
 GRPC_BYTE_BUFFER_READER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_BYTE_BUFFER_READER_TEST_SRC))))
-GRPC_BYTE_BUFFER_READER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_BYTE_BUFFER_READER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2795,11 +2686,11 @@ endif
 
 objs/$(CONFIG)/test/core/surface/byte_buffer_reader_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_byte_buffer_reader_test: $(GRPC_BYTE_BUFFER_READER_TEST_DEPS)
+deps_grpc_byte_buffer_reader_test: $(GRPC_BYTE_BUFFER_READER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_BYTE_BUFFER_READER_TEST_DEPS)
+-include $(GRPC_BYTE_BUFFER_READER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -2808,7 +2699,6 @@ GPR_CANCELLABLE_TEST_SRC = \
     test/core/support/cancellable_test.c \
 
 GPR_CANCELLABLE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_CANCELLABLE_TEST_SRC))))
-GPR_CANCELLABLE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_CANCELLABLE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2825,11 +2715,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/cancellable_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_DEPS)
+deps_gpr_cancellable_test: $(GPR_CANCELLABLE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_CANCELLABLE_TEST_DEPS)
+-include $(GPR_CANCELLABLE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -2838,7 +2728,6 @@ GPR_LOG_TEST_SRC = \
     test/core/support/log_test.c \
 
 GPR_LOG_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_LOG_TEST_SRC))))
-GPR_LOG_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_LOG_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2855,11 +2744,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/log_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_log_test: $(GPR_LOG_TEST_DEPS)
+deps_gpr_log_test: $(GPR_LOG_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_LOG_TEST_DEPS)
+-include $(GPR_LOG_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -2868,7 +2757,6 @@ GPR_USEFUL_TEST_SRC = \
     test/core/support/useful_test.c \
 
 GPR_USEFUL_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_USEFUL_TEST_SRC))))
-GPR_USEFUL_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_USEFUL_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2885,11 +2773,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/useful_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_useful_test: $(GPR_USEFUL_TEST_DEPS)
+deps_gpr_useful_test: $(GPR_USEFUL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_USEFUL_TEST_DEPS)
+-include $(GPR_USEFUL_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -2898,7 +2786,6 @@ GPR_CMDLINE_TEST_SRC = \
     test/core/support/cmdline_test.c \
 
 GPR_CMDLINE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_CMDLINE_TEST_SRC))))
-GPR_CMDLINE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_CMDLINE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2915,11 +2802,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/cmdline_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_cmdline_test: $(GPR_CMDLINE_TEST_DEPS)
+deps_gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_CMDLINE_TEST_DEPS)
+-include $(GPR_CMDLINE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -2928,7 +2815,6 @@ GPR_HISTOGRAM_TEST_SRC = \
     test/core/support/histogram_test.c \
 
 GPR_HISTOGRAM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
-GPR_HISTOGRAM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2945,11 +2831,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/histogram_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_histogram_test: $(GPR_HISTOGRAM_TEST_DEPS)
+deps_gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_HISTOGRAM_TEST_DEPS)
+-include $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -2958,7 +2844,6 @@ GPR_HOST_PORT_TEST_SRC = \
     test/core/support/host_port_test.c \
 
 GPR_HOST_PORT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HOST_PORT_TEST_SRC))))
-GPR_HOST_PORT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_HOST_PORT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -2975,11 +2860,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/host_port_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_host_port_test: $(GPR_HOST_PORT_TEST_DEPS)
+deps_gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_HOST_PORT_TEST_DEPS)
+-include $(GPR_HOST_PORT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -2988,7 +2873,6 @@ GPR_SLICE_BUFFER_TEST_SRC = \
     test/core/support/slice_buffer_test.c \
 
 GPR_SLICE_BUFFER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
-GPR_SLICE_BUFFER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3005,11 +2889,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/slice_buffer_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_DEPS)
+deps_gpr_slice_buffer_test: $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_SLICE_BUFFER_TEST_DEPS)
+-include $(GPR_SLICE_BUFFER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3018,7 +2902,6 @@ GPR_SLICE_TEST_SRC = \
     test/core/support/slice_test.c \
 
 GPR_SLICE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SLICE_TEST_SRC))))
-GPR_SLICE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_SLICE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3035,11 +2918,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/slice_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_slice_test: $(GPR_SLICE_TEST_DEPS)
+deps_gpr_slice_test: $(GPR_SLICE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_SLICE_TEST_DEPS)
+-include $(GPR_SLICE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3048,7 +2931,6 @@ GPR_STRING_TEST_SRC = \
     test/core/support/string_test.c \
 
 GPR_STRING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_STRING_TEST_SRC))))
-GPR_STRING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_STRING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3065,11 +2947,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/string_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_string_test: $(GPR_STRING_TEST_DEPS)
+deps_gpr_string_test: $(GPR_STRING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_STRING_TEST_DEPS)
+-include $(GPR_STRING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3078,7 +2960,6 @@ GPR_SYNC_TEST_SRC = \
     test/core/support/sync_test.c \
 
 GPR_SYNC_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SYNC_TEST_SRC))))
-GPR_SYNC_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_SYNC_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3095,11 +2976,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/sync_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_sync_test: $(GPR_SYNC_TEST_DEPS)
+deps_gpr_sync_test: $(GPR_SYNC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_SYNC_TEST_DEPS)
+-include $(GPR_SYNC_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3108,7 +2989,6 @@ GPR_THD_TEST_SRC = \
     test/core/support/thd_test.c \
 
 GPR_THD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_THD_TEST_SRC))))
-GPR_THD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_THD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3125,11 +3005,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/thd_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_thd_test: $(GPR_THD_TEST_DEPS)
+deps_gpr_thd_test: $(GPR_THD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_THD_TEST_DEPS)
+-include $(GPR_THD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3138,7 +3018,6 @@ GPR_TIME_TEST_SRC = \
     test/core/support/time_test.c \
 
 GPR_TIME_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_TIME_TEST_SRC))))
-GPR_TIME_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GPR_TIME_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3155,11 +3034,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/time_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_gpr_time_test: $(GPR_TIME_TEST_DEPS)
+deps_gpr_time_test: $(GPR_TIME_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GPR_TIME_TEST_DEPS)
+-include $(GPR_TIME_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3168,7 +3047,6 @@ MURMUR_HASH_TEST_SRC = \
     test/core/support/murmur_hash_test.c \
 
 MURMUR_HASH_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(MURMUR_HASH_TEST_SRC))))
-MURMUR_HASH_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(MURMUR_HASH_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3185,11 +3063,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/murmur_hash_test.o:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_murmur_hash_test: $(MURMUR_HASH_TEST_DEPS)
+deps_murmur_hash_test: $(MURMUR_HASH_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(MURMUR_HASH_TEST_DEPS)
+-include $(MURMUR_HASH_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3198,7 +3076,6 @@ GRPC_STREAM_OP_TEST_SRC = \
     test/core/transport/stream_op_test.c \
 
 GRPC_STREAM_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_STREAM_OP_TEST_SRC))))
-GRPC_STREAM_OP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_STREAM_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3215,11 +3092,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/stream_op_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_stream_op_test: $(GRPC_STREAM_OP_TEST_DEPS)
+deps_grpc_stream_op_test: $(GRPC_STREAM_OP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_STREAM_OP_TEST_DEPS)
+-include $(GRPC_STREAM_OP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3228,7 +3105,6 @@ ALPN_TEST_SRC = \
     test/core/transport/chttp2/alpn_test.c \
 
 ALPN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ALPN_TEST_SRC))))
-ALPN_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(ALPN_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3245,11 +3121,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/alpn_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_alpn_test: $(ALPN_TEST_DEPS)
+deps_alpn_test: $(ALPN_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ALPN_TEST_DEPS)
+-include $(ALPN_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3258,7 +3134,6 @@ TIME_AVERAGED_STATS_TEST_SRC = \
     test/core/iomgr/time_averaged_stats_test.c \
 
 TIME_AVERAGED_STATS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TIME_AVERAGED_STATS_TEST_SRC))))
-TIME_AVERAGED_STATS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(TIME_AVERAGED_STATS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3275,11 +3150,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/time_averaged_stats_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_time_averaged_stats_test: $(TIME_AVERAGED_STATS_TEST_DEPS)
+deps_time_averaged_stats_test: $(TIME_AVERAGED_STATS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(TIME_AVERAGED_STATS_TEST_DEPS)
+-include $(TIME_AVERAGED_STATS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3288,7 +3163,6 @@ CHTTP2_STREAM_ENCODER_TEST_SRC = \
     test/core/transport/chttp2/stream_encoder_test.c \
 
 CHTTP2_STREAM_ENCODER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_STREAM_ENCODER_TEST_SRC))))
-CHTTP2_STREAM_ENCODER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_STREAM_ENCODER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3305,11 +3179,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/stream_encoder_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_chttp2_stream_encoder_test: $(CHTTP2_STREAM_ENCODER_TEST_DEPS)
+deps_chttp2_stream_encoder_test: $(CHTTP2_STREAM_ENCODER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_STREAM_ENCODER_TEST_DEPS)
+-include $(CHTTP2_STREAM_ENCODER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3318,7 +3192,6 @@ HPACK_TABLE_TEST_SRC = \
     test/core/transport/chttp2/hpack_table_test.c \
 
 HPACK_TABLE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_TABLE_TEST_SRC))))
-HPACK_TABLE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(HPACK_TABLE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3335,11 +3208,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/hpack_table_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_hpack_table_test: $(HPACK_TABLE_TEST_DEPS)
+deps_hpack_table_test: $(HPACK_TABLE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HPACK_TABLE_TEST_DEPS)
+-include $(HPACK_TABLE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3348,7 +3221,6 @@ CHTTP2_STREAM_MAP_TEST_SRC = \
     test/core/transport/chttp2/stream_map_test.c \
 
 CHTTP2_STREAM_MAP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_STREAM_MAP_TEST_SRC))))
-CHTTP2_STREAM_MAP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_STREAM_MAP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3365,11 +3237,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/stream_map_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_chttp2_stream_map_test: $(CHTTP2_STREAM_MAP_TEST_DEPS)
+deps_chttp2_stream_map_test: $(CHTTP2_STREAM_MAP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_STREAM_MAP_TEST_DEPS)
+-include $(CHTTP2_STREAM_MAP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3378,7 +3250,6 @@ HPACK_PARSER_TEST_SRC = \
     test/core/transport/chttp2/hpack_parser_test.c \
 
 HPACK_PARSER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_PARSER_TEST_SRC))))
-HPACK_PARSER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(HPACK_PARSER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3395,11 +3266,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/hpack_parser_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_hpack_parser_test: $(HPACK_PARSER_TEST_DEPS)
+deps_hpack_parser_test: $(HPACK_PARSER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HPACK_PARSER_TEST_DEPS)
+-include $(HPACK_PARSER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3408,7 +3279,6 @@ TRANSPORT_METADATA_TEST_SRC = \
     test/core/transport/metadata_test.c \
 
 TRANSPORT_METADATA_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
-TRANSPORT_METADATA_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3425,11 +3295,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/metadata_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_transport_metadata_test: $(TRANSPORT_METADATA_TEST_DEPS)
+deps_transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(TRANSPORT_METADATA_TEST_DEPS)
+-include $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3438,7 +3308,6 @@ CHTTP2_STATUS_CONVERSION_TEST_SRC = \
     test/core/transport/chttp2/status_conversion_test.c \
 
 CHTTP2_STATUS_CONVERSION_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_STATUS_CONVERSION_TEST_SRC))))
-CHTTP2_STATUS_CONVERSION_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_STATUS_CONVERSION_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3455,11 +3324,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/status_conversion_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_chttp2_status_conversion_test: $(CHTTP2_STATUS_CONVERSION_TEST_DEPS)
+deps_chttp2_status_conversion_test: $(CHTTP2_STATUS_CONVERSION_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_STATUS_CONVERSION_TEST_DEPS)
+-include $(CHTTP2_STATUS_CONVERSION_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3468,7 +3337,6 @@ CHTTP2_TRANSPORT_END2END_TEST_SRC = \
     test/core/transport/chttp2_transport_end2end_test.c \
 
 CHTTP2_TRANSPORT_END2END_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_TRANSPORT_END2END_TEST_SRC))))
-CHTTP2_TRANSPORT_END2END_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_TRANSPORT_END2END_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3485,11 +3353,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2_transport_end2end_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_chttp2_transport_end2end_test: $(CHTTP2_TRANSPORT_END2END_TEST_DEPS)
+deps_chttp2_transport_end2end_test: $(CHTTP2_TRANSPORT_END2END_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_TRANSPORT_END2END_TEST_DEPS)
+-include $(CHTTP2_TRANSPORT_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3498,7 +3366,6 @@ TCP_POSIX_TEST_SRC = \
     test/core/iomgr/tcp_posix_test.c \
 
 TCP_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_POSIX_TEST_SRC))))
-TCP_POSIX_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(TCP_POSIX_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3515,11 +3382,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/tcp_posix_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_tcp_posix_test: $(TCP_POSIX_TEST_DEPS)
+deps_tcp_posix_test: $(TCP_POSIX_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(TCP_POSIX_TEST_DEPS)
+-include $(TCP_POSIX_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3528,7 +3395,6 @@ DUALSTACK_SOCKET_TEST_SRC = \
     test/core/end2end/dualstack_socket_test.c \
 
 DUALSTACK_SOCKET_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(DUALSTACK_SOCKET_TEST_SRC))))
-DUALSTACK_SOCKET_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(DUALSTACK_SOCKET_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3545,11 +3411,11 @@ endif
 
 objs/$(CONFIG)/test/core/end2end/dualstack_socket_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_dualstack_socket_test: $(DUALSTACK_SOCKET_TEST_DEPS)
+deps_dualstack_socket_test: $(DUALSTACK_SOCKET_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(DUALSTACK_SOCKET_TEST_DEPS)
+-include $(DUALSTACK_SOCKET_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3558,7 +3424,6 @@ NO_SERVER_TEST_SRC = \
     test/core/end2end/no_server_test.c \
 
 NO_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(NO_SERVER_TEST_SRC))))
-NO_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(NO_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3575,11 +3440,11 @@ endif
 
 objs/$(CONFIG)/test/core/end2end/no_server_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_no_server_test: $(NO_SERVER_TEST_DEPS)
+deps_no_server_test: $(NO_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(NO_SERVER_TEST_DEPS)
+-include $(NO_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3588,7 +3453,6 @@ RESOLVE_ADDRESS_TEST_SRC = \
     test/core/iomgr/resolve_address_test.c \
 
 RESOLVE_ADDRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVE_ADDRESS_TEST_SRC))))
-RESOLVE_ADDRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(RESOLVE_ADDRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3605,11 +3469,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/resolve_address_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_resolve_address_test: $(RESOLVE_ADDRESS_TEST_DEPS)
+deps_resolve_address_test: $(RESOLVE_ADDRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(RESOLVE_ADDRESS_TEST_DEPS)
+-include $(RESOLVE_ADDRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3618,7 +3482,6 @@ SOCKADDR_UTILS_TEST_SRC = \
     test/core/iomgr/sockaddr_utils_test.c \
 
 SOCKADDR_UTILS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(SOCKADDR_UTILS_TEST_SRC))))
-SOCKADDR_UTILS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(SOCKADDR_UTILS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3635,11 +3498,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/sockaddr_utils_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_sockaddr_utils_test: $(SOCKADDR_UTILS_TEST_DEPS)
+deps_sockaddr_utils_test: $(SOCKADDR_UTILS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(SOCKADDR_UTILS_TEST_DEPS)
+-include $(SOCKADDR_UTILS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3648,7 +3511,6 @@ TCP_SERVER_POSIX_TEST_SRC = \
     test/core/iomgr/tcp_server_posix_test.c \
 
 TCP_SERVER_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_SERVER_POSIX_TEST_SRC))))
-TCP_SERVER_POSIX_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(TCP_SERVER_POSIX_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3665,11 +3527,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/tcp_server_posix_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_tcp_server_posix_test: $(TCP_SERVER_POSIX_TEST_DEPS)
+deps_tcp_server_posix_test: $(TCP_SERVER_POSIX_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(TCP_SERVER_POSIX_TEST_DEPS)
+-include $(TCP_SERVER_POSIX_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3678,7 +3540,6 @@ TCP_CLIENT_POSIX_TEST_SRC = \
     test/core/iomgr/tcp_client_posix_test.c \
 
 TCP_CLIENT_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_CLIENT_POSIX_TEST_SRC))))
-TCP_CLIENT_POSIX_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(TCP_CLIENT_POSIX_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3695,11 +3556,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/tcp_client_posix_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_tcp_client_posix_test: $(TCP_CLIENT_POSIX_TEST_DEPS)
+deps_tcp_client_posix_test: $(TCP_CLIENT_POSIX_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(TCP_CLIENT_POSIX_TEST_DEPS)
+-include $(TCP_CLIENT_POSIX_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3708,7 +3569,6 @@ GRPC_CHANNEL_STACK_TEST_SRC = \
     test/core/channel/channel_stack_test.c \
 
 GRPC_CHANNEL_STACK_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_STACK_TEST_SRC))))
-GRPC_CHANNEL_STACK_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_CHANNEL_STACK_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3725,11 +3585,11 @@ endif
 
 objs/$(CONFIG)/test/core/channel/channel_stack_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_channel_stack_test: $(GRPC_CHANNEL_STACK_TEST_DEPS)
+deps_grpc_channel_stack_test: $(GRPC_CHANNEL_STACK_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_CHANNEL_STACK_TEST_DEPS)
+-include $(GRPC_CHANNEL_STACK_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3738,7 +3598,6 @@ METADATA_BUFFER_TEST_SRC = \
     test/core/channel/metadata_buffer_test.c \
 
 METADATA_BUFFER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(METADATA_BUFFER_TEST_SRC))))
-METADATA_BUFFER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(METADATA_BUFFER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3755,11 +3614,11 @@ endif
 
 objs/$(CONFIG)/test/core/channel/metadata_buffer_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_metadata_buffer_test: $(METADATA_BUFFER_TEST_DEPS)
+deps_metadata_buffer_test: $(METADATA_BUFFER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(METADATA_BUFFER_TEST_DEPS)
+-include $(METADATA_BUFFER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3768,7 +3627,6 @@ GRPC_COMPLETION_QUEUE_TEST_SRC = \
     test/core/surface/completion_queue_test.c \
 
 GRPC_COMPLETION_QUEUE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_TEST_SRC))))
-GRPC_COMPLETION_QUEUE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_COMPLETION_QUEUE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3785,11 +3643,11 @@ endif
 
 objs/$(CONFIG)/test/core/surface/completion_queue_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_completion_queue_test: $(GRPC_COMPLETION_QUEUE_TEST_DEPS)
+deps_grpc_completion_queue_test: $(GRPC_COMPLETION_QUEUE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_COMPLETION_QUEUE_TEST_DEPS)
+-include $(GRPC_COMPLETION_QUEUE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3798,7 +3656,6 @@ GRPC_COMPLETION_QUEUE_BENCHMARK_SRC = \
     test/core/surface/completion_queue_benchmark.c \
 
 GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_BENCHMARK_SRC))))
-GRPC_COMPLETION_QUEUE_BENCHMARK_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_COMPLETION_QUEUE_BENCHMARK_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3815,11 +3672,11 @@ endif
 
 objs/$(CONFIG)/test/core/surface/completion_queue_benchmark.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_completion_queue_benchmark: $(GRPC_COMPLETION_QUEUE_BENCHMARK_DEPS)
+deps_grpc_completion_queue_benchmark: $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_COMPLETION_QUEUE_BENCHMARK_DEPS)
+-include $(GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS:.o=.dep)
 endif
 endif
 
@@ -3828,7 +3685,6 @@ CENSUS_TRACE_STORE_TEST_SRC = \
     test/core/statistics/trace_test.c \
 
 CENSUS_TRACE_STORE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_TRACE_STORE_TEST_SRC))))
-CENSUS_TRACE_STORE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_TRACE_STORE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3845,11 +3701,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/trace_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_trace_store_test: $(CENSUS_TRACE_STORE_TEST_DEPS)
+deps_census_trace_store_test: $(CENSUS_TRACE_STORE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_TRACE_STORE_TEST_DEPS)
+-include $(CENSUS_TRACE_STORE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3858,7 +3714,6 @@ CENSUS_STATS_STORE_TEST_SRC = \
     test/core/statistics/rpc_stats_test.c \
 
 CENSUS_STATS_STORE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATS_STORE_TEST_SRC))))
-CENSUS_STATS_STORE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_STATS_STORE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3875,11 +3730,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/rpc_stats_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_stats_store_test: $(CENSUS_STATS_STORE_TEST_DEPS)
+deps_census_stats_store_test: $(CENSUS_STATS_STORE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_STATS_STORE_TEST_DEPS)
+-include $(CENSUS_STATS_STORE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3888,7 +3743,6 @@ CENSUS_WINDOW_STATS_TEST_SRC = \
     test/core/statistics/window_stats_test.c \
 
 CENSUS_WINDOW_STATS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_WINDOW_STATS_TEST_SRC))))
-CENSUS_WINDOW_STATS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_WINDOW_STATS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3905,11 +3759,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/window_stats_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_window_stats_test: $(CENSUS_WINDOW_STATS_TEST_DEPS)
+deps_census_window_stats_test: $(CENSUS_WINDOW_STATS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_WINDOW_STATS_TEST_DEPS)
+-include $(CENSUS_WINDOW_STATS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3918,7 +3772,6 @@ CENSUS_STATISTICS_QUICK_TEST_SRC = \
     test/core/statistics/quick_test.c \
 
 CENSUS_STATISTICS_QUICK_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_QUICK_TEST_SRC))))
-CENSUS_STATISTICS_QUICK_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_QUICK_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3935,11 +3788,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/quick_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_statistics_quick_test: $(CENSUS_STATISTICS_QUICK_TEST_DEPS)
+deps_census_statistics_quick_test: $(CENSUS_STATISTICS_QUICK_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_STATISTICS_QUICK_TEST_DEPS)
+-include $(CENSUS_STATISTICS_QUICK_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3948,7 +3801,6 @@ CENSUS_STATISTICS_SMALL_LOG_TEST_SRC = \
     test/core/statistics/small_log_test.c \
 
 CENSUS_STATISTICS_SMALL_LOG_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_SMALL_LOG_TEST_SRC))))
-CENSUS_STATISTICS_SMALL_LOG_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_SMALL_LOG_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3965,11 +3817,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/small_log_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_statistics_small_log_test: $(CENSUS_STATISTICS_SMALL_LOG_TEST_DEPS)
+deps_census_statistics_small_log_test: $(CENSUS_STATISTICS_SMALL_LOG_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_STATISTICS_SMALL_LOG_TEST_DEPS)
+-include $(CENSUS_STATISTICS_SMALL_LOG_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -3978,7 +3830,6 @@ CENSUS_STATISTICS_PERFORMANCE_TEST_SRC = \
     test/core/statistics/performance_test.c \
 
 CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_PERFORMANCE_TEST_SRC))))
-CENSUS_STATISTICS_PERFORMANCE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_PERFORMANCE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -3995,11 +3846,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/performance_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_statistics_performance_test: $(CENSUS_STATISTICS_PERFORMANCE_TEST_DEPS)
+deps_census_statistics_performance_test: $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_STATISTICS_PERFORMANCE_TEST_DEPS)
+-include $(CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4008,7 +3859,6 @@ CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC = \
     test/core/statistics/multiple_writers_test.c \
 
 CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC))))
-CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4025,11 +3875,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/multiple_writers_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_statistics_multiple_writers_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_DEPS)
+deps_census_statistics_multiple_writers_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_DEPS)
+-include $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4038,7 +3888,6 @@ CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_SRC = \
     test/core/statistics/multiple_writers_circular_buffer_test.c \
 
 CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_SRC))))
-CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4055,11 +3904,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/multiple_writers_circular_buffer_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_statistics_multiple_writers_circular_buffer_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_DEPS)
+deps_census_statistics_multiple_writers_circular_buffer_test: $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_DEPS)
+-include $(CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4068,7 +3917,6 @@ CENSUS_STUB_TEST_SRC = \
     test/core/statistics/census_stub_test.c \
 
 CENSUS_STUB_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STUB_TEST_SRC))))
-CENSUS_STUB_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_STUB_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4085,11 +3933,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/census_stub_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_stub_test: $(CENSUS_STUB_TEST_DEPS)
+deps_census_stub_test: $(CENSUS_STUB_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_STUB_TEST_DEPS)
+-include $(CENSUS_STUB_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4098,7 +3946,6 @@ CENSUS_HASH_TABLE_TEST_SRC = \
     test/core/statistics/hash_table_test.c \
 
 CENSUS_HASH_TABLE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_HASH_TABLE_TEST_SRC))))
-CENSUS_HASH_TABLE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CENSUS_HASH_TABLE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4115,11 +3962,11 @@ endif
 
 objs/$(CONFIG)/test/core/statistics/hash_table_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_census_hash_table_test: $(CENSUS_HASH_TABLE_TEST_DEPS)
+deps_census_hash_table_test: $(CENSUS_HASH_TABLE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CENSUS_HASH_TABLE_TEST_DEPS)
+-include $(CENSUS_HASH_TABLE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4128,7 +3975,6 @@ FLING_SERVER_SRC = \
     test/core/fling/server.c \
 
 FLING_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_SERVER_SRC))))
-FLING_SERVER_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(FLING_SERVER_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4145,11 +3991,11 @@ endif
 
 objs/$(CONFIG)/test/core/fling/server.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_fling_server: $(FLING_SERVER_DEPS)
+deps_fling_server: $(FLING_SERVER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(FLING_SERVER_DEPS)
+-include $(FLING_SERVER_OBJS:.o=.dep)
 endif
 endif
 
@@ -4158,7 +4004,6 @@ FLING_CLIENT_SRC = \
     test/core/fling/client.c \
 
 FLING_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_CLIENT_SRC))))
-FLING_CLIENT_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(FLING_CLIENT_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4175,11 +4020,11 @@ endif
 
 objs/$(CONFIG)/test/core/fling/client.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_fling_client: $(FLING_CLIENT_DEPS)
+deps_fling_client: $(FLING_CLIENT_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(FLING_CLIENT_DEPS)
+-include $(FLING_CLIENT_OBJS:.o=.dep)
 endif
 endif
 
@@ -4188,7 +4033,6 @@ FLING_TEST_SRC = \
     test/core/fling/fling_test.c \
 
 FLING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_TEST_SRC))))
-FLING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(FLING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4205,11 +4049,11 @@ endif
 
 objs/$(CONFIG)/test/core/fling/fling_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_fling_test: $(FLING_TEST_DEPS)
+deps_fling_test: $(FLING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(FLING_TEST_DEPS)
+-include $(FLING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4218,7 +4062,6 @@ ECHO_SERVER_SRC = \
     test/core/echo/server.c \
 
 ECHO_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ECHO_SERVER_SRC))))
-ECHO_SERVER_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(ECHO_SERVER_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4235,11 +4078,11 @@ endif
 
 objs/$(CONFIG)/test/core/echo/server.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_echo_server: $(ECHO_SERVER_DEPS)
+deps_echo_server: $(ECHO_SERVER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ECHO_SERVER_DEPS)
+-include $(ECHO_SERVER_OBJS:.o=.dep)
 endif
 endif
 
@@ -4248,7 +4091,6 @@ ECHO_CLIENT_SRC = \
     test/core/echo/client.c \
 
 ECHO_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ECHO_CLIENT_SRC))))
-ECHO_CLIENT_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(ECHO_CLIENT_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4265,11 +4107,11 @@ endif
 
 objs/$(CONFIG)/test/core/echo/client.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_echo_client: $(ECHO_CLIENT_DEPS)
+deps_echo_client: $(ECHO_CLIENT_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ECHO_CLIENT_DEPS)
+-include $(ECHO_CLIENT_OBJS:.o=.dep)
 endif
 endif
 
@@ -4278,7 +4120,6 @@ ECHO_TEST_SRC = \
     test/core/echo/echo_test.c \
 
 ECHO_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ECHO_TEST_SRC))))
-ECHO_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(ECHO_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4295,11 +4136,11 @@ endif
 
 objs/$(CONFIG)/test/core/echo/echo_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_echo_test: $(ECHO_TEST_DEPS)
+deps_echo_test: $(ECHO_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ECHO_TEST_DEPS)
+-include $(ECHO_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4308,7 +4149,6 @@ LOW_LEVEL_PING_PONG_BENCHMARK_SRC = \
     test/core/network_benchmarks/low_level_ping_pong.c \
 
 LOW_LEVEL_PING_PONG_BENCHMARK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LOW_LEVEL_PING_PONG_BENCHMARK_SRC))))
-LOW_LEVEL_PING_PONG_BENCHMARK_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LOW_LEVEL_PING_PONG_BENCHMARK_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4325,11 +4165,11 @@ endif
 
 objs/$(CONFIG)/test/core/network_benchmarks/low_level_ping_pong.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_low_level_ping_pong_benchmark: $(LOW_LEVEL_PING_PONG_BENCHMARK_DEPS)
+deps_low_level_ping_pong_benchmark: $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LOW_LEVEL_PING_PONG_BENCHMARK_DEPS)
+-include $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS:.o=.dep)
 endif
 endif
 
@@ -4338,7 +4178,6 @@ MESSAGE_COMPRESS_TEST_SRC = \
     test/core/compression/message_compress_test.c \
 
 MESSAGE_COMPRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(MESSAGE_COMPRESS_TEST_SRC))))
-MESSAGE_COMPRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(MESSAGE_COMPRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4355,11 +4194,11 @@ endif
 
 objs/$(CONFIG)/test/core/compression/message_compress_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_message_compress_test: $(MESSAGE_COMPRESS_TEST_DEPS)
+deps_message_compress_test: $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(MESSAGE_COMPRESS_TEST_DEPS)
+-include $(MESSAGE_COMPRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4368,7 +4207,6 @@ BIN_ENCODER_TEST_SRC = \
     test/core/transport/chttp2/bin_encoder_test.c \
 
 BIN_ENCODER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(BIN_ENCODER_TEST_SRC))))
-BIN_ENCODER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(BIN_ENCODER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4385,11 +4223,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/bin_encoder_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_bin_encoder_test: $(BIN_ENCODER_TEST_DEPS)
+deps_bin_encoder_test: $(BIN_ENCODER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(BIN_ENCODER_TEST_DEPS)
+-include $(BIN_ENCODER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4398,7 +4236,6 @@ SECURE_ENDPOINT_TEST_SRC = \
     test/core/security/secure_endpoint_test.c \
 
 SECURE_ENDPOINT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(SECURE_ENDPOINT_TEST_SRC))))
-SECURE_ENDPOINT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(SECURE_ENDPOINT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4415,11 +4252,11 @@ endif
 
 objs/$(CONFIG)/test/core/security/secure_endpoint_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_secure_endpoint_test: $(SECURE_ENDPOINT_TEST_DEPS)
+deps_secure_endpoint_test: $(SECURE_ENDPOINT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(SECURE_ENDPOINT_TEST_DEPS)
+-include $(SECURE_ENDPOINT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4428,7 +4265,6 @@ HTTPCLI_FORMAT_REQUEST_TEST_SRC = \
     test/core/httpcli/format_request_test.c \
 
 HTTPCLI_FORMAT_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_FORMAT_REQUEST_TEST_SRC))))
-HTTPCLI_FORMAT_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(HTTPCLI_FORMAT_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4445,11 +4281,11 @@ endif
 
 objs/$(CONFIG)/test/core/httpcli/format_request_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_DEPS)
+deps_httpcli_format_request_test: $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HTTPCLI_FORMAT_REQUEST_TEST_DEPS)
+-include $(HTTPCLI_FORMAT_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4458,7 +4294,6 @@ HTTPCLI_PARSER_TEST_SRC = \
     test/core/httpcli/parser_test.c \
 
 HTTPCLI_PARSER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_PARSER_TEST_SRC))))
-HTTPCLI_PARSER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(HTTPCLI_PARSER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4475,11 +4310,11 @@ endif
 
 objs/$(CONFIG)/test/core/httpcli/parser_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_httpcli_parser_test: $(HTTPCLI_PARSER_TEST_DEPS)
+deps_httpcli_parser_test: $(HTTPCLI_PARSER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HTTPCLI_PARSER_TEST_DEPS)
+-include $(HTTPCLI_PARSER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4488,7 +4323,6 @@ HTTPCLI_TEST_SRC = \
     test/core/httpcli/httpcli_test.c \
 
 HTTPCLI_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_TEST_SRC))))
-HTTPCLI_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(HTTPCLI_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4505,11 +4339,11 @@ endif
 
 objs/$(CONFIG)/test/core/httpcli/httpcli_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_httpcli_test: $(HTTPCLI_TEST_DEPS)
+deps_httpcli_test: $(HTTPCLI_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HTTPCLI_TEST_DEPS)
+-include $(HTTPCLI_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4518,7 +4352,6 @@ GRPC_CREDENTIALS_TEST_SRC = \
     test/core/security/credentials_test.c \
 
 GRPC_CREDENTIALS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CREDENTIALS_TEST_SRC))))
-GRPC_CREDENTIALS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_CREDENTIALS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4535,11 +4368,11 @@ endif
 
 objs/$(CONFIG)/test/core/security/credentials_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_credentials_test: $(GRPC_CREDENTIALS_TEST_DEPS)
+deps_grpc_credentials_test: $(GRPC_CREDENTIALS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_CREDENTIALS_TEST_DEPS)
+-include $(GRPC_CREDENTIALS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4548,7 +4381,6 @@ GRPC_FETCH_OAUTH2_SRC = \
     test/core/security/fetch_oauth2.c \
 
 GRPC_FETCH_OAUTH2_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_FETCH_OAUTH2_SRC))))
-GRPC_FETCH_OAUTH2_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_FETCH_OAUTH2_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4565,11 +4397,11 @@ endif
 
 objs/$(CONFIG)/test/core/security/fetch_oauth2.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_fetch_oauth2: $(GRPC_FETCH_OAUTH2_DEPS)
+deps_grpc_fetch_oauth2: $(GRPC_FETCH_OAUTH2_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_FETCH_OAUTH2_DEPS)
+-include $(GRPC_FETCH_OAUTH2_OBJS:.o=.dep)
 endif
 endif
 
@@ -4578,7 +4410,6 @@ GRPC_BASE64_TEST_SRC = \
     test/core/security/base64_test.c \
 
 GRPC_BASE64_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_BASE64_TEST_SRC))))
-GRPC_BASE64_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_BASE64_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4595,11 +4426,11 @@ endif
 
 objs/$(CONFIG)/test/core/security/base64_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_base64_test: $(GRPC_BASE64_TEST_DEPS)
+deps_grpc_base64_test: $(GRPC_BASE64_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_BASE64_TEST_DEPS)
+-include $(GRPC_BASE64_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4608,7 +4439,6 @@ GRPC_JSON_TOKEN_TEST_SRC = \
     test/core/security/json_token_test.c \
 
 GRPC_JSON_TOKEN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_JSON_TOKEN_TEST_SRC))))
-GRPC_JSON_TOKEN_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(GRPC_JSON_TOKEN_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4625,11 +4455,11 @@ endif
 
 objs/$(CONFIG)/test/core/security/json_token_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_grpc_json_token_test: $(GRPC_JSON_TOKEN_TEST_DEPS)
+deps_grpc_json_token_test: $(GRPC_JSON_TOKEN_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_JSON_TOKEN_TEST_DEPS)
+-include $(GRPC_JSON_TOKEN_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4638,7 +4468,6 @@ TIMEOUT_ENCODING_TEST_SRC = \
     test/core/transport/chttp2/timeout_encoding_test.c \
 
 TIMEOUT_ENCODING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TIMEOUT_ENCODING_TEST_SRC))))
-TIMEOUT_ENCODING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(TIMEOUT_ENCODING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4655,11 +4484,11 @@ endif
 
 objs/$(CONFIG)/test/core/transport/chttp2/timeout_encoding_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_timeout_encoding_test: $(TIMEOUT_ENCODING_TEST_DEPS)
+deps_timeout_encoding_test: $(TIMEOUT_ENCODING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(TIMEOUT_ENCODING_TEST_DEPS)
+-include $(TIMEOUT_ENCODING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4668,7 +4497,6 @@ FD_POSIX_TEST_SRC = \
     test/core/iomgr/fd_posix_test.c \
 
 FD_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FD_POSIX_TEST_SRC))))
-FD_POSIX_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(FD_POSIX_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4685,11 +4513,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/fd_posix_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_fd_posix_test: $(FD_POSIX_TEST_DEPS)
+deps_fd_posix_test: $(FD_POSIX_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(FD_POSIX_TEST_DEPS)
+-include $(FD_POSIX_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4698,7 +4526,6 @@ FLING_STREAM_TEST_SRC = \
     test/core/fling/fling_stream_test.c \
 
 FLING_STREAM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_STREAM_TEST_SRC))))
-FLING_STREAM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(FLING_STREAM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4715,11 +4542,11 @@ endif
 
 objs/$(CONFIG)/test/core/fling/fling_stream_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_fling_stream_test: $(FLING_STREAM_TEST_DEPS)
+deps_fling_stream_test: $(FLING_STREAM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(FLING_STREAM_TEST_DEPS)
+-include $(FLING_STREAM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4728,7 +4555,6 @@ LAME_CLIENT_TEST_SRC = \
     test/core/surface/lame_client_test.c \
 
 LAME_CLIENT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LAME_CLIENT_TEST_SRC))))
-LAME_CLIENT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LAME_CLIENT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4745,11 +4571,11 @@ endif
 
 objs/$(CONFIG)/test/core/surface/lame_client_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_lame_client_test: $(LAME_CLIENT_TEST_DEPS)
+deps_lame_client_test: $(LAME_CLIENT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(LAME_CLIENT_TEST_DEPS)
+-include $(LAME_CLIENT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4758,7 +4584,6 @@ THREAD_POOL_TEST_SRC = \
     test/cpp/server/thread_pool_test.cc \
 
 THREAD_POOL_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(THREAD_POOL_TEST_SRC))))
-THREAD_POOL_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(THREAD_POOL_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4775,11 +4600,11 @@ endif
 
 objs/$(CONFIG)/test/cpp/server/thread_pool_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_thread_pool_test: $(THREAD_POOL_TEST_DEPS)
+deps_thread_pool_test: $(THREAD_POOL_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(THREAD_POOL_TEST_DEPS)
+-include $(THREAD_POOL_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4788,7 +4613,6 @@ STATUS_TEST_SRC = \
     test/cpp/util/status_test.cc \
 
 STATUS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_TEST_SRC))))
-STATUS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(STATUS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4805,11 +4629,11 @@ endif
 
 objs/$(CONFIG)/test/cpp/util/status_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_status_test: $(STATUS_TEST_DEPS)
+deps_status_test: $(STATUS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(STATUS_TEST_DEPS)
+-include $(STATUS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4818,7 +4642,6 @@ SYNC_CLIENT_ASYNC_SERVER_TEST_SRC = \
     test/cpp/end2end/sync_client_async_server_test.cc \
 
 SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(SYNC_CLIENT_ASYNC_SERVER_TEST_SRC))))
-SYNC_CLIENT_ASYNC_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(SYNC_CLIENT_ASYNC_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4835,11 +4658,11 @@ endif
 
 objs/$(CONFIG)/test/cpp/end2end/sync_client_async_server_test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_sync_client_async_server_test: $(SYNC_CLIENT_ASYNC_SERVER_TEST_DEPS)
+deps_sync_client_async_server_test: $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(SYNC_CLIENT_ASYNC_SERVER_TEST_DEPS)
+-include $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4849,7 +4672,6 @@ QPS_CLIENT_SRC = \
     test/cpp/qps/client.cc \
 
 QPS_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_CLIENT_SRC))))
-QPS_CLIENT_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(QPS_CLIENT_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4867,11 +4689,11 @@ endif
 objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 objs/$(CONFIG)/test/cpp/qps/client.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_qps_client: $(QPS_CLIENT_DEPS)
+deps_qps_client: $(QPS_CLIENT_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(QPS_CLIENT_DEPS)
+-include $(QPS_CLIENT_OBJS:.o=.dep)
 endif
 endif
 
@@ -4881,7 +4703,6 @@ QPS_SERVER_SRC = \
     test/cpp/qps/server.cc \
 
 QPS_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_SERVER_SRC))))
-QPS_SERVER_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(QPS_SERVER_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4899,11 +4720,11 @@ endif
 objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 objs/$(CONFIG)/test/cpp/qps/server.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_qps_server: $(QPS_SERVER_DEPS)
+deps_qps_server: $(QPS_SERVER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(QPS_SERVER_DEPS)
+-include $(QPS_SERVER_OBJS:.o=.dep)
 endif
 endif
 
@@ -4915,7 +4736,6 @@ INTEROP_SERVER_SRC = \
     test/cpp/interop/server.cc \
 
 INTEROP_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_SERVER_SRC))))
-INTEROP_SERVER_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(INTEROP_SERVER_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4935,11 +4755,11 @@ objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.
 objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 objs/$(CONFIG)/test/cpp/interop/server.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_interop_server: $(INTEROP_SERVER_DEPS)
+deps_interop_server: $(INTEROP_SERVER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(INTEROP_SERVER_DEPS)
+-include $(INTEROP_SERVER_OBJS:.o=.dep)
 endif
 endif
 
@@ -4951,7 +4771,6 @@ INTEROP_CLIENT_SRC = \
     test/cpp/interop/client.cc \
 
 INTEROP_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_CLIENT_SRC))))
-INTEROP_CLIENT_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(INTEROP_CLIENT_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -4971,11 +4790,11 @@ objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.
 objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 objs/$(CONFIG)/test/cpp/interop/client.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_interop_client: $(INTEROP_CLIENT_DEPS)
+deps_interop_client: $(INTEROP_CLIENT_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(INTEROP_CLIENT_DEPS)
+-include $(INTEROP_CLIENT_OBJS:.o=.dep)
 endif
 endif
 
@@ -4984,7 +4803,6 @@ END2END_TEST_SRC = \
     test/cpp/end2end/end2end_test.cc \
 
 END2END_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(END2END_TEST_SRC))))
-END2END_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(END2END_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5001,11 +4819,11 @@ endif
 
 objs/$(CONFIG)/test/cpp/end2end/end2end_test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_end2end_test: $(END2END_TEST_DEPS)
+deps_end2end_test: $(END2END_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(END2END_TEST_DEPS)
+-include $(END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5014,7 +4832,6 @@ CHANNEL_ARGUMENTS_TEST_SRC = \
     test/cpp/client/channel_arguments_test.cc \
 
 CHANNEL_ARGUMENTS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_ARGUMENTS_TEST_SRC))))
-CHANNEL_ARGUMENTS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHANNEL_ARGUMENTS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5031,11 +4848,11 @@ endif
 
 objs/$(CONFIG)/test/cpp/client/channel_arguments_test.o:  libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
 
-deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_DEPS)
+deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHANNEL_ARGUMENTS_TEST_DEPS)
+-include $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5044,7 +4861,6 @@ CREDENTIALS_TEST_SRC = \
     test/cpp/client/credentials_test.cc \
 
 CREDENTIALS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CREDENTIALS_TEST_SRC))))
-CREDENTIALS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CREDENTIALS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5061,11 +4877,11 @@ endif
 
 objs/$(CONFIG)/test/cpp/client/credentials_test.o:  libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
 
-deps_credentials_test: $(CREDENTIALS_TEST_DEPS)
+deps_credentials_test: $(CREDENTIALS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CREDENTIALS_TEST_DEPS)
+-include $(CREDENTIALS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5074,7 +4890,6 @@ ALARM_TEST_SRC = \
     test/core/iomgr/alarm_test.c \
 
 ALARM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_TEST_SRC))))
-ALARM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(ALARM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5091,11 +4906,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/alarm_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_alarm_test: $(ALARM_TEST_DEPS)
+deps_alarm_test: $(ALARM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ALARM_TEST_DEPS)
+-include $(ALARM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5104,7 +4919,6 @@ ALARM_LIST_TEST_SRC = \
     test/core/iomgr/alarm_list_test.c \
 
 ALARM_LIST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_LIST_TEST_SRC))))
-ALARM_LIST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(ALARM_LIST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5121,11 +4935,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/alarm_list_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_alarm_list_test: $(ALARM_LIST_TEST_DEPS)
+deps_alarm_list_test: $(ALARM_LIST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ALARM_LIST_TEST_DEPS)
+-include $(ALARM_LIST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5134,7 +4948,6 @@ ALARM_HEAP_TEST_SRC = \
     test/core/iomgr/alarm_heap_test.c \
 
 ALARM_HEAP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_HEAP_TEST_SRC))))
-ALARM_HEAP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(ALARM_HEAP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5151,11 +4964,11 @@ endif
 
 objs/$(CONFIG)/test/core/iomgr/alarm_heap_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_alarm_heap_test: $(ALARM_HEAP_TEST_DEPS)
+deps_alarm_heap_test: $(ALARM_HEAP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ALARM_HEAP_TEST_DEPS)
+-include $(ALARM_HEAP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5164,7 +4977,6 @@ TIME_TEST_SRC = \
     test/core/support/time_test.c \
 
 TIME_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TIME_TEST_SRC))))
-TIME_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(TIME_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5181,11 +4993,11 @@ endif
 
 objs/$(CONFIG)/test/core/support/time_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
 
-deps_time_test: $(TIME_TEST_DEPS)
+deps_time_test: $(TIME_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(TIME_TEST_DEPS)
+-include $(TIME_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5193,7 +5005,6 @@ endif
 CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5209,11 +5020,11 @@ bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test: $(CHTTP2_FAKE_SECU
 endif
 
 
-deps_chttp2_fake_security_cancel_after_accept_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+deps_chttp2_fake_security_cancel_after_accept_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5221,7 +5032,6 @@ endif
 CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5237,11 +5047,11 @@ bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test: 
 endif
 
 
-deps_chttp2_fake_security_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+deps_chttp2_fake_security_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5249,7 +5059,6 @@ endif
 CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5265,11 +5074,11 @@ bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test: $(CHTTP2_FAKE_SECU
 endif
 
 
-deps_chttp2_fake_security_cancel_after_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_DEPS)
+deps_chttp2_fake_security_cancel_after_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5277,7 +5086,6 @@ endif
 CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5293,11 +5101,11 @@ bins/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test: $(CHTTP2_FAKE_SEC
 endif
 
 
-deps_chttp2_fake_security_cancel_before_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+deps_chttp2_fake_security_cancel_before_invoke_test: $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5305,7 +5113,6 @@ endif
 CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5321,11 +5128,11 @@ bins/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test: $(CHTTP2_FAKE_SECUR
 endif
 
 
-deps_chttp2_fake_security_cancel_in_a_vacuum_test: $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_DEPS)
+deps_chttp2_fake_security_cancel_in_a_vacuum_test: $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5333,7 +5140,6 @@ endif
 CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5349,11 +5155,11 @@ bins/$(CONFIG)/chttp2_fake_security_census_simple_request_test: $(CHTTP2_FAKE_SE
 endif
 
 
-deps_chttp2_fake_security_census_simple_request_test: $(CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_fake_security_census_simple_request_test: $(CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5361,7 +5167,6 @@ endif
 CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5377,11 +5182,11 @@ bins/$(CONFIG)/chttp2_fake_security_disappearing_server_test: $(CHTTP2_FAKE_SECU
 endif
 
 
-deps_chttp2_fake_security_disappearing_server_test: $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_DEPS)
+deps_chttp2_fake_security_disappearing_server_test: $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5389,7 +5194,6 @@ endif
 CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5405,11 +5209,11 @@ bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_call
 endif
 
 
-deps_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+deps_chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5417,7 +5221,6 @@ endif
 CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5433,11 +5236,11 @@ bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test: $(
 endif
 
 
-deps_chttp2_fake_security_early_server_shutdown_finishes_tags_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+deps_chttp2_fake_security_early_server_shutdown_finishes_tags_test: $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5445,7 +5248,6 @@ endif
 CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5461,11 +5263,11 @@ bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test: $(CHTTP2_FAKE_SEC
 endif
 
 
-deps_chttp2_fake_security_invoke_large_request_test: $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_DEPS)
+deps_chttp2_fake_security_invoke_large_request_test: $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5473,7 +5275,6 @@ endif
 CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5489,11 +5290,11 @@ bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test: $(CHTTP2_FAKE_S
 endif
 
 
-deps_chttp2_fake_security_max_concurrent_streams_test: $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+deps_chttp2_fake_security_max_concurrent_streams_test: $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5501,7 +5302,6 @@ endif
 CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_NO_OP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5517,11 +5317,11 @@ bins/$(CONFIG)/chttp2_fake_security_no_op_test: $(CHTTP2_FAKE_SECURITY_NO_OP_TES
 endif
 
 
-deps_chttp2_fake_security_no_op_test: $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_DEPS)
+deps_chttp2_fake_security_no_op_test: $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5529,7 +5329,6 @@ endif
 CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5545,11 +5344,11 @@ bins/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test: $(CHTTP2_FAKE_SECU
 endif
 
 
-deps_chttp2_fake_security_ping_pong_streaming_test: $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_DEPS)
+deps_chttp2_fake_security_ping_pong_streaming_test: $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5557,7 +5356,6 @@ endif
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5573,11 +5371,11 @@ bins/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_pa
 endif
 
 
-deps_chttp2_fake_security_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_fake_security_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5585,7 +5383,6 @@ endif
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5601,11 +5398,11 @@ bins/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_t
 endif
 
 
-deps_chttp2_fake_security_request_response_with_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_fake_security_request_response_with_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5613,7 +5410,6 @@ endif
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5629,11 +5425,11 @@ bins/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test: $(CHTTP2
 endif
 
 
-deps_chttp2_fake_security_request_response_with_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+deps_chttp2_fake_security_request_response_with_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5641,7 +5437,6 @@ endif
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5657,11 +5452,11 @@ bins/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_
 endif
 
 
-deps_chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5669,7 +5464,6 @@ endif
 CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5685,11 +5479,11 @@ bins/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test: $(CHTTP2_FAKE_S
 endif
 
 
-deps_chttp2_fake_security_simple_delayed_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+deps_chttp2_fake_security_simple_delayed_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5697,7 +5491,6 @@ endif
 CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5713,11 +5506,11 @@ bins/$(CONFIG)/chttp2_fake_security_simple_request_test: $(CHTTP2_FAKE_SECURITY_
 endif
 
 
-deps_chttp2_fake_security_simple_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_fake_security_simple_request_test: $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5725,7 +5518,6 @@ endif
 CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5741,11 +5533,11 @@ bins/$(CONFIG)/chttp2_fake_security_thread_stress_test: $(CHTTP2_FAKE_SECURITY_T
 endif
 
 
-deps_chttp2_fake_security_thread_stress_test: $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_DEPS)
+deps_chttp2_fake_security_thread_stress_test: $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5753,7 +5545,6 @@ endif
 CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
-CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5769,11 +5560,11 @@ bins/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test: $(
 endif
 
 
-deps_chttp2_fake_security_writes_done_hangs_with_pending_read_test: $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+deps_chttp2_fake_security_writes_done_hangs_with_pending_read_test: $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+-include $(CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5781,7 +5572,6 @@ endif
 CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 
 CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
-CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5797,11 +5587,11 @@ bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test: $(CHTTP2_FULLSTACK_CAN
 endif
 
 
-deps_chttp2_fullstack_cancel_after_accept_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+deps_chttp2_fullstack_cancel_after_accept_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5809,7 +5599,6 @@ endif
 CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
 
 CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
-CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5825,11 +5614,11 @@ bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test: $(CH
 endif
 
 
-deps_chttp2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+deps_chttp2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5837,7 +5626,6 @@ endif
 CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
 
 CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
-CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5853,11 +5641,11 @@ bins/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_CAN
 endif
 
 
-deps_chttp2_fullstack_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+deps_chttp2_fullstack_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5865,7 +5653,6 @@ endif
 CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC = \
 
 CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
-CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5881,11 +5668,11 @@ bins/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_CA
 endif
 
 
-deps_chttp2_fullstack_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+deps_chttp2_fullstack_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5893,7 +5680,6 @@ endif
 CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
 
 CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
-CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5909,11 +5695,11 @@ bins/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_CANC
 endif
 
 
-deps_chttp2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+deps_chttp2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5921,7 +5707,6 @@ endif
 CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5937,11 +5722,11 @@ bins/$(CONFIG)/chttp2_fullstack_census_simple_request_test: $(CHTTP2_FULLSTACK_C
 endif
 
 
-deps_chttp2_fullstack_census_simple_request_test: $(CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_fullstack_census_simple_request_test: $(CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5949,7 +5734,6 @@ endif
 CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC = \
 
 CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
-CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5965,11 +5749,11 @@ bins/$(CONFIG)/chttp2_fullstack_disappearing_server_test: $(CHTTP2_FULLSTACK_DIS
 endif
 
 
-deps_chttp2_fullstack_disappearing_server_test: $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS)
+deps_chttp2_fullstack_disappearing_server_test: $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5977,7 +5761,6 @@ endif
 CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
 
 CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
-CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -5993,11 +5776,11 @@ bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_te
 endif
 
 
-deps_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+deps_chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6005,7 +5788,6 @@ endif
 CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
 
 CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
-CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6021,11 +5803,11 @@ bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTT
 endif
 
 
-deps_chttp2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+deps_chttp2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6033,7 +5815,6 @@ endif
 CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
-CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6049,11 +5830,11 @@ bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test: $(CHTTP2_FULLSTACK_IN
 endif
 
 
-deps_chttp2_fullstack_invoke_large_request_test: $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+deps_chttp2_fullstack_invoke_large_request_test: $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6061,7 +5842,6 @@ endif
 CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC = \
 
 CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
-CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6077,11 +5857,11 @@ bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_
 endif
 
 
-deps_chttp2_fullstack_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+deps_chttp2_fullstack_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6089,7 +5869,6 @@ endif
 CHTTP2_FULLSTACK_NO_OP_TEST_SRC = \
 
 CHTTP2_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_NO_OP_TEST_SRC))))
-CHTTP2_FULLSTACK_NO_OP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6105,11 +5884,11 @@ bins/$(CONFIG)/chttp2_fullstack_no_op_test: $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS) 
 endif
 
 
-deps_chttp2_fullstack_no_op_test: $(CHTTP2_FULLSTACK_NO_OP_TEST_DEPS)
+deps_chttp2_fullstack_no_op_test: $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_NO_OP_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_NO_OP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6117,7 +5896,6 @@ endif
 CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC = \
 
 CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
-CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6133,11 +5911,11 @@ bins/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_PIN
 endif
 
 
-deps_chttp2_fullstack_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+deps_chttp2_fullstack_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6145,7 +5923,6 @@ endif
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6161,11 +5938,11 @@ bins/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payloa
 endif
 
 
-deps_chttp2_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6173,7 +5950,6 @@ endif
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6189,11 +5965,11 @@ bins/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test:
 endif
 
 
-deps_chttp2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6201,7 +5977,6 @@ endif
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
-CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6217,11 +5992,11 @@ bins/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test: $(CHTTP2_FUL
 endif
 
 
-deps_chttp2_fullstack_request_response_with_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+deps_chttp2_fullstack_request_response_with_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6229,7 +6004,6 @@ endif
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6245,11 +6019,11 @@ bins/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payl
 endif
 
 
-deps_chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6257,7 +6031,6 @@ endif
 CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 
 CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
-CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6273,11 +6046,11 @@ bins/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test: $(CHTTP2_FULLSTACK_
 endif
 
 
-deps_chttp2_fullstack_simple_delayed_request_test: $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+deps_chttp2_fullstack_simple_delayed_request_test: $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6285,7 +6058,6 @@ endif
 CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6301,11 +6073,11 @@ bins/$(CONFIG)/chttp2_fullstack_simple_request_test: $(CHTTP2_FULLSTACK_SIMPLE_R
 endif
 
 
-deps_chttp2_fullstack_simple_request_test: $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_fullstack_simple_request_test: $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6313,7 +6085,6 @@ endif
 CHTTP2_FULLSTACK_THREAD_STRESS_TEST_SRC = \
 
 CHTTP2_FULLSTACK_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_SRC))))
-CHTTP2_FULLSTACK_THREAD_STRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6329,11 +6100,11 @@ bins/$(CONFIG)/chttp2_fullstack_thread_stress_test: $(CHTTP2_FULLSTACK_THREAD_ST
 endif
 
 
-deps_chttp2_fullstack_thread_stress_test: $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_DEPS)
+deps_chttp2_fullstack_thread_stress_test: $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6341,7 +6112,6 @@ endif
 CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
 
 CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
-CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6357,11 +6127,11 @@ bins/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTT
 endif
 
 
-deps_chttp2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+deps_chttp2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+-include $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6369,7 +6139,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6385,11 +6154,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test: $(CHTTP2_SI
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6397,7 +6166,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6413,11 +6181,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6425,7 +6193,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6441,11 +6208,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test: $(CHTTP2_SI
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6453,7 +6220,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6469,11 +6235,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test: $(CHTTP2_S
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6481,7 +6247,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6497,11 +6262,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIM
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6509,7 +6274,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6525,11 +6289,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test: $(CHTTP2_
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_census_simple_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_census_simple_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6537,7 +6301,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6553,11 +6316,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test: $(CHTTP2_SI
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_disappearing_server_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_disappearing_server_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6565,7 +6328,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6581,11 +6343,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflig
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6593,7 +6355,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6609,11 +6370,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_t
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6621,7 +6382,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6637,11 +6397,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test: $(CHTTP2_S
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6649,7 +6409,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6665,11 +6424,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test: $(CHTTP2
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6677,7 +6436,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6693,11 +6451,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_FULLS
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6705,7 +6463,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6721,11 +6478,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test: $(CHTTP2_SI
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6733,7 +6490,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6749,11 +6505,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6761,7 +6517,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6777,11 +6532,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_pa
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6789,7 +6544,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6805,11 +6559,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test: $
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6817,7 +6571,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6833,11 +6586,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metada
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6845,7 +6598,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6861,11 +6613,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test: $(CHTTP2
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6873,7 +6625,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6889,11 +6640,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test: $(CHTTP2_SIMPLE_
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6901,7 +6652,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6917,11 +6667,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test: $(CHTTP2_SIMPLE_S
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_thread_stress_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_thread_stress_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6929,7 +6679,6 @@ endif
 CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6945,11 +6694,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_t
 endif
 
 
-deps_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+deps_chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6957,7 +6706,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -6973,11 +6721,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test:
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -6985,7 +6733,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7001,11 +6748,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_w
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7013,7 +6760,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7029,11 +6775,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test:
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7041,7 +6787,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7057,11 +6802,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7069,7 +6814,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7085,11 +6829,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test: 
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7097,7 +6841,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7113,11 +6856,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_tes
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7125,7 +6868,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7141,11 +6883,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test:
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7153,7 +6895,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7169,11 +6910,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_fin
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7181,7 +6922,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7197,11 +6937,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_fin
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7209,7 +6949,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7225,11 +6964,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7237,7 +6976,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7253,11 +6991,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_te
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7265,7 +7003,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7281,11 +7018,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: $(CHTTP2_SIMP
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7293,7 +7030,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7309,11 +7045,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test:
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7321,7 +7057,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7337,11 +7072,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_bin
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7349,7 +7084,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7365,11 +7099,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_met
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7377,7 +7111,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7393,11 +7126,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_pay
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7405,7 +7138,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7421,11 +7153,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_tra
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7433,7 +7165,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7449,11 +7180,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_te
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7461,7 +7192,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7477,11 +7207,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test: $(CH
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7489,7 +7219,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7505,11 +7234,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test: $(CHT
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7517,7 +7246,6 @@ endif
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
-CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7533,11 +7261,11 @@ bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pe
 endif
 
 
-deps_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+deps_chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7545,7 +7273,6 @@ endif
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7561,11 +7288,11 @@ bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR
 endif
 
 
-deps_chttp2_socket_pair_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+deps_chttp2_socket_pair_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7573,7 +7300,6 @@ endif
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7589,11 +7315,11 @@ bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test: $(
 endif
 
 
-deps_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+deps_chttp2_socket_pair_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7601,7 +7327,6 @@ endif
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7617,11 +7342,11 @@ bins/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR
 endif
 
 
-deps_chttp2_socket_pair_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_DEPS)
+deps_chttp2_socket_pair_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7629,7 +7354,6 @@ endif
 CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7645,11 +7369,11 @@ bins/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAI
 endif
 
 
-deps_chttp2_socket_pair_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+deps_chttp2_socket_pair_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7657,7 +7381,6 @@ endif
 CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7673,11 +7396,11 @@ bins/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_
 endif
 
 
-deps_chttp2_socket_pair_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_DEPS)
+deps_chttp2_socket_pair_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7685,7 +7408,6 @@ endif
 CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7701,11 +7423,11 @@ bins/$(CONFIG)/chttp2_socket_pair_census_simple_request_test: $(CHTTP2_SOCKET_PA
 endif
 
 
-deps_chttp2_socket_pair_census_simple_request_test: $(CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_census_simple_request_test: $(CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7713,7 +7435,6 @@ endif
 CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7729,11 +7450,11 @@ bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_test: $(CHTTP2_SOCKET_PAIR
 endif
 
 
-deps_chttp2_socket_pair_disappearing_server_test: $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_DEPS)
+deps_chttp2_socket_pair_disappearing_server_test: $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7741,7 +7462,6 @@ endif
 CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7757,11 +7477,11 @@ bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_
 endif
 
 
-deps_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+deps_chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7769,7 +7489,6 @@ endif
 CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7785,11 +7504,11 @@ bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test: $(CH
 endif
 
 
-deps_chttp2_socket_pair_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+deps_chttp2_socket_pair_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7797,7 +7516,6 @@ endif
 CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7813,11 +7531,11 @@ bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test: $(CHTTP2_SOCKET_PAI
 endif
 
 
-deps_chttp2_socket_pair_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7825,7 +7543,6 @@ endif
 CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7841,11 +7558,11 @@ bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test: $(CHTTP2_SOCKET_P
 endif
 
 
-deps_chttp2_socket_pair_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+deps_chttp2_socket_pair_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7853,7 +7570,6 @@ endif
 CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_NO_OP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7869,11 +7585,11 @@ bins/$(CONFIG)/chttp2_socket_pair_no_op_test: $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OB
 endif
 
 
-deps_chttp2_socket_pair_no_op_test: $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_DEPS)
+deps_chttp2_socket_pair_no_op_test: $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7881,7 +7597,6 @@ endif
 CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7897,11 +7612,11 @@ bins/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR
 endif
 
 
-deps_chttp2_socket_pair_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_DEPS)
+deps_chttp2_socket_pair_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7909,7 +7624,6 @@ endif
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7925,11 +7639,11 @@ bins/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payl
 endif
 
 
-deps_chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7937,7 +7651,6 @@ endif
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7953,11 +7666,11 @@ bins/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_tes
 endif
 
 
-deps_chttp2_socket_pair_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7965,7 +7678,6 @@ endif
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -7981,11 +7693,11 @@ bins/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test: $(CHTTP2_S
 endif
 
 
-deps_chttp2_socket_pair_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -7993,7 +7705,6 @@ endif
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8009,11 +7720,11 @@ bins/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_pa
 endif
 
 
-deps_chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8021,7 +7732,6 @@ endif
 CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8037,11 +7747,11 @@ bins/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test: $(CHTTP2_SOCKET_P
 endif
 
 
-deps_chttp2_socket_pair_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8049,7 +7759,6 @@ endif
 CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8065,11 +7774,11 @@ bins/$(CONFIG)/chttp2_socket_pair_simple_request_test: $(CHTTP2_SOCKET_PAIR_SIMP
 endif
 
 
-deps_chttp2_socket_pair_simple_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_simple_request_test: $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8077,7 +7786,6 @@ endif
 CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8093,11 +7801,11 @@ bins/$(CONFIG)/chttp2_socket_pair_thread_stress_test: $(CHTTP2_SOCKET_PAIR_THREA
 endif
 
 
-deps_chttp2_socket_pair_thread_stress_test: $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_DEPS)
+deps_chttp2_socket_pair_thread_stress_test: $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8105,7 +7813,6 @@ endif
 CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8121,11 +7828,11 @@ bins/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test: $(CH
 endif
 
 
-deps_chttp2_socket_pair_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+deps_chttp2_socket_pair_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8133,7 +7840,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8149,11 +7855,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test: $
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8161,7 +7867,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8177,11 +7882,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_wri
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8189,7 +7894,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8205,11 +7909,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test: $
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8217,7 +7921,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8233,11 +7936,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test: 
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8245,7 +7948,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8261,11 +7963,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test: $(
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8273,7 +7975,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8289,11 +7990,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test:
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8301,7 +8002,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8317,11 +8017,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test: $
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8329,7 +8029,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8345,11 +8044,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finis
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8357,7 +8056,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8373,11 +8071,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finis
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8385,7 +8083,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8401,11 +8098,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test: 
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8413,7 +8110,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8429,11 +8125,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8441,7 +8137,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8457,11 +8152,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test: $(CHTTP2_SOCKET
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_no_op_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_no_op_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8469,7 +8164,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8485,11 +8179,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test: $
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8497,7 +8191,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8513,11 +8206,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binar
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8525,7 +8218,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8541,11 +8233,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metad
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8553,7 +8245,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8569,11 +8260,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_paylo
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8581,7 +8272,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8597,11 +8287,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trail
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8609,7 +8299,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8625,11 +8314,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8637,7 +8326,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8653,11 +8341,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test: $(CHTT
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_simple_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_simple_request_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8665,7 +8353,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8681,11 +8368,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test: $(CHTTP
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_thread_stress_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_thread_stress_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -8693,7 +8380,6 @@ endif
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
-CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
@@ -8709,11 +8395,11 @@ bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pend
 endif
 
 
-deps_chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+deps_chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_DEPS)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
 endif
 endif
 

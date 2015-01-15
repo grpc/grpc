@@ -613,7 +613,6 @@ PUBLIC_HEADERS_C += \\
 % endif
 
 LIB${lib.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
-LIB${lib.name.upper()}_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
 
 % if lib.get('secure', True):
 ifeq ($(NO_SECURE),true)
@@ -701,13 +700,11 @@ endif
 endif
 % endif
 
-deps_lib${lib.name}: $(LIB${lib.name.upper()}_DEPS)
-
 % if lib.get('secure', True):
 ifneq ($(NO_SECURE),true)
 % endif
 ifneq ($(NO_DEPS),true)
--include $(LIB${lib.name.upper()}_DEPS)
+-include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
 endif
 % if lib.get('secure', True):
 endif
@@ -735,7 +732,6 @@ ${tgt.name.upper()}_SRC = \\
 % endfor
 
 ${tgt.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-${tgt.name.upper()}_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(${tgt.name.upper()}_SRC))))
 
 % if tgt.get('secure', True):
 ifeq ($(NO_SECURE),true)
@@ -802,13 +798,13 @@ objs/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 
 % endfor
 
-deps_${tgt.name}: $(${tgt.name.upper()}_DEPS)
+deps_${tgt.name}: $(${tgt.name.upper()}_OBJS:.o=.dep)
 
 % if tgt.get('secure', True):
 ifneq ($(NO_SECURE),true)
 % endif
 ifneq ($(NO_DEPS),true)
--include $(${tgt.name.upper()}_DEPS)
+-include $(${tgt.name.upper()}_OBJS:.o=.dep)
 endif
 % if tgt.get('secure', True):
 endif
