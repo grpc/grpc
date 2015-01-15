@@ -126,7 +126,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
                            deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(s, f.server_cq, tag(102), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 
@@ -216,7 +217,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
                            "test.google.com", deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(s1, f.server_cq, tag(102), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s1, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s1, 0));
   cq_expect_client_metadata_read(v_client, tag(live_call + 1), NULL);
   cq_verify(v_client);
 
@@ -246,7 +248,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
                            "test.google.com", deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(s2, f.server_cq, tag(202), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s2, f.server_cq, tag(202)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s2, 0));
   cq_expect_client_metadata_read(v_client, tag(live_call + 1), NULL);
   cq_verify(v_client);
 

@@ -218,9 +218,10 @@ static void server_thread(void *p) {
           break;
         case GRPC_SERVER_RPC_NEW:
           if (ev->call) {
-            GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(ev->call,
+            GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(ev->call,
                                                         g_fixture.server_cq,
-                                                        ev->tag, 0));
+                                                        ev->tag));
+            GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(ev->call,0));
             GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(ev->call, ev->tag));
             GPR_ASSERT(GRPC_CALL_OK ==
                        grpc_call_start_write(ev->call, buf, ev->tag, 0));

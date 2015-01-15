@@ -124,7 +124,8 @@ int main(int argc, char **argv) {
       case GRPC_SERVER_RPC_NEW:
         if (ev->call != NULL) {
           /* initial ops are already started in request_call */
-          grpc_call_accept(ev->call, cq, s, GRPC_WRITE_BUFFER_HINT);
+          grpc_call_server_accept(ev->call, cq, s);
+          grpc_call_server_end_initial_metadata(ev->call, GRPC_WRITE_BUFFER_HINT);
           GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
           request_call();
         } else {
