@@ -535,17 +535,6 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
-                                 void *finished_tag, gpr_uint32 flags) {
-  grpc_call_error err;
-
-  err = grpc_call_server_accept(call, cq, finished_tag);
-  if (err != GRPC_CALL_OK) return err;
-  err = grpc_call_server_end_initial_metadata(call, flags);
-  if (err != GRPC_CALL_OK) return err;
-  return GRPC_CALL_OK;
-}
-
 static void done_writes_done(void *user_data, grpc_op_error error) {
   grpc_call *call = user_data;
   void *tag = call->write_tag;
