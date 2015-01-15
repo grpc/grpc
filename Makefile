@@ -23,6 +23,7 @@ LDFLAGS_dbg =
 DEFINES_dbg = _DEBUG DEBUG
 
 VALID_CONFIG_valgrind = 1
+REQUIRE_CUSTOM_LIBRARIES_valgrind = 1
 CC_valgrind = gcc
 CXX_valgrind = g++
 LD_valgrind = gcc
@@ -33,6 +34,7 @@ LDFLAGS_valgrind =
 DEFINES_valgrind = _DEBUG DEBUG
 
 VALID_CONFIG_tsan = 1
+REQUIRE_CUSTOM_LIBRARIES_tsan = 1
 CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
@@ -43,6 +45,7 @@ LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG
 
 VALID_CONFIG_asan = 1
+REQUIRE_CUSTOM_LIBRARIES_asan = 1
 CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang
@@ -53,6 +56,7 @@ LDFLAGS_asan = -fsanitize=address
 DEFINES_asan = NDEBUG
 
 VALID_CONFIG_msan = 1
+REQUIRE_CUSTOM_LIBRARIES_msan = 1
 CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang
@@ -169,8 +173,14 @@ endif
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -lssl -lcrypto -ldl $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
 
+ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
+else
+# override system libraries if the config requires a custom compiled library
+HAS_SYSTEM_OPENSSL_ALPN = false
+HAS_SYSTEM_ZLIB = false
+endif
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
