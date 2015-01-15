@@ -39,12 +39,23 @@ CPPFLAGS_dbg = -O0
 LDFLAGS_dbg =
 DEFINES_dbg = _DEBUG DEBUG
 
+VALID_CONFIG_valgrind = 1
+CC_valgrind = gcc
+CXX_valgrind = g++
+LD_valgrind = gcc
+LDXX_valgrind = g++
+CPPFLAGS_valgrind = -O0
+OPENSSL_CFLAGS_valgrind = -DPURIFY
+LDFLAGS_valgrind =
+DEFINES_valgrind = _DEBUG DEBUG
+
 VALID_CONFIG_tsan = 1
 CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O1 -fsanitize=thread -fno-omit-frame-pointer
+OPENSSL_CONFIG_tsan = no-asm
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG
 
@@ -54,6 +65,7 @@ CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
 CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
+OPENSSL_CONFIG_asan = no-asm
 LDFLAGS_asan = -fsanitize=address
 DEFINES_asan = NDEBUG
 
@@ -63,6 +75,8 @@ CXX_msan = clang++
 LD_msan = clang
 LDXX_msan = clang++
 CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer
+OPENSSL_CFLAGS_msan = -DPURIFY
+OPENSSL_CONFIG_msan = no-asm
 LDFLAGS_msan = -fsanitize=memory
 DEFINES_msan = NDEBUG
 
@@ -199,10 +213,10 @@ endif
 
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
-OPENSSL_DEP = third_party/openssl/libssl.a
-OPENSSL_MERGE_LIBS += third_party/openssl/libssl.a third_party/openssl/libcrypto.a
+OPENSSL_DEP = libs/$(CONFIG)/openssl/libssl.a
+OPENSSL_MERGE_LIBS += libs/$(CONFIG)/openssl/libssl.a libs/$(CONFIG)/openssl/libcrypto.a
 CPPFLAGS += -Ithird_party/openssl/include
-LDFLAGS += -Lthird_party/openssl
+LDFLAGS += -Llibs/$(CONFIG)/openssl
 LIBS_SECURE = dl
 else
 NO_SECURE = true
@@ -294,9 +308,12 @@ third_party/zlib/libz.a:
 	(cd third_party/zlib ; CFLAGS="-fPIC -fvisibility=hidden" ./configure --static)
 	$(MAKE) -C third_party/zlib
 
-third_party/openssl/libssl.a:
-	(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden" ./config)
+libs/$(CONFIG)/openssl/libssl.a:
+	(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+	$(MAKE) -C third_party/openssl clean
 	$(MAKE) -C third_party/openssl build_crypto build_ssl
+	mkdir -p libs/$(CONFIG)/openssl
+	cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a libs/$(CONFIG)/openssl
 
 static: static_c static_cxx
 
