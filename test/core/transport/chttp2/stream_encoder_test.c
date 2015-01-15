@@ -281,10 +281,10 @@ static void test_decode_random_headers_inner(int max_len) {
   grpc_sopb_destroy(&encops);
 }
 
-#define DECL_TEST_DECODE_RANDOM_HEADERS(n)       \
+#define DECL_TEST_DECODE_RANDOM_HEADERS(n)           \
   static void test_decode_random_headers_##n(void) { \
-    test_decode_random_headers_inner(n);         \
-  }                                              \
+    test_decode_random_headers_inner(n);             \
+  }                                                  \
   int keeps_formatting_correct_##n
 
 DECL_TEST_DECODE_RANDOM_HEADERS(1);

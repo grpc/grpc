@@ -95,7 +95,9 @@ static gpr_uint64 op_id_2_uint64(census_op_id* id) {
 
 static void init_mutex(void) { gpr_mu_init(&g_mu); }
 
-static void init_mutex_once(void) { gpr_once_init(&g_init_mutex_once, init_mutex); }
+static void init_mutex_once(void) {
+  gpr_once_init(&g_init_mutex_once, init_mutex);
+}
 
 census_op_id census_tracing_start_op(void) {
   gpr_mu_lock(&g_mu);
