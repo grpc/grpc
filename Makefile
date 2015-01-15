@@ -2654,8 +2654,8 @@ endif
 
 
 CPP_PLUGIN_SRC = \
-    src/compiler/cpp_plugin.cpp \
-    src/compiler/cpp_generator.cpp \
+    src/compiler/cpp_plugin.cc \
+    src/compiler/cpp_generator.cc \
 
 CPP_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CPP_PLUGIN_SRC))))
 
@@ -2675,8 +2675,8 @@ endif
 
 
 RUBY_PLUGIN_SRC = \
-    src/compiler/ruby_plugin.cpp \
-    src/compiler/ruby_generator.cpp \
+    src/compiler/ruby_plugin.cc \
+    src/compiler/ruby_generator.cc \
 
 RUBY_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(RUBY_PLUGIN_SRC))))
 
