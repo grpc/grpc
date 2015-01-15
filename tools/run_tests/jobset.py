@@ -165,7 +165,10 @@ def _never_cancelled():
   return False
 
 
-def run(cmdlines, check_cancelled=_never_cancelled, maxjobs=None, newline_on_success=False):
+def run(cmdlines,
+        check_cancelled=_never_cancelled,
+        maxjobs=None,
+        newline_on_success=False):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success)

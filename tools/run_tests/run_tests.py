@@ -102,12 +102,8 @@ def _build_and_run(check_cancelled, newline_on_success, forever=False):
               check_cancelled,
               newline_on_success=newline_on_success,
               maxjobs=min(c.maxjobs for c in run_configs)):
-    if not forever:
-      jobset.message('FAILED', 'Some tests failed', do_newline=True)
     return 2
 
-  if not forever:
-    jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   return 0
 
 
@@ -118,12 +114,21 @@ if forever:
     initial_time = dw.most_recent_change()
     have_files_changed = lambda: dw.most_recent_change() != initial_time
     previous_success = success
-    success = _build_and_run(have_files_changed, newline_on_success=False, forever=True) == 0
+    success = _build_and_run(have_files_changed,
+                             newline_on_success=False,
+                             forever=True) == 0
     if not previous_success and success:
-      jobset.message('SUCCESS', 'All tests are now passing properly', do_newline=True)
+      jobset.message('SUCCESS',
+                     'All tests are now passing properly',
+                     do_newline=True)
     jobset.message('IDLE', 'No change detected')
     while not have_files_changed():
       time.sleep(1)
 else:
-  sys.exit(_build_and_run(lambda: False, newline_on_success=args.newline_on_success))
-
+  result = _build_and_run(lambda: False,
+                          newline_on_success=args.newline_on_success)
+  if result == 0:
+    jobset.message('SUCCESS', 'All tests passed', do_newline=True)
+  else:
+    jobset.message('FAILED', 'Some tests failed', do_newline=True)
+  sys.exit(result)
