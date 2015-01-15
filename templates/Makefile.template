@@ -213,11 +213,7 @@ endif
 
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 
-ifneq ($(DEP_MISSING),)
-NO_DEPS = true
-endif
-
-ifneq ($(MAKECMDGOALS),clean)
+ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
 endif
 
@@ -300,7 +296,7 @@ third_party/openssl/libssl.a:
 
 static: static_c static_cxx
 
-static_c: dep_c\
+static_c: \
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
@@ -308,7 +304,7 @@ static_c: dep_c\
 % endfor
 
 
-static_cxx: dep_cxx\
+static_cxx: \
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
@@ -318,7 +314,7 @@ static_cxx: dep_cxx\
 
 shared: shared_c shared_cxx
 
-shared_c: dep_c\
+shared_c: \
 % for lib in libs:
 % if lib.build == 'all' and not lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
@@ -326,7 +322,7 @@ shared_c: dep_c\
 % endfor
 
 
-shared_cxx: dep_cxx\
+shared_cxx: \
 % for lib in libs:
 % if lib.build == 'all' and lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
@@ -336,7 +332,7 @@ shared_cxx: dep_cxx\
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c: dep_c\
+privatelibs_c: \
 % for lib in libs:
 % if lib.build == 'private' and not lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
@@ -344,7 +340,7 @@ privatelibs_c: dep_c\
 % endfor
 
 
-privatelibs_cxx: dep_cxx\
+privatelibs_cxx: \
 % for lib in libs:
 % if lib.build == 'private' and lib.get('c++', False):
  libs/$(CONFIG)/lib${lib.name}.a\
@@ -354,7 +350,7 @@ privatelibs_cxx: dep_cxx\
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: bins_dep_c privatelibs_c\
+buildtests_c: privatelibs_c\
 % for tgt in targets:
 % if tgt.build == 'test' and not tgt.get('c++', False):
  bins/$(CONFIG)/${tgt.name}\
@@ -362,7 +358,7 @@ buildtests_c: bins_dep_c privatelibs_c\
 % endfor
 
 
-buildtests_cxx: bins_dep_cxx privatelibs_cxx\
+buildtests_cxx: privatelibs_cxx\
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('c++', False):
  bins/$(CONFIG)/${tgt.name}\
@@ -463,10 +459,6 @@ strip-shared_cxx: shared_cxx
 % endfor
 
 % for p in protos:
-deps/$(CONFIG)/gens/${p}.pb.dep:
-	$(Q) mkdir -p `dirname $@`
-	$(Q) touch $@
-
 gens/${p}.pb.cc: ${p}.proto protoc_plugins
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
@@ -474,68 +466,25 @@ gens/${p}.pb.cc: ${p}.proto protoc_plugins
 
 % endfor
 
-deps/$(CONFIG)/%.dep : %.c
-	$(E) "[DEP]     Generating dependencies for $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
-
-deps/$(CONFIG)/%.dep : %.cc
-	$(E) "[DEP]     Generating dependencies for $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS_NO_ARCH) -MG -M $< > $@
-
 objs/$(CONFIG)/%.o : %.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 objs/$(CONFIG)/%.o : gens/%.pb.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 objs/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
 	$(E) "[HOSTCXX] Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -c -o $@ $<
+	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 objs/$(CONFIG)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
-
-dep: dep_c dep_cxx
-
-dep_c:\
-% for lib in libs:
-% if not lib.get('c++', False):
- deps_lib${lib.name}\
-% endif
-% endfor
-
-
-bins_dep_c:\
-% for tgt in targets:
-% if not tgt.get('c++', False):
- deps_${tgt.name}\
-% endif
-% endfor
-
-
-dep_cxx:\
-% for lib in libs:
-% if lib.get('c++', False):
- deps_lib${lib.name}\
-% endif
-% endfor
-
-
-bins_dep_cxx:\
-% for tgt in targets:
-% if tgt.get('c++', False):
- deps_${tgt.name}\
-% endif
-% endfor
+	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
 install: install_c install_cxx
@@ -625,7 +574,7 @@ endif
 endif
 
 clean:
-	$(Q) $(RM) -rf deps objs libs bins gens
+	$(Q) $(RM) -rf objs libs bins gens
 
 
 # The various libraries
@@ -664,7 +613,7 @@ PUBLIC_HEADERS_C += \\
 % endif
 
 LIB${lib.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
-LIB${lib.name.upper()}_DEPS = $(addprefix deps/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
+LIB${lib.name.upper()}_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(LIB${lib.name.upper()}_SRC))))
 
 % if lib.get('secure', True):
 ifeq ($(NO_SECURE),true)
@@ -775,13 +724,6 @@ objs/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 % endif
 
 % endfor
-
-clean_lib${lib.name}:
-	$(E) "[CLEAN]   Cleaning lib${lib.name} files"
-	$(Q) $(RM) $(LIB${lib.name.upper()}_OBJS)
-	$(Q) $(RM) $(LIB${lib.name.upper()}_DEPS)
-	$(Q) $(RM) libs/$(CONFIG)/lib${lib.name}.a
-	$(Q) $(RM) libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
 </%def>
 
 <%def name="maketarget(tgt)">
@@ -793,7 +735,7 @@ ${tgt.name.upper()}_SRC = \\
 % endfor
 
 ${tgt.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
-${tgt.name.upper()}_DEPS = $(addprefix deps/$(CONFIG)/, $(addsuffix .dep, $(basename $(${tgt.name.upper()}_SRC))))
+${tgt.name.upper()}_DEPS = $(addprefix objs/$(CONFIG)/, $(addsuffix .dep, $(basename $(${tgt.name.upper()}_SRC))))
 
 % if tgt.get('secure', True):
 ifeq ($(NO_SECURE),true)
@@ -871,12 +813,6 @@ endif
 % if tgt.get('secure', True):
 endif
 % endif
-
-clean_${tgt.name}:
-	$(E) "[CLEAN]   Cleaning ${tgt.name} files"
-	$(Q) $(RM) $(${tgt.name.upper()}_OBJS)
-	$(Q) $(RM) $(${tgt.name.upper()}_DEPS)
-	$(Q) $(RM) bins/$(CONFIG)/${tgt.name}
 </%def>
 
 .PHONY: all strip tools \
@@ -890,12 +826,6 @@ install-static install-static_c install-static_cxx \
 strip strip-shared strip-static \
 strip_c strip-shared_c strip-static_c \
 strip_cxx strip-shared_cxx strip-static_cxx \
-clean \
 dep_c dep_cxx bins_dep_c bins_dep_cxx\
-% for lib in libs:
- deps_lib${lib.name} clean_lib${lib.name}\
-% endfor
-% for tgt in targets:
- deps_${tgt.name} clean_${tgt.name}\
-% endfor
+clean
 
