@@ -5,7 +5,7 @@
 
 @rem Build the library dependencies first
 MSBuild.exe gpr.vcxproj /p:Configuration=Debug
-MSBuild.exe grpc_test_util.vcxproj /p:Configuration=Debug
+MSBuild.exe gpr_test_util.vcxproj /p:Configuration=Debug
 
 mkdir test_bin
 

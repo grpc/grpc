@@ -365,6 +365,16 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
    Can be called multiple times, from any thread. */
 grpc_call_error grpc_call_cancel(grpc_call *call);
 
+/* Called by clients to cancel an RPC on the server.
+   Can be called multiple times, from any thread.
+   If a status has not been received for the call, set it to the status code
+   and description passed in.
+   Importantly, this function does not send status nor description to the
+   remote endpoint. */
+grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
+                                             grpc_status_code status,
+                                             const char *description);
+
 /* Queue a byte buffer for writing.
    flags is a bit-field combination of the write flags defined above.
    A write with byte_buffer null is allowed, and will not send any bytes on the
