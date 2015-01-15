@@ -53,7 +53,7 @@ void census_log_initialize(size_t size_in_mb, int discard_old_records);
    - no in progress or future call to any census_log functions
    - no incomplete records
 */
-void census_log_shutdown();
+void census_log_shutdown(void);
 
 /* Allocates and returns a 'size' bytes record and marks it in use. A
    subsequent census_log_end_write() marks the record complete. The
@@ -74,7 +74,7 @@ void census_log_end_write(void* record, size_t bytes_written);
    is read. census_log_init_reader() starts the iteration or aborts the
    current iteration.
 */
-void census_log_init_reader();
+void census_log_init_reader(void);
 const void* census_log_read_next(size_t* bytes_available);
 
 /* Returns estimated remaining space across all blocks, in bytes. If log is
@@ -82,10 +82,10 @@ const void* census_log_read_next(size_t* bytes_available);
    returns space available in empty blocks (partially filled blocks are
    treated as full).
 */
-size_t census_log_remaining_space();
+size_t census_log_remaining_space(void);
 
 /* Returns the number of times gprc_stats_log_start_write() failed due to
    out-of-space. */
-int census_log_out_of_space_count();
+int census_log_out_of_space_count(void);
 
 #endif /* __GRPC_INTERNAL_STATISTICS_LOG_H__ */

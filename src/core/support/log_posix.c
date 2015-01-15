@@ -50,7 +50,7 @@
 #include <time.h>
 #include <pthread.h>
 
-static gpr_intptr gettid() { return (gpr_intptr)pthread_self(); }
+static gpr_intptr gettid(void) { return (gpr_intptr)pthread_self(); }
 
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {

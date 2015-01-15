@@ -40,7 +40,7 @@
 
 #define LOG_TEST_NAME() gpr_log(GPR_INFO, "%s", __FUNCTION__);
 
-static void test_slice_malloc_returns_something_sensible() {
+static void test_slice_malloc_returns_something_sensible(void) {
   /* Calls gpr_slice_create for various lengths and verifies the internals for
      consistency. */
   size_t length;
@@ -74,7 +74,7 @@ static void test_slice_malloc_returns_something_sensible() {
 
 static void do_nothing(void *ignored) {}
 
-static void test_slice_new_returns_something_sensible() {
+static void test_slice_new_returns_something_sensible(void) {
   gpr_uint8 x;
 
   gpr_slice slice = gpr_slice_new(&x, 1, do_nothing);
@@ -91,7 +91,7 @@ static void do_nothing_with_len_1(void *ignored, size_t len) {
   do_nothing_with_len_1_calls++;
 }
 
-static void test_slice_new_with_len_returns_something_sensible() {
+static void test_slice_new_with_len_returns_something_sensible(void) {
   gpr_uint8 x;
 
   gpr_slice slice = gpr_slice_new_with_len(&x, 1, do_nothing_with_len_1);
@@ -198,7 +198,7 @@ static void test_slice_split_tail_works(int length) {
   gpr_slice_unref(slice);
 }
 
-static void test_slice_from_copied_string_works() {
+static void test_slice_from_copied_string_works(void) {
   static const char *text = "HELLO WORLD!";
   gpr_slice slice;
 

@@ -37,7 +37,7 @@
 
 #include <string.h>
 
-gpr_slice gpr_empty_slice() {
+gpr_slice gpr_empty_slice(void) {
   gpr_slice out;
   out.refcount = 0;
   out.data.inlined.length = 0;

@@ -33,6 +33,6 @@
 
 #include "src/core/iomgr/iomgr_posix.h"
 
-void grpc_iomgr_platform_init() { grpc_pollset_global_init(); }
+void grpc_iomgr_platform_init(void) { grpc_pollset_global_init(); }
 
-void grpc_iomgr_platform_shutdown() { grpc_pollset_global_shutdown(); }
+void grpc_iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }

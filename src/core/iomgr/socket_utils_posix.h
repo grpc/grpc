@@ -61,7 +61,7 @@ int grpc_set_socket_low_latency(int fd, int low_latency);
    and bind IPv6 sockets, but cannot connect to a getsockname() of [::]:port
    without a valid loopback interface.  Rather than expose this half-broken
    state to library users, we turn off IPv6 sockets. */
-int grpc_ipv6_loopback_available();
+int grpc_ipv6_loopback_available(void);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

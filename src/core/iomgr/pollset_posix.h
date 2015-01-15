@@ -86,7 +86,7 @@ void grpc_kick_drain(grpc_pollset *p);
    regardless of applications listening to events. Relying on this is slow
    however (the backup pollset only listens every 100ms or so) - so it's not
    to be relied on. */
-grpc_pollset *grpc_backup_pollset();
+grpc_pollset *grpc_backup_pollset(void);
 
 /* turn a pollset into a multipoller: platform specific */
 void grpc_platform_become_multipoller(grpc_pollset *pollset,

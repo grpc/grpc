@@ -57,7 +57,7 @@ typedef struct {
   gpr_uint32 flags;
 } call_state;
 
-static void request_call() {
+static void request_call(void) {
   call_state *s = gpr_malloc(sizeof(call_state));
   gpr_ref_init(&s->pending_ops, 2);
   grpc_server_request_call(server, s);

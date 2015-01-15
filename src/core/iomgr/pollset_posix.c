@@ -129,9 +129,9 @@ void grpc_kick_drain(grpc_pollset *p) {
 
 /* global state management */
 
-grpc_pollset *grpc_backup_pollset() { return &g_backup_pollset; }
+grpc_pollset *grpc_backup_pollset(void) { return &g_backup_pollset; }
 
-void grpc_pollset_global_init() {
+void grpc_pollset_global_init(void) {
   int i;
   gpr_thd_id id;
 
@@ -151,7 +151,7 @@ void grpc_pollset_global_init() {
   gpr_thd_new(&id, backup_poller, NULL, NULL);
 }
 
-void grpc_pollset_global_shutdown() {
+void grpc_pollset_global_shutdown(void) {
   int i;
 
   /* terminate the backup poller thread */

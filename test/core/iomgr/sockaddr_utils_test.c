@@ -70,7 +70,7 @@ static const gpr_uint8 kIPv4[] = {192, 0, 2, 1};
 static const gpr_uint8 kIPv6[] = {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
                                   0,    0,    0,    0,    0, 0, 0, 1};
 
-static void test_sockaddr_is_v4mapped() {
+static void test_sockaddr_is_v4mapped(void) {
   struct sockaddr_in input4;
   struct sockaddr_in6 input6;
   struct sockaddr_in output4;
@@ -101,7 +101,7 @@ static void test_sockaddr_is_v4mapped() {
       !grpc_sockaddr_is_v4mapped((const struct sockaddr *)&input4, NULL));
 }
 
-static void test_sockaddr_to_v4mapped() {
+static void test_sockaddr_to_v4mapped(void) {
   struct sockaddr_in input4;
   struct sockaddr_in6 input6;
   struct sockaddr_in6 output6;
@@ -129,7 +129,7 @@ static void test_sockaddr_to_v4mapped() {
       !grpc_sockaddr_to_v4mapped((const struct sockaddr *)&input6, &output6));
 }
 
-static void test_sockaddr_is_wildcard() {
+static void test_sockaddr_is_wildcard(void) {
   struct sockaddr_in wild4;
   struct sockaddr_in6 wild6;
   struct sockaddr_in6 wild_mapped;
@@ -187,7 +187,7 @@ static void expect_sockaddr_str(const char *expected, void *addr,
   gpr_free(str);
 }
 
-static void test_sockaddr_to_string() {
+static void test_sockaddr_to_string(void) {
   struct sockaddr_in input4;
   struct sockaddr_in6 input6;
   struct sockaddr dummy;

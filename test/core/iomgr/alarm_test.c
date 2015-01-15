@@ -89,7 +89,7 @@ static void alarm_cb(void *arg /* alarm_arg */, int success) {
 }
 
 /* Test grpc_alarm add and cancel. */
-static void test_grpc_alarm() {
+static void test_grpc_alarm(void) {
   grpc_alarm alarm;
   grpc_alarm alarm_to_cancel;
   /* Timeout on the alarm cond. var, so make big enough to absorb time

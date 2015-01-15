@@ -144,36 +144,36 @@ static gpr_slice alloc_recv_buffer(void *user_data, grpc_transport *transport,
   return gpr_slice_malloc(size_hint);
 }
 
-static void pending_ops_cleanup() {
+static void pending_ops_cleanup(void) {
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_cv);
 }
 
-static void pending_ops_init() {
+static void pending_ops_init(void) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
   atexit(pending_ops_cleanup);
 }
 
-static void use_pending_ops() {
+static void use_pending_ops(void) {
   gpr_once_init(&g_pending_ops_init, pending_ops_init);
 }
 
-static void add_pending_op() {
+static void add_pending_op(void) {
   use_pending_ops();
   gpr_mu_lock(&g_mu);
   g_pending_ops++;
   gpr_mu_unlock(&g_mu);
 }
 
-static void end_pending_op() {
+static void end_pending_op(void) {
   gpr_mu_lock(&g_mu);
   g_pending_ops--;
   gpr_cv_broadcast(&g_cv);
   gpr_mu_unlock(&g_mu);
 }
 
-static void wait_pending_ops() {
+static void wait_pending_ops(void) {
   use_pending_ops();
   gpr_mu_lock(&g_mu);
   while (g_pending_ops > 0) {

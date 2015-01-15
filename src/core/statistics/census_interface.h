@@ -49,10 +49,10 @@ typedef struct census_op_id {
 typedef struct census_rpc_stats census_rpc_stats;
 
 /* Initializes Census library. No-op if Census is already initialized. */
-void census_init();
+void census_init(void);
 
 /* Shutdown Census Library. */
-void census_shutdown();
+void census_shutdown(void);
 
 /* Annotates grpc method name on a census_op_id. The method name has the format
    of <full quantified rpc service name>/<rpc function name>. Returns 0 iff
@@ -68,7 +68,7 @@ int census_add_method_tag(census_op_id op_id, const char* method_name);
 void census_tracing_print(census_op_id op_id, const char* annotation);
 
 /* Starts tracing for an RPC. Returns a locally unique census_op_id */
-census_op_id census_tracing_start_op();
+census_op_id census_tracing_start_op(void);
 
 /* Ends tracing. Calling this function will invalidate the input op_id. */
 void census_tracing_end_op(census_op_id op_id);

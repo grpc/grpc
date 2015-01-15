@@ -88,7 +88,7 @@ extern const grpc_chttp2_setting_parameters
 gpr_slice grpc_chttp2_settings_create(gpr_uint32 *old, const gpr_uint32 *new,
                                       gpr_uint32 force_mask, size_t count);
 /* Create an ack settings frame */
-gpr_slice grpc_chttp2_settings_ack_create();
+gpr_slice grpc_chttp2_settings_ack_create(void);
 
 grpc_chttp2_parse_error grpc_chttp2_settings_parser_begin_frame(
     grpc_chttp2_settings_parser *parser, gpr_uint32 length, gpr_uint8 flags,

@@ -56,7 +56,7 @@ typedef struct {
   gpr_intmax bytes_read;
 } call_state;
 
-static void request_call() {
+static void request_call(void) {
   call_state *tag = gpr_malloc(sizeof(*tag));
   gpr_ref_init(&tag->pending_ops, 2);
   tag->bytes_read = 0;

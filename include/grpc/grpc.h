@@ -232,12 +232,12 @@ typedef struct grpc_event {
 } grpc_event;
 
 /* Initialize the grpc library */
-void grpc_init();
+void grpc_init(void);
 
 /* Shutdown the grpc library */
-void grpc_shutdown();
+void grpc_shutdown(void);
 
-grpc_completion_queue *grpc_completion_queue_create();
+grpc_completion_queue *grpc_completion_queue_create(void);
 
 /* Blocks until an event is available, the completion queue is being shutdown,
    or deadline is reached. Returns NULL on timeout, otherwise the event that
