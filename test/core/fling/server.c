@@ -130,7 +130,8 @@ int main(int argc, char **argv) {
           } else {
             s->flags = GRPC_WRITE_BUFFER_HINT;
           }
-          grpc_call_accept(ev->call, cq, s, s->flags);
+          grpc_call_server_accept(ev->call, cq, s);
+          grpc_call_server_end_initial_metadata(ev->call, s->flags);
           GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
           request_call();
         } else {
