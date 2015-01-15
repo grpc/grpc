@@ -315,8 +315,8 @@ run_dep_checks:
 	$(ZLIB_CHECK_CMD) || true
 
 libs/$(CONFIG)/zlib/libz.a:
-	(cd third_party/zlib ; CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
-	$(MAKE) -c third_party/zlib clean
+	(cd third_party/zlib ; CC="$(CC)" CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
+	$(MAKE) -C third_party/zlib clean
 	$(MAKE) -C third_party/zlib
 	mkdir -p libs/$(CONFIG)/zlib
 	cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
@@ -718,9 +718,9 @@ endif
 
 else
 
-libs/$(CONFIG)/lib${lib.name}.a: $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
+libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
 % else:
-libs/$(CONFIG)/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
+libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
 % endif
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -749,9 +749,9 @@ libs/$(CONFIG)/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
   common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
   libs = ''
-  lib_deps = ''
+  lib_deps = ' $(ZLIB_DEP)'
   mingw_libs = ''
-  mingw_lib_deps = ''
+  mingw_lib_deps = ' $(ZLIB_DEP)'
   for dep in lib.get('deps', []):
     libs = libs + ' -l' + dep
     lib_deps = lib_deps + 'libs/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
@@ -762,7 +762,6 @@ libs/$(CONFIG)/lib${lib.name}.a: $(LIB${lib.name.upper()}_OBJS)
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
     mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
-
 %>
 
 % if lib.build == "all":
