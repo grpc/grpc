@@ -35,4 +35,4 @@
 
 void grpc_profiler_start(const char *filename) {}
 
-void grpc_profiler_stop() {}
+void grpc_profiler_stop(void) {}

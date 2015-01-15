@@ -56,7 +56,7 @@ static gpr_timespec n_seconds_time(int n) {
   return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
 }
 
-static gpr_timespec five_seconds_time() { return n_seconds_time(5); }
+static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 /* Drain pending events on a completion queue until it's ready to destroy.
    Does some post-processing to safely release memory on some of the events. */
@@ -105,7 +105,7 @@ static void drain_cq(int client, grpc_completion_queue *cq) {
 }
 
 /* Kick off a new request - assumes g_mu taken */
-static void start_request() {
+static void start_request(void) {
   grpc_call *call = grpc_channel_create_call(
       g_fixture.client, "/Foo", "test.google.com", g_test_end_time);
   g_active_requests++;
@@ -180,7 +180,7 @@ static void client_thread(void *p) {
 /* Request a new server call. We tag them with a ref-count that starts at two,
    and decrements after each of: a read completes and a write completes.
    When it drops to zero, we write status */
-static void request_server_call() {
+static void request_server_call(void) {
   gpr_refcount *rc = gpr_malloc(sizeof(gpr_refcount));
   gpr_ref_init(rc, 2);
   grpc_server_request_call(g_fixture.server, rc);

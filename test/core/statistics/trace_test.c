@@ -45,7 +45,7 @@
 #include "test/core/util/test_config.h"
 
 /* Ensure all possible state transitions are called without causing problem */
-static void test_init_shutdown() {
+static void test_init_shutdown(void) {
   census_tracing_init();
   census_tracing_init();
   census_tracing_shutdown();
@@ -53,7 +53,7 @@ static void test_init_shutdown() {
   census_tracing_init();
 }
 
-static void test_start_op_generates_locally_unique_ids() {
+static void test_start_op_generates_locally_unique_ids(void) {
 /* Check that ids generated within window size of 1000 are unique.
    TODO(hongyu): Replace O(n^2) duplicate detection algorithm with O(nlogn)
    algorithm. Enhance the test to larger window size (>10^6) */
@@ -75,7 +75,7 @@ static void test_start_op_generates_locally_unique_ids() {
   census_shutdown();
 }
 
-static void test_get_trace_method_name() {
+static void test_get_trace_method_name(void) {
   census_op_id id;
   const char write_name[] = "service/method";
   census_tracing_init();
@@ -119,7 +119,7 @@ static void mimic_trace_op_sequences(void* arg) {
   gpr_mu_unlock(&args->mu);
 }
 
-static void test_concurrency() {
+static void test_concurrency(void) {
 #define NUM_THREADS 1000
   gpr_thd_id tid[NUM_THREADS];
   int i = 0;
@@ -141,7 +141,7 @@ static void test_concurrency() {
 #undef NUM_THREADS
 }
 
-static void test_add_method_tag_to_unknown_op_id() {
+static void test_add_method_tag_to_unknown_op_id(void) {
   census_op_id unknown_id = {0xDEAD, 0xBEEF};
   int ret = 0;
   census_tracing_init();
@@ -150,7 +150,7 @@ static void test_add_method_tag_to_unknown_op_id() {
   census_tracing_shutdown();
 }
 
-static void test_trace_print() {
+static void test_trace_print(void) {
   census_op_id id;
   int i;
   const char* annotation_txt[4] = {"abc", "", "$%^ *()_"};

@@ -37,7 +37,7 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-static gpr_timespec test_deadline() {
+static gpr_timespec test_deadline(void) {
   return gpr_time_add(gpr_now(), gpr_time_from_micros(100000000));
 }
 
@@ -53,35 +53,35 @@ static void must_fail(void* evp, grpc_resolved_addresses* p) {
   gpr_event_set(evp, (void*)1);
 }
 
-static void test_localhost() {
+static void test_localhost(void) {
   gpr_event ev;
   gpr_event_init(&ev);
   grpc_resolve_address("localhost:1", NULL, must_succeed, &ev);
   GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
 }
 
-static void test_default_port() {
+static void test_default_port(void) {
   gpr_event ev;
   gpr_event_init(&ev);
   grpc_resolve_address("localhost", "1", must_succeed, &ev);
   GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
 }
 
-static void test_missing_default_port() {
+static void test_missing_default_port(void) {
   gpr_event ev;
   gpr_event_init(&ev);
   grpc_resolve_address("localhost", NULL, must_fail, &ev);
   GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
 }
 
-static void test_ipv6_with_port() {
+static void test_ipv6_with_port(void) {
   gpr_event ev;
   gpr_event_init(&ev);
   grpc_resolve_address("[2001:db8::1]:1", NULL, must_succeed, &ev);
   GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
 }
 
-static void test_ipv6_without_port() {
+static void test_ipv6_without_port(void) {
   const char* const kCases[] = {
       "2001:db8::1", "2001:db8::1.2.3.4", "[2001:db8::1]",
   };
@@ -94,7 +94,7 @@ static void test_ipv6_without_port() {
   }
 }
 
-static void test_invalid_ip_addresses() {
+static void test_invalid_ip_addresses(void) {
   const char* const kCases[] = {
       "293.283.1238.3:1", "[2001:db8::11111]:1",
   };
@@ -107,7 +107,7 @@ static void test_invalid_ip_addresses() {
   }
 }
 
-static void test_unparseable_hostports() {
+static void test_unparseable_hostports(void) {
   const char* const kCases[] = {
       "[", "[::1", "[::1]bad", "[1.2.3.4]", "[localhost]", "[localhost]:1",
   };

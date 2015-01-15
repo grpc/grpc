@@ -102,7 +102,7 @@ gpr_slice grpc_chttp2_settings_create(gpr_uint32 *old, const gpr_uint32 *new,
   return output;
 }
 
-gpr_slice grpc_chttp2_settings_ack_create() {
+gpr_slice grpc_chttp2_settings_ack_create(void) {
   gpr_slice output = gpr_slice_malloc(9);
   fill_header(GPR_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
   return output;

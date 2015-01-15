@@ -44,13 +44,13 @@
 static int cb_called[MAX_CB][2];
 static int kicks;
 
-void grpc_kick_poller() { ++kicks; }
+void grpc_kick_poller(void) { ++kicks; }
 
 static void cb(void *arg, int success) {
   cb_called[(gpr_intptr)arg][success]++;
 }
 
-static void add_test() {
+static void add_test(void) {
   gpr_timespec start = gpr_now();
   int i;
   grpc_alarm alarms[20];
@@ -108,7 +108,7 @@ static void add_test() {
 }
 
 /* Cleaning up a list with pending alarms. */
-void destruction_test() {
+void destruction_test(void) {
   grpc_alarm alarms[5];
 
   grpc_alarm_list_init(gpr_time_0);

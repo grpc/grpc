@@ -48,7 +48,7 @@ static void join_host_port_expect(const char *host, int port,
   gpr_free(buf);
 }
 
-static void test_join_host_port() {
+static void test_join_host_port(void) {
   join_host_port_expect("foo", 101, "foo:101");
   join_host_port_expect("", 102, ":102");
   join_host_port_expect("1::2", 103, "[1::2]:103");
@@ -56,7 +56,7 @@ static void test_join_host_port() {
 }
 
 /* Garbage in, garbage out. */
-static void test_join_host_port_garbage() {
+static void test_join_host_port_garbage(void) {
   join_host_port_expect("[foo]", 105, "[foo]:105");
   join_host_port_expect("[::", 106, "[:::106");
   join_host_port_expect("::]", 107, "[::]]:107");
