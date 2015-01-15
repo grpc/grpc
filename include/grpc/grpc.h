@@ -313,8 +313,6 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
    flags is a bit-field combination of the write flags defined above.
    REQUIRES: Can be called at most once per call.
              Can only be called on the client.
-   Produces a GRPC_INVOKE_ACCEPTED event with invoke_accepted_tag when the
-       call has been invoked (meaning bytes can start flowing to the wire).
    Produces a GRPC_CLIENT_METADATA_READ event with metadata_read_tag when
        the servers initial metadata has been read.
    Produces a GRPC_FINISHED event with finished_tag when the call has been
@@ -323,11 +321,6 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
 grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
                                  void *metadata_read_tag, void *finished_tag,
                                  gpr_uint32 flags);
-grpc_call_error grpc_call_start_invoke(grpc_call *call,
-                                       grpc_completion_queue *cq,
-                                       void *invoke_accepted_tag,
-                                       void *metadata_read_tag,
-                                       void *finished_tag, gpr_uint32 flags);
 
 /* DEPRECATED: users should use grpc_call_server_accept, and
    grpc_call_server_end_initial_metadata instead now.

@@ -382,21 +382,6 @@ static void finish_call(grpc_call *call) {
       elements, count);
 }
 
-grpc_call_error grpc_call_start_invoke(grpc_call *call,
-                                       grpc_completion_queue *cq,
-                                       void *invoke_accepted_tag,
-                                       void *metadata_read_tag,
-                                       void *finished_tag, gpr_uint32 flags) {
-  grpc_call_error err =
-      grpc_call_invoke(call, cq, metadata_read_tag, finished_tag, flags);
-  if (err == GRPC_CALL_OK) {
-    grpc_cq_begin_op(call->cq, call, GRPC_INVOKE_ACCEPTED);
-    grpc_cq_end_invoke_accepted(call->cq, invoke_accepted_tag, call, do_nothing,
-                                NULL, GRPC_OP_OK);
-  }
-  return err;
-}
-
 static void done_write(void *user_data, grpc_op_error error) {
   grpc_call *call = user_data;
   void *tag = call->write_tag;
