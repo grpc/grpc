@@ -1,15 +1,15 @@
-syntax = "proto2";
+syntax = "proto3";
 
 package math;
 
 message DivArgs {
-  required int64 dividend = 1;
-  required int64 divisor = 2;
+  optional int64 dividend = 1;
+  optional int64 divisor = 2;
 }
 
 message DivReply {
-  required int64 quotient = 1;
-  required int64 remainder = 2;
+  optional int64 quotient = 1;
+  optional int64 remainder = 2;
 }
 
 message FibArgs {
@@ -17,9 +17,34 @@ message FibArgs {
 }
 
 message Num {
-  required int64 num = 1;
+  optional int64 num = 1;
 }
 
 message FibReply {
-  required int64 count = 1;
+  optional int64 count = 1;
+}
+
+service Math {
+  // Div divides args.dividend by args.divisor and returns the quotient and
+  // remainder.
+  rpc Div (DivArgs) returns (DivReply) {
+  }
+
+  // DivMany accepts an arbitrary number of division args from the client stream
+  // and sends back the results in the reply stream.  The stream continues until
+  // the client closes its end; the server does the same after sending all the
+  // replies.  The stream ends immediately if either end aborts.
+  rpc DivMany (stream DivArgs) returns (stream DivReply) {
+  }
+
+  // Fib generates numbers in the Fibonacci sequence.  If args.limit > 0, Fib
+  // generates up to limit numbers; otherwise it continues until the call is
+  // canceled.  Unlike Fib above, Fib has no final FibReply.
+  rpc Fib (FibArgs) returns (stream Num) {
+  }
+
+  // Sum sums a stream of numbers, returning the final result once the stream
+  // is closed.
+  rpc Sum (stream Num) returns (Num) {
+  }
 }
