@@ -33,7 +33,7 @@ require 'socket'
 # @param [Fixnum] the maximum port number to accept
 # @return [Fixnum ]a free tcp port
 def find_unused_tcp_port(min = 32_768, max = 60_000)
-  # Allow the system to assign a port, by sp[ecifying 0.
+  # Allow the system to assign a port, by specifying 0.
   # Loop until a port is assigned in the required range
   loop do
     socket = Socket.new(:INET, :STREAM, 0)
