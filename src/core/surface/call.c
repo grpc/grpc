@@ -901,8 +901,8 @@ static void call_alarm(void *arg, int success) {
       grpc_call_cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
                                    "Deadline Exceeded");
     } else {
-    grpc_call_cancel(call);
-  }
+      grpc_call_cancel(call);
+    }
   }
   grpc_call_internal_unref(call);
 }
