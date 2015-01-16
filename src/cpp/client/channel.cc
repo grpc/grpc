@@ -104,7 +104,6 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
   context->set_call(call);
   grpc_event* ev;
   void* finished_tag = reinterpret_cast<char*>(call);
-  void* invoke_tag = reinterpret_cast<char*>(call) + 1;
   void* metadata_read_tag = reinterpret_cast<char*>(call) + 2;
   void* write_tag = reinterpret_cast<char*>(call) + 3;
   void* halfclose_tag = reinterpret_cast<char*>(call) + 4;
@@ -115,19 +114,11 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
   // add_metadata from context
   //
   // invoke
-  GPR_ASSERT(grpc_call_start_invoke(call, cq, invoke_tag, metadata_read_tag,
-                                    finished_tag,
-                                    GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
-  ev = grpc_completion_queue_pluck(cq, invoke_tag, gpr_inf_future);
-  bool success = ev->data.invoke_accepted == GRPC_OP_OK;
-  grpc_event_finish(ev);
-  if (!success) {
-    GetFinalStatus(cq, finished_tag, &status);
-    return status;
-  }
+  GPR_ASSERT(grpc_call_invoke(call, cq, metadata_read_tag, finished_tag,
+                              GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   // write request
   grpc_byte_buffer* write_buffer = nullptr;
-  success = SerializeProto(request, &write_buffer);
+  bool success = SerializeProto(request, &write_buffer);
   if (!success) {
     grpc_call_cancel(call);
     status =

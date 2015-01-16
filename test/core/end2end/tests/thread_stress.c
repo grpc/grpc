@@ -106,25 +106,30 @@ static void drain_cq(int client, grpc_completion_queue *cq) {
 
 /* Kick off a new request - assumes g_mu taken */
 static void start_request(void) {
+  gpr_slice slice = gpr_slice_malloc(100);
+  grpc_byte_buffer *buf;
   grpc_call *call = grpc_channel_create_call(
       g_fixture.client, "/Foo", "test.google.com", g_test_end_time);
+
+  memset(GPR_SLICE_START_PTR(slice), 1, GPR_SLICE_LENGTH(slice));
+  buf = grpc_byte_buffer_create(&slice, 1);
+  gpr_slice_unref(slice);
+
   g_active_requests++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_invoke(call, g_fixture.client_cq,
-                                                    NULL, NULL, NULL, 0));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_invoke(call, g_fixture.client_cq, NULL, NULL, 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(call, NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write(call, buf, NULL, 0));
+
+  grpc_byte_buffer_destroy(buf);
 }
 
 /* Async client: handle sending requests, reading responses, and starting
    new requests when old ones finish */
 static void client_thread(void *p) {
-  int id = (gpr_intptr)p;
+  gpr_intptr id = (gpr_intptr)p;
   grpc_event *ev;
-  gpr_slice slice = gpr_slice_malloc(100);
-  grpc_byte_buffer *buf;
   char *estr;
-  memset(GPR_SLICE_START_PTR(slice), id, GPR_SLICE_LENGTH(slice));
-
-  buf = grpc_byte_buffer_create(&slice, 1);
-  gpr_slice_unref(slice);
 
   for (;;) {
     ev = grpc_completion_queue_next(g_fixture.client_cq, n_seconds_time(1));
@@ -134,14 +139,6 @@ static void client_thread(void *p) {
           estr = grpc_event_string(ev);
           gpr_log(GPR_ERROR, "unexpected event: %s", estr);
           gpr_free(estr);
-          break;
-        case GRPC_INVOKE_ACCEPTED:
-          /* better not keep going if the invoke failed */
-          if (ev->data.invoke_accepted == GRPC_OP_OK) {
-            GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(ev->call, NULL));
-            GPR_ASSERT(GRPC_CALL_OK ==
-                       grpc_call_start_write(ev->call, buf, NULL, 0));
-          }
           break;
         case GRPC_READ:
           break;
@@ -173,7 +170,6 @@ static void client_thread(void *p) {
     gpr_mu_unlock(&g_mu);
   }
 
-  grpc_byte_buffer_destroy(buf);
   gpr_event_set(&g_client_done[id], (void *)1);
 }
 
@@ -196,16 +192,16 @@ static void maybe_end_server_call(grpc_call *call, gpr_refcount *rc) {
 
 static void server_thread(void *p) {
   int id = (gpr_intptr)p;
-  grpc_event *ev;
   gpr_slice slice = gpr_slice_malloc(100);
   grpc_byte_buffer *buf;
+  grpc_event *ev;
   char *estr;
-  memset(GPR_SLICE_START_PTR(slice), id, GPR_SLICE_LENGTH(slice));
 
-  request_server_call();
-
+  memset(GPR_SLICE_START_PTR(slice), 1, GPR_SLICE_LENGTH(slice));
   buf = grpc_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
+
+  request_server_call();
 
   for (;;) {
     ev = grpc_completion_queue_next(g_fixture.server_cq, n_seconds_time(1));
