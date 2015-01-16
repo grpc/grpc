@@ -5,6 +5,7 @@ import argparse
 import glob
 import itertools
 import multiprocessing
+import os
 import sys
 import time
 
@@ -117,9 +118,10 @@ class TestCache(object):
     with open('.run_tests_cache', 'w') as f:
       f.write(simplejson.dumps(self.dump()))
 
-  def load(self):
-    with open('.run_tests_cache') as f:
-      self.parse(simplejson.loads(f.read()))
+  def maybe_load(self):
+    if os.path.exists('.run_tests_cache'):
+      with open('.run_tests_cache') as f:
+        self.parse(simplejson.loads(f.read()))
 
 
 def _build_and_run(check_cancelled, newline_on_success, cache):
@@ -158,7 +160,7 @@ test_cache = (None if runs_per_test != 1
               or 'valgrind' in build_configs
               else TestCache())
 if test_cache:
-  test_cache.load()
+  test_cache.maybe_load()
 
 if forever:
   success = True
