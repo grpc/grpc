@@ -318,18 +318,20 @@ run_dep_checks:
 	$(ZLIB_CHECK_CMD) || true
 
 libs/$(CONFIG)/zlib/libz.a:
-	(cd third_party/zlib ; CC="$(CC)" CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
-	$(MAKE) -C third_party/zlib clean
-	$(MAKE) -C third_party/zlib
-	mkdir -p libs/$(CONFIG)/zlib
-	cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
+	$(E) "[MAKE]    Building zlib"
+	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
+	$(Q)$(MAKE) -C third_party/zlib clean
+	$(Q)$(MAKE) -C third_party/zlib
+	$(Q)mkdir -p libs/$(CONFIG)/zlib
+	$(Q)cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
 
 libs/$(CONFIG)/openssl/libssl.a:
-	(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
-	$(MAKE) -C third_party/openssl clean
-	$(MAKE) -C third_party/openssl build_crypto build_ssl
-	mkdir -p libs/$(CONFIG)/openssl
-	cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a libs/$(CONFIG)/openssl
+	$(E) "[MAKE]    Building openssl"
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)$(MAKE) -C third_party/openssl clean
+	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
+	$(Q)mkdir -p libs/$(CONFIG)/openssl
+	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a libs/$(CONFIG)/openssl
 
 static: static_c static_cxx
 
@@ -657,6 +659,12 @@ endif
 % endif
 
 else
+
+ifneq ($(OPENSSL_DEP),)
+% for src in lib.src:
+${src}: $(OPENSSL_DEP)
+% endfor
+endif
 
 libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
 % else:
