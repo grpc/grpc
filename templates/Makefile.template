@@ -93,6 +93,7 @@ CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
 LDFLAGS_gcov = -fprofile-arcs -ftest-coverage
 DEFINES_gcov = NDEBUG
 
+
 # General settings.
 # You may want to change these depending on your system.
 
@@ -112,6 +113,12 @@ RM = rm -f
 ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
 endif
+
+
+# The HOST compiler settings are used to compile the protoc plugins.
+# In most cases, you won't have to change anything, but if you are
+# cross-compiling, you can override these variables from GNU make's
+# command line: make CC=cross-gcc HOST_CC=gcc
 
 HOST_CC = $(CC)
 HOST_CXX = $(CXX)
@@ -449,6 +456,11 @@ strip-static: strip-static_c strip-static_cxx
 
 strip-shared: strip-shared_c strip-shared_cxx
 
+
+# TODO(nnoble): the strip target is stripping in-place, instead
+# of copying files in a temporary folder.
+# This prevents proper debugging after running make install.
+
 strip-static_c: static_c
 % for lib in libs:
 % if not lib.get("c++", False):
@@ -645,8 +657,11 @@ PUBLIC_HEADERS_C += \\
 
 LIB${lib.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
+## If the library requires OpenSSL with ALPN, let's add some restrictions.
 % if lib.get('secure', True):
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
 
 libs/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
 
@@ -667,6 +682,7 @@ ${src}: $(OPENSSL_DEP)
 endif
 
 libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
+## The else here corresponds to the if secure earlier.
 % else:
 libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
 % endif
@@ -731,6 +747,8 @@ endif
 endif
 % endif
 
+## If the lib was secure, we have to close the Makefile's if that tested
+## the presence of an ALPN-capable OpenSSL.
 % if lib.get('secure', True):
 
 endif
@@ -772,17 +790,29 @@ ${tgt.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basena
 % if tgt.get('secure', True):
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/${tgt.name}: openssl_dep_error
 
 else
 
 % endif
+##
+## We're not trying to add a dependency on building zlib and openssl here,
+## as it's already done in the libraries. We're assuming that the build
+## trickles down, and that a secure target requires a secure version of
+## a library.
+##
+## That simplifies the codegen a bit, but prevents a fully defined Makefile.
+## I can live with that.
+##
 bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % for dep in tgt.deps:
  libs/$(CONFIG)/lib${dep}.a\
 % endfor
 
 % if tgt.get("c++", False):
+## C++ targets specificies.
 % if tgt.build == 'protoc':
 	$(E) "[HOSTLD]  Linking $@"
 	$(Q) mkdir -p `dirname $@`
@@ -796,6 +826,7 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  $(GTEST_LIB)\
 % endif
 % else:
+## C-only targets specificities.
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
