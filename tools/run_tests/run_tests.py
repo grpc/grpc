@@ -4,16 +4,18 @@
 import argparse
 import glob
 import itertools
-import simplejson
 import multiprocessing
 import sys
 import time
 
 import jobset
+import simplejson
 import watch_dirs
+
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
+
   def __init__(self, config):
     self.build_config = config
     self.maxjobs = 32 * multiprocessing.cpu_count()
@@ -24,6 +26,7 @@ class SimpleConfig(object):
 
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
 class ValgrindConfig(object):
+
   def __init__(self, config, tool):
     self.build_config = config
     self.tool = tool
@@ -35,15 +38,15 @@ class ValgrindConfig(object):
 
 # different configurations we can run under
 _CONFIGS = {
-  'dbg': SimpleConfig('dbg'),
-  'opt': SimpleConfig('opt'),
-  'tsan': SimpleConfig('tsan'),
-  'msan': SimpleConfig('msan'),
-  'asan': SimpleConfig('asan'),
-  'gcov': SimpleConfig('gcov'),
-  'memcheck': ValgrindConfig('valgrind', 'memcheck'),
-  'helgrind': ValgrindConfig('dbg', 'helgrind')
-  }
+    'dbg': SimpleConfig('dbg'),
+    'opt': SimpleConfig('opt'),
+    'tsan': SimpleConfig('tsan'),
+    'msan': SimpleConfig('msan'),
+    'asan': SimpleConfig('asan'),
+    'gcov': SimpleConfig('gcov'),
+    'memcheck': ValgrindConfig('valgrind', 'memcheck'),
+    'helgrind': ValgrindConfig('dbg', 'helgrind')
+    }
 
 
 _DEFAULT = ['dbg', 'opt']
@@ -87,6 +90,8 @@ forever = args.forever
 
 
 class TestCache(object):
+  """Cache for running tests."""
+
   def __init__(self):
     self._last_successful_run = {}
 
@@ -102,7 +107,8 @@ class TestCache(object):
     self._last_successful_run[' '.join(cmdline)] = bin_hash
 
   def dump(self):
-    return [{'cmdline': k, 'hash': v} for k, v in self._last_successful_run.iteritems()]
+    return [{'cmdline': k, 'hash': v}
+            for k, v in self._last_successful_run.iteritems()]
 
   def parse(self, exdump):
     self._last_successful_run = dict((o['cmdline'], o['hash']) for o in exdump)
@@ -138,19 +144,19 @@ def _build_and_run(check_cancelled, newline_on_success, cache):
                   glob.glob('bins/%s/%s_test' % (
                       config.build_config, filt)),
                   runs_per_test)))),
-              check_cancelled,
-              newline_on_success=newline_on_success,
-              maxjobs=min(c.maxjobs for c in run_configs),
-              cache=cache):
+      check_cancelled,
+      newline_on_success=newline_on_success,
+      maxjobs=min(c.maxjobs for c in run_configs),
+      cache=cache):
     return 2
 
   return 0
 
 
 test_cache = (None if runs_per_test != 1
-                       or 'gcov' in build_configs
-                       or 'valgrind' in build_configs
-                   else TestCache())
+              or 'gcov' in build_configs
+              or 'valgrind' in build_configs
+              else TestCache())
 if test_cache:
   test_cache.load()
 
