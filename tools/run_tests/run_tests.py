@@ -4,6 +4,7 @@
 import argparse
 import glob
 import itertools
+import simplejson
 import multiprocessing
 import sys
 import time
@@ -85,7 +86,37 @@ runs_per_test = args.runs_per_test
 forever = args.forever
 
 
-def _build_and_run(check_cancelled, newline_on_success, forever=False):
+class TestCache(object):
+  def __init__(self):
+    self._last_successful_run = {}
+
+  def should_run(self, cmdline, bin_hash):
+    cmdline = ' '.join(cmdline)
+    if cmdline not in self._last_successful_run:
+      return True
+    if self._last_successful_run[cmdline] != bin_hash:
+      return True
+    return False
+
+  def finished(self, cmdline, bin_hash):
+    self._last_successful_run[' '.join(cmdline)] = bin_hash
+
+  def dump(self):
+    return [{'cmdline': k, 'hash': v} for k, v in self._last_successful_run.iteritems()]
+
+  def parse(self, exdump):
+    self._last_successful_run = dict((o['cmdline'], o['hash']) for o in exdump)
+
+  def save(self):
+    with open('.run_tests_cache', 'w') as f:
+      f.write(simplejson.dumps(self.dump()))
+
+  def load(self):
+    with open('.run_tests_cache') as f:
+      self.parse(simplejson.loads(f.read()))
+
+
+def _build_and_run(check_cancelled, newline_on_success, cache):
   """Do one pass of building & running tests."""
   # build latest, sharing cpu between the various makes
   if not jobset.run(
@@ -109,11 +140,19 @@ def _build_and_run(check_cancelled, newline_on_success, forever=False):
                   runs_per_test)))),
               check_cancelled,
               newline_on_success=newline_on_success,
-              maxjobs=min(c.maxjobs for c in run_configs)):
+              maxjobs=min(c.maxjobs for c in run_configs),
+              cache=cache):
     return 2
 
   return 0
 
+
+test_cache = (None if runs_per_test != 1
+                       or 'gcov' in build_configs
+                       or 'valgrind' in build_configs
+                   else TestCache())
+if test_cache:
+  test_cache.load()
 
 if forever:
   success = True
@@ -122,9 +161,9 @@ if forever:
     initial_time = dw.most_recent_change()
     have_files_changed = lambda: dw.most_recent_change() != initial_time
     previous_success = success
-    success = _build_and_run(have_files_changed,
+    success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
-                             forever=True) == 0
+                             cache=test_cache) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',
                      'All tests are now passing properly',
@@ -133,10 +172,12 @@ if forever:
     while not have_files_changed():
       time.sleep(1)
 else:
-  result = _build_and_run(lambda: False,
-                          newline_on_success=args.newline_on_success)
+  result = _build_and_run(check_cancelled=lambda: False,
+                          newline_on_success=args.newline_on_success,
+                          cache=test_cache)
   if result == 0:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
+  test_cache.save()
   sys.exit(result)
