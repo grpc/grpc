@@ -5,7 +5,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-export GRPC_DIR=`pwd`
+root=`pwd`
 
 # make the libraries
 make -j static_c
@@ -15,7 +15,6 @@ cd src/php
 
 cd ext/grpc
 phpize
-./configure
-#cd ext/grpc
+./configure --enable-grpc=$root
 make
 
