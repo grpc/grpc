@@ -6,6 +6,7 @@ set -ex
 cd $(dirname $0)/../..
 
 root=`pwd`
+export GRPC_LIB_SUBDIR=libs/opt
 
 # make the libraries
 make -j static_c

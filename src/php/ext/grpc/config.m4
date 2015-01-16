@@ -38,11 +38,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(rt)
 
-  if test -e $GRPC_DIR/libs/opt; then
-    GRPC_LIBDIR=$GRPC_DIR/libs/opt
-  else
-    GRPC_LIBDIR=$GRPC_DIR/lib
-  fi
+  GRPC_LIBDIR=$GRPC_DIR/${GRPC_LIB_SUBDIR-lib}
 
   PHP_ADD_LIBPATH($GRPC_LIBDIR)
 
