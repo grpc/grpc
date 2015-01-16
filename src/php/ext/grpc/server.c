@@ -176,10 +176,10 @@ PHP_METHOD(Server, start) {
 
 static zend_function_entry server_methods[] = {
     PHP_ME(Server, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_ME(Server, request_call, NULL, ZEND_ACC_PUBLIC)
-            PHP_ME(Server, add_http2_port, NULL, ZEND_ACC_PUBLIC)
-                PHP_ME(Server, add_secure_http2_port, NULL, ZEND_ACC_PUBLIC)
-                    PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Server, request_call, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, add_http2_port, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, add_secure_http2_port, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_server(TSRMLS_D) {
   zend_class_entry ce;
