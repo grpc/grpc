@@ -32,83 +32,13 @@
  */
 
 var assert = require('assert');
-var ProtoBuf = require('protobufjs');
 var port_picker = require('../port_picker');
 
-var builder = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
-var math = builder.build('math');
-
-var client = require('../surface_client.js');
-var makeConstructor = client.makeClientConstructor;
-/**
- * Get a function that deserializes a specific type of protobuf.
- * @param {function()} cls The constructor of the message type to deserialize
- * @return {function(Buffer):cls} The deserialization function
- */
-function deserializeCls(cls) {
-  /**
-   * Deserialize a buffer to a message object
-   * @param {Buffer} arg_buf The buffer to deserialize
-   * @return {cls} The resulting object
-   */
-  return function deserialize(arg_buf) {
-    return cls.decode(arg_buf);
-  };
-}
+var grpc = require('..');
+var math = grpc.load(__dirname + '/../examples/math.proto').math;
 
 /**
- * Get a function that serializes objects to a buffer by protobuf class.
- * @param {function()} Cls The constructor of the message type to serialize
- * @return {function(Cls):Buffer} The serialization function
- */
-function serializeCls(Cls) {
-  /**
-   * Serialize an object to a Buffer
-   * @param {Object} arg The object to serialize
-   * @return {Buffer} The serialized object
-   */
-  return function serialize(arg) {
-    return new Buffer(new Cls(arg).encode().toBuffer());
-  };
-}
-
-/* This function call creates a client constructor for clients that expose the
- * four specified methods. This specifies how to serialize messages that the
- * client sends and deserialize messages that the server sends, and whether the
- * client or the server will send a stream of messages, for each method. This
- * also specifies a prefix that will be added to method names when sending them
- * on the wire. This function call and all of the preceding code in this file
- * are intended to approximate what the generated code will look like for the
- * math client */
-var MathClient = makeConstructor({
-  Div: {
-    serialize: serializeCls(math.DivArgs),
-    deserialize: deserializeCls(math.DivReply),
-    client_stream: false,
-    server_stream: false
-  },
-  Fib: {
-    serialize: serializeCls(math.FibArgs),
-    deserialize: deserializeCls(math.Num),
-    client_stream: false,
-    server_stream: true
-  },
-  Sum: {
-    serialize: serializeCls(math.Num),
-    deserialize: deserializeCls(math.Num),
-    client_stream: true,
-    server_stream: false
-  },
-  DivMany: {
-    serialize: serializeCls(math.DivArgs),
-    deserialize: deserializeCls(math.DivReply),
-    client_stream: true,
-    server_stream: true
-  }
-}, '/Math/');
-
-/**
- * Channel to use to make requests to a running server.
+ * Client to use to make requests to a running server.
  */
 var math_client;
 
@@ -122,7 +52,7 @@ describe('Math client', function() {
   before(function(done) {
     port_picker.nextAvailablePort(function(port) {
       server.bind(port).listen();
-      math_client = new MathClient(port);
+      math_client = new math.Math(port);
       done();
     });
   });
@@ -137,7 +67,7 @@ describe('Math client', function() {
       assert.equal(value.remainder, 3);
     });
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, client.status.OK);
+      assert.strictEqual(status.code, grpc.status.OK);
       done();
     });
   });
@@ -150,7 +80,7 @@ describe('Math client', function() {
       next_expected += 1;
     });
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, client.status.OK);
+      assert.strictEqual(status.code, grpc.status.OK);
       done();
     });
   });
@@ -164,7 +94,7 @@ describe('Math client', function() {
     }
     call.end();
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, client.status.OK);
+      assert.strictEqual(status.code, grpc.status.OK);
       done();
     });
   });
@@ -184,7 +114,7 @@ describe('Math client', function() {
     }
     call.end();
     call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, client.status.OK);
+      assert.strictEqual(status.code, grpc.status.OK);
       done();
     });
   });

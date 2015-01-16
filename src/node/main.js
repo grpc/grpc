@@ -31,53 +31,68 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+var _ = require('underscore');
 
-static void *tag(gpr_intptr i) { return (void *)i; }
+var ProtoBuf = require('protobufjs');
 
-int main(int argc, char **argv) {
-  grpc_channel *chan;
-  grpc_call *call;
-  gpr_timespec timeout = gpr_time_from_seconds(4);
-  gpr_timespec deadline = gpr_time_add(gpr_now(), timeout);
-  grpc_completion_queue *cq;
-  cq_verifier *cqv;
-  grpc_event *ev;
-  int done;
+var surface_client = require('./surface_client.js');
 
-  grpc_test_init(argc, argv);
-  grpc_init();
+var surface_server = require('./surface_server.js');
 
-  cq = grpc_completion_queue_create();
-  cqv = cq_verifier_create(cq);
+var grpc = require('bindings')('grpc');
 
-  /* create a call, channel to a non existant server */
-  chan = grpc_channel_create("nonexistant:54321", NULL);
-  call = grpc_channel_create_call(chan, "/foo", "nonexistant", deadline);
-  GPR_ASSERT(grpc_call_start_invoke(call, cq, tag(1), tag(2), tag(3), 0) ==
-             GRPC_CALL_OK);
-  /* verify that all tags get completed */
-  cq_expect_invoke_accepted(cqv, tag(1), GRPC_OP_ERROR);
-  cq_expect_client_metadata_read(cqv, tag(2), NULL);
-  cq_expect_finished_with_status(cqv, tag(3), GRPC_STATUS_DEADLINE_EXCEEDED,
-                                 "Deadline Exceeded", NULL);
-  cq_verify(cqv);
-
-  grpc_completion_queue_shutdown(cq);
-  for (done = 0; !done;) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_future);
-    done = ev->type == GRPC_QUEUE_SHUTDOWN;
-    grpc_event_finish(ev);
+/**
+ * Load a gRPC object from an existing ProtoBuf.Reflect object.
+ * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
+ * @return {Object<string, *>} The resulting gRPC object
+ */
+function loadObject(value) {
+  var result = {};
+  if (value.className === 'Namespace') {
+    _.each(value.children, function(child) {
+      result[child.name] = loadObject(child);
+    });
+    return result;
+  } else if (value.className === 'Service') {
+    return surface_client.makeClientConstructor(value);
+  } else if (value.className === 'Service.Message') {
+    return value.build();
+  } else {
+    return value;
   }
-  grpc_completion_queue_destroy(cq);
-  grpc_call_destroy(call);
-  grpc_channel_destroy(chan);
-  cq_verifier_destroy(cqv);
-
-  grpc_shutdown();
-
-  return 0;
 }
+
+/**
+ * Load a gRPC object from a .proto file.
+ * @param {string} filename The file to load
+ * @return {Object<string, *>} The resulting gRPC object
+ */
+function load(filename) {
+  var builder = ProtoBuf.loadProtoFile(filename);
+
+  return loadObject(builder.ns);
+}
+
+/**
+ * See docs for loadObject
+ */
+exports.loadObject = loadObject;
+
+/**
+ * See docs for load
+ */
+exports.load = load;
+
+/**
+ * See docs for surface_server.makeServerConstructor
+ */
+exports.buildServer = surface_server.makeServerConstructor;
+
+/**
+ * Status name to code number mapping
+ */
+exports.status = grpc.status;
+/**
+ * Call error name to code number mapping
+ */
+exports.callError = grpc.callError;
