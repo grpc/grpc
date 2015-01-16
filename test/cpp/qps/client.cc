@@ -134,33 +134,37 @@ void RunTest(const int client_threads, const int client_channels,
     GPR_ASSERT(hist != NULL);
     thread_stats[i] = hist;
 
-    threads.push_back(std::thread(
-        [hist, client_threads, client_channels, num_rpcs, payload_size,
-         &channels](int channel_num) {
-          SimpleRequest request;
-          SimpleResponse response;
-          request.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
-          request.set_response_size(payload_size);
+    threads.push_back(
+        std::thread([hist, client_threads, client_channels, num_rpcs,
+                     payload_size, &channels](int channel_num) {
+                      SimpleRequest request;
+                      SimpleResponse response;
+                      request.set_response_type(
+                          grpc::testing::PayloadType::COMPRESSABLE);
+                      request.set_response_size(payload_size);
 
-          for (int j = 0; j < num_rpcs; j++) {
-            TestService::Stub *stub = channels[channel_num].get_stub();
-            double start = now();
-            grpc::ClientContext context;
-            grpc::Status s = stub->UnaryCall(&context, request, &response);
-            gpr_histogram_add(hist, now() - start);
+                      for (int j = 0; j < num_rpcs; j++) {
+                        TestService::Stub *stub =
+                            channels[channel_num].get_stub();
+                        double start = now();
+                        grpc::ClientContext context;
+                        grpc::Status s =
+                            stub->UnaryCall(&context, request, &response);
+                        gpr_histogram_add(hist, now() - start);
 
-            GPR_ASSERT((s.code() == grpc::StatusCode::OK) &&
-                       (response.payload().type() ==
-                        grpc::testing::PayloadType::COMPRESSABLE) &&
-                       (response.payload().body().length() ==
-                        static_cast<size_t>(payload_size)));
+                        GPR_ASSERT((s.code() == grpc::StatusCode::OK) &&
+                                   (response.payload().type() ==
+                                    grpc::testing::PayloadType::COMPRESSABLE) &&
+                                   (response.payload().body().length() ==
+                                    static_cast<size_t>(payload_size)));
 
-            // Now do runtime round-robin assignment of the next channel number
-            channel_num += client_threads;
-            channel_num %= client_channels;
-          }
-        },
-        i % client_channels));
+                        // Now do runtime round-robin assignment of the next
+                        // channel number
+                        channel_num += client_threads;
+                        channel_num %= client_channels;
+                      }
+                    },
+                    i % client_channels));
   }
 
   gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);

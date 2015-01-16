@@ -186,10 +186,9 @@ static double threshold_for_count_below(gpr_histogram *h, double count_below) {
        should lie */
     lower_bound = bucket_start(h, lower_idx);
     upper_bound = bucket_start(h, lower_idx + 1);
-    return GPR_CLAMP(upper_bound -
-                         (upper_bound - lower_bound) *
-                             (count_so_far - count_below) /
-                             h->buckets[lower_idx],
+    return GPR_CLAMP(upper_bound - (upper_bound - lower_bound) *
+                                       (count_so_far - count_below) /
+                                       h->buckets[lower_idx],
                      h->min_seen, h->max_seen);
   }
 }

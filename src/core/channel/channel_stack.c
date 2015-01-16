@@ -75,9 +75,9 @@ size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
   return size;
 }
 
-#define CHANNEL_ELEMS_FROM_STACK(stk)                                   \
-  ((grpc_channel_element *)((char *)(stk) + ROUND_UP_TO_ALIGNMENT_SIZE( \
-                                                sizeof(grpc_channel_stack))))
+#define CHANNEL_ELEMS_FROM_STACK(stk) \
+  ((grpc_channel_element *)(          \
+      (char *)(stk) + ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack))))
 
 #define CALL_ELEMS_FROM_STACK(stk)       \
   ((grpc_call_element *)((char *)(stk) + \
@@ -190,13 +190,14 @@ void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op) {
 
 grpc_channel_stack *grpc_channel_stack_from_top_element(
     grpc_channel_element *elem) {
-  return (grpc_channel_stack *)((char *)(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
-      sizeof(grpc_channel_stack)));
+  return (grpc_channel_stack *)((char *)(elem) -
+                                ROUND_UP_TO_ALIGNMENT_SIZE(
+                                    sizeof(grpc_channel_stack)));
 }
 
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
-  return (grpc_call_stack *)((char *)(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
-      sizeof(grpc_call_stack)));
+  return (grpc_call_stack *)((char *)(elem) - ROUND_UP_TO_ALIGNMENT_SIZE(
+                                                  sizeof(grpc_call_stack)));
 }
 
 static void do_nothing(void *user_data, grpc_op_error error) {}
