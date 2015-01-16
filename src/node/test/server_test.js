@@ -83,28 +83,7 @@ describe('echo server', function() {
       var call = new grpc.Call(channel,
                                'echo',
                                deadline);
-      call.startInvoke(function(event) {
-        assert.strictEqual(event.type,
-                           grpc.completionType.INVOKE_ACCEPTED);
-        call.startWrite(
-            new Buffer(req_text),
-            function(event) {
-              assert.strictEqual(event.type,
-                                 grpc.completionType.WRITE_ACCEPTED);
-              assert.strictEqual(event.data, grpc.opError.OK);
-              call.writesDone(function(event) {
-                assert.strictEqual(event.type,
-                                   grpc.completionType.FINISH_ACCEPTED);
-                assert.strictEqual(event.data, grpc.opError.OK);
-                done();
-              });
-            }, 0);
-        call.startRead(function(event) {
-          assert.strictEqual(event.type, grpc.completionType.READ);
-          assert.strictEqual(event.data.toString(), req_text);
-          done();
-        });
-      },function(event) {
+      call.invoke(function(event) {
         assert.strictEqual(event.type,
                            grpc.completionType.CLIENT_METADATA_READ);
         done();
@@ -116,6 +95,24 @@ describe('echo server', function() {
         server.shutdown();
         done();
       }, 0);
+      call.startWrite(
+          new Buffer(req_text),
+          function(event) {
+            assert.strictEqual(event.type,
+                               grpc.completionType.WRITE_ACCEPTED);
+            assert.strictEqual(event.data, grpc.opError.OK);
+            call.writesDone(function(event) {
+              assert.strictEqual(event.type,
+                                 grpc.completionType.FINISH_ACCEPTED);
+              assert.strictEqual(event.data, grpc.opError.OK);
+              done();
+            });
+          }, 0);
+      call.startRead(function(event) {
+        assert.strictEqual(event.type, grpc.completionType.READ);
+        assert.strictEqual(event.data.toString(), req_text);
+        done();
+      });
     });
   });
 });
