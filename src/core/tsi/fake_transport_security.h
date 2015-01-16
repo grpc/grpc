@@ -52,7 +52,7 @@ tsi_handshaker* tsi_create_fake_handshaker(int is_client);
 
 /* Creates a protector directly without going through the handshake phase. */
 tsi_frame_protector* tsi_create_fake_protector(
-    uint32_t* max_protected_frame_size);
+    size_t* max_protected_frame_size);
 
 #ifdef __cplusplus
 }
