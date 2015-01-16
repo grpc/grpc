@@ -35,6 +35,7 @@
 #define __TRANSPORT_SECURITY_INTERFACE_H_
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,11 +90,11 @@ typedef struct tsi_frame_protector tsi_frame_protector;
 
    ------------------------------------------------------------------------
    unsigned char protected_buffer[4096];
-   uint32_t protected_buffer_size = sizeof(protected_buffer);
+   size_t protected_buffer_size = sizeof(protected_buffer);
    tsi_result result = TSI_OK;
    while (message_size > 0) {
-     uint32_t protected_buffer_size_to_send = protected_buffer_size;
-     uint32_t processed_message_size = message_size;
+     size_t protected_buffer_size_to_send = protected_buffer_size;
+     size_t processed_message_size = message_size;
      result = tsi_frame_protector_protect(protector,
                                           message_bytes,
                                           &processed_message_size,
@@ -106,7 +107,7 @@ typedef struct tsi_frame_protector tsi_frame_protector;
 
      // Don't forget to flush.
      if (message_size == 0) {
-       uint32_t still_pending_size;
+       size_t still_pending_size;
        do {
          protected_buffer_size_to_send = protected_buffer_size;
          result = tsi_frame_protector_protect_flush(
@@ -122,9 +123,9 @@ typedef struct tsi_frame_protector tsi_frame_protector;
    ------------------------------------------------------------------------  */
 tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
                                        const unsigned char* unprotected_bytes,
-                                       uint32_t* unprotected_bytes_size,
+                                       size_t* unprotected_bytes_size,
                                        unsigned char* protected_output_frames,
-                                       uint32_t* protected_output_frames_size);
+                                       size_t* protected_output_frames_size);
 
 /* Indicates that we need to flush the bytes buffered in the protector and get
    the resulting frame.
@@ -136,7 +137,7 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
      that still need to be flushed from the protector.*/
 tsi_result tsi_frame_protector_protect_flush(
     tsi_frame_protector* self, unsigned char* protected_output_frames,
-    uint32_t* protected_output_frames_size, uint32_t* still_pending_size);
+    size_t* protected_output_frames_size, size_t* still_pending_size);
 
 /* Outputs unprotected bytes.
    - protected_frames_bytes is an input only parameter and points to the
@@ -160,8 +161,8 @@ tsi_result tsi_frame_protector_protect_flush(
      protected_frames_size will be set to 0.  */
 tsi_result tsi_frame_protector_unprotect(
     tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
-    uint32_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
-    uint32_t* unprotected_bytes_size);
+    size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
+    size_t* unprotected_bytes_size);
 
 /* Destroys the tsi_frame_protector object.  */
 void tsi_frame_protector_destroy(tsi_frame_protector* self);
@@ -194,18 +195,18 @@ typedef struct tsi_peer_property {
     double real;
     struct {
       char* data;
-      uint32_t length;
+      size_t length;
     } string;
     struct {
       struct tsi_peer_property* children;
-      uint32_t child_count;
+      size_t child_count;
     } list;
   } value;
 } tsi_peer_property;
 
 typedef struct {
   tsi_peer_property* properties;
-  uint32_t property_count;
+  size_t property_count;
 } tsi_peer;
 
 /* Gets the first property with the specified name. Iteration over the
@@ -227,12 +228,12 @@ void tsi_peer_destruct(tsi_peer* self);
    ------------------------------------------------------------------------
    tsi_result result = TSI_OK;
    unsigned char buf[4096];
-   uint32_t buf_offset;
-   uint32_t buf_size;
+   size_t buf_offset;
+   size_t buf_size;
    while (1) {
      // See if we need to send some bytes to the peer.
      do {
-       uint32_t buf_size_to_send = sizeof(buf);
+       size_t buf_size_to_send = sizeof(buf);
        result = tsi_handshaker_get_bytes_to_send_to_peer(handshaker, buf,
                                                          &buf_size_to_send);
        if (buf_size_to_send > 0) send_bytes_to_peer(buf, buf_size_to_send);
@@ -250,7 +251,7 @@ void tsi_peer_destruct(tsi_peer* self);
        // Process the bytes from the peer. We have to be careful as these bytes
        // may contain non-handshake data (protected data). If this is the case,
        // we will exit from the loop with buf_size > 0.
-       uint32_t consumed_by_handshaker = buf_size;
+       size_t consumed_by_handshaker = buf_size;
        result = tsi_handshaker_process_bytes_from_peer(
            handshaker, buf, &consumed_by_handshaker);
        buf_size -= consumed_by_handshaker;
@@ -300,7 +301,7 @@ typedef struct tsi_handshaker tsi_handshaker;
    error in the handshake, another specific error code is returned.  */
 tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
                                                     unsigned char* bytes,
-                                                    uint32_t* bytes_size);
+                                                    size_t* bytes_size);
 
 /* Processes bytes received from the peer.
    - bytes is the buffer containing the data.
@@ -313,7 +314,7 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
    returned.  */
 tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
                                                   const unsigned char* bytes,
-                                                  uint32_t* bytes_size);
+                                                  size_t* bytes_size);
 
 /* Gets the result of the handshaker.
    Returns TSI_OK if the hanshake completed successfully and there has been no
@@ -349,7 +350,7 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer);
    the handshaker is not in a fatal error state.
    The caller is responsible for destroying the protector.  */
 tsi_result tsi_handshaker_create_frame_protector(
-    tsi_handshaker* self, uint32_t* max_output_protected_frame_size,
+    tsi_handshaker* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector);
 
 /* This method releases the tsi_handshaker object. After this method is called,
