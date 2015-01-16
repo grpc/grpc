@@ -93,11 +93,13 @@ static gpr_uint64 op_id_2_uint64(census_op_id* id) {
   return ret;
 }
 
-static void init_mutex() { gpr_mu_init(&g_mu); }
+static void init_mutex(void) { gpr_mu_init(&g_mu); }
 
-static void init_mutex_once() { gpr_once_init(&g_init_mutex_once, init_mutex); }
+static void init_mutex_once(void) {
+  gpr_once_init(&g_init_mutex_once, init_mutex);
+}
 
-census_op_id census_tracing_start_op() {
+census_op_id census_tracing_start_op(void) {
   gpr_mu_lock(&g_mu);
   {
     trace_obj* ret = (trace_obj*)gpr_malloc(sizeof(trace_obj));
@@ -164,7 +166,7 @@ void census_tracing_end_op(census_op_id op_id) {
   gpr_mu_unlock(&g_mu);
 }
 
-void census_tracing_init() {
+void census_tracing_init(void) {
   gpr_log(GPR_INFO, "Initialize census trace store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);
@@ -177,7 +179,7 @@ void census_tracing_init() {
   gpr_mu_unlock(&g_mu);
 }
 
-void census_tracing_shutdown() {
+void census_tracing_shutdown(void) {
   gpr_log(GPR_INFO, "Shutdown census trace store.");
   gpr_mu_lock(&g_mu);
   if (g_trace_store != NULL) {
@@ -189,9 +191,9 @@ void census_tracing_shutdown() {
   gpr_mu_unlock(&g_mu);
 }
 
-void census_internal_lock_trace_store() { gpr_mu_lock(&g_mu); }
+void census_internal_lock_trace_store(void) { gpr_mu_lock(&g_mu); }
 
-void census_internal_unlock_trace_store() { gpr_mu_unlock(&g_mu); }
+void census_internal_unlock_trace_store(void) { gpr_mu_unlock(&g_mu); }
 
 trace_obj* census_get_trace_obj_locked(census_op_id op_id) {
   if (g_trace_store == NULL) {

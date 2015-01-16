@@ -54,7 +54,7 @@ static void assert_index(const grpc_chttp2_hptbl *tbl, int idx, const char *key,
   assert_str(tbl, md->value, value);
 }
 
-static void test_static_lookup() {
+static void test_static_lookup(void) {
   grpc_chttp2_hptbl tbl;
   grpc_mdctx *mdctx;
 
@@ -128,7 +128,7 @@ static void test_static_lookup() {
   grpc_mdctx_orphan(mdctx);
 }
 
-static void test_many_additions() {
+static void test_many_additions(void) {
   grpc_chttp2_hptbl tbl;
   int i;
   char key[32];
@@ -165,7 +165,7 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
   return r;
 }
 
-static void test_find() {
+static void test_find(void) {
   grpc_chttp2_hptbl tbl;
   int i;
   char buffer[32];

@@ -41,7 +41,7 @@
 #define EXPECT_EQ(a, b) GPR_ASSERT((a) == (b))
 #define EXPECT_DOUBLE_EQ(a, b) GPR_ASSERT(fabs((a) - (b)) < 1e-9)
 
-static void no_regress_no_persist_test_1() {
+static void no_regress_no_persist_test_1(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 0, 0.0);
   EXPECT_DOUBLE_EQ(1000, tas.aggregate_weighted_avg);
@@ -59,7 +59,7 @@ static void no_regress_no_persist_test_1() {
   EXPECT_DOUBLE_EQ(1, tas.aggregate_total_weight);
 }
 
-static void no_regress_no_persist_test_2() {
+static void no_regress_no_persist_test_2(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 0, 0.0);
   EXPECT_DOUBLE_EQ(1000, tas.aggregate_weighted_avg);
@@ -75,7 +75,7 @@ static void no_regress_no_persist_test_2() {
   EXPECT_DOUBLE_EQ(1, tas.aggregate_total_weight);
 }
 
-static void no_regress_no_persist_test_3() {
+static void no_regress_no_persist_test_3(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 0, 0.0);
   EXPECT_DOUBLE_EQ(1000, tas.aggregate_weighted_avg);
@@ -92,7 +92,7 @@ static void no_regress_no_persist_test_3() {
   EXPECT_DOUBLE_EQ(2, tas.aggregate_total_weight);
 }
 
-static void some_regress_no_persist_test() {
+static void some_regress_no_persist_test(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 0.5, 0.0);
   EXPECT_DOUBLE_EQ(1000, tas.aggregate_weighted_avg);
@@ -105,7 +105,7 @@ static void some_regress_no_persist_test() {
   EXPECT_DOUBLE_EQ(2.5, tas.aggregate_total_weight);
 }
 
-static void some_decay_test() {
+static void some_decay_test(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 1, 0.0);
   EXPECT_EQ(1000, tas.aggregate_weighted_avg);
@@ -126,7 +126,7 @@ static void some_decay_test() {
   EXPECT_DOUBLE_EQ(2, tas.aggregate_total_weight);
 }
 
-static void no_regress_full_persist_test() {
+static void no_regress_full_persist_test(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 0, 1.0);
   EXPECT_DOUBLE_EQ(1000, tas.aggregate_weighted_avg);
@@ -146,7 +146,7 @@ static void no_regress_full_persist_test() {
   EXPECT_DOUBLE_EQ(3, tas.aggregate_total_weight);
 }
 
-static void no_regress_some_persist_test() {
+static void no_regress_some_persist_test(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 0, 0.5);
   /* Should replace init value */
@@ -162,7 +162,7 @@ static void no_regress_some_persist_test() {
   EXPECT_DOUBLE_EQ(2.5, tas.aggregate_total_weight);
 }
 
-static void some_regress_some_persist_test() {
+static void some_regress_some_persist_test(void) {
   grpc_time_averaged_stats tas;
   grpc_time_averaged_stats_init(&tas, 1000, 0.4, 0.6);
   /* Sample weight = 0 */

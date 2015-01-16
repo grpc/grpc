@@ -44,7 +44,7 @@
 
 #define LOG_TEST_NAME() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
-static void test_strdup() {
+static void test_strdup(void) {
   static const char *src1 = "hello world";
   char *dst1;
 
@@ -64,7 +64,7 @@ static void expect_hexdump(const char *buf, size_t len, gpr_uint32 flags,
   gpr_free(got);
 }
 
-static void test_hexdump() {
+static void test_hexdump(void) {
   LOG_TEST_NAME();
   expect_hexdump("\x01", 1, 0, "01");
   expect_hexdump("\x01", 1, GPR_HEXDUMP_PLAINTEXT, "01 '.'");
@@ -85,7 +85,7 @@ static void test_pu32_succeed(const char *s, gpr_uint32 want) {
   GPR_ASSERT(out == want);
 }
 
-static void test_parse_uint32() {
+static void test_parse_uint32(void) {
   LOG_TEST_NAME();
 
   test_pu32_fail("-1");
@@ -119,7 +119,7 @@ static void test_parse_uint32() {
   test_pu32_fail("4294967299");
 }
 
-static void test_asprintf() {
+static void test_asprintf(void) {
   char *buf;
   int i, j;
 

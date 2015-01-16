@@ -40,7 +40,7 @@
 int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size);
 
 /* Returns the number of protocol versions to advertise */
-size_t grpc_chttp2_num_alpn_versions();
+size_t grpc_chttp2_num_alpn_versions(void);
 
 /* Returns the protocol version at index i (0 <= i <
  * grpc_chttp2_num_alpn_versions()) */

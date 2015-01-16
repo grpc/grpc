@@ -349,7 +349,7 @@ static void client_wait_and_shutdown(client *cl) {
 /* Test grpc_fd. Start an upload server and client, upload a stream of
    bytes from the client to the server, and verify that the total number of
    sent bytes is equal to the total number of received bytes. */
-static void test_grpc_fd() {
+static void test_grpc_fd(void) {
   server sv;
   client cl;
   int port;
@@ -403,7 +403,7 @@ static void second_read_callback(void *arg /* fd_change_data */, int success) {
    Note that we have two different but almost identical callbacks above -- the
    point is to have two different function pointers and two different data
    pointers and make sure that changing both really works. */
-static void test_grpc_fd_change() {
+static void test_grpc_fd_change(void) {
   grpc_fd *em_fd;
   fd_change_data a, b;
   int flags;
