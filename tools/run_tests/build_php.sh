@@ -15,8 +15,7 @@ cd src/php
 
 cd ext/grpc
 phpize
-cd ../..
-ext/grpc/configure
+./configure
 #cd ext/grpc
 make
 
