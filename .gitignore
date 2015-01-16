@@ -10,6 +10,3 @@ objs
 # cache for run_tests.py
 .run_tests_cache
 
-# phpize output
-src/php/ext/grpc/ltmain.sh
-
