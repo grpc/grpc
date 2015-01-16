@@ -38,7 +38,13 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(rt)
 
-  PHP_ADD_LIBPATH($GRPC_DIR/lib)
+  if test -e $GRPC_DIR/libs/opt; then
+    GRPC_LIBDIR=$GRPC_DIR/libs/opt
+  else
+    GRPC_LIBDIR=$GRPC_DIR/lib
+  fi
+
+  PHP_ADD_LIBPATH($GRPC_LIBDIR)
 
   PHP_CHECK_LIBRARY(gpr,gpr_now,
   [
@@ -48,7 +54,7 @@ if test "$PHP_GRPC" != "no"; then
   ],[
     AC_MSG_ERROR([wrong gpr lib version or lib not found])
   ],[
-    -L$GRPC_DIR/lib
+    -L$GRPC_LIBDIR
   ])
 
   PHP_ADD_LIBRARY(event,,GRPC_SHARED_LIBADD)
@@ -68,7 +74,7 @@ if test "$PHP_GRPC" != "no"; then
   ],[
     AC_MSG_ERROR([wrong grpc lib version or lib not found])
   ],[
-    -L$GRPC_DIR/lib
+    -L$GRPC_LIBDIR
   ])
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
