@@ -56,7 +56,7 @@ static gpr_timespec n_seconds_time(int n) {
   return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
 }
 
-static gpr_timespec five_seconds_time() { return n_seconds_time(5); }
+static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 /* Drain pending events on a completion queue until it's ready to destroy.
    Does some post-processing to safely release memory on some of the events. */
@@ -105,7 +105,7 @@ static void drain_cq(int client, grpc_completion_queue *cq) {
 }
 
 /* Kick off a new request - assumes g_mu taken */
-static void start_request() {
+static void start_request(void) {
   gpr_slice slice = gpr_slice_malloc(100);
   grpc_byte_buffer *buf;
   grpc_call *call = grpc_channel_create_call(
@@ -176,7 +176,7 @@ static void client_thread(void *p) {
 /* Request a new server call. We tag them with a ref-count that starts at two,
    and decrements after each of: a read completes and a write completes.
    When it drops to zero, we write status */
-static void request_server_call() {
+static void request_server_call(void) {
   gpr_refcount *rc = gpr_malloc(sizeof(gpr_refcount));
   gpr_ref_init(rc, 2);
   grpc_server_request_call(g_fixture.server, rc);
@@ -214,9 +214,11 @@ static void server_thread(void *p) {
           break;
         case GRPC_SERVER_RPC_NEW:
           if (ev->call) {
-            GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(ev->call,
-                                                        g_fixture.server_cq,
-                                                        ev->tag, 0));
+            GPR_ASSERT(GRPC_CALL_OK ==
+                       grpc_call_server_accept(ev->call, g_fixture.server_cq,
+                                               ev->tag));
+            GPR_ASSERT(GRPC_CALL_OK ==
+                       grpc_call_server_end_initial_metadata(ev->call, 0));
             GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(ev->call, ev->tag));
             GPR_ASSERT(GRPC_CALL_OK ==
                        grpc_call_start_write(ev->call, buf, ev->tag, 0));

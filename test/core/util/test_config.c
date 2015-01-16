@@ -39,7 +39,7 @@
 
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
-static int seed() { return getpid(); }
+static int seed(void) { return getpid(); }
 #endif
 
 #if GPR_GETPID_IN_PROCESS_H

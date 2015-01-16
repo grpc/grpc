@@ -50,9 +50,9 @@ static grpc_channel *channel;
 static grpc_completion_queue *cq;
 static grpc_call *call;
 
-static void init_ping_pong_request() {}
+static void init_ping_pong_request(void) {}
 
-static void step_ping_pong_request() {
+static void step_ping_pong_request(void) {
   call = grpc_channel_create_call(channel, "/Reflector/reflectUnary",
                                   "localhost", gpr_inf_future);
   GPR_ASSERT(grpc_call_invoke(call, cq, (void *)1, (void *)1,
@@ -69,7 +69,7 @@ static void step_ping_pong_request() {
   call = NULL;
 }
 
-static void init_ping_pong_stream() {
+static void init_ping_pong_stream(void) {
   call = grpc_channel_create_call(channel, "/Reflector/reflectStream",
                                   "localhost", gpr_inf_future);
   GPR_ASSERT(grpc_call_invoke(call, cq, (void *)1, (void *)1, 0) ==
@@ -77,7 +77,7 @@ static void init_ping_pong_stream() {
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
 }
 
-static void step_ping_pong_stream() {
+static void step_ping_pong_stream(void) {
   GPR_ASSERT(grpc_call_start_write(call, the_buffer, (void *)1, 0) ==
              GRPC_CALL_OK);
   GPR_ASSERT(grpc_call_start_read(call, (void *)1) == GRPC_CALL_OK);
@@ -85,7 +85,7 @@ static void step_ping_pong_stream() {
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
 }
 
-static double now() {
+static double now(void) {
   gpr_timespec tv = gpr_now();
   return 1e9 * tv.tv_sec + tv.tv_nsec;
 }

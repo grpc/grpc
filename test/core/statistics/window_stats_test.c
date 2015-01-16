@@ -73,7 +73,7 @@ static int compare_double(double a, double b, double epsilon) {
   }
 }
 
-void empty_test() {
+void empty_test(void) {
   census_window_stats_sums result;
   const gpr_timespec zero = {0, 0};
   test_stat sum;
@@ -88,7 +88,7 @@ void empty_test() {
   census_window_stats_destroy(stats);
 }
 
-void one_interval_test() {
+void one_interval_test(void) {
   const test_stat value = {0.1, 4};
   const double epsilon = 1e10 - 11;
   gpr_timespec when = {0, 0};
@@ -197,7 +197,7 @@ void one_interval_test() {
   census_window_stats_destroy(stats);
 }
 
-void many_interval_test() {
+void many_interval_test(void) {
   gpr_timespec intervals[4];
   const test_stat value = {123.45, 8};
   const double epsilon = 1e10 - 11;
@@ -258,7 +258,7 @@ void many_interval_test() {
   census_window_stats_destroy(stats);
 }
 
-void rolling_time_test() {
+void rolling_time_test(void) {
   const test_stat value = {0.1, 4};
   gpr_timespec when = {0, 0};
   census_window_stats_sums result;
@@ -282,7 +282,7 @@ void rolling_time_test() {
   census_window_stats_destroy(stats);
 }
 #include <stdio.h>
-void infinite_interval_test() {
+void infinite_interval_test(void) {
   const test_stat value = {0.1, 4};
   gpr_timespec when = {0, 0};
   census_window_stats_sums result;

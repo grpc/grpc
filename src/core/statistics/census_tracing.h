@@ -38,10 +38,10 @@
 typedef struct trace_obj trace_obj;
 
 /* Initializes trace store. This function is thread safe. */
-void census_tracing_init();
+void census_tracing_init(void);
 
 /* Shutsdown trace store. This function is thread safe. */
-void census_tracing_shutdown();
+void census_tracing_shutdown(void);
 
 /* Gets trace obj corresponding to the input op_id. Returns NULL if trace store
    is not initialized or trace obj is not found. Requires trace store being
@@ -50,8 +50,8 @@ trace_obj* census_get_trace_obj_locked(census_op_id op_id);
 
 /* The following two functions acquire and release the trace store global lock.
    They are for census internal use only. */
-void census_internal_lock_trace_store();
-void census_internal_unlock_trace_store();
+void census_internal_lock_trace_store(void);
+void census_internal_unlock_trace_store(void);
 
 /* Gets method tag name associated with the input trace object. */
 const char* census_get_trace_method_name(const trace_obj* trace);

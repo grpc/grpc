@@ -1,6 +1,8 @@
 """Run a group of subprocesses and then finish."""
 
+import hashlib
 import multiprocessing
+import os
 import random
 import subprocess
 import sys
@@ -40,9 +42,11 @@ _KILLED = object()
 
 
 _COLORS = {
-    'red': 31,
-    'green': 32,
-    'yellow': 33,
+    'red': [ 31, 0 ],
+    'green': [ 32, 0 ],
+    'yellow': [ 33, 0 ],
+    'lightgray': [ 37, 0],
+    'gray': [ 30, 1 ],
     }
 
 
@@ -53,45 +57,63 @@ _CLEAR_LINE = '\x1b[2K'
 _TAG_COLOR = {
     'FAILED': 'red',
     'PASSED': 'green',
-    'START': 'yellow',
+    'START': 'gray',
     'WAITING': 'yellow',
+    'SUCCESS': 'green',
+    'IDLE': 'gray',
     }
 
 
-def message(tag, message, explanatory_text=None):
-  sys.stdout.write('%s%s\x1b[%dm%s\x1b[0m: %s%s' % (
+def message(tag, message, explanatory_text=None, do_newline=False):
+  sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
       _BEGINNING_OF_LINE,
       _CLEAR_LINE,
-      _COLORS[_TAG_COLOR[tag]],
+      '\n%s' % explanatory_text if explanatory_text is not None else '',
+      _COLORS[_TAG_COLOR[tag]][1],
+      _COLORS[_TAG_COLOR[tag]][0],
       tag,
       message,
-      '\n%s\n' % explanatory_text if explanatory_text is not None else ''))
+      '\n' if do_newline or explanatory_text is not None else ''))
   sys.stdout.flush()
+
+
+def which(filename):
+  if '/' in filename:
+    return filename
+  for path in os.environ['PATH'].split(os.pathsep):
+    if os.path.exists(os.path.join(path, filename)):
+      return os.path.join(path, filename)
+  raise Exception('%s not found' % filename)
 
 
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, cmdline):
-    self._cmdline = ' '.join(cmdline)
+  def __init__(self, cmdline, bin_hash, newline_on_success):
+    self._cmdline = cmdline
+    self._bin_hash = bin_hash
     self._tempfile = tempfile.TemporaryFile()
     self._process = subprocess.Popen(args=cmdline,
                                      stderr=subprocess.STDOUT,
                                      stdout=self._tempfile)
     self._state = _RUNNING
-    message('START', self._cmdline)
+    self._newline_on_success = newline_on_success
+    message('START', ' '.join(self._cmdline))
 
-  def state(self):
+  def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
     if self._state == _RUNNING and self._process.poll() is not None:
       if self._process.returncode != 0:
         self._state = _FAILURE
         self._tempfile.seek(0)
         stdout = self._tempfile.read()
-        message('FAILED', '%s [ret=%d]' % (self._cmdline, self._process.returncode), stdout)
+        message('FAILED', '%s [ret=%d]' % (
+            ' '.join(self._cmdline), self._process.returncode), stdout)
       else:
         self._state = _SUCCESS
-        message('PASSED', '%s' % self._cmdline)
+        message('PASSED', '%s' % ' '.join(self._cmdline),
+                do_newline=self._newline_on_success)
+        update_cache.finished(self._cmdline, self._bin_hash)
     return self._state
 
   def kill(self):
@@ -103,13 +125,15 @@ class Job(object):
 class Jobset(object):
   """Manages one run of jobs."""
 
-  def __init__(self, check_cancelled, maxjobs):
+  def __init__(self, check_cancelled, maxjobs, newline_on_success, cache):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
     self._failures = 0
     self._completed = 0
     self._maxjobs = maxjobs
+    self._newline_on_success = newline_on_success
+    self._cache = cache
 
   def start(self, cmdline):
     """Start a job. Return True on success, False on failure."""
@@ -117,7 +141,10 @@ class Jobset(object):
       if self.cancelled(): return False
       self.reap()
     if self.cancelled(): return False
-    self._running.add(Job(cmdline))
+    with open(which(cmdline[0])) as f:
+      bin_hash = hashlib.sha1(f.read()).hexdigest()
+    if self._cache.should_run(cmdline, bin_hash):
+      self._running.add(Job(cmdline, bin_hash, self._newline_on_success))
     return True
 
   def reap(self):
@@ -125,7 +152,7 @@ class Jobset(object):
     while self._running:
       dead = set()
       for job in self._running:
-        st = job.state()
+        st = job.state(self._cache)
         if st == _RUNNING: continue
         if st == _FAILURE: self._failures += 1
         dead.add(job)
@@ -157,9 +184,24 @@ def _never_cancelled():
   return False
 
 
-def run(cmdlines, check_cancelled=_never_cancelled, maxjobs=None):
+# cache class that caches nothing
+class NoCache(object):
+  def should_run(self, cmdline, bin_hash):
+    return True
+
+  def finished(self, cmdline, bin_hash):
+    pass
+
+
+def run(cmdlines,
+        check_cancelled=_never_cancelled,
+        maxjobs=None,
+        newline_on_success=False,
+        cache=None):
   js = Jobset(check_cancelled,
-              maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS)
+              maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
+              newline_on_success,
+              cache if cache is not None else NoCache())
   for cmdline in shuffle_iteratable(cmdlines):
     if not js.start(cmdline):
       break

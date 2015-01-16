@@ -145,7 +145,7 @@ static gpr_slice create_test_value(test_value id) {
   return gpr_slice_from_copied_string("bad value");
 }
 
-static void test_bad_data() {
+static void test_bad_data(void) {
   gpr_slice_buffer input;
   gpr_slice_buffer output;
   int i;

@@ -125,7 +125,7 @@ secure_endpoint_create_fixture_tcp_socketpair_leftover(size_t slice_size) {
   return f;
 }
 
-static void clean_up() {}
+static void clean_up(void) {}
 
 static grpc_endpoint_test_config configs[] = {
     {"secure_ep/tcp_socketpair",

@@ -82,7 +82,7 @@ struct grpc_mdelem {
 };
 
 /* Create/orphan a metadata context */
-grpc_mdctx *grpc_mdctx_create();
+grpc_mdctx *grpc_mdctx_create(void);
 grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed);
 void grpc_mdctx_orphan(grpc_mdctx *mdctx);
 

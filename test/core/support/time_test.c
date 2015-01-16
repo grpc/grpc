@@ -222,7 +222,7 @@ static void test_sticky_infinities(void) {
   }
 }
 
-static void test_similar() {
+static void test_similar(void) {
   GPR_ASSERT(1 == gpr_time_similar(gpr_inf_future, gpr_inf_future, gpr_time_0));
   GPR_ASSERT(1 == gpr_time_similar(gpr_inf_past, gpr_inf_past, gpr_time_0));
   GPR_ASSERT(0 == gpr_time_similar(gpr_inf_past, gpr_inf_future, gpr_time_0));

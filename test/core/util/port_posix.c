@@ -98,7 +98,7 @@ static int is_port_available(int *port, int is_tcp) {
   return 1;
 }
 
-int grpc_pick_unused_port() {
+int grpc_pick_unused_port(void) {
   /* We repeatedly pick a port and then see whether or not it is
      available for use both as a TCP socket and a UDP socket.  First, we
      pick a random large port number.  For subsequent
@@ -141,7 +141,7 @@ int grpc_pick_unused_port() {
   return 0;
 }
 
-int grpc_pick_unused_port_or_die() {
+int grpc_pick_unused_port_or_die(void) {
   int port = grpc_pick_unused_port();
   GPR_ASSERT(port > 0);
   return port;
