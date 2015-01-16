@@ -57,15 +57,6 @@ if test "$PHP_GRPC" != "no"; then
     -L$GRPC_LIBDIR
   ])
 
-  PHP_ADD_LIBRARY(event,,GRPC_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(event)
-
-  PHP_ADD_LIBRARY(event_pthreads,,GRPC_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(event_pthreads)
-
-  PHP_ADD_LIBRARY(event_core,,GRPC_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(event_core)
-
   PHP_CHECK_LIBRARY(grpc,grpc_channel_destroy,
   [
     PHP_ADD_LIBRARY(grpc,,GRPC_SHARED_LIBADD)
