@@ -31,6 +31,9 @@
  *
  */
 
+#include <string>
+#include <map>
+
 #include "src/compiler/cpp_generator.h"
 
 #include "src/compiler/cpp_generator_helpers.h"

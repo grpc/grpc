@@ -35,6 +35,8 @@
 //
 
 #include <memory>
+#include <string>
+
 #include "src/compiler/cpp_generator.h"
 #include "src/compiler/cpp_generator_helpers.h"
 #include <google/protobuf/descriptor.h>

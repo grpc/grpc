@@ -37,6 +37,7 @@
 // and net/proto2/compiler/public/plugin.h for more information on plugins.
 
 #include <memory>
+#include <string>
 
 #include "src/compiler/ruby_generator.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
