@@ -55,7 +55,8 @@ def main():
               'name': 'end2end_test_%s' % t,
               'build': 'private',
               'secure': False,
-              'src': ['test/core/end2end/tests/%s.c' % t]
+              'src': ['test/core/end2end/tests/%s.c' % t],
+              'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
           }
           for t in END2END_TESTS] + [
           {
