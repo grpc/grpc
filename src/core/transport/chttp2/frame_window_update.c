@@ -81,7 +81,7 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
   grpc_chttp2_window_update_parser *p = parser;
 
   while (p->byte != 4 && cur != end) {
-    p->amount |= ((gpr_uint32)*cur) << (8 * (3 - p->byte));
+    p->amount |= ((gpr_uint32) * cur) << (8 * (3 - p->byte));
     cur++;
     p->byte++;
   }

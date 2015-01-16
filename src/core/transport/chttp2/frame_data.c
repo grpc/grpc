@@ -105,28 +105,28 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_1:
-      p->frame_size = ((gpr_uint32)*cur) << 24;
+      p->frame_size = ((gpr_uint32) * cur) << 24;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_2;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_2:
-      p->frame_size |= ((gpr_uint32)*cur) << 16;
+      p->frame_size |= ((gpr_uint32) * cur) << 16;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_3;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_3:
-      p->frame_size |= ((gpr_uint32)*cur) << 8;
+      p->frame_size |= ((gpr_uint32) * cur) << 8;
       if (++cur == end) {
         p->state = GRPC_CHTTP2_DATA_FH_4;
         return GRPC_CHTTP2_PARSE_OK;
       }
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FH_4:
-      p->frame_size |= ((gpr_uint32)*cur);
+      p->frame_size |= ((gpr_uint32) * cur);
       p->state = GRPC_CHTTP2_DATA_FRAME;
       ++cur;
       state->need_flush_reads = 1;

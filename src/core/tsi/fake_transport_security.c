@@ -120,7 +120,7 @@ static void store32_little_endian(gpr_uint32 value, unsigned char* buf) {
   buf[3] = (unsigned char)(value >> 24) & 0xFF;
   buf[2] = (unsigned char)(value >> 16) & 0xFF;
   buf[1] = (unsigned char)(value >> 8) & 0xFF;
-  buf[0] = (unsigned char)(value)&0xFF;
+  buf[0] = (unsigned char)(value) & 0xFF;
 }
 
 static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
@@ -230,10 +230,11 @@ static void tsi_fake_frame_destruct(tsi_fake_frame* frame) {
 
 /* --- tsi_frame_protector methods implementation. ---*/
 
-static tsi_result fake_protector_protect(
-    tsi_frame_protector* self, const unsigned char* unprotected_bytes,
-    size_t* unprotected_bytes_size, unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size) {
+static tsi_result fake_protector_protect(tsi_frame_protector* self,
+                                         const unsigned char* unprotected_bytes,
+                                         size_t* unprotected_bytes_size,
+                                         unsigned char* protected_output_frames,
+                                         size_t* protected_output_frames_size) {
   tsi_result result = TSI_OK;
   tsi_fake_frame_protector* impl = (tsi_fake_frame_protector*)self;
   unsigned char frame_header[TSI_FAKE_FRAME_HEADER_SIZE];
@@ -368,8 +369,7 @@ static void fake_protector_destroy(tsi_frame_protector* self) {
 
 static const tsi_frame_protector_vtable frame_protector_vtable = {
     fake_protector_protect, fake_protector_protect_flush,
-    fake_protector_unprotect, fake_protector_destroy,
-};
+    fake_protector_unprotect, fake_protector_destroy, };
 
 /* --- tsi_handshaker methods implementation. ---*/
 
@@ -480,10 +480,11 @@ static void fake_handshaker_destroy(tsi_handshaker* self) {
 
 static const tsi_handshaker_vtable handshaker_vtable = {
     fake_handshaker_get_bytes_to_send_to_peer,
-    fake_handshaker_process_bytes_from_peer, fake_handshaker_get_result,
-    fake_handshaker_extract_peer, fake_handshaker_create_frame_protector,
-    fake_handshaker_destroy,
-};
+    fake_handshaker_process_bytes_from_peer,
+    fake_handshaker_get_result,
+    fake_handshaker_extract_peer,
+    fake_handshaker_create_frame_protector,
+    fake_handshaker_destroy, };
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {
   tsi_fake_handshaker* impl = calloc(1, sizeof(tsi_fake_handshaker));

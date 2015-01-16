@@ -293,5 +293,4 @@ const grpc_chttp2_huffsym grpc_chttp2_huffsyms[GRPC_CHTTP2_NUM_HUFFSYMS] = {
     {0x7ffffef, 27},
     {0x7fffff0, 27},
     {0x3ffffee, 26},
-    {0x3fffffff, 30},
-};
+    {0x3fffffff, 30}, };

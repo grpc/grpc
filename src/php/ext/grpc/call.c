@@ -423,16 +423,15 @@ PHP_METHOD(Call, start_read) {
 
 static zend_function_entry call_methods[] = {
     PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_ME(Call, server_accept, NULL, ZEND_ACC_PUBLIC)
-            PHP_ME(Call, server_end_initial_metadata, NULL, ZEND_ACC_PUBLIC)
-                PHP_ME(Call, add_metadata, NULL, ZEND_ACC_PUBLIC) PHP_ME(
-                    Call, cancel, NULL, ZEND_ACC_PUBLIC)
-                    PHP_ME(Call, start_invoke, NULL, ZEND_ACC_PUBLIC) PHP_ME(
-                        Call, start_read, NULL, ZEND_ACC_PUBLIC)
-                        PHP_ME(Call, start_write, NULL, ZEND_ACC_PUBLIC) PHP_ME(
-                            Call, start_write_status, NULL, ZEND_ACC_PUBLIC)
-                            PHP_ME(Call, writes_done, NULL, ZEND_ACC_PUBLIC)
-                                PHP_FE_END};
+    PHP_ME(Call, server_accept, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, server_end_initial_metadata, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, add_metadata, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_invoke, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_read, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_write, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_write_status, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, writes_done, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;
