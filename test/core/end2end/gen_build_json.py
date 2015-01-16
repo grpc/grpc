@@ -25,6 +25,7 @@ END2END_TESTS = [
     'disappearing_server',
     'early_server_shutdown_finishes_inflight_calls',
     'early_server_shutdown_finishes_tags',
+    'graceful_server_shutdown',
     'invoke_large_request',
     'max_concurrent_streams',
     'no_op',

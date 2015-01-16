@@ -155,6 +155,13 @@ static void end_op_locked(grpc_completion_queue *cc,
   }
 }
 
+void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag) {
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  add_locked(cc, GRPC_SERVER_SHUTDOWN, tag, NULL, NULL, NULL);
+  end_op_locked(cc, GRPC_SERVER_SHUTDOWN);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+}
+
 void grpc_cq_end_read(grpc_completion_queue *cc, void *tag, grpc_call *call,
                       grpc_event_finish_func on_finish, void *user_data,
                       grpc_byte_buffer *read) {
