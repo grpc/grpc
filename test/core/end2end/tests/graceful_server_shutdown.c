@@ -143,7 +143,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   cq_expect_server_shutdown(v_server, tag(0xdead));
   cq_verify(v_server);
 
-  cq_expect_finished_with_status(v_client, tag(3), GRPC_OP_OK, NULL, NULL);
+  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_OK, NULL, NULL);
   cq_verify(v_client);
 
   grpc_call_destroy(c);
