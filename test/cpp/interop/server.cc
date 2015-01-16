@@ -203,11 +203,7 @@ void RunServer() {
   builder.RegisterService(service.service());
   if (FLAGS_enable_ssl) {
     SslServerCredentialsOptions ssl_opts = {
-        "",
-        {reinterpret_cast<const char*>(test_server1_key),
-         test_server1_key_size},
-        {reinterpret_cast<const char*>(test_server1_cert),
-         test_server1_cert_size}};
+        "", {{test_server1_key, test_server1_cert}}};
     std::shared_ptr<ServerCredentials> creds =
         ServerCredentialsFactory::SslCredentials(ssl_opts);
     builder.SetCredentials(creds);

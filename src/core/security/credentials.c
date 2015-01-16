@@ -139,7 +139,7 @@ typedef struct {
 
 typedef struct {
   grpc_server_credentials base;
-  grpc_ssl_config config;
+  grpc_ssl_server_config config;
 } grpc_ssl_server_credentials;
 
 static void ssl_destroy(grpc_credentials *creds) {
@@ -152,9 +152,24 @@ static void ssl_destroy(grpc_credentials *creds) {
 
 static void ssl_server_destroy(grpc_server_credentials *creds) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
+  size_t i;
+  for (i = 0; i < c->config.num_key_cert_pairs; i++) {
+    if (c->config.pem_private_keys[i] != NULL) {
+      gpr_free(c->config.pem_private_keys[i]);
+    }
+    if (c->config.pem_cert_chains[i]!= NULL)  {
+      gpr_free(c->config.pem_cert_chains[i]);
+    }
+  }
+  if (c->config.pem_private_keys != NULL) gpr_free(c->config.pem_private_keys);
+  if (c->config.pem_private_keys_sizes != NULL) {
+    gpr_free(c->config.pem_private_keys_sizes);
+  }
+  if (c->config.pem_cert_chains != NULL) gpr_free(c->config.pem_cert_chains);
+  if (c->config.pem_cert_chains_sizes != NULL) {
+    gpr_free(c->config.pem_cert_chains_sizes);
+  }
   if (c->config.pem_root_certs != NULL) gpr_free(c->config.pem_root_certs);
-  if (c->config.pem_private_key != NULL) gpr_free(c->config.pem_private_key);
-  if (c->config.pem_cert_chain != NULL) gpr_free(c->config.pem_cert_chain);
   gpr_free(creds);
 }
 
@@ -179,7 +194,7 @@ const grpc_ssl_config *grpc_ssl_credentials_get_config(
   }
 }
 
-const grpc_ssl_config *grpc_ssl_server_credentials_get_config(
+const grpc_ssl_server_config *grpc_ssl_server_credentials_get_config(
     const grpc_server_credentials *creds) {
   if (creds == NULL || strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
     return NULL;
@@ -189,57 +204,89 @@ const grpc_ssl_config *grpc_ssl_server_credentials_get_config(
   }
 }
 
-static void ssl_build_config(const unsigned char *pem_root_certs,
-                             size_t pem_root_certs_size,
-                             const unsigned char *pem_private_key,
-                             size_t pem_private_key_size,
-                             const unsigned char *pem_cert_chain,
-                             size_t pem_cert_chain_size,
+static void ssl_copy_key_material(const char *input, unsigned char **output,
+                                  size_t *output_size) {
+  *output_size = strlen(input);
+  *output = gpr_malloc(*output_size);
+  memcpy(*output, input, *output_size);
+}
+
+static void ssl_build_config(const char *pem_root_certs,
+                             grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
                              grpc_ssl_config *config) {
+  if (pem_root_certs == NULL) {
+    /* TODO(jboeuf): Get them from the environment. */
+    gpr_log(GPR_ERROR, "Default SSL roots not yet implemented.");
+  } else {
+    ssl_copy_key_material(pem_root_certs, &config->pem_root_certs,
+                          &config->pem_root_certs_size);
+  }
+
+  if (pem_key_cert_pair != NULL) {
+    GPR_ASSERT(pem_key_cert_pair->private_key != NULL);
+    GPR_ASSERT(pem_key_cert_pair->cert_chain != NULL);
+    ssl_copy_key_material(pem_key_cert_pair->private_key,
+                          &config->pem_private_key,
+                          &config->pem_private_key_size);
+    ssl_copy_key_material(pem_key_cert_pair->cert_chain,
+                          &config->pem_cert_chain,
+                          &config->pem_cert_chain_size);
+  }
+}
+
+static void ssl_build_server_config(
+    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs, grpc_ssl_server_config *config) {
+  size_t i;
   if (pem_root_certs != NULL) {
-    config->pem_root_certs = gpr_malloc(pem_root_certs_size);
-    memcpy(config->pem_root_certs, pem_root_certs, pem_root_certs_size);
-    config->pem_root_certs_size = pem_root_certs_size;
+    ssl_copy_key_material(pem_root_certs, &config->pem_root_certs,
+                          &config->pem_root_certs_size);
   }
-  if (pem_private_key != NULL) {
-    config->pem_private_key = gpr_malloc(pem_private_key_size);
-    memcpy(config->pem_private_key, pem_private_key, pem_private_key_size);
-    config->pem_private_key_size = pem_private_key_size;
+  if (num_key_cert_pairs > 0) {
+    GPR_ASSERT(pem_key_cert_pairs != NULL);
+    config->pem_private_keys =
+        gpr_malloc(num_key_cert_pairs * sizeof(unsigned char *));
+    config->pem_cert_chains =
+        gpr_malloc(num_key_cert_pairs * sizeof(unsigned char *));
+    config->pem_private_keys_sizes =
+        gpr_malloc(num_key_cert_pairs * sizeof(size_t));
+    config->pem_cert_chains_sizes =
+        gpr_malloc(num_key_cert_pairs * sizeof(size_t));
   }
-  if (pem_cert_chain != NULL) {
-    config->pem_cert_chain = gpr_malloc(pem_cert_chain_size);
-    memcpy(config->pem_cert_chain, pem_cert_chain, pem_cert_chain_size);
-    config->pem_cert_chain_size = pem_cert_chain_size;
+  config->num_key_cert_pairs = num_key_cert_pairs;
+  for (i = 0; i < num_key_cert_pairs; i++) {
+    GPR_ASSERT(pem_key_cert_pairs[i].private_key != NULL);
+    GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != NULL);
+    ssl_copy_key_material(pem_key_cert_pairs[i].private_key,
+                          &config->pem_private_keys[i],
+                          &config->pem_private_keys_sizes[i]);
+    ssl_copy_key_material(pem_key_cert_pairs[i].cert_chain,
+                          &config->pem_cert_chains[i],
+                          &config->pem_cert_chains_sizes[i]);
   }
 }
 
 grpc_credentials *grpc_ssl_credentials_create(
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const unsigned char *pem_private_key, size_t pem_private_key_size,
-    const unsigned char *pem_cert_chain, size_t pem_cert_chain_size) {
+    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair) {
   grpc_ssl_credentials *c = gpr_malloc(sizeof(grpc_ssl_credentials));
   memset(c, 0, sizeof(grpc_ssl_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_SSL;
   c->base.vtable = &ssl_vtable;
   gpr_ref_init(&c->base.refcount, 1);
-  ssl_build_config(pem_root_certs, pem_root_certs_size, pem_private_key,
-                   pem_private_key_size, pem_cert_chain, pem_cert_chain_size,
-                   &c->config);
+  ssl_build_config(pem_root_certs, pem_key_cert_pair, &c->config);
   return &c->base;
 }
 
 grpc_server_credentials *grpc_ssl_server_credentials_create(
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const unsigned char *pem_private_key, size_t pem_private_key_size,
-    const unsigned char *pem_cert_chain, size_t pem_cert_chain_size) {
+    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs) {
   grpc_ssl_server_credentials *c =
       gpr_malloc(sizeof(grpc_ssl_server_credentials));
   memset(c, 0, sizeof(grpc_ssl_server_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_SSL;
   c->base.vtable = &ssl_server_vtable;
-  ssl_build_config(pem_root_certs, pem_root_certs_size, pem_private_key,
-                   pem_private_key_size, pem_cert_chain, pem_cert_chain_size,
-                   &c->config);
+  ssl_build_server_config(pem_root_certs, pem_key_cert_pairs,
+                          num_key_cert_pairs, &c->config);
   return &c->base;
 }
 

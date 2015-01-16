@@ -56,11 +56,8 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
   ChannelArguments channel_args;
   if (enable_ssl) {
     const char* roots_certs =
-        use_prod_roots ? reinterpret_cast<const char*>(prod_roots_certs)
-                       : reinterpret_cast<const char*>(test_root_cert);
-    unsigned int roots_certs_size =
-        use_prod_roots ? prod_roots_certs_size : test_root_cert_size;
-    SslCredentialsOptions ssl_opts = {{roots_certs, roots_certs_size}, "", ""};
+        use_prod_roots ? prod_roots_certs : test_root_cert;
+    SslCredentialsOptions ssl_opts = {roots_certs, "", ""};
 
     std::unique_ptr<Credentials> creds =
         CredentialsFactory::SslCredentials(ssl_opts);
