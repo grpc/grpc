@@ -80,9 +80,9 @@ static void background_callback_executor(void *ignored) {
   gpr_event_set(&g_background_callback_executor_done, (void *)1);
 }
 
-void grpc_kick_poller() { gpr_cv_broadcast(&g_cv); }
+void grpc_kick_poller(void) { gpr_cv_broadcast(&g_cv); }
 
-void grpc_iomgr_init() {
+void grpc_iomgr_init(void) {
   gpr_thd_id id;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
@@ -93,7 +93,7 @@ void grpc_iomgr_init() {
   gpr_thd_new(&id, background_callback_executor, NULL, NULL);
 }
 
-void grpc_iomgr_shutdown() {
+void grpc_iomgr_shutdown(void) {
   delayed_callback *cb;
   gpr_timespec shutdown_deadline =
       gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
@@ -134,13 +134,13 @@ void grpc_iomgr_shutdown() {
   gpr_cv_destroy(&g_cv);
 }
 
-void grpc_iomgr_ref() {
+void grpc_iomgr_ref(void) {
   gpr_mu_lock(&g_mu);
   ++g_refs;
   gpr_mu_unlock(&g_mu);
 }
 
-void grpc_iomgr_unref() {
+void grpc_iomgr_unref(void) {
   gpr_mu_lock(&g_mu);
   if (0 == --g_refs) {
     gpr_cv_signal(&g_cv);

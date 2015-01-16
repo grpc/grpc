@@ -36,7 +36,7 @@
 
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__);
 
-static void test_no_op() {
+static void test_no_op(void) {
   gpr_histogram_destroy(gpr_histogram_create(0.01, 60e9));
 }
 
@@ -49,7 +49,7 @@ static void expect_percentile(gpr_histogram *h, double percentile,
   GPR_ASSERT(got <= max_expect);
 }
 
-static void test_simple() {
+static void test_simple(void) {
   gpr_histogram *h;
 
   LOG_TEST();
@@ -66,7 +66,7 @@ static void test_simple() {
   gpr_histogram_destroy(h);
 }
 
-static void test_percentile() {
+static void test_percentile(void) {
   gpr_histogram *h;
   double last;
   double i;
@@ -111,7 +111,7 @@ static void test_percentile() {
   gpr_histogram_destroy(h);
 }
 
-static void test_merge() {
+static void test_merge(void) {
   gpr_histogram *h1, *h2;
   double last;
   double i;

@@ -411,9 +411,9 @@ grpc_security_status grpc_ssl_server_security_context_create(
   c->base.vtable = &ssl_server_vtable;
   result = tsi_create_ssl_server_handshaker_factory(
       (const unsigned char **)&config->pem_private_key,
-      (const gpr_uint32 *)&config->pem_private_key_size,
+      &config->pem_private_key_size,
       (const unsigned char **)&config->pem_cert_chain,
-      (const gpr_uint32 *)&config->pem_cert_chain_size, 1,
+      &config->pem_cert_chain_size, 1,
       config->pem_root_certs, config->pem_root_certs_size,
       GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
       alpn_protocol_string_lengths, num_alpn_protocols, &c->handshaker_factory);

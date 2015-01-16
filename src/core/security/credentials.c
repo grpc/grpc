@@ -637,8 +637,8 @@ grpc_credentials *grpc_fake_transport_security_credentials_create(void) {
   return c;
 }
 
-grpc_server_credentials *
-grpc_fake_transport_security_server_credentials_create() {
+grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
+    void) {
   grpc_server_credentials *c = gpr_malloc(sizeof(grpc_server_credentials));
   memset(c, 0, sizeof(grpc_server_credentials));
   c->type = GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;

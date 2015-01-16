@@ -131,7 +131,7 @@ static void send_handshake_bytes_to_peer(grpc_secure_transport_setup *s) {
   grpc_endpoint_write_status write_status;
 
   do {
-    uint32_t to_send_size = s->handshake_buffer_size - offset;
+    size_t to_send_size = s->handshake_buffer_size - offset;
     result = tsi_handshaker_get_bytes_to_send_to_peer(
         s->handshaker, s->handshake_buffer + offset, &to_send_size);
     offset += to_send_size;
@@ -174,7 +174,7 @@ static void on_handshake_data_received_from_peer(
     void *setup, gpr_slice *slices, size_t nslices,
     grpc_endpoint_cb_status error) {
   grpc_secure_transport_setup *s = setup;
-  uint32_t consumed_slice_size = 0;
+  size_t consumed_slice_size = 0;
   tsi_result result = TSI_OK;
   size_t i;
   size_t num_left_overs;

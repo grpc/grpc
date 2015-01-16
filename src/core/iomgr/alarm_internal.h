@@ -42,12 +42,12 @@
 int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next);
 
 void grpc_alarm_list_init(gpr_timespec now);
-void grpc_alarm_list_shutdown();
+void grpc_alarm_list_shutdown(void);
 
-gpr_timespec grpc_alarm_list_next_timeout();
+gpr_timespec grpc_alarm_list_next_timeout(void);
 
 /* the following must be implemented by each iomgr implementation */
 
-void grpc_kick_poller();
+void grpc_kick_poller(void);
 
 #endif /* __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_ */

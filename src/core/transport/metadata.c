@@ -154,7 +154,7 @@ grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed) {
   return ctx;
 }
 
-grpc_mdctx *grpc_mdctx_create() {
+grpc_mdctx *grpc_mdctx_create(void) {
   /* This seed is used to prevent remote connections from controlling hash table
    * collisions. It needs to be somewhat unpredictable to a remote connection.
    */

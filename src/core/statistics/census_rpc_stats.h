@@ -53,7 +53,7 @@ struct census_rpc_stats {
 };
 
 /* Creates an empty rpc stats object on heap. */
-census_rpc_stats* census_rpc_stats_create_empty();
+census_rpc_stats* census_rpc_stats_create_empty(void);
 
 typedef struct census_per_method_rpc_stats {
   const char* method;
@@ -91,8 +91,8 @@ void census_get_server_stats(census_aggregated_rpc_stats* data_map);
    DO NOT CALL from outside of grpc code. */
 void census_get_client_stats(census_aggregated_rpc_stats* data_map);
 
-void census_stats_store_init();
-void census_stats_store_shutdown();
+void census_stats_store_init(void);
+void census_stats_store_shutdown(void);
 
 #ifdef __cplusplus
 }

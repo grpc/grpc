@@ -102,7 +102,7 @@ static void assert_result_ok(void *user_data, grpc_op_error error) {
   GPR_ASSERT(error == GRPC_OP_OK);
 }
 
-static void test_small_data_framing() {
+static void test_small_data_framing(void) {
   grpc_sopb_add_no_op(&g_sopb);
   verify_sopb(10, 0, 0, "");
 
@@ -135,7 +135,7 @@ static void add_sopb_header(const char *key, const char *value) {
                          grpc_mdelem_from_strings(g_mdctx, key, value));
 }
 
-static void test_basic_headers() {
+static void test_basic_headers(void) {
   int i;
 
   add_sopb_header("a", "a");
@@ -183,7 +183,7 @@ static void encode_int_to_str(int i, char *p) {
   p[2] = 0;
 }
 
-static void test_decode_table_overflow() {
+static void test_decode_table_overflow(void) {
   int i;
   char key[3], value[3];
   char expect[128];
@@ -281,10 +281,10 @@ static void test_decode_random_headers_inner(int max_len) {
   grpc_sopb_destroy(&encops);
 }
 
-#define DECL_TEST_DECODE_RANDOM_HEADERS(n)       \
-  static void test_decode_random_headers_##n() { \
-    test_decode_random_headers_inner(n);         \
-  }                                              \
+#define DECL_TEST_DECODE_RANDOM_HEADERS(n)           \
+  static void test_decode_random_headers_##n(void) { \
+    test_decode_random_headers_inner(n);             \
+  }                                                  \
   int keeps_formatting_correct_##n
 
 DECL_TEST_DECODE_RANDOM_HEADERS(1);

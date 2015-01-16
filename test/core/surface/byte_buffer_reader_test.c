@@ -46,7 +46,7 @@
 
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
-static void test_create() {
+static void test_create(void) {
   grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader *reader;
   gpr_slice empty = gpr_empty_slice();
@@ -57,7 +57,7 @@ static void test_create() {
   grpc_byte_buffer_destroy(buffer);
 }
 
-static void test_read_one_slice() {
+static void test_read_one_slice(void) {
   gpr_slice slice;
   grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader *reader;
@@ -79,7 +79,7 @@ static void test_read_one_slice() {
   grpc_byte_buffer_destroy(buffer);
 }
 
-static void test_read_one_slice_malloc() {
+static void test_read_one_slice_malloc(void) {
   gpr_slice slice;
   grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader *reader;
