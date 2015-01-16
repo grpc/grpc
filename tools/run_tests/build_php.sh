@@ -8,7 +8,7 @@ cd $(dirname $0)/../..
 export GRPC_DIR=`pwd`
 
 # make the libraries
-make -j shared_c
+make -j static_c
 
 # build php
 cd src/php
