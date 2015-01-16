@@ -6,3 +6,6 @@ gens
 libs
 objs
 *.pyc
+
+# cache for run_tests.py
+.run_tests_cache
