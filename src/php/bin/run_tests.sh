@@ -1,3 +1,4 @@
+#!/bin/sh
 # Loads the local shared library, and runs all of the test cases in tests/
 # against it
 cd $(dirname $0)
