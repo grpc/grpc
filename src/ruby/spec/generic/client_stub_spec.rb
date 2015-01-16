@@ -31,7 +31,7 @@ require 'grpc'
 require 'xray/thread_dump_signal_handler'
 require_relative '../port_picker'
 
-NOOP = Proc.new { |x| x }
+NOOP = proc { |x| x }
 
 def wakey_thread(&blk)
   awake_mutex, awake_cond = Mutex.new, ConditionVariable.new
@@ -52,7 +52,6 @@ include GRPC::Core::StatusCodes
 include GRPC::Core::TimeConsts
 
 describe 'ClientStub' do
-
   before(:each) do
     Thread.abort_on_exception = true
     @server = nil
@@ -67,11 +66,10 @@ describe 'ClientStub' do
   end
 
   describe '#new' do
-
     it 'can be created from a host and args' do
       host = new_test_host
-      opts = {:a_channel_arg => 'an_arg'}
-      blk = Proc.new do
+      opts = { a_channel_arg: 'an_arg' }
+      blk = proc do
         GRPC::ClientStub.new(host, @cq, **opts)
       end
       expect(&blk).not_to raise_error
@@ -79,8 +77,8 @@ describe 'ClientStub' do
 
     it 'can be created with a default deadline' do
       host = new_test_host
-      opts = {:a_channel_arg => 'an_arg', :deadline => 5}
-      blk = Proc.new do
+      opts = { a_channel_arg: 'an_arg', deadline: 5 }
+      blk = proc do
         GRPC::ClientStub.new(host, @cq, **opts)
       end
       expect(&blk).not_to raise_error
@@ -88,8 +86,8 @@ describe 'ClientStub' do
 
     it 'can be created with an channel override' do
       host = new_test_host
-      opts = {:a_channel_arg => 'an_arg', :channel_override => @ch}
-      blk = Proc.new do
+      opts = { a_channel_arg: 'an_arg', channel_override: @ch }
+      blk = proc do
         GRPC::ClientStub.new(host, @cq, **opts)
       end
       expect(&blk).not_to raise_error
@@ -97,8 +95,8 @@ describe 'ClientStub' do
 
     it 'cannot be created with a bad channel override' do
       host = new_test_host
-      blk = Proc.new do
-        opts = {:a_channel_arg => 'an_arg', :channel_override => Object.new}
+      blk = proc do
+        opts = { a_channel_arg: 'an_arg', channel_override: Object.new }
         GRPC::ClientStub.new(host, @cq, **opts)
       end
       expect(&blk).to raise_error
@@ -106,8 +104,8 @@ describe 'ClientStub' do
 
     it 'cannot be created with bad credentials' do
       host = new_test_host
-      blk = Proc.new do
-        opts = {:a_channel_arg => 'an_arg', :creds => Object.new}
+      blk = proc do
+        opts = { a_channel_arg: 'an_arg', creds: Object.new }
         GRPC::ClientStub.new(host, @cq, **opts)
       end
       expect(&blk).to raise_error
@@ -116,17 +114,16 @@ describe 'ClientStub' do
     it 'can be created with test test credentials' do
       certs = load_test_certs
       host = new_test_host
-      blk = Proc.new do
+      blk = proc do
         opts = {
           GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com',
-          :a_channel_arg => 'an_arg',
-          :creds => GRPC::Core::Credentials.new(certs[0], nil, nil)
+          a_channel_arg: 'an_arg',
+          creds: GRPC::Core::Credentials.new(certs[0], nil, nil)
         }
         GRPC::ClientStub.new(host, @cq, **opts)
       end
       expect(&blk).to_not raise_error
     end
-
   end
 
   describe '#request_response' do
@@ -135,7 +132,6 @@ describe 'ClientStub' do
     end
 
     shared_examples 'request response' do
-
       it 'should send a request to/receive a reply from a server' do
         host = new_test_host
         th = run_request_response(host, @sent_msg, @resp, @pass)
@@ -146,8 +142,8 @@ describe 'ClientStub' do
 
       it 'should send metadata to the server ok' do
         host = new_test_host
-        th = run_request_response(host, @sent_msg, @resp, @pass, k1: 'v1',
-                                  k2: 'v2')
+        th = run_request_response(host, @sent_msg, @resp, @pass,
+                                  k1: 'v1', k2: 'v2')
         stub = GRPC::ClientStub.new(host, @cq)
         expect(get_response(stub)).to eq(@resp)
         th.join
@@ -157,7 +153,10 @@ describe 'ClientStub' do
         host = new_test_host
         th = run_request_response(host, @sent_msg, @resp, @pass,
                                   k1: 'updated-v1', k2: 'v2')
-        update_md = Proc.new { |md| md[:k1] = 'updated-v1'; md }
+        update_md = proc do |md|
+          md[:k1] = 'updated-v1'
+          md
+        end
         stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
         expect(get_response(stub)).to eq(@resp)
         th.join
@@ -167,7 +166,7 @@ describe 'ClientStub' do
         alt_host = new_test_host
         th = run_request_response(alt_host, @sent_msg, @resp, @pass)
         ch = GRPC::Core::Channel.new(alt_host, nil)
-        stub = GRPC::ClientStub.new('ignored-host', @cq, channel_override:ch)
+        stub = GRPC::ClientStub.new('ignored-host', @cq, channel_override: ch)
         expect(get_response(stub)).to eq(@resp)
         th.join
       end
@@ -176,45 +175,37 @@ describe 'ClientStub' do
         host = new_test_host
         th = run_request_response(host, @sent_msg, @resp, @fail)
         stub = GRPC::ClientStub.new(host, @cq)
-        blk = Proc.new { get_response(stub) }
+        blk = proc { get_response(stub) }
         expect(&blk).to raise_error(GRPC::BadStatus)
         th.join
       end
-
     end
 
     describe 'without a call operation' do
-
       def get_response(stub)
-        stub.request_response(@method, @sent_msg, NOOP, NOOP, k1: 'v1',
-                              k2: 'v2')
+        stub.request_response(@method, @sent_msg, NOOP, NOOP,
+                              k1: 'v1', k2: 'v2')
       end
 
       it_behaves_like 'request response'
-
     end
 
     describe 'via a call operation' do
-
       def get_response(stub)
         op = stub.request_response(@method, @sent_msg, NOOP, NOOP,
-                                   return_op:true, k1: 'v1', k2: 'v2')
+                                   return_op: true, k1: 'v1', k2: 'v2')
         expect(op).to be_a(GRPC::ActiveCall::Operation)
-        op.execute()
+        op.execute
       end
 
       it_behaves_like 'request response'
-
     end
-
   end
 
   describe '#client_streamer' do
-
     shared_examples 'client streaming' do
-
       before(:each) do
-        @sent_msgs = Array.new(3) { |i| 'msg_' + (i+1).to_s }
+        @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
         @resp = 'a_reply'
       end
 
@@ -228,19 +219,21 @@ describe 'ClientStub' do
 
       it 'should send metadata to the server ok' do
         host = new_test_host
-        th = run_client_streamer(host, @sent_msgs, @resp, @pass, k1: 'v1',
-                                 k2: 'v2')
+        th = run_client_streamer(host, @sent_msgs, @resp, @pass,
+                                 k1: 'v1', k2: 'v2')
         stub = GRPC::ClientStub.new(host, @cq)
         expect(get_response(stub)).to eq(@resp)
         th.join
       end
 
-
       it 'should update the sent metadata with a provided metadata updater' do
         host = new_test_host
         th = run_client_streamer(host, @sent_msgs, @resp, @pass,
                                  k1: 'updated-v1', k2: 'v2')
-        update_md = Proc.new { |md| md[:k1] = 'updated-v1'; md }
+        update_md = proc do |md|
+          md[:k1] = 'updated-v1'
+          md
+        end
         stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
         expect(get_response(stub)).to eq(@resp)
         th.join
@@ -250,46 +243,38 @@ describe 'ClientStub' do
         host = new_test_host
         th = run_client_streamer(host, @sent_msgs, @resp, @fail)
         stub = GRPC::ClientStub.new(host, @cq)
-        blk = Proc.new { get_response(stub) }
+        blk = proc { get_response(stub) }
         expect(&blk).to raise_error(GRPC::BadStatus)
         th.join
       end
-
     end
 
     describe 'without a call operation' do
-
       def get_response(stub)
-        stub.client_streamer(@method, @sent_msgs, NOOP, NOOP, k1: 'v1',
-                             k2: 'v2')
+        stub.client_streamer(@method, @sent_msgs, NOOP, NOOP,
+                             k1: 'v1', k2: 'v2')
       end
 
       it_behaves_like 'client streaming'
-
     end
 
     describe 'via a call operation' do
-
       def get_response(stub)
         op = stub.client_streamer(@method, @sent_msgs, NOOP, NOOP,
-                                  return_op:true, k1: 'v1', k2: 'v2')
+                                  return_op: true, k1: 'v1', k2: 'v2')
         expect(op).to be_a(GRPC::ActiveCall::Operation)
-        resp = op.execute()
+        op.execute
       end
 
       it_behaves_like 'client streaming'
-
     end
-
   end
 
   describe '#server_streamer' do
-
     shared_examples 'server streaming' do
-
       before(:each) do
         @sent_msg = 'a_msg'
-        @replys = Array.new(3) { |i| 'reply_' + (i+1).to_s }
+        @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
       end
 
       it 'should send a request to/receive replies from a server' do
@@ -311,8 +296,8 @@ describe 'ClientStub' do
 
       it 'should send metadata to the server ok' do
         host = new_test_host
-        th = run_server_streamer(host, @sent_msg, @replys, @fail, k1: 'v1',
-                                 k2: 'v2')
+        th = run_server_streamer(host, @sent_msg, @replys, @fail,
+                                 k1: 'v1', k2: 'v2')
         stub = GRPC::ClientStub.new(host, @cq)
         e = get_responses(stub)
         expect { e.collect { |r| r } }.to raise_error(GRPC::BadStatus)
@@ -323,55 +308,50 @@ describe 'ClientStub' do
         host = new_test_host
         th = run_server_streamer(host, @sent_msg, @replys, @pass,
                                  k1: 'updated-v1', k2: 'v2')
-        update_md = Proc.new { |md| md[:k1] = 'updated-v1'; md }
+        update_md = proc do |md|
+          md[:k1] = 'updated-v1'
+          md
+        end
         stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
         e = get_responses(stub)
         expect(e.collect { |r| r }).to eq(@replys)
         th.join
       end
-
     end
 
     describe 'without a call operation' do
-
       def get_responses(stub)
-        e = stub.server_streamer(@method, @sent_msg, NOOP, NOOP, k1: 'v1',
-                                 k2: 'v2')
+        e = stub.server_streamer(@method, @sent_msg, NOOP, NOOP,
+                                 k1: 'v1', k2: 'v2')
         expect(e).to be_a(Enumerator)
         e
       end
 
       it_behaves_like 'server streaming'
-
     end
 
     describe 'via a call operation' do
-
       def get_responses(stub)
         op = stub.server_streamer(@method, @sent_msg, NOOP, NOOP,
-                                  return_op:true, k1: 'v1', k2: 'v2')
+                                  return_op: true, k1: 'v1', k2: 'v2')
         expect(op).to be_a(GRPC::ActiveCall::Operation)
-        e = op.execute()
+        e = op.execute
         expect(e).to be_a(Enumerator)
         e
       end
 
       it_behaves_like 'server streaming'
-
     end
-
   end
 
   describe '#bidi_streamer' do
-
     shared_examples 'bidi streaming' do
-
       before(:each) do
-        @sent_msgs = Array.new(3) { |i| 'msg_' + (i+1).to_s }
-        @replys = Array.new(3) { |i| 'reply_' + (i+1).to_s }
+        @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
+        @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
       end
 
-      it 'supports sending all the requests first', :bidi => true do
+      it 'supports sending all the requests first', bidi: true do
         host = new_test_host
         th = run_bidi_streamer_handle_inputs_first(host, @sent_msgs, @replys,
                                                    @pass)
@@ -381,7 +361,7 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'supports client-initiated ping pong', :bidi => true do
+      it 'supports client-initiated ping pong', bidi: true do
         host = new_test_host
         th = run_bidi_streamer_echo_ping_pong(host, @sent_msgs, @pass, true)
         stub = GRPC::ClientStub.new(host, @cq)
@@ -396,7 +376,7 @@ describe 'ClientStub' do
       # servers don't know if all the client metadata has been sent until
       # they receive a message from the client.  Without receiving all the
       # metadata, the server does not accept the call, so this test hangs.
-      xit 'supports a server-initiated ping pong', :bidi => true do
+      xit 'supports a server-initiated ping pong', bidi: true do
         host = new_test_host
         th = run_bidi_streamer_echo_ping_pong(host, @sent_msgs, @pass, false)
         stub = GRPC::ClientStub.new(host, @cq)
@@ -404,11 +384,9 @@ describe 'ClientStub' do
         expect(e.collect { |r| r }).to eq(@sent_msgs)
         th.join
       end
-
     end
 
     describe 'without a call operation' do
-
       def get_responses(stub)
         e = stub.bidi_streamer(@method, @sent_msgs, NOOP, NOOP)
         expect(e).to be_a(Enumerator)
@@ -416,13 +394,12 @@ describe 'ClientStub' do
       end
 
       it_behaves_like 'bidi streaming'
-
     end
 
     describe 'via a call operation' do
-
       def get_responses(stub)
-        op = stub.bidi_streamer(@method, @sent_msgs, NOOP, NOOP, return_op:true)
+        op = stub.bidi_streamer(@method, @sent_msgs, NOOP, NOOP,
+                                return_op: true)
         expect(op).to be_a(GRPC::ActiveCall::Operation)
         e = op.execute
         expect(e).to be_a(Enumerator)
@@ -430,9 +407,7 @@ describe 'ClientStub' do
       end
 
       it_behaves_like 'bidi streaming'
-
     end
-
   end
 
   def run_server_streamer(hostname, expected_input, replys, status, **kw)
@@ -514,14 +489,13 @@ describe 'ClientStub' do
 
   def expect_server_to_be_invoked(hostname, awake_mutex, awake_cond)
     server_queue = start_test_server(hostname, awake_mutex, awake_cond)
-    test_deadline = Time.now + 10  # fail tests after 10 seconds
     ev = server_queue.pluck(@server_tag, INFINITE_FUTURE)
-    raise OutOfTime if ev.nil?
+    fail OutOfTime if ev.nil?
     server_call = ev.call
     server_call.metadata = ev.result.metadata
     finished_tag = Object.new
     server_call.server_accept(server_queue, finished_tag)
-    server_call.server_end_initial_metadata()
+    server_call.server_end_initial_metadata
     GRPC::ActiveCall.new(server_call, server_queue, NOOP, NOOP, INFINITE_FUTURE,
                          finished_tag: finished_tag)
   end
@@ -530,5 +504,4 @@ describe 'ClientStub' do
     port = find_unused_tcp_port
     "localhost:#{port}"
   end
-
 end

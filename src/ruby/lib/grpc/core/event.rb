@@ -30,9 +30,12 @@
 module Google
   module RPC
     module Core
-      class Event  # Add an inspect method to C-defined Event class.
+      # Event is a class defined in the c extension
+      #
+      # Here, we add an inspect method.
+      class Event
         def inspect
-          '<%s: type:%s, tag:%s result:%s>' % [self.class, type, tag, result]
+          "<#{self.class}: type:#{type}, tag:#{tag} result:#{result}>"
         end
       end
     end

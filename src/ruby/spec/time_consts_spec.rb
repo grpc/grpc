@@ -32,7 +32,6 @@ require 'grpc'
 TimeConsts = GRPC::Core::TimeConsts
 
 describe TimeConsts do
-
   before(:each) do
     @known_consts = [:ZERO, :INFINITE_FUTURE, :INFINITE_PAST].sort
   end
@@ -49,11 +48,9 @@ describe TimeConsts do
       end
     end
   end
-
 end
 
 describe '#from_relative_time' do
-
   it 'cannot handle arbitrary objects' do
     expect { TimeConsts.from_relative_time(Object.new) }.to raise_error
   end
@@ -89,5 +86,4 @@ describe '#from_relative_time' do
       expect(abs.to_f).to be_within(epsilon).of(want.to_f)
     end
   end
-
 end
