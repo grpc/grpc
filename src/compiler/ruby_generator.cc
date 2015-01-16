@@ -32,6 +32,7 @@
  */
 
 #include <cctype>
+#include <string>
 #include <map>
 #include <vector>
 
