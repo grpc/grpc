@@ -495,18 +495,20 @@ run_dep_checks:
 	$(ZLIB_CHECK_CMD) || true
 
 libs/$(CONFIG)/zlib/libz.a:
-	(cd third_party/zlib ; CC="$(CC)" CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
-	$(MAKE) -C third_party/zlib clean
-	$(MAKE) -C third_party/zlib
-	mkdir -p libs/$(CONFIG)/zlib
-	cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
+	$(E) "[MAKE]    Building zlib"
+	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
+	$(Q)$(MAKE) -C third_party/zlib clean
+	$(Q)$(MAKE) -C third_party/zlib
+	$(Q)mkdir -p libs/$(CONFIG)/zlib
+	$(Q)cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
 
 libs/$(CONFIG)/openssl/libssl.a:
-	(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
-	$(MAKE) -C third_party/openssl clean
-	$(MAKE) -C third_party/openssl build_crypto build_ssl
-	mkdir -p libs/$(CONFIG)/openssl
-	cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a libs/$(CONFIG)/openssl
+	$(E) "[MAKE]    Building openssl"
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)$(MAKE) -C third_party/openssl clean
+	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
+	$(Q)mkdir -p libs/$(CONFIG)/openssl
+	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a libs/$(CONFIG)/openssl
 
 static: static_c static_cxx
 
@@ -1347,6 +1349,101 @@ endif
 
 else
 
+ifneq ($(OPENSSL_DEP),)
+src/core/security/auth.c: $(OPENSSL_DEP)
+src/core/security/base64.c: $(OPENSSL_DEP)
+src/core/security/credentials.c: $(OPENSSL_DEP)
+src/core/security/factories.c: $(OPENSSL_DEP)
+src/core/security/google_root_certs.c: $(OPENSSL_DEP)
+src/core/security/json_token.c: $(OPENSSL_DEP)
+src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
+src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
+src/core/security/security_context.c: $(OPENSSL_DEP)
+src/core/security/server_secure_chttp2.c: $(OPENSSL_DEP)
+src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
+src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
+src/core/tsi/transport_security.c: $(OPENSSL_DEP)
+src/core/channel/call_op_string.c: $(OPENSSL_DEP)
+src/core/channel/census_filter.c: $(OPENSSL_DEP)
+src/core/channel/channel_args.c: $(OPENSSL_DEP)
+src/core/channel/channel_stack.c: $(OPENSSL_DEP)
+src/core/channel/child_channel.c: $(OPENSSL_DEP)
+src/core/channel/client_channel.c: $(OPENSSL_DEP)
+src/core/channel/client_setup.c: $(OPENSSL_DEP)
+src/core/channel/connected_channel.c: $(OPENSSL_DEP)
+src/core/channel/http_client_filter.c: $(OPENSSL_DEP)
+src/core/channel/http_filter.c: $(OPENSSL_DEP)
+src/core/channel/http_server_filter.c: $(OPENSSL_DEP)
+src/core/channel/metadata_buffer.c: $(OPENSSL_DEP)
+src/core/channel/noop_filter.c: $(OPENSSL_DEP)
+src/core/compression/algorithm.c: $(OPENSSL_DEP)
+src/core/compression/message_compress.c: $(OPENSSL_DEP)
+src/core/httpcli/format_request.c: $(OPENSSL_DEP)
+src/core/httpcli/httpcli.c: $(OPENSSL_DEP)
+src/core/httpcli/httpcli_security_context.c: $(OPENSSL_DEP)
+src/core/httpcli/parser.c: $(OPENSSL_DEP)
+src/core/iomgr/alarm.c: $(OPENSSL_DEP)
+src/core/iomgr/alarm_heap.c: $(OPENSSL_DEP)
+src/core/iomgr/endpoint.c: $(OPENSSL_DEP)
+src/core/iomgr/endpoint_pair_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/fd_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/iomgr.c: $(OPENSSL_DEP)
+src/core/iomgr/iomgr_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/pollset_multipoller_with_poll_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/pollset_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/resolve_address_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/sockaddr_utils.c: $(OPENSSL_DEP)
+src/core/iomgr/socket_utils_common_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/socket_utils_linux.c: $(OPENSSL_DEP)
+src/core/iomgr/socket_utils_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/tcp_client_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/tcp_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/tcp_server_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/time_averaged_stats.c: $(OPENSSL_DEP)
+src/core/statistics/census_init.c: $(OPENSSL_DEP)
+src/core/statistics/census_log.c: $(OPENSSL_DEP)
+src/core/statistics/census_rpc_stats.c: $(OPENSSL_DEP)
+src/core/statistics/census_tracing.c: $(OPENSSL_DEP)
+src/core/statistics/hash_table.c: $(OPENSSL_DEP)
+src/core/statistics/window_stats.c: $(OPENSSL_DEP)
+src/core/surface/byte_buffer.c: $(OPENSSL_DEP)
+src/core/surface/byte_buffer_reader.c: $(OPENSSL_DEP)
+src/core/surface/call.c: $(OPENSSL_DEP)
+src/core/surface/channel.c: $(OPENSSL_DEP)
+src/core/surface/channel_create.c: $(OPENSSL_DEP)
+src/core/surface/client.c: $(OPENSSL_DEP)
+src/core/surface/completion_queue.c: $(OPENSSL_DEP)
+src/core/surface/event_string.c: $(OPENSSL_DEP)
+src/core/surface/init.c: $(OPENSSL_DEP)
+src/core/surface/lame_client.c: $(OPENSSL_DEP)
+src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
+src/core/surface/secure_server_create.c: $(OPENSSL_DEP)
+src/core/surface/server.c: $(OPENSSL_DEP)
+src/core/surface/server_chttp2.c: $(OPENSSL_DEP)
+src/core/surface/server_create.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/alpn.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/bin_encoder.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/frame_data.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/frame_goaway.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/frame_ping.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/frame_rst_stream.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/frame_settings.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/frame_window_update.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/hpack_parser.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/hpack_table.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/huffsyms.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/status_conversion.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/stream_encoder.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/stream_map.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/timeout_encoding.c: $(OPENSSL_DEP)
+src/core/transport/chttp2/varint.c: $(OPENSSL_DEP)
+src/core/transport/chttp2_transport.c: $(OPENSSL_DEP)
+src/core/transport/metadata.c: $(OPENSSL_DEP)
+src/core/transport/stream_op.c: $(OPENSSL_DEP)
+src/core/transport/transport.c: $(OPENSSL_DEP)
+third_party/cJSON/cJSON.c: $(OPENSSL_DEP)
+endif
+
 libs/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -1693,6 +1790,10 @@ libs/$(CONFIG)/libgpr_test_util.a: openssl_dep_error
 
 else
 
+ifneq ($(OPENSSL_DEP),)
+test/core/util/test_config.c: $(OPENSSL_DEP)
+endif
+
 libs/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGPR_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -1736,6 +1837,21 @@ libs/$(CONFIG)/libgrpc_test_util.a: openssl_dep_error
 
 
 else
+
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/cq_verifier.c: $(OPENSSL_DEP)
+test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
+test/core/end2end/data/prod_roots_certs.c: $(OPENSSL_DEP)
+test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
+test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
+test/core/iomgr/endpoint_tests.c: $(OPENSSL_DEP)
+test/core/statistics/census_log_tests.c: $(OPENSSL_DEP)
+test/core/transport/transport_end2end_tests.c: $(OPENSSL_DEP)
+test/core/util/grpc_profiler.c: $(OPENSSL_DEP)
+test/core/util/port_posix.c: $(OPENSSL_DEP)
+test/core/util/parse_hexstring.c: $(OPENSSL_DEP)
+test/core/util/slice_splitter.c: $(OPENSSL_DEP)
+endif
 
 libs/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -1825,6 +1941,29 @@ endif
 
 else
 
+ifneq ($(OPENSSL_DEP),)
+src/cpp/client/channel.cc: $(OPENSSL_DEP)
+src/cpp/client/channel_arguments.cc: $(OPENSSL_DEP)
+src/cpp/client/client_context.cc: $(OPENSSL_DEP)
+src/cpp/client/create_channel.cc: $(OPENSSL_DEP)
+src/cpp/client/credentials.cc: $(OPENSSL_DEP)
+src/cpp/client/internal_stub.cc: $(OPENSSL_DEP)
+src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
+src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
+src/cpp/server/async_server.cc: $(OPENSSL_DEP)
+src/cpp/server/async_server_context.cc: $(OPENSSL_DEP)
+src/cpp/server/completion_queue.cc: $(OPENSSL_DEP)
+src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
+src/cpp/server/server_context_impl.cc: $(OPENSSL_DEP)
+src/cpp/server/server.cc: $(OPENSSL_DEP)
+src/cpp/server/server_rpc_handler.cc: $(OPENSSL_DEP)
+src/cpp/server/server_credentials.cc: $(OPENSSL_DEP)
+src/cpp/server/thread_pool.cc: $(OPENSSL_DEP)
+src/cpp/stream/stream_context.cc: $(OPENSSL_DEP)
+src/cpp/util/status.cc: $(OPENSSL_DEP)
+src/cpp/util/time.cc: $(OPENSSL_DEP)
+endif
+
 libs/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -1897,6 +2036,14 @@ libs/$(CONFIG)/libgrpc++_test_util.a: openssl_dep_error
 
 else
 
+ifneq ($(OPENSSL_DEP),)
+test/cpp/util/messages.proto: $(OPENSSL_DEP)
+test/cpp/util/echo.proto: $(OPENSSL_DEP)
+test/cpp/util/echo_duplicate.proto: $(OPENSSL_DEP)
+test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
+test/cpp/end2end/async_test_server.cc: $(OPENSSL_DEP)
+endif
+
 libs/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -1934,6 +2081,10 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a: openssl_dep_error
 
 else
 
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/fixtures/chttp2_fake_security.c: $(OPENSSL_DEP)
+endif
+
 libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -1966,6 +2117,10 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a: openssl_dep_error
 
 
 else
+
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/fixtures/chttp2_fullstack.c: $(OPENSSL_DEP)
+endif
 
 libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2000,6 +2155,10 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: openssl_dep_err
 
 else
 
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/fixtures/chttp2_simple_ssl_fullstack.c: $(OPENSSL_DEP)
+endif
+
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -2032,6 +2191,10 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: ope
 
 
 else
+
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/fixtures/chttp2_simple_ssl_with_oauth2_fullstack.c: $(OPENSSL_DEP)
+endif
 
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2066,6 +2229,10 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a: openssl_dep_error
 
 else
 
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/fixtures/chttp2_socket_pair.c: $(OPENSSL_DEP)
+endif
+
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
@@ -2098,6 +2265,10 @@ libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: opens
 
 
 else
+
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/fixtures/chttp2_socket_pair_one_byte_at_a_time.c: $(OPENSSL_DEP)
+endif
 
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
 	$(E) "[AR]      Creating $@"
@@ -2596,6 +2767,13 @@ libs/$(CONFIG)/libend2end_certs.a: openssl_dep_error
 
 
 else
+
+ifneq ($(OPENSSL_DEP),)
+test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
+test/core/end2end/data/prod_roots_certs.c: $(OPENSSL_DEP)
+test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
+test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
+endif
 
 libs/$(CONFIG)/libend2end_certs.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_CERTS_OBJS)
 	$(E) "[AR]      Creating $@"
