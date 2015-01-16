@@ -39,14 +39,12 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
 
-using namespace std;
-
 namespace grpc_cpp_generator {
 
-inline bool StripSuffix(string* filename, const string& suffix) {
+inline bool StripSuffix(std::string* filename, const std::string& suffix) {
   if (filename->length() >= suffix.length()) {
     size_t suffix_pos = filename->length() - suffix.length();
-    if (filename->compare(suffix_pos, string::npos, suffix) == 0) {
+    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
       filename->resize(filename->size() - suffix.size());
       return true;
     }
@@ -55,19 +53,20 @@ inline bool StripSuffix(string* filename, const string& suffix) {
   return false;
 }
 
-inline string StripProto(string filename) {
+inline std::string StripProto(std::string filename) {
   if (!StripSuffix(&filename, ".protodevel")) {
     StripSuffix(&filename, ".proto");
   }
   return filename;
 }
 
-inline string StringReplace(string str, const string& from, const string& to) {
+inline std::string StringReplace(std::string str, const std::string& from,
+                                 const std::string& to) {
   size_t pos = 0;
 
   for (;;) {
     pos = str.find(from, pos);
-    if (pos == string::npos) {
+    if (pos == std::string::npos) {
       break;
     }
     str.replace(pos, from.length(), to);
@@ -77,23 +76,23 @@ inline string StringReplace(string str, const string& from, const string& to) {
   return str;
 }
 
-inline string DotsToColons(const string& name) {
+inline std::string DotsToColons(const std::string& name) {
   return StringReplace(name, ".", "::");
 }
 
-inline string DotsToUnderscores(const string& name) {
+inline std::string DotsToUnderscores(const std::string& name) {
   return StringReplace(name, ".", "_");
 }
 
-inline string ClassName(const google::protobuf::Descriptor* descriptor,
-                        bool qualified) {
+inline std::string ClassName(const google::protobuf::Descriptor* descriptor,
+                             bool qualified) {
   // Find "outer", the descriptor of the top-level message in which
   // "descriptor" is embedded.
   const google::protobuf::Descriptor* outer = descriptor;
   while (outer->containing_type() != NULL) outer = outer->containing_type();
 
-  const string& outer_name = outer->full_name();
-  string inner_name = descriptor->full_name().substr(outer_name.size());
+  const std::string& outer_name = outer->full_name();
+  std::string inner_name = descriptor->full_name().substr(outer_name.size());
 
   if (qualified) {
     return "::" + DotsToColons(outer_name) + DotsToUnderscores(inner_name);
