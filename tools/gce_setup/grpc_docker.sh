@@ -480,7 +480,9 @@ grpc_launch_server() {
   _grpc_set_project_and_zone -f grpc_launch_server_args "$@" || return 1
   gce_has_instance $grpc_project $host || return 1;
 
-  cmd="sudo docker run -d --name $docker_name"
+  cmd="sudo docker kill $docker_name > /dev/null 2>&1; "
+  cmd+="sudo docker rm $docker_name > /dev/null 2>&1; "
+  cmd+="sudo docker run -d --name $docker_name"
   cmd+=" -p $grpc_port:$grpc_port $docker_label"
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"

@@ -32,14 +32,14 @@ require 'socket'
 # @param [Fixnum] the minimum port number to accept
 # @param [Fixnum] the maximum port number to accept
 # @return [Fixnum ]a free tcp port
-def find_unused_tcp_port(min=32768, max=60000)
-  # Allow the system to assign a port, by specifying 0.
+def find_unused_tcp_port(min = 32_768, max = 60_000)
+  # Allow the system to assign a port, by sp[ecifying 0.
   # Loop until a port is assigned in the required range
   loop do
     socket = Socket.new(:INET, :STREAM, 0)
     socket.bind(Addrinfo.tcp('127.0.0.1', 0))
     p = socket.local_address.ip_port
     socket.close
-    return p if p > min and p < 60000
+    return p if p > min && p < max
   end
 end

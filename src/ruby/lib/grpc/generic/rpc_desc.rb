@@ -29,54 +29,51 @@
 
 require 'grpc/grpc'
 
-module Google::RPC
+module Google
+  module RPC
+    # RpcDesc is a Descriptor of an RPC method.
+    class RpcDesc < Struct.new(:name, :input, :output, :marshal_method,
+                               :unmarshal_method)
+      include Core::StatusCodes
 
-  # RpcDesc is a Descriptor of an RPC method.
-  class RpcDesc < Struct.new(:name, :input, :output, :marshal_method,
-                             :unmarshal_method)
-    include Core::StatusCodes
+      # Used to wrap a message class to indicate that it needs to be streamed.
+      class Stream
+        attr_accessor :type
 
-    # Used to wrap a message class to indicate that it needs to be streamed.
-    class Stream
-      attr_accessor :type
-
-      def initialize(type)
-        @type = type
+        def initialize(type)
+          @type = type
+        end
       end
-    end
 
-    # @return [Proc] { |instance| marshalled(instance) }
-    def marshal_proc
-      Proc.new { |o| o.class.method(marshal_method).call(o).to_s }
-    end
-
-    # @param [:input, :output] target determines whether to produce the an
-    #                          unmarshal Proc for the rpc input parameter or
-    #                          its output parameter
-    #
-    # @return [Proc] An unmarshal proc { |marshalled(instance)| instance }
-    def unmarshal_proc(target)
-      raise ArgumentError if not [:input, :output].include?(target)
-      unmarshal_class = method(target).call
-      if unmarshal_class.is_a?Stream
-        unmarshal_class = unmarshal_class.type
+      # @return [Proc] { |instance| marshalled(instance) }
+      def marshal_proc
+        proc { |o| o.class.method(marshal_method).call(o).to_s }
       end
-      Proc.new { |o| unmarshal_class.method(unmarshal_method).call(o) }
-    end
 
-    def run_server_method(active_call, mth)
-      # While a server method is running, it might be cancelled, its deadline
-      # might be reached, the handler could throw an unknown error, or a
-      # well-behaved handler could throw a StatusError.
-      begin
-        if is_request_response?
+      # @param [:input, :output] target determines whether to produce the an
+      #                          unmarshal Proc for the rpc input parameter or
+      #                          its output parameter
+      #
+      # @return [Proc] An unmarshal proc { |marshalled(instance)| instance }
+      def unmarshal_proc(target)
+        fail ArgumentError unless [:input, :output].include?(target)
+        unmarshal_class = method(target).call
+        unmarshal_class = unmarshal_class.type if unmarshal_class.is_a? Stream
+        proc { |o| unmarshal_class.method(unmarshal_method).call(o) }
+      end
+
+      def run_server_method(active_call, mth)
+        # While a server method is running, it might be cancelled, its deadline
+        # might be reached, the handler could throw an unknown error, or a
+        # well-behaved handler could throw a StatusError.
+        if request_response?
           req = active_call.remote_read
           resp = mth.call(req, active_call.single_req_view)
           active_call.remote_send(resp)
-        elsif is_client_streamer?
+        elsif client_streamer?
           resp = mth.call(active_call.multi_req_view)
           active_call.remote_send(resp)
-        elsif is_server_streamer?
+        elsif server_streamer?
           req = active_call.remote_read
           replys = mth.call(req, active_call.single_req_view)
           replys.each { |r| active_call.remote_send(r) }
@@ -88,7 +85,7 @@ module Google::RPC
       rescue BadStatus => e
         # this is raised by handlers that want GRPC to send an application
         # error code and detail message.
-        logger.debug("app error: #{active_call}, status:#{e.code}:#{e.details}")
+        logger.debug("app err: #{active_call}, status:#{e.code}:#{e.details}")
         send_status(active_call, e.code, e.details)
       rescue Core::CallError => e
         # This is raised by GRPC internals but should rarely, if ever happen.
@@ -110,50 +107,46 @@ module Google::RPC
         logger.warn(e)
         send_status(active_call, UNKNOWN, 'no reason given')
       end
-    end
 
-    def assert_arity_matches(mth)
-      if (is_request_response? || is_server_streamer?)
-        if mth.arity != 2
-          raise arity_error(mth, 2, "should be #{mth.name}(req, call)")
-        end
-      else
-        if mth.arity != 1
-          raise arity_error(mth, 1, "should be #{mth.name}(call)")
+      def assert_arity_matches(mth)
+        if request_response? || server_streamer?
+          if mth.arity != 2
+            fail arity_error(mth, 2, "should be #{mth.name}(req, call)")
+          end
+        else
+          if mth.arity != 1
+            fail arity_error(mth, 1, "should be #{mth.name}(call)")
+          end
         end
       end
-    end
 
-    def is_request_response?
-      !input.is_a?(Stream) && !output.is_a?(Stream)
-    end
+      def request_response?
+        !input.is_a?(Stream) && !output.is_a?(Stream)
+      end
 
-    def is_client_streamer?
-      input.is_a?(Stream) && !output.is_a?(Stream)
-    end
+      def client_streamer?
+        input.is_a?(Stream) && !output.is_a?(Stream)
+      end
 
-    def is_server_streamer?
-      !input.is_a?(Stream) && output.is_a?(Stream)
-    end
+      def server_streamer?
+        !input.is_a?(Stream) && output.is_a?(Stream)
+      end
 
-    def is_bidi_streamer?
-      input.is_a?(Stream) && output.is_a?(Stream)
-    end
+      def bidi_streamer?
+        input.is_a?(Stream) && output.is_a?(Stream)
+      end
 
-    def arity_error(mth, want, msg)
-      "##{mth.name}: bad arg count; got:#{mth.arity}, want:#{want}, #{msg}"
-    end
+      def arity_error(mth, want, msg)
+        "##{mth.name}: bad arg count; got:#{mth.arity}, want:#{want}, #{msg}"
+      end
 
-    def send_status(active_client, code, details)
-      begin
+      def send_status(active_client, code, details)
         details = 'Not sure why' if details.nil?
         active_client.send_status(code, details)
       rescue StandardError => e
-        logger.warn('Could not send status %d:%s' % [code, details])
+        logger.warn("Could not send status #{code}:#{details}")
         logger.warn(e)
       end
     end
-
   end
-
 end
