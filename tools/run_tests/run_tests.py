@@ -4,13 +4,13 @@
 import argparse
 import glob
 import itertools
+import json
 import multiprocessing
 import os
 import sys
 import time
 
 import jobset
-import simplejson
 import watch_dirs
 
 
@@ -159,12 +159,12 @@ class TestCache(object):
 
   def save(self):
     with open('.run_tests_cache', 'w') as f:
-      f.write(simplejson.dumps(self.dump()))
+      f.write(json.dumps(self.dump()))
 
   def maybe_load(self):
     if os.path.exists('.run_tests_cache'):
       with open('.run_tests_cache') as f:
-        self.parse(simplejson.loads(f.read()))
+        self.parse(json.loads(f.read()))
 
 
 def _build_and_run(check_cancelled, newline_on_success, cache):
