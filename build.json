@@ -1505,13 +1505,13 @@
       "name": "poll_kick_test",
       "build": "test",
       "src": [
-	"test/core/iomgr/poll_kick_test.c"
+        "test/core/iomgr/poll_kick_test.c"
       ],
       "deps": [
-	"grpc_test_util",
-	"grpc",
-	"gpr_test_util",
-	"gpr"
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
       ]
     }
   ]
