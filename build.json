@@ -38,7 +38,7 @@
         "src/core/iomgr/fd_posix.c",
         "src/core/iomgr/iomgr.c",
         "src/core/iomgr/iomgr_posix.c",
-	"src/core/iomgr/pollset_kick_posix.c",
+        "src/core/iomgr/pollset_kick_posix.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/resolve_address_posix.c",
@@ -127,8 +127,8 @@
         "src/core/iomgr/iomgr.h",
         "src/core/iomgr/iomgr_internal.h",
         "src/core/iomgr/iomgr_posix.h",
-	"src/core/iomgr/pollset_kick.h",
-	"src/core/iomgr/pollset_kick_posix.h",
+        "src/core/iomgr/pollset_kick.h",
+        "src/core/iomgr/pollset_kick_posix.h",
         "src/core/iomgr/pollset.h",
         "src/core/iomgr/pollset_posix.h",
         "src/core/iomgr/resolve_address.h",
@@ -1505,13 +1505,13 @@
       "name": "poll_kick_test",
       "build": "test",
       "src": [
-	"test/core/iomgr/poll_kick_test.c"
+        "test/core/iomgr/poll_kick_test.c"
       ],
       "deps": [
-	"grpc_test_util",
-	"grpc",
-	"gpr_test_util",
-	"gpr"
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
       ]
     }
   ]
