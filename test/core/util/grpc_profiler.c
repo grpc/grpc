@@ -33,6 +33,22 @@
 
 #include "test/core/util/grpc_profiler.h"
 
-void grpc_profiler_start(const char *filename) {}
+#if GRPC_HAVE_PERFTOOLS
+#include <gperftools/profiler.h>
+
+void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
+
+void grpc_profiler_stop() { ProfilerStop(); }
+#else
+#include <grpc/support/log.h>
+
+void grpc_profiler_start(const char *filename) {
+  gpr_log(GPR_DEBUG,
+          "You do not have google-perftools installed, profiling is disabled");
+  gpr_log(GPR_DEBUG,
+          "To install on ubuntu: sudo apt-get install google-perftools "
+          "libgoogle-perftools-dev");
+}
 
 void grpc_profiler_stop(void) {}
+#endif

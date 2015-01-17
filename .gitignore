@@ -1,10 +1,17 @@
+# C/C++ build outputs
 bins
-coverage
-deps
-*.gcno
 gens
 libs
 objs
+
+# gcov coverage data
+coverage
+*.gcno
+
+# profiler output
+*.prof
+
+# python compiled objects
 *.pyc
 
 # cache for run_tests.py
