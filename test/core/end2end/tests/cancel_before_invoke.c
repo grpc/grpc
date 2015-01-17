@@ -44,10 +44,6 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-/* allow cancellation by either grpc_call_cancel, or by wait_for_deadline (which
- * does nothing) */
-typedef grpc_call_error (*canceller)(grpc_call *call);
-
 enum { TIMEOUT = 200000 };
 
 static void *tag(gpr_intptr t) { return (void *)t; }

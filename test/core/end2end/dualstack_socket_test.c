@@ -149,8 +149,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   } else {
     /* Check for a failed connection. */
     cq_expect_client_metadata_read(v_client, tag(2), NULL);
-    cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_CANCELLED,
-                                   NULL, NULL);
+    cq_expect_finished_with_status(v_client, tag(3),
+                                   GRPC_STATUS_DEADLINE_EXCEEDED,
+                                   "Deadline Exceeded", NULL);
     cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_ERROR);
     cq_verify(v_client);
 

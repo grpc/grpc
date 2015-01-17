@@ -31,51 +31,45 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+var assert = require('assert');
 
-static void *tag(gpr_intptr i) { return (void *)i; }
+var surface_server = require('../surface_server.js');
 
-int main(int argc, char **argv) {
-  grpc_channel *chan;
-  grpc_call *call;
-  gpr_timespec timeout = gpr_time_from_seconds(4);
-  gpr_timespec deadline = gpr_time_add(gpr_now(), timeout);
-  grpc_completion_queue *cq;
-  cq_verifier *cqv;
-  grpc_event *ev;
-  int done;
+var ProtoBuf = require('protobufjs');
 
-  grpc_test_init(argc, argv);
-  grpc_init();
+var grpc = require('..');
 
-  cq = grpc_completion_queue_create();
-  cqv = cq_verifier_create(cq);
+var math_proto = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
 
-  /* create a call, channel to a non existant server */
-  chan = grpc_channel_create("nonexistant:54321", NULL);
-  call = grpc_channel_create_call(chan, "/foo", "nonexistant", deadline);
-  GPR_ASSERT(grpc_call_invoke(call, cq, tag(2), tag(3), 0) == GRPC_CALL_OK);
-  /* verify that all tags get completed */
-  cq_expect_client_metadata_read(cqv, tag(2), NULL);
-  cq_expect_finished_with_status(cqv, tag(3), GRPC_STATUS_DEADLINE_EXCEEDED,
-                                 "Deadline Exceeded", NULL);
-  cq_verify(cqv);
+var mathService = math_proto.lookup('math.Math');
 
-  grpc_completion_queue_shutdown(cq);
-  for (done = 0; !done;) {
-    ev = grpc_completion_queue_next(cq, gpr_inf_future);
-    done = ev->type == GRPC_QUEUE_SHUTDOWN;
-    grpc_event_finish(ev);
-  }
-  grpc_completion_queue_destroy(cq);
-  grpc_call_destroy(call);
-  grpc_channel_destroy(chan);
-  cq_verifier_destroy(cqv);
-
-  grpc_shutdown();
-
-  return 0;
-}
+describe('Surface server constructor', function() {
+  it('Should fail with conflicting method names', function() {
+    assert.throws(function() {
+      grpc.buildServer([mathService, mathService]);
+    });
+  });
+  it('Should succeed with a single service', function() {
+    assert.doesNotThrow(function() {
+      grpc.buildServer([mathService]);
+    });
+  });
+  it('Should fail with missing handlers', function() {
+    var Server = grpc.buildServer([mathService]);
+    assert.throws(function() {
+      new Server({
+        'math.Math': {
+          'Div': function() {},
+          'DivMany': function() {},
+          'Fib': function() {}
+        }
+      });
+    }, /math.Math.Sum/);
+  });
+  it('Should fail with no handlers for the service', function() {
+    var Server = grpc.buildServer([mathService]);
+    assert.throws(function() {
+      new Server({});
+    }, /math.Math/);
+  });
+});

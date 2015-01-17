@@ -126,8 +126,8 @@ static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
     size_t message_size = GPR_SLICE_LENGTH(encrypted);
 
     while (message_size > 0 || keep_looping) {
-      gpr_uint32 unprotected_buffer_size_written = end - cur;
-      gpr_uint32 processed_message_size = message_size;
+      size_t unprotected_buffer_size_written = end - cur;
+      size_t processed_message_size = message_size;
       gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_unprotect(ep->protector, message_bytes,
                                              &processed_message_size, cur,
@@ -245,8 +245,8 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
     gpr_uint8 *message_bytes = GPR_SLICE_START_PTR(plain);
     size_t message_size = GPR_SLICE_LENGTH(plain);
     while (message_size > 0) {
-      gpr_uint32 protected_buffer_size_to_send = end - cur;
-      gpr_uint32 processed_message_size = message_size;
+      size_t protected_buffer_size_to_send = end - cur;
+      size_t processed_message_size = message_size;
       gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_protect(ep->protector, message_bytes,
                                            &processed_message_size, cur,
@@ -268,9 +268,9 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
     if (result != TSI_OK) break;
   }
   if (result == TSI_OK) {
-    gpr_uint32 still_pending_size;
+    size_t still_pending_size;
     do {
-      gpr_uint32 protected_buffer_size_to_send = end - cur;
+      size_t protected_buffer_size_to_send = end - cur;
       gpr_mu_lock(&ep->protector_mu);
       result = tsi_frame_protector_protect_flush(ep->protector, cur,
                                                  &protected_buffer_size_to_send,

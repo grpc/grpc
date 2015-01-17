@@ -76,6 +76,7 @@ CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
 LDFLAGS_gcov = -fprofile-arcs -ftest-coverage
 DEFINES_gcov = NDEBUG
 
+
 # General settings.
 # You may want to change these depending on your system.
 
@@ -95,6 +96,12 @@ RM = rm -f
 ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
 endif
+
+
+# The HOST compiler settings are used to compile the protoc plugins.
+# In most cases, you won't have to change anything, but if you are
+# cross-compiling, you can override these variables from GNU make's
+# command line: make CC=cross-gcc HOST_CC=gcc
 
 HOST_CC = $(CC)
 HOST_CXX = $(CXX)
@@ -372,6 +379,7 @@ chttp2_fake_security_census_simple_request_test: bins/$(CONFIG)/chttp2_fake_secu
 chttp2_fake_security_disappearing_server_test: bins/$(CONFIG)/chttp2_fake_security_disappearing_server_test
 chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test: bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test
 chttp2_fake_security_early_server_shutdown_finishes_tags_test: bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test
+chttp2_fake_security_graceful_server_shutdown_test: bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test
 chttp2_fake_security_invoke_large_request_test: bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test
 chttp2_fake_security_max_concurrent_streams_test: bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test
 chttp2_fake_security_no_op_test: bins/$(CONFIG)/chttp2_fake_security_no_op_test
@@ -393,6 +401,7 @@ chttp2_fullstack_census_simple_request_test: bins/$(CONFIG)/chttp2_fullstack_cen
 chttp2_fullstack_disappearing_server_test: bins/$(CONFIG)/chttp2_fullstack_disappearing_server_test
 chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test: bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test
 chttp2_fullstack_early_server_shutdown_finishes_tags_test: bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test
+chttp2_fullstack_graceful_server_shutdown_test: bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test
 chttp2_fullstack_invoke_large_request_test: bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test
 chttp2_fullstack_max_concurrent_streams_test: bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test
 chttp2_fullstack_no_op_test: bins/$(CONFIG)/chttp2_fullstack_no_op_test
@@ -414,6 +423,7 @@ chttp2_simple_ssl_fullstack_census_simple_request_test: bins/$(CONFIG)/chttp2_si
 chttp2_simple_ssl_fullstack_disappearing_server_test: bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test
 chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test: bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test
 chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test: bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test
+chttp2_simple_ssl_fullstack_graceful_server_shutdown_test: bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test
 chttp2_simple_ssl_fullstack_invoke_large_request_test: bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test
 chttp2_simple_ssl_fullstack_max_concurrent_streams_test: bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test
 chttp2_simple_ssl_fullstack_no_op_test: bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test
@@ -435,6 +445,7 @@ chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test: bins/$(CONFI
 chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test: bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test
 chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test: bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test
 chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test: bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test
+chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test: bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test
 chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test: bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test
 chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test: bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test
 chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test
@@ -456,6 +467,7 @@ chttp2_socket_pair_census_simple_request_test: bins/$(CONFIG)/chttp2_socket_pair
 chttp2_socket_pair_disappearing_server_test: bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_test
 chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test: bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test
 chttp2_socket_pair_early_server_shutdown_finishes_tags_test: bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test
+chttp2_socket_pair_graceful_server_shutdown_test: bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test
 chttp2_socket_pair_invoke_large_request_test: bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test
 chttp2_socket_pair_max_concurrent_streams_test: bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test
 chttp2_socket_pair_no_op_test: bins/$(CONFIG)/chttp2_socket_pair_no_op_test
@@ -477,6 +489,7 @@ chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test: bins/$(CONFIG)
 chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test
 chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test
 chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test
+chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test
 chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test
 chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test
 chttp2_socket_pair_one_byte_at_a_time_no_op_test: bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test
@@ -524,13 +537,13 @@ shared_cxx:  libs/$(CONFIG)/libgrpc++.$(SHARED_EXT)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(CONFIG)/libend2end_test_cancel_after_accept.a libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a libs/$(CONFIG)/libend2end_test_census_simple_request.a libs/$(CONFIG)/libend2end_test_disappearing_server.a libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(CONFIG)/libend2end_test_invoke_large_request.a libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a libs/$(CONFIG)/libend2end_test_no_op.a libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_simple_delayed_request.a libs/$(CONFIG)/libend2end_test_simple_request.a libs/$(CONFIG)/libend2end_test_thread_stress.a libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(CONFIG)/libend2end_certs.a
+privatelibs_c:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(CONFIG)/libend2end_test_cancel_after_accept.a libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a libs/$(CONFIG)/libend2end_test_census_simple_request.a libs/$(CONFIG)/libend2end_test_disappearing_server.a libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_test_invoke_large_request.a libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a libs/$(CONFIG)/libend2end_test_no_op.a libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_simple_delayed_request.a libs/$(CONFIG)/libend2end_test_simple_request.a libs/$(CONFIG)/libend2end_test_thread_stress.a libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(CONFIG)/libend2end_certs.a
 
 privatelibs_cxx:  libs/$(CONFIG)/libgrpc++_test_util.a
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: privatelibs_c bins/$(CONFIG)/grpc_byte_buffer_reader_test bins/$(CONFIG)/gpr_cancellable_test bins/$(CONFIG)/gpr_log_test bins/$(CONFIG)/gpr_useful_test bins/$(CONFIG)/gpr_cmdline_test bins/$(CONFIG)/gpr_histogram_test bins/$(CONFIG)/gpr_host_port_test bins/$(CONFIG)/gpr_slice_buffer_test bins/$(CONFIG)/gpr_slice_test bins/$(CONFIG)/gpr_string_test bins/$(CONFIG)/gpr_sync_test bins/$(CONFIG)/gpr_thd_test bins/$(CONFIG)/gpr_time_test bins/$(CONFIG)/murmur_hash_test bins/$(CONFIG)/grpc_stream_op_test bins/$(CONFIG)/alpn_test bins/$(CONFIG)/time_averaged_stats_test bins/$(CONFIG)/chttp2_stream_encoder_test bins/$(CONFIG)/hpack_table_test bins/$(CONFIG)/chttp2_stream_map_test bins/$(CONFIG)/hpack_parser_test bins/$(CONFIG)/transport_metadata_test bins/$(CONFIG)/chttp2_status_conversion_test bins/$(CONFIG)/chttp2_transport_end2end_test bins/$(CONFIG)/tcp_posix_test bins/$(CONFIG)/dualstack_socket_test bins/$(CONFIG)/no_server_test bins/$(CONFIG)/resolve_address_test bins/$(CONFIG)/sockaddr_utils_test bins/$(CONFIG)/tcp_server_posix_test bins/$(CONFIG)/tcp_client_posix_test bins/$(CONFIG)/grpc_channel_stack_test bins/$(CONFIG)/metadata_buffer_test bins/$(CONFIG)/grpc_completion_queue_test bins/$(CONFIG)/census_window_stats_test bins/$(CONFIG)/census_statistics_quick_test bins/$(CONFIG)/census_statistics_small_log_test bins/$(CONFIG)/census_statistics_performance_test bins/$(CONFIG)/census_statistics_multiple_writers_test bins/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test bins/$(CONFIG)/census_stub_test bins/$(CONFIG)/census_hash_table_test bins/$(CONFIG)/fling_server bins/$(CONFIG)/fling_client bins/$(CONFIG)/fling_test bins/$(CONFIG)/echo_server bins/$(CONFIG)/echo_client bins/$(CONFIG)/echo_test bins/$(CONFIG)/message_compress_test bins/$(CONFIG)/bin_encoder_test bins/$(CONFIG)/secure_endpoint_test bins/$(CONFIG)/httpcli_format_request_test bins/$(CONFIG)/httpcli_parser_test bins/$(CONFIG)/httpcli_test bins/$(CONFIG)/grpc_credentials_test bins/$(CONFIG)/grpc_base64_test bins/$(CONFIG)/grpc_json_token_test bins/$(CONFIG)/timeout_encoding_test bins/$(CONFIG)/fd_posix_test bins/$(CONFIG)/fling_stream_test bins/$(CONFIG)/lame_client_test bins/$(CONFIG)/alarm_test bins/$(CONFIG)/alarm_list_test bins/$(CONFIG)/alarm_heap_test bins/$(CONFIG)/time_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test bins/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test bins/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_fake_security_census_simple_request_test bins/$(CONFIG)/chttp2_fake_security_disappearing_server_test bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test bins/$(CONFIG)/chttp2_fake_security_no_op_test bins/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test bins/$(CONFIG)/chttp2_fake_security_simple_request_test bins/$(CONFIG)/chttp2_fake_security_thread_stress_test bins/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_fullstack_no_op_test bins/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_fullstack_simple_request_test bins/$(CONFIG)/chttp2_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test bins/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test bins/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_socket_pair_census_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_test bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test bins/$(CONFIG)/chttp2_socket_pair_no_op_test bins/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test bins/$(CONFIG)/chttp2_socket_pair_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_thread_stress_test bins/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test
+buildtests_c: privatelibs_c bins/$(CONFIG)/grpc_byte_buffer_reader_test bins/$(CONFIG)/gpr_cancellable_test bins/$(CONFIG)/gpr_log_test bins/$(CONFIG)/gpr_useful_test bins/$(CONFIG)/gpr_cmdline_test bins/$(CONFIG)/gpr_histogram_test bins/$(CONFIG)/gpr_host_port_test bins/$(CONFIG)/gpr_slice_buffer_test bins/$(CONFIG)/gpr_slice_test bins/$(CONFIG)/gpr_string_test bins/$(CONFIG)/gpr_sync_test bins/$(CONFIG)/gpr_thd_test bins/$(CONFIG)/gpr_time_test bins/$(CONFIG)/murmur_hash_test bins/$(CONFIG)/grpc_stream_op_test bins/$(CONFIG)/alpn_test bins/$(CONFIG)/time_averaged_stats_test bins/$(CONFIG)/chttp2_stream_encoder_test bins/$(CONFIG)/hpack_table_test bins/$(CONFIG)/chttp2_stream_map_test bins/$(CONFIG)/hpack_parser_test bins/$(CONFIG)/transport_metadata_test bins/$(CONFIG)/chttp2_status_conversion_test bins/$(CONFIG)/chttp2_transport_end2end_test bins/$(CONFIG)/tcp_posix_test bins/$(CONFIG)/dualstack_socket_test bins/$(CONFIG)/no_server_test bins/$(CONFIG)/resolve_address_test bins/$(CONFIG)/sockaddr_utils_test bins/$(CONFIG)/tcp_server_posix_test bins/$(CONFIG)/tcp_client_posix_test bins/$(CONFIG)/grpc_channel_stack_test bins/$(CONFIG)/metadata_buffer_test bins/$(CONFIG)/grpc_completion_queue_test bins/$(CONFIG)/census_window_stats_test bins/$(CONFIG)/census_statistics_quick_test bins/$(CONFIG)/census_statistics_small_log_test bins/$(CONFIG)/census_statistics_performance_test bins/$(CONFIG)/census_statistics_multiple_writers_test bins/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test bins/$(CONFIG)/census_stub_test bins/$(CONFIG)/census_hash_table_test bins/$(CONFIG)/fling_server bins/$(CONFIG)/fling_client bins/$(CONFIG)/fling_test bins/$(CONFIG)/echo_server bins/$(CONFIG)/echo_client bins/$(CONFIG)/echo_test bins/$(CONFIG)/message_compress_test bins/$(CONFIG)/bin_encoder_test bins/$(CONFIG)/secure_endpoint_test bins/$(CONFIG)/httpcli_format_request_test bins/$(CONFIG)/httpcli_parser_test bins/$(CONFIG)/httpcli_test bins/$(CONFIG)/grpc_credentials_test bins/$(CONFIG)/grpc_base64_test bins/$(CONFIG)/grpc_json_token_test bins/$(CONFIG)/timeout_encoding_test bins/$(CONFIG)/fd_posix_test bins/$(CONFIG)/fling_stream_test bins/$(CONFIG)/lame_client_test bins/$(CONFIG)/alarm_test bins/$(CONFIG)/alarm_list_test bins/$(CONFIG)/alarm_heap_test bins/$(CONFIG)/time_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test bins/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test bins/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_fake_security_census_simple_request_test bins/$(CONFIG)/chttp2_fake_security_disappearing_server_test bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test bins/$(CONFIG)/chttp2_fake_security_no_op_test bins/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test bins/$(CONFIG)/chttp2_fake_security_simple_request_test bins/$(CONFIG)/chttp2_fake_security_thread_stress_test bins/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_fullstack_no_op_test bins/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_fullstack_simple_request_test bins/$(CONFIG)/chttp2_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test bins/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test bins/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_socket_pair_census_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_test bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test bins/$(CONFIG)/chttp2_socket_pair_no_op_test bins/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test bins/$(CONFIG)/chttp2_socket_pair_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_thread_stress_test bins/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test
 
 buildtests_cxx: privatelibs_cxx bins/$(CONFIG)/thread_pool_test bins/$(CONFIG)/status_test bins/$(CONFIG)/sync_client_async_server_test bins/$(CONFIG)/qps_client bins/$(CONFIG)/qps_server bins/$(CONFIG)/interop_server bins/$(CONFIG)/interop_client bins/$(CONFIG)/end2end_test bins/$(CONFIG)/channel_arguments_test bins/$(CONFIG)/credentials_test
 
@@ -677,6 +690,8 @@ test_c: buildtests_c
 	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_early_server_shutdown_finishes_tags_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fake_security_graceful_server_shutdown_test"
+	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test || ( echo test chttp2_fake_security_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_invoke_large_request_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test || ( echo test chttp2_fake_security_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_max_concurrent_streams_test"
@@ -719,6 +734,8 @@ test_c: buildtests_c
 	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_early_server_shutdown_finishes_tags_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_graceful_server_shutdown_test"
+	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test || ( echo test chttp2_fullstack_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_invoke_large_request_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test || ( echo test chttp2_fullstack_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_max_concurrent_streams_test"
@@ -761,6 +778,8 @@ test_c: buildtests_c
 	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_graceful_server_shutdown_test"
+	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test || ( echo test chttp2_simple_ssl_fullstack_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_invoke_large_request_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_fullstack_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_max_concurrent_streams_test"
@@ -803,6 +822,8 @@ test_c: buildtests_c
 	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test"
+	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test"
@@ -845,6 +866,8 @@ test_c: buildtests_c
 	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_early_server_shutdown_finishes_tags_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_graceful_server_shutdown_test"
+	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test || ( echo test chttp2_socket_pair_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_invoke_large_request_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test || ( echo test chttp2_socket_pair_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_max_concurrent_streams_test"
@@ -887,6 +910,8 @@ test_c: buildtests_c
 	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test"
+	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test"
 	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test"
@@ -943,6 +968,11 @@ strip: strip-static strip-shared
 strip-static: strip-static_c strip-static_cxx
 
 strip-shared: strip-shared_c strip-shared_cxx
+
+
+# TODO(nnoble): the strip target is stripping in-place, instead
+# of copying files in a temporary folder.
+# This prevents proper debugging after running make install.
 
 strip-static_c: static_c
 	$(E) "[STRIP]   Stripping libgpr.a"
@@ -1338,6 +1368,8 @@ PUBLIC_HEADERS_C += \
 LIBGRPC_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
 
 libs/$(CONFIG)/libgrpc.a: openssl_dep_error
 
@@ -1785,6 +1817,8 @@ LIBGPR_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
 libs/$(CONFIG)/libgpr_test_util.a: openssl_dep_error
 
 
@@ -1832,6 +1866,8 @@ LIBGRPC_TEST_UTIL_SRC = \
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
 
 libs/$(CONFIG)/libgrpc_test_util.a: openssl_dep_error
 
@@ -1930,6 +1966,8 @@ PUBLIC_HEADERS_CXX += \
 LIBGRPC++_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
 
 libs/$(CONFIG)/libgrpc++.a: openssl_dep_error
 
@@ -2031,6 +2069,8 @@ LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basena
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
 libs/$(CONFIG)/libgrpc++_test_util.a: openssl_dep_error
 
 
@@ -2076,6 +2116,8 @@ LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS = $(addprefix objs/$(CONFIG)/, $(ad
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
 libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a: openssl_dep_error
 
 
@@ -2112,6 +2154,8 @@ LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
 
 libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a: openssl_dep_error
 
@@ -2150,6 +2194,8 @@ LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS = $(addprefix objs/$(CONFIG)
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: openssl_dep_error
 
 
@@ -2186,6 +2232,8 @@ LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
 
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: openssl_dep_error
 
@@ -2224,6 +2272,8 @@ LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS = $(addprefix objs/$(CONFIG)/, $(adds
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a: openssl_dep_error
 
 
@@ -2260,6 +2310,8 @@ LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC = \
 LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
 
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: openssl_dep_error
 
@@ -2486,6 +2538,28 @@ ifneq ($(NO_DEPS),true)
 endif
 
 objs/$(CONFIG)/test/core/end2end/tests/early_server_shutdown_finishes_tags.o: 
+
+
+LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_SRC = \
+    test/core/end2end/tests/graceful_server_shutdown.c \
+
+
+LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_SRC))))
+
+libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a: $(ZLIB_DEP) $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
+
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS:.o=.dep)
+endif
+
+objs/$(CONFIG)/test/core/end2end/tests/graceful_server_shutdown.o: 
 
 
 LIBEND2END_TEST_INVOKE_LARGE_REQUEST_SRC = \
@@ -2763,6 +2837,8 @@ LIBEND2END_CERTS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
 libs/$(CONFIG)/libend2end_certs.a: openssl_dep_error
 
 
@@ -2808,6 +2884,8 @@ GEN_HPACK_TABLES_SRC = \
 GEN_HPACK_TABLES_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/gen_hpack_tables: openssl_dep_error
 
@@ -2880,6 +2958,8 @@ GRPC_BYTE_BUFFER_READER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o,
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/grpc_byte_buffer_reader_test: openssl_dep_error
 
 else
@@ -2908,6 +2988,8 @@ GPR_CANCELLABLE_TEST_SRC = \
 GPR_CANCELLABLE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_CANCELLABLE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/gpr_cancellable_test: openssl_dep_error
 
@@ -2938,6 +3020,8 @@ GPR_LOG_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GP
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/gpr_log_test: openssl_dep_error
 
 else
@@ -2966,6 +3050,8 @@ GPR_USEFUL_TEST_SRC = \
 GPR_USEFUL_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_USEFUL_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/gpr_useful_test: openssl_dep_error
 
@@ -2996,6 +3082,8 @@ GPR_CMDLINE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/gpr_cmdline_test: openssl_dep_error
 
 else
@@ -3024,6 +3112,8 @@ GPR_HISTOGRAM_TEST_SRC = \
 GPR_HISTOGRAM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/gpr_histogram_test: openssl_dep_error
 
@@ -3054,6 +3144,8 @@ GPR_HOST_PORT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basenam
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/gpr_host_port_test: openssl_dep_error
 
 else
@@ -3082,6 +3174,8 @@ GPR_SLICE_BUFFER_TEST_SRC = \
 GPR_SLICE_BUFFER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SLICE_BUFFER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/gpr_slice_buffer_test: openssl_dep_error
 
@@ -3112,6 +3206,8 @@ GPR_SLICE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/gpr_slice_test: openssl_dep_error
 
 else
@@ -3140,6 +3236,8 @@ GPR_STRING_TEST_SRC = \
 GPR_STRING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_STRING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/gpr_string_test: openssl_dep_error
 
@@ -3170,6 +3268,8 @@ GPR_SYNC_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(G
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/gpr_sync_test: openssl_dep_error
 
 else
@@ -3198,6 +3298,8 @@ GPR_THD_TEST_SRC = \
 GPR_THD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_THD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/gpr_thd_test: openssl_dep_error
 
@@ -3228,6 +3330,8 @@ GPR_TIME_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(G
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/gpr_time_test: openssl_dep_error
 
 else
@@ -3256,6 +3360,8 @@ MURMUR_HASH_TEST_SRC = \
 MURMUR_HASH_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(MURMUR_HASH_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/murmur_hash_test: openssl_dep_error
 
@@ -3286,6 +3392,8 @@ GRPC_STREAM_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basena
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/grpc_stream_op_test: openssl_dep_error
 
 else
@@ -3314,6 +3422,8 @@ ALPN_TEST_SRC = \
 ALPN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ALPN_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/alpn_test: openssl_dep_error
 
@@ -3344,6 +3454,8 @@ TIME_AVERAGED_STATS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(b
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/time_averaged_stats_test: openssl_dep_error
 
 else
@@ -3372,6 +3484,8 @@ CHTTP2_STREAM_ENCODER_TEST_SRC = \
 CHTTP2_STREAM_ENCODER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_STREAM_ENCODER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_stream_encoder_test: openssl_dep_error
 
@@ -3402,6 +3516,8 @@ HPACK_TABLE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/hpack_table_test: openssl_dep_error
 
 else
@@ -3430,6 +3546,8 @@ CHTTP2_STREAM_MAP_TEST_SRC = \
 CHTTP2_STREAM_MAP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_STREAM_MAP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_stream_map_test: openssl_dep_error
 
@@ -3460,6 +3578,8 @@ HPACK_PARSER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/hpack_parser_test: openssl_dep_error
 
 else
@@ -3488,6 +3608,8 @@ TRANSPORT_METADATA_TEST_SRC = \
 TRANSPORT_METADATA_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/transport_metadata_test: openssl_dep_error
 
@@ -3518,6 +3640,8 @@ CHTTP2_STATUS_CONVERSION_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_status_conversion_test: openssl_dep_error
 
 else
@@ -3546,6 +3670,8 @@ CHTTP2_TRANSPORT_END2END_TEST_SRC = \
 CHTTP2_TRANSPORT_END2END_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_TRANSPORT_END2END_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_transport_end2end_test: openssl_dep_error
 
@@ -3576,6 +3702,8 @@ TCP_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/tcp_posix_test: openssl_dep_error
 
 else
@@ -3604,6 +3732,8 @@ DUALSTACK_SOCKET_TEST_SRC = \
 DUALSTACK_SOCKET_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(DUALSTACK_SOCKET_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/dualstack_socket_test: openssl_dep_error
 
@@ -3634,6 +3764,8 @@ NO_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/no_server_test: openssl_dep_error
 
 else
@@ -3662,6 +3794,8 @@ RESOLVE_ADDRESS_TEST_SRC = \
 RESOLVE_ADDRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVE_ADDRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/resolve_address_test: openssl_dep_error
 
@@ -3692,6 +3826,8 @@ SOCKADDR_UTILS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basena
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/sockaddr_utils_test: openssl_dep_error
 
 else
@@ -3720,6 +3856,8 @@ TCP_SERVER_POSIX_TEST_SRC = \
 TCP_SERVER_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_SERVER_POSIX_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/tcp_server_posix_test: openssl_dep_error
 
@@ -3750,6 +3888,8 @@ TCP_CLIENT_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/tcp_client_posix_test: openssl_dep_error
 
 else
@@ -3778,6 +3918,8 @@ GRPC_CHANNEL_STACK_TEST_SRC = \
 GRPC_CHANNEL_STACK_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_STACK_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/grpc_channel_stack_test: openssl_dep_error
 
@@ -3808,6 +3950,8 @@ METADATA_BUFFER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/metadata_buffer_test: openssl_dep_error
 
 else
@@ -3836,6 +3980,8 @@ GRPC_COMPLETION_QUEUE_TEST_SRC = \
 GRPC_COMPLETION_QUEUE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/grpc_completion_queue_test: openssl_dep_error
 
@@ -3866,6 +4012,8 @@ GRPC_COMPLETION_QUEUE_BENCHMARK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/grpc_completion_queue_benchmark: openssl_dep_error
 
 else
@@ -3894,6 +4042,8 @@ CENSUS_TRACE_STORE_TEST_SRC = \
 CENSUS_TRACE_STORE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_TRACE_STORE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/census_trace_store_test: openssl_dep_error
 
@@ -3924,6 +4074,8 @@ CENSUS_STATS_STORE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/census_stats_store_test: openssl_dep_error
 
 else
@@ -3952,6 +4104,8 @@ CENSUS_WINDOW_STATS_TEST_SRC = \
 CENSUS_WINDOW_STATS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_WINDOW_STATS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/census_window_stats_test: openssl_dep_error
 
@@ -3982,6 +4136,8 @@ CENSUS_STATISTICS_QUICK_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o,
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/census_statistics_quick_test: openssl_dep_error
 
 else
@@ -4010,6 +4166,8 @@ CENSUS_STATISTICS_SMALL_LOG_TEST_SRC = \
 CENSUS_STATISTICS_SMALL_LOG_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_SMALL_LOG_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/census_statistics_small_log_test: openssl_dep_error
 
@@ -4040,6 +4198,8 @@ CENSUS_STATISTICS_PERFORMANCE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuff
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/census_statistics_performance_test: openssl_dep_error
 
 else
@@ -4068,6 +4228,8 @@ CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC = \
 CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STATISTICS_MULTIPLE_WRITERS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/census_statistics_multiple_writers_test: openssl_dep_error
 
@@ -4098,6 +4260,8 @@ CENSUS_STATISTICS_MULTIPLE_WRITERS_CIRCULAR_BUFFER_TEST_OBJS = $(addprefix objs/
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test: openssl_dep_error
 
 else
@@ -4126,6 +4290,8 @@ CENSUS_STUB_TEST_SRC = \
 CENSUS_STUB_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_STUB_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/census_stub_test: openssl_dep_error
 
@@ -4156,6 +4322,8 @@ CENSUS_HASH_TABLE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(bas
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/census_hash_table_test: openssl_dep_error
 
 else
@@ -4184,6 +4352,8 @@ FLING_SERVER_SRC = \
 FLING_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_SERVER_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/fling_server: openssl_dep_error
 
@@ -4214,6 +4384,8 @@ FLING_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FL
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/fling_client: openssl_dep_error
 
 else
@@ -4242,6 +4414,8 @@ FLING_TEST_SRC = \
 FLING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/fling_test: openssl_dep_error
 
@@ -4272,6 +4446,8 @@ ECHO_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ECH
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/echo_server: openssl_dep_error
 
 else
@@ -4300,6 +4476,8 @@ ECHO_CLIENT_SRC = \
 ECHO_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ECHO_CLIENT_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/echo_client: openssl_dep_error
 
@@ -4330,6 +4508,8 @@ ECHO_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ECHO_
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/echo_test: openssl_dep_error
 
 else
@@ -4358,6 +4538,8 @@ LOW_LEVEL_PING_PONG_BENCHMARK_SRC = \
 LOW_LEVEL_PING_PONG_BENCHMARK_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LOW_LEVEL_PING_PONG_BENCHMARK_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/low_level_ping_pong_benchmark: openssl_dep_error
 
@@ -4388,6 +4570,8 @@ MESSAGE_COMPRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/message_compress_test: openssl_dep_error
 
 else
@@ -4416,6 +4600,8 @@ BIN_ENCODER_TEST_SRC = \
 BIN_ENCODER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(BIN_ENCODER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/bin_encoder_test: openssl_dep_error
 
@@ -4446,6 +4632,8 @@ SECURE_ENDPOINT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/secure_endpoint_test: openssl_dep_error
 
 else
@@ -4474,6 +4662,8 @@ HTTPCLI_FORMAT_REQUEST_TEST_SRC = \
 HTTPCLI_FORMAT_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_FORMAT_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/httpcli_format_request_test: openssl_dep_error
 
@@ -4504,6 +4694,8 @@ HTTPCLI_PARSER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basena
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/httpcli_parser_test: openssl_dep_error
 
 else
@@ -4532,6 +4724,8 @@ HTTPCLI_TEST_SRC = \
 HTTPCLI_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/httpcli_test: openssl_dep_error
 
@@ -4562,6 +4756,8 @@ GRPC_CREDENTIALS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/grpc_credentials_test: openssl_dep_error
 
 else
@@ -4590,6 +4786,8 @@ GRPC_FETCH_OAUTH2_SRC = \
 GRPC_FETCH_OAUTH2_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_FETCH_OAUTH2_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/grpc_fetch_oauth2: openssl_dep_error
 
@@ -4620,6 +4818,8 @@ GRPC_BASE64_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/grpc_base64_test: openssl_dep_error
 
 else
@@ -4648,6 +4848,8 @@ GRPC_JSON_TOKEN_TEST_SRC = \
 GRPC_JSON_TOKEN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_JSON_TOKEN_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/grpc_json_token_test: openssl_dep_error
 
@@ -4678,6 +4880,8 @@ TIMEOUT_ENCODING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/timeout_encoding_test: openssl_dep_error
 
 else
@@ -4706,6 +4910,8 @@ FD_POSIX_TEST_SRC = \
 FD_POSIX_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(FD_POSIX_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/fd_posix_test: openssl_dep_error
 
@@ -4736,6 +4942,8 @@ FLING_STREAM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/fling_stream_test: openssl_dep_error
 
 else
@@ -4764,6 +4972,8 @@ LAME_CLIENT_TEST_SRC = \
 LAME_CLIENT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LAME_CLIENT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/lame_client_test: openssl_dep_error
 
@@ -4794,6 +5004,8 @@ THREAD_POOL_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/thread_pool_test: openssl_dep_error
 
 else
@@ -4823,6 +5035,8 @@ STATUS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(STA
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/status_test: openssl_dep_error
 
 else
@@ -4851,6 +5065,8 @@ SYNC_CLIENT_ASYNC_SERVER_TEST_SRC = \
 SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(SYNC_CLIENT_ASYNC_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/sync_client_async_server_test: openssl_dep_error
 
@@ -4882,6 +5098,8 @@ QPS_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/qps_client: openssl_dep_error
 
 else
@@ -4912,6 +5130,8 @@ QPS_SERVER_SRC = \
 QPS_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_SERVER_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/qps_server: openssl_dep_error
 
@@ -4945,6 +5165,8 @@ INTEROP_SERVER_SRC = \
 INTEROP_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_SERVER_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/interop_server: openssl_dep_error
 
@@ -4981,6 +5203,8 @@ INTEROP_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/interop_client: openssl_dep_error
 
 else
@@ -5013,6 +5237,8 @@ END2END_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(EN
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/end2end_test: openssl_dep_error
 
 else
@@ -5041,6 +5267,8 @@ CHANNEL_ARGUMENTS_TEST_SRC = \
 CHANNEL_ARGUMENTS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_ARGUMENTS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/channel_arguments_test: openssl_dep_error
 
@@ -5071,6 +5299,8 @@ CREDENTIALS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/credentials_test: openssl_dep_error
 
 else
@@ -5099,6 +5329,8 @@ ALARM_TEST_SRC = \
 ALARM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/alarm_test: openssl_dep_error
 
@@ -5129,6 +5361,8 @@ ALARM_LIST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/alarm_list_test: openssl_dep_error
 
 else
@@ -5157,6 +5391,8 @@ ALARM_HEAP_TEST_SRC = \
 ALARM_HEAP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_HEAP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/alarm_heap_test: openssl_dep_error
 
@@ -5187,6 +5423,8 @@ TIME_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TIME_
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/time_test: openssl_dep_error
 
 else
@@ -5215,6 +5453,8 @@ CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test: openssl_dep_error
 
 else
@@ -5241,6 +5481,8 @@ CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test: openssl_dep_error
 
@@ -5269,6 +5511,8 @@ CHTTP2_FAKE_SECURITY_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test: openssl_dep_error
 
 else
@@ -5295,6 +5539,8 @@ CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CANCEL_BEFORE_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test: openssl_dep_error
 
@@ -5323,6 +5569,8 @@ CHTTP2_FAKE_SECURITY_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/,
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test: openssl_dep_error
 
 else
@@ -5349,6 +5597,8 @@ CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_census_simple_request_test: openssl_dep_error
 
@@ -5377,6 +5627,8 @@ CHTTP2_FAKE_SECURITY_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_disappearing_server_test: openssl_dep_error
 
 else
@@ -5403,6 +5655,8 @@ CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test: openssl_dep_error
 
@@ -5431,6 +5685,8 @@ CHTTP2_FAKE_SECURITY_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test: openssl_dep_error
 
 else
@@ -5452,11 +5708,40 @@ endif
 endif
 
 
+CHTTP2_FAKE_SECURITY_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC = \
+
+CHTTP2_FAKE_SECURITY_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test: $(CHTTP2_FAKE_SECURITY_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FAKE_SECURITY_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test
+
+endif
+
+
+deps_chttp2_fake_security_graceful_server_shutdown_test: $(CHTTP2_FAKE_SECURITY_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FAKE_SECURITY_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test: openssl_dep_error
 
@@ -5485,6 +5770,8 @@ CHTTP2_FAKE_SECURITY_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFI
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test: openssl_dep_error
 
 else
@@ -5511,6 +5798,8 @@ CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_no_op_test: openssl_dep_error
 
@@ -5539,6 +5828,8 @@ CHTTP2_FAKE_SECURITY_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test: openssl_dep_error
 
 else
@@ -5565,6 +5856,8 @@ CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC 
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test: openssl_dep_error
 
@@ -5593,6 +5886,8 @@ CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(ad
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -5619,6 +5914,8 @@ CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test: openssl_dep_error
 
@@ -5647,6 +5944,8 @@ CHTTP2_FAKE_SECURITY_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OB
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -5673,6 +5972,8 @@ CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test: openssl_dep_error
 
@@ -5701,6 +6002,8 @@ CHTTP2_FAKE_SECURITY_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(a
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_simple_request_test: openssl_dep_error
 
 else
@@ -5727,6 +6030,8 @@ CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_SRC = \
 CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FAKE_SECURITY_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fake_security_thread_stress_test: openssl_dep_error
 
@@ -5755,6 +6060,8 @@ CHTTP2_FAKE_SECURITY_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test: openssl_dep_error
 
 else
@@ -5781,6 +6088,8 @@ CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test: openssl_dep_error
 
@@ -5809,6 +6118,8 @@ CHTTP2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix o
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test: openssl_dep_error
 
 else
@@ -5835,6 +6146,8 @@ CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
 CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test: openssl_dep_error
 
@@ -5863,6 +6176,8 @@ CHTTP2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test: openssl_dep_error
 
 else
@@ -5889,6 +6204,8 @@ CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
 CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test: openssl_dep_error
 
@@ -5917,6 +6234,8 @@ CHTTP2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_census_simple_request_test: openssl_dep_error
 
 else
@@ -5943,6 +6262,8 @@ CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC = \
 CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_disappearing_server_test: openssl_dep_error
 
@@ -5971,6 +6292,8 @@ CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(add
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test: openssl_dep_error
 
 else
@@ -5998,6 +6321,8 @@ CHTTP2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix obj
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test: openssl_dep_error
 
 else
@@ -6019,11 +6344,40 @@ endif
 endif
 
 
+CHTTP2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC = \
+
+CHTTP2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test: $(CHTTP2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test
+
+endif
+
+
+deps_chttp2_fullstack_graceful_server_shutdown_test: $(CHTTP2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test: openssl_dep_error
 
@@ -6052,6 +6406,8 @@ CHTTP2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)/,
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test: openssl_dep_error
 
 else
@@ -6078,6 +6434,8 @@ CHTTP2_FULLSTACK_NO_OP_TEST_SRC = \
 CHTTP2_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_no_op_test: openssl_dep_error
 
@@ -6106,6 +6464,8 @@ CHTTP2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test: openssl_dep_error
 
 else
@@ -6132,6 +6492,8 @@ CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test: openssl_dep_error
 
@@ -6160,6 +6522,8 @@ CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addpre
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -6186,6 +6550,8 @@ CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test: openssl_dep_error
 
@@ -6214,6 +6580,8 @@ CHTTP2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS =
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -6240,6 +6608,8 @@ CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test: openssl_dep_error
 
@@ -6268,6 +6638,8 @@ CHTTP2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsu
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_simple_request_test: openssl_dep_error
 
 else
@@ -6294,6 +6666,8 @@ CHTTP2_FULLSTACK_THREAD_STRESS_TEST_SRC = \
 CHTTP2_FULLSTACK_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_fullstack_thread_stress_test: openssl_dep_error
 
@@ -6322,6 +6696,8 @@ CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix obj
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test: openssl_dep_error
 
 else
@@ -6348,6 +6724,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test: openssl_dep_error
 
@@ -6376,6 +6754,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test: openssl_dep_error
 
 else
@@ -6402,6 +6782,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test: openssl_dep_error
 
@@ -6430,6 +6812,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test: openssl_dep_error
 
 else
@@ -6456,6 +6840,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test: openssl_dep_error
 
@@ -6484,6 +6870,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test: openssl_dep_error
 
 else
@@ -6510,6 +6898,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test: openssl_dep_error
 
@@ -6538,6 +6928,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_O
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test: openssl_dep_error
 
 else
@@ -6565,6 +6957,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(ad
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test: openssl_dep_error
 
 else
@@ -6586,11 +6980,40 @@ endif
 endif
 
 
+CHTTP2_SIMPLE_SSL_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test
+
+endif
+
+
+deps_chttp2_simple_ssl_fullstack_graceful_server_shutdown_test: $(CHTTP2_SIMPLE_SSL_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_SIMPLE_SSL_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test: openssl_dep_error
 
@@ -6619,6 +7042,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test: openssl_dep_error
 
 else
@@ -6645,6 +7070,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test: openssl_dep_error
 
@@ -6673,6 +7100,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(C
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test: openssl_dep_error
 
 else
@@ -6699,6 +7128,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TE
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test: openssl_dep_error
 
@@ -6727,6 +7158,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -6753,6 +7186,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test: openssl_dep_error
 
@@ -6781,6 +7216,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -6807,6 +7244,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test: openssl_dep_error
 
@@ -6835,6 +7274,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test: openssl_dep_error
 
 else
@@ -6861,6 +7302,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_FULLSTACK_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test: openssl_dep_error
 
@@ -6889,6 +7332,8 @@ CHTTP2_SIMPLE_SSL_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(ad
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test: openssl_dep_error
 
 else
@@ -6915,6 +7360,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test: openssl_dep_error
 
@@ -6943,6 +7390,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TE
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test: openssl_dep_error
 
 else
@@ -6969,6 +7418,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test: openssl_dep_error
 
@@ -6997,6 +7448,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addpr
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test: openssl_dep_error
 
 else
@@ -7023,6 +7476,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test: openssl_dep_error
 
@@ -7051,6 +7506,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addp
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test: openssl_dep_error
 
 else
@@ -7077,6 +7534,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test: openssl_dep_error
 
@@ -7105,6 +7564,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test: openssl_dep_error
 
 else
@@ -7132,6 +7593,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test: openssl_dep_error
 
 else
@@ -7153,11 +7616,40 @@ endif
 endif
 
 
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC = \
+
+CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test
+
+endif
+
+
+deps_chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test: $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test: openssl_dep_error
 
@@ -7186,6 +7678,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(add
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test: openssl_dep_error
 
 else
@@ -7212,6 +7706,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test: openssl_dep_error
 
@@ -7240,6 +7736,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_PING_PONG_STREAMING_TEST_OBJS = $(addpre
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test: openssl_dep_error
 
 else
@@ -7266,6 +7764,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AN
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test: openssl_dep_error
 
@@ -7294,6 +7794,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLO
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -7320,6 +7822,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC =
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test: openssl_dep_error
 
@@ -7348,6 +7852,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_REQUEST_RESPONSE_WITH_TRAILING_METADATA_
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -7374,6 +7880,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test: openssl_dep_error
 
@@ -7402,6 +7910,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_SIMPLE_REQUEST_TEST_OBJS = $(addprefix o
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test: openssl_dep_error
 
 else
@@ -7428,6 +7938,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_SRC = \
 CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test: openssl_dep_error
 
@@ -7456,6 +7968,8 @@ CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test: openssl_dep_error
 
 else
@@ -7482,6 +7996,8 @@ CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test: openssl_dep_error
 
@@ -7510,6 +8026,8 @@ CHTTP2_SOCKET_PAIR_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test: openssl_dep_error
 
 else
@@ -7536,6 +8054,8 @@ CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test: openssl_dep_error
 
@@ -7564,6 +8084,8 @@ CHTTP2_SOCKET_PAIR_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/,
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test: openssl_dep_error
 
 else
@@ -7590,6 +8112,8 @@ CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test: openssl_dep_error
 
@@ -7618,6 +8142,8 @@ CHTTP2_SOCKET_PAIR_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_census_simple_request_test: openssl_dep_error
 
 else
@@ -7644,6 +8170,8 @@ CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_test: openssl_dep_error
 
@@ -7672,6 +8200,8 @@ CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(a
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test: openssl_dep_error
 
 else
@@ -7699,6 +8229,8 @@ CHTTP2_SOCKET_PAIR_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix o
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test: openssl_dep_error
 
 else
@@ -7720,11 +8252,40 @@ endif
 endif
 
 
+CHTTP2_SOCKET_PAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test: $(CHTTP2_SOCKET_PAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test
+
+endif
+
+
+deps_chttp2_socket_pair_graceful_server_shutdown_test: $(CHTTP2_SOCKET_PAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_SOCKET_PAIR_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test: openssl_dep_error
 
@@ -7753,6 +8314,8 @@ CHTTP2_SOCKET_PAIR_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix objs/$(CONFIG)
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test: openssl_dep_error
 
 else
@@ -7779,6 +8342,8 @@ CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_no_op_test: openssl_dep_error
 
@@ -7807,6 +8372,8 @@ CHTTP2_SOCKET_PAIR_PING_PONG_STREAMING_TEST_OBJS = $(addprefix objs/$(CONFIG)/, 
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test: openssl_dep_error
 
 else
@@ -7833,6 +8400,8 @@ CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = 
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test: openssl_dep_error
 
@@ -7861,6 +8430,8 @@ CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addp
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -7887,6 +8458,8 @@ CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test: openssl_dep_error
 
@@ -7915,6 +8488,8 @@ CHTTP2_SOCKET_PAIR_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_TEST_OBJS
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -7941,6 +8516,8 @@ CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test: openssl_dep_error
 
@@ -7969,6 +8546,8 @@ CHTTP2_SOCKET_PAIR_SIMPLE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(add
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_simple_request_test: openssl_dep_error
 
 else
@@ -7995,6 +8574,8 @@ CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_THREAD_STRESS_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_thread_stress_test: openssl_dep_error
 
@@ -8023,6 +8604,8 @@ CHTTP2_SOCKET_PAIR_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix o
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test: openssl_dep_error
 
 else
@@ -8049,6 +8632,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test: openssl_dep_error
 
@@ -8077,6 +8662,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test: openssl_dep_error
 
 else
@@ -8103,6 +8690,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_AFTER_INVOKE_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test: openssl_dep_error
 
@@ -8131,6 +8720,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addpref
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test: openssl_dep_error
 
 else
@@ -8157,6 +8748,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CANCEL_IN_A_VACUUM_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test: openssl_dep_error
 
@@ -8185,6 +8778,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addpre
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test: openssl_dep_error
 
 else
@@ -8211,6 +8806,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_DISAPPEARING_SERVER_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test: openssl_dep_error
 
@@ -8239,6 +8836,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CA
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test: openssl_dep_error
 
 else
@@ -8266,6 +8865,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_O
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test: openssl_dep_error
 
 else
@@ -8287,11 +8888,40 @@ endif
 endif
 
 
+CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC = \
+
+CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_certs.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test
+
+endif
+
+
+deps_chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test: $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_SRC = \
 
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_INVOKE_LARGE_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test: openssl_dep_error
 
@@ -8320,6 +8950,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addpr
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test: openssl_dep_error
 
 else
@@ -8346,6 +8978,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_NO_OP_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test: openssl_dep_error
 
@@ -8374,6 +9008,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_PING_PONG_STREAMING_TEST_OBJS = $(addprefi
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test: openssl_dep_error
 
 else
@@ -8400,6 +9036,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test: openssl_dep_error
 
@@ -8428,6 +9066,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -8454,6 +9094,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test: openssl_dep_error
 
@@ -8482,6 +9124,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AN
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test: openssl_dep_error
 
 else
@@ -8508,6 +9152,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test: openssl_dep_error
 
@@ -8536,6 +9182,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_SIMPLE_REQUEST_TEST_OBJS = $(addprefix obj
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test: openssl_dep_error
 
 else
@@ -8563,6 +9211,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_THREAD_STRESS_TEST_OBJS = $(addprefix objs
 
 ifeq ($(NO_SECURE),true)
 
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test: openssl_dep_error
 
 else
@@ -8589,6 +9239,8 @@ CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_S
 CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
 
 ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
 
 bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test: openssl_dep_error
 

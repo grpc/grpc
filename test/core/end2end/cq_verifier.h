@@ -69,5 +69,6 @@ void cq_expect_finished_with_status(cq_verifier *v, void *tag,
                                     grpc_status_code status_code,
                                     const char *details, ...);
 void cq_expect_finished(cq_verifier *v, void *tag, ...);
+void cq_expect_server_shutdown(cq_verifier *v, void *tag);
 
 #endif /* __GRPC_TEST_END2END_CQ_VERIFIER_H__ */

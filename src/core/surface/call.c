@@ -961,7 +961,12 @@ grpc_metadata_buffer *grpc_call_get_metadata_buffer(grpc_call *call) {
 static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
   if (success) {
-    grpc_call_cancel(call);
+    if (call->is_client) {
+      grpc_call_cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                                   "Deadline Exceeded");
+    } else {
+      grpc_call_cancel(call);
+    }
   }
   grpc_call_internal_unref(call);
 }

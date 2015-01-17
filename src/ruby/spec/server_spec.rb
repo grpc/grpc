@@ -39,7 +39,6 @@ end
 Server = GRPC::Core::Server
 
 describe Server do
-
   def create_test_cert
     GRPC::Core::ServerCredentials.new(*load_test_certs)
   end
@@ -49,11 +48,8 @@ describe Server do
   end
 
   describe '#start' do
-
     it 'runs without failing' do
-      blk = Proc.new do
-        s = Server.new(@cq, nil).start
-      end
+      blk = proc { Server.new(@cq, nil).start }
       expect(&blk).to_not raise_error
     end
 
@@ -62,20 +58,19 @@ describe Server do
       s.close
       expect { s.start }.to raise_error(RuntimeError)
     end
-
   end
 
   describe '#destroy' do
     it 'destroys a server ok' do
       s = start_a_server
-      blk = Proc.new { s.destroy }
+      blk = proc { s.destroy }
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
       begin
-        blk = Proc.new { s.destroy }
+        blk = proc { s.destroy }
         expect(&blk).to_not raise_error
         blk.call
         expect(&blk).to_not raise_error
@@ -89,7 +84,7 @@ describe Server do
     it 'closes a server ok' do
       s = start_a_server
       begin
-        blk = Proc.new { s.close }
+        blk = proc { s.close }
         expect(&blk).to_not raise_error
       ensure
         s.close
@@ -98,7 +93,7 @@ describe Server do
 
     it 'can be called more than once without error' do
       s = start_a_server
-      blk = Proc.new { s.close }
+      blk = proc { s.close }
       expect(&blk).to_not raise_error
       blk.call
       expect(&blk).to_not raise_error
@@ -106,11 +101,9 @@ describe Server do
   end
 
   describe '#add_http_port' do
-
     describe 'for insecure servers' do
-
       it 'runs without failing' do
-        blk = Proc.new do
+        blk = proc do
           s = Server.new(@cq, nil)
           s.add_http2_port('localhost:0')
           s.close
@@ -123,13 +116,11 @@ describe Server do
         s.close
         expect { s.add_http2_port('localhost:0') }.to raise_error(RuntimeError)
       end
-
     end
 
     describe 'for secure servers' do
-
       it 'runs without failing' do
-        blk = Proc.new do
+        blk = proc do
           s = Server.new(@cq, nil)
           s.add_http2_port('localhost:0', true)
           s.close
@@ -140,16 +131,13 @@ describe Server do
       it 'fails if the server is closed' do
         s = Server.new(@cq, nil)
         s.close
-        blk = Proc.new { s.add_http2_port('localhost:0', true) }
+        blk = proc { s.add_http2_port('localhost:0', true) }
         expect(&blk).to raise_error(RuntimeError)
       end
-
     end
-
   end
 
   shared_examples '#new' do
-
     it 'takes a completion queue with nil channel args' do
       expect { Server.new(@cq, nil, create_test_cert) }.to_not raise_error
     end
@@ -162,14 +150,14 @@ describe Server do
     end
 
     it 'does not take a hash with bad values as channel args' do
-      blk = construct_with_args(:symbol => Object.new)
+      blk = construct_with_args(symbol: Object.new)
       expect(&blk).to raise_error TypeError
       blk = construct_with_args('1' => Hash.new)
       expect(&blk).to raise_error TypeError
     end
 
     it 'can take a hash with a symbol key as channel args' do
-      blk = construct_with_args(:a_symbol => 1)
+      blk = construct_with_args(a_symbol: 1)
       expect(&blk).to_not raise_error
     end
 
@@ -179,46 +167,41 @@ describe Server do
     end
 
     it 'can take a hash with a string value as channel args' do
-      blk = construct_with_args(:a_symbol => '1')
+      blk = construct_with_args(a_symbol: '1')
       expect(&blk).to_not raise_error
     end
 
     it 'can take a hash with a symbol value as channel args' do
-      blk = construct_with_args(:a_symbol => :another_symbol)
+      blk = construct_with_args(a_symbol: :another_symbol)
       expect(&blk).to_not raise_error
     end
 
     it 'can take a hash with a numeric value as channel args' do
-      blk = construct_with_args(:a_symbol => 1)
+      blk = construct_with_args(a_symbol: 1)
       expect(&blk).to_not raise_error
     end
 
     it 'can take a hash with many args as channel args' do
-      args = Hash[127.times.collect { |x| [x.to_s, x] } ]
+      args = Hash[127.times.collect { |x| [x.to_s, x] }]
       blk = construct_with_args(args)
       expect(&blk).to_not raise_error
     end
-
   end
 
   describe '#new with an insecure channel' do
-
     def construct_with_args(a)
-      Proc.new { Server.new(@cq, a) }
+      proc { Server.new(@cq, a) }
     end
 
     it_behaves_like '#new'
-
   end
 
   describe '#new with a secure channel' do
-
     def construct_with_args(a)
-      Proc.new { Server.new(@cq, a, create_test_cert) }
+      proc { Server.new(@cq, a, create_test_cert) }
     end
 
     it_behaves_like '#new'
-
   end
 
   def start_a_server
@@ -229,5 +212,4 @@ describe Server do
     s.start
     s
   end
-
 end

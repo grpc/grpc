@@ -30,25 +30,23 @@
 require 'grpc'
 
 describe GRPC::Core::CompletionType do
-
   before(:each) do
     @known_types = {
-      :QUEUE_SHUTDOWN => 0,
-      :READ => 1,
-      :INVOKE_ACCEPTED => 2,
-      :WRITE_ACCEPTED => 3,
-      :FINISH_ACCEPTED => 4,
-      :CLIENT_METADATA_READ => 5,
-      :FINISHED => 6,
-      :SERVER_RPC_NEW => 7,
-      :RESERVED => 8
+      QUEUE_SHUTDOWN: 0,
+      READ: 1,
+      INVOKE_ACCEPTED: 2,
+      WRITE_ACCEPTED: 3,
+      FINISH_ACCEPTED: 4,
+      CLIENT_METADATA_READ: 5,
+      FINISHED: 6,
+      SERVER_RPC_NEW: 7,
+      RESERVED: 8
     }
   end
 
   it 'should have all the known types' do
     mod = GRPC::Core::CompletionType
-    blk = Proc.new { Hash[mod.constants.collect { |c| [c, mod.const_get(c)] }] }
+    blk = proc { Hash[mod.constants.collect { |c| [c, mod.const_get(c)] }] }
     expect(blk.call).to eq(@known_types)
   end
-
 end

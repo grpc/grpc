@@ -33,9 +33,7 @@ require 'xray/thread_dump_signal_handler'
 Pool = GRPC::RpcServer::Pool
 
 describe Pool do
-
   describe '#new' do
-
     it 'raises if a non-positive size is used' do
       expect { Pool.new(0) }.to raise_error
       expect { Pool.new(-1) }.to raise_error
@@ -45,11 +43,9 @@ describe Pool do
     it 'is constructed OK with a positive size' do
       expect { Pool.new(1) }.not_to raise_error
     end
-
   end
 
   describe '#jobs_waiting' do
-
     it 'at start, it is zero' do
       p = Pool.new(1)
       expect(p.jobs_waiting).to be(0)
@@ -57,74 +53,67 @@ describe Pool do
 
     it 'it increases, with each scheduled job if the pool is not running' do
       p = Pool.new(1)
-      job = Proc.new { }
+      job = proc {}
       expect(p.jobs_waiting).to be(0)
       5.times do |i|
         p.schedule(&job)
         expect(p.jobs_waiting).to be(i + 1)
       end
-
     end
 
     it 'it decreases as jobs are run' do
       p = Pool.new(1)
-      job = Proc.new { }
+      job = proc {}
       expect(p.jobs_waiting).to be(0)
-      3.times do |i|
+      3.times do
         p.schedule(&job)
       end
       p.start
       sleep 2
       expect(p.jobs_waiting).to be(0)
     end
-
   end
 
   describe '#schedule' do
-
     it 'throws if the pool is already stopped' do
       p = Pool.new(1)
-      p.stop()
-      job = Proc.new { }
+      p.stop
+      job = proc {}
       expect { p.schedule(&job) }.to raise_error
     end
 
     it 'adds jobs that get run by the pool' do
       p = Pool.new(1)
-      p.start()
+      p.start
       o, q = Object.new, Queue.new
-      job = Proc.new { q.push(o) }
+      job = proc { q.push(o) }
       p.schedule(&job)
       expect(q.pop).to be(o)
       p.stop
     end
-
   end
 
   describe '#stop' do
-
     it 'works when there are no scheduled tasks' do
       p = Pool.new(1)
-      expect { p.stop() }.not_to raise_error
+      expect { p.stop }.not_to raise_error
     end
 
     it 'stops jobs when there are long running jobs' do
       p = Pool.new(1)
-      p.start()
+      p.start
       o, q = Object.new, Queue.new
-      job = Proc.new do
+      job = proc do
         sleep(5)  # long running
         q.push(o)
       end
       p.schedule(&job)
       sleep(1)  # should ensure the long job gets scheduled
-      expect { p.stop() }.not_to raise_error
+      expect { p.stop }.not_to raise_error
     end
-
   end
 
   describe '#start' do
-
     it 'runs pre-scheduled jobs' do
       p = Pool.new(2)
       o, q = Object.new, Queue.new
@@ -146,7 +135,5 @@ describe Pool do
       end
       p.stop
     end
-
   end
-
 end

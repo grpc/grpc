@@ -61,7 +61,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   } else {
     int i;
     tsi_result result;
-    gpr_uint32 still_pending_size;
+    size_t still_pending_size;
     size_t total_buffer_size = 8192;
     size_t buffer_size = total_buffer_size;
     gpr_uint8 *encrypted_buffer = gpr_malloc(buffer_size);
@@ -72,8 +72,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
       gpr_uint8 *message_bytes = GPR_SLICE_START_PTR(plain);
       size_t message_size = GPR_SLICE_LENGTH(plain);
       while (message_size > 0) {
-        gpr_uint32 protected_buffer_size_to_send = buffer_size;
-        gpr_uint32 processed_message_size = message_size;
+        size_t protected_buffer_size_to_send = buffer_size;
+        size_t processed_message_size = message_size;
         result = tsi_frame_protector_protect(
             fake_write_protector, message_bytes, &processed_message_size, cur,
             &protected_buffer_size_to_send);
@@ -88,7 +88,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
       gpr_slice_unref(plain);
     }
     do {
-      gpr_uint32 protected_buffer_size_to_send = buffer_size;
+      size_t protected_buffer_size_to_send = buffer_size;
       result = tsi_frame_protector_protect_flush(fake_write_protector, cur,
                                                  &protected_buffer_size_to_send,
                                                  &still_pending_size);

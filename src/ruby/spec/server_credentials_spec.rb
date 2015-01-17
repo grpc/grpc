@@ -35,13 +35,10 @@ def load_test_certs
   files.map { |f| File.open(File.join(test_root, f)).read }
 end
 
-
 describe GRPC::Core::ServerCredentials do
-
   Creds = GRPC::Core::ServerCredentials
 
   describe '#new' do
-
     it 'can be constructed from a fake CA PEM, server PEM and a server key' do
       expect { Creds.new('a', 'b', 'c') }.not_to raise_error
     end
@@ -53,22 +50,20 @@ describe GRPC::Core::ServerCredentials do
 
     it 'cannot be constructed without a server cert chain' do
       root_cert, server_key, _ = load_test_certs
-      blk = Proc.new { Creds.new(root_cert, server_key, nil) }
+      blk = proc { Creds.new(root_cert, server_key, nil) }
       expect(&blk).to raise_error
     end
 
     it 'cannot be constructed without a server key' do
-      root_cert, server_key, _ = load_test_certs
-      blk = Proc.new { Creds.new(root_cert, _, cert_chain) }
+      root_cert, _, _ = load_test_certs
+      blk = proc { Creds.new(root_cert, nil, cert_chain) }
       expect(&blk).to raise_error
     end
 
     it 'can be constructed without a root_cret' do
       _, server_key, cert_chain = load_test_certs
-      blk = Proc.new { Creds.new(_, server_key, cert_chain) }
+      blk = proc { Creds.new(nil, server_key, cert_chain) }
       expect(&blk).to_not raise_error
     end
-
   end
-
 end

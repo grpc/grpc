@@ -210,9 +210,7 @@ TEST_F(End2endTest, RpcDeadlineExpires) {
       std::chrono::system_clock::now() + std::chrono::microseconds(10);
   context.set_absolute_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
-  // TODO(yangg) use correct error code when b/18793983 is fixed.
-  // EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.code());
-  EXPECT_EQ(StatusCode::CANCELLED, s.code());
+  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.code());
 }
 
 // Set a long but finite deadline.

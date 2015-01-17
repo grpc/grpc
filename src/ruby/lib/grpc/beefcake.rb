@@ -29,25 +29,21 @@
 
 require 'beefcake'
 
-# Re-open the beefcake message module to add a static encode
-#
-# This is a temporary measure while beefcake is used as the default proto
-# library for developing grpc ruby.  Once that changes to the official proto
-# library this can be removed.  It's necessary to allow the update the service
-# module to assume a static encode method.
-#
-# TODO(temiola): remove me, once official code generation is available in protoc
 module Beefcake
+  # Re-open the beefcake message module to add a static encode
+  #
+  # This is a temporary measure while beefcake is used as the default proto
+  # library for developing grpc ruby.  Once that changes to the official proto
+  # library this can be removed.  It's necessary to allow the update the service
+  # module to assume a static encode method.
+  # TODO(temiola): remove this.
   module Message
-
     # additional mixin module that adds static encode method when include
     module StaticEncode
-
       # encodes o with its instance#encode method
       def encode(o)
         o.encode
       end
-
     end
 
     # extend self.included in Beefcake::Message to include StaticEncode
@@ -57,6 +53,5 @@ module Beefcake
       o.extend Decode
       o.send(:include, Encode)
     end
-
   end
 end
