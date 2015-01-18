@@ -63,8 +63,8 @@ zend_object_value create_wrapped_grpc_completion_queue(
  */
 PHP_METHOD(CompletionQueue, __construct) {
   wrapped_grpc_completion_queue *queue =
-      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
-          getThis() TSRMLS_CC);
+      (wrapped_grpc_completion_queue *)zend_object_store_get_object(getThis()
+                                                                    TSRMLS_CC);
   queue->wrapped = grpc_completion_queue_create();
 }
 
@@ -86,8 +86,8 @@ PHP_METHOD(CompletionQueue, next) {
     return;
   }
   wrapped_grpc_completion_queue *completion_queue =
-      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
-          getThis() TSRMLS_CC);
+      (wrapped_grpc_completion_queue *)zend_object_store_get_object(getThis()
+                                                                    TSRMLS_CC);
   wrapped_grpc_timeval *wrapped_timeout =
       (wrapped_grpc_timeval *)zend_object_store_get_object(timeout TSRMLS_CC);
   grpc_event *event = grpc_completion_queue_next(completion_queue->wrapped,
@@ -109,8 +109,8 @@ PHP_METHOD(CompletionQueue, pluck) {
                          "pluck needs a long and a Timeval", 1 TSRMLS_CC);
   }
   wrapped_grpc_completion_queue *completion_queue =
-      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
-          getThis() TSRMLS_CC);
+      (wrapped_grpc_completion_queue *)zend_object_store_get_object(getThis()
+                                                                    TSRMLS_CC);
   wrapped_grpc_timeval *wrapped_timeout =
       (wrapped_grpc_timeval *)zend_object_store_get_object(timeout TSRMLS_CC);
   grpc_event *event = grpc_completion_queue_pluck(
@@ -124,8 +124,8 @@ PHP_METHOD(CompletionQueue, pluck) {
 
 static zend_function_entry completion_queue_methods[] = {
     PHP_ME(CompletionQueue, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_ME(CompletionQueue, next, NULL, ZEND_ACC_PUBLIC)
-            PHP_ME(CompletionQueue, pluck, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(CompletionQueue, next, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(CompletionQueue, pluck, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_completion_queue(TSRMLS_D) {
   zend_class_entry ce;
