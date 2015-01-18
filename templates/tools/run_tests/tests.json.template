@@ -1,0 +1,8 @@
+<%!
+import json
+%>
+
+${json.dumps([{"name": tgt.name, "language": tgt.language}
+              for tgt in targets
+              if tgt.build == "test" and tgt.name[-5:] == "_test"])}
+

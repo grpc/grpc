@@ -41,12 +41,17 @@ class ValgrindConfig(object):
 
 class CLanguage(object):
 
-  def __init__(self, make_target):
+  def __init__(self, make_target, test_lang):
     self.allow_hashing = True
     self.make_target = make_target
+    with open('tools/run_tests/tests.json') as f:
+      js = json.loads(f.read())
+      self.binaries = [tgt['name'] 
+                       for tgt in js 
+                       if tgt['language'] == test_lang]
 
   def test_binaries(self, config):
-    return glob.glob('bins/%s/*_test' % config)
+    return ['bins/%s/%s' % (config, binary) for binary in self.binaries]
 
   def make_targets(self):
     return ['buildtests_%s' % self.make_target]
@@ -85,8 +90,8 @@ _CONFIGS = {
 
 _DEFAULT = ['dbg', 'opt']
 _LANGUAGES = {
-    'c++': CLanguage('cxx'),
-    'c': CLanguage('c'),
+    'c++': CLanguage('cxx', 'c++'),
+    'c': CLanguage('c', 'c'),
     'php': PhpLanguage()
 }
 
