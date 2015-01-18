@@ -45,7 +45,7 @@ for filename in sys.argv[1:]:
   for grp in ['filegroups', 'libs', 'targets']:
     if grp not in js: continue
     js[grp] = sorted([clean_elem(x) for x in js[grp]],
-                     key=lambda x: x['name'])
+                     key=lambda x: (x.get('language', '_'), x['name']))
   output = json.dumps(js, indent = 2)
   # massage out trailing whitespace
   lines = []
