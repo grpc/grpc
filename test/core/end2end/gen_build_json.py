@@ -48,6 +48,7 @@ def main():
           {
               'name': 'end2end_fixture_%s' % f,
               'build': 'private',
+              'language': 'c',
               'secure': True,
               'src': ['test/core/end2end/fixtures/%s.c' % f]
           }
@@ -55,6 +56,7 @@ def main():
           {
               'name': 'end2end_test_%s' % t,
               'build': 'private',
+              'language': 'c',
               'secure': False,
               'src': ['test/core/end2end/tests/%s.c' % t],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
@@ -63,6 +65,7 @@ def main():
           {
               'name': 'end2end_certs',
               'build': 'private',
+              'language': 'c',
               'src': [
                   "test/core/end2end/data/test_root_cert.c",
                   "test/core/end2end/data/prod_roots_certs.c",
@@ -75,6 +78,7 @@ def main():
           {
               'name': '%s_%s_test' % (f, t),
               'build': 'test',
+              'language': 'c',
               'src': [],
               'deps': [
                   'end2end_fixture_%s' % f,
