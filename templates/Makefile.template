@@ -351,7 +351,7 @@ static: static_c static_cxx
 
 static_c: \
 % for lib in libs:
-% if lib.build == 'all' and not lib.get('c++', False):
+% if lib.build == 'all' and lib.language == 'c':
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
@@ -359,7 +359,7 @@ static_c: \
 
 static_cxx: \
 % for lib in libs:
-% if lib.build == 'all' and lib.get('c++', False):
+% if lib.build == 'all' and lib.language == 'c++':
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
@@ -369,7 +369,7 @@ shared: shared_c shared_cxx
 
 shared_c: \
 % for lib in libs:
-% if lib.build == 'all' and not lib.get('c++', False):
+% if lib.build == 'all' and lib.language == 'c':
  libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
 % endif
 % endfor
@@ -377,7 +377,7 @@ shared_c: \
 
 shared_cxx: \
 % for lib in libs:
-% if lib.build == 'all' and lib.get('c++', False):
+% if lib.build == 'all' and lib.language == 'c++':
  libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
 % endif
 % endfor
@@ -387,7 +387,7 @@ privatelibs: privatelibs_c privatelibs_cxx
 
 privatelibs_c: \
 % for lib in libs:
-% if lib.build == 'private' and not lib.get('c++', False):
+% if lib.build == 'private' and lib.language == 'c':
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
@@ -395,7 +395,7 @@ privatelibs_c: \
 
 privatelibs_cxx: \
 % for lib in libs:
-% if lib.build == 'private' and lib.get('c++', False):
+% if lib.build == 'private' and lib.language == 'c++':
  libs/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
@@ -405,7 +405,7 @@ buildtests: buildtests_c buildtests_cxx
 
 buildtests_c: privatelibs_c\
 % for tgt in targets:
-% if tgt.build == 'test' and not tgt.get('c++', False):
+% if tgt.build == 'test' and not tgt.language == 'c++':
  bins/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
@@ -413,7 +413,7 @@ buildtests_c: privatelibs_c\
 
 buildtests_cxx: privatelibs_cxx\
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('c++', False):
+% if tgt.build == 'test' and tgt.language == 'c++':
  bins/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
@@ -423,7 +423,7 @@ test: test_c test_cxx
 
 test_c: buildtests_c
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and not tgt.get('c++', False):
+% if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++':
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) ./bins/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -432,7 +432,7 @@ test_c: buildtests_c
 
 test_cxx: buildtests_cxx
 % for tgt in targets:
-% if tgt.build == 'test' and tgt.get('run', True) and tgt.get('c++', False):
+% if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++':
 	$(E) "[RUN]     Testing ${tgt.name}"
 	$(Q) ./bins/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
@@ -470,7 +470,7 @@ strip-shared: strip-shared_c strip-shared_cxx
 
 strip-static_c: static_c
 % for lib in libs:
-% if not lib.get("c++", False):
+% if lib.language == "c":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.a
@@ -480,7 +480,7 @@ strip-static_c: static_c
 
 strip-static_cxx: static_cxx
 % for lib in libs:
-% if lib.get("c++", False):
+% if lib.language == "c++":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.a
@@ -490,7 +490,7 @@ strip-static_cxx: static_cxx
 
 strip-shared_c: shared_c
 % for lib in libs:
-% if not lib.get("c++", False):
+% if lib.language == "c":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
@@ -500,7 +500,7 @@ strip-shared_c: shared_c
 
 strip-shared_cxx: shared_cxx
 % for lib in libs:
-% if lib.get("c++", False):
+% if lib.language == "c++":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
@@ -557,7 +557,7 @@ install-static: install-static_c install-static_cxx
 
 install-static_c: static_c strip-static_c
 % for lib in libs:
-% if not lib.get("c++", False):
+% if lib.language == "c":
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
 	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
@@ -567,7 +567,7 @@ install-static_c: static_c strip-static_c
 
 install-static_cxx: static_cxx strip-static_cxx
 % for lib in libs:
-% if lib.get("c++", False):
+% if lib.language == "c++":
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
 	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
@@ -577,7 +577,7 @@ install-static_cxx: static_cxx strip-static_cxx
 
 install-shared_c: shared_c strip-shared_c
 % for lib in libs:
-% if not lib.get("c++", False):
+% if lib.language == "c":
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
@@ -601,7 +601,7 @@ endif
 
 install-shared_cxx: shared_cxx strip-shared_cxx
 % for lib in libs:
-% if lib.get("c++", False):
+% if lib.language == "c++":
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
@@ -649,7 +649,7 @@ LIB${lib.name.upper()}_SRC = \\
 % endfor
 
 % if "public_headers" in lib:
-% if lib.get("c++", False):
+% if lib.language == "c++":
 PUBLIC_HEADERS_CXX += \\
 
 % else:
@@ -709,7 +709,7 @@ libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
 % endif
 
 <%
-  if lib.get('c++', False):
+  if lib.language == 'c++':
     ld = '$(LDXX)'
   else:
     ld = '$(LD)'
@@ -818,7 +818,7 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  libs/$(CONFIG)/lib${dep}.a\
 % endfor
 
-% if tgt.get("c++", False):
+% if tgt.language == "c++":
 ## C++ targets specificies.
 % if tgt.build == 'protoc':
 	$(E) "[HOSTLD]  Linking $@"
@@ -841,7 +841,7 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % for dep in tgt.deps:
  libs/$(CONFIG)/lib${dep}.a\
 % endfor
-% if tgt.get("c++", False):
+% if tgt.language == "c++":
 % if tgt.build == 'protoc':
  $(HOST_LDLIBSXX)\
 % else:

@@ -23,7 +23,7 @@ projects.extend(targets)
 projects = [project for project in projects if project.get('vs_project_guid', None)]
 
 ## Exclude C++ projects for now
-projects = [project for project in projects if not project.get('c++', False)]
+projects = [project for project in projects if not project.language == 'c++']
 
 for p in projects:
   p.deps = p.get('deps',[])
