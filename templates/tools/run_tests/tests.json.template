@@ -5,5 +5,5 @@ import json
 ${json.dumps([{"name": tgt.name, "language": tgt.language}
               for tgt in targets
               if tgt.build == "test" and tgt.name[-5:] == "_test"],
-             sort_keys=True, indent=4)}
+             sort_keys=True, indent=2)}
 
