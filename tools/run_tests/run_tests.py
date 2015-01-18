@@ -45,7 +45,7 @@ class CLanguage(object):
     self.allow_hashing = True
     self.make_target = make_target
     with open('tools/run_tests/tests.json') as f:
-      js = json.loads(f.read())
+      js = json.load(f)
       self.binaries = [tgt['name'] 
                        for tgt in js 
                        if tgt['language'] == test_lang]
