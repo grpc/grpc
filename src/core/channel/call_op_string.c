@@ -112,6 +112,9 @@ char *grpc_call_op_string(grpc_call_op *op) {
     case GRPC_SEND_MESSAGE:
       bprintf(&b, "SEND_MESSAGE");
       break;
+    case GRPC_SEND_PREFORMATTED_MESSAGE:
+      bprintf(&b, "SEND_PREFORMATTED_MESSAGE");
+      break;
     case GRPC_SEND_FINISH:
       bprintf(&b, "SEND_FINISH");
       break;

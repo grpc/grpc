@@ -69,6 +69,8 @@ typedef enum {
   GRPC_SEND_START,
   /* send a message to the channels peer */
   GRPC_SEND_MESSAGE,
+  /* send a pre-formatted message to the channels peer */
+  GRPC_SEND_PREFORMATTED_MESSAGE,
   /* send half-close to the channels peer */
   GRPC_SEND_FINISH,
   /* request that more data be allowed through flow control */
