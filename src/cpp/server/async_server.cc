@@ -39,7 +39,7 @@
 
 namespace grpc {
 
-AsyncServer::AsyncServer(CompletionQueue* cc)
+AsyncServer::AsyncServer(CompletionQueue *cc)
     : started_(false), shutdown_(false) {
   server_ = grpc_server_create(cc->cq(), nullptr);
 }
@@ -53,7 +53,7 @@ AsyncServer::~AsyncServer() {
   grpc_server_destroy(server_);
 }
 
-void AsyncServer::AddPort(const grpc::string& addr) {
+void AsyncServer::AddPort(const grpc::string &addr) {
   GPR_ASSERT(!started_);
   int success = grpc_server_add_http2_port(server_, addr.c_str());
   GPR_ASSERT(success);

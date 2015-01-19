@@ -54,7 +54,7 @@
 
 /* Given a size, round up to the next multiple of sizeof(void*) */
 #define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
-  (((x) + GPR_MAX_ALIGNMENT - 1) & ~(GPR_MAX_ALIGNMENT - 1))
+  (((x)+GPR_MAX_ALIGNMENT - 1) & ~(GPR_MAX_ALIGNMENT - 1))
 
 size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
                                size_t filter_count) {
@@ -190,13 +190,14 @@ void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op) {
 
 grpc_channel_stack *grpc_channel_stack_from_top_element(
     grpc_channel_element *elem) {
-  return (grpc_channel_stack *)((char *)(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
-      sizeof(grpc_channel_stack)));
+  return (grpc_channel_stack *)((char *)(elem) -
+                                ROUND_UP_TO_ALIGNMENT_SIZE(
+                                    sizeof(grpc_channel_stack)));
 }
 
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
-  return (grpc_call_stack *)((char *)(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
-      sizeof(grpc_call_stack)));
+  return (grpc_call_stack *)((char *)(elem) - ROUND_UP_TO_ALIGNMENT_SIZE(
+                                                  sizeof(grpc_call_stack)));
 }
 
 static void do_nothing(void *user_data, grpc_op_error error) {}
