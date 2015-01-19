@@ -101,7 +101,9 @@ int main(int argc, char **argv) {
 
   cq = grpc_completion_queue_create();
   if (secure) {
-    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(NULL, 0, test_server1_key, test_server1_key_size, test_server1_cert, test_server1_cert_size);
+    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
+        NULL, 0, test_server1_key, test_server1_key_size, test_server1_cert,
+        test_server1_cert_size);
     server = grpc_secure_server_create(ssl_creds, cq, NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
   } else {
