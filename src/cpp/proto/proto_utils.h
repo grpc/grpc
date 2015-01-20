@@ -46,11 +46,11 @@ namespace grpc {
 // Serialize the msg into a buffer created inside the function. The caller
 // should destroy the returned buffer when done with it. If serialization fails,
 // false is returned and buffer is left unchanged.
-bool SerializeProto(const google::protobuf::Message& msg,
-                    grpc_byte_buffer** buffer);
+bool SerializeProto(const google::protobuf::Message &msg,
+                    grpc_byte_buffer **buffer);
 
 // The caller keeps ownership of buffer and msg.
-bool DeserializeProto(grpc_byte_buffer* buffer, google::protobuf::Message* msg);
+bool DeserializeProto(grpc_byte_buffer *buffer, google::protobuf::Message *msg);
 
 }  // namespace grpc
 

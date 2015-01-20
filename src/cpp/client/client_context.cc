@@ -50,7 +50,7 @@ ClientContext::~ClientContext() {
   if (cq_) {
     grpc_completion_queue_shutdown(cq_);
     // Drain cq_.
-    grpc_event* ev;
+    grpc_event *ev;
     grpc_completion_type t;
     do {
       ev = grpc_completion_queue_next(cq_, gpr_inf_future);
@@ -62,7 +62,7 @@ ClientContext::~ClientContext() {
 }
 
 void ClientContext::set_absolute_deadline(
-    const system_clock::time_point& deadline) {
+    const system_clock::time_point &deadline) {
   Timepoint2Timespec(deadline, &absolute_deadline_);
 }
 
@@ -70,8 +70,8 @@ system_clock::time_point ClientContext::absolute_deadline() {
   return Timespec2Timepoint(absolute_deadline_);
 }
 
-void ClientContext::AddMetadata(const grpc::string& meta_key,
-                                const grpc::string& meta_value) {
+void ClientContext::AddMetadata(const grpc::string &meta_key,
+                                const grpc::string &meta_value) {
   return;
 }
 

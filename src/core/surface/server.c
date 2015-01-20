@@ -411,9 +411,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    call_op, channel_op,
+    call_op,              channel_op,
 
-    sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(call_data),    init_call_elem,    destroy_call_elem,
 
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
 
