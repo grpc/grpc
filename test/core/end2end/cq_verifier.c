@@ -70,6 +70,7 @@ typedef struct expectation {
   union {
     grpc_op_error finish_accepted;
     grpc_op_error write_accepted;
+    grpc_op_error ioreq;
     struct {
       const char *method;
       const char *host;
@@ -180,9 +181,6 @@ static void verify_matches(expectation *e, grpc_event *ev) {
     case GRPC_WRITE_ACCEPTED:
       GPR_ASSERT(e->data.write_accepted == ev->data.write_accepted);
       break;
-    case GRPC_INVOKE_ACCEPTED:
-      abort();
-      break;
     case GRPC_SERVER_RPC_NEW:
       GPR_ASSERT(string_equivalent(e->data.server_rpc_new.method,
                                    ev->data.server_rpc_new.method));
@@ -221,6 +219,9 @@ static void verify_matches(expectation *e, grpc_event *ev) {
       } else {
         GPR_ASSERT(ev->data.read == NULL);
       }
+      break;
+    case GRPC_IOREQ:
+      GPR_ASSERT(e->data.ioreq == ev->data.ioreq);
       break;
     case GRPC_SERVER_SHUTDOWN:
       break;
@@ -261,8 +262,9 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
                      e->data.write_accepted);
       gpr_strvec_add(buf, tmp);
       break;
-    case GRPC_INVOKE_ACCEPTED:
-      gpr_strvec_add(buf, gpr_strdup("GRPC_INVOKE_ACCEPTED"));
+    case GRPC_IOREQ:
+      gpr_asprintf(&tmp, "GRPC_IOREQ result=%d", e->data.ioreq);
+      gpr_strvec_add(buf, tmp);
       break;
     case GRPC_SERVER_RPC_NEW:
       timeout = gpr_time_sub(e->data.server_rpc_new.deadline, gpr_now());

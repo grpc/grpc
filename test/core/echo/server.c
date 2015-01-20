@@ -64,7 +64,7 @@ static void request_call(void) {
   call_state *tag = gpr_malloc(sizeof(*tag));
   gpr_ref_init(&tag->pending_ops, 2);
   tag->bytes_read = 0;
-  grpc_server_request_call(server, tag);
+  grpc_server_request_call_old(server, tag);
 }
 
 static void assert_read_ok(call_state *s, grpc_byte_buffer *b) {

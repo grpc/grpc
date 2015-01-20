@@ -109,7 +109,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -119,7 +120,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, tag(100)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
   cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
                            deadline, NULL);
   cq_verify(v_server);
@@ -181,13 +182,14 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
   deadline = five_seconds_time();
-  c1 =
-      grpc_channel_create_call(f.client, "/alpha", "test.google.com", deadline);
+  c1 = grpc_channel_create_call_old(f.client, "/alpha", "test.google.com",
+                                    deadline);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(f.client, "/beta", "test.google.com", deadline);
+  c2 = grpc_channel_create_call_old(f.client, "/beta", "test.google.com",
+                                    deadline);
   GPR_ASSERT(c1);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, tag(100)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_invoke(c1, f.client_cq, tag(301), tag(302), 0));
@@ -204,7 +206,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* The /alpha or /beta calls started above could be invoked (but NOT both);
    * check this here */
   /* We'll get tag 303 or 403, we want 300, 400 */
-  live_call = ((int)(gpr_intptr)ev->tag) - 3;
+  live_call = ((int)(gpr_intptr) ev->tag) - 3;
   grpc_event_finish(ev);
 
   cq_expect_server_rpc_new(v_server, &s1, tag(100),
@@ -232,7 +234,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   live_call = (live_call == 300) ? 400 : 300;
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, tag(200)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(200)));
   cq_expect_server_rpc_new(v_server, &s2, tag(200),
                            live_call == 300 ? "/alpha" : "/beta",
                            "test.google.com", deadline, NULL);

@@ -173,18 +173,6 @@ void grpc_cq_end_read(grpc_completion_queue *cc, void *tag, grpc_call *call,
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 
-void grpc_cq_end_invoke_accepted(grpc_completion_queue *cc, void *tag,
-                                 grpc_call *call,
-                                 grpc_event_finish_func on_finish,
-                                 void *user_data, grpc_op_error error) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_INVOKE_ACCEPTED, tag, call, on_finish, user_data);
-  ev->base.data.invoke_accepted = error;
-  end_op_locked(cc, GRPC_INVOKE_ACCEPTED);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
 void grpc_cq_end_write_accepted(grpc_completion_queue *cc, void *tag,
                                 grpc_call *call,
                                 grpc_event_finish_func on_finish,
@@ -194,6 +182,17 @@ void grpc_cq_end_write_accepted(grpc_completion_queue *cc, void *tag,
   ev = add_locked(cc, GRPC_WRITE_ACCEPTED, tag, call, on_finish, user_data);
   ev->base.data.write_accepted = error;
   end_op_locked(cc, GRPC_WRITE_ACCEPTED);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+}
+
+void grpc_cq_end_ioreq(grpc_completion_queue *cc, void *tag, grpc_call *call,
+                       grpc_event_finish_func on_finish, void *user_data,
+                       grpc_op_error error) {
+  event *ev;
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  ev = add_locked(cc, GRPC_IOREQ, tag, call, on_finish, user_data);
+  ev->base.data.write_accepted = error;
+  end_op_locked(cc, GRPC_IOREQ);
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 

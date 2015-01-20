@@ -105,32 +105,6 @@ static void test_cq_end_read(void) {
   shutdown_and_destroy(cc);
 }
 
-static void test_cq_end_invoke_accepted(void) {
-  grpc_event *ev;
-  grpc_completion_queue *cc;
-  int on_finish_called = 0;
-  void *tag = create_test_tag();
-
-  LOG_TEST();
-
-  cc = grpc_completion_queue_create();
-
-  grpc_cq_begin_op(cc, NULL, GRPC_INVOKE_ACCEPTED);
-  grpc_cq_end_invoke_accepted(cc, tag, NULL, increment_int_on_finish,
-                              &on_finish_called, GRPC_OP_OK);
-
-  ev = grpc_completion_queue_next(cc, gpr_inf_past);
-  GPR_ASSERT(ev != NULL);
-  GPR_ASSERT(ev->type == GRPC_INVOKE_ACCEPTED);
-  GPR_ASSERT(ev->tag == tag);
-  GPR_ASSERT(ev->data.invoke_accepted == GRPC_OP_OK);
-  GPR_ASSERT(on_finish_called == 0);
-  grpc_event_finish(ev);
-  GPR_ASSERT(on_finish_called == 1);
-
-  shutdown_and_destroy(cc);
-}
-
 static void test_cq_end_write_accepted(void) {
   grpc_event *ev;
   grpc_completion_queue *cc;
@@ -421,7 +395,6 @@ int main(int argc, char **argv) {
   test_no_op();
   test_wait_empty();
   test_cq_end_read();
-  test_cq_end_invoke_accepted();
   test_cq_end_write_accepted();
   test_cq_end_finish_accepted();
   test_cq_end_client_metadata_read();

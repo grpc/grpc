@@ -62,7 +62,7 @@ typedef struct {
 static void request_call(void) {
   call_state *s = gpr_malloc(sizeof(call_state));
   gpr_ref_init(&s->pending_ops, 2);
-  grpc_server_request_call(server, s);
+  grpc_server_request_call_old(server, s);
 }
 
 static void sigint_handler(int x) { got_sigint = 1; }

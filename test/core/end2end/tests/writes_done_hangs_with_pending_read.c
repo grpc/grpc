@@ -124,7 +124,8 @@ static void test_writes_done_hangs_with_pending_read(
   gpr_slice_unref(request_payload_slice);
   gpr_slice_unref(response_payload_slice);
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -138,7 +139,7 @@ static void test_writes_done_hangs_with_pending_read(
   cq_expect_write_accepted(v_client, tag(4), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, tag(100)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
   cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
                            deadline, NULL);
   cq_verify(v_server);

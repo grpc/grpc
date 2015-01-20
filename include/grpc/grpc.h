@@ -183,12 +183,11 @@ typedef struct grpc_metadata {
 } grpc_metadata;
 
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN,  /* Shutting down */
-  GRPC_READ,            /* A read has completed */
-  GRPC_INVOKE_ACCEPTED, /* An invoke call has been accepted by flow
-                           control */
-  GRPC_WRITE_ACCEPTED, /* A write has been accepted by
-                          flow control */
+  GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
+  GRPC_IOREQ,                /* grpc_call_ioreq completion */
+  GRPC_READ,                 /* A read has completed */
+  GRPC_WRITE_ACCEPTED,       /* A write has been accepted by
+                                flow control */
   GRPC_FINISH_ACCEPTED,      /* writes_done or write_status has been accepted */
   GRPC_CLIENT_METADATA_READ, /* The metadata array sent by server received at
                                 client */
@@ -213,6 +212,7 @@ typedef struct grpc_event {
     grpc_op_error write_accepted;
     grpc_op_error finish_accepted;
     grpc_op_error invoke_accepted;
+    grpc_op_error ioreq;
     struct {
       size_t count;
       grpc_metadata *elements;
@@ -232,6 +232,67 @@ typedef struct grpc_event {
     } server_rpc_new;
   } data;
 } grpc_event;
+
+typedef struct {
+  size_t count;
+  size_t capacity;
+  grpc_metadata *metadata;
+} grpc_metadata_array;
+
+typedef struct {
+  size_t count;
+  size_t capacity;
+  grpc_byte_buffer **buffers;
+} grpc_byte_buffer_array;
+
+typedef struct {
+  grpc_status_code status;
+  size_t details_length;
+  size_t details_capacity;
+  char *details;
+} grpc_recv_status;
+
+typedef struct {
+  const char *method;
+  const char *host;
+  gpr_timespec deadline;
+} grpc_call_details;
+
+typedef enum {
+  GRPC_IOREQ_SEND_INITIAL_METADATA = 0,
+  GRPC_IOREQ_SEND_TRAILING_METADATA,
+  GRPC_IOREQ_SEND_MESSAGES,
+  GRPC_IOREQ_SEND_CLOSE,
+  GRPC_IOREQ_RECV_INITIAL_METADATA,
+  GRPC_IOREQ_RECV_TRAILING_METADATA,
+  GRPC_IOREQ_RECV_MESSAGES,
+  GRPC_IOREQ_RECV_STATUS,
+  GRPC_IOREQ_OP_COUNT
+} grpc_ioreq_op;
+
+typedef union {
+  struct {
+    size_t count;
+    const grpc_metadata *metadata;
+  } send_metadata;
+  struct {
+    size_t count;
+    grpc_byte_buffer **messages;
+  } send_messages;
+  struct {
+    /* fields only make sense on the server */
+    grpc_status_code status;
+    const char *details;
+  } send_close;
+  grpc_metadata_array *recv_metadata;
+  grpc_byte_buffer_array *recv_messages;
+  grpc_recv_status *recv_status;
+} grpc_ioreq_data;
+
+typedef struct grpc_ioreq {
+  grpc_ioreq_op op;
+  grpc_ioreq_data data;
+} grpc_ioreq;
 
 /* Initialize the grpc library */
 void grpc_init(void);
@@ -275,8 +336,15 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 /* Create a call given a grpc_channel, in order to call 'method'. The request
    is not sent until grpc_call_invoke is called. All completions are sent to
    'completion_queue'. */
-grpc_call *grpc_channel_create_call(grpc_channel *channel, const char *method,
-                                    const char *host, gpr_timespec deadline);
+
+grpc_call *grpc_channel_create_call_old(grpc_channel *channel, const char *method, const char *host, gpr_timespec deadline);
+
+grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                    grpc_completion_queue *cq,
+                                    const grpc_call_details *details);
+
+grpc_call_error grpc_call_start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
+                                      size_t nreqs, void *tag);
 
 /* Create a client channel */
 grpc_channel *grpc_channel_create(const char *target,
@@ -414,7 +482,11 @@ void grpc_call_destroy(grpc_call *call);
    tag_cancel.
    REQUIRES: Server must not have been shutdown.
    NOTE: calling this is the only way to obtain GRPC_SERVER_RPC_NEW events. */
-grpc_call_error grpc_server_request_call(grpc_server *server, void *tag_new);
+grpc_call_error grpc_server_request_call_old(grpc_server *server, void *tag_new);
+
+grpc_call_error grpc_server_request_call(
+    grpc_server *server, grpc_completion_queue *cq, grpc_call_details *details,
+    grpc_metadata_array *initial_metadata, void *tag);
 
 /* Create a server */
 grpc_server *grpc_server_create(grpc_completion_queue *cq,

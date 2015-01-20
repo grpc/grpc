@@ -102,6 +102,7 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
   grpc_call *call = grpc_channel_create_call(
       c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
+
   grpc_event *ev;
   void *finished_tag = reinterpret_cast<char *>(call);
   void *metadata_read_tag = reinterpret_cast<char *>(call) + 2;

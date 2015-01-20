@@ -38,6 +38,9 @@
 #include "src/core/channel/metadata_buffer.h"
 #include <grpc/grpc.h>
 
+typedef void (*grpc_ioreq_completion_func)(grpc_call *call, grpc_op_error status,
+                                      void *user_data);
+
 grpc_call *grpc_call_create(grpc_channel *channel,
                             const void *server_transport_data);
 
@@ -47,14 +50,15 @@ void grpc_call_internal_unref(grpc_call *call);
 /* Helpers for grpc_client, grpc_server filters to publish received data to
    the completion queue/surface layer */
 void grpc_call_recv_metadata(grpc_call_element *surface_element,
-                             grpc_call_op *op);
+                             grpc_mdelem *md);
 void grpc_call_recv_message(
-    grpc_call_element *surface_element, grpc_byte_buffer *message,
-    void (*on_finish)(void *user_data, grpc_op_error error), void *user_data);
-void grpc_call_recv_finish(grpc_call_element *surface_element,
-                           int is_full_close);
+    grpc_call_element *surface_element, grpc_byte_buffer *message);
+void grpc_call_read_closed(grpc_call_element *surface_element);
+void grpc_call_stream_closed(grpc_call_element *surface_element);
 
 void grpc_call_execute_op(grpc_call *call, grpc_call_op *op);
+grpc_call_error grpc_call_start_ioreq_and_call_back(grpc_call *call, const grpc_ioreq *reqs,
+                                      size_t nreqs, grpc_ioreq_completion_func on_complete, void *user_data);
 
 /* Called when it's known that the initial batch of metadata is complete on the
    client side (must not be called on the server) */
@@ -68,9 +72,6 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
-
-/* Get the metadata buffer. */
-grpc_metadata_buffer *grpc_call_get_metadata_buffer(grpc_call *call);
 
 void grpc_call_add_mdelem(grpc_call *call, grpc_mdelem *mdelem,
                           gpr_uint32 flags);
