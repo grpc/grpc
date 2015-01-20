@@ -36,17 +36,24 @@
 #include <string.h>
 #include <grpc/support/log.h>
 
+typedef enum {
+  NOT_RECEIVED,
+  POST,
+  GET
+} known_method_type;
+
 typedef struct call_data {
+  known_method_type seen_method;
   gpr_uint8 sent_status;
   gpr_uint8 seen_scheme;
-  gpr_uint8 seen_method;
   gpr_uint8 seen_te_trailers;
   grpc_mdelem *path;
 } call_data;
 
 typedef struct channel_data {
   grpc_mdelem *te_trailers;
-  grpc_mdelem *method;
+  grpc_mdelem *method_get;
+  grpc_mdelem *method_post;
   grpc_mdelem *http_scheme;
   grpc_mdelem *https_scheme;
   /* TODO(klempner): Remove this once we stop using it */
@@ -75,14 +82,17 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_RECV_METADATA:
       /* Check if it is one of the headers we care about. */
       if (op->data.metadata == channeld->te_trailers ||
-          op->data.metadata == channeld->method ||
+          op->data.metadata == channeld->method_get ||
+          op->data.metadata == channeld->method_post ||
           op->data.metadata == channeld->http_scheme ||
           op->data.metadata == channeld->https_scheme ||
           op->data.metadata == channeld->grpc_scheme ||
           op->data.metadata == channeld->content_type) {
         /* swallow it */
-        if (op->data.metadata == channeld->method) {
-          calld->seen_method = 1;
+        if (op->data.metadata == channeld->method_get) {
+          calld->seen_method = GET;
+        } else if (op->data.metadata == channeld->method_post) {
+          calld->seen_method = POST;
         } else if (op->data.metadata->key == channeld->http_scheme->key) {
           calld->seen_scheme = 1;
         } else if (op->data.metadata == channeld->te_trailers) {
@@ -110,7 +120,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         grpc_mdelem_unref(op->data.metadata);
         op->done_cb(op->user_data, GRPC_OP_OK);
       } else if (op->data.metadata->key == channeld->te_trailers->key ||
-                 op->data.metadata->key == channeld->method->key ||
+                 op->data.metadata->key == channeld->method_post->key ||
                  op->data.metadata->key == channeld->http_scheme->key ||
                  op->data.metadata->key == channeld->content_type->key) {
         gpr_log(GPR_ERROR, "Invalid %s: header: '%s'",
@@ -138,17 +148,19 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       /* Have we seen the required http2 transport headers?
          (:method, :scheme, content-type, with :path and :authority covered
          at the channel level right now) */
-      if (calld->seen_method && calld->seen_scheme && calld->seen_te_trailers &&
+      if (calld->seen_method == POST && calld->seen_scheme && calld->seen_te_trailers &&
           calld->path) {
         grpc_call_element_recv_metadata(elem, calld->path);
         calld->path = NULL;
         grpc_call_next_op(elem, op);
       } else {
-        if (!calld->seen_method) {
+        if (calld->seen_method == NOT_RECEIVED) {
           gpr_log(GPR_ERROR, "Missing :method header");
-        } else if (!calld->seen_scheme) {
+        }
+        if (!calld->seen_scheme) {
           gpr_log(GPR_ERROR, "Missing :scheme header");
-        } else if (!calld->seen_te_trailers) {
+        }
+        if (!calld->seen_te_trailers) {
           gpr_log(GPR_ERROR, "Missing te trailers header");
         }
         /* Error this call out */
@@ -204,7 +216,7 @@ static void init_call_elem(grpc_call_element *elem,
   calld->path = NULL;
   calld->sent_status = 0;
   calld->seen_scheme = 0;
-  calld->seen_method = 0;
+  calld->seen_method = NOT_RECEIVED;
   calld->seen_te_trailers = 0;
 }
 
@@ -237,7 +249,8 @@ static void init_channel_elem(grpc_channel_element *elem,
   /* initialize members */
   channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
   channeld->status = grpc_mdelem_from_strings(mdctx, ":status", "200");
-  channeld->method = grpc_mdelem_from_strings(mdctx, ":method", "POST");
+  channeld->method_post = grpc_mdelem_from_strings(mdctx, ":method", "POST");
+  channeld->method_get = grpc_mdelem_from_strings(mdctx, ":method", "GET");
   channeld->http_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "http");
   channeld->https_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "https");
   channeld->grpc_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
@@ -253,7 +266,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 
   grpc_mdelem_unref(channeld->te_trailers);
   grpc_mdelem_unref(channeld->status);
-  grpc_mdelem_unref(channeld->method);
+  grpc_mdelem_unref(channeld->method_post);
+  grpc_mdelem_unref(channeld->method_get);
   grpc_mdelem_unref(channeld->http_scheme);
   grpc_mdelem_unref(channeld->https_scheme);
   grpc_mdelem_unref(channeld->grpc_scheme);
