@@ -37,10 +37,11 @@
 #include <grpc/support/log.h>
 
 typedef struct call_data {
-  int sent_status;
-  int seen_scheme;
-  int seen_method;
-  int seen_te_trailers;
+  gpr_uint8 sent_status;
+  gpr_uint8 seen_scheme;
+  gpr_uint8 seen_method;
+  gpr_uint8 seen_te_trailers;
+  grpc_mdelem *path;
 } call_data;
 
 typedef struct channel_data {
@@ -52,6 +53,7 @@ typedef struct channel_data {
   grpc_mdelem *grpc_scheme;
   grpc_mdelem *content_type;
   grpc_mdelem *status;
+  grpc_mdstr *path_key;
 } channel_data;
 
 /* used to silence 'variable not used' warnings */
@@ -120,6 +122,13 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         grpc_mdelem_unref(op->data.metadata);
         op->done_cb(op->user_data, GRPC_OP_OK);
         grpc_call_element_send_cancel(elem);
+      } else if (op->data.metadata->key == channeld->path_key) {
+        if (calld->path != NULL) {
+          gpr_log(GPR_ERROR, "Received :path twice");
+          grpc_mdelem_unref(calld->path);
+        }
+        calld->path = grpc_mdelem_ref(op->data.metadata);
+        op->done_cb(op->user_data, GRPC_OP_OK);
       } else {
         /* pass the event up */
         grpc_call_next_op(elem, op);
@@ -129,7 +138,10 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       /* Have we seen the required http2 transport headers?
          (:method, :scheme, content-type, with :path and :authority covered
          at the channel level right now) */
-      if (calld->seen_method && calld->seen_scheme && calld->seen_te_trailers) {
+      if (calld->seen_method && calld->seen_scheme && calld->seen_te_trailers &&
+          calld->path) {
+        grpc_call_element_recv_metadata(elem, calld->path);
+        calld->path = NULL;
         grpc_call_next_op(elem, op);
       } else {
         if (!calld->seen_method) {
@@ -189,6 +201,7 @@ static void init_call_elem(grpc_call_element *elem,
   ignore_unused(channeld);
 
   /* initialize members */
+  calld->path = NULL;
   calld->sent_status = 0;
   calld->seen_scheme = 0;
   calld->seen_method = 0;
@@ -201,8 +214,11 @@ static void destroy_call_elem(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
-  ignore_unused(calld);
   ignore_unused(channeld);
+
+  if (calld->path) {
+    grpc_mdelem_unref(calld->path);
+  }
 }
 
 /* Constructor for channel_data */
@@ -225,6 +241,7 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->http_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "http");
   channeld->https_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "https");
   channeld->grpc_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
+  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path");
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 }
@@ -241,6 +258,7 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   grpc_mdelem_unref(channeld->https_scheme);
   grpc_mdelem_unref(channeld->grpc_scheme);
   grpc_mdelem_unref(channeld->content_type);
+  grpc_mdstr_unref(channeld->path_key);
 }
 
 const grpc_channel_filter grpc_http_server_filter = {

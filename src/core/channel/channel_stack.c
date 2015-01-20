@@ -202,6 +202,17 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
 
 static void do_nothing(void *user_data, grpc_op_error error) {}
 
+void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
+    grpc_mdelem *mdelem) {
+  grpc_call_op metadata_op;
+  metadata_op.type = GRPC_RECV_METADATA;
+  metadata_op.dir = GRPC_CALL_UP;
+  metadata_op.done_cb = do_nothing;
+  metadata_op.user_data = NULL;
+  metadata_op.data.metadata = grpc_mdelem_ref(mdelem);
+  grpc_call_next_op(cur_elem, &metadata_op);
+}
+
 void grpc_call_element_send_metadata(grpc_call_element *cur_elem,
                                      grpc_mdelem *mdelem) {
   grpc_call_op metadata_op;
