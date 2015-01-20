@@ -309,18 +309,14 @@ census_stats_store_test: bins/$(CONFIG)/census_stats_store_test
 census_stub_test: bins/$(CONFIG)/census_stub_test
 census_trace_store_test: bins/$(CONFIG)/census_trace_store_test
 census_window_stats_test: bins/$(CONFIG)/census_window_stats_test
-channel_arguments_test: bins/$(CONFIG)/channel_arguments_test
 chttp2_status_conversion_test: bins/$(CONFIG)/chttp2_status_conversion_test
 chttp2_stream_encoder_test: bins/$(CONFIG)/chttp2_stream_encoder_test
 chttp2_stream_map_test: bins/$(CONFIG)/chttp2_stream_map_test
 chttp2_transport_end2end_test: bins/$(CONFIG)/chttp2_transport_end2end_test
-cpp_plugin: bins/$(CONFIG)/cpp_plugin
-credentials_test: bins/$(CONFIG)/credentials_test
 dualstack_socket_test: bins/$(CONFIG)/dualstack_socket_test
 echo_client: bins/$(CONFIG)/echo_client
 echo_server: bins/$(CONFIG)/echo_server
 echo_test: bins/$(CONFIG)/echo_test
-end2end_test: bins/$(CONFIG)/end2end_test
 fd_posix_test: bins/$(CONFIG)/fd_posix_test
 fling_client: bins/$(CONFIG)/fling_client
 fling_server: bins/$(CONFIG)/fling_server
@@ -353,8 +349,6 @@ hpack_table_test: bins/$(CONFIG)/hpack_table_test
 httpcli_format_request_test: bins/$(CONFIG)/httpcli_format_request_test
 httpcli_parser_test: bins/$(CONFIG)/httpcli_parser_test
 httpcli_test: bins/$(CONFIG)/httpcli_test
-interop_client: bins/$(CONFIG)/interop_client
-interop_server: bins/$(CONFIG)/interop_server
 lame_client_test: bins/$(CONFIG)/lame_client_test
 low_level_ping_pong_benchmark: bins/$(CONFIG)/low_level_ping_pong_benchmark
 message_compress_test: bins/$(CONFIG)/message_compress_test
@@ -362,22 +356,28 @@ metadata_buffer_test: bins/$(CONFIG)/metadata_buffer_test
 murmur_hash_test: bins/$(CONFIG)/murmur_hash_test
 no_server_test: bins/$(CONFIG)/no_server_test
 poll_kick_test: bins/$(CONFIG)/poll_kick_test
-qps_client: bins/$(CONFIG)/qps_client
-qps_server: bins/$(CONFIG)/qps_server
 resolve_address_test: bins/$(CONFIG)/resolve_address_test
-ruby_plugin: bins/$(CONFIG)/ruby_plugin
 secure_endpoint_test: bins/$(CONFIG)/secure_endpoint_test
 sockaddr_utils_test: bins/$(CONFIG)/sockaddr_utils_test
-status_test: bins/$(CONFIG)/status_test
-sync_client_async_server_test: bins/$(CONFIG)/sync_client_async_server_test
 tcp_client_posix_test: bins/$(CONFIG)/tcp_client_posix_test
 tcp_posix_test: bins/$(CONFIG)/tcp_posix_test
 tcp_server_posix_test: bins/$(CONFIG)/tcp_server_posix_test
-thread_pool_test: bins/$(CONFIG)/thread_pool_test
 time_averaged_stats_test: bins/$(CONFIG)/time_averaged_stats_test
 time_test: bins/$(CONFIG)/time_test
 timeout_encoding_test: bins/$(CONFIG)/timeout_encoding_test
 transport_metadata_test: bins/$(CONFIG)/transport_metadata_test
+channel_arguments_test: bins/$(CONFIG)/channel_arguments_test
+cpp_plugin: bins/$(CONFIG)/cpp_plugin
+credentials_test: bins/$(CONFIG)/credentials_test
+end2end_test: bins/$(CONFIG)/end2end_test
+interop_client: bins/$(CONFIG)/interop_client
+interop_server: bins/$(CONFIG)/interop_server
+qps_client: bins/$(CONFIG)/qps_client
+qps_server: bins/$(CONFIG)/qps_server
+ruby_plugin: bins/$(CONFIG)/ruby_plugin
+status_test: bins/$(CONFIG)/status_test
+sync_client_async_server_test: bins/$(CONFIG)/sync_client_async_server_test
+thread_pool_test: bins/$(CONFIG)/thread_pool_test
 chttp2_fake_security_cancel_after_accept_test: bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test
 chttp2_fake_security_cancel_after_accept_and_writes_closed_test: bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test
 chttp2_fake_security_cancel_after_invoke_test: bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test
@@ -1662,194 +1662,6 @@ objs/$(CONFIG)/src/core/transport/transport.o:
 objs/$(CONFIG)/third_party/cJSON/cJSON.o: 
 
 
-LIBGRPC++_SRC = \
-    src/cpp/client/channel.cc \
-    src/cpp/client/channel_arguments.cc \
-    src/cpp/client/client_context.cc \
-    src/cpp/client/create_channel.cc \
-    src/cpp/client/credentials.cc \
-    src/cpp/client/internal_stub.cc \
-    src/cpp/common/rpc_method.cc \
-    src/cpp/proto/proto_utils.cc \
-    src/cpp/server/async_server.cc \
-    src/cpp/server/async_server_context.cc \
-    src/cpp/server/completion_queue.cc \
-    src/cpp/server/server.cc \
-    src/cpp/server/server_builder.cc \
-    src/cpp/server/server_context_impl.cc \
-    src/cpp/server/server_credentials.cc \
-    src/cpp/server/server_rpc_handler.cc \
-    src/cpp/server/thread_pool.cc \
-    src/cpp/stream/stream_context.cc \
-    src/cpp/util/status.cc \
-    src/cpp/util/time.cc \
-
-PUBLIC_HEADERS_CXX += \
-    include/grpc++/async_server.h \
-    include/grpc++/async_server_context.h \
-    include/grpc++/channel_arguments.h \
-    include/grpc++/channel_interface.h \
-    include/grpc++/client_context.h \
-    include/grpc++/completion_queue.h \
-    include/grpc++/config.h \
-    include/grpc++/create_channel.h \
-    include/grpc++/credentials.h \
-    include/grpc++/impl/internal_stub.h \
-    include/grpc++/impl/rpc_method.h \
-    include/grpc++/impl/rpc_service_method.h \
-    include/grpc++/server.h \
-    include/grpc++/server_builder.h \
-    include/grpc++/server_context.h \
-    include/grpc++/server_credentials.h \
-    include/grpc++/status.h \
-    include/grpc++/stream.h \
-    include/grpc++/stream_context_interface.h \
-
-LIBGRPC++_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL with ALPN.
-
-libs/$(CONFIG)/libgrpc++.a: openssl_dep_error
-
-ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/grpc++.$(SHARED_EXT): openssl_dep_error
-else
-libs/$(CONFIG)/libgrpc++.$(SHARED_EXT): openssl_dep_error
-endif
-
-else
-
-ifneq ($(OPENSSL_DEP),)
-src/cpp/client/channel.cc: $(OPENSSL_DEP)
-src/cpp/client/channel_arguments.cc: $(OPENSSL_DEP)
-src/cpp/client/client_context.cc: $(OPENSSL_DEP)
-src/cpp/client/create_channel.cc: $(OPENSSL_DEP)
-src/cpp/client/credentials.cc: $(OPENSSL_DEP)
-src/cpp/client/internal_stub.cc: $(OPENSSL_DEP)
-src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
-src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
-src/cpp/server/async_server.cc: $(OPENSSL_DEP)
-src/cpp/server/async_server_context.cc: $(OPENSSL_DEP)
-src/cpp/server/completion_queue.cc: $(OPENSSL_DEP)
-src/cpp/server/server.cc: $(OPENSSL_DEP)
-src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
-src/cpp/server/server_context_impl.cc: $(OPENSSL_DEP)
-src/cpp/server/server_credentials.cc: $(OPENSSL_DEP)
-src/cpp/server/server_rpc_handler.cc: $(OPENSSL_DEP)
-src/cpp/server/thread_pool.cc: $(OPENSSL_DEP)
-src/cpp/stream/stream_context.cc: $(OPENSSL_DEP)
-src/cpp/util/status.cc: $(OPENSSL_DEP)
-src/cpp/util/time.cc: $(OPENSSL_DEP)
-endif
-
-libs/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)
-
-
-
-ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP)libs/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/grpc++.def -Wl,--out-implib=libs/$(CONFIG)/libgrpc++-imp.a -o libs/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc-imp
-else
-libs/$(CONFIG)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) libs/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
-else
-	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
-	$(Q) ln -sf libgrpc++.$(SHARED_EXT) libs/$(CONFIG)/libgrpc++.so
-endif
-endif
-
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBGRPC++_OBJS:.o=.dep)
-endif
-endif
-
-objs/$(CONFIG)/src/cpp/client/channel.o: 
-objs/$(CONFIG)/src/cpp/client/channel_arguments.o: 
-objs/$(CONFIG)/src/cpp/client/client_context.o: 
-objs/$(CONFIG)/src/cpp/client/create_channel.o: 
-objs/$(CONFIG)/src/cpp/client/credentials.o: 
-objs/$(CONFIG)/src/cpp/client/internal_stub.o: 
-objs/$(CONFIG)/src/cpp/common/rpc_method.o: 
-objs/$(CONFIG)/src/cpp/proto/proto_utils.o: 
-objs/$(CONFIG)/src/cpp/server/async_server.o: 
-objs/$(CONFIG)/src/cpp/server/async_server_context.o: 
-objs/$(CONFIG)/src/cpp/server/completion_queue.o: 
-objs/$(CONFIG)/src/cpp/server/server.o: 
-objs/$(CONFIG)/src/cpp/server/server_builder.o: 
-objs/$(CONFIG)/src/cpp/server/server_context_impl.o: 
-objs/$(CONFIG)/src/cpp/server/server_credentials.o: 
-objs/$(CONFIG)/src/cpp/server/server_rpc_handler.o: 
-objs/$(CONFIG)/src/cpp/server/thread_pool.o: 
-objs/$(CONFIG)/src/cpp/stream/stream_context.o: 
-objs/$(CONFIG)/src/cpp/util/status.o: 
-objs/$(CONFIG)/src/cpp/util/time.o: 
-
-
-LIBGRPC++_TEST_UTIL_SRC = \
-    gens/test/cpp/util/echo.pb.cc \
-    gens/test/cpp/util/echo_duplicate.pb.cc \
-    gens/test/cpp/util/messages.pb.cc \
-    test/cpp/end2end/async_test_server.cc \
-    test/cpp/util/create_test_channel.cc \
-
-
-LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL with ALPN.
-
-libs/$(CONFIG)/libgrpc++_test_util.a: openssl_dep_error
-
-
-else
-
-ifneq ($(OPENSSL_DEP),)
-test/cpp/util/echo.proto: $(OPENSSL_DEP)
-test/cpp/util/echo_duplicate.proto: $(OPENSSL_DEP)
-test/cpp/util/messages.proto: $(OPENSSL_DEP)
-test/cpp/end2end/async_test_server.cc: $(OPENSSL_DEP)
-test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
-endif
-
-libs/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
-
-
-
-
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBGRPC++_TEST_UTIL_OBJS:.o=.dep)
-endif
-endif
-
-
-
-
-objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
-objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
-
-
 LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/cq_verifier.c \
     test/core/end2end/data/prod_roots_certs.c \
@@ -2121,6 +1933,194 @@ objs/$(CONFIG)/src/core/transport/metadata.o:
 objs/$(CONFIG)/src/core/transport/stream_op.o: 
 objs/$(CONFIG)/src/core/transport/transport.o: 
 objs/$(CONFIG)/third_party/cJSON/cJSON.o: 
+
+
+LIBGRPC++_SRC = \
+    src/cpp/client/channel.cc \
+    src/cpp/client/channel_arguments.cc \
+    src/cpp/client/client_context.cc \
+    src/cpp/client/create_channel.cc \
+    src/cpp/client/credentials.cc \
+    src/cpp/client/internal_stub.cc \
+    src/cpp/common/rpc_method.cc \
+    src/cpp/proto/proto_utils.cc \
+    src/cpp/server/async_server.cc \
+    src/cpp/server/async_server_context.cc \
+    src/cpp/server/completion_queue.cc \
+    src/cpp/server/server.cc \
+    src/cpp/server/server_builder.cc \
+    src/cpp/server/server_context_impl.cc \
+    src/cpp/server/server_credentials.cc \
+    src/cpp/server/server_rpc_handler.cc \
+    src/cpp/server/thread_pool.cc \
+    src/cpp/stream/stream_context.cc \
+    src/cpp/util/status.cc \
+    src/cpp/util/time.cc \
+
+PUBLIC_HEADERS_CXX += \
+    include/grpc++/async_server.h \
+    include/grpc++/async_server_context.h \
+    include/grpc++/channel_arguments.h \
+    include/grpc++/channel_interface.h \
+    include/grpc++/client_context.h \
+    include/grpc++/completion_queue.h \
+    include/grpc++/config.h \
+    include/grpc++/create_channel.h \
+    include/grpc++/credentials.h \
+    include/grpc++/impl/internal_stub.h \
+    include/grpc++/impl/rpc_method.h \
+    include/grpc++/impl/rpc_service_method.h \
+    include/grpc++/server.h \
+    include/grpc++/server_builder.h \
+    include/grpc++/server_context.h \
+    include/grpc++/server_credentials.h \
+    include/grpc++/status.h \
+    include/grpc++/stream.h \
+    include/grpc++/stream_context_interface.h \
+
+LIBGRPC++_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
+libs/$(CONFIG)/libgrpc++.a: openssl_dep_error
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(CONFIG)/grpc++.$(SHARED_EXT): openssl_dep_error
+else
+libs/$(CONFIG)/libgrpc++.$(SHARED_EXT): openssl_dep_error
+endif
+
+else
+
+ifneq ($(OPENSSL_DEP),)
+src/cpp/client/channel.cc: $(OPENSSL_DEP)
+src/cpp/client/channel_arguments.cc: $(OPENSSL_DEP)
+src/cpp/client/client_context.cc: $(OPENSSL_DEP)
+src/cpp/client/create_channel.cc: $(OPENSSL_DEP)
+src/cpp/client/credentials.cc: $(OPENSSL_DEP)
+src/cpp/client/internal_stub.cc: $(OPENSSL_DEP)
+src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
+src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
+src/cpp/server/async_server.cc: $(OPENSSL_DEP)
+src/cpp/server/async_server_context.cc: $(OPENSSL_DEP)
+src/cpp/server/completion_queue.cc: $(OPENSSL_DEP)
+src/cpp/server/server.cc: $(OPENSSL_DEP)
+src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
+src/cpp/server/server_context_impl.cc: $(OPENSSL_DEP)
+src/cpp/server/server_credentials.cc: $(OPENSSL_DEP)
+src/cpp/server/server_rpc_handler.cc: $(OPENSSL_DEP)
+src/cpp/server/thread_pool.cc: $(OPENSSL_DEP)
+src/cpp/stream/stream_context.cc: $(OPENSSL_DEP)
+src/cpp/util/status.cc: $(OPENSSL_DEP)
+src/cpp/util/time.cc: $(OPENSSL_DEP)
+endif
+
+libs/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(CONFIG)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP)libs/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/grpc++.def -Wl,--out-implib=libs/$(CONFIG)/libgrpc++-imp.a -o libs/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc-imp
+else
+libs/$(CONFIG)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) libs/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+else
+	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+	$(Q) ln -sf libgrpc++.$(SHARED_EXT) libs/$(CONFIG)/libgrpc++.so
+endif
+endif
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC++_OBJS:.o=.dep)
+endif
+endif
+
+objs/$(CONFIG)/src/cpp/client/channel.o: 
+objs/$(CONFIG)/src/cpp/client/channel_arguments.o: 
+objs/$(CONFIG)/src/cpp/client/client_context.o: 
+objs/$(CONFIG)/src/cpp/client/create_channel.o: 
+objs/$(CONFIG)/src/cpp/client/credentials.o: 
+objs/$(CONFIG)/src/cpp/client/internal_stub.o: 
+objs/$(CONFIG)/src/cpp/common/rpc_method.o: 
+objs/$(CONFIG)/src/cpp/proto/proto_utils.o: 
+objs/$(CONFIG)/src/cpp/server/async_server.o: 
+objs/$(CONFIG)/src/cpp/server/async_server_context.o: 
+objs/$(CONFIG)/src/cpp/server/completion_queue.o: 
+objs/$(CONFIG)/src/cpp/server/server.o: 
+objs/$(CONFIG)/src/cpp/server/server_builder.o: 
+objs/$(CONFIG)/src/cpp/server/server_context_impl.o: 
+objs/$(CONFIG)/src/cpp/server/server_credentials.o: 
+objs/$(CONFIG)/src/cpp/server/server_rpc_handler.o: 
+objs/$(CONFIG)/src/cpp/server/thread_pool.o: 
+objs/$(CONFIG)/src/cpp/stream/stream_context.o: 
+objs/$(CONFIG)/src/cpp/util/status.o: 
+objs/$(CONFIG)/src/cpp/util/time.o: 
+
+
+LIBGRPC++_TEST_UTIL_SRC = \
+    gens/test/cpp/util/echo.pb.cc \
+    gens/test/cpp/util/echo_duplicate.pb.cc \
+    gens/test/cpp/util/messages.pb.cc \
+    test/cpp/end2end/async_test_server.cc \
+    test/cpp/util/create_test_channel.cc \
+
+
+LIBGRPC++_TEST_UTIL_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
+libs/$(CONFIG)/libgrpc++_test_util.a: openssl_dep_error
+
+
+else
+
+ifneq ($(OPENSSL_DEP),)
+test/cpp/util/echo.proto: $(OPENSSL_DEP)
+test/cpp/util/echo_duplicate.proto: $(OPENSSL_DEP)
+test/cpp/util/messages.proto: $(OPENSSL_DEP)
+test/cpp/end2end/async_test_server.cc: $(OPENSSL_DEP)
+test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
+endif
+
+libs/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
+
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC++_TEST_UTIL_OBJS:.o=.dep)
+endif
+endif
+
+
+
+
+objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
+objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
 
 
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
@@ -3358,37 +3358,6 @@ endif
 endif
 
 
-CHANNEL_ARGUMENTS_TEST_SRC = \
-    test/cpp/client/channel_arguments_test.cc \
-
-CHANNEL_ARGUMENTS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_ARGUMENTS_TEST_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/channel_arguments_test: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/channel_arguments_test
-
-endif
-
-objs/$(CONFIG)/test/cpp/client/channel_arguments_test.o:  libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
-
-deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 CHTTP2_STATUS_CONVERSION_TEST_SRC = \
     test/core/transport/chttp2/status_conversion_test.c \
 
@@ -3513,58 +3482,6 @@ endif
 endif
 
 
-CPP_PLUGIN_SRC = \
-    src/compiler/cpp_generator.cc \
-    src/compiler/cpp_plugin.cc \
-
-CPP_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CPP_PLUGIN_SRC))))
-
-bins/$(CONFIG)/cpp_plugin: $(CPP_PLUGIN_OBJS)
-	$(E) "[HOSTLD]  Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(CPP_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(CONFIG)/cpp_plugin
-
-objs/$(CONFIG)/src/compiler/cpp_generator.o: 
-objs/$(CONFIG)/src/compiler/cpp_plugin.o: 
-
-deps_cpp_plugin: $(CPP_PLUGIN_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(CPP_PLUGIN_OBJS:.o=.dep)
-endif
-
-
-CREDENTIALS_TEST_SRC = \
-    test/cpp/client/credentials_test.cc \
-
-CREDENTIALS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CREDENTIALS_TEST_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/credentials_test: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/credentials_test: $(CREDENTIALS_TEST_OBJS) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CREDENTIALS_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/credentials_test
-
-endif
-
-objs/$(CONFIG)/test/cpp/client/credentials_test.o:  libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
-
-deps_credentials_test: $(CREDENTIALS_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CREDENTIALS_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 DUALSTACK_SOCKET_TEST_SRC = \
     test/core/end2end/dualstack_socket_test.c \
 
@@ -3685,37 +3602,6 @@ deps_echo_test: $(ECHO_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ECHO_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-END2END_TEST_SRC = \
-    test/cpp/end2end/end2end_test.cc \
-
-END2END_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(END2END_TEST_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/end2end_test: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/end2end_test: $(END2END_TEST_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(END2END_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/end2end_test
-
-endif
-
-objs/$(CONFIG)/test/cpp/end2end/end2end_test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_end2end_test: $(END2END_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -4712,80 +4598,6 @@ endif
 endif
 
 
-INTEROP_CLIENT_SRC = \
-    gens/test/cpp/interop/empty.pb.cc \
-    gens/test/cpp/interop/messages.pb.cc \
-    gens/test/cpp/interop/test.pb.cc \
-    test/cpp/interop/client.cc \
-
-INTEROP_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_CLIENT_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/interop_client: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/interop_client: $(INTEROP_CLIENT_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_CLIENT_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/interop_client
-
-endif
-
-objs/$(CONFIG)/test/cpp/interop/empty.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/client.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_interop_client: $(INTEROP_CLIENT_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(INTEROP_CLIENT_OBJS:.o=.dep)
-endif
-endif
-
-
-INTEROP_SERVER_SRC = \
-    gens/test/cpp/interop/empty.pb.cc \
-    gens/test/cpp/interop/messages.pb.cc \
-    gens/test/cpp/interop/test.pb.cc \
-    test/cpp/interop/server.cc \
-
-INTEROP_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_SERVER_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/interop_server: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/interop_server: $(INTEROP_SERVER_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_SERVER_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/interop_server
-
-endif
-
-objs/$(CONFIG)/test/cpp/interop/empty.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/interop/server.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_interop_server: $(INTEROP_SERVER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(INTEROP_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
 LAME_CLIENT_TEST_SRC = \
     test/core/surface/lame_client_test.c \
 
@@ -5003,72 +4815,6 @@ endif
 endif
 
 
-QPS_CLIENT_SRC = \
-    gens/test/cpp/qps/qpstest.pb.cc \
-    test/cpp/qps/client.cc \
-
-QPS_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_CLIENT_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/qps_client: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/qps_client: $(QPS_CLIENT_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/qps_client
-
-endif
-
-objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/qps/client.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_qps_client: $(QPS_CLIENT_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(QPS_CLIENT_OBJS:.o=.dep)
-endif
-endif
-
-
-QPS_SERVER_SRC = \
-    gens/test/cpp/qps/qpstest.pb.cc \
-    test/cpp/qps/server.cc \
-
-QPS_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_SERVER_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/qps_server: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/qps_server: $(QPS_SERVER_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/qps_server
-
-endif
-
-objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-objs/$(CONFIG)/test/cpp/qps/server.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_qps_server: $(QPS_SERVER_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(QPS_SERVER_OBJS:.o=.dep)
-endif
-endif
-
-
 RESOLVE_ADDRESS_TEST_SRC = \
     test/core/iomgr/resolve_address_test.c \
 
@@ -5097,27 +4843,6 @@ ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(RESOLVE_ADDRESS_TEST_OBJS:.o=.dep)
 endif
-endif
-
-
-RUBY_PLUGIN_SRC = \
-    src/compiler/ruby_generator.cc \
-    src/compiler/ruby_plugin.cc \
-
-RUBY_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(RUBY_PLUGIN_SRC))))
-
-bins/$(CONFIG)/ruby_plugin: $(RUBY_PLUGIN_OBJS)
-	$(E) "[HOSTLD]  Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(RUBY_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(CONFIG)/ruby_plugin
-
-objs/$(CONFIG)/src/compiler/ruby_generator.o: 
-objs/$(CONFIG)/src/compiler/ruby_plugin.o: 
-
-deps_ruby_plugin: $(RUBY_PLUGIN_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(RUBY_PLUGIN_OBJS:.o=.dep)
 endif
 
 
@@ -5179,68 +4904,6 @@ deps_sockaddr_utils_test: $(SOCKADDR_UTILS_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SOCKADDR_UTILS_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-STATUS_TEST_SRC = \
-    test/cpp/util/status_test.cc \
-
-STATUS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_TEST_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/status_test: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/status_test: $(STATUS_TEST_OBJS) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/status_test
-
-endif
-
-objs/$(CONFIG)/test/cpp/util/status_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_status_test: $(STATUS_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(STATUS_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-SYNC_CLIENT_ASYNC_SERVER_TEST_SRC = \
-    test/cpp/end2end/sync_client_async_server_test.cc \
-
-SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(SYNC_CLIENT_ASYNC_SERVER_TEST_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/sync_client_async_server_test: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/sync_client_async_server_test: $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/sync_client_async_server_test
-
-endif
-
-objs/$(CONFIG)/test/cpp/end2end/sync_client_async_server_test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_sync_client_async_server_test: $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5334,37 +4997,6 @@ deps_tcp_server_posix_test: $(TCP_SERVER_POSIX_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TCP_SERVER_POSIX_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-THREAD_POOL_TEST_SRC = \
-    test/cpp/server/thread_pool_test.cc \
-
-THREAD_POOL_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(THREAD_POOL_TEST_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL with ALPN.
-
-bins/$(CONFIG)/thread_pool_test: openssl_dep_error
-
-else
-
-bins/$(CONFIG)/thread_pool_test: $(THREAD_POOL_TEST_OBJS) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_POOL_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/thread_pool_test
-
-endif
-
-objs/$(CONFIG)/test/cpp/server/thread_pool_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
-
-deps_thread_pool_test: $(THREAD_POOL_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(THREAD_POOL_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -5489,6 +5121,374 @@ deps_transport_metadata_test: $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TRANSPORT_METADATA_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHANNEL_ARGUMENTS_TEST_SRC = \
+    test/cpp/client/channel_arguments_test.cc \
+
+CHANNEL_ARGUMENTS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_ARGUMENTS_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/channel_arguments_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/channel_arguments_test
+
+endif
+
+objs/$(CONFIG)/test/cpp/client/channel_arguments_test.o:  libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
+
+deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CPP_PLUGIN_SRC = \
+    src/compiler/cpp_generator.cc \
+    src/compiler/cpp_plugin.cc \
+
+CPP_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CPP_PLUGIN_SRC))))
+
+bins/$(CONFIG)/cpp_plugin: $(CPP_PLUGIN_OBJS)
+	$(E) "[HOSTLD]  Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(CPP_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(CONFIG)/cpp_plugin
+
+objs/$(CONFIG)/src/compiler/cpp_generator.o: 
+objs/$(CONFIG)/src/compiler/cpp_plugin.o: 
+
+deps_cpp_plugin: $(CPP_PLUGIN_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(CPP_PLUGIN_OBJS:.o=.dep)
+endif
+
+
+CREDENTIALS_TEST_SRC = \
+    test/cpp/client/credentials_test.cc \
+
+CREDENTIALS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(CREDENTIALS_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/credentials_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/credentials_test: $(CREDENTIALS_TEST_OBJS) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CREDENTIALS_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/credentials_test
+
+endif
+
+objs/$(CONFIG)/test/cpp/client/credentials_test.o:  libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr.a
+
+deps_credentials_test: $(CREDENTIALS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CREDENTIALS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+END2END_TEST_SRC = \
+    test/cpp/end2end/end2end_test.cc \
+
+END2END_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(END2END_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/end2end_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/end2end_test: $(END2END_TEST_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(END2END_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/end2end_test
+
+endif
+
+objs/$(CONFIG)/test/cpp/end2end/end2end_test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_end2end_test: $(END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INTEROP_CLIENT_SRC = \
+    gens/test/cpp/interop/empty.pb.cc \
+    gens/test/cpp/interop/messages.pb.cc \
+    gens/test/cpp/interop/test.pb.cc \
+    test/cpp/interop/client.cc \
+
+INTEROP_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_CLIENT_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/interop_client: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/interop_client: $(INTEROP_CLIENT_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_CLIENT_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/interop_client
+
+endif
+
+objs/$(CONFIG)/test/cpp/interop/empty.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/interop/client.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_interop_client: $(INTEROP_CLIENT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INTEROP_CLIENT_OBJS:.o=.dep)
+endif
+endif
+
+
+INTEROP_SERVER_SRC = \
+    gens/test/cpp/interop/empty.pb.cc \
+    gens/test/cpp/interop/messages.pb.cc \
+    gens/test/cpp/interop/test.pb.cc \
+    test/cpp/interop/server.cc \
+
+INTEROP_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_SERVER_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/interop_server: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/interop_server: $(INTEROP_SERVER_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_SERVER_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/interop_server
+
+endif
+
+objs/$(CONFIG)/test/cpp/interop/empty.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/interop/messages.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/interop/test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/interop/server.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_interop_server: $(INTEROP_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INTEROP_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+QPS_CLIENT_SRC = \
+    gens/test/cpp/qps/qpstest.pb.cc \
+    test/cpp/qps/client.cc \
+
+QPS_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_CLIENT_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/qps_client: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/qps_client: $(QPS_CLIENT_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/qps_client
+
+endif
+
+objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/qps/client.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_qps_client: $(QPS_CLIENT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(QPS_CLIENT_OBJS:.o=.dep)
+endif
+endif
+
+
+QPS_SERVER_SRC = \
+    gens/test/cpp/qps/qpstest.pb.cc \
+    test/cpp/qps/server.cc \
+
+QPS_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_SERVER_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/qps_server: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/qps_server: $(QPS_SERVER_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/qps_server
+
+endif
+
+objs/$(CONFIG)/test/cpp/qps/qpstest.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+objs/$(CONFIG)/test/cpp/qps/server.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_qps_server: $(QPS_SERVER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(QPS_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+RUBY_PLUGIN_SRC = \
+    src/compiler/ruby_generator.cc \
+    src/compiler/ruby_plugin.cc \
+
+RUBY_PLUGIN_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(RUBY_PLUGIN_SRC))))
+
+bins/$(CONFIG)/ruby_plugin: $(RUBY_PLUGIN_OBJS)
+	$(E) "[HOSTLD]  Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(RUBY_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o bins/$(CONFIG)/ruby_plugin
+
+objs/$(CONFIG)/src/compiler/ruby_generator.o: 
+objs/$(CONFIG)/src/compiler/ruby_plugin.o: 
+
+deps_ruby_plugin: $(RUBY_PLUGIN_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(RUBY_PLUGIN_OBJS:.o=.dep)
+endif
+
+
+STATUS_TEST_SRC = \
+    test/cpp/util/status_test.cc \
+
+STATUS_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/status_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/status_test: $(STATUS_TEST_OBJS) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/status_test
+
+endif
+
+objs/$(CONFIG)/test/cpp/util/status_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_status_test: $(STATUS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STATUS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SYNC_CLIENT_ASYNC_SERVER_TEST_SRC = \
+    test/cpp/end2end/sync_client_async_server_test.cc \
+
+SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(SYNC_CLIENT_ASYNC_SERVER_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/sync_client_async_server_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/sync_client_async_server_test: $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/sync_client_async_server_test
+
+endif
+
+objs/$(CONFIG)/test/cpp/end2end/sync_client_async_server_test.o:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_sync_client_async_server_test: $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SYNC_CLIENT_ASYNC_SERVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+THREAD_POOL_TEST_SRC = \
+    test/cpp/server/thread_pool_test.cc \
+
+THREAD_POOL_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(THREAD_POOL_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/thread_pool_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/thread_pool_test: $(THREAD_POOL_TEST_OBJS) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_POOL_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/thread_pool_test
+
+endif
+
+objs/$(CONFIG)/test/cpp/server/thread_pool_test.o:  libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_thread_pool_test: $(THREAD_POOL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(THREAD_POOL_TEST_OBJS:.o=.dep)
 endif
 endif
 
