@@ -295,6 +295,7 @@ void grpc_call_element_send_metadata(grpc_call_element *cur_elem,
 void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
                                      grpc_mdelem *elem);
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
+void grpc_call_element_send_finish(grpc_call_element *cur_elem);
 
 #ifdef GRPC_CHANNEL_STACK_TRACE
 #define GRPC_CALL_LOG_OP(sev, elem, op) grpc_call_log_op(sev, elem, op)
