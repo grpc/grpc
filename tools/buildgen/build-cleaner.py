@@ -6,6 +6,8 @@ import json
 import os
 import sys
 
+TEST = (os.environ.get('TEST', 'false') == 'true')
+
 _TOP_LEVEL_KEYS = ['settings', 'filegroups', 'libs', 'targets']
 _VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
@@ -51,6 +53,11 @@ for filename in sys.argv[1:]:
   lines = []
   for line in output.splitlines():
     lines.append(line.rstrip() + '\n')
-  with open(filename, 'w') as f:
-    f.write(''.join(lines))
+  output = ''.join(lines)
+  if TEST:
+    with open(filename) as f:
+      assert f.read() == output
+  else:
+    with open(filename, 'w') as f:
+      f.write(output)
 
