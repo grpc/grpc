@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "mocha": "~1.21.0",
-    "highland": "~2.0.0"
+    "minimist": "^1.1.0"
   },
   "main": "main.js"
 }

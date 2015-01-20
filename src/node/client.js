@@ -115,6 +115,7 @@ function GrpcClientStream(call, options) {
   }, function(event) {
     self.emit('metadata', event.data);
   }, function(event) {
+    debugger;
     self.emit('status', event.data);
   }, 0);
   this.on('finish', function() {
