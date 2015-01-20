@@ -49,7 +49,7 @@ namespace grpc {
 // TODO(rocking): consider a better default value like num of cores.
 static const int kNumThreads = 4;
 
-Server::Server(ThreadPoolInterface* thread_pool, ServerCredentials* creds)
+Server::Server(ThreadPoolInterface *thread_pool, ServerCredentials *creds)
     : started_(false),
       shutdown_(false),
       num_running_cb_(0),
@@ -82,14 +82,14 @@ Server::~Server() {
   }
 }
 
-void Server::RegisterService(RpcService* service) {
+void Server::RegisterService(RpcService *service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
-    RpcServiceMethod* method = service->GetMethod(i);
+    RpcServiceMethod *method = service->GetMethod(i);
     method_map_.insert(std::make_pair(method->name(), method));
   }
 }
 
-void Server::AddPort(const grpc::string& addr) {
+void Server::AddPort(const grpc::string &addr) {
   GPR_ASSERT(!started_);
   int success;
   if (secure_) {
@@ -131,7 +131,7 @@ void Server::Shutdown() {
 
   // Shutdown the completion queue.
   cq_.Shutdown();
-  void* tag = nullptr;
+  void *tag = nullptr;
   CompletionQueue::CompletionType t = cq_.Next(&tag);
   GPR_ASSERT(t == CompletionQueue::QUEUE_CLOSED);
 }
@@ -147,18 +147,18 @@ void Server::ScheduleCallback() {
 
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
-  void* tag = nullptr;
+  void *tag = nullptr;
   AllowOneRpc();
   CompletionQueue::CompletionType t = cq_.Next(&tag);
   GPR_ASSERT(t == CompletionQueue::SERVER_RPC_NEW);
 
-  AsyncServerContext* server_context = static_cast<AsyncServerContext*>(tag);
+  AsyncServerContext *server_context = static_cast<AsyncServerContext *>(tag);
   // server_context could be nullptr during server shutdown.
   if (server_context != nullptr) {
     // Schedule a new callback to handle more rpcs.
     ScheduleCallback();
 
-    RpcServiceMethod* method = nullptr;
+    RpcServiceMethod *method = nullptr;
     auto iter = method_map_.find(server_context->method());
     if (iter != method_map_.end()) {
       method = iter->second;

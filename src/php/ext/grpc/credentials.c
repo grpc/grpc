@@ -151,13 +151,12 @@ PHP_METHOD(Credentials, createFake) {
 
 static zend_function_entry credentials_methods[] = {
     PHP_ME(Credentials, createDefault, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-        PHP_ME(Credentials, createSsl, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-            PHP_ME(Credentials, createComposite, NULL,
-                   ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-                PHP_ME(Credentials, createGce, NULL,
-                       ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-                    PHP_ME(Credentials, createFake, NULL,
-                           ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) PHP_FE_END};
+    PHP_ME(Credentials, createSsl, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Credentials, createComposite, NULL,
+           ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Credentials, createGce, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Credentials, createFake, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_FE_END};
 
 void grpc_init_credentials(TSRMLS_D) {
   zend_class_entry ce;
