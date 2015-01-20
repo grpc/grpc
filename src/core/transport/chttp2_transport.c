@@ -1505,6 +1505,7 @@ static int process_read(transport *t, gpr_slice slice) {
                   CLIENT_CONNECT_STRING[t->deframe_state],
                   (int)(gpr_uint8) CLIENT_CONNECT_STRING[t->deframe_state],
                   *cur, (int)*cur, t->deframe_state);
+          drop_connection(t);
           return 0;
         }
         ++cur;
