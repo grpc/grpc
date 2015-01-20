@@ -66,6 +66,14 @@ typedef struct channel_data {
 /* used to silence 'variable not used' warnings */
 static void ignore_unused(void *ignored) {}
 
+/* Handle 'GET': not technically grpc, so probably a web browser hitting
+   us */
+static void handle_get(grpc_call_element *elem) {
+  channel_data *channeld = elem->channel_data;
+  grpc_call_element_send_metadata(elem, channeld->status);
+  grpc_call_element_send_finish(elem);
+}
+
 /* Called either:
      - in response to an API call (or similar) from above, to send something
      - a network event (or similar) from below, to receive something
@@ -153,6 +161,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         grpc_call_element_recv_metadata(elem, calld->path);
         calld->path = NULL;
         grpc_call_next_op(elem, op);
+      } else if (calld->seen_method == GET) {
+        handle_get(elem);
       } else {
         if (calld->seen_method == NOT_RECEIVED) {
           gpr_log(GPR_ERROR, "Missing :method header");
