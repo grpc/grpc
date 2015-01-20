@@ -209,7 +209,7 @@ void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
   metadata_op.dir = GRPC_CALL_UP;
   metadata_op.done_cb = do_nothing;
   metadata_op.user_data = NULL;
-  metadata_op.data.metadata = grpc_mdelem_ref(mdelem);
+  metadata_op.data.metadata = mdelem;
   grpc_call_next_op(cur_elem, &metadata_op);
 }
 
@@ -220,7 +220,7 @@ void grpc_call_element_send_metadata(grpc_call_element *cur_elem,
   metadata_op.dir = GRPC_CALL_DOWN;
   metadata_op.done_cb = do_nothing;
   metadata_op.user_data = NULL;
-  metadata_op.data.metadata = grpc_mdelem_ref(mdelem);
+  metadata_op.data.metadata = mdelem;
   grpc_call_next_op(cur_elem, &metadata_op);
 }
 

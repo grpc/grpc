@@ -127,7 +127,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
           gpr_log(GPR_ERROR, "Received :path twice");
           grpc_mdelem_unref(calld->path);
         }
-        calld->path = grpc_mdelem_ref(op->data.metadata);
+        calld->path = op->data.metadata;
         op->done_cb(op->user_data, GRPC_OP_OK);
       } else {
         /* pass the event up */
@@ -163,7 +163,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       if (!calld->sent_status) {
         calld->sent_status = 1;
         /* status is reffed by grpc_call_element_send_metadata */
-        grpc_call_element_send_metadata(elem, channeld->status);
+        grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->status));
       }
       grpc_call_next_op(elem, op);
       break;
