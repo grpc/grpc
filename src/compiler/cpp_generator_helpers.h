@@ -41,7 +41,7 @@
 
 namespace grpc_cpp_generator {
 
-inline bool StripSuffix(std::string* filename, const std::string& suffix) {
+inline bool StripSuffix(std::string *filename, const std::string &suffix) {
   if (filename->length() >= suffix.length()) {
     size_t suffix_pos = filename->length() - suffix.length();
     if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
@@ -60,8 +60,8 @@ inline std::string StripProto(std::string filename) {
   return filename;
 }
 
-inline std::string StringReplace(std::string str, const std::string& from,
-                                 const std::string& to) {
+inline std::string StringReplace(std::string str, const std::string &from,
+                                 const std::string &to) {
   size_t pos = 0;
 
   for (;;) {
@@ -76,22 +76,22 @@ inline std::string StringReplace(std::string str, const std::string& from,
   return str;
 }
 
-inline std::string DotsToColons(const std::string& name) {
+inline std::string DotsToColons(const std::string &name) {
   return StringReplace(name, ".", "::");
 }
 
-inline std::string DotsToUnderscores(const std::string& name) {
+inline std::string DotsToUnderscores(const std::string &name) {
   return StringReplace(name, ".", "_");
 }
 
-inline std::string ClassName(const google::protobuf::Descriptor* descriptor,
+inline std::string ClassName(const google::protobuf::Descriptor *descriptor,
                              bool qualified) {
   // Find "outer", the descriptor of the top-level message in which
   // "descriptor" is embedded.
-  const google::protobuf::Descriptor* outer = descriptor;
+  const google::protobuf::Descriptor *outer = descriptor;
   while (outer->containing_type() != NULL) outer = outer->containing_type();
 
-  const std::string& outer_name = outer->full_name();
+  const std::string &outer_name = outer->full_name();
   std::string inner_name = descriptor->full_name().substr(outer_name.size());
 
   if (qualified) {

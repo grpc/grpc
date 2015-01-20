@@ -290,7 +290,7 @@ static void shutdown_during_write_test_read_handler(
 
   if (error != GRPC_ENDPOINT_CB_OK) {
     grpc_endpoint_destroy(st->ep);
-    gpr_event_set(&st->ev, (void *)(gpr_intptr)error);
+    gpr_event_set(&st->ev, (void *)(gpr_intptr) error);
   } else {
     grpc_endpoint_notify_on_read(
         st->ep, shutdown_during_write_test_read_handler, user_data);
@@ -309,7 +309,7 @@ static void shutdown_during_write_test_write_handler(
     gpr_log(GPR_ERROR,
             "shutdown_during_write_test_write_handler completed unexpectedly");
   }
-  gpr_event_set(&st->ev, (void *)(gpr_intptr)1);
+  gpr_event_set(&st->ev, (void *)(gpr_intptr) 1);
 }
 
 static void shutdown_during_write_test(grpc_endpoint_test_config config,

@@ -155,7 +155,7 @@ PHP_METHOD(Channel, close) {
 
 static zend_function_entry channel_methods[] = {
     PHP_ME(Channel, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-        PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Channel, close, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_channel(TSRMLS_D) {
   zend_class_entry ce;

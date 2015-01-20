@@ -36,6 +36,8 @@
 
 #include <grpc/support/sync.h>
 
+#include "src/core/iomgr/pollset_kick.h"
+
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
 /* forward declare only in this file to avoid leaking impl details via
@@ -51,6 +53,7 @@ typedef struct grpc_pollset {
   const grpc_pollset_vtable *vtable;
   gpr_mu mu;
   gpr_cv cv;
+  grpc_pollset_kick_state kick_state;
   int counter;
   union {
     int fd;

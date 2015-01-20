@@ -37,31 +37,31 @@
 
 namespace grpc {
 
-ServerCredentials::ServerCredentials(grpc_server_credentials* c_creds)
+ServerCredentials::ServerCredentials(grpc_server_credentials *c_creds)
     : creds_(c_creds) {}
 
 ServerCredentials::~ServerCredentials() {
   grpc_server_credentials_release(creds_);
 }
 
-grpc_server_credentials* ServerCredentials::GetRawCreds() { return creds_; }
+grpc_server_credentials *ServerCredentials::GetRawCreds() { return creds_; }
 
 std::shared_ptr<ServerCredentials> ServerCredentialsFactory::SslCredentials(
-    const SslServerCredentialsOptions& options) {
-  const unsigned char* pem_root_certs =
+    const SslServerCredentialsOptions &options) {
+  const unsigned char *pem_root_certs =
       options.pem_root_certs.empty() ? nullptr
-                                     : reinterpret_cast<const unsigned char*>(
+                                     : reinterpret_cast<const unsigned char *>(
                                            options.pem_root_certs.c_str());
-  const unsigned char* pem_private_key =
+  const unsigned char *pem_private_key =
       options.pem_private_key.empty() ? nullptr
-                                      : reinterpret_cast<const unsigned char*>(
+                                      : reinterpret_cast<const unsigned char *>(
                                             options.pem_private_key.c_str());
-  const unsigned char* pem_cert_chain =
+  const unsigned char *pem_cert_chain =
       options.pem_cert_chain.empty() ? nullptr
-                                     : reinterpret_cast<const unsigned char*>(
+                                     : reinterpret_cast<const unsigned char *>(
                                            options.pem_cert_chain.c_str());
 
-  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create(
+  grpc_server_credentials *c_creds = grpc_ssl_server_credentials_create(
       pem_root_certs, options.pem_root_certs.size(), pem_private_key,
       options.pem_private_key.size(), pem_cert_chain,
       options.pem_cert_chain.size());

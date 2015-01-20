@@ -42,7 +42,7 @@
 namespace grpc {
 
 AsyncServerContext::AsyncServerContext(
-    grpc_call* call, const grpc::string& method, const grpc::string& host,
+    grpc_call *call, const grpc::string &method, const grpc::string &host,
     system_clock::time_point absolute_deadline)
     : method_(method),
       host_(host),
@@ -52,21 +52,21 @@ AsyncServerContext::AsyncServerContext(
 
 AsyncServerContext::~AsyncServerContext() { grpc_call_destroy(call_); }
 
-void AsyncServerContext::Accept(grpc_completion_queue* cq) {
+void AsyncServerContext::Accept(grpc_completion_queue *cq) {
   GPR_ASSERT(grpc_call_server_accept(call_, cq, this) == GRPC_CALL_OK);
   GPR_ASSERT(grpc_call_server_end_initial_metadata(call_, 0) == GRPC_CALL_OK);
 }
 
-bool AsyncServerContext::StartRead(google::protobuf::Message* request) {
+bool AsyncServerContext::StartRead(google::protobuf::Message *request) {
   GPR_ASSERT(request);
   request_ = request;
   grpc_call_error err = grpc_call_start_read(call_, this);
   return err == GRPC_CALL_OK;
 }
 
-bool AsyncServerContext::StartWrite(const google::protobuf::Message& response,
+bool AsyncServerContext::StartWrite(const google::protobuf::Message &response,
                                     int flags) {
-  grpc_byte_buffer* buffer = nullptr;
+  grpc_byte_buffer *buffer = nullptr;
   if (!SerializeProto(response, &buffer)) {
     return false;
   }
@@ -75,16 +75,16 @@ bool AsyncServerContext::StartWrite(const google::protobuf::Message& response,
   return err == GRPC_CALL_OK;
 }
 
-bool AsyncServerContext::StartWriteStatus(const Status& status) {
+bool AsyncServerContext::StartWriteStatus(const Status &status) {
   grpc_call_error err = grpc_call_start_write_status(
       call_, static_cast<grpc_status_code>(status.code()),
       status.details().empty() ? nullptr
-                               : const_cast<char*>(status.details().c_str()),
+                               : const_cast<char *>(status.details().c_str()),
       this);
   return err == GRPC_CALL_OK;
 }
 
-bool AsyncServerContext::ParseRead(grpc_byte_buffer* read_buffer) {
+bool AsyncServerContext::ParseRead(grpc_byte_buffer *read_buffer) {
   GPR_ASSERT(request_);
   bool success = DeserializeProto(read_buffer, request_);
   request_ = nullptr;

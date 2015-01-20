@@ -4,13 +4,13 @@
 import argparse
 import glob
 import itertools
+import json
 import multiprocessing
 import os
 import sys
 import time
 
 import jobset
-import simplejson
 import watch_dirs
 
 
@@ -20,6 +20,7 @@ class SimpleConfig(object):
   def __init__(self, config):
     self.build_config = config
     self.maxjobs = 32 * multiprocessing.cpu_count()
+    self.allow_hashing = (config != 'gcov')
 
   def run_command(self, binary):
     return [binary]
@@ -32,9 +33,46 @@ class ValgrindConfig(object):
     self.build_config = config
     self.tool = tool
     self.maxjobs = 4 * multiprocessing.cpu_count()
+    self.allow_hashing = False
 
   def run_command(self, binary):
     return ['valgrind', binary, '--tool=%s' % self.tool]
+
+
+class CLanguage(object):
+
+  def __init__(self, make_target, test_lang):
+    self.allow_hashing = True
+    self.make_target = make_target
+    with open('tools/run_tests/tests.json') as f:
+      js = json.load(f)
+      self.binaries = [tgt['name'] 
+                       for tgt in js 
+                       if tgt['language'] == test_lang]
+
+  def test_binaries(self, config):
+    return ['bins/%s/%s' % (config, binary) for binary in self.binaries]
+
+  def make_targets(self):
+    return ['buildtests_%s' % self.make_target]
+
+  def build_steps(self):
+    return []
+
+
+class PhpLanguage(object):
+
+  def __init__(self):
+    self.allow_hashing = False
+
+  def test_binaries(self, config):
+    return ['src/php/bin/run_tests.sh']
+
+  def make_targets(self):
+    return []
+
+  def build_steps(self):
+    return [['tools/run_tests/build_php.sh']]
 
 
 # different configurations we can run under
@@ -51,9 +89,10 @@ _CONFIGS = {
 
 
 _DEFAULT = ['dbg', 'opt']
-_LANGUAGE_TEST_TARGETS = {
-    'c++': 'buildtests_cxx',
-    'c': 'buildtests_c',
+_LANGUAGES = {
+    'c++': CLanguage('cxx', 'c++'),
+    'c': CLanguage('c', 'c'),
+    'php': PhpLanguage()
 }
 
 # parse command line
@@ -62,7 +101,6 @@ argp.add_argument('-c', '--config',
                   choices=['all'] + sorted(_CONFIGS.keys()),
                   nargs='+',
                   default=_DEFAULT)
-argp.add_argument('-t', '--test-filter', nargs='*', default=['*'])
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
 argp.add_argument('-f', '--forever',
                   default=False,
@@ -73,9 +111,9 @@ argp.add_argument('--newline_on_success',
                   action='store_const',
                   const=True)
 argp.add_argument('-l', '--language',
-                  choices=sorted(_LANGUAGE_TEST_TARGETS.keys()),
+                  choices=sorted(_LANGUAGES.keys()),
                   nargs='+',
-                  default=sorted(_LANGUAGE_TEST_TARGETS.keys()))
+                  default=sorted(_LANGUAGES.keys()))
 args = argp.parse_args()
 
 # grab config
@@ -84,8 +122,18 @@ run_configs = set(_CONFIGS[cfg]
                       _CONFIGS.iterkeys() if x == 'all' else [x]
                       for x in args.config))
 build_configs = set(cfg.build_config for cfg in run_configs)
-make_targets = set(_LANGUAGE_TEST_TARGETS[x] for x in args.language)
-filters = args.test_filter
+
+make_targets = []
+languages = set(_LANGUAGES[l] for l in args.language)
+build_steps = [['make',
+                '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                'CONFIG=%s' % cfg] + list(set(
+                    itertools.chain.from_iterable(l.make_targets()
+                                                  for l in languages)))
+               for cfg in build_configs] + list(
+                   itertools.chain.from_iterable(l.build_steps()
+                                                 for l in languages))
+
 runs_per_test = args.runs_per_test
 forever = args.forever
 
@@ -116,48 +164,41 @@ class TestCache(object):
 
   def save(self):
     with open('.run_tests_cache', 'w') as f:
-      f.write(simplejson.dumps(self.dump()))
+      f.write(json.dumps(self.dump()))
 
   def maybe_load(self):
     if os.path.exists('.run_tests_cache'):
       with open('.run_tests_cache') as f:
-        self.parse(simplejson.loads(f.read()))
+        self.parse(json.loads(f.read()))
 
 
 def _build_and_run(check_cancelled, newline_on_success, cache):
   """Do one pass of building & running tests."""
   # build latest, sharing cpu between the various makes
-  if not jobset.run(
-      (['make',
-        '-j', '%d' % (multiprocessing.cpu_count() + 1),
-        'CONFIG=%s' % cfg] + list(make_targets)
-       for cfg in build_configs),
-      check_cancelled, maxjobs=1):
+  if not jobset.run(build_steps):
     return 1
 
   # run all the tests
-  if not jobset.run(
-      itertools.ifilter(
-          lambda x: x is not None, (
-              config.run_command(x)
-              for config in run_configs
-              for filt in filters
-              for x in itertools.chain.from_iterable(itertools.repeat(
-                  glob.glob('bins/%s/%s_test' % (
-                      config.build_config, filt)),
-                  runs_per_test)))),
-      check_cancelled,
-      newline_on_success=newline_on_success,
-      maxjobs=min(c.maxjobs for c in run_configs),
-      cache=cache):
+  one_run = dict(
+      (' '.join(config.run_command(x)), config.run_command(x))
+      for config in run_configs
+      for language in args.language
+      for x in _LANGUAGES[language].test_binaries(config.build_config)
+      ).values()
+  all_runs = itertools.chain.from_iterable(
+      itertools.repeat(one_run, runs_per_test))
+  if not jobset.run(all_runs, check_cancelled,
+                    newline_on_success=newline_on_success,
+                    maxjobs=min(c.maxjobs for c in run_configs),
+                    cache=cache):
     return 2
 
   return 0
 
 
-test_cache = (None if runs_per_test != 1
-              or 'gcov' in build_configs
-              or 'valgrind' in build_configs
+test_cache = (None
+              if not all(x.allow_hashing
+                         for x in itertools.chain(languages, run_configs))
               else TestCache())
 if test_cache:
   test_cache.maybe_load()
@@ -177,6 +218,7 @@ if forever:
                      'All tests are now passing properly',
                      do_newline=True)
     jobset.message('IDLE', 'No change detected')
+    if test_cache: test_cache.save()
     while not have_files_changed():
       time.sleep(1)
 else:
@@ -187,5 +229,5 @@ else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
-  test_cache.save()
+  if test_cache: test_cache.save()
   sys.exit(result)

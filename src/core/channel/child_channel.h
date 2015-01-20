@@ -39,7 +39,7 @@
 /* helper for filters that need to host child channel stacks... handles
    lifetime and upwards propagation cleanly */
 
-const grpc_channel_filter grpc_child_channel_top_filter;
+extern const grpc_channel_filter grpc_child_channel_top_filter;
 
 typedef grpc_channel_stack grpc_child_channel;
 typedef grpc_call_stack grpc_child_call;

@@ -46,9 +46,8 @@ require 'optparse'
 
 # Holds state for a fibonacci series
 class Fibber
-
   def initialize(limit)
-    raise "bad limit: got #{limit}, want limit > 0" if limit < 1
+    fail "bad limit: got #{limit}, want limit > 0" if limit < 1
     @limit = limit
   end
 
@@ -57,14 +56,14 @@ class Fibber
     idx, current, previous = 0, 1, 1
     until idx == @limit
       if idx == 0 || idx == 1
-        yield Math::Num.new(:num => 1)
+        yield Math::Num.new(num: 1)
         idx += 1
         next
       end
       tmp = current
       current = previous + current
       previous = tmp
-      yield Math::Num.new(:num => current)
+      yield Math::Num.new(num: current)
       idx += 1
     end
   end
@@ -85,43 +84,41 @@ class EnumeratorQueue
     loop do
       r = @q.pop
       break if r.equal?(@sentinel)
-      raise r if r.is_a?Exception
+      fail r if r.is_a? Exception
       yield r
     end
   end
-
 end
 
 # The Math::Math:: module occurs because the service has the same name as its
 # package. That practice should be avoided by defining real services.
 class Calculator < Math::Math::Service
-
-  def div(div_args, call)
+  def div(div_args, _call)
     if div_args.divisor == 0
       # To send non-OK status handlers raise a StatusError with the code and
       # and detail they want sent as a Status.
-      raise GRPC::StatusError.new(GRPC::Status::INVALID_ARGUMENT,
-                                  'divisor cannot be 0')
+      fail GRPC::StatusError.new(GRPC::Status::INVALID_ARGUMENT,
+                                 'divisor cannot be 0')
     end
 
-    Math::DivReply.new(:quotient => div_args.dividend/div_args.divisor,
-                       :remainder => div_args.dividend % div_args.divisor)
+    Math::DivReply.new(quotient: div_args.dividend / div_args.divisor,
+                       remainder: div_args.dividend % div_args.divisor)
   end
 
   def sum(call)
     # the requests are accesible as the Enumerator call#each_request
-    nums = call.each_remote_read.collect { |x| x.num }
-    sum = nums.inject { |sum,x| sum + x }
-    Math::Num.new(:num => sum)
+    nums = call.each_remote_read.collect(&:num)
+    sum = nums.inject { |s, x| s + x }
+    Math::Num.new(num: sum)
   end
 
-  def fib(fib_args, call)
+  def fib(fib_args, _call)
     if fib_args.limit < 1
-      raise StatusError.new(Status::INVALID_ARGUMENT, 'limit must be >= 0')
+      fail StatusError.new(Status::INVALID_ARGUMENT, 'limit must be >= 0')
     end
 
     # return an Enumerator of Nums
-    Fibber.new(fib_args.limit).generator()
+    Fibber.new(fib_args.limit).generator
     # just return the generator, GRPC::GenericServer sends each actual response
   end
 
@@ -132,10 +129,10 @@ class Calculator < Math::Math::Service
       begin
         requests.each do |req|
           logger.info("read #{req.inspect}")
-          resp = Math::DivReply.new(:quotient => req.dividend/req.divisor,
-                                    :remainder => req.dividend % req.divisor)
+          resp = Math::DivReply.new(quotient: req.dividend / req.divisor,
+                                    remainder: req.dividend % req.divisor)
           q.push(resp)
-          Thread::pass  # let the internal Bidi threads run
+          Thread.pass  # let the internal Bidi threads run
         end
         logger.info('finished reads')
         q.push(self)
@@ -147,7 +144,6 @@ class Calculator < Math::Math::Service
     t.priority = -2  # hint that the div_many thread should not be favoured
     q.each_item
   end
-
 end
 
 def load_test_certs
@@ -159,7 +155,7 @@ end
 
 def test_server_creds
   certs = load_test_certs
-  server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+  GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
 end
 
 def main
@@ -173,7 +169,7 @@ def main
       options['host'] = v
     end
     opts.on('-s', '--secure', 'access using test creds') do |v|
-      options['secure'] = true
+      options['secure'] = v
     end
   end.parse!
 

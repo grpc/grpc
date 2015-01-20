@@ -33,29 +33,29 @@ LIBDIR = RbConfig::CONFIG['libdir']
 INCLUDEDIR = RbConfig::CONFIG['includedir']
 
 HEADER_DIRS = [
-    # Search /opt/local (Mac source install)
-    '/opt/local/include',
+  # Search /opt/local (Mac source install)
+  '/opt/local/include',
 
-    # Search /usr/local (Source install)
-    '/usr/local/include',
+  # Search /usr/local (Source install)
+  '/usr/local/include',
 
-    # Check the ruby install locations
-    INCLUDEDIR,
+  # Check the ruby install locations
+  INCLUDEDIR
 ]
 
 LIB_DIRS = [
-    # Search /opt/local (Mac source install)
-    '/opt/local/lib',
+  # Search /opt/local (Mac source install)
+  '/opt/local/lib',
 
-    # Search /usr/local (Source install)
-    '/usr/local/lib',
+  # Search /usr/local (Source install)
+  '/usr/local/lib',
 
-    # Check the ruby install locations
-    LIBDIR,
+  # Check the ruby install locations
+  LIBDIR
 ]
 
 def crash(msg)
-  print(" extconf failure: %s\n" % msg)
+  print(" extconf failure: #{msg}\n")
   exit 1
 end
 

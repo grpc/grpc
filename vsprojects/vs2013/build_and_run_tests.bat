@@ -17,22 +17,6 @@ echo Running test gpr_cancellable_test
 test_bin\gpr_cancellable_test.exe || echo TEST FAILED: gpr_cancellable_test && exit /b
 echo(
 
-echo Building test gpr_log_test
-cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\log_test.c 
-link.exe /OUT:"test_bin\gpr_log_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\log_test.obj 
-echo(
-echo Running test gpr_log_test
-test_bin\gpr_log_test.exe || echo TEST FAILED: gpr_log_test && exit /b
-echo(
-
-echo Building test gpr_useful_test
-cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\useful_test.c 
-link.exe /OUT:"test_bin\gpr_useful_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\useful_test.obj 
-echo(
-echo Running test gpr_useful_test
-test_bin\gpr_useful_test.exe || echo TEST FAILED: gpr_useful_test && exit /b
-echo(
-
 echo Building test gpr_cmdline_test
 cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\cmdline_test.c 
 link.exe /OUT:"test_bin\gpr_cmdline_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\cmdline_test.obj 
@@ -55,6 +39,14 @@ link.exe /OUT:"test_bin\gpr_host_port_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:
 echo(
 echo Running test gpr_host_port_test
 test_bin\gpr_host_port_test.exe || echo TEST FAILED: gpr_host_port_test && exit /b
+echo(
+
+echo Building test gpr_log_test
+cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\log_test.c 
+link.exe /OUT:"test_bin\gpr_log_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\log_test.obj 
+echo(
+echo Running test gpr_log_test
+test_bin\gpr_log_test.exe || echo TEST FAILED: gpr_log_test && exit /b
 echo(
 
 echo Building test gpr_slice_buffer_test
@@ -103,5 +95,13 @@ link.exe /OUT:"test_bin\gpr_time_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSO
 echo(
 echo Running test gpr_time_test
 test_bin\gpr_time_test.exe || echo TEST FAILED: gpr_time_test && exit /b
+echo(
+
+echo Building test gpr_useful_test
+cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\useful_test.c 
+link.exe /OUT:"test_bin\gpr_useful_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\useful_test.obj 
+echo(
+echo Running test gpr_useful_test
+test_bin\gpr_useful_test.exe || echo TEST FAILED: gpr_useful_test && exit /b
 echo(
 
