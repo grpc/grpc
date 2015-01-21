@@ -83,10 +83,7 @@ shared_context 'setup: tags' do
 
   def client_sends(call, sent = 'a message')
     req = ByteBuffer.new(sent)
-    call.start_invoke(@client_queue, @tag, @tag, @client_finished_tag)
-    ev = @client_queue.pluck(@tag, TimeConsts::INFINITE_FUTURE)
-    expect(ev).not_to be_nil
-    expect(ev.type).to be(INVOKE_ACCEPTED)
+    call.invoke(@client_queue,  @tag, @client_finished_tag)
     call.start_write(req, @tag)
     ev = @client_queue.pluck(@tag, TimeConsts::INFINITE_FUTURE)
     expect(ev).not_to be_nil
@@ -233,8 +230,7 @@ shared_examples 'GRPC metadata delivery works OK' do
         call.add_metadata(md)
 
         # Client begins a call OK
-        call.start_invoke(@client_queue, @tag, @tag, @client_finished_tag)
-        expect_next_event_on(@client_queue, INVOKE_ACCEPTED, @tag)
+        call.invoke(@client_queue, @tag, @client_finished_tag)
 
         # ... server has all metadata available even though the client did not
         # send a write

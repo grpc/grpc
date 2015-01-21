@@ -50,9 +50,7 @@ module Google
       #
       # BidiCall should only be created after a call is accepted.  That means
       # different things on a client and a server.  On the client, the call is
-      # accepted after call.start_invoke followed by receipt of the
-      # corresponding INVOKE_ACCEPTED.  On the server, this is after
-      # call.accept.
+      # accepted after call.invoke. On the server, this is after call.accept.
       #
       # #initialize cannot determine if the call is accepted or not; so if a
       # call that's not accepted is used here, the error won't be visible until
