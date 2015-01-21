@@ -40,10 +40,12 @@ var server;
 
 var port;
 
+var name_override = 'foo.test.google.com';
+
 describe('Interop tests', function() {
   before(function(done) {
     port_picker.nextAvailablePort(function(addr) {
-      server = interop_server.getServer(addr.substring(addr.indexOf(':') + 1));
+      server = interop_server.getServer(addr.substring(addr.indexOf(':') + 1), true);
       server.listen();
       port = addr;
       done();
@@ -51,22 +53,22 @@ describe('Interop tests', function() {
   });
   // This depends on not using a binary stream
   it.skip('should pass empty_unary', function(done) {
-    interop_client.runTest(port, null, 'empty_unary', false, done);
+    interop_client.runTest(port, name_override, 'empty_unary', true, done);
   });
   it('should pass large_unary', function(done) {
-    interop_client.runTest(port, null, 'large_unary', false, done);
+    interop_client.runTest(port, name_override, 'large_unary', true, done);
   });
   it('should pass client_streaming', function(done) {
-    interop_client.runTest(port, null, 'client_streaming', false, done);
+    interop_client.runTest(port, name_override, 'client_streaming', true, done);
   });
   it('should pass server_streaming', function(done) {
-    interop_client.runTest(port, null, 'server_streaming', false, done);
+    interop_client.runTest(port, name_override, 'server_streaming', true, done);
   });
   it('should pass ping_pong', function(done) {
-    interop_client.runTest(port, null, 'ping_pong', false, done);
+    interop_client.runTest(port, name_override, 'ping_pong', true, done);
   });
   // This depends on the new invoke API
   it.skip('should pass empty_stream', function(done) {
-    interop_client.runTest(port, null, 'empty_stream', false, done);
+    interop_client.runTest(port, name_override, 'empty_stream', true, done);
   });
 });

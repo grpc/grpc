@@ -13,6 +13,7 @@
     "underscore.string": "^3.0.0"
   },
   "devDependencies": {
+    "highland": "~2.2.0",
     "mocha": "~1.21.0",
     "minimist": "^1.1.0"
   },

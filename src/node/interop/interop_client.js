@@ -31,17 +31,30 @@
  *
  */
 
+var fs = require('fs');
+var path = require('path');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
 
 var assert = require('assert');
 
+/**
+ * Create a buffer filled with size zeroes
+ * @param {number} size The length of the buffer
+ * @return {Buffer} The new buffer
+ */
 function zeroBuffer(size) {
   var zeros = new Buffer(size);
   zeros.fill(0);
   return zeros;
 }
 
+/**
+ * Run the empty_unary test
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
 function emptyUnary(client, done) {
   var call = client.emptyCall({}, function(err, resp) {
     assert.ifError(err);
@@ -54,6 +67,12 @@ function emptyUnary(client, done) {
   });
 }
 
+/**
+ * Run the large_unary test
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
 function largeUnary(client, done) {
   var arg = {
     response_type: testProto.PayloadType.COMPRESSABLE,
@@ -76,6 +95,12 @@ function largeUnary(client, done) {
   });
 }
 
+/**
+ * Run the client_streaming test
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
 function clientStreaming(client, done) {
   var call = client.streamingInputCall(function(err, resp) {
     assert.ifError(err);
@@ -94,6 +119,12 @@ function clientStreaming(client, done) {
   call.end();
 }
 
+/**
+ * Run the server_streaming test
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
 function serverStreaming(client, done) {
   var arg = {
     response_type: testProto.PayloadType.COMPRESSABLE,
@@ -122,6 +153,12 @@ function serverStreaming(client, done) {
   });
 }
 
+/**
+ * Run the ping_pong test
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
 function pingPong(client, done) {
   var payload_sizes = [27182, 8, 1828, 45904];
   var response_sizes = [31415, 9, 2653, 58979];
@@ -160,6 +197,13 @@ function pingPong(client, done) {
   });
 }
 
+/**
+ * Run the empty_stream test.
+ * NOTE: This does not work, but should with the new invoke API
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
 function emptyStream(client, done) {
   var call = client.fullDuplexCall();
   call.on('status', function(status) {
@@ -174,6 +218,9 @@ function emptyStream(client, done) {
   call.end();
 }
 
+/**
+ * Map from test case names to test functions
+ */
 var test_cases = {
   empty_unary: emptyUnary,
   large_unary: largeUnary,
@@ -196,8 +243,17 @@ var test_cases = {
  */
 function runTest(address, host_override, test_case, tls, done) {
   // TODO(mlumish): enable TLS functionality
-  // TODO(mlumish): fix namespaces and service name
-  var client = new testProto.TestService(address);
+  var options = {};
+  if (tls) {
+    var ca_path = path.join(__dirname, '../test/data/ca.pem');
+    var ca_data = fs.readFileSync(ca_path);
+    var creds = grpc.Credentials.createSsl(ca_data);
+    options.credentials = creds;
+    if (host_override) {
+      options['grpc.ssl_target_name_override'] = host_override;
+    }
+  }
+  var client = new testProto.TestService(address, options);
 
   test_cases[test_case](client, done);
 }

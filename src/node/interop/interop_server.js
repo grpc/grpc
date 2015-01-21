@@ -31,21 +31,41 @@
  *
  */
 
+var fs = require('fs');
+var path = require('path');
 var _ = require('underscore');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
 var Server = grpc.buildServer([testProto.TestService.service]);
 
+/**
+ * Create a buffer filled with size zeroes
+ * @param {number} size The length of the buffer
+ * @return {Buffer} The new buffer
+ */
 function zeroBuffer(size) {
   var zeros = new Buffer(size);
   zeros.fill(0);
   return zeros;
 }
 
+/**
+ * Respond to an empty parameter with an empty response.
+ * NOTE: this currently does not work due to issue #137
+ * @param {Call} call Call to handle
+ * @param {function(Error, Object)} callback Callback to call with result
+ *     or error
+ */
 function handleEmpty(call, callback) {
   callback(null, {});
 }
 
+/**
+ * Handle a unary request by sending the requested payload
+ * @param {Call} call Call to handle
+ * @param {function(Error, Object)} callback Callback to call with result or
+ *     error
+ */
 function handleUnary(call, callback) {
   var req = call.request;
   var zeros = zeroBuffer(req.response_size);
@@ -58,6 +78,12 @@ function handleUnary(call, callback) {
   callback(null, {payload: {type: payload_type, body: zeros}});
 }
 
+/**
+ * Respond to a streaming call with the total size of all payloads
+ * @param {Call} call Call to handle
+ * @param {function(Error, Object)} callback Callback to call with result or
+ *     error
+ */
 function handleStreamingInput(call, callback) {
   var aggregate_size = 0;
   call.on('data', function(value) {
@@ -68,6 +94,10 @@ function handleStreamingInput(call, callback) {
   });
 }
 
+/**
+ * Respond to a payload request with a stream of the requested payloads
+ * @param {Call} call Call to handle
+ */
 function handleStreamingOutput(call) {
   var req = call.request;
   var payload_type = req.response_type;
@@ -87,6 +117,11 @@ function handleStreamingOutput(call) {
   call.end();
 }
 
+/**
+ * Respond to a stream of payload requests with a stream of payload responses as
+ * they arrive.
+ * @param {Call} call Call to handle
+ */
 function handleFullDuplex(call) {
   call.on('data', function(value) {
     var payload_type = value.response_type;
@@ -109,12 +144,35 @@ function handleFullDuplex(call) {
   });
 }
 
+/**
+ * Respond to a stream of payload requests with a stream of payload responses
+ * after all requests have arrived
+ * @param {Call} call Call to handle
+ */
 function handleHalfDuplex(call) {
   throw new Error('HalfDuplexCall not yet implemented');
 }
 
+/**
+ * Get a server object bound to the given port
+ * @param {string} port Port to which to bind
+ * @param {boolean} tls Indicates that the bound port should use TLS
+ * @return {Server} Server object bound to the support
+ */
 function getServer(port, tls) {
   // TODO(mlumish): enable TLS functionality
+  var options = {};
+  if (tls) {
+    var key_path = path.join(__dirname, '../test/data/server1.key');
+    var pem_path = path.join(__dirname, '../test/data/server1.pem');
+
+    var key_data = fs.readFileSync(key_path);
+    var pem_data = fs.readFileSync(pem_path);
+    var server_creds = grpc.ServerCredentials.createSsl(null,
+                                                        key_data,
+                                                        pem_data);
+    options.credentials = server_creds;
+  }
   var server = new Server({
     'grpc.testing.TestService' : {
       emptyCall: handleEmpty,
@@ -124,8 +182,8 @@ function getServer(port, tls) {
       fullDuplexCall: handleFullDuplex,
       halfDuplexCall: handleHalfDuplex
     }
-  });
-  server.bind('0.0.0.0:' + port);
+  }, options);
+  server.bind('0.0.0.0:' + port, tls);
   return server;
 }
 
