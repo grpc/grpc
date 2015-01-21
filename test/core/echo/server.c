@@ -32,6 +32,7 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include <signal.h>
 #include <stdio.h>
@@ -41,11 +42,13 @@
 
 #include "test/core/util/test_config.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/cmdline.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string.h>
 #include <grpc/support/time.h>
 #include "test/core/util/port.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
@@ -83,28 +86,52 @@ static void sigint_handler(int x) { got_sigint = 1; }
 
 int main(int argc, char **argv) {
   grpc_event *ev;
-  char *addr;
   call_state *s;
+  char *addr_buf = NULL;
+  gpr_cmdline *cl;
   int shutdown_started = 0;
   int shutdown_finished = 0;
 
-  grpc_test_init(argc, argv);
+  int secure = 0;
+  char *addr = NULL;
+
+  char *fake_argv[1];
+
+  GPR_ASSERT(argc >= 1);
+  fake_argv[0] = argv[0];
+  grpc_test_init(1, fake_argv);
 
   grpc_init();
   srand(clock());
 
-  if (argc == 2) {
-    addr = gpr_strdup(argv[1]);
-  } else {
-    gpr_join_host_port(&addr, "::", grpc_pick_unused_port_or_die());
+  cl = gpr_cmdline_create("echo server");
+  gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
+  gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
+  gpr_cmdline_parse(cl, argc, argv);
+  gpr_cmdline_destroy(cl);
+
+  if (addr == NULL) {
+    gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
+    addr = addr_buf;
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
   cq = grpc_completion_queue_create();
-  server = grpc_server_create(cq, NULL);
-  GPR_ASSERT(grpc_server_add_http2_port(server, addr));
-  gpr_free(addr);
+  if (secure) {
+    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
+        NULL, 0, test_server1_key, test_server1_key_size, test_server1_cert,
+        test_server1_cert_size);
+    server = grpc_secure_server_create(ssl_creds, cq, NULL);
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
+    grpc_server_credentials_release(ssl_creds);
+  } else {
+    server = grpc_server_create(cq, NULL);
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr));
+  }
   grpc_server_start(server);
+
+  gpr_free(addr_buf);
+  addr = addr_buf = NULL;
 
   request_call();
 
