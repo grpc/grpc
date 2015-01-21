@@ -203,7 +203,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(ev->data.invoke_accepted == GRPC_OP_OK);
   /* The /alpha or /beta calls started above could be invoked (but NOT both);
    * check this here */
-  live_call = (int)(gpr_intptr)ev->tag;
+  live_call = (int)(gpr_intptr) ev->tag;
   live_call_obj = live_call == 300 ? c1 : c2;
   grpc_event_finish(ev);
 

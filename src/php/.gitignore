@@ -16,3 +16,6 @@ install-sh
 libtool
 missing
 mkinstalldirs
+
+ext/grpc/ltmain.sh
+

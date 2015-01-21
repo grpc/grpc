@@ -31,30 +31,30 @@ require 'grpc'
 require 'grpc/generic/rpc_desc'
 require 'grpc/generic/service'
 
-
+# A test message that encodes/decodes using marshal/marshal.
 class GoodMsg
-  def self.marshal(o)
+  def self.marshal(_o)
     ''
   end
 
-  def self.unmarshal(o)
+  def self.unmarshal(_o)
     GoodMsg.new
   end
 end
 
+# A test message that encodes/decodes using encode/decode.
 class EncodeDecodeMsg
-  def self.encode(o)
+  def self.encode(_o)
     ''
   end
 
-  def self.decode(o)
+  def self.decode(_o)
     GoodMsg.new
   end
 end
 
 GenericService = GRPC::GenericService
 Dsl = GenericService::Dsl
-
 
 describe 'String#underscore' do
   it 'should convert CamelCase to underscore separated' do
@@ -66,20 +66,14 @@ describe 'String#underscore' do
 end
 
 describe Dsl do
-
   it 'can be included in new classes' do
-    blk = Proc.new do
-      c = Class.new { include Dsl }
-    end
+    blk = proc { Class.new { include Dsl } }
     expect(&blk).to_not raise_error
   end
-
 end
 
 describe GenericService do
-
   describe 'including it' do
-
     it 'adds a class method, rpc' do
       c = Class.new do
         include GenericService
@@ -144,9 +138,8 @@ describe GenericService do
   end
 
   describe '#include' do
-
     it 'raises if #rpc is missing an arg' do
-      blk = Proc.new do
+      blk = proc do
         Class.new do
           include GenericService
           rpc :AnRpc, GoodMsg
@@ -154,7 +147,7 @@ describe GenericService do
       end
       expect(&blk).to raise_error ArgumentError
 
-      blk = Proc.new do
+      blk = proc do
         Class.new do
           include GenericService
           rpc :AnRpc
@@ -164,9 +157,8 @@ describe GenericService do
     end
 
     describe 'when #rpc args are incorrect' do
-
       it 'raises if an arg does not have the marshal or unmarshal methods' do
-        blk = Proc.new do
+        blk = proc do
           Class.new do
             include GenericService
             rpc :AnRpc, GoodMsg, Object
@@ -176,13 +168,14 @@ describe GenericService do
       end
 
       it 'raises if a type arg only has the marshal method' do
+        # a bad message type with only a marshal method
         class OnlyMarshal
           def marshal(o)
             o
           end
         end
 
-        blk = Proc.new do
+        blk = proc do
           Class.new do
             include GenericService
             rpc :AnRpc, OnlyMarshal, GoodMsg
@@ -192,12 +185,13 @@ describe GenericService do
       end
 
       it 'raises if a type arg only has the unmarshal method' do
+        # a bad message type with only an unmarshal method
         class OnlyUnmarshal
           def self.ummarshal(o)
             o
           end
         end
-        blk = Proc.new do
+        blk = proc do
           Class.new do
             include GenericService
             rpc :AnRpc, GoodMsg, OnlyUnmarshal
@@ -208,7 +202,7 @@ describe GenericService do
     end
 
     it 'is ok for services that expect the default {un,}marshal methods' do
-      blk = Proc.new do
+      blk = proc do
         Class.new do
           include GenericService
           rpc :AnRpc, GoodMsg, GoodMsg
@@ -218,7 +212,7 @@ describe GenericService do
     end
 
     it 'is ok for services that override the default {un,}marshal methods' do
-      blk = Proc.new do
+      blk = proc do
         Class.new do
           include GenericService
           self.marshal_class_method = :encode
@@ -228,11 +222,9 @@ describe GenericService do
       end
       expect(&blk).not_to raise_error
     end
-
   end
 
   describe '#rpc_stub_class' do
-
     it 'generates a client class that defines any of the rpc methods' do
       s = Class.new do
         include GenericService
@@ -249,7 +241,6 @@ describe GenericService do
     end
 
     describe 'the generated instances' do
-
       it 'can be instanciated with just a hostname' do
         s = Class.new do
           include GenericService
@@ -277,13 +268,10 @@ describe GenericService do
         expect(o.methods).to include(:a_client_streamer)
         expect(o.methods).to include(:a_bidi_streamer)
       end
-
     end
-
   end
 
   describe '#assert_rpc_descs_have_methods' do
-
     it 'fails if there is no instance method for an rpc descriptor' do
       c1 = Class.new do
         include GenericService
@@ -310,16 +298,16 @@ describe GenericService do
         rpc :AClientStreamer, stream(GoodMsg), GoodMsg
         rpc :ABidiStreamer, stream(GoodMsg), stream(GoodMsg)
 
-        def an_rpc(req, call)
+        def an_rpc(_req, _call)
         end
 
-        def a_server_streamer(req, call)
+        def a_server_streamer(_req, _call)
         end
 
-        def a_client_streamer(call)
+        def a_client_streamer(_call)
         end
 
-        def a_bidi_streamer(call)
+        def a_bidi_streamer(_call)
         end
       end
       expect { c.assert_rpc_descs_have_methods }.to_not raise_error
@@ -330,7 +318,7 @@ describe GenericService do
         include GenericService
         rpc :AnRpc, GoodMsg, GoodMsg
 
-        def an_rpc(req, call)
+        def an_rpc(_req, _call)
         end
       end
       c = Class.new(base)
@@ -344,13 +332,11 @@ describe GenericService do
         rpc :AnRpc, GoodMsg, GoodMsg
       end
       c = Class.new(base) do
-        def an_rpc(req, call)
+        def an_rpc(_req, _call)
         end
       end
       expect { c.assert_rpc_descs_have_methods }.to_not raise_error
       expect(c.include?(GenericService)).to be(true)
     end
-
   end
-
 end

@@ -33,7 +33,8 @@ zend_module_entry grpc_module_entry = {
 #if ZEND_MODULE_API_NO >= 20010901
     STANDARD_MODULE_HEADER,
 #endif
-    "grpc", grpc_functions, PHP_MINIT(grpc), PHP_MSHUTDOWN(grpc), NULL, NULL,
+    "grpc",                    grpc_functions, PHP_MINIT(grpc),
+    PHP_MSHUTDOWN(grpc),       NULL,           NULL,
     PHP_MINFO(grpc),
 #if ZEND_MODULE_API_NO >= 20010901
     PHP_GRPC_VERSION,

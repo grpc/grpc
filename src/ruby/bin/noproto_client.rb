@@ -40,16 +40,18 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 require 'grpc'
 require 'optparse'
 
+# a simple non-protobuf message class.
 class NoProtoMsg
-  def self.marshal(o)
+  def self.marshal(_o)
     ''
   end
 
-  def self.unmarshal(o)
+  def self.unmarshal(_o)
     NoProtoMsg.new
   end
 end
 
+# service the uses the non-protobuf message class.
 class NoProtoService
   include GRPC::GenericService
   rpc :AnRPC, NoProtoMsg, NoProtoMsg
@@ -66,7 +68,7 @@ end
 
 def test_creds
   certs = load_test_certs
-  creds = GRPC::Core::Credentials.new(certs[0])
+  GRPC::Core::Credentials.new(certs[0])
 end
 
 def main
@@ -80,14 +82,14 @@ def main
       options['host'] = v
     end
     opts.on('-s', '--secure', 'access using test creds') do |v|
-      options['secure'] = true
+      options['secure'] = v
     end
   end.parse!
 
   if options['secure']
     stub_opts = {
       :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com',
+      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com'
     }
     p stub_opts
     p options['host']

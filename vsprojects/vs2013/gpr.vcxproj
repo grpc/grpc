@@ -74,9 +74,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\grpc\support\alloc.h" />
+    <ClInclude Include="..\..\include\grpc\support\atm.h" />
     <ClInclude Include="..\..\include\grpc\support\atm_gcc_atomic.h" />
     <ClInclude Include="..\..\include\grpc\support\atm_gcc_sync.h" />
-    <ClInclude Include="..\..\include\grpc\support\atm.h" />
     <ClInclude Include="..\..\include\grpc\support\atm_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\cancellable_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\cmdline.h" />
@@ -84,11 +84,11 @@
     <ClInclude Include="..\..\include\grpc\support\host_port.h" />
     <ClInclude Include="..\..\include\grpc\support\log.h" />
     <ClInclude Include="..\..\include\grpc\support\port_platform.h" />
-    <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />
     <ClInclude Include="..\..\include\grpc\support\slice.h" />
+    <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />
     <ClInclude Include="..\..\include\grpc\support\string.h" />
-    <ClInclude Include="..\..\include\grpc\support\sync_generic.h" />
     <ClInclude Include="..\..\include\grpc\support\sync.h" />
+    <ClInclude Include="..\..\include\grpc\support\sync_generic.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_posix.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\thd.h" />
@@ -119,9 +119,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\host_port.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\support\log_android.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\support\log.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\log_android.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\log_linux.c">
     </ClCompile>
@@ -131,9 +131,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\murmur_hash.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\support\slice_buffer.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\support\slice.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\slice_buffer.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\string.c">
     </ClCompile>

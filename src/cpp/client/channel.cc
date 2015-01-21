@@ -53,7 +53,7 @@
 
 namespace grpc {
 
-Channel::Channel(const grpc::string& target, const ChannelArguments& args)
+Channel::Channel(const grpc::string &target, const ChannelArguments &args)
     : target_(target) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
@@ -61,15 +61,15 @@ Channel::Channel(const grpc::string& target, const ChannelArguments& args)
       target_.c_str(), channel_args.num_args > 0 ? &channel_args : nullptr);
 }
 
-Channel::Channel(const grpc::string& target,
-                 const std::unique_ptr<Credentials>& creds,
-                 const ChannelArguments& args)
+Channel::Channel(const grpc::string &target,
+                 const std::unique_ptr<Credentials> &creds,
+                 const ChannelArguments &args)
     : target_(args.GetSslTargetNameOverride().empty()
                   ? target
                   : args.GetSslTargetNameOverride()) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
-  grpc_credentials* c_creds = creds ? creds->GetRawCreds() : nullptr;
+  grpc_credentials *c_creds = creds ? creds->GetRawCreds() : nullptr;
   c_channel_ = grpc_secure_channel_create(
       c_creds, target.c_str(),
       channel_args.num_args > 0 ? &channel_args : nullptr);
@@ -79,9 +79,9 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 namespace {
 // Pluck the finished event and set to status when it is not nullptr.
-void GetFinalStatus(grpc_completion_queue* cq, void* finished_tag,
-                    Status* status) {
-  grpc_event* ev =
+void GetFinalStatus(grpc_completion_queue *cq, void *finished_tag,
+                    Status *status) {
+  grpc_event *ev =
       grpc_completion_queue_pluck(cq, finished_tag, gpr_inf_future);
   if (status) {
     StatusCode error_code = static_cast<StatusCode>(ev->data.finished.status);
@@ -94,23 +94,23 @@ void GetFinalStatus(grpc_completion_queue* cq, void* finished_tag,
 }  // namespace
 
 // TODO(yangg) more error handling
-Status Channel::StartBlockingRpc(const RpcMethod& method,
-                                 ClientContext* context,
-                                 const google::protobuf::Message& request,
-                                 google::protobuf::Message* result) {
+Status Channel::StartBlockingRpc(const RpcMethod &method,
+                                 ClientContext *context,
+                                 const google::protobuf::Message &request,
+                                 google::protobuf::Message *result) {
   Status status;
-  grpc_call* call = grpc_channel_create_call(
+  grpc_call *call = grpc_channel_create_call(
       c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
-  grpc_event* ev;
-  void* finished_tag = reinterpret_cast<char*>(call);
-  void* invoke_tag = reinterpret_cast<char*>(call) + 1;
-  void* metadata_read_tag = reinterpret_cast<char*>(call) + 2;
-  void* write_tag = reinterpret_cast<char*>(call) + 3;
-  void* halfclose_tag = reinterpret_cast<char*>(call) + 4;
-  void* read_tag = reinterpret_cast<char*>(call) + 5;
+  grpc_event *ev;
+  void *finished_tag = reinterpret_cast<char *>(call);
+  void *invoke_tag = reinterpret_cast<char *>(call) + 1;
+  void *metadata_read_tag = reinterpret_cast<char *>(call) + 2;
+  void *write_tag = reinterpret_cast<char *>(call) + 3;
+  void *halfclose_tag = reinterpret_cast<char *>(call) + 4;
+  void *read_tag = reinterpret_cast<char *>(call) + 5;
 
-  grpc_completion_queue* cq = grpc_completion_queue_create();
+  grpc_completion_queue *cq = grpc_completion_queue_create();
   context->set_cq(cq);
   // add_metadata from context
   //
@@ -126,7 +126,7 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
     return status;
   }
   // write request
-  grpc_byte_buffer* write_buffer = nullptr;
+  grpc_byte_buffer *write_buffer = nullptr;
   success = SerializeProto(request, &write_buffer);
   if (!success) {
     grpc_call_cancel(call);
@@ -172,14 +172,14 @@ Status Channel::StartBlockingRpc(const RpcMethod& method,
   return status;
 }
 
-StreamContextInterface* Channel::CreateStream(
-    const RpcMethod& method, ClientContext* context,
-    const google::protobuf::Message* request,
-    google::protobuf::Message* result) {
-  grpc_call* call = grpc_channel_create_call(
+StreamContextInterface *Channel::CreateStream(
+    const RpcMethod &method, ClientContext *context,
+    const google::protobuf::Message *request,
+    google::protobuf::Message *result) {
+  grpc_call *call = grpc_channel_create_call(
       c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
-  grpc_completion_queue* cq = grpc_completion_queue_create();
+  grpc_completion_queue *cq = grpc_completion_queue_create();
   context->set_cq(cq);
   return new StreamContext(method, context, request, result);
 }

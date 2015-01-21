@@ -48,8 +48,8 @@ CompletionQueue::~CompletionQueue() { grpc_completion_queue_destroy(cq_); }
 
 void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }
 
-CompletionQueue::CompletionType CompletionQueue::Next(void** tag) {
-  grpc_event* ev;
+CompletionQueue::CompletionType CompletionQueue::Next(void **tag) {
+  grpc_event *ev;
   CompletionType return_type;
   bool success;
 
@@ -65,8 +65,8 @@ CompletionQueue::CompletionType CompletionQueue::Next(void** tag) {
     case GRPC_READ:
       *tag = ev->tag;
       if (ev->data.read) {
-        success =
-            static_cast<AsyncServerContext*>(ev->tag)->ParseRead(ev->data.read);
+        success = static_cast<AsyncServerContext *>(ev->tag)
+                      ->ParseRead(ev->data.read);
         return_type = success ? SERVER_READ_OK : SERVER_READ_ERROR;
       } else {
         return_type = SERVER_READ_ERROR;
