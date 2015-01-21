@@ -320,7 +320,7 @@ static void init_channel_elem(grpc_channel_element *elem,
         gettable_capacity =
             GPR_MAX(gettable_capacity * 3 / 2, gettable_capacity + 1);
         channeld->gettables =
-            gpr_realloc(channeld->gettables, gettable_capacity);
+            gpr_realloc(channeld->gettables, gettable_capacity * sizeof(gettable));
       }
       g = &channeld->gettables[channeld->gettable_count++];
       g->path = grpc_mdelem_from_strings(mdctx, ":path", p->path);
