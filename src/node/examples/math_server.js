@@ -119,10 +119,10 @@ function mathDivMany(stream) {
 
 var server = new Server({
   'math.Math' : {
-    Div: mathDiv,
-    Fib: mathFib,
-    Sum: mathSum,
-    DivMany: mathDivMany
+    div: mathDiv,
+    fib: mathFib,
+    sum: mathSum,
+    divMany: mathDivMany
   }
 });
 
