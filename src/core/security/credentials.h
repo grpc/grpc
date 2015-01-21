@@ -137,10 +137,17 @@ struct grpc_server_credentials {
   const char *type;
 };
 
-/* TODO(jboeuf): Have an ssl_server_config that can contain multiple key/cert
-   pairs. */
+typedef struct {
+  unsigned char **pem_private_keys;
+  size_t *pem_private_keys_sizes;
+  unsigned char **pem_cert_chains;
+  size_t *pem_cert_chains_sizes;
+  size_t num_key_cert_pairs;
+  unsigned char *pem_root_certs;
+  size_t pem_root_certs_size;
+} grpc_ssl_server_config;
 
-const grpc_ssl_config *grpc_ssl_server_credentials_get_config(
+const grpc_ssl_server_config *grpc_ssl_server_credentials_get_config(
     const grpc_server_credentials *ssl_creds);
 
 #endif /* __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__ */
