@@ -118,11 +118,7 @@ function GrpcClientStream(call, options) {
     self.emit('status', event.data);
   }, 0);
   this.on('finish', function() {
-    try {
-      call.writesDone(function() {});
-    } catch (e) {
-      debugger;
-    }
+    call.writesDone(function() {});
   });
   /**
    * Indicate that reads should start, and start them if the INVOKE_ACCEPTED
