@@ -38,6 +38,20 @@
 extern "C" {
 #endif
 
+/* HTTP GET support.
+
+   HTTP2 servers can publish statically generated text content served
+   via HTTP2 GET queries by publishing one or more grpc_http_server_page
+   elements via repeated GRPC_ARG_SERVE_OVER_HTTP elements in the servers
+   channel_args.
+
+   This is not:
+    - a general purpose web server
+    - particularly fast
+
+   It's useful for being able to serve up some static content (maybe some
+   javascript to be able to interact with your GRPC server?) */
+
 typedef struct {
   const char *path;
   const char *content_type;
