@@ -37,8 +37,6 @@ def load_test_certs
 end
 
 describe GRPC::Core::Channel do
-
-
   def create_test_cert
     GRPC::Core::Credentials.new(load_test_certs[0])
   end
@@ -48,7 +46,6 @@ describe GRPC::Core::Channel do
   end
 
   shared_examples '#new' do
-
     it 'take a host name without channel args' do
       expect { GRPC::Core::Channel.new('dummy_host', nil) }.not_to raise_error
     end
@@ -61,14 +58,14 @@ describe GRPC::Core::Channel do
     end
 
     it 'does not take a hash with bad values as channel args' do
-      blk = construct_with_args(:symbol => Object.new)
+      blk = construct_with_args(symbol: Object.new)
       expect(&blk).to raise_error TypeError
       blk = construct_with_args('1' => Hash.new)
       expect(&blk).to raise_error TypeError
     end
 
     it 'can take a hash with a symbol key as channel args' do
-      blk = construct_with_args(:a_symbol => 1)
+      blk = construct_with_args(a_symbol: 1)
       expect(&blk).to_not raise_error
     end
 
@@ -78,32 +75,30 @@ describe GRPC::Core::Channel do
     end
 
     it 'can take a hash with a string value as channel args' do
-      blk = construct_with_args(:a_symbol => '1')
+      blk = construct_with_args(a_symbol: '1')
       expect(&blk).to_not raise_error
     end
 
     it 'can take a hash with a symbol value as channel args' do
-      blk = construct_with_args(:a_symbol => :another_symbol)
+      blk = construct_with_args(a_symbol: :another_symbol)
       expect(&blk).to_not raise_error
     end
 
     it 'can take a hash with a numeric value as channel args' do
-      blk = construct_with_args(:a_symbol => 1)
+      blk = construct_with_args(a_symbol: 1)
       expect(&blk).to_not raise_error
     end
 
     it 'can take a hash with many args as channel args' do
-      args = Hash[127.times.collect { |x| [x.to_s, x] } ]
+      args = Hash[127.times.collect { |x| [x.to_s, x] }]
       blk = construct_with_args(args)
       expect(&blk).to_not raise_error
     end
-
   end
 
   describe '#new for secure channels' do
-
     def construct_with_args(a)
-      Proc.new { GRPC::Core::Channel.new('dummy_host', a, create_test_cert) }
+      proc { GRPC::Core::Channel.new('dummy_host', a, create_test_cert) }
     end
 
     it_behaves_like '#new'
@@ -113,7 +108,7 @@ describe GRPC::Core::Channel do
     it_behaves_like '#new'
 
     def construct_with_args(a)
-      Proc.new { GRPC::Core::Channel.new('dummy_host', a) }
+      proc { GRPC::Core::Channel.new('dummy_host', a) }
     end
   end
 
@@ -125,7 +120,7 @@ describe GRPC::Core::Channel do
 
       deadline = Time.now + 5
 
-      blk = Proc.new do
+      blk = proc do
         ch.create_call('dummy_method', 'dummy_host', deadline)
       end
       expect(&blk).to_not raise_error
@@ -138,12 +133,11 @@ describe GRPC::Core::Channel do
       ch.close
 
       deadline = Time.now + 5
-      blk = Proc.new do
+      blk = proc do
         ch.create_call('dummy_method', 'dummy_host', deadline)
       end
       expect(&blk).to raise_error(RuntimeError)
     end
-
   end
 
   describe '#destroy' do
@@ -151,7 +145,7 @@ describe GRPC::Core::Channel do
       port = find_unused_tcp_port
       host = "localhost:#{port}"
       ch = GRPC::Core::Channel.new(host, nil)
-      blk = Proc.new { ch.destroy }
+      blk = proc { ch.destroy }
       expect(&blk).to_not raise_error
     end
 
@@ -159,18 +153,16 @@ describe GRPC::Core::Channel do
       port = find_unused_tcp_port
       host = "localhost:#{port}"
       ch = GRPC::Core::Channel.new(host, nil)
-      blk = Proc.new { ch.destroy }
+      blk = proc { ch.destroy }
       blk.call
       expect(&blk).to_not raise_error
     end
   end
 
   describe '::SSL_TARGET' do
-
     it 'is a symbol' do
       expect(GRPC::Core::Channel::SSL_TARGET).to be_a(Symbol)
     end
-
   end
 
   describe '#close' do
@@ -178,7 +170,7 @@ describe GRPC::Core::Channel do
       port = find_unused_tcp_port
       host = "localhost:#{port}"
       ch = GRPC::Core::Channel.new(host, nil)
-      blk = Proc.new { ch.close }
+      blk = proc { ch.close }
       expect(&blk).to_not raise_error
     end
 
@@ -186,10 +178,9 @@ describe GRPC::Core::Channel do
       port = find_unused_tcp_port
       host = "localhost:#{port}"
       ch = GRPC::Core::Channel.new(host, nil)
-      blk = Proc.new { ch.close }
+      blk = proc { ch.close }
       blk.call
       expect(&blk).to_not raise_error
     end
   end
-
 end

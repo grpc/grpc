@@ -63,4 +63,4 @@ struct grpc_end2end_test_config {
 
 void grpc_end2end_tests(grpc_end2end_test_config config);
 
-#endif  /* __GRPC_TEST_END2END_END2END_TESTS_H__ */
+#endif /* __GRPC_TEST_END2END_END2END_TESTS_H__ */

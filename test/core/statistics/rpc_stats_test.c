@@ -45,7 +45,7 @@
 #include "test/core/util/test_config.h"
 
 /* Ensure all possible state transitions are called without causing problem */
-static void test_init_shutdown() {
+static void test_init_shutdown(void) {
   census_stats_store_init();
   census_stats_store_init();
   census_stats_store_shutdown();
@@ -53,7 +53,7 @@ static void test_init_shutdown() {
   census_stats_store_init();
 }
 
-static void test_create_and_destroy() {
+static void test_create_and_destroy(void) {
   census_rpc_stats* stats = NULL;
   census_aggregated_rpc_stats agg_stats = {0, NULL};
 
@@ -80,7 +80,7 @@ static void test_create_and_destroy() {
 #define ASSERT_NEAR(a, b) \
   GPR_ASSERT((a - b) * (a - b) < 1e-24 * (a + b) * (a + b))
 
-static void test_record_and_get_stats() {
+static void test_record_and_get_stats(void) {
   census_rpc_stats stats = {1, 2, 3, 4, 5.1, 6.2, 7.3, 8.4};
   census_op_id id;
   census_aggregated_rpc_stats agg_stats = {0, NULL};
@@ -149,7 +149,7 @@ static void test_record_and_get_stats() {
   census_shutdown();
 }
 
-static void test_record_stats_on_unknown_op_id() {
+static void test_record_stats_on_unknown_op_id(void) {
   census_op_id unknown_id = {0xDEAD, 0xBEEF};
   census_rpc_stats stats = {1, 2, 3, 4, 5.1, 6.2, 7.3, 8.4};
   census_aggregated_rpc_stats agg_stats = {0, NULL};
@@ -169,7 +169,7 @@ static void test_record_stats_on_unknown_op_id() {
 }
 
 /* Test that record stats is noop when trace store is uninitialized. */
-static void test_record_stats_with_trace_store_uninitialized() {
+static void test_record_stats_with_trace_store_uninitialized(void) {
   census_rpc_stats stats = {1, 2, 3, 4, 5.1, 6.2, 7.3, 8.4};
   census_op_id id = {0, 0};
   census_aggregated_rpc_stats agg_stats = {0, NULL};

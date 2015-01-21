@@ -41,7 +41,7 @@
 
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
-static void test_simple_int() {
+static void test_simple_int(void) {
   int x = 1;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "-foo", "3"};
@@ -56,7 +56,7 @@ static void test_simple_int() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_eq_int() {
+static void test_eq_int(void) {
   int x = 1;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "-foo=3"};
@@ -71,7 +71,7 @@ static void test_eq_int() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_2dash_int() {
+static void test_2dash_int(void) {
   int x = 1;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo", "3"};
@@ -86,7 +86,7 @@ static void test_2dash_int() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_2dash_eq_int() {
+static void test_2dash_eq_int(void) {
   int x = 1;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo=3"};
@@ -101,7 +101,7 @@ static void test_2dash_eq_int() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_simple_string() {
+static void test_simple_string(void) {
   char *x = NULL;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "-foo", "3"};
@@ -116,7 +116,7 @@ static void test_simple_string() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_eq_string() {
+static void test_eq_string(void) {
   char *x = NULL;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "-foo=3"};
@@ -131,7 +131,7 @@ static void test_eq_string() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_2dash_string() {
+static void test_2dash_string(void) {
   char *x = NULL;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo", "3"};
@@ -146,7 +146,7 @@ static void test_2dash_string() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_2dash_eq_string() {
+static void test_2dash_eq_string(void) {
   char *x = NULL;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo=3"};
@@ -161,7 +161,7 @@ static void test_2dash_eq_string() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_flag_on() {
+static void test_flag_on(void) {
   int x = 2;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo"};
@@ -176,7 +176,7 @@ static void test_flag_on() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_flag_no() {
+static void test_flag_no(void) {
   int x = 2;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--no-foo"};
@@ -191,7 +191,7 @@ static void test_flag_no() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_flag_val_1() {
+static void test_flag_val_1(void) {
   int x = 2;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo=1"};
@@ -206,7 +206,7 @@ static void test_flag_val_1() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_flag_val_0() {
+static void test_flag_val_0(void) {
   int x = 2;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo=0"};
@@ -221,7 +221,7 @@ static void test_flag_val_0() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_flag_val_true() {
+static void test_flag_val_true(void) {
   int x = 2;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo=true"};
@@ -236,7 +236,7 @@ static void test_flag_val_true() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_flag_val_false() {
+static void test_flag_val_false(void) {
   int x = 2;
   gpr_cmdline *cl;
   char *args[] = {(char *)__FUNCTION__, "--foo=false"};
@@ -251,7 +251,7 @@ static void test_flag_val_false() {
   gpr_cmdline_destroy(cl);
 }
 
-static void test_many() {
+static void test_many(void) {
   char *str = NULL;
   int x = 0;
   int flag = 2;

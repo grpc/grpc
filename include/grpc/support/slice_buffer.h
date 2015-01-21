@@ -81,4 +81,4 @@ void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb);
 }
 #endif
 
-#endif  /* __GRPC_SUPPORT_SLICE_BUFFER_H__ */
+#endif /* __GRPC_SUPPORT_SLICE_BUFFER_H__ */

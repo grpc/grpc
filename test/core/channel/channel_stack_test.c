@@ -76,7 +76,7 @@ static void channel_func(grpc_channel_element *elem,
   ++*(int *)(elem->channel_data);
 }
 
-static void test_create_channel_stack() {
+static void test_create_channel_stack(void) {
   const grpc_channel_filter filter = {
       call_func,   channel_func,
 

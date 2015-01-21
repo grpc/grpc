@@ -100,7 +100,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->client_cq);
 }
 
-static gpr_slice large_slice() {
+static gpr_slice large_slice(void) {
   gpr_slice slice = gpr_slice_malloc(1000000);
   memset(GPR_SLICE_START_PTR(slice), 0xab, GPR_SLICE_LENGTH(slice));
   return slice;
@@ -143,7 +143,8 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
                            deadline, NULL);
   cq_verify(v_server);
 
-  grpc_call_accept(s, f.server_cq, tag(102), 0);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 

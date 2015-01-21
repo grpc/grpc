@@ -47,17 +47,17 @@ class RpcServiceMethod;
 class ServerRpcHandler {
  public:
   // Takes ownership of async_server_context.
-  ServerRpcHandler(AsyncServerContext* async_server_context,
-                   RpcServiceMethod* method);
+  ServerRpcHandler(AsyncServerContext *async_server_context,
+                   RpcServiceMethod *method);
 
   void StartRpc();
 
  private:
   CompletionQueue::CompletionType WaitForNextEvent();
-  void FinishRpc(const Status& status);
+  void FinishRpc(const Status &status);
 
   std::unique_ptr<AsyncServerContext> async_server_context_;
-  RpcServiceMethod* method_;
+  RpcServiceMethod *method_;
   CompletionQueue cq_;
 };
 

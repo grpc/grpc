@@ -106,8 +106,7 @@ static void init_channel_elem(grpc_channel_element *elem,
   GPR_ASSERT(!is_last);
 }
 
-static void destroy_channel_elem(grpc_channel_element *elem) {
-}
+static void destroy_channel_elem(grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_client_surface_filter = {
     call_op,              channel_op,

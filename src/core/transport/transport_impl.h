@@ -84,4 +84,4 @@ struct grpc_transport {
   const grpc_transport_vtable *vtable;
 };
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_TRANSPORT_IMPL_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_TRANSPORT_IMPL_H__ */

@@ -41,8 +41,8 @@
 
 namespace grpc {
 
-ServerRpcHandler::ServerRpcHandler(AsyncServerContext* async_server_context,
-                                   RpcServiceMethod* method)
+ServerRpcHandler::ServerRpcHandler(AsyncServerContext *async_server_context,
+                                   RpcServiceMethod *method)
     : async_server_context_(async_server_context), method_(method) {}
 
 void ServerRpcHandler::StartRpc() {
@@ -60,8 +60,10 @@ void ServerRpcHandler::StartRpc() {
     async_server_context_->Accept(cq_.cq());
 
     // Allocate request and response.
-    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
-    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+    std::unique_ptr<google::protobuf::Message> request(
+        method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(
+        method_->AllocateResponseProto());
 
     // Read request
     async_server_context_->StartRead(request.get());
@@ -69,7 +71,7 @@ void ServerRpcHandler::StartRpc() {
     GPR_ASSERT(type == CompletionQueue::SERVER_READ_OK);
 
     // Run the application's rpc handler
-    MethodHandler* handler = method_->handler();
+    MethodHandler *handler = method_->handler();
     Status status = handler->RunHandler(MethodHandler::HandlerParameter(
         &user_context, request.get(), response.get()));
 
@@ -86,14 +88,16 @@ void ServerRpcHandler::StartRpc() {
   } else {
     // Allocate request and response.
     // TODO(yangg) maybe not allocate both when not needed?
-    std::unique_ptr<google::protobuf::Message> request(method_->AllocateRequestProto());
-    std::unique_ptr<google::protobuf::Message> response(method_->AllocateResponseProto());
+    std::unique_ptr<google::protobuf::Message> request(
+        method_->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(
+        method_->AllocateResponseProto());
 
     StreamContext stream_context(*method_, async_server_context_->call(),
                                  cq_.cq(), request.get(), response.get());
 
     // Run the application's rpc handler
-    MethodHandler* handler = method_->handler();
+    MethodHandler *handler = method_->handler();
     Status status = handler->RunHandler(MethodHandler::HandlerParameter(
         &user_context, request.get(), response.get(), &stream_context));
     if (status.IsOk() &&
@@ -106,17 +110,17 @@ void ServerRpcHandler::StartRpc() {
 }
 
 CompletionQueue::CompletionType ServerRpcHandler::WaitForNextEvent() {
-  void* tag = nullptr;
+  void *tag = nullptr;
   CompletionQueue::CompletionType type = cq_.Next(&tag);
   if (type != CompletionQueue::QUEUE_CLOSED &&
       type != CompletionQueue::RPC_END) {
-    GPR_ASSERT(static_cast<AsyncServerContext*>(tag) ==
+    GPR_ASSERT(static_cast<AsyncServerContext *>(tag) ==
                async_server_context_.get());
   }
   return type;
 }
 
-void ServerRpcHandler::FinishRpc(const Status& status) {
+void ServerRpcHandler::FinishRpc(const Status &status) {
   async_server_context_->StartWriteStatus(status);
   CompletionQueue::CompletionType type;
 

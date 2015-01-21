@@ -70,4 +70,4 @@ static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
 #define gpr_atm_acq_cas(p, o, n) (__sync_bool_compare_and_swap((p), (o), (n)))
 #define gpr_atm_rel_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 
-#endif  /* __GRPC_SUPPORT_ATM_GCC_SYNC_H__ */
+#endif /* __GRPC_SUPPORT_ATM_GCC_SYNC_H__ */

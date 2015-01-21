@@ -24,9 +24,9 @@
 #include "byte_buffer.h"
 
 /* Frees and destroys an instance of wrapped_grpc_call */
-void free_wrapped_grpc_call(void *object TSRMLS_DC){
-  wrapped_grpc_call *call = (wrapped_grpc_call*)object;
-  if(call->owned && call->wrapped != NULL){
+void free_wrapped_grpc_call(void *object TSRMLS_DC) {
+  wrapped_grpc_call *call = (wrapped_grpc_call *)object;
+  if (call->owned && call->wrapped != NULL) {
     grpc_call_destroy(call->wrapped);
   }
   efree(call);
@@ -34,38 +34,36 @@ void free_wrapped_grpc_call(void *object TSRMLS_DC){
 
 /* Initializes an instance of wrapped_grpc_call to be associated with an object
  * of a class specified by class_type */
-zend_object_value create_wrapped_grpc_call(
-    zend_class_entry *class_type TSRMLS_DC){
+zend_object_value create_wrapped_grpc_call(zend_class_entry *class_type
+                                               TSRMLS_DC) {
   zend_object_value retval;
   wrapped_grpc_call *intern;
 
-  intern = (wrapped_grpc_call*)emalloc(sizeof(wrapped_grpc_call));
+  intern = (wrapped_grpc_call *)emalloc(sizeof(wrapped_grpc_call));
   memset(intern, 0, sizeof(wrapped_grpc_call));
 
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
   retval.handle = zend_objects_store_put(
-      intern,
-      (zend_objects_store_dtor_t) zend_objects_destroy_object,
-      free_wrapped_grpc_call,
-      NULL TSRMLS_CC);
+      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
+      free_wrapped_grpc_call, NULL TSRMLS_CC);
   retval.handlers = zend_get_std_object_handlers();
   return retval;
 }
 
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the struct
    should be destroyed at the end of the object's lifecycle */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned){
+zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
   zval *call_object;
   MAKE_STD_ZVAL(call_object);
   object_init_ex(call_object, grpc_ce_call);
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      call_object TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
   call->wrapped = wrapped;
   return call_object;
 }
 
-zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements){
+zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements) {
   int i;
   zval *array;
   zval **data = NULL;
@@ -78,18 +76,16 @@ zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements){
   array_init(array);
   array_hash = Z_ARRVAL_P(array);
   grpc_metadata *elem;
-  for(i=0; i<count; i++){
+  for (i = 0; i < count; i++) {
     elem = &elements[i];
     key_len = strlen(elem->key);
-    str_key = ecalloc(key_len+1, sizeof(char));
+    str_key = ecalloc(key_len + 1, sizeof(char));
     memcpy(str_key, elem->key, key_len);
-    str_val = ecalloc(elem->value_length+1, sizeof(char));
+    str_val = ecalloc(elem->value_length + 1, sizeof(char));
     memcpy(str_val, elem->value, elem->value_length);
-    if(zend_hash_find(array_hash,
-                      str_key,
-                      key_len,
-                      (void**)data) == SUCCESS){
-      switch(Z_TYPE_P(*data)){
+    if (zend_hash_find(array_hash, str_key, key_len, (void **)data) ==
+        SUCCESS) {
+      switch (Z_TYPE_P(*data)) {
         case IS_STRING:
           MAKE_STD_ZVAL(inner_array);
           array_init(inner_array);
@@ -107,44 +103,36 @@ zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements){
           efree(str_val);
           return NULL;
       }
-      add_next_index_stringl(inner_array,
-                             str_val,
-                             elem->value_length,
-                             false);
+      add_next_index_stringl(inner_array, str_val, elem->value_length, false);
     } else {
-      add_assoc_stringl(array,
-                        str_key,
-                        str_val,
-                        elem->value_length,
-                        false);
+      add_assoc_stringl(array, str_key, str_val, elem->value_length, false);
     }
   }
   return array;
 }
 
-int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC,
-                                          int num_args,
+int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC, int num_args,
                                           va_list args,
-                                          zend_hash_key *hash_key){
+                                          zend_hash_key *hash_key) {
   grpc_call_error error_code;
-  zval **data = (zval**)elem;
+  zval **data = (zval **)elem;
   grpc_metadata metadata;
-  grpc_call *call = va_arg(args, grpc_call*);
+  grpc_call *call = va_arg(args, grpc_call *);
   gpr_uint32 flags = va_arg(args, gpr_uint32);
   const char *key;
   HashTable *inner_hash;
   /* We assume that either two args were passed, and we are in the recursive
      case (and the second argument is the key), or one arg was passed and
      hash_key is the string key. */
-  if(num_args > 2){
-    key = va_arg(args, const char*);
+  if (num_args > 2) {
+    key = va_arg(args, const char *);
   } else {
     /* TODO(mlumish): If possible, check that hash_key is a string */
     key = hash_key->arKey;
   }
-  switch(Z_TYPE_P(*data)){
+  switch (Z_TYPE_P(*data)) {
     case IS_STRING:
-      metadata.key = (char*)key;
+      metadata.key = (char *)key;
       metadata.value = Z_STRVAL_P(*data);
       metadata.value_length = Z_STRLEN_P(*data);
       error_code = grpc_call_add_metadata(call, &metadata, 0u);
@@ -153,11 +141,8 @@ int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC,
     case IS_ARRAY:
       inner_hash = Z_ARRVAL_P(*data);
       zend_hash_apply_with_arguments(inner_hash TSRMLS_CC,
-                                     php_grpc_call_add_metadata_array_walk,
-                                     3,
-                                     call,
-                                     flags,
-                                     key);
+                                     php_grpc_call_add_metadata_array_walk, 3,
+                                     call, flags, key);
       break;
     default:
       zend_throw_exception(zend_exception_get_default(),
@@ -174,27 +159,26 @@ int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC,
  * @param string $method The method to call
  * @param Timeval $absolute_deadline The deadline for completing the call
  */
-PHP_METHOD(Call, __construct){
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+PHP_METHOD(Call, __construct) {
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval *channel_obj;
   char *method;
   int method_len;
   zval *deadline_obj;
   /* "OsO" == 1 Object, 1 string, 1 Object */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "OsO",
-                           &channel_obj, grpc_ce_channel,
-                           &method, &method_len,
-                           &deadline_obj, grpc_ce_timeval) == FAILURE){
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO", &channel_obj,
+                            grpc_ce_channel, &method, &method_len,
+                            &deadline_obj, grpc_ce_timeval) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Call expects a Channel, a String, and a Timeval",
                          1 TSRMLS_CC);
     return;
   }
   wrapped_grpc_channel *channel =
-    (wrapped_grpc_channel*)zend_object_store_get_object(channel_obj TSRMLS_CC);
-  if(channel->wrapped == NULL) {
+      (wrapped_grpc_channel *)zend_object_store_get_object(
+          channel_obj TSRMLS_CC);
+  if (channel->wrapped == NULL) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Call cannot be constructed from a closed Channel",
                          1 TSRMLS_CC);
@@ -202,11 +186,10 @@ PHP_METHOD(Call, __construct){
   }
   add_property_zval(getThis(), "channel", channel_obj);
   wrapped_grpc_timeval *deadline =
-    (wrapped_grpc_timeval*)zend_object_store_get_object(deadline_obj TSRMLS_CC);
-  call->wrapped = grpc_channel_create_call(channel->wrapped,
-                                           method,
-                                           channel->target,
-                                           deadline->wrapped);
+      (wrapped_grpc_timeval *)zend_object_store_get_object(
+          deadline_obj TSRMLS_CC);
+  call->wrapped = grpc_channel_create_call(channel->wrapped, method,
+                                           channel->target, deadline->wrapped);
 }
 
 /**
@@ -218,17 +201,15 @@ PHP_METHOD(Call, __construct){
  * (optional)
  * @return Void
  */
-PHP_METHOD(Call, add_metadata){
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+PHP_METHOD(Call, add_metadata) {
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval *array;
   HashTable *array_hash;
   long flags = 0;
   /* "a|l" == 1 array, 1 optional long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "a|l",
-                           &array,
-                           &flags) == FAILURE){
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|l", &array, &flags) ==
+      FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "add_metadata expects an array and an optional long",
                          1 TSRMLS_CC);
@@ -236,10 +217,8 @@ PHP_METHOD(Call, add_metadata){
   }
   array_hash = Z_ARRVAL_P(array);
   zend_hash_apply_with_arguments(array_hash TSRMLS_CC,
-                                 php_grpc_call_add_metadata_array_walk,
-                                 2,
-                                 call->wrapped,
-                                 (gpr_uint32)flags);
+                                 php_grpc_call_add_metadata_array_walk, 2,
+                                 call->wrapped, (gpr_uint32)flags);
 }
 
 /**
@@ -252,7 +231,7 @@ PHP_METHOD(Call, add_metadata){
  * (optional)
  * @return Void
  */
-PHP_METHOD(Call, start_invoke){
+PHP_METHOD(Call, start_invoke) {
   grpc_call_error error_code;
   long tag1;
   long tag2;
@@ -260,31 +239,24 @@ PHP_METHOD(Call, start_invoke){
   zval *queue_obj;
   long flags = 0;
   /* "Olll|l" == 1 Object, 3 mandatory longs, 1 optional long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "Olll|l",
-                           &queue_obj, grpc_ce_completion_queue,
-                           &tag1,
-                           &tag2,
-                           &tag3,
-                           &flags) == FAILURE){
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Olll|l", &queue_obj,
+                            grpc_ce_completion_queue, &tag1, &tag2, &tag3,
+                            &flags) == FAILURE) {
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
         "start_invoke needs a CompletionQueue, 3 longs, and an optional long",
-                         1 TSRMLS_CC);
+        1 TSRMLS_CC);
     return;
   }
   add_property_zval(getThis(), "completion_queue", queue_obj);
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-    getThis() TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   wrapped_grpc_completion_queue *queue =
-    (wrapped_grpc_completion_queue*)zend_object_store_get_object(
-        queue_obj TSRMLS_CC);
-  error_code = grpc_call_start_invoke(call->wrapped,
-                                      queue->wrapped,
-                                      (void*)tag1,
-                                      (void*)tag2,
-                                      (void*)tag3,
-                                      (gpr_uint32)flags);
+      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
+          queue_obj TSRMLS_CC);
+  error_code =
+      grpc_call_start_invoke(call->wrapped, queue->wrapped, (void *)tag1,
+                             (void *)tag2, (void *)tag3, (gpr_uint32)flags);
   MAYBE_THROW_CALL_ERROR(start_invoke, error_code);
 }
 
@@ -298,15 +270,13 @@ PHP_METHOD(Call, start_invoke){
  * (optional)
  * @return Void
  */
-PHP_METHOD(Call, server_accept){
+PHP_METHOD(Call, server_accept) {
   long tag;
   zval *queue_obj;
   grpc_call_error error_code;
   /* "Ol|l" == 1 Object, 1 long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "Ol",
-                           &queue_obj, grpc_ce_completion_queue,
-                           &tag) == FAILURE){
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Ol", &queue_obj,
+                            grpc_ce_completion_queue, &tag) == FAILURE) {
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
         "server_accept expects a CompletionQueue, a long, and an optional long",
@@ -314,14 +284,13 @@ PHP_METHOD(Call, server_accept){
     return;
   }
   add_property_zval(getThis(), "completion_queue", queue_obj);
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   wrapped_grpc_completion_queue *queue =
-    (wrapped_grpc_completion_queue*)zend_object_store_get_object(
-        queue_obj TSRMLS_CC);
-  error_code = grpc_call_server_accept(call->wrapped,
-                                       queue->wrapped,
-                                       (void*)tag);
+      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
+          queue_obj TSRMLS_CC);
+  error_code =
+      grpc_call_server_accept(call->wrapped, queue->wrapped, (void *)tag);
   MAYBE_THROW_CALL_ERROR(server_accept, error_code);
 }
 
@@ -329,16 +298,14 @@ PHP_METHOD(Call, server_end_initial_metadata) {
   grpc_call_error error_code;
   long flags = 0;
   /* "|l" == 1 optional long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "|l",
-                           &flags) == FAILURE) {
-    zend_throw_exception(
-        spl_ce_InvalidArgumentException,
-        "server_end_initial_metadata expects an optional long",
-        1 TSRMLS_CC);
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags) ==
+      FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "server_end_initial_metadata expects an optional long",
+                         1 TSRMLS_CC);
   }
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   error_code = grpc_call_server_end_initial_metadata(call->wrapped, flags);
   MAYBE_THROW_CALL_ERROR(server_end_initial_metadata, error_code);
 }
@@ -347,9 +314,9 @@ PHP_METHOD(Call, server_end_initial_metadata) {
  * Called by clients to cancel an RPC on the server.
  * @return Void
  */
-PHP_METHOD(Call, cancel){
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+PHP_METHOD(Call, cancel) {
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   grpc_call_error error_code = grpc_call_cancel(call->wrapped);
   MAYBE_THROW_CALL_ERROR(cancel, error_code);
 }
@@ -362,30 +329,25 @@ PHP_METHOD(Call, cancel){
  * (optional)
  * @return Void
  */
-PHP_METHOD(Call, start_write){
+PHP_METHOD(Call, start_write) {
   grpc_call_error error_code;
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   char *buffer;
   int buffer_len;
   long tag;
   long flags = 0;
   /* "Ol|l" == 1 Object, 1 mandatory long, 1 optional long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "sl|l",
-                           &buffer, &buffer_len,
-                           &tag,
-                           &flags) == FAILURE){
-    zend_throw_exception(
-        spl_ce_InvalidArgumentException,
-        "start_write expects a string and an optional long",
-        1 TSRMLS_CC);
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|l", &buffer,
+                            &buffer_len, &tag, &flags) == FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "start_write expects a string and an optional long",
+                         1 TSRMLS_CC);
     return;
   }
   error_code = grpc_call_start_write(call->wrapped,
                                      string_to_byte_buffer(buffer, buffer_len),
-                                     (void*)tag,
-                                     (gpr_uint32)flags);
+                                     (void *)tag, (gpr_uint32)flags);
   MAYBE_THROW_CALL_ERROR(start_write, error_code);
 }
 
@@ -396,30 +358,26 @@ PHP_METHOD(Call, start_write){
  * @param long $tag The tag to associate with this status
  * @return Void
  */
-PHP_METHOD(Call, start_write_status){
+PHP_METHOD(Call, start_write_status) {
   grpc_call_error error_code;
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   long status_code;
   int status_details_length;
   long tag;
   char *status_details;
   /* "lsl" == 1 long, 1 string, 1 long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "lsl",
-                           &status_code,
-                           &status_details, &status_details_length,
-                           &tag) == FAILURE){
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lsl", &status_code,
+                            &status_details, &status_details_length,
+                            &tag) == FAILURE) {
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
-        "start_write_status expects a long, a string, and a long",
-        1 TSRMLS_CC);
+        "start_write_status expects a long, a string, and a long", 1 TSRMLS_CC);
     return;
   }
-  error_code = grpc_call_start_write_status(call->wrapped,
-                                            (grpc_status_code)status_code,
-                                            status_details,
-                                            (void*)tag);
+  error_code =
+      grpc_call_start_write_status(call->wrapped, (grpc_status_code)status_code,
+                                   status_details, (void *)tag);
   MAYBE_THROW_CALL_ERROR(start_write_status, error_code);
 }
 
@@ -427,19 +385,18 @@ PHP_METHOD(Call, start_write_status){
  * Indicate that there are no more messages to send
  * @return Void
  */
-PHP_METHOD(Call, writes_done){
+PHP_METHOD(Call, writes_done) {
   grpc_call_error error_code;
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   long tag;
   /* "l" == 1 long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &tag) == FAILURE){
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &tag) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "writes_done expects a long",
-                         1 TSRMLS_CC);
+                         "writes_done expects a long", 1 TSRMLS_CC);
     return;
   }
-  error_code = grpc_call_writes_done(call->wrapped, (void*)tag);
+  error_code = grpc_call_writes_done(call->wrapped, (void *)tag);
   MAYBE_THROW_CALL_ERROR(writes_done, error_code);
 }
 
@@ -449,37 +406,34 @@ PHP_METHOD(Call, writes_done){
  * @param long $tag The tag to associate with this read
  * @return Void
  */
-PHP_METHOD(Call, start_read){
+PHP_METHOD(Call, start_read) {
   grpc_call_error error_code;
-  wrapped_grpc_call *call = (wrapped_grpc_call*)zend_object_store_get_object(
-      getThis() TSRMLS_CC);
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
   long tag;
   /* "l" == 1 long */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &tag) == FAILURE){
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &tag) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "start_read expects a long",
-                         1 TSRMLS_CC);
+                         "start_read expects a long", 1 TSRMLS_CC);
     return;
   }
-  error_code = grpc_call_start_read(call->wrapped, (void*)tag);
+  error_code = grpc_call_start_read(call->wrapped, (void *)tag);
   MAYBE_THROW_CALL_ERROR(start_read, error_code);
 }
 
 static zend_function_entry call_methods[] = {
-  PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-  PHP_ME(Call, server_accept, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, server_end_initial_metadata, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, add_metadata, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, start_invoke, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, start_read, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, start_write, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, start_write_status, NULL, ZEND_ACC_PUBLIC)
-  PHP_ME(Call, writes_done, NULL, ZEND_ACC_PUBLIC)
-  PHP_FE_END
-};
+    PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
+    PHP_ME(Call, server_accept, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, server_end_initial_metadata, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, add_metadata, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_invoke, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_read, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_write, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, start_write_status, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, writes_done, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
-void grpc_init_call(TSRMLS_D){
+void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\Call", call_methods);
   ce.create_object = create_wrapped_grpc_call;

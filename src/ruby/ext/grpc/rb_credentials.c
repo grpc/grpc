@@ -40,7 +40,6 @@
 
 #include "rb_grpc.h"
 
-
 /* grpc_rb_credentials wraps a grpc_credentials.  It provides a
  * peer ruby object, 'mark' to minimize copying when a credential is
  * created from ruby. */
@@ -92,8 +91,7 @@ static VALUE grpc_rb_credentials_alloc(VALUE cls) {
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
   return Data_Wrap_Struct(cls, grpc_rb_credentials_mark,
-                          grpc_rb_credentials_free,
-                          wrapper);
+                          grpc_rb_credentials_free, wrapper);
 }
 
 /* Clones Credentials instances.
@@ -111,8 +109,7 @@ static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
   /* Raise an error if orig is not a credentials object or a subclass. */
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_credentials_free) {
-    rb_raise(rb_eTypeError, "not a %s",
-             rb_obj_classname(rb_cCredentials));
+    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(rb_cCredentials));
   }
 
   Data_Get_Struct(orig, grpc_rb_credentials, orig_cred);
@@ -238,14 +235,12 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
         RSTRING_PTR(pem_cert_chain), RSTRING_LEN(pem_cert_chain));
   } else if (pem_private_key == Qnil) {
     creds = grpc_ssl_credentials_create(
-        RSTRING_PTR(pem_root_certs), RSTRING_LEN(pem_root_certs),
-        NULL, 0,
+        RSTRING_PTR(pem_root_certs), RSTRING_LEN(pem_root_certs), NULL, 0,
         RSTRING_PTR(pem_cert_chain), RSTRING_LEN(pem_cert_chain));
   } else {
     creds = grpc_ssl_credentials_create(
         RSTRING_PTR(pem_root_certs), RSTRING_LEN(pem_root_certs),
-        RSTRING_PTR(pem_private_key), RSTRING_LEN(pem_private_key),
-        NULL, 0);
+        RSTRING_PTR(pem_private_key), RSTRING_LEN(pem_private_key), NULL, 0);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
@@ -265,15 +260,14 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
 VALUE rb_cCredentials = Qnil;
 
 void Init_google_rpc_credentials() {
-  rb_cCredentials = rb_define_class_under(rb_mGoogleRpcCore, "Credentials",
-                                          rb_cObject);
+  rb_cCredentials =
+      rb_define_class_under(rb_mGoogleRpcCore, "Credentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cCredentials, grpc_rb_credentials_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cCredentials, "initialize",
-                   grpc_rb_credentials_init, -1);
+  rb_define_method(rb_cCredentials, "initialize", grpc_rb_credentials_init, -1);
   rb_define_method(rb_cCredentials, "initialize_copy",
                    grpc_rb_credentials_init_copy, 1);
 
@@ -294,7 +288,7 @@ void Init_google_rpc_credentials() {
 }
 
 /* Gets the wrapped grpc_credentials from the ruby wrapper */
-grpc_credentials* grpc_rb_get_wrapped_credentials(VALUE v) {
+grpc_credentials *grpc_rb_get_wrapped_credentials(VALUE v) {
   grpc_rb_credentials *wrapper = NULL;
   Data_Get_Struct(v, grpc_rb_credentials, wrapper);
   return wrapper->wrapped;

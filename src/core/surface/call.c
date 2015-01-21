@@ -178,6 +178,7 @@ struct grpc_call {
   gpr_uint8 received_metadata;
   gpr_uint8 have_read;
   gpr_uint8 have_alarm;
+  gpr_uint8 got_status_code;
   /* The current outstanding read message tag (only valid if have_read == 1) */
   void *read_tag;
   void *metadata_tag;
@@ -225,6 +226,7 @@ grpc_call *grpc_call_create(grpc_channel *channel,
   call->have_write = 0;
   call->have_alarm = 0;
   call->received_metadata = 0;
+  call->got_status_code = 0;
   call->status_code =
       server_transport_data != NULL ? GRPC_STATUS_OK : GRPC_STATUS_UNKNOWN;
   call->status_details = NULL;
@@ -268,6 +270,19 @@ void grpc_call_destroy(grpc_call *c) {
   grpc_call_internal_unref(c);
 }
 
+static void maybe_set_status_code(grpc_call *call, gpr_uint32 status) {
+  if (!call->got_status_code) {
+    call->status_code = status;
+    call->got_status_code = 1;
+  }
+}
+
+static void maybe_set_status_details(grpc_call *call, grpc_mdstr *status) {
+  if (!call->status_details) {
+    call->status_details = grpc_mdstr_ref(status);
+  }
+}
+
 grpc_call_error grpc_call_cancel(grpc_call *c) {
   grpc_call_element *elem;
   grpc_call_op op;
@@ -282,6 +297,21 @@ grpc_call_error grpc_call_cancel(grpc_call *c) {
   elem->filter->call_op(elem, NULL, &op);
 
   return GRPC_CALL_OK;
+}
+
+grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
+                                             grpc_status_code status,
+                                             const char *description) {
+  grpc_mdstr *details =
+      description ? grpc_mdstr_from_string(c->metadata_context, description)
+                  : NULL;
+  gpr_mu_lock(&c->read_mu);
+  maybe_set_status_code(c, status);
+  if (details) {
+    maybe_set_status_details(c, details);
+  }
+  gpr_mu_unlock(&c->read_mu);
+  return grpc_call_cancel(c);
 }
 
 void grpc_call_execute_op(grpc_call *call, grpc_call_op *op) {
@@ -502,17 +532,6 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   elem = CALL_ELEM_FROM_CALL(call, 0);
   elem->filter->call_op(elem, NULL, &op);
 
-  return GRPC_CALL_OK;
-}
-
-grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
-                                 void *finished_tag, gpr_uint32 flags) {
-  grpc_call_error err;
-
-  err = grpc_call_server_accept(call, cq, finished_tag);
-  if (err != GRPC_CALL_OK) return err;
-  err = grpc_call_server_end_initial_metadata(call, flags);
-  if (err != GRPC_CALL_OK) return err;
   return GRPC_CALL_OK;
 }
 
@@ -782,7 +801,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
@@ -800,14 +819,11 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_call_op *op) {
   grpc_mdelem *md = op->data.metadata;
   grpc_mdstr *key = md->key;
   if (key == grpc_channel_get_status_string(call->channel)) {
-    call->status_code = decode_status(md);
+    maybe_set_status_code(call, decode_status(md));
     grpc_mdelem_unref(md);
     op->done_cb(op->user_data, GRPC_OP_OK);
   } else if (key == grpc_channel_get_message_string(call->channel)) {
-    if (call->status_details) {
-      grpc_mdstr_unref(call->status_details);
-    }
-    call->status_details = grpc_mdstr_ref(md->value);
+    maybe_set_status_details(call, md->value);
     grpc_mdelem_unref(md);
     op->done_cb(op->user_data, GRPC_OP_OK);
   } else {
@@ -881,7 +897,12 @@ grpc_metadata_buffer *grpc_call_get_metadata_buffer(grpc_call *call) {
 static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
   if (success) {
-    grpc_call_cancel(call);
+    if (call->is_client) {
+      grpc_call_cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                                   "Deadline Exceeded");
+    } else {
+      grpc_call_cancel(call);
+    }
   }
   grpc_call_internal_unref(call);
 }

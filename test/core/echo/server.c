@@ -56,7 +56,7 @@ typedef struct {
   gpr_intmax bytes_read;
 } call_state;
 
-static void request_call() {
+static void request_call(void) {
   call_state *tag = gpr_malloc(sizeof(*tag));
   gpr_ref_init(&tag->pending_ops, 2);
   tag->bytes_read = 0;
@@ -124,7 +124,9 @@ int main(int argc, char **argv) {
       case GRPC_SERVER_RPC_NEW:
         if (ev->call != NULL) {
           /* initial ops are already started in request_call */
-          grpc_call_accept(ev->call, cq, s, GRPC_WRITE_BUFFER_HINT);
+          grpc_call_server_accept(ev->call, cq, s);
+          grpc_call_server_end_initial_metadata(ev->call,
+                                                GRPC_WRITE_BUFFER_HINT);
           GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
           request_call();
         } else {

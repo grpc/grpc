@@ -36,7 +36,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -445,7 +444,7 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
   free(slices);
 }
 
-void run_tests() {
+void run_tests(void) {
   int i = 0;
 
   read_test(100, 8192);
@@ -470,7 +469,7 @@ void run_tests() {
   }
 }
 
-static void clean_up() {}
+static void clean_up(void) {}
 
 static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
     size_t slice_size) {
@@ -491,8 +490,6 @@ static grpc_endpoint_test_config configs[] = {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
-  /* disable SIGPIPE */
-  signal(SIGPIPE, SIG_IGN);
   run_tests();
   grpc_endpoint_tests(configs[0]);
   grpc_iomgr_shutdown();

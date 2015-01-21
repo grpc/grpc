@@ -31,6 +31,8 @@
  *
  */
 
+#include <sys/time.h>
+#include <sys/resource.h>
 #include <thread>
 
 #include <google/gflags.h>
@@ -41,7 +43,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
-#include "test/cpp/interop/test.pb.h"
+#include "test/cpp/qps/qpstest.pb.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -54,10 +56,16 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::testing::Payload;
 using grpc::testing::PayloadType;
+using grpc::testing::ServerStats;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
+using grpc::testing::StatsRequest;
 using grpc::testing::TestService;
 using grpc::Status;
+
+static double time_double(struct timeval* tv) {
+  return tv->tv_sec + 1e-6 * tv->tv_usec;
+}
 
 bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
@@ -73,6 +81,17 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
 
 class TestServiceImpl : public TestService::Service {
  public:
+  Status CollectServerStats(ServerContext* context, const StatsRequest*,
+                            ServerStats* response) {
+    struct rusage usage;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    getrusage(RUSAGE_SELF, &usage);
+    response->set_time_now(time_double(&tv));
+    response->set_time_user(time_double(&usage.ru_utime));
+    response->set_time_system(time_double(&usage.ru_stime));
+    return Status::OK;
+  }
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) {
     if (request->has_response_size() && request->response_size() > 0) {

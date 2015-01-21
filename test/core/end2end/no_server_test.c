@@ -62,8 +62,8 @@ int main(int argc, char **argv) {
   /* verify that all tags get completed */
   cq_expect_invoke_accepted(cqv, tag(1), GRPC_OP_ERROR);
   cq_expect_client_metadata_read(cqv, tag(2), NULL);
-  cq_expect_finished_with_status(cqv, tag(3), GRPC_STATUS_CANCELLED, NULL,
-                                 NULL);
+  cq_expect_finished_with_status(cqv, tag(3), GRPC_STATUS_DEADLINE_EXCEEDED,
+                                 "Deadline Exceeded", NULL);
   cq_verify(cqv);
 
   grpc_completion_queue_shutdown(cq);

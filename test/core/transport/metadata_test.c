@@ -45,7 +45,7 @@
 /* a large number */
 #define MANY 1000000
 
-static void test_no_op() {
+static void test_no_op(void) {
   grpc_mdctx *ctx;
 
   LOG_TEST();
@@ -54,7 +54,7 @@ static void test_no_op() {
   grpc_mdctx_orphan(ctx);
 }
 
-static void test_create_string() {
+static void test_create_string(void) {
   grpc_mdctx *ctx;
   grpc_mdstr *s1, *s2, *s3;
 
@@ -74,7 +74,7 @@ static void test_create_string() {
   grpc_mdstr_unref(s3);
 }
 
-static void test_create_metadata() {
+static void test_create_metadata(void) {
   grpc_mdctx *ctx;
   grpc_mdelem *m1, *m2, *m3;
 
@@ -97,7 +97,7 @@ static void test_create_metadata() {
   grpc_mdctx_orphan(ctx);
 }
 
-static void test_create_many_ephemeral_metadata() {
+static void test_create_many_ephemeral_metadata(void) {
   grpc_mdctx *ctx;
   char buffer[256];
   long i;
@@ -118,7 +118,7 @@ static void test_create_many_ephemeral_metadata() {
   grpc_mdctx_orphan(ctx);
 }
 
-static void test_create_many_persistant_metadata() {
+static void test_create_many_persistant_metadata(void) {
   grpc_mdctx *ctx;
   char buffer[256];
   long i;
@@ -149,7 +149,7 @@ static void test_create_many_persistant_metadata() {
   gpr_free(created);
 }
 
-static void test_spin_creating_the_same_thing() {
+static void test_spin_creating_the_same_thing(void) {
   grpc_mdctx *ctx;
 
   LOG_TEST();
@@ -173,7 +173,7 @@ static void test_spin_creating_the_same_thing() {
   grpc_mdctx_orphan(ctx);
 }
 
-static void test_things_stick_around() {
+static void test_things_stick_around(void) {
   grpc_mdctx *ctx;
   int i, j;
   char buffer[64];
@@ -220,7 +220,7 @@ static void test_things_stick_around() {
   gpr_free(shuf);
 }
 
-static void test_slices_work() {
+static void test_slices_work(void) {
   /* ensure no memory leaks when switching representation from mdstr to slice */
   grpc_mdctx *ctx;
   grpc_mdstr *str;
@@ -245,7 +245,7 @@ static void test_slices_work() {
   grpc_mdctx_orphan(ctx);
 }
 
-static void test_base64_and_huffman_works() {
+static void test_base64_and_huffman_works(void) {
   grpc_mdctx *ctx;
   grpc_mdstr *str;
   gpr_slice slice1;

@@ -21,16 +21,15 @@ grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
   return grpc_byte_buffer_create(&slice, 1);
 }
 
-void byte_buffer_to_string(grpc_byte_buffer *buffer,
-                           char **out_string,
+void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
                            size_t *out_length) {
   size_t length = grpc_byte_buffer_length(buffer);
-  char *string = ecalloc(length+1, sizeof(char));
+  char *string = ecalloc(length + 1, sizeof(char));
   size_t offset = 0;
   grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
   gpr_slice next;
-  while(grpc_byte_buffer_reader_next(reader, &next) != 0) {
-    memcpy(string+offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
+  while (grpc_byte_buffer_reader_next(reader, &next) != 0) {
+    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
   }
   *out_string = string;

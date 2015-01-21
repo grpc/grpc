@@ -32,10 +32,15 @@ if test "$PHP_GRPC" != "no"; then
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_ADD_LIBRARY(pthread)
 
+  PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
+  PHP_ADD_LIBRARY(dl)
+
   PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(rt)
 
-  PHP_ADD_LIBPATH($GRPC_DIR/lib)
+  GRPC_LIBDIR=$GRPC_DIR/${GRPC_LIB_SUBDIR-lib}
+
+  PHP_ADD_LIBPATH($GRPC_LIBDIR)
 
   PHP_CHECK_LIBRARY(gpr,gpr_now,
   [
@@ -45,17 +50,8 @@ if test "$PHP_GRPC" != "no"; then
   ],[
     AC_MSG_ERROR([wrong gpr lib version or lib not found])
   ],[
-    -L$GRPC_DIR/lib
+    -L$GRPC_LIBDIR
   ])
-
-  PHP_ADD_LIBRARY(event,,GRPC_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(event)
-
-  PHP_ADD_LIBRARY(event_pthreads,,GRPC_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(event_pthreads)
-
-  PHP_ADD_LIBRARY(event_core,,GRPC_SHARED_LIBADD)
-  PHP_ADD_LIBRARY(event_core)
 
   PHP_CHECK_LIBRARY(grpc,grpc_channel_destroy,
   [
@@ -65,7 +61,7 @@ if test "$PHP_GRPC" != "no"; then
   ],[
     AC_MSG_ERROR([wrong grpc lib version or lib not found])
   ],[
-    -L$GRPC_DIR/lib
+    -L$GRPC_LIBDIR
   ])
 
   PHP_SUBST(GRPC_SHARED_LIBADD)

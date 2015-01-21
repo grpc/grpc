@@ -17,9 +17,9 @@
 #include "grpc/grpc_security.h"
 
 /* Frees and destroys an instance of wrapped_grpc_credentials */
-void free_wrapped_grpc_credentials(void *object TSRMLS_DC){
-  wrapped_grpc_credentials *creds = (wrapped_grpc_credentials*)object;
-  if(creds->wrapped != NULL) {
+void free_wrapped_grpc_credentials(void *object TSRMLS_DC) {
+  wrapped_grpc_credentials *creds = (wrapped_grpc_credentials *)object;
+  if (creds->wrapped != NULL) {
     grpc_credentials_release(creds->wrapped);
   }
   efree(creds);
@@ -27,32 +27,31 @@ void free_wrapped_grpc_credentials(void *object TSRMLS_DC){
 
 /* Initializes an instance of wrapped_grpc_credentials to be associated with an
  * object of a class specified by class_type */
-zend_object_value create_wrapped_grpc_credentials(
-    zend_class_entry *class_type TSRMLS_DC){
+zend_object_value create_wrapped_grpc_credentials(zend_class_entry *class_type
+                                                      TSRMLS_DC) {
   zend_object_value retval;
   wrapped_grpc_credentials *intern;
 
-  intern = (wrapped_grpc_credentials*)emalloc(sizeof(wrapped_grpc_credentials));
+  intern =
+      (wrapped_grpc_credentials *)emalloc(sizeof(wrapped_grpc_credentials));
   memset(intern, 0, sizeof(wrapped_grpc_credentials));
 
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
   retval.handle = zend_objects_store_put(
-      intern,
-      (zend_objects_store_dtor_t) zend_objects_destroy_object,
-      free_wrapped_grpc_credentials,
-      NULL TSRMLS_CC);
+      intern, (zend_objects_store_dtor_t)zend_objects_destroy_object,
+      free_wrapped_grpc_credentials, NULL TSRMLS_CC);
   retval.handlers = zend_get_std_object_handlers();
   return retval;
 }
 
-zval *grpc_php_wrap_credentials(grpc_credentials *wrapped){
+zval *grpc_php_wrap_credentials(grpc_credentials *wrapped) {
   zval *credentials_object;
   MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_credentials);
   wrapped_grpc_credentials *credentials =
-    (wrapped_grpc_credentials*)zend_object_store_get_object(
-        credentials_object TSRMLS_CC);
+      (wrapped_grpc_credentials *)zend_object_store_get_object(
+          credentials_object TSRMLS_CC);
   credentials->wrapped = wrapped;
   return credentials_object;
 }
@@ -61,7 +60,7 @@ zval *grpc_php_wrap_credentials(grpc_credentials *wrapped){
  * Create a default credentials object.
  * @return Credentials The new default credentials object
  */
-PHP_METHOD(Credentials, createDefault){
+PHP_METHOD(Credentials, createDefault) {
   grpc_credentials *creds = grpc_default_credentials_create();
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
@@ -76,7 +75,7 @@ PHP_METHOD(Credentials, createDefault){
  *     (optional)
  * @return Credentials The new SSL credentials object
  */
-PHP_METHOD(Credentials, createSsl){
+PHP_METHOD(Credentials, createSsl) {
   char *pem_root_certs;
   char *pem_private_key = NULL;
   char *pem_cert_chain = NULL;
@@ -84,20 +83,18 @@ PHP_METHOD(Credentials, createSsl){
   int root_certs_length, private_key_length = 0, cert_chain_length = 0;
 
   /* "s|s!s! == 1 string, 2 optional nullable strings */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "s|s!s!",
-                           &pem_root_certs, &root_certs_length,
-                           &pem_private_key, &private_key_length,
-                           &pem_cert_chain, &cert_chain_length) == FAILURE) {
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!s!",
+                            &pem_root_certs, &root_certs_length,
+                            &pem_private_key, &private_key_length,
+                            &pem_cert_chain, &cert_chain_length) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createSsl expects 1 to 3 strings",
-                         1 TSRMLS_CC);
+                         "createSsl expects 1 to 3 strings", 1 TSRMLS_CC);
     return;
   }
   grpc_credentials *creds = grpc_ssl_credentials_create(
-      (unsigned char*)pem_root_certs, (size_t)root_certs_length,
-      (unsigned char*)pem_private_key, (size_t)private_key_length,
-      (unsigned char*)pem_cert_chain, (size_t)cert_chain_length);
+      (unsigned char *)pem_root_certs, (size_t)root_certs_length,
+      (unsigned char *)pem_private_key, (size_t)private_key_length,
+      (unsigned char *)pem_cert_chain, (size_t)cert_chain_length);
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
@@ -108,28 +105,26 @@ PHP_METHOD(Credentials, createSsl){
  * @param Credentials cred2 The second credential
  * @return Credentials The new composite credentials object
  */
-PHP_METHOD(Credentials, createComposite){
+PHP_METHOD(Credentials, createComposite) {
   zval *cred1_obj;
   zval *cred2_obj;
 
   /* "OO" == 3 Objects */
-  if(zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC,
-                           "OO",
-                           &cred1_obj, grpc_ce_credentials,
-                           &cred2_obj, grpc_ce_credentials) == FAILURE) {
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OO", &cred1_obj,
+                            grpc_ce_credentials, &cred2_obj,
+                            grpc_ce_credentials) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createComposite expects 2 Credentials",
-                         1 TSRMLS_CC);
+                         "createComposite expects 2 Credentials", 1 TSRMLS_CC);
     return;
   }
   wrapped_grpc_credentials *cred1 =
-      (wrapped_grpc_credentials*)zend_object_store_get_object(
+      (wrapped_grpc_credentials *)zend_object_store_get_object(
           cred1_obj TSRMLS_CC);
   wrapped_grpc_credentials *cred2 =
-      (wrapped_grpc_credentials*)zend_object_store_get_object(
+      (wrapped_grpc_credentials *)zend_object_store_get_object(
           cred2_obj TSRMLS_CC);
-  grpc_credentials *creds = grpc_composite_credentials_create(cred1->wrapped,
-                                                              cred2->wrapped);
+  grpc_credentials *creds =
+      grpc_composite_credentials_create(cred1->wrapped, cred2->wrapped);
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
@@ -155,15 +150,15 @@ PHP_METHOD(Credentials, createFake) {
 }
 
 static zend_function_entry credentials_methods[] = {
-  PHP_ME(Credentials, createDefault, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-  PHP_ME(Credentials, createSsl, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-  PHP_ME(Credentials, createComposite, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-  PHP_ME(Credentials, createGce, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-  PHP_ME(Credentials, createFake, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-  PHP_FE_END
-};
+    PHP_ME(Credentials, createDefault, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Credentials, createSsl, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Credentials, createComposite, NULL,
+           ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Credentials, createGce, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Credentials, createFake, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_FE_END};
 
-void grpc_init_credentials(TSRMLS_D){
+void grpc_init_credentials(TSRMLS_D) {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\Credentials", credentials_methods);
   ce.create_object = create_wrapped_grpc_credentials;

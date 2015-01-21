@@ -18,6 +18,20 @@
 #  * on startup, some of the docker images will be regenerated automatically
 # - used grpc_update_image to update images via that instance
 
+
+# Creates the ssh key file expect by 'gcloud compute ssh' if it does not exist.
+#
+# Allows gcloud ssh commands to run on freshly started docker instances.
+_grpc_ensure_gcloud_ssh() {
+  local default_key_file="$HOME/.ssh/google_compute_engine"
+  [ -f $default_key_file ] || {
+    ssh-keygen -f $default_key_file -N '' > /dev/null || {
+      echo "could not precreate $default_key_file" 1>&2
+      return 1
+    }
+  }
+}
+
 # Pushes a dockerfile dir to cloud storage.
 #
 # dockerfile is expected to the parent directory to a nunber of directoies each
@@ -50,6 +64,7 @@ grpc_push_dockerfiles() {
 # Adds the user to docker group on a GCE instance, and restarts the docker
 # daemon
 grpc_add_docker_user() {
+  _grpc_ensure_gcloud_ssh || return 1;
   local host=$1
   [[ -n $host ]] || {
     echo "$FUNCNAME: missing arg: host" 1>&2
@@ -70,66 +85,104 @@ grpc_add_docker_user() {
   gcloud compute $project_opt ssh $zone_opt $host --command "$ssh_cmd"
 }
 
+_grpc_update_image_args() {
+  # default the host, root storage uri and docker file root
+  grpc_gs_root='gs://tmp-grpc-dev/admin/'
+  grpc_dockerfile_root='tools/dockerfile'
+  grpc_gce_script_root='tools/gce_setup'
+  host='grpc-docker-builder'
+
+  # see if -p or -z is used to override the the project or zone
+  local OPTIND
+  local OPTARG
+  while getopts :r:d:h name
+  do
+    case $name in
+      d)  grpc_dockerfile_root=$OPTARG ;;
+      r)  grpc_gs_root=$OPTARG ;;
+      s)  grpc_gce_script_root=$OPTARG ;;
+      h)  host=$OPTARG ;;
+      :)  continue ;; # ignore -r or -d without args, just use the defaults
+      \?)  echo "-$OPTARG: unknown flag; it's ignored" 1>&2;  continue ;;
+    esac
+  done
+  shift $((OPTIND-1))
+
+  [[ -d $grpc_dockerfile_root ]] || {
+    echo "Could not locate dockerfile root dir: $grpc_dockerfile_root" 1>&2
+    return 1
+  }
+
+  [[ -d $grpc_gce_script_root ]] || {
+    echo "Could not locate gce script dir: $grpc_gce_script_root" 1>&2
+    return 1
+  }
+
+  # the suffix is required and can't be defaulted
+  # the suffix has two roles:
+  # - images are labelled grpc/<label_suffix>
+  # - the dockerfile is for an image is dockerfile_root/grpc_<label_suffix>
+  [[ -n $1 ]] && {
+    label_suffix=$1
+    shift
+  } || {
+    echo "$FUNCNAME: missing arg: label_suffix (e.g cxx,base,ruby,java_base)" 1>&2
+    return 1
+  }
+}
+
 # Updates a docker image specified in a local dockerfile via the docker
 # container GCE instance.
 #
 # the docker container GCE instance
 # - should have been setup using ./new_grpc_docker_instance
-# - so will have /var/local/startup_scripts/shared_startup_funcs.sh, a copy of
-#   ./shared_startup_funcs.sh
 #
-# grpc_update_image gs://bucket/path/to/dockerfile parent \.
-#   image_label path/to/docker_dir docker_gce_instance [project] [zone]
+# There are options for
+#
+# call-seq:
+#   grpc_update_image php_base
+#   grpc_update_image cxx  # rebuilds the cxx image
+#
 grpc_update_image() {
-  local gs_root_uri=$1
-  [[ -n $gs_root_uri ]] || {
-    echo "$FUNCNAME: missing arg: gs_root_uri" 1>&2
-    return 1
-  }
+  _grpc_ensure_gcloud_ssh || return 1;
 
-  local image_label=$2
-  [[ -n $image_label ]] || {
-    echo "$FUNCNAME: missing arg: host" 1>&2
-    return 1
-  }
+  # set up by _grpc_update_args
+  local host grpc_gs_root grpc_gce_script_root grpc_dockerfile_root label_suffix
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  _grpc_set_project_and_zone -f _grpc_update_image_args "$@" || return 1
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  local image_label="grpc/$label_suffix"
+  local docker_dir_basename="grpc_$label_suffix"
+  local gce_docker_dir="/var/local/dockerfile/${docker_dir_basename}"
 
-  local docker_dir=$3
-  [[ -n $docker_dir ]] || {
-    echo "$FUNCNAME: missing arg: docker_dir" 1>&2
-    return 1
-  }
-  [[ -d $docker_dir ]] || {
-    echo "could find directory $docker_dir" 1>&2
-    return 1
-  }
-  local docker_parent_dir=$(dirname $docker_dir)
-  local gce_docker_dir="/var/local/dockerfile/$(basename $docker_dir)"
-
-  local host=$4
-  [[ -n $host ]] || {
-    echo "$FUNCNAME: missing arg: host" 1>&2
-    return 1
-  }
-
-  local project=$5
-  local project_opt=''
-  [[ -n $project ]] && project_opt=" --project $project"
-
-  local zone=$6
-  local zone_opt=''
-  [[ -n $zone ]] && zone_opt=" --zone $zone"
-
-  local func_lib="/var/local/startup_scripts/shared_startup_funcs.sh"
-  local ssh_cmd="source $func_lib"
+  # Set up and run the SSH command that builds the image
+  local func_lib="shared_startup_funcs.sh"
+  local gce_func_lib="/var/local/startup_scripts/$func_lib"
+  local ssh_cmd="source $gce_func_lib"
   local ssh_cmd+=" && grpc_dockerfile_refresh $image_label $gce_docker_dir"
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
 
-  grpc_push_dockerfiles $docker_parent_dir $gs_root_uri || return 1
+  # Update the remote copy of the GCE func library.
+  local src_func_lib="$grpc_gce_script_root/$func_lib"
+  local rmt_func_lib="$host:$gce_func_lib"
+  gcloud compute copy-files $src_func_lib $rmt_func_lib $project_opt $zone_opt || return 1
+
+  # Update the remote version of the docker func.
+  local src_docker_dir="$grpc_dockerfile_root/$docker_dir_basename"
+  local rmt_docker_root="$host:/var/local/dockerfile"
+  gcloud compute copy-files $src_docker_dir $rmt_docker_root $project_opt $zone_opt || return 1
+
   gcloud compute $project_opt ssh $zone_opt $host --command "$ssh_cmd"
 }
 
 # gce_has_instance checks if a project contains a named instance
 #
-# gce_has_instance <project> <instance_name>
+# call-seq:
+#   gce_has_instance <project> <instance_name>
 gce_has_instance() {
   local project=$1
   [[ -n $project ]] || { echo "$FUNCNAME: missing arg: project" 1>&2; return 1; }
@@ -186,13 +239,19 @@ gce_find_internal_ip() {
 # - is set to the value gcloud config value for project if that's present
 # - it defaults to stoked-keyword-656 (the grpc cloud testing project)
 # - it can be overridden by passing -p <other value>
-grpc_set_project_and_zone() {
+_grpc_set_project_and_zone() {
+  # can be set to 1 by passing -n in the args
   dry_run=0
+
+  # by default; grpc_zone == gcloud config value || asia-east1-a
+  # - can be assigned via -p<project> in the args
   grpc_zone=$(gcloud config list compute/zone --format text \
     | sed -e 's/ \+/ /g' | cut -d' ' -f 2)
   # pick a known zone as a default
   [[ $grpc_zone == 'None' ]] && grpc_zone='asia-east1-a'
 
+  # grpc_project == gcloud config value || stoked-keyword-656
+  # - can be assigned via -z<zone> in the args
   grpc_project=$(gcloud config list project --format text \
     | sed -e 's/ \+/ /g' | cut -d' ' -f 2)
   # pick an known zone as a default
@@ -333,43 +392,47 @@ grpc_interop_test_args() {
   }
 }
 
-grpc_update_docker_images_args() {
-  [[ -n $1 ]] && {  # host
-    host=$1
-    shift
-  } || {
-    echo "$FUNCNAME: missing arg: host" 1>&2
+grpc_sync_images_args() {
+  [[ $# -lt 1  ]] && {
+    echo "$FUNCNAME: missing arg: host1 [host2 ... hostN]" 1>&2
     return 1
   }
+  grpc_hosts="$@"
 }
 
 # Updates all the known docker images on a host..
 #
 # call-seq;
-#   grpc_update_docker_images <server_name>
+#   grpc_sync_images <server_name1>, <server_name2> .. <server_name3>
 #
 # Updates the GCE docker instance <server_name>
-grpc_update_docker_images() {
+grpc_sync_images() {
+  _grpc_ensure_gcloud_ssh || return 1;
+
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
-  local grpc_zone grpc_project dry_run  # set by grpc_set_project_and_zone
-  # set by grpc_update_docker_images_args
-  local host
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  # set by grpc_sync_images
+  local grpc_hosts
 
   # set the project zone and check that all necessary args are provided
-  grpc_set_project_and_zone -f grpc_update_docker_images_args "$@" || return 1
-  gce_has_instance $grpc_project $host || return 1;
+  _grpc_set_project_and_zone -f grpc_sync_images_args "$@" || return 1
 
   local func_lib="/var/local/startup_scripts/shared_startup_funcs.sh"
   local cmd="source $func_lib && grpc_docker_pull_known"
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  local host
+  for host in $grpc_hosts
+  do
+    gce_has_instance $grpc_project $h || return 1;
+    local ssh_cmd="bash -l -c \"$cmd\""
+    echo "will run:"
+    echo "  $ssh_cmd"
+    echo "on $host"
+    [[ $dry_run == 1 ]] && continue  # don't run the command on a dry run
+    gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  done
 }
 
 grpc_launch_server_args() {
@@ -409,15 +472,17 @@ grpc_launch_server_args() {
 grpc_launch_server() {
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
-  local grpc_zone grpc_project dry_run  # set by grpc_set_project_and_zone
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   # set by grpc_launch_server_args
   local docker_label docker_name host grpc_port
 
   # set the project zone and check that all necessary args are provided
-  grpc_set_project_and_zone -f grpc_launch_server_args "$@" || return 1
+  _grpc_set_project_and_zone -f grpc_launch_server_args "$@" || return 1
   gce_has_instance $grpc_project $host || return 1;
 
-  cmd="sudo docker run -d --name $docker_name"
+  cmd="sudo docker kill $docker_name > /dev/null 2>&1; "
+  cmd+="sudo docker rm $docker_name > /dev/null 2>&1; "
+  cmd+="sudo docker run -d --name $docker_name"
   cmd+=" -p $grpc_port:$grpc_port $docker_label"
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"
@@ -469,15 +534,16 @@ grpc_launch_server() {
 #
 # --server_host=<svr_addr>  --server_port=<svr_port> --test_case=<...>
 grpc_interop_test() {
+  _grpc_ensure_gcloud_ssh || return 1;
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
 
-  local grpc_zone grpc_project dry_run  # set by grpc_set_project_and_zone
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_interop_test_args
   local test_case host grpc_gen_test_cmd grpc_server grpc_port
 
   # set the project zone and check that all necessary args are provided
-  grpc_set_project_and_zone -f grpc_interop_test_args "$@" || return 1
+  _grpc_set_project_and_zone -f grpc_interop_test_args "$@" || return 1
   gce_has_instance $grpc_project $host || return 1;
 
   local addr=$(gce_find_internal_ip $grpc_project $grpc_server)

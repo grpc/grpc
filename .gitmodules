@@ -9,10 +9,6 @@
 	path = third_party/protobuf
 	url = https://github.com/google/protobuf.git
 	branch = v3.0.0-alpha-1
-[submodule "third_party/libevent"]
-	path = third_party/libevent
-	url = https://github.com/libevent/libevent.git
-	branch = patches-2.0
 [submodule "third_party/gflags"]
 	path = third_party/gflags
 	url = https://code.google.com/p/gflags

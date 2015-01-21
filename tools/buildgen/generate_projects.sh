@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e
 
 if [ "x$TEST" == "x" ] ; then
   TEST=false
@@ -11,7 +11,7 @@ cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
 gen_build_json=test/core/end2end/gen_build_json.py
 
-end2end_test_build=`mktemp`
+end2end_test_build=`mktemp /tmp/genXXXXXX`
 $gen_build_json > $end2end_test_build
 
 global_plugins=`find ./tools/buildgen/plugins -name '*.py' |
@@ -32,7 +32,7 @@ for dir in . ; do
     data=`for i in $json_files; do echo -n "-d $i "; done`
     if [ $TEST == true ] ; then
       actual_out=$out
-      out=`mktemp`
+      out=`mktemp /tmp/gentXXXXXX`
     fi
     $mako_renderer $plugins $data -o $out $file
     if [ $TEST == true ] ; then

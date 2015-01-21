@@ -33,30 +33,29 @@ require 'port_picker'
 include GRPC::Core::StatusCodes
 
 describe GRPC::Core::RpcErrors do
-
   before(:each) do
     @known_types = {
-      :OK => 0,
-      :ERROR => 1,
-      :NOT_ON_SERVER => 2,
-      :NOT_ON_CLIENT => 3,
-      :ALREADY_ACCEPTED => 4,
-      :ALREADY_INVOKED => 5,
-      :NOT_INVOKED => 6,
-      :ALREADY_FINISHED => 7,
-      :TOO_MANY_OPERATIONS => 8,
-      :INVALID_FLAGS => 9,
-      :ErrorMessages => {
-        0=>'ok',
-        1=>'unknown error',
-        2=>'not available on a server',
-        3=>'not available on a client',
-        4=>'call is already accepted',
-        5=>'call is already invoked',
-        6=>'call is not yet invoked',
-        7=>'call is already finished',
-        8=>'outstanding read or write present',
-        9=>'a bad flag was given',
+      OK: 0,
+      ERROR: 1,
+      NOT_ON_SERVER: 2,
+      NOT_ON_CLIENT: 3,
+      ALREADY_ACCEPTED: 4,
+      ALREADY_INVOKED: 5,
+      NOT_INVOKED: 6,
+      ALREADY_FINISHED: 7,
+      TOO_MANY_OPERATIONS: 8,
+      INVALID_FLAGS: 9,
+      ErrorMessages: {
+        0 => 'ok',
+        1 => 'unknown error',
+        2 => 'not available on a server',
+        3 => 'not available on a client',
+        4 => 'call is already accepted',
+        5 => 'call is already invoked',
+        6 => 'call is not yet invoked',
+        7 => 'call is already finished',
+        8 => 'outstanding read or write present',
+        9 => 'a bad flag was given'
       }
     }
   end
@@ -66,11 +65,9 @@ describe GRPC::Core::RpcErrors do
     syms_and_codes = m.constants.collect { |c| [c, m.const_get(c)] }
     expect(Hash[syms_and_codes]).to eq(@known_types)
   end
-
 end
 
 describe GRPC::Core::Call do
-
   before(:each) do
     @tag = Object.new
     @client_queue = GRPC::Core::CompletionQueue.new
@@ -88,7 +85,7 @@ describe GRPC::Core::Call do
 
   describe '#start_read' do
     it 'should fail if called immediately' do
-      blk = Proc.new { make_test_call.start_read(@tag) }
+      blk = proc { make_test_call.start_read(@tag) }
       expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
@@ -96,21 +93,21 @@ describe GRPC::Core::Call do
   describe '#start_write' do
     it 'should fail if called immediately' do
       bytes = GRPC::Core::ByteBuffer.new('test string')
-      blk = Proc.new { make_test_call.start_write(bytes, @tag) }
+      blk = proc { make_test_call.start_write(bytes, @tag) }
       expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#start_write_status' do
     it 'should fail if called immediately' do
-      blk = Proc.new { make_test_call.start_write_status(153, 'x', @tag) }
+      blk = proc { make_test_call.start_write_status(153, 'x', @tag) }
       expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#writes_done' do
     it 'should fail if called immediately' do
-      blk = Proc.new { make_test_call.writes_done(Object.new) }
+      blk = proc { make_test_call.writes_done(Object.new) }
       expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
@@ -119,7 +116,8 @@ describe GRPC::Core::Call do
     it 'adds metadata to a call without fail' do
       call = make_test_call
       n = 37
-      metadata = Hash[n.times.collect { |i| ["key%d" % i, "value%d" %i] } ]
+      one_md = proc { |x| [sprintf('key%d', x), sprintf('value%d', x)] }
+      metadata = Hash[n.times.collect { |i| one_md.call i }]
       expect { call.add_metadata(metadata) }.to_not raise_error
     end
   end
@@ -174,7 +172,7 @@ describe GRPC::Core::Call do
   describe '#metadata' do
     it 'can save the metadata hash and read it back' do
       call = make_test_call
-      md = {'k1' => 'v1',  'k2' => 'v2'}
+      md = { 'k1' => 'v1',  'k2' => 'v2' }
       expect { call.metadata = md }.not_to raise_error
       expect(call.metadata).to be(md)
     end
@@ -191,7 +189,6 @@ describe GRPC::Core::Call do
     end
   end
 
-
   def make_test_call
     @ch.create_call('dummy_method', 'dummy_host', deadline)
   end
@@ -199,5 +196,4 @@ describe GRPC::Core::Call do
   def deadline
     Time.now + 2  # in 2 seconds; arbitrary
   end
-
 end

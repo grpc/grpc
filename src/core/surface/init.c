@@ -35,12 +35,12 @@
 #include "src/core/statistics/census_interface.h"
 #include "src/core/iomgr/iomgr.h"
 
-void grpc_init() {
+void grpc_init(void) {
   grpc_iomgr_init();
   census_init();
 }
 
-void grpc_shutdown() {
+void grpc_shutdown(void) {
   grpc_iomgr_shutdown();
   census_shutdown();
 }

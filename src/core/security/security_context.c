@@ -35,6 +35,8 @@
 
 #include <string.h>
 
+#include "src/core/channel/channel_args.h"
+#include "src/core/channel/http_client_filter.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_endpoint.h"
 #include "src/core/surface/lame_client.h"
@@ -100,8 +102,7 @@ grpc_arg grpc_security_context_to_arg(grpc_security_context *ctx) {
   return result;
 }
 
-grpc_security_context *grpc_security_context_from_arg(
-    const grpc_arg *arg) {
+grpc_security_context *grpc_security_context_from_arg(const grpc_arg *arg) {
   if (strcmp(arg->key, GRPC_SECURITY_CONTEXT_ARG)) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
@@ -140,9 +141,7 @@ static void fake_channel_destroy(grpc_security_context *ctx) {
   gpr_free(ctx);
 }
 
-static void fake_server_destroy(grpc_security_context *ctx) {
-  gpr_free(ctx);
-}
+static void fake_server_destroy(grpc_security_context *ctx) { gpr_free(ctx); }
 
 static grpc_security_status fake_channel_create_handshaker(
     grpc_security_context *ctx, tsi_handshaker **handshaker) {
@@ -234,8 +233,7 @@ static void ssl_channel_destroy(grpc_security_context *ctx) {
 }
 
 static void ssl_server_destroy(grpc_security_context *ctx) {
-  grpc_ssl_server_security_context *c =
-      (grpc_ssl_server_security_context *)ctx;
+  grpc_ssl_server_security_context *c = (grpc_ssl_server_security_context *)ctx;
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
@@ -267,8 +265,7 @@ static grpc_security_status ssl_channel_create_handshaker(
 
 static grpc_security_status ssl_server_create_handshaker(
     grpc_security_context *ctx, tsi_handshaker **handshaker) {
-  grpc_ssl_server_security_context *c =
-      (grpc_ssl_server_security_context *)ctx;
+  grpc_ssl_server_security_context *c = (grpc_ssl_server_security_context *)ctx;
   return ssl_create_handshaker(c->handshaker_factory, 0, NULL, handshaker);
 }
 
@@ -414,12 +411,12 @@ grpc_security_status grpc_ssl_server_security_context_create(
   c->base.vtable = &ssl_server_vtable;
   result = tsi_create_ssl_server_handshaker_factory(
       (const unsigned char **)&config->pem_private_key,
-      (const gpr_uint32 *)&config->pem_private_key_size,
+      &config->pem_private_key_size,
       (const unsigned char **)&config->pem_cert_chain,
-      (const gpr_uint32 *)&config->pem_cert_chain_size, 1,
-      config->pem_root_certs, config->pem_root_certs_size,
-      GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
-      alpn_protocol_string_lengths, num_alpn_protocols, &c->handshaker_factory);
+      &config->pem_cert_chain_size, 1, config->pem_root_certs,
+      config->pem_root_certs_size, GRPC_SSL_CIPHER_SUITES,
+      alpn_protocol_strings, alpn_protocol_string_lengths, num_alpn_protocols,
+      &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -449,6 +446,8 @@ grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
   grpc_security_status status = GRPC_SECURITY_OK;
   size_t i = 0;
   const char *secure_peer_name = target;
+  grpc_arg arg;
+  grpc_channel_args *new_args;
 
   for (i = 0; args && i < args->num_args; i++) {
     grpc_arg *arg = &args->args[i];
@@ -464,8 +463,13 @@ grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
   if (status != GRPC_SECURITY_OK) {
     return grpc_lame_client_channel_create();
   }
-  channel = grpc_secure_channel_create_internal(target, args, ctx);
+  arg.type = GRPC_ARG_STRING;
+  arg.key = GRPC_ARG_HTTP2_SCHEME;
+  arg.value.string = "https";
+  new_args = grpc_channel_args_copy_and_add(args, &arg);
+  channel = grpc_secure_channel_create_internal(target, new_args, ctx);
   grpc_security_context_unref(&ctx->base);
+  grpc_channel_args_destroy(new_args);
   return channel;
 }
 

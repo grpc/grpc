@@ -35,6 +35,8 @@
 //
 
 #include <memory>
+#include <string>
+
 #include "src/compiler/cpp_generator.h"
 #include "src/compiler/cpp_generator_helpers.h"
 #include <google/protobuf/descriptor.h>
@@ -49,18 +51,19 @@ class CppGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
   CppGrpcGenerator() {}
   virtual ~CppGrpcGenerator() {}
 
-  virtual bool Generate(const google::protobuf::FileDescriptor* file,
-                        const string& parameter,
-                        google::protobuf::compiler::GeneratorContext* context,
-                        string* error) const {
+  virtual bool Generate(const google::protobuf::FileDescriptor *file,
+                        const std::string &parameter,
+                        google::protobuf::compiler::GeneratorContext *context,
+                        std::string *error) const {
     if (file->options().cc_generic_services()) {
-      *error = "cpp grpc proto compiler plugin does not work with generic "
-               "services. To generate cpp grpc APIs, please set \""
-               "cc_generic_service = false\".";
+      *error =
+          "cpp grpc proto compiler plugin does not work with generic "
+          "services. To generate cpp grpc APIs, please set \""
+          "cc_generic_service = false\".";
       return false;
     }
 
-    string file_name = grpc_cpp_generator::StripProto(file->name());
+    std::string file_name = grpc_cpp_generator::StripProto(file->name());
 
     // Generate .pb.h
     Insert(context, file_name + ".pb.h", "includes",
@@ -78,9 +81,9 @@ class CppGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
 
  private:
   // Insert the given code into the given file at the given insertion point.
-  void Insert(google::protobuf::compiler::GeneratorContext* context,
-              const string& filename, const string& insertion_point,
-              const string& code) const {
+  void Insert(google::protobuf::compiler::GeneratorContext *context,
+              const std::string &filename, const std::string &insertion_point,
+              const std::string &code) const {
     std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
         context->OpenForInsert(filename, insertion_point));
     google::protobuf::io::CodedOutputStream coded_out(output.get());
@@ -88,7 +91,7 @@ class CppGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   CppGrpcGenerator generator;
   return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

@@ -32,6 +32,7 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include <signal.h>
 #include <stdio.h>
@@ -47,6 +48,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "test/core/util/port.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
@@ -57,7 +59,7 @@ typedef struct {
   gpr_uint32 flags;
 } call_state;
 
-static void request_call() {
+static void request_call(void) {
   call_state *s = gpr_malloc(sizeof(call_state));
   gpr_ref_init(&s->pending_ops, 2);
   grpc_server_request_call(server, s);
@@ -98,8 +100,17 @@ int main(int argc, char **argv) {
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
   cq = grpc_completion_queue_create();
-  server = grpc_server_create(cq, NULL);
-  GPR_ASSERT(grpc_server_add_http2_port(server, addr));
+  if (secure) {
+    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
+        NULL, 0, test_server1_key, test_server1_key_size, test_server1_cert,
+        test_server1_cert_size);
+    server = grpc_secure_server_create(ssl_creds, cq, NULL);
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
+    grpc_server_credentials_release(ssl_creds);
+  } else {
+    server = grpc_server_create(cq, NULL);
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr));
+  }
   grpc_server_start(server);
 
   gpr_free(addr_buf);
@@ -130,7 +141,8 @@ int main(int argc, char **argv) {
           } else {
             s->flags = GRPC_WRITE_BUFFER_HINT;
           }
-          grpc_call_accept(ev->call, cq, s, s->flags);
+          grpc_call_server_accept(ev->call, cq, s);
+          grpc_call_server_end_initial_metadata(ev->call, s->flags);
           GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
           request_call();
         } else {

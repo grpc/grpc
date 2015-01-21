@@ -37,8 +37,8 @@
 /* gRPC Callback definition */
 typedef void (*grpc_iomgr_cb_func)(void *arg, int success);
 
-void grpc_iomgr_init();
-void grpc_iomgr_shutdown();
+void grpc_iomgr_init(void);
+void grpc_iomgr_shutdown(void);
 
 /* This function is called from within a callback or from anywhere else
    and causes the invocation of a callback at some point in the future */

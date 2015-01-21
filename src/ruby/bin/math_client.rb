@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 # Copyright 2014, Google Inc.
 # All rights reserved.
 #
@@ -27,8 +29,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#!/usr/bin/env ruby
-#
 # Sample app that accesses a Calc service running on a Ruby gRPC server and
 # helps validate RpcServer as a gRPC server using proto2 serialization.
 #
@@ -48,9 +48,9 @@ include GRPC::Core::TimeConsts
 def do_div(stub)
   logger.info('request_response')
   logger.info('----------------')
-  req = Math::DivArgs.new(:dividend => 7, :divisor => 3)
+  req = Math::DivArgs.new(dividend: 7, divisor: 3)
   logger.info("div(7/3): req=#{req.inspect}")
-  resp = stub.div(req, deadline=INFINITE_FUTURE)
+  resp = stub.div(req, INFINITE_FUTURE)
   logger.info("Answer: #{resp.inspect}")
   logger.info('----------------')
 end
@@ -59,7 +59,7 @@ def do_sum(stub)
   # to make client streaming requests, pass an enumerable of the inputs
   logger.info('client_streamer')
   logger.info('---------------')
-  reqs = [1, 2, 3, 4, 5].map { |x| Math::Num.new(:num => x) }
+  reqs = [1, 2, 3, 4, 5].map { |x| Math::Num.new(num: x) }
   logger.info("sum(1, 2, 3, 4, 5): reqs=#{reqs.inspect}")
   resp = stub.sum(reqs)  # reqs.is_a?(Enumerable)
   logger.info("Answer: #{resp.inspect}")
@@ -69,9 +69,9 @@ end
 def do_fib(stub)
   logger.info('server_streamer')
   logger.info('----------------')
-  req = Math::FibArgs.new(:limit => 11)
+  req = Math::FibArgs.new(limit: 11)
   logger.info("fib(11): req=#{req.inspect}")
-  resp = stub.fib(req, deadline=INFINITE_FUTURE)
+  resp = stub.fib(req, INFINITE_FUTURE)
   resp.each do |r|
     logger.info("Answer: #{r.inspect}")
   end
@@ -82,11 +82,11 @@ def do_div_many(stub)
   logger.info('bidi_streamer')
   logger.info('-------------')
   reqs = []
-  reqs << Math::DivArgs.new(:dividend => 7, :divisor => 3)
-  reqs << Math::DivArgs.new(:dividend => 5, :divisor => 2)
-  reqs << Math::DivArgs.new(:dividend => 7, :divisor => 2)
+  reqs << Math::DivArgs.new(dividend: 7, divisor: 3)
+  reqs << Math::Di5AvArgs.new(dividend: 5, divisor: 2)
+  reqs << Math::DivArgs.new(dividend: 7, divisor: 2)
   logger.info("div(7/3), div(5/2), div(7/2): reqs=#{reqs.inspect}")
-  resp = stub.div_many(reqs, deadline=10)
+  resp = stub.div_many(reqs, 10)
   resp.each do |r|
     logger.info("Answer: #{r.inspect}")
   end
@@ -102,7 +102,7 @@ end
 
 def test_creds
   certs = load_test_certs
-  creds = GRPC::Core::Credentials.new(certs[0])
+  GRPC::Core::Credentials.new(certs[0])
 end
 
 def main
@@ -116,7 +116,7 @@ def main
       options['host'] = v
     end
     opts.on('-s', '--secure', 'access using test creds') do |v|
-      options['secure'] = true
+      options['secure'] = v
     end
   end.parse!
 
@@ -127,7 +127,7 @@ def main
   if options['secure']
     stub_opts = {
       :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com',
+      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com'
     }
     p stub_opts
     p options['host']

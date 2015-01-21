@@ -34,7 +34,8 @@
 #include <chrono>
 #include <thread>
 
-#include "net/grpc/cpp/echo_duplicate_proto_cc.pb.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/echo_duplicate.pb.h"
 #include "test/cpp/util/echo.pb.h"
 #include "src/cpp/util/time.h"
 #include <grpc++/channel_arguments.h>
@@ -47,7 +48,7 @@
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "net/util/netutil.h"
+#include "test/core/util/port.h"
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -141,7 +142,7 @@ class TestServiceImplDupPkg
 class End2endTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    int port = PickUnusedPortOrDie();
+    int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
@@ -151,9 +152,7 @@ class End2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override {
-    server_->Shutdown();
-  }
+  void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
     std::shared_ptr<ChannelInterface> channel =
@@ -189,7 +188,7 @@ TEST_F(End2endTest, SimpleRpc) {
 
 TEST_F(End2endTest, MultipleRpcs) {
   ResetStub();
-  vector<std::thread*> threads;
+  std::vector<std::thread*> threads;
   for (int i = 0; i < 10; ++i) {
     threads.push_back(new std::thread(SendRpc, stub_.get(), 10));
   }
@@ -211,9 +210,7 @@ TEST_F(End2endTest, RpcDeadlineExpires) {
       std::chrono::system_clock::now() + std::chrono::microseconds(10);
   context.set_absolute_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
-  // TODO(yangg) use correct error code when b/18793983 is fixed.
-  // EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.code());
-  EXPECT_EQ(StatusCode::CANCELLED, s.code());
+  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.code());
 }
 
 // Set a long but finite deadline.
@@ -437,6 +434,7 @@ TEST_F(End2endTest, BadCredentials) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();

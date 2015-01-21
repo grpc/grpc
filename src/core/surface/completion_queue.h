@@ -97,6 +97,8 @@ void grpc_cq_end_new_rpc(grpc_completion_queue *cc, void *tag, grpc_call *call,
                          gpr_timespec deadline, size_t metadata_count,
                          grpc_metadata *metadata_elements);
 
+void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag);
+
 /* disable polling for some tests */
 void grpc_completion_queue_dont_poll_test_only(grpc_completion_queue *cc);
 
@@ -104,4 +106,4 @@ void grpc_cq_dump_pending_ops(grpc_completion_queue *cc);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
-#endif  /* __GRPC_INTERNAL_SURFACE_COMPLETION_QUEUE_H__ */
+#endif /* __GRPC_INTERNAL_SURFACE_COMPLETION_QUEUE_H__ */

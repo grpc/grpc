@@ -51,4 +51,4 @@ VALUE grpc_rb_byte_buffer_create_with_mark(VALUE mark, grpc_byte_buffer* bb);
 /* Gets the wrapped byte_buffer from its ruby object. */
 grpc_byte_buffer* grpc_rb_get_wrapped_byte_buffer(VALUE v);
 
-#endif  /* GRPC_RB_BYTE_BUFFER_H_ */
+#endif /* GRPC_RB_BYTE_BUFFER_H_ */

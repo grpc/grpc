@@ -38,4 +38,4 @@
 
 extern const grpc_channel_filter grpc_client_surface_filter;
 
-#endif  /* __GRPC_INTERNAL_SURFACE_CLIENT_H__ */
+#endif /* __GRPC_INTERNAL_SURFACE_CLIENT_H__ */

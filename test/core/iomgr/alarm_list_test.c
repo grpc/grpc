@@ -44,13 +44,13 @@
 static int cb_called[MAX_CB][2];
 static int kicks;
 
-void grpc_kick_poller() { ++kicks; }
+void grpc_kick_poller(void) { ++kicks; }
 
 static void cb(void *arg, int success) {
   cb_called[(gpr_intptr)arg][success]++;
 }
 
-static void add_test() {
+static void add_test(void) {
   gpr_timespec start = gpr_now();
   int i;
   grpc_alarm alarms[20];
@@ -61,13 +61,13 @@ static void add_test() {
   /* 10 ms alarms.  will expire in the current epoch */
   for (i = 0; i < 10; i++) {
     grpc_alarm_init(&alarms[i], gpr_time_add(start, gpr_time_from_millis(10)),
-                    cb, (void *)(gpr_intptr)i, start);
+                    cb, (void *)(gpr_intptr) i, start);
   }
 
   /* 1010 ms alarms.  will expire in the next epoch */
   for (i = 10; i < 20; i++) {
     grpc_alarm_init(&alarms[i], gpr_time_add(start, gpr_time_from_millis(1010)),
-                    cb, (void *)(gpr_intptr)i, start);
+                    cb, (void *)(gpr_intptr) i, start);
   }
 
   /* collect alarms.  Only the first batch should be ready. */
@@ -108,22 +108,22 @@ static void add_test() {
 }
 
 /* Cleaning up a list with pending alarms. */
-void destruction_test() {
+void destruction_test(void) {
   grpc_alarm alarms[5];
 
   grpc_alarm_list_init(gpr_time_0);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_alarm_init(&alarms[0], gpr_time_from_millis(100), cb,
-                  (void *)(gpr_intptr)0, gpr_time_0);
+                  (void *)(gpr_intptr) 0, gpr_time_0);
   grpc_alarm_init(&alarms[1], gpr_time_from_millis(3), cb,
-                  (void *)(gpr_intptr)1, gpr_time_0);
+                  (void *)(gpr_intptr) 1, gpr_time_0);
   grpc_alarm_init(&alarms[2], gpr_time_from_millis(100), cb,
-                  (void *)(gpr_intptr)2, gpr_time_0);
+                  (void *)(gpr_intptr) 2, gpr_time_0);
   grpc_alarm_init(&alarms[3], gpr_time_from_millis(3), cb,
-                  (void *)(gpr_intptr)3, gpr_time_0);
+                  (void *)(gpr_intptr) 3, gpr_time_0);
   grpc_alarm_init(&alarms[4], gpr_time_from_millis(1), cb,
-                  (void *)(gpr_intptr)4, gpr_time_0);
+                  (void *)(gpr_intptr) 4, gpr_time_0);
   GPR_ASSERT(1 == grpc_alarm_check(NULL, gpr_time_from_millis(2), NULL));
   GPR_ASSERT(1 == cb_called[4][1]);
   grpc_alarm_cancel(&alarms[0]);

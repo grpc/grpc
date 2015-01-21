@@ -53,7 +53,7 @@ class StreamContextInterface {
   virtual bool Read(google::protobuf::Message* msg) = 0;
   virtual bool Write(const google::protobuf::Message* msg, bool is_last) = 0;
   virtual const Status& Wait() = 0;
-  virtual void FinishStream(const Status& status, bool send) = 0;
+  virtual void Cancel() = 0;
 
   virtual google::protobuf::Message* request() = 0;
   virtual google::protobuf::Message* response() = 0;

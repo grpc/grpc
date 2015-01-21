@@ -47,7 +47,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-static long gettid() { return syscall(__NR_gettid); }
+static long gettid(void) { return syscall(__NR_gettid); }
 
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {

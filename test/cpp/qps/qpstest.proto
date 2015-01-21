@@ -1,0 +1,158 @@
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
+syntax = "proto2";
+
+package grpc.testing;
+
+enum PayloadType {
+  // Compressable text format.
+  COMPRESSABLE= 1;
+
+  // Uncompressable binary format.
+  UNCOMPRESSABLE = 2;
+
+  // Randomly chosen from all other formats defined in this enum.
+  RANDOM = 3;
+}
+
+message StatsRequest {
+  // run number
+  optional int32 test_num = 1;
+}
+
+message ServerStats {
+  // wall clock time for timestamp
+  required double time_now = 1;
+
+  // user time used by the server process and threads
+  required double time_user = 2;
+
+  // server time used by the server process and all threads
+  required double time_system = 3;
+
+  // RPC count so far
+  optional int32 num_rpcs = 4;
+}
+
+message Payload {
+  // The type of data in body.
+  optional PayloadType type = 1;
+  // Primary contents of payload.
+  optional bytes body = 2;
+}
+
+message Latencies {
+  required double l_50 = 1;
+  required double l_90 = 2;
+  required double l_99 = 3;
+  required double l_999 = 4;
+}
+
+message StartArgs {
+  required string server_host = 1;
+  required int32 server_port = 2;
+  optional bool enable_ssl = 3 [default = false];
+  optional int32 client_threads = 4 [default = 1];
+  optional int32 client_channels = 5 [default = -1];
+  optional int32 num_rpcs = 6 [default = 1];
+  optional int32 payload_size = 7 [default = 1];
+}
+
+message StartResult {
+  required Latencies latencies = 1;
+  required int32 num_rpcs = 2;
+  required double time_elapsed = 3;
+  required double time_user = 4;
+  required double time_system = 5;
+}
+
+message SimpleRequest {
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, server randomly chooses one from other formats.
+  optional PayloadType response_type = 1 [default=COMPRESSABLE];
+
+  // Desired payload size in the response from the server.
+  // If response_type is COMPRESSABLE, this denotes the size before compression.
+  optional int32 response_size = 2;
+
+  // Optional input payload sent along with the request.
+  optional Payload payload = 3;
+}
+
+message SimpleResponse {
+  optional Payload payload = 1;
+}
+
+message StreamingInputCallRequest {
+  // Optional input payload sent along with the request.
+  optional Payload payload = 1;
+
+  // Not expecting any payload from the response.
+}
+
+message StreamingInputCallResponse {
+  // Aggregated size of payloads received from the client.
+  optional int32 aggregated_payload_size = 1;
+}
+
+message ResponseParameters {
+  // Desired payload sizes in responses from the server.
+  // If response_type is COMPRESSABLE, this denotes the size before compression.
+  required int32 size = 1;
+
+  // Desired interval between consecutive responses in the response stream in
+  // microseconds.
+  required int32 interval_us = 2;
+}
+
+message StreamingOutputCallRequest {
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, the payload from each response in the stream
+  // might be of different types. This is to simulate a mixed type of payload
+  // stream.
+  optional PayloadType response_type = 1 [default=COMPRESSABLE];
+
+  repeated ResponseParameters response_parameters = 2;
+
+  // Optional input payload sent along with the request.
+  optional Payload payload = 3;
+}
+
+message StreamingOutputCallResponse {
+  optional Payload payload = 1;
+}
+
+service TestService {
+  // Start test with specified workload
+  rpc StartTest(StartArgs) returns (Latencies);
+
+  // Collect stats from server, ignore request content
+  rpc CollectServerStats(StatsRequest) returns (ServerStats);
+
+  // One request followed by one response.
+  // The server returns the client payload as-is.
+  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
+
+  // One request followed by a sequence of responses (streamed download).
+  // The server returns the payload with client desired type and sizes.
+  rpc StreamingOutputCall(StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
+
+  // A sequence of requests followed by one response (streamed upload).
+  // The server returns the aggregated size of client payload as the result.
+  rpc StreamingInputCall(stream StreamingInputCallRequest)
+      returns (StreamingInputCallResponse);
+
+  // A sequence of requests with each request served by the server immediately.
+  // As one request could lead to multiple responses, this interface
+  // demonstrates the idea of full duplexing.
+  rpc FullDuplexCall(stream StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
+
+  // A sequence of requests followed by a sequence of responses.
+  // The server buffers all the client requests and then serves them in order. A
+  // stream of responses are returned to the client when the server starts with
+  // first request.
+  rpc HalfDuplexCall(stream StreamingOutputCallRequest)
+      returns (stream StreamingOutputCallResponse);
+}

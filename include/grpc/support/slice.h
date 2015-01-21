@@ -163,7 +163,7 @@ gpr_slice gpr_slice_split_tail(gpr_slice *s, size_t split);
    Requires s intialized, split <= s.length */
 gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split);
 
-gpr_slice gpr_empty_slice();
+gpr_slice gpr_empty_slice(void);
 
 /* Returns <0 if a < b, ==0 if a == b, >0 if a > b */
 int gpr_slice_cmp(gpr_slice a, gpr_slice b);
@@ -173,4 +173,4 @@ int gpr_slice_str_cmp(gpr_slice a, const char *b);
 }
 #endif
 
-#endif  /* __GRPC_SUPPORT_SLICE_H__ */
+#endif /* __GRPC_SUPPORT_SLICE_H__ */

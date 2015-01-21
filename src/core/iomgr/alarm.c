@@ -100,7 +100,7 @@ void grpc_alarm_list_init(gpr_timespec now) {
   }
 }
 
-void grpc_alarm_list_shutdown() {
+void grpc_alarm_list_shutdown(void) {
   int i;
   while (run_some_expired_alarms(NULL, gpr_inf_future, NULL, 0))
     ;
@@ -360,7 +360,7 @@ int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next) {
   return run_some_expired_alarms(drop_mu, now, next, 1);
 }
 
-gpr_timespec grpc_alarm_list_next_timeout() {
+gpr_timespec grpc_alarm_list_next_timeout(void) {
   gpr_timespec out;
   gpr_mu_lock(&g_mu);
   out = g_shard_queue[0]->min_deadline;

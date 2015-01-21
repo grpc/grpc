@@ -45,18 +45,18 @@ extern "C" {
 typedef struct {
   tsi_result (*protect)(tsi_frame_protector* self,
                         const unsigned char* unprotected_bytes,
-                        uint32_t* unprotected_bytes_size,
+                        size_t* unprotected_bytes_size,
                         unsigned char* protected_output_frames,
-                        uint32_t* protected_output_frames_size);
+                        size_t* protected_output_frames_size);
   tsi_result (*protect_flush)(tsi_frame_protector* self,
                               unsigned char* protected_output_frames,
-                              uint32_t* protected_output_frames_size,
-                              uint32_t* still_pending_size);
+                              size_t* protected_output_frames_size,
+                              size_t* still_pending_size);
   tsi_result (*unprotect)(tsi_frame_protector* self,
                           const unsigned char* protected_frames_bytes,
-                          uint32_t* protected_frames_bytes_size,
+                          size_t* protected_frames_bytes_size,
                           unsigned char* unprotected_bytes,
-                          uint32_t* unprotected_bytes_size);
+                          size_t* unprotected_bytes_size);
   void (*destroy)(tsi_frame_protector* self);
 } tsi_frame_protector_vtable;
 
@@ -69,14 +69,14 @@ struct tsi_frame_protector {
 typedef struct {
   tsi_result (*get_bytes_to_send_to_peer)(tsi_handshaker* self,
                                           unsigned char* bytes,
-                                          uint32_t* bytes_size);
+                                          size_t* bytes_size);
   tsi_result (*process_bytes_from_peer)(tsi_handshaker* self,
                                         const unsigned char* bytes,
-                                        uint32_t* bytes_size);
+                                        size_t* bytes_size);
   tsi_result (*get_result)(tsi_handshaker* self);
   tsi_result (*extract_peer)(tsi_handshaker* self, tsi_peer* peer);
   tsi_result (*create_frame_protector)(tsi_handshaker* self,
-                                       uint32_t* max_protected_frame_size,
+                                       size_t* max_protected_frame_size,
                                        tsi_frame_protector** protector);
   void (*destroy)(tsi_handshaker* self);
 } tsi_handshaker_vtable;
@@ -87,7 +87,7 @@ struct tsi_handshaker {
 };
 
 /* Peer and property construction/destruction functions. */
-tsi_result tsi_construct_peer(uint32_t property_count, tsi_peer* peer);
+tsi_result tsi_construct_peer(size_t property_count, tsi_peer* peer);
 tsi_peer_property tsi_init_peer_property(void);
 void tsi_peer_property_destruct(tsi_peer_property* property);
 tsi_result tsi_construct_signed_integer_peer_property(
@@ -98,21 +98,21 @@ tsi_result tsi_construct_real_peer_property(const char* name, double value,
                                             tsi_peer_property* property);
 tsi_result tsi_construct_string_peer_property(const char* name,
                                               const char* value,
-                                              uint32_t value_length,
+                                              size_t value_length,
                                               tsi_peer_property* property);
 tsi_result tsi_construct_allocated_string_peer_property(
-    const char* name, uint32_t value_length, tsi_peer_property* property);
+    const char* name, size_t value_length, tsi_peer_property* property);
 tsi_result tsi_construct_string_peer_property_from_cstring(
     const char* name, const char* value, tsi_peer_property* property);
 tsi_result tsi_construct_list_peer_property(const char* name,
-                                            uint32_t child_count,
+                                            size_t child_count,
                                             tsi_peer_property* property);
 
 /* Utils. */
-char* tsi_strdup(const char* src);  /* Sadly, no strdup in C89. */
+char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /* __TRANSPORT_SECURITY_H_ */
+#endif /* __TRANSPORT_SECURITY_H_ */

@@ -55,14 +55,17 @@ class MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
-    HandlerParameter(ServerContext* context, const google::protobuf::Message* req,
+    HandlerParameter(ServerContext* context,
+                     const google::protobuf::Message* req,
                      google::protobuf::Message* resp)
         : server_context(context),
           request(req),
           response(resp),
           stream_context(nullptr) {}
-    HandlerParameter(ServerContext* context, const google::protobuf::Message* req,
-                     google::protobuf::Message* resp, StreamContextInterface* stream)
+    HandlerParameter(ServerContext* context,
+                     const google::protobuf::Message* req,
+                     google::protobuf::Message* resp,
+                     StreamContextInterface* stream)
         : server_context(context),
           request(req),
           response(resp),
@@ -171,7 +174,8 @@ class RpcServiceMethod : public RpcMethod {
  public:
   // Takes ownership of the handler and two prototype objects.
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
-                   MethodHandler* handler, google::protobuf::Message* request_prototype,
+                   MethodHandler* handler,
+                   google::protobuf::Message* request_prototype,
                    google::protobuf::Message* response_prototype)
       : RpcMethod(name, type),
         handler_(handler),
@@ -180,7 +184,9 @@ class RpcServiceMethod : public RpcMethod {
 
   MethodHandler* handler() { return handler_.get(); }
 
-  google::protobuf::Message* AllocateRequestProto() { return request_prototype_->New(); }
+  google::protobuf::Message* AllocateRequestProto() {
+    return request_prototype_->New();
+  }
   google::protobuf::Message* AllocateResponseProto() {
     return response_prototype_->New();
   }

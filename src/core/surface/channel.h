@@ -48,4 +48,4 @@ grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 void grpc_channel_internal_ref(grpc_channel *channel);
 void grpc_channel_internal_unref(grpc_channel *channel);
 
-#endif  /* __GRPC_INTERNAL_SURFACE_CHANNEL_H__ */
+#endif /* __GRPC_INTERNAL_SURFACE_CHANNEL_H__ */

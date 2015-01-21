@@ -82,7 +82,7 @@ struct grpc_mdelem {
 };
 
 /* Create/orphan a metadata context */
-grpc_mdctx *grpc_mdctx_create();
+grpc_mdctx *grpc_mdctx_create(void);
 grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed);
 void grpc_mdctx_orphan(grpc_mdctx *mdctx);
 
@@ -136,4 +136,4 @@ const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
-#endif  /* __GRPC_INTERNAL_TRANSPORT_METADATA_H__ */
+#endif /* __GRPC_INTERNAL_TRANSPORT_METADATA_H__ */

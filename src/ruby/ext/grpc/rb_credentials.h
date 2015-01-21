@@ -47,4 +47,4 @@ void Init_google_rpc_credentials();
 /* Gets the wrapped credentials from the ruby wrapper */
 grpc_credentials* grpc_rb_get_wrapped_credentials(VALUE v);
 
-#endif  /* GRPC_RB_CREDENTIALS_H_ */
+#endif /* GRPC_RB_CREDENTIALS_H_ */

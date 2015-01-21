@@ -62,7 +62,7 @@ static gpr_timespec n_seconds_time(int n) {
   return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
 }
 
-static gpr_timespec five_seconds_time() { return n_seconds_time(5); }
+static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event *ev;
@@ -106,7 +106,4 @@ static void test_no_op(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-
-void grpc_end2end_tests(grpc_end2end_test_config config) {
-  test_no_op(config);
-}
+void grpc_end2end_tests(grpc_end2end_test_config config) { test_no_op(config); }

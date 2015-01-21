@@ -59,9 +59,9 @@ static gpr_mu g_mu;
 static census_ht* g_client_stats_store = NULL;
 static census_ht* g_server_stats_store = NULL;
 
-static void init_mutex() { gpr_mu_init(&g_mu); }
+static void init_mutex(void) { gpr_mu_init(&g_mu); }
 
-static void init_mutex_once() {
+static void init_mutex_once(void) {
   gpr_once_init(&g_stats_store_mu_init, init_mutex);
 }
 
@@ -85,8 +85,9 @@ static void delete_key(void* key) { gpr_free(key); }
 
 static const census_ht_option ht_opt = {
     CENSUS_HT_POINTER /* key type */, 1999 /* n_of_buckets */,
-    simple_hash /* hash function */,  cmp_str_keys /* key comparator */,
-    delete_stats /* data deleter */,  delete_key /* key deleter */};
+    simple_hash /* hash function */, cmp_str_keys /* key comparator */,
+    delete_stats /* data deleter */, delete_key /* key deleter */
+};
 
 static void init_rpc_stats(void* stats) {
   memset(stats, 0, sizeof(census_rpc_stats));
@@ -115,7 +116,7 @@ static gpr_timespec min_hour_total_intervals[3] = {
 static const census_window_stats_stat_info window_stats_settings = {
     sizeof(census_rpc_stats), init_rpc_stats, stat_add, stat_add_proportion};
 
-census_rpc_stats* census_rpc_stats_create_empty() {
+census_rpc_stats* census_rpc_stats_create_empty(void) {
   census_rpc_stats* ret =
       (census_rpc_stats*)gpr_malloc(sizeof(census_rpc_stats));
   memset(ret, 0, sizeof(census_rpc_stats));
@@ -220,7 +221,7 @@ void census_get_server_stats(census_aggregated_rpc_stats* data) {
   get_stats(g_server_stats_store, data);
 }
 
-void census_stats_store_init() {
+void census_stats_store_init(void) {
   gpr_log(GPR_INFO, "Initialize census stats store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);
@@ -233,7 +234,7 @@ void census_stats_store_init() {
   gpr_mu_unlock(&g_mu);
 }
 
-void census_stats_store_shutdown() {
+void census_stats_store_shutdown(void) {
   gpr_log(GPR_INFO, "Shutdown census stats store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);

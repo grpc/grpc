@@ -31,21 +31,49 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_GO_GENERATOR_H_
-#define NET_GRPC_COMPILER_GO_GENERATOR_H_
+#ifndef NET_GRPC_NODE_CHANNEL_H_
+#define NET_GRPC_NODE_CHANNEL_H_
 
-#include <string>
+#include <node.h>
+#include <nan.h>
+#include "grpc/grpc.h"
 
-namespace google {
-namespace protobuf {
-class FileDescriptor;
-}  // namespace protobuf
-}  // namespace google
+namespace grpc {
+namespace node {
 
-namespace grpc_go_generator {
+/* Wrapper class for grpc_channel structs */
+class Channel : public ::node::ObjectWrap {
+ public:
+  static void Init(v8::Handle<v8::Object> exports);
+  static bool HasInstance(v8::Handle<v8::Value> val);
+  /* This is used to typecheck javascript objects before converting them to
+     this type */
+  static v8::Persistent<v8::Value> prototype;
 
-string GetServices(const google::protobuf::FileDescriptor* file);
+  /* Returns the grpc_channel struct that this object wraps */
+  grpc_channel *GetWrappedChannel();
 
-}  // namespace grpc_go_generator
+  /* Return the hostname that this channel connects to */
+  char *GetHost();
 
-#endif  // NET_GRPC_COMPILER_GO_GENERATOR_H_
+ private:
+  explicit Channel(grpc_channel *channel, NanUtf8String *host);
+  ~Channel();
+
+  // Prevent copying
+  Channel(const Channel &);
+  Channel &operator=(const Channel &);
+
+  static NAN_METHOD(New);
+  static NAN_METHOD(Close);
+  static v8::Persistent<v8::Function> constructor;
+  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
+
+  grpc_channel *wrapped_channel;
+  NanUtf8String *host;
+};
+
+}  // namespace node
+}  // namespace grpc
+
+#endif  // NET_GRPC_NODE_CHANNEL_H_

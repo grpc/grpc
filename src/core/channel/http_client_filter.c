@@ -32,6 +32,7 @@
  */
 
 #include "src/core/channel/http_client_filter.h"
+#include <string.h>
 #include <grpc/support/log.h>
 
 typedef struct call_data { int sent_headers; } call_data;
@@ -130,6 +131,19 @@ static void destroy_call_elem(grpc_call_element *elem) {
   ignore_unused(channeld);
 }
 
+static const char *scheme_from_args(const grpc_channel_args *args) {
+  int i;
+  if (args != NULL) {
+    for (i = 0; i < args->num_args; ++i) {
+      if (args->args[i].type == GRPC_ARG_STRING &&
+          strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME) == 0) {
+        return args->args[i].value.string;
+      }
+    }
+  }
+  return "http";
+}
+
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
@@ -146,7 +160,8 @@ static void init_channel_elem(grpc_channel_element *elem,
   /* initialize members */
   channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
   channeld->method = grpc_mdelem_from_strings(mdctx, ":method", "POST");
-  channeld->scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
+  channeld->scheme =
+      grpc_mdelem_from_strings(mdctx, ":scheme", scheme_from_args(args));
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 }
@@ -163,9 +178,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_client_filter = {
-    call_op, channel_op,
+    call_op,              channel_op,
 
-    sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(call_data),    init_call_elem,    destroy_call_elem,
 
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
 

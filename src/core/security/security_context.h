@@ -118,7 +118,7 @@ grpc_security_context *grpc_find_security_context_in_args(
 typedef struct grpc_channel_security_context grpc_channel_security_context;
 
 struct grpc_channel_security_context {
-  grpc_security_context base;  /* requires is_client_side to be non 0. */
+  grpc_security_context base; /* requires is_client_side to be non 0. */
   grpc_credentials *request_metadata_creds;
 };
 
