@@ -7,5 +7,10 @@ libs
 objs
 *.pyc
 
+#eclipse project files
+.cproject
+.project
+.settings
+
 # cache for run_tests.py
 .run_tests_cache
