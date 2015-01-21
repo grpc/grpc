@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcDemo", "GrpcDemo\GrpcDe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcApi", "GrpcApi\GrpcApi.csproj", "{7DC1433E-3225-42C7-B7EA-546D56E27A4B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtocolBuffers.NET40", "..\..\..\protobuf\csharp\src\ProtocolBuffers\ProtocolBuffers.NET40.csproj", "{6908BDCE-D925-43F3-94AC-A531E6DF2591}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -21,6 +23,10 @@ Global
 		{61ECB8EE-0C96-4F8E-B187-8E4D227417C0}.Debug|x86.Build.0 = Debug|x86
 		{61ECB8EE-0C96-4F8E-B187-8E4D227417C0}.Release|x86.ActiveCfg = Release|x86
 		{61ECB8EE-0C96-4F8E-B187-8E4D227417C0}.Release|x86.Build.0 = Release|x86
+		{6908BDCE-D925-43F3-94AC-A531E6DF2591}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6908BDCE-D925-43F3-94AC-A531E6DF2591}.Debug|x86.Build.0 = Debug|Any CPU
+		{6908BDCE-D925-43F3-94AC-A531E6DF2591}.Release|x86.ActiveCfg = Release|Any CPU
+		{6908BDCE-D925-43F3-94AC-A531E6DF2591}.Release|x86.Build.0 = Release|Any CPU
 		{7DC1433E-3225-42C7-B7EA-546D56E27A4B}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{7DC1433E-3225-42C7-B7EA-546D56E27A4B}.Debug|x86.Build.0 = Debug|Any CPU
 		{7DC1433E-3225-42C7-B7EA-546D56E27A4B}.Release|x86.ActiveCfg = Release|Any CPU

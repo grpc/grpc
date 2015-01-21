@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reactive.Linq;
+using math;
 
 namespace Google.GRPC.Examples.Math
 {
@@ -13,99 +14,59 @@ namespace Google.GRPC.Examples.Math
 	/// </summary>
 	public interface IMathServiceClient
 	{
-
-		// possibly use Thread.interrupt to trigger cancellation?
-		DivReply Div(DivArgs args);
-
+		// TODO: how about a deadline?
 
 		// statuses different from OK are thrown as an exception....
-		Task<DivReply> DivAsync(DivArgs args);
+		DivReply Div(DivArgs args, CancellationToken token = default(CancellationToken));
 
-		// token is here to support cancellation
-		Task<DivReply> DivAsync(DivArgs args, CancellationToken token);        
+		// statuses different from OK are thrown as an exception....
+		Task<DivReply> DivAsync(DivArgs args, CancellationToken token = default(CancellationToken));        
 
-		IObservable<Number> Fib(FibArgs args);
+		IObservable<Num> Fib(FibArgs args, CancellationToken token = default(CancellationToken));        
 
-		IObservable<Number> Fib(FibArgs args, CancellationToken token);        
+		// Cancellation can also be done through inputs.OnError
+		Task<Num> Sum(out IObserver<Num> inputs, CancellationToken token = default(CancellationToken));
 
-
-		// Cancellation is can be done through inputs.OnError
-		Task<Number> Sum(out IObserver<Number> inputs);
-
-		Task<Number> Sum(out IObserver<Number> inputs, CancellationToken token);
-
-
-		// Cancellation is can be done through inputs.OnError
-		IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs);
-
-		IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token);
+		// Cancellation can also be be done through inputs.OnError
+		IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token = default(CancellationToken));
 	}
 
+	/// <summary>
+	/// Dummy local implementation of math service.
+	/// </summary>
 	public class DummyMathServiceClient : IMathServiceClient
 	{
-	
 		// possibly use Thread.interrupt to trigger cancellation?
-		public DivReply Div(DivArgs args)
+		public DivReply Div(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
+			// TODO: cancellation...
 			return DivInternal (args);
 		}
 
-		// statuses different from OK are thrown as an exception....
-		public Task<DivReply> DivAsync(DivArgs args)
-		{
-			return Task.Factory.StartNew (() => DivInternal(args));
-		}
-
 		// token is here to support cancellation
-		public Task<DivReply> DivAsync(DivArgs args, CancellationToken token)
+		public Task<DivReply> DivAsync(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
 			return Task.Factory.StartNew (() => DivInternal(args), token);
 		}
 
-		public IObservable<Number> Fib(FibArgs args)
-		{
-			if (args.Limit > 0) {
-				return FibInternal(args.Limit).ToObservable();
-			}
-
-			throw new NotImplementedException ("Not implemented yet");
-		}
-
-		public IObservable<Number> Fib(FibArgs args, CancellationToken token)
+		public IObservable<Num> Fib(FibArgs args, CancellationToken token = default(CancellationToken))
 		{
 			if (args.Limit > 0) {
 				// TODO: cancellation
 				return FibInternal(args.Limit).ToObservable();
 			}
+
 			throw new NotImplementedException ("Not implemented yet");
 		}
-		
 
-		// Cancellation is can be done through inputs.OnError
-		public Task<Number> Sum(out IObserver<Number> inputs)
+		public Task<Num> Sum(out IObserver<Num> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: implement
 			inputs = null;
-			return Task.Factory.StartNew (() => new Number());
+			return Task.Factory.StartNew (() => Num.CreateBuilder().Build(), token);
 		}
 
-		public Task<Number> Sum(out IObserver<Number> inputs, CancellationToken token)
-		{
-			// TODO: implement
-			inputs = null;
-			return Task.Factory.StartNew (() => new Number());
-		}
-
-
-		// Cancellation is can be done through inputs.OnError
-		public IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs)
-		{
-			// TODO: implement
-			inputs = null;
-			return new List<DivReply> { }.ToObservable ();
-		}
-
-		public IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token) {
+		public IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token = default(CancellationToken)) {
 			// TODO: implement
 			inputs = null;
 			return new List<DivReply> { }.ToObservable ();
@@ -116,12 +77,12 @@ namespace Google.GRPC.Examples.Math
 		{
 			long quotient = args.Dividend / args.Divisor;
 			long remainder = args.Dividend % args.Divisor;
-			return new DivReply { Quotient = quotient, Remainder = remainder };
+			return new DivReply.Builder{ Quotient = quotient, Remainder = remainder }.Build();
 		}
 
-		IEnumerable<Number> FibInternal(long n) {
+		IEnumerable<Num> FibInternal(long n) {
 			long a = 0;
-			yield return new Number{Num=a};
+			yield return new Num.Builder{Num_=a}.Build();
 
 			long b = 1;
 			for (long i = 0; i < n - 1; i++)
@@ -129,7 +90,7 @@ namespace Google.GRPC.Examples.Math
 				long temp = a;
 				a = b;
 				b = temp + b;
-				yield return new Number{Num=a};
+				yield return new Num.Builder{Num_=a}.Build();
 			}
 		}
 	}
