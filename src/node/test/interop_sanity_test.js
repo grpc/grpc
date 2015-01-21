@@ -44,11 +44,13 @@ describe('Interop tests', function() {
   before(function(done) {
     port_picker.nextAvailablePort(function(addr) {
       server = interop_server.getServer(addr.substring(addr.indexOf(':') + 1));
+      server.listen();
       port = addr;
       done();
     });
   });
-  it.only('should pass empty_unary', function(done) {
+  // This depends on not using a binary stream
+  it.skip('should pass empty_unary', function(done) {
     interop_client.runTest(port, null, 'empty_unary', false, done);
   });
   it('should pass large_unary', function(done) {
@@ -63,7 +65,8 @@ describe('Interop tests', function() {
   it('should pass ping_pong', function(done) {
     interop_client.runTest(port, null, 'ping_pong', false, done);
   });
-  it('should pass empty_stream', function(done) {
+  // This depends on the new invoke API
+  it.skip('should pass empty_stream', function(done) {
     interop_client.runTest(port, null, 'empty_stream', false, done);
   });
 });

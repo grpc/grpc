@@ -31,68 +31,23 @@
  *
  */
 
-var _ = require('underscore');
+var grpc = require('..');
+var testProto = grpc.load('test.proto').grpc.testing;
+var Server = grpc.buildServer([testProto.TestService.Service]);
 
-var ProtoBuf = require('protobufjs');
+function handleEmpty(call, callback) {
+  callback(null, {});
+}
 
-var surface_client = require('./surface_client.js');
-
-var surface_server = require('./surface_server.js');
-
-var grpc = require('bindings')('grpc');
-
-/**
- * Load a gRPC object from an existing ProtoBuf.Reflect object.
- * @param {ProtoBuf.Reflect.Namespace} value The ProtoBuf object to load.
- * @return {Object<string, *>} The resulting gRPC object
- */
-function loadObject(value) {
-  var result = {};
-  if (value.className === 'Namespace') {
-    _.each(value.children, function(child) {
-      result[child.name] = loadObject(child);
-    });
-    return result;
-  } else if (value.className === 'Service') {
-    return surface_client.makeClientConstructor(value);
-  } else if (value.className === 'Message' || value.className === 'Enum') {
-    return value.build();
-  } else {
-    return value;
+function handleUnary(call, callback) {
+  var req = call.request;
+  var zeros = new Buffer(req.response_size);
+  zeros.fill(0);
+  var payload_type = req.response_type;
+  if (payload_type === testProto.PayloadType.RANDOM) {
+    payload_type = [
+      testProto.PayloadType.COMPRESSABLE,
+      testProto.PayloadType.UNCOMPRESSABLE][Math.random() < 0.5 ? 0 : 1];
   }
+  callback(null, {payload: {type: payload_type, body: zeros}});
 }
-
-/**
- * Load a gRPC object from a .proto file.
- * @param {string} filename The file to load
- * @return {Object<string, *>} The resulting gRPC object
- */
-function load(filename) {
-  var builder = ProtoBuf.loadProtoFile(filename);
-
-  return loadObject(builder.ns);
-}
-
-/**
- * See docs for loadObject
- */
-exports.loadObject = loadObject;
-
-/**
- * See docs for load
- */
-exports.load = load;
-
-/**
- * See docs for surface_server.makeServerConstructor
- */
-exports.buildServer = surface_server.makeServerConstructor;
-
-/**
- * Status name to code number mapping
- */
-exports.status = grpc.status;
-/**
- * Call error name to code number mapping
- */
-exports.callError = grpc.callError;

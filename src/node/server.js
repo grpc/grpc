@@ -193,6 +193,7 @@ function Server(options) {
      * @param {grpc.Event} event The event to handle with tag SERVER_RPC_NEW
      */
     function handleNewCall(event) {
+      debugger;
       var call = event.call;
       var data = event.data;
       if (data == null) {

@@ -52,7 +52,6 @@ var util = require('util');
 
 function forwardEvent(fromEmitter, toEmitter, event) {
   fromEmitter.on(event, function forward() {
-    debugger;
     _.partial(toEmitter.emit, event).apply(toEmitter, arguments);
   });
 }
