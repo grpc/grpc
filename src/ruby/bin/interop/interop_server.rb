@@ -104,7 +104,7 @@ class TestTarget < Grpc::Testing::TestService::Service
 
   def unary_call(simple_req, _call)
     req_size = simple_req.response_size
-    SimpleResponse.new(payload: Payload.new(type: COMPRESSABLE,
+    SimpleResponse.new(payload: Payload.new(type: :COMPRESSABLE,
                                             body: nulls(req_size)))
   end
 
