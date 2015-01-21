@@ -31,45 +31,44 @@
  *
  */
 
-var assert = require('assert');
+var interop_server = require('../interop/interop_server.js');
+var interop_client = require('../interop/interop_client.js');
 
-var surface_server = require('../surface_server.js');
+var port_picker = require('../port_picker');
 
-var ProtoBuf = require('protobufjs');
+var server;
 
-var grpc = require('..');
+var port;
 
-var math_proto = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
+var name_override = 'foo.test.google.com';
 
-var mathService = math_proto.lookup('math.Math');
-
-describe('Surface server constructor', function() {
-  it('Should fail with conflicting method names', function() {
-    assert.throws(function() {
-      grpc.buildServer([mathService, mathService]);
+describe('Interop tests', function() {
+  before(function(done) {
+    port_picker.nextAvailablePort(function(addr) {
+      server = interop_server.getServer(addr.substring(addr.indexOf(':') + 1), true);
+      server.listen();
+      port = addr;
+      done();
     });
   });
-  it('Should succeed with a single service', function() {
-    assert.doesNotThrow(function() {
-      grpc.buildServer([mathService]);
-    });
+  // This depends on not using a binary stream
+  it.skip('should pass empty_unary', function(done) {
+    interop_client.runTest(port, name_override, 'empty_unary', true, done);
   });
-  it('Should fail with missing handlers', function() {
-    var Server = grpc.buildServer([mathService]);
-    assert.throws(function() {
-      new Server({
-        'math.Math': {
-          'div': function() {},
-          'divMany': function() {},
-          'fib': function() {}
-        }
-      });
-    }, /math.Math.Sum/);
+  it('should pass large_unary', function(done) {
+    interop_client.runTest(port, name_override, 'large_unary', true, done);
   });
-  it('Should fail with no handlers for the service', function() {
-    var Server = grpc.buildServer([mathService]);
-    assert.throws(function() {
-      new Server({});
-    }, /math.Math/);
+  it('should pass client_streaming', function(done) {
+    interop_client.runTest(port, name_override, 'client_streaming', true, done);
+  });
+  it('should pass server_streaming', function(done) {
+    interop_client.runTest(port, name_override, 'server_streaming', true, done);
+  });
+  it('should pass ping_pong', function(done) {
+    interop_client.runTest(port, name_override, 'ping_pong', true, done);
+  });
+  // This depends on the new invoke API
+  it.skip('should pass empty_stream', function(done) {
+    interop_client.runTest(port, name_override, 'empty_stream', true, done);
   });
 });
