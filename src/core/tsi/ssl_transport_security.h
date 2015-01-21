@@ -132,8 +132,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_server_handshaker_factory(
     const unsigned char** pem_private_keys,
-    const size_t* pem_private_keys_sizes,
-    const unsigned char** pem_cert_chains,
+    const size_t* pem_private_keys_sizes, const unsigned char** pem_cert_chains,
     const size_t* pem_cert_chains_sizes, size_t key_cert_pair_count,
     const unsigned char* pem_client_root_certs,
     size_t pem_client_root_certs_size, const char* cipher_suites,

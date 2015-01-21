@@ -52,10 +52,10 @@ class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
   RubyGrpcGenerator() {}
   ~RubyGrpcGenerator() override {}
 
-  bool Generate(const google::protobuf::FileDescriptor* file,
-                const std::string& parameter,
-                google::protobuf::compiler::GeneratorContext* context,
-                std::string* error) const override {
+  bool Generate(const google::protobuf::FileDescriptor *file,
+                const std::string &parameter,
+                google::protobuf::compiler::GeneratorContext *context,
+                std::string *error) const override {
     std::string code = grpc_ruby_generator::GetServices(file);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
@@ -74,7 +74,7 @@ class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   RubyGrpcGenerator generator;
   return google::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

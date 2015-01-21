@@ -488,4 +488,3 @@ void cq_expect_finished(cq_verifier *v, void *tag, ...) {
 void cq_expect_server_shutdown(cq_verifier *v, void *tag) {
   add(v, GRPC_SERVER_SHUTDOWN, tag);
 }
-

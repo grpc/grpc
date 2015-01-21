@@ -45,16 +45,16 @@ class FileDescriptor;
 namespace grpc_cpp_generator {
 
 // Return the includes needed for generated header file.
-std::string GetHeaderIncludes(const google::protobuf::FileDescriptor* file);
+std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file);
 
 // Return the includes needed for generated source file.
 std::string GetSourceIncludes();
 
 // Return the services for generated header file.
-std::string GetHeaderServices(const google::protobuf::FileDescriptor* file);
+std::string GetHeaderServices(const google::protobuf::FileDescriptor *file);
 
 // Return the services for generated source file.
-std::string GetSourceServices(const google::protobuf::FileDescriptor* file);
+std::string GetSourceServices(const google::protobuf::FileDescriptor *file);
 
 }  // namespace grpc_cpp_generator
 

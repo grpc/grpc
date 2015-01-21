@@ -413,10 +413,10 @@ grpc_security_status grpc_ssl_server_security_context_create(
       (const unsigned char **)&config->pem_private_key,
       &config->pem_private_key_size,
       (const unsigned char **)&config->pem_cert_chain,
-      &config->pem_cert_chain_size, 1,
-      config->pem_root_certs, config->pem_root_certs_size,
-      GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
-      alpn_protocol_string_lengths, num_alpn_protocols, &c->handshaker_factory);
+      &config->pem_cert_chain_size, 1, config->pem_root_certs,
+      config->pem_root_certs_size, GRPC_SSL_CIPHER_SUITES,
+      alpn_protocol_strings, alpn_protocol_string_lengths, num_alpn_protocols,
+      &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
