@@ -54,26 +54,12 @@ std::unique_ptr<Credentials> CredentialsFactory::DefaultCredentials() {
 // Builds SSL Credentials given SSL specific options
 std::unique_ptr<Credentials> CredentialsFactory::SslCredentials(
     const SslCredentialsOptions &options) {
-  const unsigned char *pem_root_certs =
-      options.pem_root_certs.empty() ? nullptr
-                                     : reinterpret_cast<const unsigned char *>(
-                                           options.pem_root_certs.c_str());
-  if (pem_root_certs == nullptr) {
-    return std::unique_ptr<Credentials>();
-  }
-  const unsigned char *pem_private_key =
-      options.pem_private_key.empty() ? nullptr
-                                      : reinterpret_cast<const unsigned char *>(
-                                            options.pem_private_key.c_str());
-  const unsigned char *pem_cert_chain =
-      options.pem_cert_chain.empty() ? nullptr
-                                     : reinterpret_cast<const unsigned char *>(
-                                           options.pem_cert_chain.c_str());
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
+      options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
 
   grpc_credentials *c_creds = grpc_ssl_credentials_create(
-      pem_root_certs, options.pem_root_certs.size(), pem_private_key,
-      options.pem_private_key.size(), pem_cert_chain,
-      options.pem_cert_chain.size());
+      options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
+      options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair);
   std::unique_ptr<Credentials> cpp_creds(
       c_creds == nullptr ? nullptr : new Credentials(c_creds));
   return cpp_creds;
