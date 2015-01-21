@@ -31,14 +31,12 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_POSIX_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_POSIX_H_
+#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
 
 #include <grpc/support/sync.h>
 
 #include "src/core/iomgr/pollset_kick.h"
-
-typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
 /* forward declare only in this file to avoid leaking impl details via
    pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
@@ -46,53 +44,11 @@ typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 struct grpc_fd;
 
 typedef struct grpc_pollset {
-  /* pollsets under posix can mutate representation as fds are added and
-     removed.
-     For example, we may choose a poll() based implementation on linux for
-     few fds, and an epoll() based implementation for many fds */
-  const grpc_pollset_vtable *vtable;
-  gpr_mu mu;
-  gpr_cv cv;
-  grpc_pollset_kick_state kick_state;
-  int counter;
-  union {
-    int fd;
-    void *ptr;
-  } data;
+	gpr_mu mu;
+	gpr_cv cv;
 } grpc_pollset;
-
-struct grpc_pollset_vtable {
-  void (*add_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
-  void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
-  int (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
-                    gpr_timespec now, int allow_synchronous_callback);
-  void (*destroy)(grpc_pollset *pollset);
-};
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 #define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
-/* Add an fd to a pollset */
-void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);
-/* Force remove an fd from a pollset (normally they are removed on the next
-   poll after an fd is orphaned) */
-void grpc_pollset_del_fd(grpc_pollset *pollset, struct grpc_fd *fd);
-
-/* Force any current pollers to break polling */
-void grpc_pollset_force_kick(grpc_pollset *pollset);
-/* Returns the fd to listen on for kicks */
-int grpc_kick_read_fd(grpc_pollset *p);
-/* Call after polling has been kicked to leave the kicked state */
-void grpc_kick_drain(grpc_pollset *p);
-
-/* All fds get added to a backup pollset to ensure that progress is made
-   regardless of applications listening to events. Relying on this is slow
-   however (the backup pollset only listens every 100ms or so) - so it's not
-   to be relied on. */
-grpc_pollset *grpc_backup_pollset(void);
-
-/* turn a pollset into a multipoller: platform specific */
-void grpc_platform_become_multipoller(grpc_pollset *pollset,
-                                      struct grpc_fd **fds, size_t fd_count);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_POSIX_H_ */
+#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
