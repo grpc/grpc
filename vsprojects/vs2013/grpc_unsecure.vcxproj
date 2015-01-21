@@ -272,6 +272,10 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json-string.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_log.c">
@@ -353,8 +357,6 @@
     <ClCompile Include="..\..\src\core\transport\stream_op.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\transport.c">
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\cJSON\cJSON.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

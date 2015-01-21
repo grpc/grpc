@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include "test/core/util/test_config.h"
-#include "third_party/cJSON/cJSON.h"
+#include "src/core/json/json.h"
 #include <openssl/evp.h>
 
 /* This JSON key was generated with the GCE console and revoked immediately.
@@ -203,10 +203,11 @@ static void test_parse_json_key_failure_no_private_key(void) {
   grpc_auth_json_key_destruct(&json_key);
 }
 
-static cJSON *parse_json_part_from_jwt(const char *str, size_t len) {
+static grpc_json *parse_json_part_from_jwt(const char *str, size_t len,
+                                           char **scratchpad) {
   char *b64;
   char *decoded;
-  cJSON *json;
+  grpc_json *json;
   gpr_slice slice;
   b64 = gpr_malloc(len + 1);
   strncpy(b64, str, len);
@@ -217,59 +218,84 @@ static cJSON *parse_json_part_from_jwt(const char *str, size_t len) {
   strncpy(decoded, (const char *)GPR_SLICE_START_PTR(slice),
           GPR_SLICE_LENGTH(slice));
   decoded[GPR_SLICE_LENGTH(slice)] = '\0';
-  json = cJSON_Parse(decoded);
+  json = grpc_json_parse_string(decoded);
   gpr_free(b64);
-  gpr_free(decoded);
+  *scratchpad = decoded;
   gpr_slice_unref(slice);
   return json;
 }
 
-static void check_jwt_header(cJSON *header) {
-  cJSON *child = cJSON_GetObjectItem(header, "alg");
-  GPR_ASSERT(child != NULL);
-  GPR_ASSERT(child->type == cJSON_String);
-  GPR_ASSERT(!strcmp(child->valuestring, "RS256"));
+static void check_jwt_header(grpc_json *header) {
+  grpc_json *ptr;
+  grpc_json *alg = NULL;
+  grpc_json *typ = NULL;
 
-  child = cJSON_GetObjectItem(header, "typ");
-  GPR_ASSERT(child != NULL);
-  GPR_ASSERT(child->type == cJSON_String);
-  GPR_ASSERT(!strcmp(child->valuestring, "JWT"));
+  for (ptr = header->child; ptr; ptr = ptr->next) {
+    if (strcmp(ptr->key, "alg") == 0) {
+      alg = ptr;
+    } else if (strcmp(ptr->key, "typ") == 0) {
+      typ = ptr;
+    }
+  }
+  GPR_ASSERT(alg != NULL);
+  GPR_ASSERT(alg->type == GRPC_JSON_STRING);
+  GPR_ASSERT(!strcmp(alg->value, "RS256"));
+
+  GPR_ASSERT(typ != NULL);
+  GPR_ASSERT(typ->type == GRPC_JSON_STRING);
+  GPR_ASSERT(!strcmp(typ->value, "JWT"));
 }
 
-static void check_jwt_claim(cJSON *claim) {
-  gpr_timespec exp = {0, 0};
+static void check_jwt_claim(grpc_json *claim) {
+  gpr_timespec expiration = {0, 0};
   gpr_timespec issue_time = {0, 0};
   gpr_timespec parsed_lifetime;
-  cJSON *child = cJSON_GetObjectItem(claim, "iss");
-  GPR_ASSERT(child != NULL);
-  GPR_ASSERT(child->type == cJSON_String);
+  grpc_json *iss = NULL;
+  grpc_json *scope = NULL;
+  grpc_json *aud = NULL;
+  grpc_json *exp = NULL;
+  grpc_json *iat = NULL;
+  grpc_json *ptr;
+
+  for (ptr = claim->child; ptr; ptr = ptr->next) {
+    if (strcmp(ptr->key, "iss") == 0) {
+      iss = ptr;
+    } else if (strcmp(ptr->key, "scope") == 0) {
+      scope = ptr;
+    } else if (strcmp(ptr->key, "aud") == 0) {
+      aud = ptr;
+    } else if (strcmp(ptr->key, "exp") == 0) {
+      exp = ptr;
+    } else if (strcmp(ptr->key, "iat") == 0) {
+      iat = ptr;
+    }
+  }
+
+  GPR_ASSERT(iss != NULL);
+  GPR_ASSERT(iss->type == GRPC_JSON_STRING);
   GPR_ASSERT(
       !strcmp(
-          child->valuestring,
+          iss->value,
           "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com"));
 
-  child = cJSON_GetObjectItem(claim, "scope");
-  GPR_ASSERT(child != NULL);
-  GPR_ASSERT(child->type == cJSON_String);
-  GPR_ASSERT(!strcmp(child->valuestring, test_scope));
+  GPR_ASSERT(scope != NULL);
+  GPR_ASSERT(scope->type == GRPC_JSON_STRING);
+  GPR_ASSERT(!strcmp(scope->value, test_scope));
 
-  child = cJSON_GetObjectItem(claim, "aud");
-  GPR_ASSERT(child != NULL);
-  GPR_ASSERT(child->type == cJSON_String);
-  GPR_ASSERT(!strcmp(child->valuestring,
+  GPR_ASSERT(aud != NULL);
+  GPR_ASSERT(aud->type == GRPC_JSON_STRING);
+  GPR_ASSERT(!strcmp(aud->value,
                      "https://www.googleapis.com/oauth2/v3/token"));
 
-  child = cJSON_GetObjectItem(claim, "exp");
-  GPR_ASSERT(child != NULL);
-  GPR_ASSERT(child->type == cJSON_Number);
-  exp.tv_sec = child->valueint;
+  GPR_ASSERT(exp != NULL);
+  GPR_ASSERT(exp->type == GRPC_JSON_NUMBER);
+  expiration.tv_sec = strtol(exp->value, NULL, 10);
 
-  child = cJSON_GetObjectItem(claim, "iat");
-  GPR_ASSERT(child != NULL);
-  GPR_ASSERT(child->type == cJSON_Number);
-  issue_time.tv_sec = child->valueint;
+  GPR_ASSERT(iat != NULL);
+  GPR_ASSERT(iat->type == GRPC_JSON_NUMBER);
+  issue_time.tv_sec = strtol(iat->value, NULL, 10);
 
-  parsed_lifetime = gpr_time_sub(exp, issue_time);
+  parsed_lifetime = gpr_time_sub(expiration, issue_time);
   GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime.tv_sec);
 }
 
@@ -300,8 +326,9 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
 
 static void test_jwt_encode_and_sign(void) {
   char *json_string = test_json_key_str(NULL);
-  cJSON *parsed_header = NULL;
-  cJSON *parsed_claim = NULL;
+  grpc_json *parsed_header = NULL;
+  grpc_json *parsed_claim = NULL;
+  char *scratchpad;
   grpc_auth_json_key json_key =
       grpc_auth_json_key_create_from_string(json_string);
   const char *b64_signature;
@@ -310,17 +337,21 @@ static void test_jwt_encode_and_sign(void) {
                                        grpc_max_auth_token_lifetime);
   const char *dot = strchr(jwt, '.');
   GPR_ASSERT(dot != NULL);
-  parsed_header = parse_json_part_from_jwt(jwt, dot - jwt);
+  parsed_header = parse_json_part_from_jwt(jwt, dot - jwt, &scratchpad);
   GPR_ASSERT(parsed_header != NULL);
   check_jwt_header(parsed_header);
   offset = dot - jwt + 1;
+  grpc_json_delete(parsed_header);
+  gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot != NULL);
-  parsed_claim = parse_json_part_from_jwt(jwt + offset, dot - (jwt + offset));
+  parsed_claim = parse_json_part_from_jwt(jwt + offset, dot - (jwt + offset), &scratchpad);
   GPR_ASSERT(parsed_claim != NULL);
   check_jwt_claim(parsed_claim);
   offset = dot - jwt + 1;
+  grpc_json_delete(parsed_claim);
+  gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot == NULL); /* no more part. */
@@ -328,8 +359,6 @@ static void test_jwt_encode_and_sign(void) {
   check_jwt_signature(b64_signature, json_key.private_key, jwt, offset - 1);
 
   gpr_free(json_string);
-  cJSON_Delete(parsed_header);
-  cJSON_Delete(parsed_claim);
   grpc_auth_json_key_destruct(&json_key);
   gpr_free(jwt);
 }

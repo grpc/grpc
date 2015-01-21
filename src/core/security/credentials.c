@@ -42,7 +42,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "third_party/cJSON/cJSON.h"
+#include "src/core/json/json.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -157,7 +157,7 @@ static void ssl_server_destroy(grpc_server_credentials *creds) {
     if (c->config.pem_private_keys[i] != NULL) {
       gpr_free(c->config.pem_private_keys[i]);
     }
-    if (c->config.pem_cert_chains[i]!= NULL)  {
+    if (c->config.pem_cert_chains[i] != NULL) {
       gpr_free(c->config.pem_cert_chains[i]);
     }
   }
@@ -336,7 +336,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   char *null_terminated_body = NULL;
   char *new_access_token = NULL;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
-  cJSON *json = NULL;
+  grpc_json *json = NULL;
 
   if (response->body_length > 0) {
     null_terminated_body = gpr_malloc(response->body_length + 1);
@@ -351,46 +351,52 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     status = GRPC_CREDENTIALS_ERROR;
     goto end;
   } else {
-    cJSON *access_token = NULL;
-    cJSON *token_type = NULL;
-    cJSON *expires_in = NULL;
+    grpc_json *access_token = NULL;
+    grpc_json *token_type = NULL;
+    grpc_json *expires_in = NULL;
+    grpc_json *ptr;
     size_t new_access_token_size = 0;
-    json = cJSON_Parse(null_terminated_body);
+    json = grpc_json_parse_string(null_terminated_body);
     if (json == NULL) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s", null_terminated_body);
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    if (json->type != cJSON_Object) {
+    if (json->type != GRPC_JSON_OBJECT) {
       gpr_log(GPR_ERROR, "Response should be a JSON object");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    access_token = cJSON_GetObjectItem(json, "access_token");
-    if (access_token == NULL || access_token->type != cJSON_String) {
+    for (ptr = json->child; ptr; ptr = ptr->next) {
+      if (strcmp(ptr->key, "access_token") == 0) {
+        access_token = ptr;
+      } else if (strcmp(ptr->key, "token_type") == 0) {
+        token_type = ptr;
+      } else if (strcmp(ptr->key, "expires_in") == 0) {
+        expires_in = ptr;
+      }
+    }
+    if (access_token == NULL || access_token->type != GRPC_JSON_STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid access_token in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    token_type = cJSON_GetObjectItem(json, "token_type");
-    if (token_type == NULL || token_type->type != cJSON_String) {
+    if (token_type == NULL || token_type->type != GRPC_JSON_STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid token_type in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    expires_in = cJSON_GetObjectItem(json, "expires_in");
-    if (expires_in == NULL || expires_in->type != cJSON_Number) {
+    if (expires_in == NULL || expires_in->type != GRPC_JSON_NUMBER) {
       gpr_log(GPR_ERROR, "Missing or invalid expires_in in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    new_access_token_size = strlen(token_type->valuestring) + 1 +
-                            strlen(access_token->valuestring) + 1;
+    new_access_token_size =
+        strlen(token_type->value) + 1 + strlen(access_token->value) + 1;
     new_access_token = gpr_malloc(new_access_token_size);
     /* C89 does not have snprintf :(. */
-    sprintf(new_access_token, "%s %s", token_type->valuestring,
-            access_token->valuestring);
-    token_lifetime->tv_sec = expires_in->valueint;
+    sprintf(new_access_token, "%s %s", token_type->value, access_token->value);
+    token_lifetime->tv_sec = strtol(expires_in->value, NULL, 10);
     token_lifetime->tv_nsec = 0;
     if (*token_elem != NULL) grpc_mdelem_unref(*token_elem);
     *token_elem = grpc_mdelem_from_strings(ctx, GRPC_AUTHORIZATION_METADATA_KEY,
@@ -405,7 +411,7 @@ end:
   }
   if (null_terminated_body != NULL) gpr_free(null_terminated_body);
   if (new_access_token != NULL) gpr_free(new_access_token);
-  if (json != NULL) cJSON_Delete(json);
+  if (json != NULL) grpc_json_delete(json);
   return status;
 }
 

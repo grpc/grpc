@@ -135,6 +135,8 @@
         "src/core/iomgr/tcp_posix.c",
         "src/core/iomgr/tcp_server_posix.c",
         "src/core/iomgr/time_averaged_stats.c",
+        "src/core/json/json.c",
+        "src/core/json/json-string.c",
         "src/core/statistics/census_init.c",
         "src/core/statistics/census_log.c",
         "src/core/statistics/census_rpc_stats.c",
@@ -175,8 +177,7 @@
         "src/core/transport/chttp2_transport.c",
         "src/core/transport/metadata.c",
         "src/core/transport/stream_op.c",
-        "src/core/transport/transport.c",
-        "third_party/cJSON/cJSON.c"
+        "src/core/transport/transport.c"
       ]
     }
   ],
