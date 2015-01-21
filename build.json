@@ -48,6 +48,7 @@
         "src/core/iomgr/pollset.h",
         "src/core/iomgr/pollset_kick.h",
         "src/core/iomgr/pollset_kick_posix.h",
+        "src/core/iomgr/pollset_kick_windows.h",
         "src/core/iomgr/pollset_posix.h",
         "src/core/iomgr/pollset_windows.h",
         "src/core/iomgr/resolve_address.h",
