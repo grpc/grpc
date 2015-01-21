@@ -28,26 +28,41 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
+require 'signet'
 
-describe GRPC::Core::CompletionType do
-  before(:each) do
-    @known_types = {
-      QUEUE_SHUTDOWN: 0,
-      READ: 1,
-      INVOKE_ACCEPTED: 2,
-      WRITE_ACCEPTED: 3,
-      FINISH_ACCEPTED: 4,
-      CLIENT_METADATA_READ: 5,
-      FINISHED: 6,
-      SERVER_RPC_NEW: 7,
-      SERVER_SHUTDOWN: 8,
-      RESERVED: 9
-    }
-  end
 
-  it 'should have all the known types' do
-    mod = GRPC::Core::CompletionType
-    blk = proc { Hash[mod.constants.collect { |c| [c, mod.const_get(c)] }] }
-    expect(blk.call).to eq(@known_types)
+module Google
+  import Signet::OAuth2
+
+  # Google::RPC contains the General RPC module.
+  module RPC
+    # ServiceAccounCredentials can obtain credentials for a configured service
+    # account, scopes and issuer.
+    module Auth
+      class ServiceAccountCredentials
+        CREDENTIAL_URI = 'https://accounts.google.com/o/oauth2/token'
+        AUDIENCE_URI = 'https://accounts.google.com/o/oauth2/token'
+
+        # Initializes an instance with the given scope, issuer and signing_key
+        def initialize(scope, issuer, key)
+          @auth_client =  Client.new(token_credential_uri: CREDENTIAL_URI,
+                                     audience: AUDIENCE_URI,
+                                     scope: scope,
+                                     issuer: issuer,
+                                     signing_key: key)
+          @auth_token = nil
+        end
+
+        def metadata_update_proc
+          proc do |input_md|
+            input
+          end
+        end
+
+        def auth_creds
+          key = Google::APIClient::KeyUtils.load_from_pkcs12('client.p12', 'notasecret')
+        end
+      end
+    end
   end
 end
