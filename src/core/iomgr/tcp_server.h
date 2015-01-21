@@ -60,7 +60,7 @@ void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset *pollset,
    For raw access to the underlying sockets, see grpc_tcp_server_get_fd(). */
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_tcp_server_add_port(grpc_tcp_server *s, const struct sockaddr *addr,
+int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
                              int addr_len);
 
 /* Returns the file descriptor of the Nth listening socket on this server,
