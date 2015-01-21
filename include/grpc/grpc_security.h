@@ -60,8 +60,8 @@ typedef struct {
      the client's private key. */
   const char *private_key;
 
-   /* cert_chain is the NULL-terminated string containing the PEM encoding of
-      the client's certificate chain. */
+  /* cert_chain is the NULL-terminated string containing the PEM encoding of
+     the client's certificate chain. */
   const char *cert_chain;
 } grpc_ssl_pem_key_cert_pair;
 
