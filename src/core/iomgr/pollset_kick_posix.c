@@ -43,6 +43,9 @@
 
 /* This implementation is based on a freelist of pipes. */
 
+#define GRPC_MAX_CACHED_PIPES 50
+#define GRPC_PIPE_LOW_WATERMARK 25
+
 typedef struct grpc_kick_pipe_info {
   int pipe_read_fd;
   int pipe_write_fd;
@@ -50,14 +53,16 @@ typedef struct grpc_kick_pipe_info {
 } grpc_kick_pipe_info;
 
 static grpc_kick_pipe_info *pipe_freelist = NULL;
+static int pipe_freelist_count = 0;
 static gpr_mu pipe_freelist_mu;
 
-static grpc_kick_pipe_info *allocate_pipe() {
+static grpc_kick_pipe_info *allocate_pipe(void) {
   grpc_kick_pipe_info *info;
   gpr_mu_lock(&pipe_freelist_mu);
   if (pipe_freelist != NULL) {
     info = pipe_freelist;
     pipe_freelist = pipe_freelist->next;
+    --pipe_freelist_count;
   } else {
     int pipefd[2];
     /* TODO(klempner): Make this nonfatal */
@@ -73,11 +78,26 @@ static grpc_kick_pipe_info *allocate_pipe() {
   return info;
 }
 
+static void destroy_pipe(void) {
+  /* assumes pipe_freelist_mu is held */
+  grpc_kick_pipe_info *current = pipe_freelist;
+  pipe_freelist = pipe_freelist->next;
+  pipe_freelist_count--;
+  close(current->pipe_read_fd);
+  close(current->pipe_write_fd);
+  gpr_free(current);
+}
+
 static void free_pipe(grpc_kick_pipe_info *pipe_info) {
-  /* TODO(klempner): Start closing pipes if the free list gets too large */
   gpr_mu_lock(&pipe_freelist_mu);
   pipe_info->next = pipe_freelist;
   pipe_freelist = pipe_info;
+  pipe_freelist_count++;
+  if (pipe_freelist_count > GRPC_MAX_CACHED_PIPES) {
+    while (pipe_freelist_count > GRPC_PIPE_LOW_WATERMARK) {
+      destroy_pipe();
+    }
+  }
   gpr_mu_unlock(&pipe_freelist_mu);
 }
 
@@ -88,11 +108,7 @@ void grpc_pollset_kick_global_init() {
 
 void grpc_pollset_kick_global_destroy() {
   while (pipe_freelist != NULL) {
-    grpc_kick_pipe_info *current = pipe_freelist;
-    pipe_freelist = pipe_freelist->next;
-    close(current->pipe_read_fd);
-    close(current->pipe_write_fd);
-    gpr_free(current);
+    destroy_pipe();
   }
   gpr_mu_destroy(&pipe_freelist_mu);
 }
