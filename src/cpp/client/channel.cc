@@ -102,12 +102,12 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
   grpc_call *call = grpc_channel_create_call(
       c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
-  grpc_event* ev;
-  void* finished_tag = reinterpret_cast<char*>(call);
-  void* metadata_read_tag = reinterpret_cast<char*>(call) + 2;
-  void* write_tag = reinterpret_cast<char*>(call) + 3;
-  void* halfclose_tag = reinterpret_cast<char*>(call) + 4;
-  void* read_tag = reinterpret_cast<char*>(call) + 5;
+  grpc_event *ev;
+  void *finished_tag = reinterpret_cast<char *>(call);
+  void *metadata_read_tag = reinterpret_cast<char *>(call) + 2;
+  void *write_tag = reinterpret_cast<char *>(call) + 3;
+  void *halfclose_tag = reinterpret_cast<char *>(call) + 4;
+  void *read_tag = reinterpret_cast<char *>(call) + 5;
 
   grpc_completion_queue *cq = grpc_completion_queue_create();
   context->set_cq(cq);
@@ -117,7 +117,7 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
   GPR_ASSERT(grpc_call_invoke(call, cq, metadata_read_tag, finished_tag,
                               GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   // write request
-  grpc_byte_buffer* write_buffer = nullptr;
+  grpc_byte_buffer *write_buffer = nullptr;
   bool success = SerializeProto(request, &write_buffer);
   if (!success) {
     grpc_call_cancel(call);

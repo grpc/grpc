@@ -72,13 +72,15 @@ class StreamContext final : public StreamContextInterface {
   // Unique tags for plucking events from the c layer. this pointer is casted
   // to char* to create single byte step between tags. It implicitly relies on
   // that StreamContext is large enough to contain all the pointers.
-  void* finished_tag() { return reinterpret_cast<char*>(this); }
-  void* read_tag() { return reinterpret_cast<char*>(this) + 1; }
-  void* write_tag() { return reinterpret_cast<char*>(this) + 2; }
-  void* halfclose_tag() { return reinterpret_cast<char*>(this) + 3; }
-  void* client_metadata_read_tag() { return reinterpret_cast<char*>(this) + 5; }
-  grpc_call* call() { return call_; }
-  grpc_completion_queue* cq() { return cq_; }
+  void *finished_tag() { return reinterpret_cast<char *>(this); }
+  void *read_tag() { return reinterpret_cast<char *>(this) + 1; }
+  void *write_tag() { return reinterpret_cast<char *>(this) + 2; }
+  void *halfclose_tag() { return reinterpret_cast<char *>(this) + 3; }
+  void *client_metadata_read_tag() {
+    return reinterpret_cast<char *>(this) + 5;
+  }
+  grpc_call *call() { return call_; }
+  grpc_completion_queue *cq() { return cq_; }
 
   bool is_client_;
   const RpcMethod *method_;             // not owned
