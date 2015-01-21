@@ -132,8 +132,8 @@
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32
 #endif
 
-#if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_POLLSET)
-#error Must define GPR_POSIX_POLLSET to use GPR_POSIX_MULTIPOLL_WITH_POLL
+#if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_SOCKET)
+#error Must define GPR_POSIX_SOCKET to use GPR_POSIX_MULTIPOLL_WITH_POLL
 #endif
 
 #if defined(GPR_POSIX_SOCKET) + defined(GPR_WIN32) != 1
