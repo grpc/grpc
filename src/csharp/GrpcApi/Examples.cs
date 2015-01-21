@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using math;
 
 namespace Google.GRPC.Examples.Math
 {
@@ -13,30 +14,30 @@ namespace Google.GRPC.Examples.Math
 
 		public void DivExample()
 		{
-			DivReply result = stub.Div(new DivArgs { Dividend = 4, Divisor = 5 });
+			DivReply result = stub.Div(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
 			Console.WriteLine(result);
 		}
 
 		public void DivAsyncExample()
 		{
-			Task<DivReply> call = stub.DivAsync(new DivArgs { Dividend = 4, Divisor = 5 });
+			Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
 			DivReply result = call.Result;
 			Console.WriteLine(result);
 		}
 
 		public void DivAsyncWithCancellationExample()
 		{
-			Task<DivReply> call = stub.DivAsync(new DivArgs { Dividend = 4, Divisor = 5 });
+			Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
 			DivReply result = call.Result;
 			Console.WriteLine(result);
 		}
 
 		public void FibExample()
 		{
-			IObservable<Number> response = stub.Fib(new FibArgs { Limit = 5 });
+			IObservable<Num> response = stub.Fib(new FibArgs.Builder{ Limit = 5 }.Build());
 
 			// .ToList() requires reactive Linq
-			IList<Number> numbers = response.ToList().Wait();
+			IList<Num> numbers = response.ToList().Wait();
 			Console.WriteLine(numbers);
 		}
 
@@ -45,11 +46,11 @@ namespace Google.GRPC.Examples.Math
 			// Cancellation options:
 			// -- inputs.OnError() can be used to cancel
 			// -- add CancellationToken as a parameter
-			IObserver<Number> numbers;
-			Task<Number> call = stub.Sum(out numbers);
-			numbers.OnNext(new Number{Num = 1});
-			numbers.OnNext(new Number{Num = 2});
-			numbers.OnNext(new Number{Num = 3});
+			IObserver<Num> numbers;
+			Task<Num> call = stub.Sum(out numbers);
+			numbers.OnNext(new Num.Builder{Num_ = 1}.Build());
+			numbers.OnNext(new Num.Builder{Num_ = 2}.Build());
+			numbers.OnNext(new Num.Builder{Num_ = 3}.Build());
 			numbers.OnCompleted();
 
 			Console.WriteLine(call.Result);
@@ -59,9 +60,9 @@ namespace Google.GRPC.Examples.Math
 		{
 			IObserver<DivArgs> requestSink;
 			IObservable<DivReply> response = stub.DivMany(out requestSink);
-			requestSink.OnNext(new DivArgs {Dividend = 5, Divisor = 4});
-			requestSink.OnNext(new DivArgs { Dividend = 3, Divisor = 2 });
-			requestSink.OnNext(new DivArgs { Dividend = 6, Divisor = 2 });
+			requestSink.OnNext(new DivArgs.Builder{Dividend = 5, Divisor = 4}.Build());
+			requestSink.OnNext(new DivArgs.Builder{ Dividend = 3, Divisor = 2 }.Build());
+			requestSink.OnNext(new DivArgs.Builder{ Dividend = 6, Divisor = 2 }.Build());
 			requestSink.OnCompleted();
 
 			Console.WriteLine(response.ToList().Wait());
@@ -69,31 +70,31 @@ namespace Google.GRPC.Examples.Math
 
 		public void DependendRequestsExample()
 		{
-			var numberList = new List<Number> { new Number { Num = 1 }, 
-				new Number { Num = 2 }, new Number { Num = 3 } };
+			var numberList = new List<Num> { new Num.Builder{ Num_ = 1 }.Build(), 
+				new Num.Builder{ Num_ = 2 }.Build(), new Num.Builder{ Num_ = 3 }.Build() };
 
 			numberList.ToObservable();
 
-			IObserver<Number> numbers;
-			Task<Number> call = stub.Sum(out numbers);            
+			IObserver<Num> numbers;
+			Task<Num> call = stub.Sum(out numbers);            
 			foreach(var num in numberList) {
 				numbers.OnNext(num);
 			}
 			numbers.OnCompleted();
 
-			Number sum = call.Result;
+			Num sum = call.Result;
 
-			DivReply result = stub.Div(new DivArgs { Dividend = sum.Num, Divisor = numberList.Count });
+			DivReply result = stub.Div(new DivArgs.Builder{ Dividend = sum.Num_, Divisor = numberList.Count }.Build());
 		}
 
 		public void Experiment()
 		{
-			var numberList = new List<Number> { new Number { Num = 1 }, 
-				new Number { Num = 2 }, new Number { Num = 3 } };
+			var numberList = new List<Num> { new Num.Builder{ Num_ = 1 }.Build(), 
+				new Num.Builder{ Num_ = 2}.Build(), new Num.Builder{Num_ = 3}.Build() };
 
-			IObservable<Number> observable = numberList.ToObservable();
+			IObservable<Num> observable = numberList.ToObservable();
 
-			IObserver<Number> observer = null;
+			IObserver<Num> observer = null;
 			IDisposable subscription = observable.Subscribe(observer);
 
 			subscription.Dispose();
