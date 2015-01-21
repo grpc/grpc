@@ -282,6 +282,9 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
   
+  /* initialize http download support */
+  channeld->gettable_count = 0;
+  channeld->gettables = NULL;
   for (i = 0; i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_SERVE_OVER_HTTP)) {
       gettable *g;
