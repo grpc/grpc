@@ -148,8 +148,6 @@ void InitCompletionTypeConstants(Handle<Object> exports) {
   completion_type->Set(NanNew("QUEUE_SHUTDOWN"), QUEUE_SHUTDOWN);
   Handle<Value> READ(NanNew<Uint32, uint32_t>(GRPC_READ));
   completion_type->Set(NanNew("READ"), READ);
-  Handle<Value> INVOKE_ACCEPTED(NanNew<Uint32, uint32_t>(GRPC_INVOKE_ACCEPTED));
-  completion_type->Set(NanNew("INVOKE_ACCEPTED"), INVOKE_ACCEPTED);
   Handle<Value> WRITE_ACCEPTED(NanNew<Uint32, uint32_t>(GRPC_WRITE_ACCEPTED));
   completion_type->Set(NanNew("WRITE_ACCEPTED"), WRITE_ACCEPTED);
   Handle<Value> FINISH_ACCEPTED(NanNew<Uint32, uint32_t>(GRPC_FINISH_ACCEPTED));
