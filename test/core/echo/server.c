@@ -104,12 +104,12 @@ int main(int argc, char **argv) {
   grpc_channel_args args = {0, NULL};
 
   grpc_http_server_page home_page = {"/", "text/html",
-                                       "<head>\n"
-                                       "<title>Echo Server</title>\n"
-                                       "</head>\n"
-                                       "<body>\n"
-                                       "Welcome to the world of the future!\n"
-                                       "</body>\n"};
+                                     "<head>\n"
+                                     "<title>Echo Server</title>\n"
+                                     "</head>\n"
+                                     "<body>\n"
+                                     "Welcome to the world of the future!\n"
+                                     "</body>\n"};
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
