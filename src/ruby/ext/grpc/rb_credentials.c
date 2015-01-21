@@ -214,6 +214,7 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   VALUE pem_cert_chain = Qnil;
   grpc_rb_credentials *wrapper = NULL;
   grpc_credentials *creds = NULL;
+  /* TODO: Remove mandatory arg when we support default roots. */
   /* "12" == 1 mandatory arg, 2 (credentials) is optional */
   rb_scan_args(argc, argv, "12", &pem_root_certs, &pem_private_key,
                &pem_cert_chain);
@@ -225,22 +226,12 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
     return Qnil;
   }
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
-    creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs),
-                                        RSTRING_LEN(pem_root_certs), NULL, 0,
-                                        NULL, 0);
-  } else if (pem_cert_chain == Qnil) {
-    creds = grpc_ssl_credentials_create(
-        RSTRING_PTR(pem_root_certs), RSTRING_LEN(pem_root_certs),
-        RSTRING_PTR(pem_private_key), RSTRING_LEN(pem_private_key),
-        RSTRING_PTR(pem_cert_chain), RSTRING_LEN(pem_cert_chain));
-  } else if (pem_private_key == Qnil) {
-    creds = grpc_ssl_credentials_create(
-        RSTRING_PTR(pem_root_certs), RSTRING_LEN(pem_root_certs), NULL, 0,
-        RSTRING_PTR(pem_cert_chain), RSTRING_LEN(pem_cert_chain));
+    creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs), NULL);
   } else {
+    grpc_ssl_pem_key_cert_pair key_cert_pair = {RSTRING_PTR(pem_private_key),
+                                                RSTRING_PTR(pem_cert_chain)};
     creds = grpc_ssl_credentials_create(
-        RSTRING_PTR(pem_root_certs), RSTRING_LEN(pem_root_certs),
-        RSTRING_PTR(pem_private_key), RSTRING_LEN(pem_private_key), NULL, 0);
+        RSTRING_PTR(pem_root_certs), &key_cert_pair);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");

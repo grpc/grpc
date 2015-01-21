@@ -68,7 +68,7 @@ $CFLAGS << ' -Wno-return-type '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -pedantic '
 
-$LDFLAGS << ' -lgrpc -lgpr -levent -levent_pthreads -levent_core'
+$LDFLAGS << ' -lgrpc -lgpr'
 
 # crash('need grpc lib') unless have_library('grpc', 'grpc_channel_destroy')
 #

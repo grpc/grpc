@@ -123,14 +123,12 @@ NAN_METHOD(ServerCredentials::New) {
 }
 
 NAN_METHOD(ServerCredentials::CreateSsl) {
+  // TODO: have the node API support multiple key/cert pairs.
   NanScope();
   char *root_certs = NULL;
-  char *private_key;
-  char *cert_chain;
-  int root_certs_length = 0, private_key_length, cert_chain_length;
+  grpc_ssl_pem_key_cert_pair key_cert_pair;
   if (Buffer::HasInstance(args[0])) {
     root_certs = Buffer::Data(args[0]);
-    root_certs_length = Buffer::Length(args[0]);
   } else if (!(args[0]->IsNull() || args[0]->IsUndefined())) {
     return NanThrowTypeError(
         "createSSl's first argument must be a Buffer if provided");
@@ -138,17 +136,13 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   if (!Buffer::HasInstance(args[1])) {
     return NanThrowTypeError("createSsl's second argument must be a Buffer");
   }
-  private_key = Buffer::Data(args[1]);
-  private_key_length = Buffer::Length(args[1]);
+  key_cert_pair.private_key = Buffer::Data(args[1]);
   if (!Buffer::HasInstance(args[2])) {
     return NanThrowTypeError("createSsl's third argument must be a Buffer");
   }
-  cert_chain = Buffer::Data(args[2]);
-  cert_chain_length = Buffer::Length(args[2]);
-  NanReturnValue(WrapStruct(grpc_ssl_server_credentials_create(
-      reinterpret_cast<unsigned char *>(root_certs), root_certs_length,
-      reinterpret_cast<unsigned char *>(private_key), private_key_length,
-      reinterpret_cast<unsigned char *>(cert_chain), cert_chain_length)));
+  key_cert_pair.cert_chain = Buffer::Data(args[2]);
+  NanReturnValue(WrapStruct(
+      grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1)));
 }
 
 NAN_METHOD(ServerCredentials::CreateFake) {
