@@ -1356,6 +1356,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/pollset_kick_posix.c \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
+    src/core/iomgr/pollset_windows.c \
     src/core/iomgr/resolve_address_posix.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
@@ -1474,6 +1475,7 @@ src/core/iomgr/iomgr_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_kick_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_multipoller_with_poll_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/pollset_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/resolve_address_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/sockaddr_utils.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_common_posix.c: $(OPENSSL_DEP)
@@ -1609,6 +1611,7 @@ objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o:
 objs/$(CONFIG)/src/core/iomgr/pollset_kick_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
@@ -1764,6 +1767,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/pollset_kick_posix.c \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
+    src/core/iomgr/pollset_windows.c \
     src/core/iomgr/resolve_address_posix.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
@@ -1882,6 +1886,7 @@ objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o:
 objs/$(CONFIG)/src/core/iomgr/pollset_kick_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 

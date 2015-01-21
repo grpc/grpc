@@ -122,6 +122,7 @@
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\resolve_address.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr_posix.h" />
@@ -253,6 +254,8 @@
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\resolve_address_posix.c">
     </ClCompile>
