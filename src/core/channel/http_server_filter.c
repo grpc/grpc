@@ -38,11 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-typedef enum {
-  NOT_RECEIVED,
-  POST,
-  GET
-} known_method_type;
+typedef enum { NOT_RECEIVED, POST, GET } known_method_type;
 
 typedef struct {
   grpc_mdelem *path;
@@ -67,7 +63,8 @@ typedef struct channel_data {
   /* TODO(klempner): Remove this once we stop using it */
   grpc_mdelem *grpc_scheme;
   grpc_mdelem *content_type;
-  grpc_mdelem *status;
+  grpc_mdelem *status_ok;
+  grpc_mdelem *status_not_found;
   grpc_mdstr *path_key;
 
   size_t gettable_count;
@@ -79,9 +76,35 @@ static void ignore_unused(void *ignored) {}
 
 /* Handle 'GET': not technically grpc, so probably a web browser hitting
    us */
+static void payload_done(void *elem, grpc_op_error error) {
+  if (error == GRPC_OP_OK) {
+    grpc_call_element_send_finish(elem);
+  }
+}
+
 static void handle_get(grpc_call_element *elem) {
   channel_data *channeld = elem->channel_data;
-  grpc_call_element_send_metadata(elem, channeld->status);
+  call_data *calld = elem->call_data;
+  grpc_call_op op;
+  size_t i;
+
+  for (i = 0; i < channeld->gettable_count; i++) {
+    if (channeld->gettables[i].path == calld->path) {
+      grpc_call_element_send_metadata(elem,
+                                      grpc_mdelem_ref(channeld->status_ok));
+      grpc_call_element_send_metadata(
+          elem, grpc_mdelem_ref(channeld->gettables[i].content_type));
+      op.type = GRPC_SEND_PREFORMATTED_MESSAGE;
+      op.dir = GRPC_CALL_DOWN;
+      op.flags = 0;
+      op.data.message = channeld->gettables[i].content;
+      op.done_cb = payload_done;
+      op.user_data = elem;
+      grpc_call_next_op(elem, &op);
+    }
+  }
+  grpc_call_element_send_metadata(elem,
+                                  grpc_mdelem_ref(channeld->status_not_found));
   grpc_call_element_send_finish(elem);
 }
 
@@ -167,8 +190,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       /* Have we seen the required http2 transport headers?
          (:method, :scheme, content-type, with :path and :authority covered
          at the channel level right now) */
-      if (calld->seen_method == POST && calld->seen_scheme && calld->seen_te_trailers &&
-          calld->path) {
+      if (calld->seen_method == POST && calld->seen_scheme &&
+          calld->seen_te_trailers && calld->path) {
         grpc_call_element_recv_metadata(elem, calld->path);
         calld->path = NULL;
         grpc_call_next_op(elem, op);
@@ -196,7 +219,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       if (!calld->sent_status) {
         calld->sent_status = 1;
         /* status is reffed by grpc_call_element_send_metadata */
-        grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->status));
+        grpc_call_element_send_metadata(elem,
+                                        grpc_mdelem_ref(channeld->status_ok));
       }
       grpc_call_next_op(elem, op);
       break;
@@ -272,7 +296,9 @@ static void init_channel_elem(grpc_channel_element *elem,
 
   /* initialize members */
   channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
-  channeld->status = grpc_mdelem_from_strings(mdctx, ":status", "200");
+  channeld->status_ok = grpc_mdelem_from_strings(mdctx, ":status", "200");
+  channeld->status_not_found =
+      grpc_mdelem_from_strings(mdctx, ":status", "404");
   channeld->method_post = grpc_mdelem_from_strings(mdctx, ":method", "POST");
   channeld->method_get = grpc_mdelem_from_strings(mdctx, ":method", "GET");
   channeld->http_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "http");
@@ -281,7 +307,7 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->path_key = grpc_mdstr_from_string(mdctx, ":path");
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
-  
+
   /* initialize http download support */
   channeld->gettable_count = 0;
   channeld->gettables = NULL;
@@ -291,12 +317,15 @@ static void init_channel_elem(grpc_channel_element *elem,
       gpr_slice slice;
       grpc_http_server_page *p = args->args[i].value.pointer.p;
       if (channeld->gettable_count == gettable_capacity) {
-        gettable_capacity = GPR_MAX(gettable_capacity * 3 / 2, gettable_capacity + 1);
-        channeld->gettables = gpr_realloc(channeld->gettables, gettable_capacity);
+        gettable_capacity =
+            GPR_MAX(gettable_capacity * 3 / 2, gettable_capacity + 1);
+        channeld->gettables =
+            gpr_realloc(channeld->gettables, gettable_capacity);
       }
       g = &channeld->gettables[channeld->gettable_count++];
       g->path = grpc_mdelem_from_strings(mdctx, ":path", p->path);
-      g->content_type = grpc_mdelem_from_strings(mdctx, "content-type", p->content_type);
+      g->content_type =
+          grpc_mdelem_from_strings(mdctx, "content-type", p->content_type);
       slice = gpr_slice_from_copied_string(p->content);
       g->content = grpc_byte_buffer_create(&slice, 1);
     }
@@ -309,7 +338,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   channel_data *channeld = elem->channel_data;
 
   grpc_mdelem_unref(channeld->te_trailers);
-  grpc_mdelem_unref(channeld->status);
+  grpc_mdelem_unref(channeld->status_ok);
+  grpc_mdelem_unref(channeld->status_not_found);
   grpc_mdelem_unref(channeld->method_post);
   grpc_mdelem_unref(channeld->method_get);
   grpc_mdelem_unref(channeld->http_scheme);
@@ -320,10 +350,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_server_filter = {
-    call_op,              channel_op,
-
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
-
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-
-    "http-server"};
+    call_op,           channel_op,           sizeof(call_data),
+    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, "http-server"};
