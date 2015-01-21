@@ -32,6 +32,7 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_http.h>
 #include <grpc/grpc_security.h>
 
 #include <signal.h>
@@ -97,18 +98,38 @@ int main(int argc, char **argv) {
 
   char *fake_argv[1];
 
+#define MAX_ARGS 4
+  grpc_arg arge[MAX_ARGS];
+  grpc_arg *e;
+  grpc_channel_args args = {0, NULL};
+
+  grpc_http_server_page home_page = {"/", "text/html",
+                                       "<head>\n"
+                                       "<title>Echo Server</title>\n"
+                                       "</head>\n"
+                                       "<body>\n"
+                                       "Welcome to the world of the future!\n"
+                                       "</body>\n"};
+
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc_test_init(1, fake_argv);
 
   grpc_init();
   srand(clock());
+  memset(arge, 0, sizeof(arge));
+  args.args = arge;
 
   cl = gpr_cmdline_create("echo server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
   gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
   gpr_cmdline_parse(cl, argc, argv);
   gpr_cmdline_destroy(cl);
+
+  e = &arge[args.num_args++];
+  e->type = GRPC_ARG_POINTER;
+  e->key = GRPC_ARG_SERVE_OVER_HTTP;
+  e->value.pointer.p = &home_page;
 
   if (addr == NULL) {
     gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
@@ -121,7 +142,7 @@ int main(int argc, char **argv) {
     grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
         NULL, 0, test_server1_key, test_server1_key_size, test_server1_cert,
         test_server1_cert_size);
-    server = grpc_secure_server_create(ssl_creds, cq, NULL);
+    server = grpc_secure_server_create(ssl_creds, cq, &args);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
     grpc_server_credentials_release(ssl_creds);
   } else {
