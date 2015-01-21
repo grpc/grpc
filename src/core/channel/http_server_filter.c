@@ -34,6 +34,8 @@
 #include "src/core/channel/http_server_filter.h"
 
 #include <string.h>
+#include <grpc/grpc_http.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 typedef enum {
@@ -41,6 +43,12 @@ typedef enum {
   POST,
   GET
 } known_method_type;
+
+typedef struct {
+  grpc_mdelem *path;
+  grpc_mdelem *content_type;
+  grpc_byte_buffer *content;
+} gettable;
 
 typedef struct call_data {
   known_method_type seen_method;
@@ -61,6 +69,9 @@ typedef struct channel_data {
   grpc_mdelem *content_type;
   grpc_mdelem *status;
   grpc_mdstr *path_key;
+
+  size_t gettable_count;
+  gettable *gettables;
 } channel_data;
 
 /* used to silence 'variable not used' warnings */
@@ -247,6 +258,9 @@ static void destroy_call_elem(grpc_call_element *elem) {
 static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
+  size_t i;
+  size_t gettable_capacity = 0;
+
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
@@ -267,6 +281,23 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->path_key = grpc_mdstr_from_string(mdctx, ":path");
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
+  
+  for (i = 0; i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_SERVE_OVER_HTTP)) {
+      gettable *g;
+      gpr_slice slice;
+      grpc_http_server_page *p = args->args[i].value.pointer.p;
+      if (channeld->gettable_count == gettable_capacity) {
+        gettable_capacity = GPR_MAX(gettable_capacity * 3 / 2, gettable_capacity + 1);
+        channeld->gettables = gpr_realloc(channeld->gettables, gettable_capacity);
+      }
+      g = &channeld->gettables[channeld->gettable_count++];
+      g->path = grpc_mdelem_from_strings(mdctx, ":path", p->path);
+      g->content_type = grpc_mdelem_from_strings(mdctx, "content-type", p->content_type);
+      slice = gpr_slice_from_copied_string(p->content);
+      g->content = grpc_byte_buffer_create(&slice, 1);
+    }
+  }
 }
 
 /* Destructor for channel data */
