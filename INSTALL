@@ -1,23 +1,103 @@
-Dependencies
-============
+These instructions only cover building grpc C and C++ libraries under
+typical unix systems. If you need more information, please try grpc's
+wiki pages:
 
-grpc has few external dependencies. If needed, they are present in the
-third_party directory, if you have cloned the github repository recursively.
-If you didn't clone recursively, you can still get them later by running the
-following command:
+  https://github.com/google/grpc/wiki
 
-$ git submodule update --init
+
+*************************
+* If you are in a hurry *
+*************************
+
+A typical unix installation won't require any more steps than running:
+
+  $ make
+  # make install
+
+You don't need anything else than GNU Make and gcc. Under a Debian or
+Ubuntu system, this should boil down to the following package:
+
+  # apt-get install build-essential
+
+
+*******************************
+* More detailled instructions *
+*******************************
+
+Setting up dependencies
+=======================
+
+Dependencies to compile the libraries
+-------------------------------------
+
+grpc libraries have few external dependencies. If you need to compile and
+install them, they are present in the third_party directory if you have
+cloned the github repository recursively. If you didn't clone recursively,
+you can still get them later by running the following command:
+
+  $ git submodule update --init
 
 Note that the Makefile makes it much easier for you to compile from sources
-if you were to clone recursively our git repository.
+if you were to clone recursively our git repository: it will automatically
+compile zlib and OpenSSL, which are core requirements for grpc. Note this
+creates grpc libraries that will have zlib and OpenSSL built-in inside of them,
+which significantly increases the libraries' size.
+
+In order to decrease that size, you can manually install zlib and OpenSSL on
+your system, so that the Makefile can use them instead.
+
+Under a Debian or Ubuntu system, one can acquire the development package
+for zlib this way:
+
+  # apt-get install zlib1g-dev
+
+To the best of our knowledge, no distribution has an OpenSSL package that
+supports ALPN yet, so you would still have to depend on installing from source
+for that particular dependency if you want to reduce the libraries' size.
+
+The recommended version of OpenSSL that provides ALPN support is available
+at this URL:
+
+  https://www.openssl.org/source/openssl-1.0.2-beta3.tar.gz
 
 
-grpc core currently depends on zlib and OpenSSL 1.0.2beta3.
+Dependencies to compile and run the tests
+-----------------------------------------
 
-grpc++'s tests depends on protobuf 3.0.0, gtests and gflags.
+Compiling and running grpc plain-C tests dont't require any more dependency.
 
-OpenSSL
--------
+
+Compiling and running grpc C++ tests depend on protobuf 3.0.0, gtest and
+gflags. Although gflags and protobuf are provided in third_party, you will
+need to manually install these dependencies on your system to run these tests.
+
+Under a Debian or Ubuntu system, you can install the gtests and gflags packages
+using apt-get:
+
+  # apt-get install libgflags-dev libgtest-dev
+
+However, protobuf 3.0.0 isn't in a debian package yet: you'll need to compile
+and install it from the sources in the third_party. Note that if you already
+have the protobuf and protoc packages installed on your system, they will most
+likely interfere, and you'll need to uninstall them first.
+
+Compiling and installing protobuf 3.0.0 requires a few more dependencies in
+itself, notably the autoconf suite, curl, and unzip. If you have apt-get, you
+can install these dependencies this way:
+
+  # apt-get install unzip curl autotools-dev
+
+Then, you can build and install protobuf 3.0.0:
+
+  $ cd third_party/protobuf
+  $ ./configure
+  $ make
+  # make install
+  # ldconfig
+
+
+A word on OpenSSL
+-----------------
 
 Secure HTTP2 requires to have the TLS extension ALPN (see rfc 7301 and
 http://http2.github.io/http2-spec/ section 3.3). Our HTTP2 implementation
@@ -34,50 +114,29 @@ version of grpc if possible.
 Compiling
 =========
 
-If you have all the dependencies in the third_party subfolder, you should
-simply be able to go ahead and run "make" to compile grpc. The other targets
-that you might find interesting are "buildtests" and "test".
+If you have all the dependencies mentioned above, you should simply be able
+to go ahead and run "make" to compile grpc's C and C++ libraries:
 
-If you didn't clone from git, and thus are unable to get the required
-dependencies, you can manually download and unpack the necessary packages,
-and let the Makefile build them itself.
-
-You may also install the dependencies yourself, from the sources, or from
-your distribution's package manager.
-
-The only development package needed for grpc is zlib.
-The development packages needed for grpc++'s tests are gtests, and gflags.
-
-To the best of our knowledge, no distribution has an OpenSSL package that
-supports ALPN yet, so you would still have to depend on installing from source
-for that particular dependency.
-
-The recommended version of OpenSSL that provides ALPN support is available
-at this URL:
-
-  https://www.openssl.org/source/openssl-1.0.2-beta3.tar.gz
-
-If you want to let the Makefile build them automatically for you, please
-extract them in the third_party folder. You will need to rename the extracted
-folder the following way:
-
-  openssl-1.0.2-beta3 --> openssl
+  $ make
 
 
 Testing
 =======
 
-At the moment, C++ tests aren't fully available yet. If you want to run tests
-on the C core of grpc, you can do the following:
+To build and run the tests, you can run the command:
 
-$ make buildtests_c
-$ make test_c
+  $ make test
+
+If you want to be able to run them in parallel, and get better output, you can
+also use the python tool we have written:
+
+  $ ./tools/run_tests/run_tests.py
 
 
 Installing
 ==========
 
-Once everything is compiled, you should be able to install grpc and grpc++
+Once everything is compiled, you should be able to install grpc C and C++
 libraries and headers:
 
-$ sudo make install
+  # make install
