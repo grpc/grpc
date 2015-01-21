@@ -157,7 +157,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   specific error code otherwise.
 */
 grpc_security_status grpc_ssl_server_security_context_create(
-    const grpc_ssl_config *config, grpc_security_context **ctx);
+    const grpc_ssl_server_config *config, grpc_security_context **ctx);
 
 /* --- Creation of high level objects. --- */
 
