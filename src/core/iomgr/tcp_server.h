@@ -34,9 +34,6 @@
 #ifndef __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__
 #define __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #include "src/core/iomgr/endpoint.h"
 
 /* Forward decl of grpc_tcp_server */

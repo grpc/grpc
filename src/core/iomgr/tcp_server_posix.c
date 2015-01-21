@@ -31,6 +31,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GRPC_POSIX_SOCKET
+
 #define _GNU_SOURCE
 #include "src/core/iomgr/tcp_server.h"
 
@@ -364,3 +368,5 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset *pollset,
   }
   gpr_mu_unlock(&s->mu);
 }
+
+#endif
