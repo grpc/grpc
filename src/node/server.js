@@ -300,9 +300,9 @@ Server.prototype.register = function(name, handler, serialize, deserialize) {
  */
 Server.prototype.bind = function(port, secure) {
   if (secure) {
-    this._server.addSecureHttp2Port(port);
+    return this._server.addSecureHttp2Port(port);
   } else {
-    this._server.addHttp2Port(port);
+    return this._server.addHttp2Port(port);
   }
 };
 
