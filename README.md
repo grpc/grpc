@@ -57,9 +57,6 @@ the client and the server can send a stream of messages to each other. The strea
 messages are delivered in the order they were sent.
 
 
-
-
-
 #Protocol
 
 The gRPC protocol specifies the abstract requirements for communication between
@@ -67,6 +64,10 @@ clients and servers. A concrete embedding over HTTP/2 completes the picture by
 fleshing out the details of each of the required operations.
 
 ## Abstract gRPC protocol
-A gRPC RPC comprises of a bidirectional stream of messages, initiated by the client. In the client-to-server direction, this stream begins with a mandatory 'Call Header', followed by optional `Initial-Metadata`, followed by zero or more `Payload Messages`. The server-to-client direction contains an optional `Initial-Metadata`, followed by zero or more `Payload Messages` terminated with a mandatory `Status` and optional `Status-Metadata` (a.k.a.,`Trailing-Metadata').
+A gRPC RPC comprises of a bidirectional stream of messages, initiated by the client. In the client-to-server direction, this stream begins with a mandatory `Call Header`, followed by optional `Initial-Metadata`, followed by zero or more `Payload Messages`. The server-to-client direction contains an optional `Initial-Metadata`, followed by zero or more `Payload Messages` terminated with a mandatory `Status` and optional `Status-Metadata` (a.k.a.,`Trailing-Metadata`).
+
+## Implementation over HTTP/2
+The abstract protocol defined above is implemented over [HTTP/2](https://http2.github.io/). gRPC bidirectional streams are mapped to HTTP/2 streams. The contents of `Call Header` and `Initial Metadata` are sent as HTTP/2 headers and subject to HPAC compression. `Payload Messages` are serialized into a byte stream of length prefixed gRPC frames which are then fragmented into HTTP/2 frames at the sender and reassembled at the receiver. `Status` and `Trailing-Metadata` are sent as HTTP/2 trailing headers (a.k.a., trailers).     
 
 
+**TODO(a11r): Add a section on flow control.**
