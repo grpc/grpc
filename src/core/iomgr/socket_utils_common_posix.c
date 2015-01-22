@@ -99,7 +99,7 @@ int grpc_set_socket_reuse_addr(int fd, int reuse) {
   socklen_t intlen = sizeof(newval);
   return 0 == setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) &&
          0 == getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen) &&
-         newval == val;
+         (newval != 0) == val;
 }
 
 /* disable nagle */
@@ -109,7 +109,7 @@ int grpc_set_socket_low_latency(int fd, int low_latency) {
   socklen_t intlen = sizeof(newval);
   return 0 == setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) &&
          0 == getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen) &&
-         newval == val;
+         (newval != 0) == val;
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
