@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
   libc6 \
   libc6-dbg \
   libc6-dev \
+  libgtest-dev \
   libtool \
   make \
   strace \
@@ -34,23 +35,13 @@ ENV CLOUD_SDK /google-cloud-sdk
 RUN $CLOUD_SDK/install.sh --usage-reporting=true --path-update=true --bash-completion=true --rc-path=/.bashrc --disable-installation-options
 ENV PATH $CLOUD_SDK/bin:$PATH
 
-# Install gcompute-tools to allow access to private git-on-borg repos
-RUN git clone https://gerrit.googlesource.com/gcompute-tools /var/local/git/gcompute-tools
-
-# Start the daemon that allows access to private git-on-borg repos
-RUN /var/local/git/gcompute-tools/git-cookie-authdaemon
-
-# Install the grpc-tools scripts dir from git
-RUN git clone https://team.googlesource.com/one-platform-grpc-team/grpc-tools /var/local/git/grpc-tools
-
-# Install the grpc-protobuf dir that has the protoc patch
-RUN git clone https://team.googlesource.com/one-platform-grpc-team/protobuf /var/local/git/protobuf
-
-# Install the patched version of protoc
-RUN cd /var/local/git/protobuf && \
-  ./autogen.sh && \
-  ./configure --prefix=/usr && \
-  make && make check && make install && make clean
+# Install a GitHub SSH service credential that gives access to the GitHub repo while it's private
+# TODO: remove this once the repo is public
+ADD .ssh .ssh
+RUN chmod 600 .ssh/github.rsa
+RUN mkdir -p $HOME/.ssh && echo 'Host github.com' > $HOME/.ssh/config
+RUN echo "    IdentityFile /.ssh/github.rsa" >> $HOME/.ssh/config
+RUN echo 'StrictHostKeyChecking no' >> $HOME/.ssh/config
 
 # Define the default command.
 CMD ["bash"]

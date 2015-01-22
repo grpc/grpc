@@ -45,15 +45,6 @@ class CredentialsTest : public ::testing::Test {
  protected:
 };
 
-TEST_F(CredentialsTest, InvalidSslCreds) {
-  std::unique_ptr<Credentials> bad1 =
-      CredentialsFactory::SslCredentials({"", "", ""});
-  EXPECT_EQ(nullptr, bad1.get());
-  std::unique_ptr<Credentials> bad2 =
-      CredentialsFactory::SslCredentials({"", "bla", "bla"});
-  EXPECT_EQ(nullptr, bad2.get());
-}
-
 TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
   std::unique_ptr<Credentials> bad1 =
       CredentialsFactory::ServiceAccountCredentials("", "",
