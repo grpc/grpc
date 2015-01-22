@@ -1,0 +1,5 @@
+Debug
+Release
+*.suo
+grpc.opensdf
+grpc.sdf
