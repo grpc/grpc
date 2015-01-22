@@ -1,9 +1,6 @@
 # Dockerfile for the gRPC Java dev image
 FROM grpc/java_base
 
-# Start the daemon that allows access to private git-on-borg repos
-RUN /var/local/git/gcompute-tools/git-cookie-authdaemon
-
 RUN  cd /var/local/git/grpc-java/lib/okhttp && \
   mvn -pl okhttp -am install
 RUN  cd /var/local/git/grpc-java/lib/netty && \
