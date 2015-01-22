@@ -400,6 +400,22 @@
         "test/cpp/end2end/async_test_server.cc"
       ],
       "c++": true
+    },
+    {
+      "name": "tips_client_lib",
+      "build": "private",
+      "src": [
+        "examples/tips/label.proto",
+        "examples/tips/empty.proto",
+        "examples/tips/pubsub.proto",
+        "examples/tips/client.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc",
+        "gpr"
+      ],
+      "c++": true
     }
   ],
   "targets": [
@@ -1396,6 +1412,41 @@
         "test/cpp/interop/client.cc"
       ],
       "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "tips_client",
+      "build": "test",
+      "run": false,
+      "c++": true,
+      "src": [
+        "examples/tips/client_main.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "tips_client_test",
+      "build": "test",
+      "c++": true,
+      "src": [
+        "examples/tips/client_test.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
