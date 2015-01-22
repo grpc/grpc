@@ -1,7 +1,6 @@
 // Labels provide a way to associate user-defined metadata with various
 // objects.  Labels may be used to organize objects into non-hierarchical
-// groups; think metadata tags attached to mp3s.  For more details, see
-// http://go/exosphere:labels
+// groups; think metadata tags attached to mp3s.
 
 syntax = "proto2";
 

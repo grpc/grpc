@@ -48,6 +48,6 @@ class Client {
   std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
 };
 
-}  // namesapce tips
+}  // namespace tips
 }  // namespace examples
 }  // namespace grpc

@@ -47,10 +47,6 @@
 
 using grpc::ChannelInterface;
 
-namespace {
-
-}  //
-
 namespace grpc {
 namespace testing {
 namespace {
