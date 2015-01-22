@@ -45,8 +45,8 @@ util.inherits(GrpcClientStream, Duplex);
  * from stream.Duplex.
  * @constructor
  * @param {grpc.Call} call Call object to proxy
- * @param {function(*):Buffer} serialize Serialization function for requests
- * @param {function(Buffer):*} deserialize Deserialization function for
+ * @param {function(*):Buffer=} serialize Serialization function for requests
+ * @param {function(Buffer):*=} deserialize Deserialization function for
  *     responses
  */
 function GrpcClientStream(call, serialize, deserialize) {
