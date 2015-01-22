@@ -35,9 +35,6 @@ RUN cd /var/local/git/protobuf && \
   ./configure --prefix=/usr && \
   make -j12 && make check && make install && make clean
 
-# Get the source from GitHub
-RUN git clone --recursive git@github.com:google/grpc-java.git /var/local/git/grpc-java
-
 RUN cd /var/local/git/grpc-java/lib/okhttp && \
   mvn -pl okhttp -am validate
 RUN cd /var/local/git/grpc-java/lib/netty && \
