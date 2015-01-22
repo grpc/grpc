@@ -340,8 +340,12 @@ libs/$(CONFIG)/zlib/libz.a:
 	$(Q)cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
 
 libs/$(CONFIG)/openssl/libssl.a:
-	$(E) "[MAKE]    Building openssl"
+	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
+ifeq ($(SYSTEM),Darwin)
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc $(OPENSSL_CONFIG_$(CONFIG)))
+else
 	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+endif
 	$(Q)$(MAKE) -C third_party/openssl clean
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
 	$(Q)mkdir -p libs/$(CONFIG)/openssl
@@ -695,6 +699,7 @@ libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
 % endif
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/lib${lib.name}.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 % if lib.get('baselib', False):
 % if lib.get('secure', True):
@@ -707,6 +712,9 @@ libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
 	$(Q) rm -rf tmp-merge
 % endif
 % endif
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/lib${lib.name}.a 
+endif
 
 <%
   if lib.language == 'c++':

@@ -524,8 +524,12 @@ libs/$(CONFIG)/zlib/libz.a:
 	$(Q)cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
 
 libs/$(CONFIG)/openssl/libssl.a:
-	$(E) "[MAKE]    Building openssl"
+	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
+ifeq ($(SYSTEM),Darwin)
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc $(OPENSSL_CONFIG_$(CONFIG)))
+else
 	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+endif
 	$(Q)$(MAKE) -C third_party/openssl clean
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
 	$(Q)mkdir -p libs/$(CONFIG)/openssl
@@ -1220,7 +1224,11 @@ LIBGPR_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_S
 libs/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(LIBGPR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgpr.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgpr.a $(LIBGPR_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgpr.a 
+endif
 
 
 
@@ -1296,7 +1304,11 @@ endif
 libs/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGPR_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgpr_test_util.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgpr_test_util.a $(LIBGPR_TEST_UTIL_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgpr_test_util.a 
+endif
 
 
 
@@ -1530,6 +1542,7 @@ endif
 libs/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)
 	$(Q) rm -rf tmp-merge
 	$(Q) mkdir tmp-merge
@@ -1538,6 +1551,9 @@ libs/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) rm -f libs/$(CONFIG)/libgrpc.a tmp-merge/__.SYMDEF*
 	$(Q) ar rcs libs/$(CONFIG)/libgrpc.a tmp-merge/*
 	$(Q) rm -rf tmp-merge
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc.a 
+endif
 
 
 
@@ -1706,7 +1722,11 @@ endif
 libs/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc_test_util.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc_test_util.a 
+endif
 
 
 
@@ -1827,7 +1847,11 @@ LIBGRPC_UNSECURE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 libs/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(LIBGRPC_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc_unsecure.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc_unsecure.a 
+endif
 
 
 
@@ -2020,7 +2044,11 @@ endif
 libs/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc++.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc++.a 
+endif
 
 
 
@@ -2102,7 +2130,11 @@ endif
 libs/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc++_test_util.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc++_test_util.a 
+endif
 
 
 
@@ -2145,7 +2177,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a 
+endif
 
 
 
@@ -2184,7 +2220,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a 
+endif
 
 
 
@@ -2223,7 +2263,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a 
+endif
 
 
 
@@ -2262,7 +2306,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a 
+endif
 
 
 
@@ -2301,7 +2349,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a 
+endif
 
 
 
@@ -2340,7 +2392,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a 
+endif
 
 
 
@@ -2366,7 +2422,11 @@ LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_cancel_after_accept.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_after_accept.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_after_accept.a 
+endif
 
 
 
@@ -2388,7 +2448,11 @@ LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS = $(addprefix objs/$(
 libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a 
+endif
 
 
 
@@ -2410,7 +2474,11 @@ LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a 
+endif
 
 
 
@@ -2432,7 +2500,11 @@ LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsu
 libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a 
+endif
 
 
 
@@ -2454,7 +2526,11 @@ LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuff
 libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a 
+endif
 
 
 
@@ -2476,7 +2552,11 @@ LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(adds
 libs/$(CONFIG)/libend2end_test_census_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_census_simple_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_census_simple_request.a 
+endif
 
 
 
@@ -2498,7 +2578,11 @@ LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_disappearing_server.a: $(ZLIB_DEP) $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_disappearing_server.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_disappearing_server.a 
+endif
 
 
 
@@ -2520,7 +2604,11 @@ LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS = $(addprefix
 libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a: $(ZLIB_DEP) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a 
+endif
 
 
 
@@ -2542,7 +2630,11 @@ LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS = $(addprefix objs/$(CO
 libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a: $(ZLIB_DEP) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a 
+endif
 
 
 
@@ -2564,7 +2656,11 @@ LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS = $(addprefix objs/$(CONFIG)/, $(a
 libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a: $(ZLIB_DEP) $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a 
+endif
 
 
 
@@ -2586,7 +2682,11 @@ LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsu
 libs/$(CONFIG)/libend2end_test_invoke_large_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_invoke_large_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_invoke_large_request.a 
+endif
 
 
 
@@ -2608,7 +2708,11 @@ LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS = $(addprefix objs/$(CONFIG)/, $(add
 libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a: $(ZLIB_DEP) $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a 
+endif
 
 
 
@@ -2630,7 +2734,11 @@ LIBEND2END_TEST_NO_OP_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(base
 libs/$(CONFIG)/libend2end_test_no_op.a: $(ZLIB_DEP) $(LIBEND2END_TEST_NO_OP_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_no_op.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_no_op.a $(LIBEND2END_TEST_NO_OP_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_no_op.a 
+endif
 
 
 
@@ -2652,7 +2760,11 @@ LIBEND2END_TEST_PING_PONG_STREAMING_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a: $(ZLIB_DEP) $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a 
+endif
 
 
 
@@ -2674,7 +2786,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS = $(addpr
 libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a 
+endif
 
 
 
@@ -2696,7 +2812,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS = $(addprefix ob
 libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a 
+endif
 
 
 
@@ -2718,7 +2838,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS = $(addprefix objs/$(CONFIG)/
 libs/$(CONFIG)/libend2end_test_request_response_with_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_payload.a 
+endif
 
 
 
@@ -2740,7 +2864,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS = $(add
 libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a 
+endif
 
 
 
@@ -2762,7 +2890,11 @@ LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(add
 libs/$(CONFIG)/libend2end_test_simple_delayed_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_simple_delayed_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_simple_delayed_request.a 
+endif
 
 
 
@@ -2784,7 +2916,11 @@ LIBEND2END_TEST_SIMPLE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .
 libs/$(CONFIG)/libend2end_test_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_simple_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_simple_request.a $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_simple_request.a 
+endif
 
 
 
@@ -2806,7 +2942,11 @@ LIBEND2END_TEST_THREAD_STRESS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o
 libs/$(CONFIG)/libend2end_test_thread_stress.a: $(ZLIB_DEP) $(LIBEND2END_TEST_THREAD_STRESS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_thread_stress.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_thread_stress.a $(LIBEND2END_TEST_THREAD_STRESS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_thread_stress.a 
+endif
 
 
 
@@ -2828,7 +2968,11 @@ LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS = $(addprefix objs/$(CO
 libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a: $(ZLIB_DEP) $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a 
+endif
 
 
 
@@ -2869,7 +3013,11 @@ endif
 libs/$(CONFIG)/libend2end_certs.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_CERTS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_certs.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_certs.a $(LIBEND2END_CERTS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_certs.a 
+endif
 
 
 
