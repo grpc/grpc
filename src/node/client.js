@@ -45,10 +45,22 @@ util.inherits(GrpcClientStream, Duplex);
  * from stream.Duplex.
  * @constructor
  * @param {grpc.Call} call Call object to proxy
- * @param {object} options Stream options
+ * @param {function(*):Buffer=} serialize Serialization function for requests
+ * @param {function(Buffer):*=} deserialize Deserialization function for
+ *     responses
  */
-function GrpcClientStream(call, options) {
-  Duplex.call(this, options);
+function GrpcClientStream(call, serialize, deserialize) {
+  Duplex.call(this, {objectMode: true});
+  if (!serialize) {
+    serialize = function(value) {
+      return value;
+    };
+  }
+  if (!deserialize) {
+    deserialize = function(value) {
+      return value;
+    };
+  }
   var self = this;
   var finished = false;
   // Indicates that a read is currently pending
@@ -56,6 +68,32 @@ function GrpcClientStream(call, options) {
   // Indicates that a write is currently pending
   var writing = false;
   this._call = call;
+
+  /**
+   * Serialize a request value to a buffer. Always maps null to null. Otherwise
+   * uses the provided serialize function
+   * @param {*} value The value to serialize
+   * @return {Buffer} The serialized value
+   */
+  this.serialize = function(value) {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    return serialize(value);
+  };
+
+  /**
+   * Deserialize a response buffer to a value. Always maps null to null.
+   * Otherwise uses the provided deserialize function.
+   * @param {Buffer} buffer The buffer to deserialize
+   * @return {*} The deserialized value
+   */
+  this.deserialize = function(buffer) {
+    if (buffer === null) {
+      return null;
+    }
+    return deserialize(buffer);
+  };
   /**
    * Callback to be called when a READ event is received. Pushes the data onto
    * the read queue and starts reading again if applicable
@@ -126,6 +164,9 @@ GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
  * Make a request on the channel to the given method with the given arguments
  * @param {grpc.Channel} channel The channel on which to make the request
  * @param {string} method The method to request
+ * @param {function(*):Buffer} serialize Serialization function for requests
+ * @param {function(Buffer):*} deserialize Deserialization function for
+ *     responses
  * @param {array=} metadata Array of metadata key/value pairs to add to the call
  * @param {(number|Date)=} deadline The deadline for processing this request.
  *     Defaults to infinite future.
@@ -133,6 +174,8 @@ GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
  */
 function makeRequest(channel,
                      method,
+                     serialize,
+                     deserialize,
                      metadata,
                      deadline) {
   if (deadline === undefined) {
