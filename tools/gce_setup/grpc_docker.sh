@@ -412,7 +412,6 @@ grpc_sync_images() {
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
-  # set by grpc_sync_images
   local grpc_hosts
 
   # set the project zone and check that all necessary args are provided
@@ -425,7 +424,7 @@ grpc_sync_images() {
   local host
   for host in $grpc_hosts
   do
-    gce_has_instance $grpc_project $h || return 1;
+    gce_has_instance $grpc_project $host || return 1;
     local ssh_cmd="bash -l -c \"$cmd\""
     echo "will run:"
     echo "  $ssh_cmd"
