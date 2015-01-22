@@ -408,6 +408,22 @@
         "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
+    },
+    {
+      "name": "tips_client_lib",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "examples/tips/label.proto",
+        "examples/tips/empty.proto",
+        "examples/tips/pubsub.proto",
+        "examples/tips/client.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc",
+        "gpr"
+      ]
     }
   ],
   "targets": [
@@ -1492,6 +1508,41 @@
         "gpr"
       ],
       "run": false
+    },
+    {
+      "name": "tips_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "examples/tips/client_main.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "tips_client_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/tips/client_test.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
     },
     {
       "name": "qps_client",
