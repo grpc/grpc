@@ -31,42 +31,55 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
+#include "src/core/iomgr/pollset_kick_eventfd.h"
+
+#ifdef GPR_LINUX_EVENTFD
+#include <errno.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/log.h>
 
-/* This is an abstraction around the typical pipe mechanism for waking up a
-   thread sitting in a poll() style call. */
+static void eventfd_create(grpc_kick_fd_info *fd_info) {
+  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  /* TODO(klempner): Handle failure more gracefully */
+  GPR_ASSERT(efd >= 0);
+  fd_info->read_fd = efd;
+  fd_info->write_fd = -1;
+}
 
-#ifdef GPR_POSIX_SOCKET
-#include "src/core/iomgr/pollset_kick_posix.h"
-#else
-#error "No pollset kick support on platform"
-#endif
+static void eventfd_consume(grpc_kick_fd_info *fd_info) {
+  eventfd_t value;
+  int err;
+  do {
+    err = eventfd_read(fd_info->read_fd, &value);
+  } while (err < 0 && errno == EINTR);
+}
 
-void grpc_pollset_kick_global_init(void);
-void grpc_pollset_kick_global_destroy(void);
+static void eventfd_kick(grpc_kick_fd_info *fd_info) {
+  int err;
+  do {
+    err = eventfd_write(fd_info->read_fd, 1);
+  } while (err < 0 && errno == EINTR);
+}
 
-/* Guarantees a pure posix implementation rather than a specialized one, if
- * applicable. Intended for testing. */
-void grpc_pollset_kick_global_init_posix(void);
+static void eventfd_destroy(grpc_kick_fd_info *fd_info) {
+  close(fd_info->read_fd);
+}
 
-void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state);
-void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state);
+static const grpc_pollset_kick_vtable eventfd_kick_vtable = {
+  eventfd_create, eventfd_consume, eventfd_kick, eventfd_destroy
+};
 
-/* Must be called before entering poll(). If return value is -1, this consumed
-   an existing kick. Otherwise the return value is an FD to add to the poll set.
- */
-int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state);
+const grpc_pollset_kick_vtable *grpc_pollset_kick_eventfd_init(void) {
+  /* TODO(klempner): Check that eventfd works */
+  return &eventfd_kick_vtable;
+}
 
-/* Consume an existing kick. Must be called after poll returns that the fd was
-   readable, and before calling kick_post_poll. */
-void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state);
+#else  /* GPR_LINUX_EVENTFD not defined */
+const grpc_pollset_kick_vtable *grpc_pollset_kick_eventfd_init(void) {
+  return NULL;
+}
 
-/* Must be called after pre_poll, and after consume if applicable */
-void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state);
-
-void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_ */
+#endif /* GPR_LINUX_EVENTFD */
