@@ -224,27 +224,25 @@ PHP_METHOD(Call, add_metadata) {
 /**
  * Invoke the RPC. Starts sending metadata and request headers over the wire
  * @param CompletionQueue $queue The completion queue to use with this call
- * @param long $invoke_accepted_tag The tag to associate with this invocation
  * @param long $metadata_tag The tag to associate with returned metadata
  * @param long $finished_tag The tag to associate with the finished event
  * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
  * (optional)
  * @return Void
  */
-PHP_METHOD(Call, start_invoke) {
+PHP_METHOD(Call, invoke) {
   grpc_call_error error_code;
   long tag1;
   long tag2;
-  long tag3;
   zval *queue_obj;
   long flags = 0;
-  /* "Olll|l" == 1 Object, 3 mandatory longs, 1 optional long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Olll|l", &queue_obj,
-                            grpc_ce_completion_queue, &tag1, &tag2, &tag3,
+  /* "Oll|l" == 1 Object, 3 mandatory longs, 1 optional long */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Oll|l", &queue_obj,
+                            grpc_ce_completion_queue, &tag1, &tag2,
                             &flags) == FAILURE) {
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
-        "start_invoke needs a CompletionQueue, 3 longs, and an optional long",
+        "invoke needs a CompletionQueue, 2 longs, and an optional long",
         1 TSRMLS_CC);
     return;
   }
@@ -254,10 +252,9 @@ PHP_METHOD(Call, start_invoke) {
   wrapped_grpc_completion_queue *queue =
       (wrapped_grpc_completion_queue *)zend_object_store_get_object(
           queue_obj TSRMLS_CC);
-  error_code =
-      grpc_call_start_invoke(call->wrapped, queue->wrapped, (void *)tag1,
-                             (void *)tag2, (void *)tag3, (gpr_uint32)flags);
-  MAYBE_THROW_CALL_ERROR(start_invoke, error_code);
+  error_code = grpc_call_invoke(call->wrapped, queue->wrapped, (void *)tag1,
+                                (void *)tag2, (gpr_uint32)flags);
+  MAYBE_THROW_CALL_ERROR(invoke, error_code);
 }
 
 /**
@@ -427,7 +424,7 @@ static zend_function_entry call_methods[] = {
     PHP_ME(Call, server_end_initial_metadata, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, add_metadata, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, start_invoke, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, invoke, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, start_read, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, start_write, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, start_write_status, NULL, ZEND_ACC_PUBLIC)
