@@ -69,5 +69,5 @@ A gRPC RPC comprises of a bidirectional stream of messages, initiated by the cli
 ## Implementation over HTTP/2
 The abstract protocol defined above is implemented over [HTTP/2](https://http2.github.io/). gRPC bidirectional streams are mapped to HTTP/2 streams. The contents of `Call Header` and `Initial Metadata` are sent as HTTP/2 headers and subject to HPAC compression. `Payload Messages` are serialized into a byte stream of length prefixed gRPC frames which are then fragmented into HTTP/2 frames at the sender and reassembled at the receiver. `Status` and `Trailing-Metadata` are sent as HTTP/2 trailing headers (a.k.a., trailers).     
 
-
-**TODO(a11r): Add a section on flow control.**
+## Flow Control
+gRPC inherits the flow control mchanims in HTTP/2 and uses them to enable fine-grained control of the amount of memory used for buffering in-flight messages.
