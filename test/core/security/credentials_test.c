@@ -48,7 +48,7 @@ static const char test_iam_authorization_token[] = "blahblahblhahb";
 static const char test_iam_authority_selector[] = "respectmyauthoritah";
 static const char test_oauth2_bearer_token[] =
     "Bearer blaaslkdjfaslkdfasdsfasf";
-static const unsigned char test_root_cert[] = {0xDE, 0xAD, 0xBE, 0xEF};
+static const char test_root_cert[] = "I am the root!";
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
@@ -275,8 +275,8 @@ static void check_ssl_oauth2_composite_metadata(
 }
 
 static void test_ssl_oauth2_composite_creds(void) {
-  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(
-      test_root_cert, sizeof(test_root_cert), NULL, 0, NULL, 0);
+  grpc_credentials *ssl_creds =
+      grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds =
       grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);
@@ -312,8 +312,8 @@ static void check_ssl_oauth2_iam_composite_metadata(
 }
 
 static void test_ssl_oauth2_iam_composite_creds(void) {
-  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(
-      test_root_cert, sizeof(test_root_cert), NULL, 0, NULL, 0);
+  grpc_credentials *ssl_creds =
+      grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds =
       grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e
 
 if [ "x$TEST" == "x" ] ; then
   TEST=false
@@ -32,7 +32,7 @@ for dir in . ; do
     data=`for i in $json_files; do echo -n "-d $i "; done`
     if [ $TEST == true ] ; then
       actual_out=$out
-      out=`mktemp`
+      out=`mktemp /tmp/gentXXXXXX`
     fi
     $mako_renderer $plugins $data -o $out $file
     if [ $TEST == true ] ; then

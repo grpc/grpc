@@ -31,22 +31,41 @@
  *
  */
 
-var net = require('net');
+var interop_server = require('../interop/interop_server.js');
+var interop_client = require('../interop/interop_client.js');
 
-/**
- * Finds a free port that a server can bind to, in the format
- * "address:port"
- * @param {function(string)} cb The callback that should execute when the port
- *     is available
- */
-function nextAvailablePort(cb) {
-  var server = net.createServer();
-  server.listen(function() {
-    var address = server.address();
-    server.close(function() {
-      cb(address.address + ':' + address.port.toString());
-    });
+var server;
+
+var port;
+
+var name_override = 'foo.test.google.com';
+
+describe('Interop tests', function() {
+  before(function(done) {
+    var server_obj = interop_server.getServer(0, true);
+    server = server_obj.server;
+    server.listen();
+    port = 'localhost:' + server_obj.port;
+    done();
   });
-}
-
-exports.nextAvailablePort = nextAvailablePort;
+  // This depends on not using a binary stream
+  it('should pass empty_unary', function(done) {
+    interop_client.runTest(port, name_override, 'empty_unary', true, done);
+  });
+  it('should pass large_unary', function(done) {
+    interop_client.runTest(port, name_override, 'large_unary', true, done);
+  });
+  it('should pass client_streaming', function(done) {
+    interop_client.runTest(port, name_override, 'client_streaming', true, done);
+  });
+  it('should pass server_streaming', function(done) {
+    interop_client.runTest(port, name_override, 'server_streaming', true, done);
+  });
+  it('should pass ping_pong', function(done) {
+    interop_client.runTest(port, name_override, 'ping_pong', true, done);
+  });
+  // This depends on the new invoke API
+  it.skip('should pass empty_stream', function(done) {
+    interop_client.runTest(port, name_override, 'empty_stream', true, done);
+  });
+});

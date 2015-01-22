@@ -57,8 +57,8 @@ namespace grpc_ruby_generator {
 namespace {
 
 // Prints out the method using the ruby gRPC DSL.
-void PrintMethod(const MethodDescriptor* method, const std::string& package,
-                 Printer* out) {
+void PrintMethod(const MethodDescriptor *method, const std::string &package,
+                 Printer *out) {
   std::string input_type = RubyTypeOf(method->input_type()->name(), package);
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
@@ -75,8 +75,8 @@ void PrintMethod(const MethodDescriptor* method, const std::string& package,
 }
 
 // Prints out the service using the ruby gRPC DSL.
-void PrintService(const ServiceDescriptor* service, const std::string& package,
-                  Printer* out) {
+void PrintService(const ServiceDescriptor *service, const std::string &package,
+                  Printer *out) {
   if (service->method_count() == 0) {
     return;
   }
@@ -125,7 +125,7 @@ void PrintService(const ServiceDescriptor* service, const std::string& package,
 
 }  // namespace
 
-std::string GetServices(const FileDescriptor* file) {
+std::string GetServices(const FileDescriptor *file) {
   std::string output;
   StringOutputStream output_stream(&output);
   Printer out(&output_stream, '$');

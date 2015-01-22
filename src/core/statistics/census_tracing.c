@@ -76,7 +76,8 @@ static void delete_trace_obj(void* obj) { trace_obj_destroy((trace_obj*)obj); }
 static const census_ht_option ht_opt = {
     CENSUS_HT_UINT64 /* key type*/, 571 /* n_of_buckets */, NULL /* hash */,
     NULL /* compare_keys */, delete_trace_obj /* delete data */,
-    NULL /* delete key */};
+    NULL /* delete key */
+};
 
 static gpr_once g_init_mutex_once = GPR_ONCE_INIT;
 static gpr_mu g_mu; /* Guards following two static variables. */

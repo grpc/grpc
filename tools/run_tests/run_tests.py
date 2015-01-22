@@ -4,13 +4,13 @@
 import argparse
 import glob
 import itertools
+import json
 import multiprocessing
 import os
 import sys
 import time
 
 import jobset
-import simplejson
 import watch_dirs
 
 
@@ -41,12 +41,17 @@ class ValgrindConfig(object):
 
 class CLanguage(object):
 
-  def __init__(self, make_target):
+  def __init__(self, make_target, test_lang):
     self.allow_hashing = True
     self.make_target = make_target
+    with open('tools/run_tests/tests.json') as f:
+      js = json.load(f)
+      self.binaries = [tgt['name'] 
+                       for tgt in js 
+                       if tgt['language'] == test_lang]
 
   def test_binaries(self, config):
-    return glob.glob('bins/%s/*_test' % config)
+    return ['bins/%s/%s' % (config, binary) for binary in self.binaries]
 
   def make_targets(self):
     return ['buildtests_%s' % self.make_target]
@@ -85,8 +90,8 @@ _CONFIGS = {
 
 _DEFAULT = ['dbg', 'opt']
 _LANGUAGES = {
-    'c++': CLanguage('cxx'),
-    'c': CLanguage('c'),
+    'c++': CLanguage('cxx', 'c++'),
+    'c': CLanguage('c', 'c'),
     'php': PhpLanguage()
 }
 
@@ -159,12 +164,12 @@ class TestCache(object):
 
   def save(self):
     with open('.run_tests_cache', 'w') as f:
-      f.write(simplejson.dumps(self.dump()))
+      f.write(json.dumps(self.dump()))
 
   def maybe_load(self):
     if os.path.exists('.run_tests_cache'):
       with open('.run_tests_cache') as f:
-        self.parse(simplejson.loads(f.read()))
+        self.parse(json.loads(f.read()))
 
 
 def _build_and_run(check_cancelled, newline_on_success, cache):
