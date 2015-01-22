@@ -34,8 +34,6 @@
 var interop_server = require('../interop/interop_server.js');
 var interop_client = require('../interop/interop_client.js');
 
-var port_picker = require('../port_picker');
-
 var server;
 
 var port;
@@ -44,12 +42,11 @@ var name_override = 'foo.test.google.com';
 
 describe('Interop tests', function() {
   before(function(done) {
-    port_picker.nextAvailablePort(function(addr) {
-      server = interop_server.getServer(addr.substring(addr.indexOf(':') + 1), true);
-      server.listen();
-      port = addr;
-      done();
-    });
+    var server_obj = interop_server.getServer(0, true);
+    server = server_obj.server;
+    server.listen();
+    port = 'localhost:' + server_obj.port;
+    done();
   });
   // This depends on not using a binary stream
   it.skip('should pass empty_unary', function(done) {
