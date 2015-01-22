@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -138,7 +139,8 @@ void test_times_out(void) {
 
   /* tie up the listen buffer, which is somewhat arbitrarily sized. */
   for (i = 0; i < NUM_CLIENT_CONNECTS; ++i) {
-    client_fd[i] = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    client_fd[i] = socket(AF_INET, SOCK_STREAM, 0);
+    grpc_set_socket_nonblocking(client_fd[i], 1);  
     do {
       r = connect(client_fd[i], (struct sockaddr *)&addr, addr_len);
     } while (r == -1 && errno == EINTR);
