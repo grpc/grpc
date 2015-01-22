@@ -35,7 +35,6 @@
 
 #include "examples/tips/client.h"
 
-using grpc::ClientContext;
 using tech::pubsub::Topic;
 using tech::pubsub::PublisherService;
 
@@ -43,7 +42,7 @@ namespace grpc {
 namespace examples {
 namespace tips {
 
-Client::Client(std::shared_ptr<grpc::ChannelInterface> channel)
+Client::Client(std::shared_ptr<ChannelInterface> channel)
     : stub_(PublisherService::NewStub(channel)) {
 }
 
@@ -51,7 +50,7 @@ Status Client::CreateTopic(grpc::string topic) {
   Topic request;
   Topic response;
   request.set_name(topic);
-  grpc::ClientContext context;
+  ClientContext context;
 
   return stub_->CreateTopic(&context, request, &response);
 }
