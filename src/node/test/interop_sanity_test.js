@@ -49,7 +49,7 @@ describe('Interop tests', function() {
     done();
   });
   // This depends on not using a binary stream
-  it.skip('should pass empty_unary', function(done) {
+  it('should pass empty_unary', function(done) {
     interop_client.runTest(port, name_override, 'empty_unary', true, done);
   });
   it('should pass large_unary', function(done) {
