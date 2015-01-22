@@ -2,6 +2,14 @@
 # This currently builds C and C++ code.
 
 
+
+# Basic platform detection
+HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
+ifeq ($(SYSTEM),)
+SYSTEM = $(HOST_SYSTEM)
+endif
+
+
 # Configurations
 
 VALID_CONFIG_opt = 1
@@ -115,10 +123,15 @@ LDFLAGS += $(LDFLAGS_$(CONFIG))
 CFLAGS += -std=c89 -pedantic
 CXXFLAGS += -std=c++11
 CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
-LDFLAGS += -g -pthread -fPIC
+LDFLAGS += -g -fPIC
 
 INCLUDES = . include gens
+ifeq ($(SYSTEM),Darwin)
+LIBS = m z
+else
 LIBS = rt m z pthread
+LDFLAGS += -pthread
+endif
 LIBSXX = protobuf
 LIBS_PROTOC = protoc protobuf
 
@@ -155,11 +168,6 @@ HOST_LDLIBS = $(LDLIBS)
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
-
-HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
-ifeq ($(SYSTEM),)
-SYSTEM = $(HOST_SYSTEM)
-endif
 
 ifeq ($(SYSTEM),MINGW32)
 SHARED_EXT = dll
