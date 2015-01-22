@@ -86,6 +86,7 @@ grpc_add_docker_user() {
 }
 
 _grpc_update_image_args() {
+  echo "image_args $@"
   # default the host, root storage uri and docker file root
   grpc_gs_root='gs://tmp-grpc-dev/admin/'
   grpc_dockerfile_root='tools/dockerfile'
@@ -95,7 +96,7 @@ _grpc_update_image_args() {
   # see if -p or -z is used to override the the project or zone
   local OPTIND
   local OPTARG
-  while getopts :r:d:h name
+  while getopts :r:d:h: name
   do
     case $name in
       d)  grpc_dockerfile_root=$OPTARG ;;
@@ -261,7 +262,7 @@ _grpc_set_project_and_zone() {
   local OPTIND
   local OPTARG
   local arg_func
-  while getopts :p:z:f:n name
+  while getopts :np:z:f: name
   do
     case $name in
       f)   declare -F $OPTARG >> /dev/null && {
@@ -390,6 +391,65 @@ grpc_interop_test_args() {
     echo "$FUNCNAME: missing arg: server_type" 1>&2
     return 1
   }
+}
+
+_grpc_sync_scripts_args() {
+  grpc_gce_script_root='tools/gce_setup'
+
+  local OPTIND
+  local OPTARG
+  while getopts :s: name
+  do
+    case $name in
+      s)  grpc_gce_script_root=$OPTARG ;;
+      :)  continue ;; # ignore -s without args, just use the defaults
+      \?)  echo "-$OPTARG: unknown flag; it's ignored" 1>&2;  continue ;;
+    esac
+  done
+  shift $((OPTIND-1))
+
+  [[ -d $grpc_gce_script_root ]] || {
+    echo "Could not locate gce script dir: $grpc_gce_script_root" 1>&2
+    return 1
+  }
+
+  [[ $# -lt 1  ]] && {
+    echo "$FUNCNAME: missing arg: host1 [host2 ... hostN]" 1>&2
+    return 1
+  }
+  grpc_hosts="$@"
+}
+
+# Updates the latest version of the support scripts on some hosts.
+#
+# call-seq;
+#   grpc_sync_scripts <server_name1>, <server_name2> .. <server_name3>
+#
+# Updates the GCE docker instance <server_name>
+grpc_sync_scripts() {
+  _grpc_ensure_gcloud_ssh || return 1;
+
+  # declare vars local so that they don't pollute the shell environment
+  # where they this func is used.
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  local grpc_hosts grpc_gce_script_root
+
+  # set the project zone and check that all necessary args are provided
+  _grpc_set_project_and_zone -f _grpc_sync_scripts_args "$@" || return 1
+
+  local func_lib="shared_startup_funcs.sh"
+  local gce_func_lib="/var/local/startup_scripts/$func_lib"
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  local host
+  for host in $grpc_hosts
+  do
+    gce_has_instance $grpc_project $host || return 1;
+    # Update the remote copy of the GCE func library.
+    local src_func_lib="$grpc_gce_script_root/$func_lib"
+    local rmt_func_lib="$host:$gce_func_lib"
+    gcloud compute copy-files $src_func_lib $rmt_func_lib $project_opt $zone_opt || return 1
+  done
 }
 
 grpc_sync_images_args() {
