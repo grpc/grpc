@@ -41,7 +41,7 @@
 #include "test/core/util/test_config.h"
 
 /* Tests census noop stubs in a simulated rpc flow */
-void test_census_stubs() {
+void test_census_stubs(void) {
   census_op_id op_id;
   census_rpc_stats* stats = census_rpc_stats_create_empty();
   census_aggregated_rpc_stats data_map = {0, NULL};

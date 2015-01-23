@@ -198,7 +198,7 @@ struct grpc_call {
   gpr_refcount internal_refcount;
 };
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
+#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call)+1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -535,17 +535,6 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
-                                 void *finished_tag, gpr_uint32 flags) {
-  grpc_call_error err;
-
-  err = grpc_call_server_accept(call, cq, finished_tag);
-  if (err != GRPC_CALL_OK) return err;
-  err = grpc_call_server_end_initial_metadata(call, flags);
-  if (err != GRPC_CALL_OK) return err;
-  return GRPC_CALL_OK;
-}
-
 static void done_writes_done(void *user_data, grpc_op_error error) {
   grpc_call *call = user_data;
   void *tag = call->write_tag;
@@ -812,7 +801,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
@@ -908,7 +897,12 @@ grpc_metadata_buffer *grpc_call_get_metadata_buffer(grpc_call *call) {
 static void call_alarm(void *arg, int success) {
   grpc_call *call = arg;
   if (success) {
-    grpc_call_cancel(call);
+    if (call->is_client) {
+      grpc_call_cancel_with_status(call, GRPC_STATUS_DEADLINE_EXCEEDED,
+                                   "Deadline Exceeded");
+    } else {
+      grpc_call_cancel(call);
+    }
   }
   grpc_call_internal_unref(call);
 }

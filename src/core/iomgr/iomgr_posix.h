@@ -36,7 +36,7 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 
-void grpc_pollset_global_init();
-void grpc_pollset_global_shutdown();
+void grpc_pollset_global_init(void);
+void grpc_pollset_global_shutdown(void);
 
 #endif /* __GRPC_INTERNAL_IOMGR_IOMGR_POSIX_H_ */

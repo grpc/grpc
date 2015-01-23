@@ -31,6 +31,9 @@
  *
  */
 
+#include <string>
+#include <map>
+
 #include "src/compiler/cpp_generator.h"
 
 #include "src/compiler/cpp_generator_helpers.h"
@@ -42,23 +45,23 @@
 namespace grpc_cpp_generator {
 namespace {
 
-bool NoStreaming(const google::protobuf::MethodDescriptor* method) {
+bool NoStreaming(const google::protobuf::MethodDescriptor *method) {
   return !method->client_streaming() && !method->server_streaming();
 }
 
-bool ClientOnlyStreaming(const google::protobuf::MethodDescriptor* method) {
+bool ClientOnlyStreaming(const google::protobuf::MethodDescriptor *method) {
   return method->client_streaming() && !method->server_streaming();
 }
 
-bool ServerOnlyStreaming(const google::protobuf::MethodDescriptor* method) {
+bool ServerOnlyStreaming(const google::protobuf::MethodDescriptor *method) {
   return !method->client_streaming() && method->server_streaming();
 }
 
-bool BidiStreaming(const google::protobuf::MethodDescriptor* method) {
+bool BidiStreaming(const google::protobuf::MethodDescriptor *method) {
   return method->client_streaming() && method->server_streaming();
 }
 
-bool HasClientOnlyStreaming(const google::protobuf::FileDescriptor* file) {
+bool HasClientOnlyStreaming(const google::protobuf::FileDescriptor *file) {
   for (int i = 0; i < file->service_count(); i++) {
     for (int j = 0; j < file->service(i)->method_count(); j++) {
       if (ClientOnlyStreaming(file->service(i)->method(j))) {
@@ -69,7 +72,7 @@ bool HasClientOnlyStreaming(const google::protobuf::FileDescriptor* file) {
   return false;
 }
 
-bool HasServerOnlyStreaming(const google::protobuf::FileDescriptor* file) {
+bool HasServerOnlyStreaming(const google::protobuf::FileDescriptor *file) {
   for (int i = 0; i < file->service_count(); i++) {
     for (int j = 0; j < file->service(i)->method_count(); j++) {
       if (ServerOnlyStreaming(file->service(i)->method(j))) {
@@ -80,7 +83,7 @@ bool HasServerOnlyStreaming(const google::protobuf::FileDescriptor* file) {
   return false;
 }
 
-bool HasBidiStreaming(const google::protobuf::FileDescriptor* file) {
+bool HasBidiStreaming(const google::protobuf::FileDescriptor *file) {
   for (int i = 0; i < file->service_count(); i++) {
     for (int j = 0; j < file->service(i)->method_count(); j++) {
       if (BidiStreaming(file->service(i)->method(j))) {
@@ -92,8 +95,8 @@ bool HasBidiStreaming(const google::protobuf::FileDescriptor* file) {
 }
 }  // namespace
 
-string GetHeaderIncludes(const google::protobuf::FileDescriptor* file) {
-  string temp =
+std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
+  std::string temp =
       "#include \"grpc++/impl/internal_stub.h\"\n"
       "#include \"grpc++/status.h\"\n"
       "\n"
@@ -121,16 +124,16 @@ string GetHeaderIncludes(const google::protobuf::FileDescriptor* file) {
   return temp;
 }
 
-string GetSourceIncludes() {
+std::string GetSourceIncludes() {
   return "#include \"grpc++/channel_interface.h\"\n"
          "#include \"grpc++/impl/rpc_method.h\"\n"
          "#include \"grpc++/impl/rpc_service_method.h\"\n"
          "#include \"grpc++/stream.h\"\n";
 }
 
-void PrintHeaderClientMethod(google::protobuf::io::Printer* printer,
-                             const google::protobuf::MethodDescriptor* method,
-                             map<string, string>* vars) {
+void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
+                             const google::protobuf::MethodDescriptor *method,
+                             std::map<std::string, std::string> *vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] =
       grpc_cpp_generator::ClassName(method->input_type(), true);
@@ -157,9 +160,9 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer* printer,
   }
 }
 
-void PrintHeaderServerMethod(google::protobuf::io::Printer* printer,
-                             const google::protobuf::MethodDescriptor* method,
-                             map<string, string>* vars) {
+void PrintHeaderServerMethod(google::protobuf::io::Printer *printer,
+                             const google::protobuf::MethodDescriptor *method,
+                             std::map<std::string, std::string> *vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] =
       grpc_cpp_generator::ClassName(method->input_type(), true);
@@ -191,9 +194,9 @@ void PrintHeaderServerMethod(google::protobuf::io::Printer* printer,
   }
 }
 
-void PrintHeaderService(google::protobuf::io::Printer* printer,
-                        const google::protobuf::ServiceDescriptor* service,
-                        map<string, string>* vars) {
+void PrintHeaderService(google::protobuf::io::Printer *printer,
+                        const google::protobuf::ServiceDescriptor *service,
+                        std::map<std::string, std::string> *vars) {
   (*vars)["Service"] = service->name();
 
   printer->Print(*vars,
@@ -238,11 +241,11 @@ void PrintHeaderService(google::protobuf::io::Printer* printer,
   printer->Print("};\n");
 }
 
-string GetHeaderServices(const google::protobuf::FileDescriptor* file) {
-  string output;
+std::string GetHeaderServices(const google::protobuf::FileDescriptor *file) {
+  std::string output;
   google::protobuf::io::StringOutputStream output_stream(&output);
   google::protobuf::io::Printer printer(&output_stream, '$');
-  map<string, string> vars;
+  std::map<std::string, std::string> vars;
 
   for (int i = 0; i < file->service_count(); ++i) {
     PrintHeaderService(&printer, file->service(i), &vars);
@@ -251,9 +254,9 @@ string GetHeaderServices(const google::protobuf::FileDescriptor* file) {
   return output;
 }
 
-void PrintSourceClientMethod(google::protobuf::io::Printer* printer,
-                             const google::protobuf::MethodDescriptor* method,
-                             map<string, string>* vars) {
+void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
+                             const google::protobuf::MethodDescriptor *method,
+                             std::map<std::string, std::string> *vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] =
       grpc_cpp_generator::ClassName(method->input_type(), true);
@@ -309,9 +312,9 @@ void PrintSourceClientMethod(google::protobuf::io::Printer* printer,
   }
 }
 
-void PrintSourceServerMethod(google::protobuf::io::Printer* printer,
-                             const google::protobuf::MethodDescriptor* method,
-                             map<string, string>* vars) {
+void PrintSourceServerMethod(google::protobuf::io::Printer *printer,
+                             const google::protobuf::MethodDescriptor *method,
+                             std::map<std::string, std::string> *vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] =
       grpc_cpp_generator::ClassName(method->input_type(), true);
@@ -359,9 +362,9 @@ void PrintSourceServerMethod(google::protobuf::io::Printer* printer,
   }
 }
 
-void PrintSourceService(google::protobuf::io::Printer* printer,
-                        const google::protobuf::ServiceDescriptor* service,
-                        map<string, string>* vars) {
+void PrintSourceService(google::protobuf::io::Printer *printer,
+                        const google::protobuf::ServiceDescriptor *service,
+                        std::map<std::string, std::string> *vars) {
   (*vars)["Service"] = service->name();
   printer->Print(
       *vars,
@@ -391,7 +394,7 @@ void PrintSourceService(google::protobuf::io::Printer* printer,
       "}\n");
   printer->Print("service_ = new ::grpc::RpcService();\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    const google::protobuf::MethodDescriptor* method = service->method(i);
+    const google::protobuf::MethodDescriptor *method = service->method(i);
     (*vars)["Method"] = method->name();
     (*vars)["Request"] =
         grpc_cpp_generator::ClassName(method->input_type(), true);
@@ -455,11 +458,11 @@ void PrintSourceService(google::protobuf::io::Printer* printer,
   printer->Print("}\n\n");
 }
 
-string GetSourceServices(const google::protobuf::FileDescriptor* file) {
-  string output;
+std::string GetSourceServices(const google::protobuf::FileDescriptor *file) {
+  std::string output;
   google::protobuf::io::StringOutputStream output_stream(&output);
   google::protobuf::io::Printer printer(&output_stream, '$');
-  map<string, string> vars;
+  std::map<std::string, std::string> vars;
   // Package string is empty or ends with a dot. It is used to fully qualify
   // method names.
   vars["Package"] = file->package();

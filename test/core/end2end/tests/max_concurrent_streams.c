@@ -64,7 +64,7 @@ static gpr_timespec n_seconds_time(int n) {
   return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
 }
 
-static gpr_timespec five_seconds_time() { return n_seconds_time(5); }
+static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event *ev;
@@ -126,7 +126,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
                            deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(s, f.server_cq, tag(102), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 
@@ -202,7 +203,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(ev->data.invoke_accepted == GRPC_OP_OK);
   /* The /alpha or /beta calls started above could be invoked (but NOT both);
    * check this here */
-  live_call = (int)(gpr_intptr)ev->tag;
+  live_call = (int)(gpr_intptr) ev->tag;
   live_call_obj = live_call == 300 ? c1 : c2;
   grpc_event_finish(ev);
 
@@ -216,7 +217,9 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
                            "test.google.com", deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(s1, f.server_cq, tag(102), 0));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_server_accept(s1, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s1, 0));
   cq_expect_client_metadata_read(v_client, tag(live_call + 1), NULL);
   cq_verify(v_client);
 
@@ -246,7 +249,9 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
                            "test.google.com", deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_accept(s2, f.server_cq, tag(202), 0));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_server_accept(s2, f.server_cq, tag(202)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s2, 0));
   cq_expect_client_metadata_read(v_client, tag(live_call + 1), NULL);
   cq_verify(v_client);
 

@@ -85,7 +85,7 @@ struct grpc_completion_queue {
 /* Default do-nothing on_finish function */
 static void null_on_finish(void *user_data, grpc_op_error error) {}
 
-grpc_completion_queue *grpc_completion_queue_create() {
+grpc_completion_queue *grpc_completion_queue_create(void) {
   grpc_completion_queue *cc = gpr_malloc(sizeof(grpc_completion_queue));
   memset(cc, 0, sizeof(*cc));
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
@@ -153,6 +153,13 @@ static void end_op_locked(grpc_completion_queue *cc,
     cc->shutdown = 1;
     gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
   }
+}
+
+void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag) {
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  add_locked(cc, GRPC_SERVER_SHUTDOWN, tag, NULL, NULL, NULL);
+  end_op_locked(cc, GRPC_SERVER_SHUTDOWN);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 
 void grpc_cq_end_read(grpc_completion_queue *cc, void *tag, grpc_call *call,
@@ -251,7 +258,7 @@ void grpc_cq_end_new_rpc(grpc_completion_queue *cc, void *tag, grpc_call *call,
 }
 
 /* Create a GRPC_QUEUE_SHUTDOWN event without queuing it anywhere */
-static event *create_shutdown_event() {
+static event *create_shutdown_event(void) {
   event *ev = gpr_malloc(sizeof(event));
   ev->base.type = GRPC_QUEUE_SHUTDOWN;
   ev->base.call = NULL;

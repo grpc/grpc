@@ -38,12 +38,12 @@
 
 /* Return the number of CPU cores on the current system. Will return 0 if
    if information is not available. */
-int gpr_cpu_num_cores();
+int gpr_cpu_num_cores(void);
 
 /* Return the CPU on which the current thread is executing; N.B. This should
    be considered advisory only - it is possible that the thread is switched
    to a different CPU at any time. Returns a value in range
    [0, gpr_cpu_num_cores() - 1] */
-int gpr_cpu_current_cpu();
+int gpr_cpu_current_cpu(void);
 
 #endif /* __GRPC_INTERNAL_SUPPORT_CPU_H__ */

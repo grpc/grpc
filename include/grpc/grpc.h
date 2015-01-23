@@ -194,6 +194,7 @@ typedef enum grpc_completion_type {
   GRPC_FINISHED,             /* An RPC has finished. The event contains status.
                                 On the server this will be OK or Cancelled. */
   GRPC_SERVER_RPC_NEW,       /* A new RPC has arrived at the server */
+  GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
   GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
                                 a default: case */
 } grpc_completion_type;
@@ -232,12 +233,12 @@ typedef struct grpc_event {
 } grpc_event;
 
 /* Initialize the grpc library */
-void grpc_init();
+void grpc_init(void);
 
 /* Shutdown the grpc library */
-void grpc_shutdown();
+void grpc_shutdown(void);
 
-grpc_completion_queue *grpc_completion_queue_create();
+grpc_completion_queue *grpc_completion_queue_create(void);
 
 /* Blocks until an event is available, the completion queue is being shutdown,
    or deadline is reached. Returns NULL on timeout, otherwise the event that
@@ -324,22 +325,6 @@ grpc_call_error grpc_call_start_invoke(grpc_call *call,
                                        void *invoke_accepted_tag,
                                        void *metadata_read_tag,
                                        void *finished_tag, gpr_uint32 flags);
-
-/* DEPRECATED: users should use grpc_call_server_accept, and
-   grpc_call_server_end_initial_metadata instead now.
-
-
-   Accept an incoming RPC, binding a completion queue to it.
-   To be called after adding metadata to the call, but before sending
-   messages.
-   flags is a bit-field combination of the write flags defined above.
-   REQUIRES: Can be called at most once per call.
-             Can only be called on the server.
-   Produces a GRPC_FINISHED event with finished_tag when the call has been
-       completed (there may be other events for the call pending at this
-       time) */
-grpc_call_error grpc_call_accept(grpc_call *call, grpc_completion_queue *cq,
-                                 void *finished_tag, gpr_uint32 flags);
 
 /* Accept an incoming RPC, binding a completion queue to it.
    To be called before sending or receiving messages.
@@ -443,7 +428,8 @@ grpc_server *grpc_server_create(grpc_completion_queue *cq,
    REQUIRES: server not started */
 int grpc_server_add_http2_port(grpc_server *server, const char *addr);
 
-/* Add a secure port to server; returns 1 on success, 0 on failure
+/* Add a secure port to server.
+   Returns bound port number on success, 0 on failure.
    REQUIRES: server not started */
 int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr);
 
@@ -454,6 +440,10 @@ void grpc_server_start(grpc_server *server);
    After completion, no new calls or connections will be admitted.
    Existing calls will be allowed to complete. */
 void grpc_server_shutdown(grpc_server *server);
+
+/* As per grpc_server_shutdown, but send a GRPC_SERVER_SHUTDOWN event when
+   there are no more calls being serviced. */
+void grpc_server_shutdown_and_notify(grpc_server *server, void *tag);
 
 /* Destroy a server.
    Forcefully cancels all existing calls. */

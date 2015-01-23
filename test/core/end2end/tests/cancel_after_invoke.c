@@ -43,14 +43,7 @@
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
-
-/* allow cancellation by either grpc_call_cancel, or by wait_for_deadline (which
- * does nothing) */
-typedef grpc_call_error (*canceller)(grpc_call *call);
-
-static grpc_call_error wait_for_deadline(grpc_call *call) {
-  return GRPC_CALL_OK;
-}
+#include "test/core/end2end/tests/cancel_test_helpers.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -72,7 +65,7 @@ static gpr_timespec n_seconds_time(int n) {
   return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
 }
 
-static gpr_timespec five_seconds_time() { return n_seconds_time(5); }
+static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event *ev;
@@ -112,7 +105,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel after invoke, no payload */
 static void test_cancel_after_invoke(grpc_end2end_test_config config,
-                                     canceller call_cancel) {
+                                     cancellation_mode mode) {
   grpc_call *c;
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
@@ -126,11 +119,11 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   cq_expect_invoke_accepted(v_client, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == call_cancel(c));
+  GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
 
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
-  cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_CANCELLED, NULL,
-                                 NULL);
+  cq_expect_finished_with_status(v_client, tag(3), mode.expect_status,
+                                 mode.expect_details, NULL);
   cq_verify(v_client);
 
   grpc_call_destroy(c);
@@ -142,9 +135,8 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
   int i;
-  canceller cancellers[2] = {grpc_call_cancel, wait_for_deadline};
 
-  for (i = 0; i < GPR_ARRAY_SIZE(cancellers); i++) {
-    test_cancel_after_invoke(config, cancellers[i]);
+  for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
+    test_cancel_after_invoke(config, cancellation_modes[i]);
   }
 }

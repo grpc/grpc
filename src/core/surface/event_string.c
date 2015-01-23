@@ -63,6 +63,9 @@ char *grpc_event_string(grpc_event *ev) {
   if (ev == NULL) return gpr_strdup("null");
 
   switch (ev->type) {
+    case GRPC_SERVER_SHUTDOWN:
+      p += sprintf(p, "SERVER_SHUTDOWN");
+      break;
     case GRPC_QUEUE_SHUTDOWN:
       p += sprintf(p, "QUEUE_SHUTDOWN");
       break;

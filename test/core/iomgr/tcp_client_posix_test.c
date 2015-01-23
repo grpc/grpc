@@ -40,10 +40,11 @@
 #include <unistd.h>
 
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-static gpr_timespec test_deadline() {
+static gpr_timespec test_deadline(void) {
   return gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
 }
 
@@ -59,7 +60,7 @@ static void must_fail(void *arg, grpc_endpoint *tcp) {
   gpr_event_set(arg, (void *)1);
 }
 
-void test_succeeds() {
+void test_succeeds(void) {
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
   int svr_fd;
@@ -94,7 +95,7 @@ void test_succeeds() {
   GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
 }
 
-void test_fails() {
+void test_fails(void) {
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
   gpr_event ev;
@@ -112,7 +113,7 @@ void test_fails() {
   GPR_ASSERT(gpr_event_wait(&ev, test_deadline()));
 }
 
-void test_times_out() {
+void test_times_out(void) {
   struct sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
   int svr_fd;
@@ -138,7 +139,8 @@ void test_times_out() {
 
   /* tie up the listen buffer, which is somewhat arbitrarily sized. */
   for (i = 0; i < NUM_CLIENT_CONNECTS; ++i) {
-    client_fd[i] = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    client_fd[i] = socket(AF_INET, SOCK_STREAM, 0);
+    grpc_set_socket_nonblocking(client_fd[i], 1);  
     do {
       r = connect(client_fd[i], (struct sockaddr *)&addr, addr_len);
     } while (r == -1 && errno == EINTR);

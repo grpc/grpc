@@ -30,7 +30,7 @@ def mako_plugin(dictionary):
   projects = [project for project in projects if project.get('vs_project_guid', None)]
 
   ## Exclude C++ projects for now
-  projects = [project for project in projects if not project.get('c++', False)]
+  projects = [project for project in projects if not project.language == 'c++']
 
   project_dict = dict([(p['name'], p) for p in projects])
 

@@ -61,11 +61,11 @@ static gpr_uint64 force_collision(const void* k) {
 static void free_data(void* data) { gpr_free(data); }
 
 /* Basic tests that empty hash table can be created and destroyed. */
-static void test_create_table() {
+static void test_create_table(void) {
   /* Create table with uint64 key type */
   census_ht* ht = NULL;
-  census_ht_option ht_options = {CENSUS_HT_UINT64, 1999, NULL, NULL, NULL,
-                                 NULL};
+  census_ht_option ht_options = {CENSUS_HT_UINT64, 1999, NULL,
+                                 NULL,             NULL, NULL};
   ht = census_ht_create(&ht_options);
   GPR_ASSERT(ht != NULL);
   GPR_ASSERT(census_ht_get_size(ht) == 0);
@@ -81,7 +81,7 @@ static void test_create_table() {
   census_ht_destroy(ht);
 }
 
-static void test_table_with_int_key() {
+static void test_table_with_int_key(void) {
   census_ht_option opt = {CENSUS_HT_UINT64, 7, NULL, NULL, NULL, NULL};
   census_ht* ht = census_ht_create(&opt);
   gpr_uint64 i = 0;
@@ -118,9 +118,9 @@ static void test_table_with_int_key() {
 }
 
 /* Test that there is no memory leak when keys and values are owned by table. */
-static void test_value_and_key_deleter() {
-  census_ht_option opt = {CENSUS_HT_POINTER, 7, &hash64, &cmp_str_keys,
-                          &free_data, &free_data};
+static void test_value_and_key_deleter(void) {
+  census_ht_option opt = {CENSUS_HT_POINTER, 7,          &hash64,
+                          &cmp_str_keys,     &free_data, &free_data};
   census_ht* ht = census_ht_create(&opt);
   census_ht_key key;
   char* val = NULL;
@@ -148,7 +148,7 @@ static void test_value_and_key_deleter() {
 }
 
 /* Test simple insert and erase operations. */
-static void test_simple_add_and_erase() {
+static void test_simple_add_and_erase(void) {
   census_ht_option opt = {CENSUS_HT_UINT64, 7, NULL, NULL, NULL, NULL};
   census_ht* ht = census_ht_create(&opt);
   GPR_ASSERT(ht != NULL);
@@ -183,9 +183,9 @@ static void test_simple_add_and_erase() {
   census_ht_destroy(ht);
 }
 
-static void test_insertion_and_deletion_with_high_collision_rate() {
-  census_ht_option opt = {CENSUS_HT_POINTER, 13, &force_collision,
-                          &cmp_str_keys, NULL, NULL};
+static void test_insertion_and_deletion_with_high_collision_rate(void) {
+  census_ht_option opt = {CENSUS_HT_POINTER, 13,   &force_collision,
+                          &cmp_str_keys,     NULL, NULL};
   census_ht* ht = census_ht_create(&opt);
   char key_str[1000][10];
   gpr_uint64 val = 0;
@@ -207,13 +207,13 @@ static void test_insertion_and_deletion_with_high_collision_rate() {
   census_ht_destroy(ht);
 }
 
-static void test_table_with_string_key() {
-  census_ht_option opt = {CENSUS_HT_POINTER, 7, &hash64, &cmp_str_keys, NULL,
-                          NULL};
+static void test_table_with_string_key(void) {
+  census_ht_option opt = {CENSUS_HT_POINTER, 7,    &hash64,
+                          &cmp_str_keys,     NULL, NULL};
   census_ht* ht = census_ht_create(&opt);
-  const char* keys[] = {"k1", "a", "000", "apple",
-                        "banana_a_long_long_long_banana", "%$", "111", "foo",
-                        "b"};
+  const char* keys[] = {"k1",    "a",                              "000",
+                        "apple", "banana_a_long_long_long_banana", "%$",
+                        "111",   "foo",                            "b"};
   const int vals[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
   int i = 0;
   GPR_ASSERT(ht != NULL);
@@ -258,7 +258,7 @@ static void test_table_with_string_key() {
   census_ht_destroy(ht);
 }
 
-static void test_insertion_with_same_key() {
+static void test_insertion_with_same_key(void) {
   census_ht_option opt = {CENSUS_HT_UINT64, 11, NULL, NULL, NULL, NULL};
   census_ht* ht = census_ht_create(&opt);
   census_ht_key key;

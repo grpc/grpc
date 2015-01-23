@@ -89,9 +89,9 @@ typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_client_handshaker_factory(
-    const unsigned char* pem_private_key, uint32_t pem_private_key_size,
-    const unsigned char* pem_cert_chain, uint32_t pem_cert_chain_size,
-    const unsigned char* pem_root_certs, uint32_t pem_root_certs_size,
+    const unsigned char* pem_private_key, size_t pem_private_key_size,
+    const unsigned char* pem_cert_chain, size_t pem_cert_chain_size,
+    const unsigned char* pem_root_certs, size_t pem_root_certs_size,
     const char* cipher_suites, const unsigned char** alpn_protocols,
     const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
     tsi_ssl_handshaker_factory** factory);
@@ -132,11 +132,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_server_handshaker_factory(
     const unsigned char** pem_private_keys,
-    const uint32_t* pem_private_keys_sizes,
-    const unsigned char** pem_cert_chains,
-    const uint32_t* pem_cert_chains_sizes, uint32_t key_cert_pair_count,
+    const size_t* pem_private_keys_sizes, const unsigned char** pem_cert_chains,
+    const size_t* pem_cert_chains_sizes, size_t key_cert_pair_count,
     const unsigned char* pem_client_root_certs,
-    uint32_t pem_client_root_certs_size, const char* cipher_suites,
+    size_t pem_client_root_certs_size, const char* cipher_suites,
     const unsigned char** alpn_protocols,
     const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
     tsi_ssl_handshaker_factory** factory);

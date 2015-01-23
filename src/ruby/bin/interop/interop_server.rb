@@ -62,12 +62,12 @@ end
 # creates a ServerCredentials from the test certificates.
 def test_server_creds
   certs = load_test_certs
-  server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+  GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
 end
 
 # produces a string of null chars (\0) of length l.
 def nulls(l)
-  raise 'requires #{l} to be +ve' if l < 0
+  fail 'requires #{l} to be +ve' if l < 0
   [].pack('x' * l).force_encoding('utf-8')
 end
 
@@ -86,7 +86,7 @@ class EnumeratorQueue
     loop do
       r = @q.pop
       break if r.equal?(@sentinel)
-      raise r if r.is_a?Exception
+      fail r if r.is_a? Exception
       yield r
     end
   end
@@ -98,27 +98,27 @@ class TestTarget < Grpc::Testing::TestService::Service
   include Grpc::Testing
   include Grpc::Testing::PayloadType
 
-  def empty_call(empty, call)
+  def empty_call(_empty, _call)
     Empty.new
   end
 
-  def unary_call(simple_req, call)
+  def unary_call(simple_req, _call)
     req_size = simple_req.response_size
-    SimpleResponse.new(:payload => Payload.new(:type => COMPRESSABLE,
-                                               :body => nulls(req_size)))
+    SimpleResponse.new(payload: Payload.new(type: :COMPRESSABLE,
+                                            body: nulls(req_size)))
   end
 
   def streaming_input_call(call)
     sizes = call.each_remote_read.map { |x| x.payload.body.length }
-    sum = sizes.inject { |sum,x| sum + x }
-    StreamingInputCallResponse.new(:aggregated_payload_size => sum)
+    sum = sizes.inject { |s, x| s + x }
+    StreamingInputCallResponse.new(aggregated_payload_size: sum)
   end
 
-  def streaming_output_call(req, call)
+  def streaming_output_call(req, _call)
     cls = StreamingOutputCallResponse
     req.response_parameters.map do |p|
-      cls.new(:payload => Payload.new(:type => req.response_type,
-                                      :body => nulls(p.size)))
+      cls.new(payload: Payload.new(type: req.response_type,
+                                   body: nulls(p.size)))
     end
   end
 
@@ -126,13 +126,13 @@ class TestTarget < Grpc::Testing::TestService::Service
     # reqs is a lazy Enumerator of the requests sent by the client.
     q = EnumeratorQueue.new(self)
     cls = StreamingOutputCallResponse
-    t = Thread.new do
+    Thread.new do
       begin
         reqs.each do |req|
           logger.info("read #{req.inspect}")
           resp_size = req.response_parameters[0].size
-          resp = cls.new(:payload => Payload.new(:type => req.response_type,
-                                                 :body => nulls(resp_size)))
+          resp = cls.new(payload: Payload.new(type: req.response_type,
+                                              body: nulls(resp_size)))
           q.push(resp)
         end
         logger.info('finished reads')
@@ -149,13 +149,12 @@ class TestTarget < Grpc::Testing::TestService::Service
     # currently used in any tests
     full_duplex_call(reqs)
   end
-
 end
 
 # validates the the command line options, returning them as a Hash.
 def parse_options
   options = {
-    'port' => nil,
+    'port' => nil
   }
   OptionParser.new do |opts|
     opts.banner = 'Usage: --port port'
@@ -165,7 +164,7 @@ def parse_options
   end.parse!
 
   if options['port'].nil?
-    raise OptionParser::MissingArgument.new("please specify --port")
+    fail(OptionParser::MissingArgument, 'please specify --port')
   end
   options
 end

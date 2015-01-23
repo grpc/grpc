@@ -34,14 +34,10 @@
 #ifndef __GRPC_TEST_END2END_DATA_SSL_TEST_DATA_H__
 #define __GRPC_TEST_END2END_DATA_SSL_TEST_DATA_H__
 
-extern unsigned char test_root_cert[];
-extern unsigned int test_root_cert_size;
-extern unsigned char test_server1_cert[];
-extern unsigned int test_server1_cert_size;
-extern unsigned char test_server1_key[];
-extern unsigned int test_server1_key_size;
+extern const char test_root_cert[];
+extern const char test_server1_cert[];
+extern const char test_server1_key[];
 
-extern unsigned char prod_roots_certs[];
-extern unsigned int prod_roots_certs_size;
+extern const char prod_roots_certs[];
 
 #endif /* __GRPC_TEST_END2END_DATA_SSL_TEST_DATA_H__ */

@@ -84,7 +84,7 @@ struct grpc_tcp_server {
   size_t port_capacity;
 };
 
-grpc_tcp_server *grpc_tcp_server_create() {
+grpc_tcp_server *grpc_tcp_server_create(void) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_mu_init(&s->mu);
   gpr_cv_init(&s->cv);
@@ -120,7 +120,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
 }
 
 /* get max listen queue size on linux */
-static void init_max_accept_queue_size() {
+static void init_max_accept_queue_size(void) {
   int n = SOMAXCONN;
   char buf[64];
   FILE *fp = fopen("/proc/sys/net/core/somaxconn", "r");
@@ -147,7 +147,7 @@ static void init_max_accept_queue_size() {
   }
 }
 
-static int get_max_accept_queue_size() {
+static int get_max_accept_queue_size(void) {
   gpr_once_init(&s_init_max_accept_queue_size, init_max_accept_queue_size);
   return s_max_accept_queue_size;
 }
@@ -252,7 +252,7 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     if (s->nports == s->port_capacity) {
       s->port_capacity *= 2;
       s->ports =
-          gpr_realloc(s->ports, sizeof(server_port *) * s->port_capacity);
+          gpr_realloc(s->ports, sizeof(server_port) * s->port_capacity);
     }
     sp = &s->ports[s->nports++];
     sp->server = s;

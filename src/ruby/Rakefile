@@ -1,46 +1,44 @@
 # -*- ruby -*-
 require 'rake/extensiontask'
 require 'rspec/core/rake_task'
+require 'rubocop/rake_task'
 
+desc 'Run Rubocop to check for style violations'
+RuboCop::RakeTask.new
 
 Rake::ExtensionTask.new 'grpc' do |ext|
   ext.lib_dir = File.join('lib', 'grpc')
 end
 
 SPEC_SUITES = [
-  { :id => :wrapper, :title => 'wrapper layer', :files => %w(spec/*.rb) },
-  { :id => :idiomatic, :title => 'idiomatic layer', :dir => %w(spec/generic),
-    :tag => '~bidi' },
-  { :id => :bidi, :title => 'bidi tests', :dir => %w(spec/generic),
-    :tag => 'bidi' }
+  { id: :wrapper, title: 'wrapper layer', files: %w(spec/*.rb) },
+  { id: :idiomatic, title: 'idiomatic layer', dir: %w(spec/generic),
+    tag: '~bidi' },
+  { id: :bidi, title: 'bidi tests', dir: %w(spec/generic),
+    tag: 'bidi' }
 ]
 
-desc "Run all RSpec tests"
+desc 'Run all RSpec tests'
 namespace :spec do
   namespace :suite do
     SPEC_SUITES.each do |suite|
       desc "Run all specs in #{suite[:title]} spec suite"
       RSpec::Core::RakeTask.new(suite[:id]) do |t|
         spec_files = []
-        if suite[:files]
-          suite[:files].each { |f| spec_files += Dir[f] }
-        end
+        suite[:files].each { |f| spec_files += Dir[f] } if suite[:files]
 
         if suite[:dirs]
           suite[:dirs].each { |f| spec_files += Dir["#{f}/**/*_spec.rb"] }
         end
 
         t.pattern = spec_files
-
-        if suite[:tag]
-          t.rspec_opts = "--tag #{suite[:tag]}"
-        end
+        t.rspec_opts = "--tag #{suite[:tag]}" if suite[:tag]
       end
     end
   end
 end
 
-task :default => "spec:suite:idiomatic"  # this should be spec:suite:bidi
-task "spec:suite:wrapper" => :compile
-task "spec:suite:idiomatic" => "spec:suite:wrapper"
-task "spec:suite:bidi" => "spec:suite:idiomatic"
+task default: 'spec:suite:idiomatic'  # this should be spec:suite:bidi
+task 'spec:suite:wrapper' => :compile
+task 'spec:suite:idiomatic' => 'spec:suite:wrapper'
+task 'spec:suite:bidi' => 'spec:suite:idiomatic'

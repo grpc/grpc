@@ -61,7 +61,7 @@ gpr_timespec gpr_now(void) {
   struct timeval now_tv;
   gettimeofday(&now_tv, NULL);
   now.tv_sec = now_tv.tv_sec;
-  now.tv_nsec = now_tv.tv_usec / 1000;
+  now.tv_nsec = now_tv.tv_usec * 1000;
   return now;
 }
 #endif

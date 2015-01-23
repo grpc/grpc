@@ -178,19 +178,19 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 }
 
 const grpc_channel_filter grpc_client_census_filter = {
-    client_call_op, channel_op,
+    client_call_op,       channel_op,
 
-    sizeof(call_data), client_init_call_elem, client_destroy_call_elem,
+    sizeof(call_data),    client_init_call_elem, client_destroy_call_elem,
 
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
+    sizeof(channel_data), init_channel_elem,     destroy_channel_elem,
 
     "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
-    server_call_op, channel_op,
+    server_call_op,       channel_op,
 
-    sizeof(call_data), server_init_call_elem, server_destroy_call_elem,
+    sizeof(call_data),    server_init_call_elem, server_destroy_call_elem,
 
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
+    sizeof(channel_data), init_channel_elem,     destroy_channel_elem,
 
     "census-server"};

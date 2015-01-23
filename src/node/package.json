@@ -8,11 +8,14 @@
   "dependencies": {
     "bindings": "^1.2.1",
     "nan": "~1.3.0",
-    "underscore": "^1.7.0"
+    "protobufjs": "murgatroid99/ProtoBuf.js",
+    "underscore": "^1.7.0",
+    "underscore.string": "^3.0.0"
   },
   "devDependencies": {
+    "highland": "~2.2.0",
     "mocha": "~1.21.0",
-    "highland": "~2.0.0",
-    "protobufjs": "~3.8.0"
-  }
+    "minimist": "^1.1.0"
+  },
+  "main": "main.js"
 }

@@ -99,7 +99,7 @@ int grpc_set_socket_reuse_addr(int fd, int reuse) {
   socklen_t intlen = sizeof(newval);
   return 0 == setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) &&
          0 == getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &newval, &intlen) &&
-         newval == val;
+         (newval != 0) == val;
 }
 
 /* disable nagle */
@@ -109,13 +109,13 @@ int grpc_set_socket_low_latency(int fd, int low_latency) {
   socklen_t intlen = sizeof(newval);
   return 0 == setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) &&
          0 == getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &newval, &intlen) &&
-         newval == val;
+         (newval != 0) == val;
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
 static int g_ipv6_loopback_available;
 
-static void probe_ipv6_once() {
+static void probe_ipv6_once(void) {
   int fd = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (fd < 0) {
@@ -135,7 +135,7 @@ static void probe_ipv6_once() {
   }
 }
 
-int grpc_ipv6_loopback_available() {
+int grpc_ipv6_loopback_available(void) {
   gpr_once_init(&g_probe_ipv6_once, probe_ipv6_once);
   return g_ipv6_loopback_available;
 }

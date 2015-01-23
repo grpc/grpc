@@ -65,7 +65,7 @@ end
 # creates a Credentials from the test certificates.
 def test_creds
   certs = load_test_certs
-  creds = GRPC::Core::Credentials.new(certs[0])
+  GRPC::Core::Credentials.new(certs[0])
 end
 
 # creates a test stub that accesses host:port securely.
@@ -73,15 +73,15 @@ def create_stub(host, port)
   address = "#{host}:#{port}"
   stub_opts = {
     :creds => test_creds,
-    GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com',
+    GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com'
   }
   logger.info("... connecting securely to #{address}")
-  stub = Grpc::Testing::TestService::Stub.new(address, **stub_opts)
+  Grpc::Testing::TestService::Stub.new(address, **stub_opts)
 end
 
 # produces a string of null chars (\0) of length l.
 def nulls(l)
-  raise 'requires #{l} to be +ve' if l < 0
+  fail 'requires #{l} to be +ve' if l < 0
   [].pack('x' * l).force_encoding('utf-8')
 end
 
@@ -102,16 +102,16 @@ class PingPongPlayer
 
   def each_item
     return enum_for(:each_item) unless block_given?
-    req_cls, p_cls= StreamingOutputCallRequest, ResponseParameters  # short
+    req_cls, p_cls = StreamingOutputCallRequest, ResponseParameters  # short
     count = 0
     @msg_sizes.each do |m|
       req_size, resp_size = m
-      req = req_cls.new(:payload => Payload.new(:body => nulls(req_size)),
-                        :response_type => COMPRESSABLE,
-                        :response_parameters => [p_cls.new(:size => resp_size)])
+      req = req_cls.new(payload: Payload.new(body: nulls(req_size)),
+                        response_type: :COMPRESSABLE,
+                        response_parameters: [p_cls.new(size: resp_size)])
       yield req
       resp = @queue.pop
-      assert_equal(PayloadType.lookup(COMPRESSABLE), resp.payload.type,
+      assert_equal(:COMPRESSABLE, resp.payload.type,
                    'payload type is wrong')
       assert_equal(resp_size, resp.payload.body.length,
                    'payload body #{i} has the wrong length')
@@ -148,12 +148,14 @@ class NamedTests
   #   ruby server
   # FAILED
   def large_unary
-    req_size, wanted_response_size = 271828, 314159
-    payload = Payload.new(:type => COMPRESSABLE, :body => nulls(req_size))
-    req = SimpleRequest.new(:response_type => COMPRESSABLE,
-                            :response_size => wanted_response_size,
-                            :payload => payload)
+    req_size, wanted_response_size = 271_828, 314_159
+    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
+    req = SimpleRequest.new(response_type: :COMPRESSABLE,
+                            response_size: wanted_response_size,
+                            payload: payload)
     resp = @stub.unary_call(req)
+    assert_equal(:COMPRESSABLE, resp.payload.type,
+                 'large_unary: payload had the wrong type')
     assert_equal(wanted_response_size, resp.payload.body.length,
                  'large_unary: payload had the wrong length')
     assert_equal(nulls(wanted_response_size), resp.payload.body,
@@ -166,31 +168,31 @@ class NamedTests
   #   ruby server
   # FAILED
   def client_streaming
-    msg_sizes = [27182, 8, 1828, 45904]
-    wanted_aggregate_size = 74922
+    msg_sizes = [27_182, 8, 1828, 45_904]
+    wanted_aggregate_size = 74_922
     reqs = msg_sizes.map do |x|
-      req = Payload.new(:body => nulls(x))
-      StreamingInputCallRequest.new(:payload => req)
+      req = Payload.new(body: nulls(x))
+      StreamingInputCallRequest.new(payload: req)
     end
     resp = @stub.streaming_input_call(reqs)
     assert_equal(wanted_aggregate_size, resp.aggregated_payload_size,
                  'client_streaming: aggregate payload size is incorrect')
     p 'OK: client_streaming'
-   end
+  end
 
   # TESTING:
   # PASSED
   #   ruby server
   # FAILED
   def server_streaming
-    msg_sizes = [31415, 9, 2653, 58979]
-    response_spec = msg_sizes.map { |s| ResponseParameters.new(:size => s) }
-    req = StreamingOutputCallRequest.new(:response_type => COMPRESSABLE,
-                                         :response_parameters => response_spec)
+    msg_sizes = [31_415, 9, 2653, 58_979]
+    response_spec = msg_sizes.map { |s| ResponseParameters.new(size: s) }
+    req = StreamingOutputCallRequest.new(response_type: :COMPRESSABLE,
+                                         response_parameters: response_spec)
     resps = @stub.streaming_output_call(req)
     resps.each_with_index do |r, i|
       assert i < msg_sizes.length, 'too many responses'
-      assert_equal(PayloadType.lookup(COMPRESSABLE), r.payload.type,
+      assert_equal(:COMPRESSABLE, r.payload.type,
                    'payload type is wrong')
       assert_equal(msg_sizes[i], r.payload.body.length,
                    'payload body #{i} has the wrong length')
@@ -203,13 +205,12 @@ class NamedTests
   #   ruby server
   # FAILED
   def ping_pong
-    msg_sizes = [[27182, 31415], [8, 9], [1828, 2653], [45904, 58979]]
+    msg_sizes = [[27_182, 31_415], [8, 9], [1828, 2653], [45_904, 58_979]]
     ppp = PingPongPlayer.new(msg_sizes)
     resps = @stub.full_duplex_call(ppp.each_item)
     resps.each { |r| ppp.queue.push(r) }
     p 'OK: ping_pong'
   end
-
 end
 
 # validates the the command line options, returning them as a Hash.
@@ -217,7 +218,7 @@ def parse_options
   options = {
     'server_host' => nil,
     'server_port' => nil,
-    'test_case' => nil,
+    'test_case' => nil
   }
   OptionParser.new do |opts|
     opts.banner = 'Usage: --server_host <server_host> --server_port server_port'
@@ -228,17 +229,17 @@ def parse_options
       options['server_port'] = v
     end
     # instance_methods(false) gives only the methods defined in that class
-    test_cases = NamedTests.instance_methods(false).map { |t| t.to_s }
+    test_cases = NamedTests.instance_methods(false).map(&:to_s)
     test_case_list = test_cases.join(',')
-    opts.on("--test_case CODE", test_cases, {}, "select a test_case",
+    opts.on('--test_case CODE', test_cases, {}, 'select a test_case',
             "  (#{test_case_list})") do |v|
       options['test_case'] = v
     end
   end.parse!
 
-  ['server_host', 'server_port', 'test_case'].each do |arg|
+  %w(server_host server_port test_case).each do |arg|
     if options[arg].nil?
-      raise OptionParser::MissingArgument.new("please specify --#{arg}")
+      fail(OptionParser::MissingArgument, "please specify --#{arg}")
     end
   end
   options

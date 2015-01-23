@@ -46,7 +46,7 @@ typedef struct grpc_tcp_server grpc_tcp_server;
 typedef void (*grpc_tcp_server_cb)(void *arg, grpc_endpoint *ep);
 
 /* Create a server, initially not bound to any ports */
-grpc_tcp_server *grpc_tcp_server_create();
+grpc_tcp_server *grpc_tcp_server_create(void);
 
 /* Start listening to bound ports */
 void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset *pollset,

@@ -36,6 +36,8 @@
 
 #include <grpc/support/sync.h>
 
+#include "src/core/iomgr/pollset_kick.h"
+
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
 
 /* forward declare only in this file to avoid leaking impl details via
@@ -51,6 +53,7 @@ typedef struct grpc_pollset {
   const grpc_pollset_vtable *vtable;
   gpr_mu mu;
   gpr_cv cv;
+  grpc_pollset_kick_state kick_state;
   int counter;
   union {
     int fd;
@@ -86,7 +89,7 @@ void grpc_kick_drain(grpc_pollset *p);
    regardless of applications listening to events. Relying on this is slow
    however (the backup pollset only listens every 100ms or so) - so it's not
    to be relied on. */
-grpc_pollset *grpc_backup_pollset();
+grpc_pollset *grpc_backup_pollset(void);
 
 /* turn a pollset into a multipoller: platform specific */
 void grpc_platform_become_multipoller(grpc_pollset *pollset,

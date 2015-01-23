@@ -136,33 +136,29 @@ NAN_METHOD(Credentials::CreateDefault) {
 
 NAN_METHOD(Credentials::CreateSsl) {
   NanScope();
-  char *root_certs;
-  char *private_key = NULL;
-  char *cert_chain = NULL;
-  int root_certs_length, private_key_length = 0, cert_chain_length = 0;
-  if (!Buffer::HasInstance(args[0])) {
+  char *root_certs = NULL;
+  grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
+  if (Buffer::HasInstance(args[0])) {
+    root_certs = Buffer::Data(args[0]);
+  } else if (!(args[0]->IsNull() || args[0]->IsUndefined())) {
     return NanThrowTypeError("createSsl's first argument must be a Buffer");
   }
-  root_certs = Buffer::Data(args[0]);
-  root_certs_length = Buffer::Length(args[0]);
   if (Buffer::HasInstance(args[1])) {
-    private_key = Buffer::Data(args[1]);
-    private_key_length = Buffer::Length(args[1]);
+    key_cert_pair.private_key = Buffer::Data(args[1]);
   } else if (!(args[1]->IsNull() || args[1]->IsUndefined())) {
     return NanThrowTypeError(
         "createSSl's second argument must be a Buffer if provided");
   }
   if (Buffer::HasInstance(args[2])) {
-    cert_chain = Buffer::Data(args[2]);
-    cert_chain_length = Buffer::Length(args[2]);
+    key_cert_pair.cert_chain = Buffer::Data(args[2]);
   } else if (!(args[2]->IsNull() || args[2]->IsUndefined())) {
     return NanThrowTypeError(
         "createSSl's third argument must be a Buffer if provided");
   }
+
   NanReturnValue(WrapStruct(grpc_ssl_credentials_create(
-      reinterpret_cast<unsigned char *>(root_certs), root_certs_length,
-      reinterpret_cast<unsigned char *>(private_key), private_key_length,
-      reinterpret_cast<unsigned char *>(cert_chain), cert_chain_length)));
+      root_certs,
+      key_cert_pair.private_key == NULL ? NULL : &key_cert_pair)));
 }
 
 NAN_METHOD(Credentials::CreateComposite) {
