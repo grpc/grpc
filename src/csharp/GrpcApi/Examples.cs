@@ -1,17 +1,15 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
 
 namespace math
 {
-
-	public class Examples {
-
+	public class Examples
+	{
 		public static void DivExample(IMathServiceClient stub)
 		{
-			DivReply result = stub.Div(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build ());
+			DivReply result = stub.Div(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
 			Console.WriteLine("Div Result: " + result);
 		}
 
@@ -31,7 +29,7 @@ namespace math
 
 		public static void FibExample(IMathServiceClient stub)
 		{
-			IObservable<Num> response = stub.Fib(new FibArgs.Builder{ Limit = 5 }.Build());
+			IObservable<Num> response = stub.Fib(new FibArgs.Builder { Limit = 5 }.Build());
 
 			// .ToList() requires reactive Linq
 			IList<Num> numbers = response.ToList().Wait();
@@ -45,9 +43,9 @@ namespace math
 			// -- add CancellationToken as a parameter
 			IObserver<Num> numbers;
 			Task<Num> call = stub.Sum(out numbers);
-			numbers.OnNext(new Num.Builder{Num_ = 1}.Build());
-			numbers.OnNext(new Num.Builder{Num_ = 2}.Build());
-			numbers.OnNext(new Num.Builder{Num_ = 3}.Build());
+			numbers.OnNext(new Num.Builder { Num_ = 1 }.Build());
+			numbers.OnNext(new Num.Builder { Num_ = 2 }.Build());
+			numbers.OnNext(new Num.Builder { Num_ = 3 }.Build());
 			numbers.OnCompleted();
 
 			Console.WriteLine("Sum Result: " + call.Result);
@@ -57,9 +55,9 @@ namespace math
 		{
 			IObserver<DivArgs> requestSink;
 			IObservable<DivReply> response = stub.DivMany(out requestSink);
-			requestSink.OnNext(new DivArgs.Builder{Dividend = 10, Divisor = 3}.Build());
-			requestSink.OnNext(new DivArgs.Builder{ Dividend = 100, Divisor = 21 }.Build());
-			requestSink.OnNext(new DivArgs.Builder{ Dividend = 7, Divisor = 2 }.Build());
+			requestSink.OnNext(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
+			requestSink.OnNext(new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build());
+			requestSink.OnNext(new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build());
 			requestSink.OnCompleted();
 
 			Console.WriteLine("DivMany Result: " + string.Join("|", response.ToList().Wait()));
@@ -67,34 +65,24 @@ namespace math
 
 		public static void DependendRequestsExample(IMathServiceClient stub)
 		{
-			var numberList = new List<Num> { new Num.Builder{ Num_ = 1 }.Build(), 
-				new Num.Builder{ Num_ = 2 }.Build(), new Num.Builder{ Num_ = 3 }.Build() };
+			var numberList = new List<Num>
+			{ new Num.Builder{ Num_ = 1 }.Build(), 
+				new Num.Builder{ Num_ = 2 }.Build(), new Num.Builder{ Num_ = 3 }.Build()
+			};
 
 			numberList.ToObservable();
 
 			IObserver<Num> numbers;
 			Task<Num> call = stub.Sum(out numbers);            
-			foreach(var num in numberList) {
+			foreach (var num in numberList)
+			{
 				numbers.OnNext(num);
 			}
 			numbers.OnCompleted();
 
 			Num sum = call.Result;
 
-			DivReply result = stub.Div(new DivArgs.Builder{ Dividend = sum.Num_, Divisor = numberList.Count }.Build());
-		}
-
-		public static void Experiment(IMathServiceClient stub)
-		{
-			var numberList = new List<Num> { new Num.Builder{ Num_ = 1 }.Build(), 
-				new Num.Builder{ Num_ = 2}.Build(), new Num.Builder{Num_ = 3}.Build() };
-
-			IObservable<Num> observable = numberList.ToObservable();
-
-			IObserver<Num> observer = null;
-			IDisposable subscription = observable.Subscribe(observer);
-
-			subscription.Dispose();
+			DivReply result = stub.Div(new DivArgs.Builder { Dividend = sum.Num_, Divisor = numberList.Count }.Build());
 		}
 	}
 }

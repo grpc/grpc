@@ -14,14 +14,16 @@ namespace Google.GRPC.Interop
 			this.detail = detail;
 		}
 
-		public GRPCStatusCode StatusCode {
-			get 
+		public GRPCStatusCode StatusCode
+		{
+			get
 			{
 				return statusCode;
 			}
 		}
 
-		public string Detail {
+		public string Detail
+		{
 			get
 			{
 				return detail;

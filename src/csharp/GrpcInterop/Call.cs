@@ -57,27 +57,33 @@ namespace Google.GRPC.Interop
 			this.deadline = deadline;
 		}
 
-		public GRPCCallError StartInvoke(CompletionQueue cq, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags) {
-			return grpc_call_start_invoke (RawPointer, cq.RawPointer, invokeAcceptedTag, metadataReadTag, finishedTag, flags);
+		public GRPCCallError StartInvoke(CompletionQueue cq, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags)
+		{
+			return grpc_call_start_invoke(RawPointer, cq.RawPointer, invokeAcceptedTag, metadataReadTag, finishedTag, flags);
 		}
 
-		public GRPCCallError StartWrite(ByteBuffer bb, IntPtr tag, UInt32 flags) {
+		public GRPCCallError StartWrite(ByteBuffer bb, IntPtr tag, UInt32 flags)
+		{
 			return grpc_call_start_write(RawPointer, bb.RawPointer, tag, flags);
 		}
 
-		public GRPCCallError WritesDone(IntPtr tag) {
+		public GRPCCallError WritesDone(IntPtr tag)
+		{
 			return grpc_call_writes_done(RawPointer, tag);
 		}
 
-		public GRPCCallError StartRead(IntPtr tag) {
+		public GRPCCallError StartRead(IntPtr tag)
+		{
 			return grpc_call_start_read(RawPointer, tag);
 		}
 
-		public GRPCCallError Cancel() {
+		public GRPCCallError Cancel()
+		{
 			return grpc_call_cancel(RawPointer);
 		}
 
-		protected override void Destroy() {
+		protected override void Destroy()
+		{
 			grpc_call_destroy(RawPointer);
 		}
 	}
