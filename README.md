@@ -1,4 +1,4 @@
-gRPC - An RPC library and framework
+[gRPC - An RPC library and framework](http://github.com/google/grpc)
 ===================================
 
 Copyright 2015 Google Inc.
@@ -35,8 +35,8 @@ Protocol Compiler plugins that generate Client- and Server-side APIs.
 gRPC users typically call into these APIs on the Client side and implement
 the corresponding API on the server side.
 
-#### Synchronous vs. Async
-Synchronous RPC calls, that block till a response arrives from the server, are
+#### Synchronous vs. asynchronous
+Synchronous RPC calls, that block until a response arrives from the server, are
 the closest approximation to the abstraction of a procedure call that RPC
 aspires to.
 
@@ -44,8 +44,8 @@ On the other hand, networks are inherently asynchronous and in many scenarios,
 it is desirable to have the ability to start RPCs without blocking the current
 thread. 
 
-The gRPC programming surface in most languages comes in both Synchronous and
-async flavors.
+The gRPC programming surface in most languages comes in both synchronous and
+asynchronous flavors.
 
 
 ## Streaming
