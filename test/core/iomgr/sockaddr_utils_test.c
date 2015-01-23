@@ -213,9 +213,9 @@ static void test_sockaddr_to_string(void) {
   expect_sockaddr_str("[::fffe:c000:263]:12345", &input6, 1);
 
   memset(&dummy, 0, sizeof(dummy));
-  dummy.sa_family = 999;
-  expect_sockaddr_str("(sockaddr family=999)", &dummy, 0);
-  expect_sockaddr_str("(sockaddr family=999)", &dummy, 1);
+  dummy.sa_family = 123;
+  expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
+  expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
 
   GPR_ASSERT(errno == 0xDEADBEEF);
 }

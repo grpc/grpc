@@ -129,7 +129,8 @@ static void expect_metadata(test_stream *s, int from_client, const char *key,
 /* Convert some number of seconds into a gpr_timespec that many seconds in the
    future */
 static gpr_timespec deadline_from_seconds(double deadline_seconds) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(deadline_seconds * 1e6));
+  return gpr_time_add(gpr_now(), 
+                      gpr_time_from_micros((long)(deadline_seconds * 1e6)));
 }
 
 /* Init a test_user_data instance */
@@ -573,7 +574,7 @@ static grpc_transport_setup_result setup_client_transport(
      name   - the name of this test */
 static void begin_test(test_fixture *f, grpc_transport_test_config *config,
                        const char *name) {
-  gpr_timespec timeout = gpr_time_add(gpr_now(), gpr_time_from_micros(100e6));
+  gpr_timespec timeout = gpr_time_add(gpr_now(), gpr_time_from_seconds(100));
 
   gpr_log(GPR_INFO, "BEGIN: %s/%s", name, config->name);
 

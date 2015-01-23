@@ -1611,7 +1611,7 @@ static int process_read(transport *t, gpr_slice slice) {
         }
         t->deframe_state = DTS_FH_0;
         return 1;
-      } else if (end - cur > t->incoming_frame_size) {
+      } else if ((gpr_uint32)(end - cur) > t->incoming_frame_size) {
         if (!parse_frame_slice(
                 t, gpr_slice_sub_no_ref(slice, cur - beg,
                                         cur + t->incoming_frame_size - beg),

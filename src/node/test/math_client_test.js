@@ -32,7 +32,6 @@
  */
 
 var assert = require('assert');
-var port_picker = require('../port_picker');
 
 var grpc = require('..');
 var math = grpc.load(__dirname + '/../examples/math.proto').math;
@@ -50,11 +49,10 @@ var server = require('../examples/math_server.js');
 
 describe('Math client', function() {
   before(function(done) {
-    port_picker.nextAvailablePort(function(port) {
-      server.bind(port).listen();
-      math_client = new math.Math(port);
-      done();
-    });
+    var port_num = server.bind('0.0.0.0:0');
+    server.listen();
+    math_client = new math.Math('localhost:' + port_num);
+    done();
   });
   after(function() {
     server.shutdown();

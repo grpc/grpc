@@ -188,7 +188,7 @@ void DoResponseStreamingWithSlowConsumer(
   grpc::ClientContext context;
   StreamingOutputCallRequest request;
 
-  for (unsigned int i = 0; i < kNumResponseMessages; ++i) {
+  for (int i = 0; i < kNumResponseMessages; ++i) {
     ResponseParameters* response_parameter = request.add_response_parameters();
     response_parameter->set_size(kResponseMessageSize);
   }
@@ -196,7 +196,7 @@ void DoResponseStreamingWithSlowConsumer(
   std::unique_ptr<grpc::ClientReader<StreamingOutputCallResponse>> stream(
       stub->StreamingOutputCall(&context, &request));
 
-  unsigned int i = 0;
+  int i = 0;
   while (stream->Read(&response)) {
     GPR_ASSERT(response.payload().body() ==
                grpc::string(kResponseMessageSize, '\0'));

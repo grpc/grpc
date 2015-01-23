@@ -428,7 +428,8 @@ grpc_server *grpc_server_create(grpc_completion_queue *cq,
    REQUIRES: server not started */
 int grpc_server_add_http2_port(grpc_server *server, const char *addr);
 
-/* Add a secure port to server; returns 1 on success, 0 on failure
+/* Add a secure port to server.
+   Returns bound port number on success, 0 on failure.
    REQUIRES: server not started */
 int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr);
 
