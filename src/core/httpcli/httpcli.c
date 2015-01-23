@@ -44,9 +44,9 @@
 #include "src/core/security/security_context.h"
 #include "src/core/security/google_root_certs.h"
 #include "src/core/security/secure_transport_setup.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 
 typedef struct {
   gpr_slice request_text;

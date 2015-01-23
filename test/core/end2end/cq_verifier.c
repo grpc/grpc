@@ -45,10 +45,10 @@
 #include <string.h>
 
 #include "src/core/surface/event_string.h"
+#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 

@@ -38,10 +38,10 @@
 
 #include "src/core/statistics/census_rpc_stats.h"
 #include "src/core/statistics/hash_table.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 

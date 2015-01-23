@@ -36,11 +36,11 @@
 #include <string.h>
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/call.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 
 typedef struct { void *unused; } call_data;
 

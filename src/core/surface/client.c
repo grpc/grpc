@@ -34,9 +34,9 @@
 #include "src/core/surface/client.h"
 
 #include "src/core/surface/call.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 
 typedef struct { void *unused; } call_data;
 

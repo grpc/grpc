@@ -35,11 +35,11 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/metadata_buffer.h"
 #include "src/core/iomgr/alarm.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 
 #include <stdio.h>
 #include <stdlib.h>

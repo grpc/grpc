@@ -37,10 +37,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include "src/core/transport/transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
