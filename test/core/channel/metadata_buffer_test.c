@@ -43,7 +43,7 @@
 /* construct a buffer with some prefix followed by an integer converted to
    a string */
 static gpr_slice construct_buffer(size_t prefix_length, size_t index) {
-  gpr_slice buffer = gpr_slice_malloc(prefix_length + 32);
+  gpr_slice buffer = gpr_slice_malloc(prefix_length + GPR_LTOA_MIN_BUFSIZE);
   memset(GPR_SLICE_START_PTR(buffer), 'a', prefix_length);
   GPR_SLICE_SET_LENGTH(
       buffer,
