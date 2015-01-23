@@ -48,13 +48,13 @@
 #include "src/core/security/auth.h"
 #include "src/core/security/security_context.h"
 #include "src/core/security/secure_transport_setup.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/client.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 #include "src/core/tsi/transport_security_interface.h"

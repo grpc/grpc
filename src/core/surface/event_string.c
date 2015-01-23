@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 
-#include <grpc/support/string.h>
+#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 
 static size_t addhdr(char *p, grpc_event *ev) {

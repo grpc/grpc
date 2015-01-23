@@ -37,8 +37,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
-#include <grpc/support/string.h>
 #include <grpc/support/useful.h>
 
 #define MAX_APPEND 1024

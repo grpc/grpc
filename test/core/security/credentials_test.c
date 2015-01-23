@@ -37,9 +37,9 @@
 
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/security/json_token.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 #include <openssl/rsa.h>

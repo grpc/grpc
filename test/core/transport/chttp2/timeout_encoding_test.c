@@ -43,7 +43,7 @@
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
 static void assert_encodes_as(gpr_timespec ts, const char *s) {
-  char buffer[32];
+  char buffer[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_chttp2_encode_timeout(ts, buffer);
   gpr_log(GPR_INFO, "check '%s' == '%s'", buffer, s);
   GPR_ASSERT(0 == strcmp(buffer, s));
