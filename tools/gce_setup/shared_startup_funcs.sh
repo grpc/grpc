@@ -367,11 +367,12 @@ grpc_docker_launch_registry() {
 grpc_docker_pull_known() {
   local addr=$1
   [[ -n $addr ]] || addr="0.0.0.0:5000"
-  local known="base cxx php_base php ruby_base ruby java_base java"
+  local known="base cxx php_base php ruby_base ruby java_base java go"
   echo "... pulling docker images for '$known'"
   for i in $known
   do
-    sudo docker pull ${addr}/grpc/$i \
+    echo "<--- grpc/$i"
+    sudo docker pull ${addr}/grpc/$i > /dev/null 2>&1 \
       && sudo docker tag ${addr}/grpc/$i grpc/$i || {
       # log and continue
       echo "docker op error:  could not pull ${addr}/grpc/$i"
@@ -402,10 +403,15 @@ grpc_dockerfile_install() {
 
   [[ -d $dockerfile_dir ]] || { echo "$FUNCNAME: not a valid dir: $dockerfile_dir"; return 1; }
 
-  # For grpc/base, sync the ssh key into the  .ssh dir in the dockerfile context
-
+  # For specific base images, sync the ssh key into the .ssh dir in the dockerfile context
   [[ $image_label == "grpc/base" ]] && {
-    grpc_docker_sync_github_key $dockerfile_dir/.ssh || return 1;
+    grpc_docker_sync_github_key $dockerfile_dir/.ssh 'base_ssh_key'|| return 1;
+  }
+  [[ $image_label == "grpc/go" ]] && {
+    grpc_docker_sync_github_key $dockerfile_dir/.ssh 'go_ssh_key'|| return 1;
+  }
+  [[ $image_label == "grpc/java_base" ]] && {
+    grpc_docker_sync_github_key $dockerfile_dir/.ssh 'java_base_ssh_key'|| return 1;
   }
 
   # TODO(temiola): maybe make cache/no-cache a func option?
@@ -445,6 +451,9 @@ grpc_docker_sync_github_key() {
   local target_dir=$1
   [[ -n $target_dir ]] || { echo "$FUNCNAME: missing arg: target_dir" >&2; return 1; }
 
+  local key_file=$2
+  [[ -n $key_file ]] || { echo "$FUNCNAME: missing arg: key_file" >&2; return 1; }
+
   # determine the admin root; the parent of the dockerfile root,
   local gs_dockerfile_root=$(load_metadata "attributes/gs_dockerfile_root")
   [[ -n $gs_dockerfile_root ]] || {
@@ -454,7 +463,7 @@ grpc_docker_sync_github_key() {
   local gcs_admin_root=$(dirname $gs_dockerfile_root)
 
   # cp the file from gsutil to a known local area
-  local gcs_key_path=$gcs_admin_root/github/ssh_key
+  local gcs_key_path=$gcs_admin_root/github/$key_file
   local local_key_path=$target_dir/github.rsa
   mkdir -p $target_dir || {
     echo "$FUNCNAME: could not create dir: $target_dir" 1>&2

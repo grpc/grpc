@@ -56,8 +56,8 @@
 typedef struct metadata {
   size_t count;
   size_t cap;
-  const char **keys;
-  const char **values;
+  char **keys;
+  char **values;
 } metadata;
 
 /* details what we expect to find on a single event - and forms a linked
@@ -407,11 +407,11 @@ static metadata *metadata_from_args(va_list args) {
 
     if (md->cap == md->count) {
       md->cap = GPR_MAX(md->cap + 1, md->cap * 3 / 2);
-      md->keys = gpr_realloc(md->keys, sizeof(const char *) * md->cap);
-      md->values = gpr_realloc(md->values, sizeof(const char *) * md->cap);
+      md->keys = gpr_realloc(md->keys, sizeof(char *) * md->cap);
+      md->values = gpr_realloc(md->values, sizeof(char *) * md->cap);
     }
-    md->keys[md->count] = key;
-    md->values[md->count] = value;
+    md->keys[md->count] = (char *)key;
+    md->values[md->count] = (char *)value;
     md->count++;
   }
 }

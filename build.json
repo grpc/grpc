@@ -48,7 +48,9 @@
         "src/core/iomgr/pollset.h",
         "src/core/iomgr/pollset_kick.h",
         "src/core/iomgr/pollset_kick_posix.h",
+        "src/core/iomgr/pollset_kick_windows.h",
         "src/core/iomgr/pollset_posix.h",
+        "src/core/iomgr/pollset_windows.h",
         "src/core/iomgr/resolve_address.h",
         "src/core/iomgr/sockaddr.h",
         "src/core/iomgr/sockaddr_posix.h",
@@ -126,6 +128,7 @@
         "src/core/iomgr/pollset_kick_posix.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
+        "src/core/iomgr/pollset_windows.c",
         "src/core/iomgr/resolve_address_posix.c",
         "src/core/iomgr/sockaddr_utils.c",
         "src/core/iomgr/socket_utils_common_posix.c",
@@ -407,6 +410,22 @@
         "test/cpp/util/messages.proto",
         "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
+      ]
+    },
+    {
+      "name": "tips_client_lib",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "examples/tips/label.proto",
+        "examples/tips/empty.proto",
+        "examples/tips/pubsub.proto",
+        "examples/tips/client.cc"
+      ],
+      "deps": [
+        "grpc++",
+        "grpc",
+        "gpr"
       ]
     }
   ],
@@ -1492,6 +1511,41 @@
         "gpr"
       ],
       "run": false
+    },
+    {
+      "name": "tips_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "examples/tips/client_main.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "tips_client_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/tips/client_test.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
     },
     {
       "name": "qps_client",
