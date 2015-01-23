@@ -413,7 +413,7 @@ static metadata *metadata_from_args(va_list args) {
       md->values = gpr_realloc(md->values, sizeof(char *) * md->cap);
     }
     md->keys[md->count] = (char *)key;
-	md->values[md->count] = (char *)value;
+    md->values[md->count] = (char *)value;
     md->count++;
   }
 }
