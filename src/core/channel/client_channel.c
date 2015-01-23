@@ -410,7 +410,7 @@ static void init_channel_elem(grpc_channel_element *elem,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
   channel_data *chand = elem->channel_data;
-  char temp[16];
+  char temp[GPR_LTOA_MIN_BUFSIZE];
 
   GPR_ASSERT(!is_first);
   GPR_ASSERT(is_last);
