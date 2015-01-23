@@ -47,7 +47,7 @@ module Google
       include Core::TimeConsts
       attr_reader(:deadline)
 
-      # client_start_invoke begins a client invocation.
+      # client_invoke begins a client invocation.
       #
       # Flow Control note: this blocks until flow control accepts that client
       # request can go ahead.
@@ -59,9 +59,9 @@ module Google
       # if a keyword value is a list, multiple metadata for it's key are sent
       #
       # @param call [Call] a call on which to start and invocation
-      # @param q [CompletionQueue] used to wait for INVOKE_ACCEPTED
-      # @param deadline [Fixnum,TimeSpec] the deadline for INVOKE_ACCEPTED
-      def self.client_start_invoke(call, q, _deadline, **kw)
+      # @param q [CompletionQueue] the completion queue
+      # @param deadline [Fixnum,TimeSpec] the deadline
+      def self.client_invoke(call, q, _deadline, **kw)
         fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
         unless q.is_a? Core::CompletionQueue
           fail(ArgumentError, 'not a CompletionQueue')
@@ -69,24 +69,16 @@ module Google
         call.add_metadata(kw) if kw.length > 0
         invoke_accepted, client_metadata_read = Object.new, Object.new
         finished_tag = Object.new
-        call.start_invoke(q, invoke_accepted, client_metadata_read,
-                          finished_tag)
-
-        # wait for the invocation to be accepted
-        ev = q.pluck(invoke_accepted, INFINITE_FUTURE)
-        fail OutOfTime if ev.nil?
-        ev.close
-
+        call.invoke(q, client_metadata_read, finished_tag)
         [finished_tag, client_metadata_read]
       end
 
       # Creates an ActiveCall.
       #
-      # ActiveCall should only be created after a call is accepted.  That means
-      # different things on a client and a server.  On the client, the call is
-      # accepted after call.start_invoke followed by receipt of the
-      # corresponding INVOKE_ACCEPTED.  on the server, this is after
-      # call.accept.
+      # ActiveCall should only be created after a call is accepted.  That
+      # means different things on a client and a server.  On the client, the
+      # call is accepted after calling call.invoke.  On the server, this is
+      # after call.accept.
       #
       # #initialize cannot determine if the call is accepted or not; so if a
       # call that's not accepted is used here, the error won't be visible until
@@ -495,7 +487,7 @@ module Google
       private
 
       def start_call(**kw)
-        tags = ActiveCall.client_start_invoke(@call, @cq, @deadline, **kw)
+        tags = ActiveCall.client_invoke(@call, @cq, @deadline, **kw)
         @finished_tag, @read_metadata_tag = tags
         @started = true
       end

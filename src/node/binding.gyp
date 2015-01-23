@@ -1,8 +1,13 @@
 {
+  "variables" : {
+    'no_install': "<!(echo $GRPC_NO_INSTALL)",
+    'grpc_root': "<!(echo $GRPC_ROOT)",
+    'grpc_lib_subdir': "<!(echo $GRPC_LIB_SUBDIR)"
+    },
   "targets" : [
     {
       'include_dirs': [
-        "<!(node -e \"require('nan')\")"
+        "<!(nodejs -e \"require('nan')\")"
       ],
       'cxxflags': [
         '-Wall',
@@ -11,16 +16,13 @@
         '-g',
         '-zdefs'
         '-Werror',
-      ],
+        ],
       'ldflags': [
-        '-g',
-        '-L/usr/local/google/home/mlumish/grpc_dev/lib'
+        '-g'
       ],
       'link_settings': {
         'libraries': [
-          '-lgrpc',
           '-lrt',
-          '-lgpr',
           '-lpthread'
         ],
       },
@@ -37,6 +39,27 @@
         "server_credentials.cc",
         "tag.cc",
         "timeval.cc"
+      ],
+      'conditions' : [
+        ['no_install=="yes"', {
+          'include_dirs': [
+            "<(grpc_root)/include"
+          ],
+          'link_settings': {
+            'libraries': [
+              '<(grpc_root)/<(grpc_lib_subdir)/libgrpc.a',
+              '<(grpc_root)/<(grpc_lib_subdir)/libgpr.a'
+            ]
+          }
+        }],
+        ['no_install!="yes"', {
+            'link_settings': {
+              'libraries': [
+                '-lgrpc',
+                '-lgpr'
+              ]
+            }
+          }]
       ]
     }
   ]
