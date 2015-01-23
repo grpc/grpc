@@ -396,12 +396,13 @@ void grpc_event_finish(grpc_event *base) {
 
 void grpc_cq_dump_pending_ops(grpc_completion_queue *cc) {
 #ifndef NDEBUG
-  char tmp[256];
+  char tmp[GRPC_COMPLETION_DO_NOT_USE * (1 + GPR_LTOA_MIN_BUFSIZE)];
   char *p = tmp;
   int i;
 
   for (i = 0; i < GRPC_COMPLETION_DO_NOT_USE; i++) {
-    p += sprintf(p, " %d", (int)cc->pending_op_count[i]);
+    *p++ = ' ';
+    p += gpr_ltoa(cc->pending_op_count[i], p);
   }
 
   gpr_log(GPR_INFO, "pending ops:%s", tmp);
