@@ -534,9 +534,7 @@ static void service_account_fetch_oauth2(
     response_cb(metadata_req, &response);
     return;
   }
-  body = gpr_malloc(strlen(GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX) +
-                    strlen(jwt) + 1);
-  sprintf(body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
+  gpr_asprintf(&body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = GRPC_SERVICE_ACCOUNT_HOST;
   request.path = GRPC_SERVICE_ACCOUNT_TOKEN_PATH;
