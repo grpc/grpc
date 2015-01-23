@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests for google3.net.rpc.python.framework.foundation.logging_pool."""
+"""Tests for _framework.foundation.logging_pool."""
 
 import unittest
 

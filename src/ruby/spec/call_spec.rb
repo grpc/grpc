@@ -122,24 +122,10 @@ describe GRPC::Core::Call do
     end
   end
 
-  describe '#start_invoke' do
-    it 'should cause the INVOKE_ACCEPTED event' do
-      call = make_test_call
-      expect(call.start_invoke(@client_queue, @tag, @tag, @tag)).to be_nil
-      ev = @client_queue.next(deadline)
-      expect(ev.call).to be_a(GRPC::Core::Call)
-      expect(ev.tag).to be(@tag)
-      expect(ev.type).to be(GRPC::Core::CompletionType::INVOKE_ACCEPTED)
-      expect(ev.call).to_not be(call)
-    end
-  end
-
   describe '#start_write' do
     it 'should cause the WRITE_ACCEPTED event' do
       call = make_test_call
-      call.start_invoke(@client_queue, @tag, @tag, @tag)
-      ev = @client_queue.next(deadline)
-      expect(ev.type).to be(GRPC::Core::CompletionType::INVOKE_ACCEPTED)
+      call.invoke(@client_queue, @tag, @tag)
       expect(call.start_write(GRPC::Core::ByteBuffer.new('test_start_write'),
                               @tag)).to be_nil
       ev = @client_queue.next(deadline)

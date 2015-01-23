@@ -17,11 +17,11 @@ RUN echo 'StrictHostKeyChecking no' >> $HOME/.ssh/config
 RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
 
 # Get the source from GitHub
-RUN go get github.com/google/grpc-go
+RUN go get github.com/google/grpc-go/rpc
 
 # Build the interop client and server
-RUN cd src/github.com/google/grpc-go/interop/client && go install
-RUN cd src/github.com/google/grpc-go/interop/server && go install
+RUN cd src/github.com/google/grpc-go/rpc/interop/client && go install
+RUN cd src/github.com/google/grpc-go/rpc/interop/server && go install
 
 # Specify the default command such that the interop server runs on its known testing port
-CMD ["/bin/bash", "-c 'cd src/github.com/google/grpc-go/interop/server && go run server.go --use_tls=true --port=8020'"]
+CMD ["/bin/bash", "-c", "cd src/github.com/google/grpc-go/rpc/interop/server && go run server.go --use_tls=true --port=8020"]
