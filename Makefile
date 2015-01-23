@@ -2210,7 +2210,11 @@ endif
 libs/$(CONFIG)/libtips_client_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBTIPS_CLIENT_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libtips_client_lib.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libtips_client_lib.a $(LIBTIPS_CLIENT_LIB_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libtips_client_lib.a 
+endif
 
 
 
