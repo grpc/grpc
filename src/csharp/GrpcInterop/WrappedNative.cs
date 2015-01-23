@@ -4,53 +4,63 @@ using System.Diagnostics.Contracts;
 
 namespace Google.GRPC.Interop
 {
-	// Wraps a native object as a disposable.
-	public abstract class WrappedNative : IDisposable
-	{
-		private IntPtr rawPtr;
-		// TODO: do we need the lock for thread safety or should the synchronization
-		// of the wrapped object be left to the user?
-		private object myLock = new object();
+    /// <summary>
+    /// Wraps a native object as Disposable.
+    /// Destroy() method is called by Dispose() appropriately.
+    /// </summary>
+    public abstract class WrappedNative : IDisposable
+    {
+        IntPtr rawPtr;
 
-		protected WrappedNative(IntPtr rawPtr)
-		{
-			lock (myLock) {
-				Contract.Requires (rawPtr != IntPtr.Zero);
-				this.rawPtr = rawPtr;
-			}
-		}
+        /// <summary>
+        /// rawPtr cannot be null.
+        /// </summary>
+        protected WrappedNative(IntPtr rawPtr)
+        {
+            this.rawPtr = rawPtr;
+        }
 
-		~WrappedNative() {
-			Dispose(false);
-		}
+        ~WrappedNative()
+        {
+            Dispose(false);
+        }
 
-		public IntPtr RawPointer {
-			get {
-				lock (myLock) {
-					Contract.Requires (rawPtr != IntPtr.Zero);
-					return rawPtr;
-				}
-			}
-		}
+        public IntPtr RawPointer
+        {
+            get
+            {
+                Contract.Requires(rawPtr != IntPtr.Zero);
+                return rawPtr;
+            }
+        }
 
-		// destroys the object represented by rawPtr
-		protected abstract void Destroy();
+        /// <summary>
+        /// Destroys the object represented by rawPtr.
+        /// </summary>
+        protected abstract void Destroy();
 
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
-		public void Dispose()
-		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		protected virtual void Dispose(bool disposing)
-		{
-			lock (myLock) {
-				if (disposing && rawPtr != IntPtr.Zero) {
-					Destroy();
-				}
-				rawPtr = IntPtr.Zero;
-			}
-		}
-	}
+        protected virtual void Dispose(bool disposing)
+        {
+            if (rawPtr != IntPtr.Zero)
+            {
+                if (disposing)
+                {
+                    try
+                    {
+                        Destroy();
+                    }
+                    finally
+                    {
+                        rawPtr = IntPtr.Zero;
+                    }
+                }
+            }
+        }
+    }
 }

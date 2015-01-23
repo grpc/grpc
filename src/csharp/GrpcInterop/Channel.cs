@@ -20,14 +20,16 @@ namespace Google.GRPC.Interop
 			this.target = target;
 		}
 
-		public Status SimpleBlockingCall(String methodName, byte[] requestData, out byte[] result, GPRTimespec deadline) {
+		public Status SimpleBlockingCall(String methodName, byte[] requestData, out byte[] result, GPRTimespec deadline)
+		{
 			result = null;
-			Call call = new Call (this, methodName, target, deadline);
+			Call call = new Call(this, methodName, target, deadline);
 			using (CallContext ctx = new CallContext(call))
 			{
 				ctx.Start(false);
 
-				if (!ctx.Write (requestData)) {
+				if (!ctx.Write(requestData))
+				{
 					return ctx.Wait();
 				}
 				ctx.WritesDone();
@@ -38,12 +40,14 @@ namespace Google.GRPC.Interop
 			}
 		}
 
-		public CallContext StreamingCall(String methodName, GPRTimespec deadline) {
-			Call call = new Call (this, methodName, target, deadline);
+		public CallContext StreamingCall(String methodName, GPRTimespec deadline)
+		{
+			Call call = new Call(this, methodName, target, deadline);
 			return new CallContext(call);
 		}
 
-		protected override void Destroy() {
+		protected override void Destroy()
+		{
 			grpc_channel_destroy(RawPointer);
 		}
 	}

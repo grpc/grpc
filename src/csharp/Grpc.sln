@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcApi", "GrpcApi\GrpcApi.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtocolBuffers.NET40", "..\..\..\protobuf\csharp\src\ProtocolBuffers\ProtocolBuffers.NET40.csproj", "{6908BDCE-D925-43F3-94AC-A531E6DF2591}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcCore", "GrpcCore\GrpcCore.csproj", "{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -31,6 +33,10 @@ Global
 		{7DC1433E-3225-42C7-B7EA-546D56E27A4B}.Debug|x86.Build.0 = Debug|Any CPU
 		{7DC1433E-3225-42C7-B7EA-546D56E27A4B}.Release|x86.ActiveCfg = Release|Any CPU
 		{7DC1433E-3225-42C7-B7EA-546D56E27A4B}.Release|x86.Build.0 = Release|Any CPU
+		{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}.Debug|x86.Build.0 = Debug|Any CPU
+		{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}.Release|x86.ActiveCfg = Release|Any CPU
+		{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = GrpcDemo\GrpcDemo.csproj
