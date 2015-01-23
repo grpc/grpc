@@ -822,7 +822,7 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
   /* always send status */
   {
     grpc_mdelem *md;
-    char buffer[32];
+    char buffer[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, buffer);
     md =
         grpc_mdelem_from_strings(call->metadata_context, "grpc-status", buffer);
