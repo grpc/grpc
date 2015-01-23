@@ -1002,7 +1002,7 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 grpc_chttp2_error_code error_code,
                                 int send_rst) {
   int had_outgoing;
-  char buffer[32];
+  char buffer[GPR_LTOA_MIN_BUFSIZE];
 
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */
