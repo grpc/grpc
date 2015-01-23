@@ -75,7 +75,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
   grpc_completion_queue_shutdown(cq);
   next_call.cq = cq;
   next_call.event = NULL;
-  /* TODO(temiola): the timeout should be a module level constant that defaults
+  /* TODO: the timeout should be a module level constant that defaults
    * to gpr_inf_future.
    *
    * - at the moment this does not work, it stalls.  Using a small timeout like
