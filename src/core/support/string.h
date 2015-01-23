@@ -60,6 +60,9 @@ char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags);
 int gpr_parse_bytes_to_uint32(const char *data, size_t length,
                               gpr_uint32 *result);
 
+/* minimum buffer size for calling ltoa */
+#define GPR_LTOA_MIN_BUFSIZE (3 * sizeof(long))
+
 /* Convert a long to a string in base 10; returns the length of the
    output string (or 0 on failure) */
 int gpr_ltoa(long value, char *output);

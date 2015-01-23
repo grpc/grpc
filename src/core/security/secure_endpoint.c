@@ -32,11 +32,11 @@
  */
 
 #include "src/core/security/secure_endpoint.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/slice.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 #include "src/core/tsi/transport_security_interface.h"
 

@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/string.h>
+#include "src/core/support/string.h"
 
 static int round_up(int x, int divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;

@@ -40,9 +40,9 @@
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/metadata_buffer.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 

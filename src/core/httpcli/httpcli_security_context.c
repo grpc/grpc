@@ -36,9 +36,9 @@
 #include <string.h>
 
 #include "src/core/security/secure_transport_setup.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include "src/core/tsi/ssl_transport_security.h"
 
 typedef struct {

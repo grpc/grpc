@@ -48,10 +48,10 @@
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/client.h"
+#include "src/core/support/string.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 

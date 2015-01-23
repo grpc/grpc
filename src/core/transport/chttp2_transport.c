@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include "src/core/transport/chttp2/frame_data.h"
 #include "src/core/transport/chttp2/frame_goaway.h"
 #include "src/core/transport/chttp2/frame_ping.h"
@@ -53,7 +54,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
-#include <grpc/support/string.h>
 #include <grpc/support/useful.h>
 
 #define DEFAULT_WINDOW 65535
