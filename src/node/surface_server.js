@@ -90,34 +90,6 @@ function ServerWritableObjectStream(stream) {
     this._stream.end();
   });
 }
-
-util.inherits(ServerBidiObjectStream, Duplex);
-
-/**
- * Class for representing a gRPC bidi streaming call as a Node stream on the
- * server side. Extends from stream.Duplex.
- * @constructor
- * @param {stream} stream Underlying binary Duplex stream for the call
- */
-function ServerBidiObjectStream(stream) {
-  var options = {objectMode: true};
-  Duplex.call(this, options);
-  this._stream = stream;
-  var self = this;
-  this._stream.on('data', function forwardData(chunk) {
-    if (!self.push(chunk)) {
-      self._stream.pause();
-    }
-  });
-  this._stream.on('end', function forwardEnd() {
-    self.push(null);
-  });
-  this._stream.pause();
-  this.on('finish', function() {
-    this._stream.end();
-  });
-}
-
 /**
  * _read implementation for both types of streams that allow reading.
  * @this {ServerReadableObjectStream|ServerBidiObjectStream}
@@ -131,14 +103,10 @@ function _read(size) {
  * See docs for _read
  */
 ServerReadableObjectStream.prototype._read = _read;
-/**
- * See docs for _read
- */
-ServerBidiObjectStream.prototype._read = _read;
 
 /**
  * _write implementation for both types of streams that allow writing
- * @this {ServerWritableObjectStream|ServerBidiObjectStream}
+ * @this {ServerWritableObjectStream}
  * @param {*} chunk The value to write to the stream
  * @param {string} encoding Ignored
  * @param {function(Error)} callback Callback to call when finished writing
@@ -151,10 +119,6 @@ function _write(chunk, encoding, callback) {
  * See docs for _write
  */
 ServerWritableObjectStream.prototype._write = _write;
-/**
- * See docs for _write
- */
-ServerBidiObjectStream.prototype._write = _write;
 
 /**
  * Creates a binary stream handler function from a unary handler function
@@ -238,15 +202,7 @@ function makeServerStreamHandler(handler) {
  * @return {function(stream)} Binary stream handler
  */
 function makeBidiStreamHandler(handler) {
-  /**
-   * Handles a stream by wrapping it in a serializing and deserializing object
-   * stream, and passing it to the handler.
-   * @param {stream} stream Binary data stream
-   */
-  return function handleBidiStreamCall(stream) {
-    var object_stream = new ServerBidiObjectStream(stream);
-    handler(object_stream);
-  };
+  return handler;
 }
 
 /**
