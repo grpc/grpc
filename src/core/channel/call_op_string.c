@@ -117,7 +117,7 @@ char *grpc_call_op_string(grpc_call_op *op) {
   gpr_asprintf(&tmp, " flags=0x%08x", op->flags);
   gpr_strvec_add(&b, tmp);
 
-  out = gpr_strvec_flatten(&b);
+  out = gpr_strvec_flatten(&b, NULL);
   gpr_strvec_destroy(&b);
 
   return out;

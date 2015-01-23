@@ -131,7 +131,7 @@ char *grpc_event_string(grpc_event *ev) {
       break;
   }
 
-  out = gpr_strvec_flatten(&buf);
+  out = gpr_strvec_flatten(&buf, NULL);
   gpr_strvec_destroy(&buf);
   return out;
 }

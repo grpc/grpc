@@ -153,7 +153,7 @@ int gpr_ltoa(long value, char *string) {
   return i;
 }
 
-char *gpr_strjoin(const char **strs, size_t nstrs) {
+char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
   size_t out_length = 0;
   size_t i;
   char *out;
@@ -169,6 +169,9 @@ char *gpr_strjoin(const char **strs, size_t nstrs) {
     out_length += slen;
   }
   out[out_length] = 0;
+  if (final_length != NULL) {
+    *final_length = out_length;
+  }
   return out;
 }
 
@@ -192,6 +195,6 @@ void gpr_strvec_add(gpr_strvec *sv, char *str) {
   sv->strs[sv->count++] = str;
 }
 
-char *gpr_strvec_flatten(gpr_strvec *sv) {
-  return gpr_strjoin((const char**)sv->strs, sv->count);
+char *gpr_strvec_flatten(gpr_strvec *sv, size_t *final_length) {
+  return gpr_strjoin((const char**)sv->strs, sv->count, final_length);
 }
