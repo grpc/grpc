@@ -6,9 +6,6 @@ and "vsproject_dict", to be used by the visual studio generators.
 """
 
 
-import re
-
-
 def mako_plugin(dictionary):
   """The exported plugin code for generate_vsprojeccts
 
@@ -27,10 +24,13 @@ def mako_plugin(dictionary):
   projects = []
   projects.extend(libs)
   projects.extend(targets)
-  projects = [project for project in projects if project.get('vs_project_guid', None)]
+  # Exclude projects without a visual project guid, such as the tests.
+  projects = [project for project in projects
+                if project.get('vs_project_guid', None)]
 
-  ## Exclude C++ projects for now
-  projects = [project for project in projects if not project.language == 'c++']
+  # Exclude C++ projects for now
+  projects = [project for project in projects
+                if not project['language'] == 'c++']
 
   project_dict = dict([(p['name'], p) for p in projects])
 
