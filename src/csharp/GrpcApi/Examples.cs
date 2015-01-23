@@ -3,36 +3,33 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using math;
 
-namespace Google.GRPC.Examples.Math
+namespace math
 {
 
 	public class Examples {
 
-		private IMathServiceClient stub = new DummyMathServiceClient();
-
-		public void DivExample()
+		public static void DivExample(IMathServiceClient stub)
 		{
-			DivReply result = stub.Div(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-			Console.WriteLine(result);
+			DivReply result = stub.Div(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build ());
+			Console.WriteLine("Div Result: " + result);
 		}
 
-		public void DivAsyncExample()
+		public static void DivAsyncExample(IMathServiceClient stub)
 		{
 			Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
 			DivReply result = call.Result;
 			Console.WriteLine(result);
 		}
 
-		public void DivAsyncWithCancellationExample()
+		public static void DivAsyncWithCancellationExample(IMathServiceClient stub)
 		{
 			Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
 			DivReply result = call.Result;
 			Console.WriteLine(result);
 		}
 
-		public void FibExample()
+		public static void FibExample(IMathServiceClient stub)
 		{
 			IObservable<Num> response = stub.Fib(new FibArgs.Builder{ Limit = 5 }.Build());
 
@@ -41,7 +38,7 @@ namespace Google.GRPC.Examples.Math
 			Console.WriteLine(numbers);
 		}
 
-		public void SumExample()
+		public static void SumExample(IMathServiceClient stub)
 		{
 			// Cancellation options:
 			// -- inputs.OnError() can be used to cancel
@@ -53,22 +50,22 @@ namespace Google.GRPC.Examples.Math
 			numbers.OnNext(new Num.Builder{Num_ = 3}.Build());
 			numbers.OnCompleted();
 
-			Console.WriteLine(call.Result);
+			Console.WriteLine("Sum Result: " + call.Result);
 		}
 
-		public void DivManyExample()
+		public static void DivManyExample(IMathServiceClient stub)
 		{
 			IObserver<DivArgs> requestSink;
 			IObservable<DivReply> response = stub.DivMany(out requestSink);
-			requestSink.OnNext(new DivArgs.Builder{Dividend = 5, Divisor = 4}.Build());
-			requestSink.OnNext(new DivArgs.Builder{ Dividend = 3, Divisor = 2 }.Build());
-			requestSink.OnNext(new DivArgs.Builder{ Dividend = 6, Divisor = 2 }.Build());
+			requestSink.OnNext(new DivArgs.Builder{Dividend = 10, Divisor = 3}.Build());
+			requestSink.OnNext(new DivArgs.Builder{ Dividend = 100, Divisor = 21 }.Build());
+			requestSink.OnNext(new DivArgs.Builder{ Dividend = 7, Divisor = 2 }.Build());
 			requestSink.OnCompleted();
 
-			Console.WriteLine(response.ToList().Wait());
+			Console.WriteLine("DivMany Result: " + string.Join("|", response.ToList().Wait()));
 		}
 
-		public void DependendRequestsExample()
+		public static void DependendRequestsExample(IMathServiceClient stub)
 		{
 			var numberList = new List<Num> { new Num.Builder{ Num_ = 1 }.Build(), 
 				new Num.Builder{ Num_ = 2 }.Build(), new Num.Builder{ Num_ = 3 }.Build() };
@@ -87,7 +84,7 @@ namespace Google.GRPC.Examples.Math
 			DivReply result = stub.Div(new DivArgs.Builder{ Dividend = sum.Num_, Divisor = numberList.Count }.Build());
 		}
 
-		public void Experiment()
+		public static void Experiment(IMathServiceClient stub)
 		{
 			var numberList = new List<Num> { new Num.Builder{ Num_ = 1 }.Build(), 
 				new Num.Builder{ Num_ = 2}.Build(), new Num.Builder{Num_ = 3}.Build() };
@@ -98,8 +95,6 @@ namespace Google.GRPC.Examples.Math
 			IDisposable subscription = observable.Subscribe(observer);
 
 			subscription.Dispose();
-
-
 		}
 	}
 }

@@ -73,6 +73,10 @@ namespace Google.GRPC.Interop
 			return grpc_call_start_read(RawPointer, tag);
 		}
 
+		public GRPCCallError Cancel() {
+			return grpc_call_cancel(RawPointer);
+		}
+
 		protected override void Destroy() {
 			grpc_call_destroy(RawPointer);
 		}

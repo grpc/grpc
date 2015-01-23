@@ -39,7 +39,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Examples.cs" />
     <Compile Include="IMathServiceClient.cs" />
-    <Compile Include="Messages.cs" />
     <Compile Include="MathServiceClientImpl.cs" />
     <Compile Include="Math.cs" />
   </ItemGroup>
