@@ -640,10 +640,11 @@ grpc_interop_gen_ruby_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_go_cmd() {
-  local cmd_prefix="sudo docker run grpc/go bin/bash -c";
-  local test_script="cd /go/src/github.com/google/grpc-go/interop/client";
-  local test_script+=" && go run client.go --use_tls=true";
-  local the_cmd="$cmd_prefix '$test_script $@ 1>&2'";
+  local cmd_prefix="sudo docker run grpc/go /bin/bash -c"
+  local test_script="cd /go/src/github.com/google/grpc-go/rpc/interop/client"
+  local test_script+=" && go run client.go --use_tls=true"
+  local the_cmd="$cmd_prefix '$test_script $@'"
+  echo $the_cmd
 }
 
 # constructs the full dockerized java interop test cmd.

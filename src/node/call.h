@@ -61,7 +61,7 @@ class Call : public ::node::ObjectWrap {
 
   static NAN_METHOD(New);
   static NAN_METHOD(AddMetadata);
-  static NAN_METHOD(StartInvoke);
+  static NAN_METHOD(Invoke);
   static NAN_METHOD(ServerAccept);
   static NAN_METHOD(ServerEndInitialMetadata);
   static NAN_METHOD(Cancel);
