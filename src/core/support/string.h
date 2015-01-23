@@ -64,7 +64,8 @@ int gpr_parse_bytes_to_uint32(const char *data, size_t length,
 #define GPR_LTOA_MIN_BUFSIZE (3 * sizeof(long))
 
 /* Convert a long to a string in base 10; returns the length of the
-   output string (or 0 on failure) */
+   output string (or 0 on failure).
+   output must be at least GPR_LTOA_MIN_BUFSIZE bytes long. */
 int gpr_ltoa(long value, char *output);
 
 /* Reverse a run of bytes */
