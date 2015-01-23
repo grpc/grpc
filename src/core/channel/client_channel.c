@@ -425,7 +425,7 @@ static void init_channel_elem(grpc_channel_element *elem,
   chand->transport_setup_initiated = 0;
   chand->args = grpc_channel_args_copy(args);
 
-  sprintf(temp, "%d", GRPC_STATUS_CANCELLED);
+  gpr_ltoa(GRPC_STATUS_CANCELLED, temp);
   chand->cancel_status =
       grpc_mdelem_from_strings(metadata_context, "grpc-status", temp);
 }
