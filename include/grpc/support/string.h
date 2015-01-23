@@ -60,6 +60,13 @@ char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags);
 int gpr_parse_bytes_to_uint32(const char *data, size_t length,
                               gpr_uint32 *result);
 
+/* Convert a long to a string in base 10; returns the length of the
+   output string (or 0 on failure) */
+int gpr_ltoa(long value, char *output);
+
+/* Reverse a run of bytes */
+void gpr_reverse_bytes(char *str, int len);
+
 /* printf to a newly-allocated string.  The set of supported formats may vary
    between platforms.
 
