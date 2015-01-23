@@ -1002,7 +1002,7 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 grpc_chttp2_error_code error_code,
                                 int send_rst) {
   int had_outgoing;
-  char buffer[32];
+  char buffer[GPR_LTOA_MIN_BUFSIZE];
 
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */
@@ -1015,7 +1015,7 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
       s->cancelled = 1;
       stream_list_join(t, s, CANCELLED);
 
-      sprintf(buffer, "%d", local_status);
+      gpr_ltoa(local_status, buffer);
       grpc_sopb_add_metadata(
           &s->parser.incoming_sopb,
           grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));

@@ -157,7 +157,7 @@ static void ssl_server_destroy(grpc_server_credentials *creds) {
     if (c->config.pem_private_keys[i] != NULL) {
       gpr_free(c->config.pem_private_keys[i]);
     }
-    if (c->config.pem_cert_chains[i]!= NULL)  {
+    if (c->config.pem_cert_chains[i] != NULL) {
       gpr_free(c->config.pem_cert_chains[i]);
     }
   }
@@ -354,7 +354,6 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     cJSON *access_token = NULL;
     cJSON *token_type = NULL;
     cJSON *expires_in = NULL;
-    size_t new_access_token_size = 0;
     json = cJSON_Parse(null_terminated_body);
     if (json == NULL) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s", null_terminated_body);
@@ -384,12 +383,8 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    new_access_token_size = strlen(token_type->valuestring) + 1 +
-                            strlen(access_token->valuestring) + 1;
-    new_access_token = gpr_malloc(new_access_token_size);
-    /* C89 does not have snprintf :(. */
-    sprintf(new_access_token, "%s %s", token_type->valuestring,
-            access_token->valuestring);
+    gpr_asprintf(&new_access_token, "%s %s", token_type->valuestring,
+                 access_token->valuestring);
     token_lifetime->tv_sec = expires_in->valueint;
     token_lifetime->tv_nsec = 0;
     if (*token_elem != NULL) grpc_mdelem_unref(*token_elem);
@@ -539,9 +534,7 @@ static void service_account_fetch_oauth2(
     response_cb(metadata_req, &response);
     return;
   }
-  body = gpr_malloc(strlen(GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX) +
-                    strlen(jwt) + 1);
-  sprintf(body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
+  gpr_asprintf(&body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = GRPC_SERVICE_ACCOUNT_HOST;
   request.path = GRPC_SERVICE_ACCOUNT_TOKEN_PATH;
