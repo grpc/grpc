@@ -325,9 +325,10 @@ void cq_verify(cq_verifier *v) {
       gpr_time_add(gpr_now(), gpr_time_from_micros(10 * GPR_US_PER_SEC));
   grpc_event *ev;
   expectation *e;
+  char *s;
+  gpr_strvec have_tags;
 
-  char have_tags[512] = {0};
-  char *phave = have_tags;
+  gpr_strvec_init(&have_tags);
 
   while (v->expect.next != &v->expect) {
     ev = grpc_completion_queue_next(v->cq, deadline);
@@ -336,7 +337,8 @@ void cq_verify(cq_verifier *v) {
     }
 
     for (e = v->expect.next; e != &v->expect; e = e->next) {
-      phave += sprintf(phave, " %p", e->tag);
+      gpr_asprintf(&s, " %p", e->tag);
+      gpr_strvec_add(&have_tags, s);
       if (e->tag == ev->tag) {
         verify_matches(e, ev);
         e->next->prev = e->prev;
@@ -346,15 +348,20 @@ void cq_verify(cq_verifier *v) {
       }
     }
     if (e == &v->expect) {
-      char *s = grpc_event_string(ev);
+      s = grpc_event_string(ev);
       gpr_log(GPR_ERROR, "event not found: %s", s);
-      gpr_log(GPR_ERROR, "have tags:%s", have_tags);
       gpr_free(s);
+      s = gpr_strvec_flatten(&have_tags, NULL);
+      gpr_log(GPR_ERROR, "have tags:%s", s);
+      gpr_free(s);
+      gpr_strvec_destroy(&have_tags);
       abort();
     }
 
     grpc_event_finish(ev);
   }
+
+  gpr_strvec_destroy(&have_tags);
 }
 
 void cq_verify_empty(cq_verifier *v) {
