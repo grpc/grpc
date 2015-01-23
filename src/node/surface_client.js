@@ -63,18 +63,16 @@ util.inherits(ClientReadableObjectStream, Readable);
  * client side. Extends from stream.Readable.
  * @constructor
  * @param {stream} stream Underlying binary Duplex stream for the call
- * @param {function(Buffer)} deserialize Function for deserializing binary data
- * @param {object} options Stream options
  */
-function ClientReadableObjectStream(stream, deserialize, options) {
-  options = _.extend(options, {objectMode: true});
+function ClientReadableObjectStream(stream) {
+  var options = {objectMode: true};
   Readable.call(this, options);
   this._stream = stream;
   var self = this;
   forwardEvent(stream, this, 'status');
   forwardEvent(stream, this, 'metadata');
   this._stream.on('data', function forwardData(chunk) {
-    if (!self.push(deserialize(chunk))) {
+    if (!self.push(chunk)) {
       self._stream.pause();
     }
   });
@@ -88,14 +86,11 @@ util.inherits(ClientWritableObjectStream, Writable);
  * client side. Extends from stream.Writable.
  * @constructor
  * @param {stream} stream Underlying binary Duplex stream for the call
- * @param {function(*):Buffer} serialize Function for serializing objects
- * @param {object} options Stream options
  */
-function ClientWritableObjectStream(stream, serialize, options) {
-  options = _.extend(options, {objectMode: true});
+function ClientWritableObjectStream(stream) {
+  var options = {objectMode: true};
   Writable.call(this, options);
   this._stream = stream;
-  this._serialize = serialize;
   forwardEvent(stream, this, 'status');
   forwardEvent(stream, this, 'metadata');
   this.on('finish', function() {
@@ -111,20 +106,16 @@ util.inherits(ClientBidiObjectStream, Duplex);
  * client side. Extends from stream.Duplex.
  * @constructor
  * @param {stream} stream Underlying binary Duplex stream for the call
- * @param {function(*):Buffer} serialize Function for serializing objects
- * @param {function(Buffer)} deserialize Function for deserializing binary data
- * @param {object} options Stream options
  */
-function ClientBidiObjectStream(stream, serialize, deserialize, options) {
-  options = _.extend(options, {objectMode: true});
+function ClientBidiObjectStream(stream) {
+  var options = {objectMode: true};
   Duplex.call(this, options);
   this._stream = stream;
-  this._serialize = serialize;
   var self = this;
   forwardEvent(stream, this, 'status');
   forwardEvent(stream, this, 'metadata');
   this._stream.on('data', function forwardData(chunk) {
-    if (!self.push(deserialize(chunk))) {
+    if (!self.push(chunk)) {
       self._stream.pause();
     }
   });
@@ -160,7 +151,7 @@ ClientBidiObjectStream.prototype._read = _read;
  * @param {function(Error)} callback Callback to call when finished writing
  */
 function _write(chunk, encoding, callback) {
-  this._stream.write(this._serialize(chunk), encoding, callback);
+  this._stream.write(chunk, encoding, callback);
 }
 
 /**
@@ -196,15 +187,16 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeUnaryRequest(argument, callback, metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
+    var stream = client.makeRequest(this.channel, method, serialize,
+                                    deserialize, metadata, deadline);
     var emitter = new EventEmitter();
     forwardEvent(stream, emitter, 'status');
     forwardEvent(stream, emitter, 'metadata');
-    stream.write(serialize(argument));
+    stream.write(argument);
     stream.end();
     stream.on('data', function forwardData(chunk) {
       try {
-        callback(null, deserialize(chunk));
+        callback(null, chunk);
       } catch (e) {
         callback(e);
       }
@@ -236,11 +228,12 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeClientStreamRequest(callback, metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
-    var obj_stream = new ClientWritableObjectStream(stream, serialize, {});
+    var stream = client.makeRequest(this.channel, method, serialize,
+                                    deserialize, metadata, deadline);
+    var obj_stream = new ClientWritableObjectStream(stream);
     stream.on('data', function forwardData(chunk) {
       try {
-        callback(null, deserialize(chunk));
+        callback(null, chunk);
       } catch (e) {
         callback(e);
       }
@@ -272,9 +265,10 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeServerStreamRequest(argument, metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
-    var obj_stream = new ClientReadableObjectStream(stream, deserialize, {});
-    stream.write(serialize(argument));
+    var stream = client.makeRequest(this.channel, method, serialize,
+                                    deserialize, metadata, deadline);
+    var obj_stream = new ClientReadableObjectStream(stream);
+    stream.write(argument);
     stream.end();
     return obj_stream;
   }
@@ -301,11 +295,9 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeBidiStreamRequest(metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
-    var obj_stream = new ClientBidiObjectStream(stream,
-                                                serialize,
-                                                deserialize,
-                                                {});
+    var stream = client.makeRequest(this.channel, method, serialize,
+                                    deserialize, metadata, deadline);
+    var obj_stream = new ClientBidiObjectStream(stream);
     return obj_stream;
   }
   return makeBidiStreamRequest;
