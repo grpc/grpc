@@ -263,6 +263,10 @@
   }, 
   {
     "language": "c++", 
+    "name": "tips_client_test"
+  }, 
+  {
+    "language": "c++", 
     "name": "status_test"
   }, 
   {
