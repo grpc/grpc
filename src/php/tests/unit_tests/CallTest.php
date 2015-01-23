@@ -19,10 +19,10 @@ class CallTest extends PHPUnit_Framework_TestCase{
   /**
    * @expectedException LogicException
    * @expectedExceptionCode Grpc\CALL_ERROR_INVALID_FLAGS
-   * @expectedExceptionMessage start_invoke
+   * @expectedExceptionMessage invoke
    */
-  public function testStartInvokeRejectsBadFlags() {
-    $this->call->start_invoke($this->cq, 0, 0, 0, 0xDEADBEEF);
+  public function testInvokeRejectsBadFlags() {
+    $this->call->invoke($this->cq, 0, 0, 0xDEADBEEF);
   }
 
   /**
