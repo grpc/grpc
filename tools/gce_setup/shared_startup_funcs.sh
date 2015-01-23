@@ -371,7 +371,8 @@ grpc_docker_pull_known() {
   echo "... pulling docker images for '$known'"
   for i in $known
   do
-    sudo docker pull ${addr}/grpc/$i \
+    echo "<--- grpc/$i"
+    sudo docker pull ${addr}/grpc/$i > /dev/null 2>&1 \
       && sudo docker tag ${addr}/grpc/$i grpc/$i || {
       # log and continue
       echo "docker op error:  could not pull ${addr}/grpc/$i"
