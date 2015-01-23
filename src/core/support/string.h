@@ -80,6 +80,21 @@ void gpr_reverse_bytes(char *str, int len);
    the result is undefined. */
 int gpr_asprintf(char **strp, const char *format, ...);
 
+/* Join a set of strings, returning the resulting string */
+char *gpr_strjoin(const char **strs, size_t nstrs);
+
+/* A vector of strings... addition takes ownership of strings */
+typedef struct {
+  char **strs;
+  size_t count;
+  size_t capacity;
+} gpr_strvec;
+
+void gpr_strvec_init(gpr_strvec *strs);
+void gpr_strvec_destroy(gpr_strvec *strs);
+void gpr_strvec_add(gpr_strvec *strs, char *add);
+char *gpr_strvec_flatten(gpr_strvec *strs);
+
 #ifdef __cplusplus
 }
 #endif

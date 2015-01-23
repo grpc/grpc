@@ -152,3 +152,46 @@ int gpr_ltoa(long value, char *string) {
   string[i] = 0;
   return i;
 }
+
+char *gpr_strjoin(const char **strs, size_t nstrs) {
+  size_t out_length = 0;
+  size_t i;
+  char *out;
+  for (i = 0; i < nstrs; i++) {
+    out_length += strlen(strs[i]);
+  }
+  out_length += 1;  /* null terminator */
+  out = gpr_malloc(out_length);
+  out_length = 0;
+  for (i = 0; i < nstrs; i++) {
+    size_t slen = strlen(strs[i]);
+    memcpy(out + out_length, strs[i], slen);
+    out_length += slen;
+  }
+  out[out_length] = 0;
+  return out;
+}
+
+void gpr_strvec_init(gpr_strvec *sv) {
+  memset(sv, 0, sizeof(*sv));
+}
+
+void gpr_strvec_destroy(gpr_strvec *sv) {
+  size_t i;
+  for (i = 0; i < sv->count; i++) {
+    gpr_free(sv->strs[i]);
+  }
+  gpr_free(sv->strs);
+}
+
+void gpr_strvec_add(gpr_strvec *sv, char *str) {
+  if (sv->count == sv->capacity) {
+    sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 3 / 2);
+    sv->strs = gpr_realloc(sv->strs, sizeof(char*) * sv->capacity);
+  }
+  sv->strs[sv->count++] = str;
+}
+
+char *gpr_strvec_flatten(gpr_strvec *sv) {
+  return gpr_strjoin((const char**)sv->strs, sv->count);
+}
