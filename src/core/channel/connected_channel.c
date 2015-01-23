@@ -384,23 +384,25 @@ static void recv_batch(void *user_data, grpc_transport *transport,
       case GRPC_OP_BEGIN_MESSAGE:
         /* can't begin a message when we're still reading a message */
         if (calld->reading_message) {
-          char message[128];
-          sprintf(message,
-                  "Message terminated early; read %d bytes, expected %d",
-                  (int)calld->incoming_message.length,
-                  (int)calld->incoming_message_length);
+          char *message = NULL;
+          gpr_asprintf(&message,
+                       "Message terminated early; read %d bytes, expected %d",
+                       (int)calld->incoming_message.length,
+                       (int)calld->incoming_message_length);
           recv_error(chand, calld, __LINE__, message);
+          gpr_free(message);
           return;
         }
         /* stash away parameters, and prepare for incoming slices */
         length = stream_op->data.begin_message.length;
         if (length > calld->max_message_length) {
-          char message[128];
-          sprintf(
-              message,
+          char *message = NULL;
+          gpr_asprintf(
+              &message,
               "Maximum message length of %d exceeded by a message of length %d",
               calld->max_message_length, length);
           recv_error(chand, calld, __LINE__, message);
+          gpr_free(message);
         } else if (length > 0) {
           calld->reading_message = 1;
           calld->incoming_message_length = length;
@@ -423,12 +425,13 @@ static void recv_batch(void *user_data, grpc_transport *transport,
         gpr_slice_buffer_add(&calld->incoming_message, stream_op->data.slice);
         if (calld->incoming_message.length > calld->incoming_message_length) {
           /* if we got too many bytes, complain */
-          char message[128];
-          sprintf(message,
-                  "Receiving message overflow; read %d bytes, expected %d",
-                  (int)calld->incoming_message.length,
-                  (int)calld->incoming_message_length);
+          char *message = NULL;
+          gpr_asprintf(&message,
+                       "Receiving message overflow; read %d bytes, expected %d",
+                       (int)calld->incoming_message.length,
+                       (int)calld->incoming_message_length);
           recv_error(chand, calld, __LINE__, message);
+          gpr_free(message);
           return;
         } else if (calld->incoming_message.length ==
                    calld->incoming_message_length) {
@@ -441,10 +444,11 @@ static void recv_batch(void *user_data, grpc_transport *transport,
                                  final_state == GRPC_STREAM_CLOSED)) {
     calld->got_read_close = 1;
     if (calld->reading_message) {
-      char message[128];
-      sprintf(message, "Last message truncated; read %d bytes, expected %d",
-              (int)calld->incoming_message.length,
-              (int)calld->incoming_message_length);
+      char *message = NULL;
+      gpr_asprintf(&message,
+                   "Last message truncated; read %d bytes, expected %d",
+                   (int)calld->incoming_message.length,
+                   (int)calld->incoming_message_length);
       recv_error(chand, calld, __LINE__, message);
     }
     call_op.type = GRPC_RECV_HALF_CLOSE;
