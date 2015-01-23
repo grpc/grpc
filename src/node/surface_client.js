@@ -79,6 +79,20 @@ function ClientReadableObjectStream(stream) {
   this._stream.pause();
 }
 
+/**
+ * _read implementation for both types of streams that allow reading.
+ * @this {ClientReadableObjectStream}
+ * @param {number} size Ignored
+ */
+function _read(size) {
+  this._stream.resume();
+}
+
+/**
+ * See docs for _read
+ */
+ClientReadableObjectStream.prototype._read = _read;
+
 util.inherits(ClientWritableObjectStream, Writable);
 
 /**
@@ -97,20 +111,6 @@ function ClientWritableObjectStream(stream) {
     this._stream.end();
   });
 }
-
-/**
- * _read implementation for both types of streams that allow reading.
- * @this {ClientReadableObjectStream}
- * @param {number} size Ignored
- */
-function _read(size) {
-  this._stream.resume();
-}
-
-/**
- * See docs for _read
- */
-ClientReadableObjectStream.prototype._read = _read;
 
 /**
  * _write implementation for both types of streams that allow writing
