@@ -52,7 +52,9 @@ static grpc_arg copy_arg(const grpc_arg *src) {
       break;
     case GRPC_ARG_POINTER:
       dst.value.pointer = src->value.pointer;
-      dst.value.pointer.p = src->value.pointer.copy? src->value.pointer.copy(src->value.pointer.p) : src->value.pointer.p;
+      dst.value.pointer.p = src->value.pointer.copy
+                                ? src->value.pointer.copy(src->value.pointer.p)
+                                : src->value.pointer.p;
       break;
   }
   return dst;
