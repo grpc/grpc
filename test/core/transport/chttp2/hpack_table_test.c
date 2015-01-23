@@ -250,7 +250,7 @@ static void test_find(void) {
 
   for (i = 0; i < tbl.num_ents; i++) {
     int expect = 9999 - i;
-    sprintf(buffer, "%d", expect);
+    gpr_ltoa(expect, buffer);
 
     r = find_simple(&tbl, "test", buffer);
     GPR_ASSERT(r.index == i + 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY);
