@@ -29,7 +29,7 @@ namespace math
 
 			// TODO: implement cancellation
 			byte[] result;
-			Status status = channel.SimpleBlockingCall("/math.Math/Div", args.ToByteArray(), out result, GPRTimespec.GPRInfFuture);
+			Status status = channel.SimpleBlockingCall("/math.Math/Div", args.ToByteArray(), out result, GPRTimespec.InfFuture);
 			// TODO: only parse data if corresponding status is returned..
 			// TODO: only parse data if result is not null...
 			return DivReply.CreateBuilder ().MergeFrom (result).Build ();
@@ -64,7 +64,7 @@ namespace math
 		public Task<Num> Sum(out IObserver<Num> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: timeout support
-			CallContext ctx = channel.StreamingCall("/math.Math/Sum", GPRTimespec.GPRInfFuture);
+			CallContext ctx = channel.StreamingCall("/math.Math/Sum", GPRTimespec.InfFuture);
 
 			ctx.Start(false);
 
@@ -88,7 +88,7 @@ namespace math
 		public IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: timeout support
-			CallContext ctx = channel.StreamingCall("/math.Math/DivMany", GPRTimespec.GPRInfFuture);
+			CallContext ctx = channel.StreamingCall("/math.Math/DivMany", GPRTimespec.InfFuture);
 			ctx.Start (false);
 			
 			inputs = new StreamingInputObserver<DivArgs> (ctx);

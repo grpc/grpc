@@ -54,7 +54,7 @@ namespace Google.GRPC.Interop
 			cq = new CompletionQueue (true);  // we can also create the completion queue sooner...
 			UInt32 flags = buffered ? 0 : GRPCUtils.GRPC_WRITE_BUFFER_HINT;
 			Utils.AssertCallOk(call.StartInvoke(cq, invoke_tag, metadata_read_tag, finished_tag, flags));
-			cq.Pluck (invoke_tag, GPRTimespec.GPRInfFuture);
+			cq.Pluck (invoke_tag, GPRTimespec.InfFuture);
 		}
 
 		// blocking write...
@@ -66,13 +66,13 @@ namespace Google.GRPC.Interop
 				Utils.AssertCallOk (call.StartWrite (byteBuffer, write_tag, GRPCUtils.GRPC_WRITE_BUFFER_HINT));
 			}
 
-			Event writeEvent = cq.Pluck (write_tag, GPRTimespec.GPRInfFuture);
+			Event writeEvent = cq.Pluck (write_tag, GPRTimespec.InfFuture);
 			return (writeEvent.WriteAcceptedSuccess == GRPCOpError.GRPC_OP_OK);
 		}
 
 		public void WritesDone() {
 			Utils.AssertCallOk(call.WritesDone (halfclose_tag));
-			cq.Pluck (halfclose_tag, GPRTimespec.GPRInfFuture);
+			cq.Pluck (halfclose_tag, GPRTimespec.InfFuture);
 		}
 
 
@@ -81,14 +81,14 @@ namespace Google.GRPC.Interop
 		}
 
 		public Status Wait() {
-			Event ev = cq.Pluck (finished_tag, GPRTimespec.GPRInfFuture);
+			Event ev = cq.Pluck (finished_tag, GPRTimespec.InfFuture);
 			return ev.FinishedStatus;
 		}
 
 		// blocking read...
 		public byte[] Read() {
 			Utils.AssertCallOk(call.StartRead(read_tag));
-			Event readEvent = cq.Pluck (read_tag, GPRTimespec.GPRInfFuture);
+			Event readEvent = cq.Pluck (read_tag, GPRTimespec.InfFuture);
 			return readEvent.ReadData;
 		}
 

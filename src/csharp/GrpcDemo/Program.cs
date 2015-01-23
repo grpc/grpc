@@ -13,7 +13,7 @@ namespace Google.GRPC.Demo
 			using (Channel channel = new Channel("127.0.0.1:12345"))
 			{
 				byte[] result;
-				Status status = channel.SimpleBlockingCall("/grpc.testing.TestService/EmptyCall", new byte[] { }, out result, GPRTimespec.GPRInfFuture);
+				Status status = channel.SimpleBlockingCall("/grpc.testing.TestService/EmptyCall", new byte[] { }, out result, GPRTimespec.InfFuture);
 
 				Console.WriteLine("result length is " + result.Length + " bytes");
 			}

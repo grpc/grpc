@@ -10,7 +10,7 @@ namespace Google.GRPC.Interop
 		public System.Int64 tv_sec;
 		public System.Int64 tv_nsec;
 
-		public static GPRTimespec GPRInfFuture
+		public static GPRTimespec InfFuture
 		{
 			get {
 				// TODO: set correct value.
