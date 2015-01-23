@@ -198,15 +198,16 @@ static void simple_request_body2(grpc_end2end_test_fixture f) {
 static void test_invoke_simple_request(
     grpc_end2end_test_config config, const char *name,
     void (*body)(grpc_end2end_test_fixture f)) {
-  char fullname[64];
+  char *fullname;
   grpc_end2end_test_fixture f;
 
-  sprintf(fullname, "%s/%s", __FUNCTION__, name);
+  gpr_asprintf(&fullname, "%s/%s", __FUNCTION__, name);
 
   f = begin_test(config, fullname, NULL, NULL);
   body(f);
   end_test(&f);
   config.tear_down_data(&f);
+  gpr_free(fullname);
 }
 
 static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
