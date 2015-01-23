@@ -63,7 +63,7 @@ void grpc_sopb_reset(grpc_stream_op_buffer *sopb) {
 }
 
 void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops) {
-  int i;
+  size_t i;
   for (i = 0; i < nops; i++) {
     switch (ops[i].type) {
       case GRPC_OP_SLICE:
