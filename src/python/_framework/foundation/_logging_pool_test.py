@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,31 +27,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'beefcake'
+"""Tests for google3.net.rpc.python.framework.foundation.logging_pool."""
 
-module Beefcake
-  # Re-open the beefcake message module to add a static encode
-  #
-  # This is a temporary measure while beefcake is used as the default proto
-  # library for developing grpc ruby.  Once that changes to the official proto
-  # library this can be removed.  It's necessary to allow the update the service
-  # module to assume a static encode method.
-  # TODO(temiola): remove this.
-  module Message
-    # additional mixin module that adds static encode method when include
-    module StaticEncode
-      # encodes o with its instance#encode method
-      def encode(o)
-        o.encode
-      end
-    end
+import unittest
 
-    # extend self.included in Beefcake::Message to include StaticEncode
-    def self.included(o)
-      o.extend StaticEncode
-      o.extend Dsl
-      o.extend Decode
-      o.send(:include, Encode)
-    end
-  end
-end
+from _framework.foundation import logging_pool
+
+_POOL_SIZE = 16
+
+
+class LoggingPoolTest(unittest.TestCase):
+
+  def testUpAndDown(self):
+    pool = logging_pool.pool(_POOL_SIZE)
+    pool.shutdown(wait=True)
+
+    with logging_pool.pool(_POOL_SIZE) as pool:
+      self.assertIsNotNone(pool)
+
+  def testTaskExecuted(self):
+    test_list = []
+
+    with logging_pool.pool(_POOL_SIZE) as pool:
+      pool.submit(lambda: test_list.append(object())).result()
+
+    self.assertTrue(test_list)
+
+  def testException(self):
+    with logging_pool.pool(_POOL_SIZE) as pool:
+      raised_exception = pool.submit(lambda: 1/0).exception()
+
+    self.assertIsNotNone(raised_exception)
+
+
+if __name__ == '__main__':
+  unittest.main()

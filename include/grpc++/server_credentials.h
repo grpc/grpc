@@ -35,6 +35,7 @@
 #define __GRPCPP_SERVER_CREDENTIALS_H_
 
 #include <memory>
+#include <vector>
 
 #include <grpc++/config.h>
 
@@ -60,9 +61,12 @@ class ServerCredentials final {
 
 // Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
+  struct PemKeyCertPair{
+    grpc::string private_key;
+    grpc::string cert_chain;
+  };
   grpc::string pem_root_certs;
-  grpc::string pem_private_key;
-  grpc::string pem_cert_chain;
+  std::vector<PemKeyCertPair> pem_key_cert_pairs;
 };
 
 // Factory for building different types of ServerCredentials

@@ -142,7 +142,7 @@ module Google
       # during bidi-streaming, read the requests to send from a separate thread
       # read so that read_loop does not block waiting for requests to read.
       def start_write_loop(requests, is_client: true)
-        Thread.new do  # TODO(temiola) run on a thread pool
+        Thread.new do  # TODO: run on a thread pool
           write_tag = Object.new
           begin
             count = 0

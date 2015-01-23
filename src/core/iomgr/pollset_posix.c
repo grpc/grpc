@@ -31,6 +31,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SOCKET
+
 #include "src/core/iomgr/pollset_posix.h"
 
 #include <errno.h>
@@ -288,3 +292,5 @@ static void become_unary_pollset(grpc_pollset *pollset, grpc_fd *fd) {
   pollset->data.ptr = fd;
   grpc_fd_ref(fd);
 }
+
+#endif /* GPR_POSIX_POLLSET */

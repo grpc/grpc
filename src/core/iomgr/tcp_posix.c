@@ -31,6 +31,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SOCKET
+
 #include "src/core/iomgr/tcp_posix.h"
 
 #include <errno.h>
@@ -539,3 +543,5 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
   tcp->em_fd = em_fd;
   return &tcp->base;
 }
+
+#endif

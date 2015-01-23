@@ -31,6 +31,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SOCKET
+
 #include "src/core/iomgr/fd_posix.h"
 
 #include <assert.h>
@@ -272,3 +276,5 @@ void grpc_fd_become_readable(grpc_fd *fd, int allow_synchronous_callback) {
 void grpc_fd_become_writable(grpc_fd *fd, int allow_synchronous_callback) {
   set_ready(fd, &fd->writest, allow_synchronous_callback);
 }
+
+#endif
