@@ -40,7 +40,8 @@ describe GRPC::Core::CompletionType do
       CLIENT_METADATA_READ: 5,
       FINISHED: 6,
       SERVER_RPC_NEW: 7,
-      RESERVED: 8
+      SERVER_SHUTDOWN: 8,
+      RESERVED: 9
     }
   end
 

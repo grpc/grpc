@@ -70,16 +70,7 @@ describe('end-to-end', function() {
     var call = new grpc.Call(channel,
                              'dummy_method',
                              deadline);
-    call.startInvoke(function(event) {
-      assert.strictEqual(event.type,
-                         grpc.completionType.INVOKE_ACCEPTED);
-
-      call.writesDone(function(event) {
-        assert.strictEqual(event.type,
-                           grpc.completionType.FINISH_ACCEPTED);
-        assert.strictEqual(event.data, grpc.opError.OK);
-      });
-    },function(event) {
+      call.invoke(function(event) {
       assert.strictEqual(event.type,
                          grpc.completionType.CLIENT_METADATA_READ);
     },function(event) {
@@ -109,8 +100,12 @@ describe('end-to-end', function() {
             done();
           });
     });
+    call.writesDone(function(event) {
+      assert.strictEqual(event.type,
+                         grpc.completionType.FINISH_ACCEPTED);
+      assert.strictEqual(event.data, grpc.opError.OK);
+    });
   });
-
   it('should send and receive data without error', function(complete) {
     var req_text = 'client_request';
     var reply_text = 'server_response';
@@ -127,28 +122,7 @@ describe('end-to-end', function() {
     var call = new grpc.Call(channel,
                              'dummy_method',
                              deadline);
-    call.startInvoke(function(event) {
-      assert.strictEqual(event.type,
-                         grpc.completionType.INVOKE_ACCEPTED);
-      call.startWrite(
-          new Buffer(req_text),
-          function(event) {
-            assert.strictEqual(event.type,
-                               grpc.completionType.WRITE_ACCEPTED);
-            assert.strictEqual(event.data, grpc.opError.OK);
-            call.writesDone(function(event) {
-              assert.strictEqual(event.type,
-                                 grpc.completionType.FINISH_ACCEPTED);
-              assert.strictEqual(event.data, grpc.opError.OK);
-              done();
-            });
-          }, 0);
-      call.startRead(function(event) {
-        assert.strictEqual(event.type, grpc.completionType.READ);
-        assert.strictEqual(event.data.toString(), reply_text);
-        done();
-      });
-    },function(event) {
+    call.invoke(function(event) {
       assert.strictEqual(event.type,
                          grpc.completionType.CLIENT_METADATA_READ);
       done();
@@ -159,6 +133,24 @@ describe('end-to-end', function() {
       assert.strictEqual(status.details, status_text);
       done();
     }, 0);
+    call.startWrite(
+        new Buffer(req_text),
+        function(event) {
+          assert.strictEqual(event.type,
+                             grpc.completionType.WRITE_ACCEPTED);
+          assert.strictEqual(event.data, grpc.opError.OK);
+          call.writesDone(function(event) {
+            assert.strictEqual(event.type,
+                               grpc.completionType.FINISH_ACCEPTED);
+            assert.strictEqual(event.data, grpc.opError.OK);
+            done();
+          });
+        }, 0);
+    call.startRead(function(event) {
+      assert.strictEqual(event.type, grpc.completionType.READ);
+      assert.strictEqual(event.data.toString(), reply_text);
+      done();
+    });
 
     server.start();
     server.requestCall(function(event) {
