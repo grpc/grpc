@@ -139,10 +139,11 @@ int main(int argc, char **argv) {
 
   cq = grpc_completion_queue_create();
   if (secure) {
-    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
-        NULL, 0, test_server1_key, test_server1_key_size, test_server1_cert,
-        test_server1_cert_size);
-    server = grpc_secure_server_create(ssl_creds, cq, &args);
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
+                                                    test_server1_cert};
+    grpc_server_credentials *ssl_creds =
+        grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
+    server = grpc_secure_server_create(ssl_creds, cq, NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
     grpc_server_credentials_release(ssl_creds);
   } else {
