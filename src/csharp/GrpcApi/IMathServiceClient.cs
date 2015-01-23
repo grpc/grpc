@@ -3,9 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reactive.Linq;
-using math;
 
-namespace Google.GRPC.Examples.Math
+namespace math
 {
 
 	/// <summary>

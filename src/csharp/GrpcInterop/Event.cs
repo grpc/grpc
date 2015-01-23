@@ -23,7 +23,7 @@ namespace Google.GRPC.Interop
 
 			switch (this.completionType) {
 			case GRPCCompletionType.GRPC_READ:
-				readData = ByteBuffer.ReadByteBuffer(ev.data.read);
+				readData = ev.data.read != IntPtr.Zero ? ByteBuffer.ReadByteBuffer (ev.data.read) : null;
 				break;
 
 			case GRPCCompletionType.GRPC_FINISHED:

@@ -43,6 +43,7 @@
     <Compile Include="Status.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="WrappedNative.cs" />
+    <Compile Include="CallContext.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
