@@ -67,7 +67,7 @@ namespace Google.GRPC.Interop
 		private void ShutdownAndDrain()
 		{
 			grpc_completion_queue_shutdown(RawPointer);
-			while (Next(GPRTimespec.GPRInfFuture).CompletionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN) {
+			while (Next(GPRTimespec.InfFuture).CompletionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN) {
 			}
 		}
 
