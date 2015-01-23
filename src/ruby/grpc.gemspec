@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email         = 'tbetbetbe@gmail.com'
   s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
   s.summary       = 'Google RPC system in Ruby'
-  s.description   = 'Send RPCs from Ruby using Google's RPC system'
+  s.description   = 'Send RPCs from Ruby using Google\'s RPC system'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- spec/*`.split("\n")
