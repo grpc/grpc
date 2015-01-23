@@ -231,100 +231,92 @@ static void verify_matches(expectation *e, grpc_event *ev) {
   }
 }
 
-static char *metadata_expectation_string(metadata *md) {
-  size_t len;
+static void metadata_expectation(gpr_strvec *buf, metadata *md) {
   size_t i;
-  char *out;
-  char *p;
+  char *tmp;
 
-  if (!md) return gpr_strdup("nil");
-
-  for (len = 0, i = 0; i < md->count; i++) {
-    len += strlen(md->keys[i]);
-    len += strlen(md->values[i]);
+  if (!md) {
+    gpr_strvec_add(buf, gpr_strdup("nil"));
+  } else {
+    for (i = 0; i < md->count; i++) {
+      gpr_asprintf(&tmp, "%c%s:%s", i ? ',' : '{', md->keys[i], md->values[i]);
+      gpr_strvec_add(buf, tmp);
+    }
+    gpr_strvec_add(buf, gpr_strdup("}"));
   }
-  len += 3 + md->count;
-
-  p = out = gpr_malloc(len);
-  *p++ = '{';
-  for (i = 0; i < md->count; i++) {
-    if (i) *p++ = ',';
-    p += sprintf(p, "%s:%s", md->keys[i], md->values[i]);
-  }
-  *p++ = '}';
-  *p++ = 0;
-  return out;
 }
 
-static size_t expectation_to_string(char *out, expectation *e) {
+static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
   gpr_timespec timeout;
-  char *str = NULL;
-  size_t len;
+  char *tmp;
 
   switch (e->type) {
     case GRPC_FINISH_ACCEPTED:
-      return sprintf(out, "GRPC_FINISH_ACCEPTED result=%d",
+      gpr_asprintf(&tmp, "GRPC_FINISH_ACCEPTED result=%d",
                      e->data.finish_accepted);
+      gpr_strvec_add(buf, tmp);
+      break;
     case GRPC_WRITE_ACCEPTED:
-      return sprintf(out, "GRPC_WRITE_ACCEPTED result=%d",
+      gpr_asprintf(&tmp, "GRPC_WRITE_ACCEPTED result=%d",
                      e->data.write_accepted);
+      gpr_strvec_add(buf, tmp);
+      break;
     case GRPC_INVOKE_ACCEPTED:
-      return sprintf(out, "GRPC_INVOKE_ACCEPTED");
+      gpr_strvec_add(buf, gpr_strdup("GRPC_INVOKE_ACCEPTED"));
+      break;
     case GRPC_SERVER_RPC_NEW:
       timeout = gpr_time_sub(e->data.server_rpc_new.deadline, gpr_now());
-      return sprintf(out, "GRPC_SERVER_RPC_NEW method=%s host=%s timeout=%fsec",
+      gpr_asprintf(&tmp, "GRPC_SERVER_RPC_NEW method=%s host=%s timeout=%fsec",
                      e->data.server_rpc_new.method, e->data.server_rpc_new.host,
                      timeout.tv_sec + 1e-9 * timeout.tv_nsec);
+      gpr_strvec_add(buf, tmp);
+      break;
     case GRPC_CLIENT_METADATA_READ:
-      str = metadata_expectation_string(e->data.client_metadata_read);
-      len = sprintf(out, "GRPC_CLIENT_METADATA_READ %s", str);
-      gpr_free(str);
-      return len;
+      gpr_strvec_add(buf, gpr_strdup("GRPC_CLIENT_METADATA_READ "));
+      metadata_expectation(buf, e->data.client_metadata_read);
+      break;
     case GRPC_FINISHED:
-      str = metadata_expectation_string(e->data.finished.metadata);
-      len = sprintf(out, "GRPC_FINISHED status=%d details=%s %s",
-                    e->data.finished.status, e->data.finished.details, str);
-      gpr_free(str);
-      return len;
+      gpr_asprintf(&tmp, "GRPC_FINISHED status=%d details=%s ",
+                    e->data.finished.status, e->data.finished.details);
+      gpr_strvec_add(buf, tmp);
+      metadata_expectation(buf, e->data.finished.metadata);
+      break;
     case GRPC_READ:
-      if (e->data.read) {
-        str =
-            gpr_hexdump((char *)GPR_SLICE_START_PTR(*e->data.read),
-                        GPR_SLICE_LENGTH(*e->data.read), GPR_HEXDUMP_PLAINTEXT);
-      }
-      len = sprintf(out, "GRPC_READ data=%s", str);
-      gpr_free(str);
-      return len;
+      gpr_strvec_add(buf, gpr_strdup("GRPC_READ data="));
+      gpr_strvec_add(buf, gpr_hexdump((char *)GPR_SLICE_START_PTR(*e->data.read),
+                        GPR_SLICE_LENGTH(*e->data.read), GPR_HEXDUMP_PLAINTEXT));
+      break;
     case GRPC_SERVER_SHUTDOWN:
-      return sprintf(out, "GRPC_SERVER_SHUTDOWN");
+      gpr_strvec_add(buf, gpr_strdup("GRPC_SERVER_SHUTDOWN"));
+      break;
     case GRPC_COMPLETION_DO_NOT_USE:
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "not implemented");
       abort();
       break;
   }
-  return 0;
 }
 
-static char *expectations_to_string(cq_verifier *v) {
+static void expectations_to_strvec(gpr_strvec *buf, cq_verifier *v) {
   /* allocate a large buffer: we're about to crash anyway */
-  char *buffer = gpr_malloc(32 * 1024 * 1024);
-  char *p = buffer;
   expectation *e;
 
   for (e = v->expect.next; e != &v->expect; e = e->next) {
-    p += expectation_to_string(p, e);
-    *p++ = '\n';
+    expectation_to_strvec(buf, e);
+    gpr_strvec_add(buf, gpr_strdup("\n"));
   }
-
-  *p = 0;
-  return buffer;
 }
 
 static void fail_no_event_received(cq_verifier *v) {
-  char *expectations = expectations_to_string(v);
-  gpr_log(GPR_ERROR, "no event received, but expected:\n%s", expectations);
-  gpr_free(expectations);
+  gpr_strvec buf;
+  char *msg;
+  gpr_strvec_init(&buf);
+  gpr_strvec_add(&buf, gpr_strdup("no event received, but expected:\n"));
+  expectations_to_strvec(&buf, v);
+  msg = gpr_strvec_flatten(&buf, NULL);
+  gpr_log(GPR_ERROR, "%s", msg);
+  gpr_strvec_destroy(&buf);
+  gpr_free(msg);
   abort();
 }
 
