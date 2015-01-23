@@ -676,5 +676,17 @@ grpc_interop_gen_php_cmd() {
     echo $the_cmd
 }
 
+# constructs the full dockerized cpp interop test cmd.
+#
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_interop_gen_cxx_cmd() {
+    local cmd_prefix="sudo docker run grpc/cxx"; 
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl";
+    local the_cmd="$cmd_prefix $test_script $@";
+    echo $the_cmd
+}
 
 # TODO(grpc-team): add grpc_interop_gen_xxx_cmd for python|cxx|nodejs
