@@ -14,7 +14,6 @@ RUN cd /var/local/git/grpc/third_party/protobuf && \
   ./autogen.sh && \
   ./configure --prefix=/usr && \
   make -j12 && make check && make install && make clean
-#RUN make install -C /var/local/git/grpc
 
 RUN cd /var/local/git/grpc && ls \
   && make clean \
