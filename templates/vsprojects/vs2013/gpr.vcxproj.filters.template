@@ -1,0 +1,2 @@
+<%namespace file="vcxproj.filters_defs.include" import="gen_project"/>\
+${gen_project('gpr', libs, targets)}
