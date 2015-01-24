@@ -7,7 +7,7 @@ namespace Google.GRPC.Interop
 	public class ByteBuffer : WrappedNative
 	{
 		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_byte_buffer_create(GPRSlice[] slices, UIntPtr nslices);
+		static extern IntPtr grpc_byte_buffer_create(Slice[] slices, UIntPtr nslices);
 
 		[DllImport("libgrpc.so")]
 		static extern UIntPtr grpc_byte_buffer_length(IntPtr byteBuffer);
@@ -25,12 +25,10 @@ namespace Google.GRPC.Interop
 		[DllImport("libgrpc.so")]
 		static extern void grpc_byte_buffer_reader_destroy(IntPtr reader);
 
-		[DllImport("libgpr.so")]
-		static extern GPRSlice gpr_slice_unref(GPRSlice slice);
-
-		public ByteBuffer(GPRSlice[] slices) : 
-			base(grpc_byte_buffer_create(slices, new UIntPtr((ulong) slices.Length)))
+		public ByteBuffer(Slice[] slices) : 
+			base(() => grpc_byte_buffer_create(slices, new UIntPtr((ulong) slices.Length)))
 		{
+			//TODO: we need to unref the slices!!!
 		}
 
 		public UIntPtr Length
@@ -45,27 +43,73 @@ namespace Google.GRPC.Interop
 		{
 			grpc_byte_buffer_destroy(RawPointer);
 		}
-		// reads all data from the byte buffer (without destroying it).
+
+		/// <summary>
+		/// Reads all data from the byte buffer (does not take ownership of the byte buffer).
+		/// </summary>
 		public static byte[] ReadByteBuffer(IntPtr byteBuffer)
 		{
-			// TODO: disposing of the byte buffer reader...
-			MemoryStream result = new MemoryStream();
-
-			IntPtr reader = grpc_byte_buffer_reader_create(byteBuffer);
-			IntPtr slicePtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(GPRSlice)));
-
-			while (grpc_byte_buffer_reader_next(reader, slicePtr) != 0)
+			using (MemoryStream ms = new MemoryStream())
 			{
-				GPRSlice slice = (GPRSlice)Marshal.PtrToStructure(slicePtr, typeof(GPRSlice));
-				Marshal.FreeHGlobal(slicePtr);
-				byte[] sliceData = slice.GetDataAsByteArray();
-				result.Write(sliceData, 0, sliceData.Length);
-				gpr_slice_unref(slice);
-
+				IntPtr reader = IntPtr.Zero;
+				try
+				{
+					reader = grpc_byte_buffer_reader_create(byteBuffer);
+					byte[] sliceData;
+					while ((sliceData = ByteBufferReadNext(reader)) != null)
+					{
+						ms.Write(sliceData, 0, sliceData.Length);
+					}
+					return ms.ToArray();
+				}
+				finally
+				{
+					if (reader != IntPtr.Zero)
+					{
+						grpc_byte_buffer_reader_destroy(reader);
+					}
+				}
 			}
+		}
 
-			grpc_byte_buffer_reader_destroy(reader);
-			return result.ToArray();
+		/// <summary>
+		/// Reads data of next slice from the byte buffer.
+		/// Returns null if there is end of buffer has been reached.
+		/// </summary>
+		/// <param name="byteBufferReader">Byte buffer reader (does not take ownership)</param>
+		private static byte[] ByteBufferReadNext(IntPtr byteBufferReader)
+		{
+			IntPtr slicePtr = IntPtr.Zero;
+			try
+			{
+				slicePtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Slice)));
+				if (grpc_byte_buffer_reader_next(byteBufferReader, slicePtr) == 0)
+				{
+					return null;
+				}
+
+				Slice slice = default(Slice);
+				try
+				{
+					slice = (Slice)Marshal.PtrToStructure(slicePtr, typeof(Slice));
+					return slice.GetDataAsByteArray();
+
+				}
+				finally
+				{
+					if (slice.NeedsUnref)
+					{
+						slice.Unref();
+					}
+				}
+			}
+			finally
+			{
+				if (slicePtr != IntPtr.Zero)
+				{
+					Marshal.FreeHGlobal(slicePtr);
+				}
+			}
 		}
 	}
 }

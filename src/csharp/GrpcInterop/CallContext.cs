@@ -53,27 +53,26 @@ namespace Google.GRPC.Interop
 
 		public void Start(bool buffered)
 		{
-			UInt32 flags = buffered ? 0 : GRPCUtils.GRPC_WRITE_BUFFER_HINT;
-			Utils.AssertCallOk(call.StartInvoke(cq, invoke_tag, metadata_read_tag, finished_tag, flags));
-			cq.Pluck(invoke_tag, GPRTimespec.InfFuture);
+			Utils.AssertCallOk(call.StartInvoke(cq, invoke_tag, metadata_read_tag, finished_tag, buffered));
+			cq.Pluck(invoke_tag, Timespec.InfFuture);
 		}
 
 		// blocking write...
 		public bool Write(byte[] payload)
 		{
 			//TODO: we need to call unref on the slice!!!
-			using (ByteBuffer byteBuffer = new ByteBuffer(new GPRSlice[] { GPRSlice.FromByteArray(payload)}))
+			using (ByteBuffer byteBuffer = new ByteBuffer(new Slice[] { Slice.FromByteArray(payload)}))
 			{
-				Utils.AssertCallOk(call.StartWrite(byteBuffer, write_tag, GRPCUtils.GRPC_WRITE_BUFFER_HINT));
+				Utils.AssertCallOk(call.StartWrite(byteBuffer, write_tag, false));
 			}
-			Event writeEvent = cq.Pluck(write_tag, GPRTimespec.InfFuture);
+			Event writeEvent = cq.Pluck(write_tag, Timespec.InfFuture);
 			return (writeEvent.WriteAcceptedSuccess == GRPCOpError.GRPC_OP_OK);
 		}
 
 		public void WritesDone()
 		{
 			Utils.AssertCallOk(call.WritesDone(halfclose_tag));
-			cq.Pluck(halfclose_tag, GPRTimespec.InfFuture);
+			cq.Pluck(halfclose_tag, Timespec.InfFuture);
 		}
 
 		public void Cancel()
@@ -83,7 +82,7 @@ namespace Google.GRPC.Interop
 
 		public Status Wait()
 		{
-			Event ev = cq.Pluck(finished_tag, GPRTimespec.InfFuture);
+			Event ev = cq.Pluck(finished_tag, Timespec.InfFuture);
 			return ev.FinishedStatus;
 		}
 
@@ -91,7 +90,7 @@ namespace Google.GRPC.Interop
 		public byte[] Read()
 		{
 			Utils.AssertCallOk(call.StartRead(read_tag));
-			Event readEvent = cq.Pluck(read_tag, GPRTimespec.InfFuture);
+			Event readEvent = cq.Pluck(read_tag, Timespec.InfFuture);
 			return readEvent.ReadData;
 		}
 

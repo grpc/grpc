@@ -5,19 +5,19 @@ using System.Diagnostics.Contracts;
 namespace Google.GRPC.Interop
 {
     /// <summary>
-    /// Wraps a native object as Disposable.
+    /// Wraps a native resource and provides a standardized way how to dispose it.
     /// Destroy() method is called by Dispose() appropriately.
     /// </summary>
     public abstract class WrappedNative : IDisposable
     {
-        IntPtr rawPtr;
+        IntPtr rawPtr = IntPtr.Zero;
 
         /// <summary>
-        /// rawPtr cannot be null.
+        /// Runs the delegate to allocate resource.
         /// </summary>
-        protected WrappedNative(IntPtr rawPtr)
+        protected WrappedNative(Func<IntPtr> allocDelegate)
         {
-            this.rawPtr = rawPtr;
+            this.rawPtr = allocDelegate();
         }
 
         ~WrappedNative()
@@ -29,7 +29,6 @@ namespace Google.GRPC.Interop
         {
             get
             {
-                Contract.Requires(rawPtr != IntPtr.Zero);
                 return rawPtr;
             }
         }
@@ -47,18 +46,15 @@ namespace Google.GRPC.Interop
 
         protected virtual void Dispose(bool disposing)
         {
-            if (rawPtr != IntPtr.Zero)
+            if (disposing && rawPtr != IntPtr.Zero)
             {
-                if (disposing)
+                try
                 {
-                    try
-                    {
-                        Destroy();
-                    }
-                    finally
-                    {
-                        rawPtr = IntPtr.Zero;
-                    }
+                    Destroy();
+                }
+                finally
+                {
+                    rawPtr = IntPtr.Zero;
                 }
             }
         }

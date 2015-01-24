@@ -10,10 +10,10 @@ namespace Google.GRPC.Interop
 		static extern IntPtr grpc_completion_queue_create();
 		// returns grpc_event*
 		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_completion_queue_next(IntPtr cq, GPRTimespec deadline);
+		static extern IntPtr grpc_completion_queue_next(IntPtr cq, Timespec deadline);
 		// returns grpc_event*
 		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_completion_queue_pluck(IntPtr cq, IntPtr tag, GPRTimespec deadline);
+		static extern IntPtr grpc_completion_queue_pluck(IntPtr cq, IntPtr tag, Timespec deadline);
 
 		[DllImport("libgrpc.so")]
 		static extern void grpc_completion_queue_shutdown(IntPtr cq);
@@ -26,32 +26,51 @@ namespace Google.GRPC.Interop
 
 		private readonly bool autoShutdown;
 
-		public CompletionQueue(bool autoShutdown) : base(grpc_completion_queue_create())
+		public CompletionQueue(bool autoShutdown) : base(() => grpc_completion_queue_create())
 		{
 			this.autoShutdown = autoShutdown;
 		}
 
-		public Event Next(GPRTimespec deadline)
+		public Event Next(Timespec deadline)
 		{
-			IntPtr eventPtr = grpc_completion_queue_next(RawPointer, deadline);
-			if (eventPtr == IntPtr.Zero)
+			IntPtr eventPtr = IntPtr.Zero;
+			try
 			{
-				// TODO: maybe throw exception...
-				return null;
+				eventPtr = grpc_completion_queue_next(RawPointer, deadline);
+				if (eventPtr == IntPtr.Zero)
+				{
+					return null;
+				}
+				return new Event(eventPtr);
 			}
-			return CreateEventFromIntPtr(eventPtr);
+			finally
+			{
+				if (eventPtr != IntPtr.Zero)
+				{
+					grpc_event_finish(eventPtr);
+				}
+			}
 		}
 
-		public Event Pluck(IntPtr tag, GPRTimespec deadline)
+		public Event Pluck(IntPtr tag, Timespec deadline)
 		{
-			IntPtr eventPtr = grpc_completion_queue_pluck(RawPointer, tag, deadline);
-			// TODO: handle this....
-			if (eventPtr == IntPtr.Zero)
+			IntPtr eventPtr = IntPtr.Zero;
+			try
 			{
-				// TODO: maybe throw exception...
-				return null;
+				eventPtr = grpc_completion_queue_pluck(RawPointer, tag, deadline);
+				if (eventPtr == IntPtr.Zero)
+				{
+					return null;
+				}
+				return new Event(eventPtr);
 			}
-			return CreateEventFromIntPtr(eventPtr);
+			finally
+			{
+				if (eventPtr != IntPtr.Zero)
+				{
+					grpc_event_finish(eventPtr);
+				}
+			}
 		}
 
 		public void Shutdown()
@@ -70,17 +89,11 @@ namespace Google.GRPC.Interop
 
 		private void ShutdownAndDrain()
 		{
+			// WARNING: be careful that Next can't be mixed with Pluck (see gprc.h)
 			grpc_completion_queue_shutdown(RawPointer);
-			while (Next(GPRTimespec.InfFuture).CompletionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN)
+			while (Next(Timespec.InfFuture).CompletionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN)
 			{
 			}
-		}
-
-		private static Event CreateEventFromIntPtr(IntPtr eventPtr)
-		{
-			Event ev = new Event(GRPCEvent.FromIntPtr(eventPtr));
-			grpc_event_finish(eventPtr);
-			return ev;
 		}
 	}
 }

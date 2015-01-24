@@ -3,18 +3,22 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Interop
 {
+	// TODO: this should not be in Interop namespace.
+	/// <summary>
+	/// Represents RPC result.
+	/// </summary>
 	public class Status
 	{
-		readonly GRPCStatusCode statusCode;
+		readonly StatusCode statusCode;
 		readonly string detail;
 
-		public Status(GRPCStatusCode statusCode, string detail)
+		public Status(StatusCode statusCode, string detail)
 		{
 			this.statusCode = statusCode;
 			this.detail = detail;
 		}
 
-		public GRPCStatusCode StatusCode
+		public StatusCode StatusCode
 		{
 			get
 			{

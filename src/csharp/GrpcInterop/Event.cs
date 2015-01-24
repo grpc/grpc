@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Interop
 {
+    /// <summary>
+    /// Event of a completion queue.
+    /// </summary>
     public class Event
     {
         readonly GRPCCompletionType completionType;
@@ -15,8 +18,12 @@ namespace Google.GRPC.Interop
         readonly GRPCOpError finishAcceptedSuccess;
         readonly GRPCOpError invokeAcceptedSuccess;
 
-        public Event(GRPCEvent ev)
+        /// <summary>
+        /// Does not take ownership of the eventPtr.
+        /// </summary>
+        public Event(IntPtr eventPtr)
         {
+            GRPCEvent ev = GRPCEvent.FromIntPtr(eventPtr);
             this.completionType = ev.type;
             this.tag = ev.tag;
 
@@ -48,6 +55,7 @@ namespace Google.GRPC.Interop
             // client_metadata_read
             // server_rpc_new
             }
+
         }
 
         public GRPCCompletionType CompletionType
@@ -87,6 +95,61 @@ namespace Google.GRPC.Interop
             get
             {
                 return writeAcceptedSuccess;
+            }
+        }
+
+        /// <summary>
+        /// grpc_event from grpc/grpc.h
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct GRPCEvent
+        {
+            [DllImport("libgrpc.so")]
+            static extern void grpc_event_finish(IntPtr ev);
+
+            public GRPCCompletionType type;
+            public IntPtr tag;
+            public IntPtr call;
+            public Data data;
+
+            public static GRPCEvent FromIntPtr(IntPtr ptr)
+            {
+                return (GRPCEvent)Marshal.PtrToStructure(ptr, typeof(GRPCEvent));
+            }
+
+            public static void EventDestroy(IntPtr ptr) {
+                grpc_event_finish(ptr);
+            }
+
+            // to simulate union
+            [StructLayout(LayoutKind.Explicit)]
+            public struct Data
+            {
+                [FieldOffset(0)]
+                public IntPtr read;
+                // grpc_byte_buffer*
+                [FieldOffset(0)]
+                public GRPCOpError write_accepted;
+                [FieldOffset(0)]
+                public GRPCOpError finish_accepted;
+                [FieldOffset(0)]
+                public GRPCOpError invoke_accepted;
+                [FieldOffset(0)]
+                public FinishedData finished;
+                // TODO: client_metadata_read
+                // TODO: finished
+                // TODO: server_rpc_new
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct FinishedData
+            {
+                public StatusCode status;
+                public IntPtr details;
+                // const char*
+                public UIntPtr metadataCount;
+                public IntPtr metadataElements;
+                // grpc_metadata*
             }
         }
     }
