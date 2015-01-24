@@ -15,12 +15,12 @@ namespace Google.GRPC.Interop
 		readonly String target;
 
 		// TODO: add args...
-		public Channel(string target) : base(grpc_channel_create(target, IntPtr.Zero))
+		public Channel(string target) : base(() => grpc_channel_create(target, IntPtr.Zero))
 		{
 			this.target = target;
 		}
 
-		public Status SimpleBlockingCall(String methodName, byte[] requestData, out byte[] result, GPRTimespec deadline)
+		public Status SimpleBlockingCall(String methodName, byte[] requestData, out byte[] result, Timespec deadline)
 		{
 			result = null;
 			Call call = new Call(this, methodName, target, deadline);
@@ -40,7 +40,7 @@ namespace Google.GRPC.Interop
 			}
 		}
 
-		public CallContext StreamingCall(String methodName, GPRTimespec deadline)
+		public CallContext StreamingCall(String methodName, Timespec deadline)
 		{
 			Call call = new Call(this, methodName, target, deadline);
 			return new CallContext(call);

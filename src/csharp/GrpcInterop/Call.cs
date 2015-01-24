@@ -5,9 +5,11 @@ namespace Google.GRPC.Interop
 {
 	public class Call : WrappedNative
 	{
+		const UInt32 GRPC_WRITE_BUFFER_HINT = 1;
+
 		// returns grpc_call*
 		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_channel_create_call(IntPtr channel, string method, string host, GPRTimespec deadline);
+		static extern IntPtr grpc_channel_create_call(IntPtr channel, string method, string host, Timespec deadline);
 
 		[DllImport("libgrpc.so")]
 		static extern GRPCCallError grpc_call_add_metadata(IntPtr call, IntPtr metadata, UInt32 flags);
@@ -28,10 +30,13 @@ namespace Google.GRPC.Interop
 		static extern GRPCCallError grpc_call_cancel(IntPtr call);
 
 		[DllImport("libgrpc.so")]
+		static extern GRPCCallError grpc_call_cancel_with_status(IntPtr call, StatusCode status, string description);
+
+		[DllImport("libgrpc.so")]
 		static extern GRPCCallError grpc_call_start_write(IntPtr call, IntPtr byteBuffer, IntPtr tag, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_start_write_status(IntPtr call, GRPCStatusCode statusCode, string statusMessage, IntPtr tag);
+		static extern GRPCCallError grpc_call_start_write_status(IntPtr call, StatusCode statusCode, string statusMessage, IntPtr tag);
 
 		[DllImport("libgrpc.so")]
 		static extern GRPCCallError grpc_call_writes_done(IntPtr call, IntPtr tag);
@@ -45,11 +50,11 @@ namespace Google.GRPC.Interop
 		readonly Channel channel;
 		readonly string method;
 		readonly string host;
-		readonly GPRTimespec deadline;
+		readonly Timespec deadline;
 
 		// TODO: refer to this.method, this.host, this.deadline, otherwise it might be unsafe...
-		public Call(Channel channel, string method, string host, GPRTimespec deadline)
-			: base(grpc_channel_create_call(channel.RawPointer, method, host, deadline))
+		public Call(Channel channel, string method, string host, Timespec deadline)
+			: base(() => grpc_channel_create_call(channel.RawPointer, method, host, deadline))
 		{
 			this.channel = channel;
 			this.method = method;
@@ -57,13 +62,15 @@ namespace Google.GRPC.Interop
 			this.deadline = deadline;
 		}
 
-		public GRPCCallError StartInvoke(CompletionQueue cq, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags)
+		public GRPCCallError StartInvoke(CompletionQueue cq, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
 		{
+			UInt32 flags = buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
 			return grpc_call_start_invoke(RawPointer, cq.RawPointer, invokeAcceptedTag, metadataReadTag, finishedTag, flags);
 		}
 
-		public GRPCCallError StartWrite(ByteBuffer bb, IntPtr tag, UInt32 flags)
+		public GRPCCallError StartWrite(ByteBuffer bb, IntPtr tag, bool buffered)
 		{
+			UInt32 flags = buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
 			return grpc_call_start_write(RawPointer, bb.RawPointer, tag, flags);
 		}
 
