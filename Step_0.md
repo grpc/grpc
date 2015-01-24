@@ -1,11 +1,11 @@
 # Step-0: define a service
 
-This section presents an example of a very simple service definition that
-receives a message from a remote client. The message contains the users's
-name and sends back a greeting to that person.
+This section presents an example of a simple service definition that receives
+a message from a remote client. The message contains the users's name and
+sends back a greeting to that person.
 
-Here it is in full; to be used to generate gRPC code it's defined in it's own
-file [helloworld.proto](helloworld.proto).
+It's shown below in full; it's actually contained in separate file
+[helloworld.proto](helloworld.proto).
 
 ```
 syntax = "proto3";
@@ -32,9 +32,10 @@ service Greeting {
 
 ```
 
-The service stanza of the messages is an example of protobuf service IDL
-(Interface Defintion Language).  Here, it defines a very simple service that
-receives a request and returns a response.
+The service stanza of the message is an example of protobuf service IDL
+(Interface Defintion Language).  Here, it defines a simple service that
+receives a request containing a name and returns a response containing a
+message.
 
-Next in [Step-1](Step-1.md), we'll use protoc to generate code this simple
-definition.
+Next, in [Step-1](Step-1.md), we'll use protoc to generate client code from
+this IDL.
