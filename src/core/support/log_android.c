@@ -72,17 +72,15 @@ void gpr_default_log(gpr_log_func_args *args) {
 
   final_slash = strrchr(args->file, '/');
   if (final_slash == NULL)
-    display_file = file;
+    display_file = args->file;
   else
     display_file = final_slash + 1;
 
-  asprintf(&prefix, "%s:%d] %s", display_file, args->line, args->message);
+  asprintf(&output, "%s:%d] %s", display_file, args->line, args->message);
 
   __android_log_write(severity_to_log_priority(args->severity), "GRPC", output);
 
   /* allocated by asprintf => use free, not gpr_free */
-  free(prefix);
-  free(suffix);
   free(output);
 }
 
