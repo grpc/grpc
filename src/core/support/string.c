@@ -14,7 +14,7 @@
  * in the documentation and/or other materials provided with the
  * distribution.
  *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
+ * contributors may be used to endorse or promote products derived from 
  * this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -189,7 +189,7 @@ void gpr_strvec_destroy(gpr_strvec *sv) {
 
 void gpr_strvec_add(gpr_strvec *sv, char *str) {
   if (sv->count == sv->capacity) {
-    sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 3 / 2);
+    sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 2);
     sv->strs = gpr_realloc(sv->strs, sizeof(char*) * sv->capacity);
   }
   sv->strs[sv->count++] = str;
