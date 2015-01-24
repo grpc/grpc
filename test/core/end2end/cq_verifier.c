@@ -298,7 +298,6 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
 }
 
 static void expectations_to_strvec(gpr_strvec *buf, cq_verifier *v) {
-  /* allocate a large buffer: we're about to crash anyway */
   expectation *e;
 
   for (e = v->expect.next; e != &v->expect; e = e->next) {
