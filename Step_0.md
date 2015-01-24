@@ -1,8 +1,8 @@
 # Step-0: define a service
 
 This section presents an example of a very simple service definition that
-receives a message from a remote client. The messages contains the users's
-name and sends's back a greeting for that person.
+receives a message from a remote client. The message contains the users's
+name and sends back a greeting to that person.
 
 Here it is in full; to be used to generate gRPC code it's defined in it's own
 file [helloworld.proto](helloworld.proto).
