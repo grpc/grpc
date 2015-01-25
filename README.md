@@ -52,14 +52,22 @@ cd grpc-helloworld
 
 # Install Java 8
 
-Java gRPC works on both Java 7 and Java 8. To keep this example simple, will
-assume that you've installed Java 8.  Instructions for
-[installing Java 8](http://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
-are available online.
+Java gRPC is designed to work with both Java 7 and Java 8.  For simplicity,
+the example assumes that Java 8 is installed.  See
+[Install Java 8](http://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
+for instructions.
+
+# Install Maven
+
+To simplify building and the managing of gRPC's dependencies, the java client
+are server are structured as a standard [Maven](http://maven.apache.org/guides/getting-started/)
+project. See [Install Maven](http://maven.apache.org/users/index.html) for instructions.
+
 
 # Install Go 1.4
 
-Go gRPC requires Go 1.4.  It's available for [download](https://golang.org/dl/) and install online.
+Go gRPC requires Go 1.4, the latest version of Go.  See
+[Install Go](https://golang.org/doc/install) for instructions.
 
 # (optional) Install protoc
 
