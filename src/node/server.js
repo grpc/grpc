@@ -246,6 +246,7 @@ function Server(options) {
       call.serverAccept(function(event) {
         if (event.data.code === grpc.status.CANCELLED) {
           cancelled = true;
+          stream.emit('cancelled');
         }
       }, 0);
       call.serverEndInitialMetadata(0);

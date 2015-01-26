@@ -161,6 +161,14 @@ GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
 };
 
 /**
+ * Cancel the ongoing call. If the call has not already finished, it will finish
+ * with status CANCELLED.
+ */
+GrpcClientStream.prototype.cancel = function() {
+  this._call.cancel();
+};
+
+/**
  * Make a request on the channel to the given method with the given arguments
  * @param {grpc.Channel} channel The channel on which to make the request
  * @param {string} method The method to request
