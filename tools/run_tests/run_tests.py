@@ -46,8 +46,8 @@ class CLanguage(object):
     self.make_target = make_target
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
-      self.binaries = [tgt['name'] 
-                       for tgt in js 
+      self.binaries = [tgt['name']
+                       for tgt in js
                        if tgt['language'] == test_lang]
 
   def test_binaries(self, config):
@@ -59,6 +59,19 @@ class CLanguage(object):
   def build_steps(self):
     return []
 
+class NodeLanguage(object):
+
+  def __init__(self):
+    self.allow_hashing = False
+
+  def test_binaries(self, config):
+    return ['tools/run_tests/run_node.sh']
+
+  def make_targets(self):
+    return ['static_c']
+
+  def build_steps(self):
+    return [['tools/run_tests/build_node.sh']]
 
 class PhpLanguage(object):
 
@@ -69,7 +82,7 @@ class PhpLanguage(object):
     return ['src/php/bin/run_tests.sh']
 
   def make_targets(self):
-    return []
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
@@ -107,6 +120,7 @@ _DEFAULT = ['dbg', 'opt']
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
+    'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
 }
@@ -191,7 +205,7 @@ class TestCache(object):
 def _build_and_run(check_cancelled, newline_on_success, cache):
   """Do one pass of building & running tests."""
   # build latest, sharing cpu between the various makes
-  if not jobset.run(build_steps):
+  if not jobset.run(build_steps, maxjobs=1):
     return 1
 
   # run all the tests
