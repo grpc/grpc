@@ -450,6 +450,7 @@ static void recv_batch(void *user_data, grpc_transport *transport,
                    (int)calld->incoming_message.length,
                    (int)calld->incoming_message_length);
       recv_error(chand, calld, __LINE__, message);
+      gpr_free(message);
     }
     call_op.type = GRPC_RECV_HALF_CLOSE;
     call_op.dir = GRPC_CALL_UP;

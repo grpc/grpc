@@ -81,6 +81,27 @@ void gpr_reverse_bytes(char *str, int len);
    the result is undefined. */
 int gpr_asprintf(char **strp, const char *format, ...);
 
+/* Join a set of strings, returning the resulting string.
+   Total combined length (excluding null terminator) is returned in total_length
+   if it is non-null. */
+char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
+
+/* A vector of strings... for building up a final string one piece at a time */
+typedef struct {
+  char **strs;
+  size_t count;
+  size_t capacity;
+} gpr_strvec;
+
+/* Initialize/destroy */
+void gpr_strvec_init(gpr_strvec *strs);
+void gpr_strvec_destroy(gpr_strvec *strs);
+/* Add a string to a strvec, takes ownership of the string */
+void gpr_strvec_add(gpr_strvec *strs, char *add);
+/* Return a joined string with all added substrings, optionally setting
+   total_length as per gpr_strjoin */
+char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
+
 #ifdef __cplusplus
 }
 #endif
