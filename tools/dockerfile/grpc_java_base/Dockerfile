@@ -29,7 +29,7 @@ RUN echo "    IdentityFile /.ssh/github.rsa" >> $HOME/.ssh/config
 RUN echo 'StrictHostKeyChecking no' >> $HOME/.ssh/config
 
 # Get the protobuf source from GitHub and install it
-RUN git clone --recursive git@github.com:google/protobuf.git /var/local/git/protobuf
+RUN git clone --recursive --branch v2.6.1 git@github.com:google/protobuf.git /var/local/git/protobuf
 RUN cd /var/local/git/protobuf && \
   ./autogen.sh && \
   ./configure --prefix=/usr && \
