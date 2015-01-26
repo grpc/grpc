@@ -82,7 +82,7 @@ class PhpLanguage(object):
     return ['src/php/bin/run_tests.sh']
 
   def make_targets(self):
-    return []
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
