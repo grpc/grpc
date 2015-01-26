@@ -81,6 +81,8 @@ PHP_METHOD(Credentials, createSsl) {
 
   int root_certs_length, private_key_length = 0, cert_chain_length = 0;
 
+  pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
+
   /* "s|s!s! == 1 string, 2 optional nullable strings */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!s!",
                             &pem_root_certs, &root_certs_length,

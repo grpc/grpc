@@ -45,10 +45,10 @@
 #include <string.h>
 
 #include "src/core/surface/event_string.h"
+#include "src/core/support/string.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
 
@@ -56,8 +56,8 @@
 typedef struct metadata {
   size_t count;
   size_t cap;
-  const char **keys;
-  const char **values;
+  char **keys;
+  char **values;
 } metadata;
 
 /* details what we expect to find on a single event - and forms a linked
@@ -70,7 +70,6 @@ typedef struct expectation {
   union {
     grpc_op_error finish_accepted;
     grpc_op_error write_accepted;
-    grpc_op_error invoke_accepted;
     struct {
       const char *method;
       const char *host;
@@ -182,7 +181,7 @@ static void verify_matches(expectation *e, grpc_event *ev) {
       GPR_ASSERT(e->data.write_accepted == ev->data.write_accepted);
       break;
     case GRPC_INVOKE_ACCEPTED:
-      GPR_ASSERT(e->data.invoke_accepted == ev->data.invoke_accepted);
+      abort();
       break;
     case GRPC_SERVER_RPC_NEW:
       GPR_ASSERT(string_equivalent(e->data.server_rpc_new.method,
@@ -270,8 +269,7 @@ static size_t expectation_to_string(char *out, expectation *e) {
       return sprintf(out, "GRPC_WRITE_ACCEPTED result=%d",
                      e->data.write_accepted);
     case GRPC_INVOKE_ACCEPTED:
-      return sprintf(out, "GRPC_INVOKE_ACCEPTED result=%d",
-                     e->data.invoke_accepted);
+      return sprintf(out, "GRPC_INVOKE_ACCEPTED");
     case GRPC_SERVER_RPC_NEW:
       timeout = gpr_time_sub(e->data.server_rpc_new.deadline, gpr_now());
       return sprintf(out, "GRPC_SERVER_RPC_NEW method=%s host=%s timeout=%fsec",
@@ -409,18 +407,13 @@ static metadata *metadata_from_args(va_list args) {
 
     if (md->cap == md->count) {
       md->cap = GPR_MAX(md->cap + 1, md->cap * 3 / 2);
-      md->keys = gpr_realloc(md->keys, sizeof(const char *) * md->cap);
-      md->values = gpr_realloc(md->values, sizeof(const char *) * md->cap);
+      md->keys = gpr_realloc(md->keys, sizeof(char *) * md->cap);
+      md->values = gpr_realloc(md->values, sizeof(char *) * md->cap);
     }
-    md->keys[md->count] = key;
-    md->values[md->count] = value;
+    md->keys[md->count] = (char *)key;
+    md->values[md->count] = (char *)value;
     md->count++;
   }
-}
-
-void cq_expect_invoke_accepted(cq_verifier *v, void *tag,
-                               grpc_op_error result) {
-  add(v, GRPC_INVOKE_ACCEPTED, tag)->data.invoke_accepted = result;
 }
 
 void cq_expect_write_accepted(cq_verifier *v, void *tag, grpc_op_error result) {

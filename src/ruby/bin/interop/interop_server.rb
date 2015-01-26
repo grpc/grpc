@@ -145,8 +145,8 @@ class TestTarget < Grpc::Testing::TestService::Service
   end
 
   def half_duplex_call(reqs)
-    # TODO(temiola): clarify the behaviour of the half_duplex_call, it's not
-    # currently used in any tests
+    # TODO: update with unique behaviour of the half_duplex_call if that's
+    # ever required by any of the tests.
     full_duplex_call(reqs)
   end
 end

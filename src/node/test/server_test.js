@@ -34,7 +34,6 @@
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
 var Server = require('../server');
-var port_picker = require('../port_picker');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
@@ -68,54 +67,49 @@ function echoHandler(stream) {
 describe('echo server', function() {
   it('should echo inputs as responses', function(done) {
     done = multiDone(done, 4);
-    port_picker.nextAvailablePort(function(port) {
-      var server = new Server();
-      server.bind(port);
-      server.register('echo', echoHandler);
-      server.start();
+    var server = new Server();
+    var port_num = server.bind('[::]:0');
+    server.register('echo', echoHandler);
+    server.start();
 
-      var req_text = 'echo test string';
-      var status_text = 'OK';
+    var req_text = 'echo test string';
+    var status_text = 'OK';
 
-      var channel = new grpc.Channel(port);
-      var deadline = new Date();
-      deadline.setSeconds(deadline.getSeconds() + 3);
-      var call = new grpc.Call(channel,
-                               'echo',
-                               deadline);
-      call.startInvoke(function(event) {
-        assert.strictEqual(event.type,
-                           grpc.completionType.INVOKE_ACCEPTED);
-        call.startWrite(
-            new Buffer(req_text),
-            function(event) {
-              assert.strictEqual(event.type,
-                                 grpc.completionType.WRITE_ACCEPTED);
-              assert.strictEqual(event.data, grpc.opError.OK);
-              call.writesDone(function(event) {
-                assert.strictEqual(event.type,
-                                   grpc.completionType.FINISH_ACCEPTED);
-                assert.strictEqual(event.data, grpc.opError.OK);
-                done();
-              });
-            }, 0);
-        call.startRead(function(event) {
-          assert.strictEqual(event.type, grpc.completionType.READ);
-          assert.strictEqual(event.data.toString(), req_text);
-          done();
-        });
-      },function(event) {
-        assert.strictEqual(event.type,
-                           grpc.completionType.CLIENT_METADATA_READ);
-        done();
-      },function(event) {
-        assert.strictEqual(event.type, grpc.completionType.FINISHED);
-        var status = event.data;
-        assert.strictEqual(status.code, grpc.status.OK);
-        assert.strictEqual(status.details, status_text);
-        server.shutdown();
-        done();
-      }, 0);
+    var channel = new grpc.Channel('localhost:' + port_num);
+    var deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 3);
+    var call = new grpc.Call(channel,
+                             'echo',
+                             deadline);
+    call.invoke(function(event) {
+      assert.strictEqual(event.type,
+                         grpc.completionType.CLIENT_METADATA_READ);
+      done();
+    },function(event) {
+      assert.strictEqual(event.type, grpc.completionType.FINISHED);
+      var status = event.data;
+      assert.strictEqual(status.code, grpc.status.OK);
+      assert.strictEqual(status.details, status_text);
+      server.shutdown();
+      done();
+    }, 0);
+    call.startWrite(
+        new Buffer(req_text),
+        function(event) {
+          assert.strictEqual(event.type,
+                             grpc.completionType.WRITE_ACCEPTED);
+          assert.strictEqual(event.data, grpc.opError.OK);
+          call.writesDone(function(event) {
+            assert.strictEqual(event.type,
+                               grpc.completionType.FINISH_ACCEPTED);
+            assert.strictEqual(event.data, grpc.opError.OK);
+            done();
+          });
+        }, 0);
+    call.startRead(function(event) {
+      assert.strictEqual(event.type, grpc.completionType.READ);
+      assert.strictEqual(event.data.toString(), req_text);
+      done();
     });
   });
 });

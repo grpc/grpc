@@ -2,6 +2,14 @@
 # This currently builds C and C++ code.
 
 
+
+# Basic platform detection
+HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
+ifeq ($(SYSTEM),)
+SYSTEM = $(HOST_SYSTEM)
+endif
+
+
 # Configurations
 
 VALID_CONFIG_opt = 1
@@ -115,10 +123,15 @@ LDFLAGS += $(LDFLAGS_$(CONFIG))
 CFLAGS += -std=c89 -pedantic
 CXXFLAGS += -std=c++11
 CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
-LDFLAGS += -g -pthread -fPIC
+LDFLAGS += -g -fPIC
 
 INCLUDES = . include gens
+ifeq ($(SYSTEM),Darwin)
+LIBS = m z
+else
 LIBS = rt m z pthread
+LDFLAGS += -pthread
+endif
 LIBSXX = protobuf
 LIBS_PROTOC = protoc protobuf
 
@@ -155,11 +168,6 @@ HOST_LDLIBS = $(LDLIBS)
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
-
-HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
-ifeq ($(SYSTEM),)
-SYSTEM = $(HOST_SYSTEM)
-endif
 
 ifeq ($(SYSTEM),MINGW32)
 SHARED_EXT = dll
@@ -372,6 +380,8 @@ credentials_test: bins/$(CONFIG)/credentials_test
 end2end_test: bins/$(CONFIG)/end2end_test
 interop_client: bins/$(CONFIG)/interop_client
 interop_server: bins/$(CONFIG)/interop_server
+tips_client: bins/$(CONFIG)/tips_client
+tips_client_test: bins/$(CONFIG)/tips_client_test
 qps_client: bins/$(CONFIG)/qps_client
 qps_server: bins/$(CONFIG)/qps_server
 ruby_plugin: bins/$(CONFIG)/ruby_plugin
@@ -524,8 +534,12 @@ libs/$(CONFIG)/zlib/libz.a:
 	$(Q)cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
 
 libs/$(CONFIG)/openssl/libssl.a:
-	$(E) "[MAKE]    Building openssl"
+	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
+ifeq ($(SYSTEM),Darwin)
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc $(OPENSSL_CONFIG_$(CONFIG)))
+else
 	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+endif
 	$(Q)$(MAKE) -C third_party/openssl clean
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
 	$(Q)mkdir -p libs/$(CONFIG)/openssl
@@ -547,13 +561,13 @@ privatelibs: privatelibs_c privatelibs_cxx
 
 privatelibs_c:  libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a libs/$(CONFIG)/libend2end_test_cancel_after_accept.a libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a libs/$(CONFIG)/libend2end_test_census_simple_request.a libs/$(CONFIG)/libend2end_test_disappearing_server.a libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a libs/$(CONFIG)/libend2end_test_invoke_large_request.a libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a libs/$(CONFIG)/libend2end_test_no_op.a libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_payload.a libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a libs/$(CONFIG)/libend2end_test_simple_delayed_request.a libs/$(CONFIG)/libend2end_test_simple_request.a libs/$(CONFIG)/libend2end_test_thread_stress.a libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a libs/$(CONFIG)/libend2end_certs.a
 
-privatelibs_cxx:  libs/$(CONFIG)/libgrpc++_test_util.a
+privatelibs_cxx:  libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libtips_client_lib.a
 
 buildtests: buildtests_c buildtests_cxx
 
 buildtests_c: privatelibs_c bins/$(CONFIG)/alarm_heap_test bins/$(CONFIG)/alarm_list_test bins/$(CONFIG)/alarm_test bins/$(CONFIG)/alpn_test bins/$(CONFIG)/bin_encoder_test bins/$(CONFIG)/census_hash_table_test bins/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test bins/$(CONFIG)/census_statistics_multiple_writers_test bins/$(CONFIG)/census_statistics_performance_test bins/$(CONFIG)/census_statistics_quick_test bins/$(CONFIG)/census_statistics_small_log_test bins/$(CONFIG)/census_stub_test bins/$(CONFIG)/census_window_stats_test bins/$(CONFIG)/chttp2_status_conversion_test bins/$(CONFIG)/chttp2_stream_encoder_test bins/$(CONFIG)/chttp2_stream_map_test bins/$(CONFIG)/chttp2_transport_end2end_test bins/$(CONFIG)/dualstack_socket_test bins/$(CONFIG)/echo_client bins/$(CONFIG)/echo_server bins/$(CONFIG)/echo_test bins/$(CONFIG)/fd_posix_test bins/$(CONFIG)/fling_client bins/$(CONFIG)/fling_server bins/$(CONFIG)/fling_stream_test bins/$(CONFIG)/fling_test bins/$(CONFIG)/gpr_cancellable_test bins/$(CONFIG)/gpr_cmdline_test bins/$(CONFIG)/gpr_histogram_test bins/$(CONFIG)/gpr_host_port_test bins/$(CONFIG)/gpr_log_test bins/$(CONFIG)/gpr_slice_buffer_test bins/$(CONFIG)/gpr_slice_test bins/$(CONFIG)/gpr_string_test bins/$(CONFIG)/gpr_sync_test bins/$(CONFIG)/gpr_thd_test bins/$(CONFIG)/gpr_time_test bins/$(CONFIG)/gpr_useful_test bins/$(CONFIG)/grpc_base64_test bins/$(CONFIG)/grpc_byte_buffer_reader_test bins/$(CONFIG)/grpc_channel_stack_test bins/$(CONFIG)/grpc_completion_queue_test bins/$(CONFIG)/grpc_credentials_test bins/$(CONFIG)/grpc_json_token_test bins/$(CONFIG)/grpc_stream_op_test bins/$(CONFIG)/hpack_parser_test bins/$(CONFIG)/hpack_table_test bins/$(CONFIG)/httpcli_format_request_test bins/$(CONFIG)/httpcli_parser_test bins/$(CONFIG)/httpcli_test bins/$(CONFIG)/lame_client_test bins/$(CONFIG)/message_compress_test bins/$(CONFIG)/metadata_buffer_test bins/$(CONFIG)/murmur_hash_test bins/$(CONFIG)/no_server_test bins/$(CONFIG)/poll_kick_test bins/$(CONFIG)/resolve_address_test bins/$(CONFIG)/secure_endpoint_test bins/$(CONFIG)/sockaddr_utils_test bins/$(CONFIG)/tcp_client_posix_test bins/$(CONFIG)/tcp_posix_test bins/$(CONFIG)/tcp_server_posix_test bins/$(CONFIG)/time_averaged_stats_test bins/$(CONFIG)/time_test bins/$(CONFIG)/timeout_encoding_test bins/$(CONFIG)/transport_metadata_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test bins/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test bins/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_fake_security_census_simple_request_test bins/$(CONFIG)/chttp2_fake_security_disappearing_server_test bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test bins/$(CONFIG)/chttp2_fake_security_no_op_test bins/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test bins/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test bins/$(CONFIG)/chttp2_fake_security_simple_request_test bins/$(CONFIG)/chttp2_fake_security_thread_stress_test bins/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_fullstack_no_op_test bins/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_fullstack_simple_request_test bins/$(CONFIG)/chttp2_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test bins/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test bins/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_socket_pair_census_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_test bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test bins/$(CONFIG)/chttp2_socket_pair_no_op_test bins/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test bins/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test bins/$(CONFIG)/chttp2_socket_pair_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_thread_stress_test bins/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test
 
-buildtests_cxx: privatelibs_cxx bins/$(CONFIG)/channel_arguments_test bins/$(CONFIG)/credentials_test bins/$(CONFIG)/end2end_test bins/$(CONFIG)/interop_client bins/$(CONFIG)/interop_server bins/$(CONFIG)/qps_client bins/$(CONFIG)/qps_server bins/$(CONFIG)/status_test bins/$(CONFIG)/sync_client_async_server_test bins/$(CONFIG)/thread_pool_test
+buildtests_cxx: privatelibs_cxx bins/$(CONFIG)/channel_arguments_test bins/$(CONFIG)/credentials_test bins/$(CONFIG)/end2end_test bins/$(CONFIG)/interop_client bins/$(CONFIG)/interop_server bins/$(CONFIG)/tips_client bins/$(CONFIG)/tips_client_test bins/$(CONFIG)/qps_client bins/$(CONFIG)/qps_server bins/$(CONFIG)/status_test bins/$(CONFIG)/sync_client_async_server_test bins/$(CONFIG)/thread_pool_test
 
 test: test_c test_cxx
 
@@ -955,6 +969,8 @@ test_cxx: buildtests_cxx
 	$(Q) ./bins/$(CONFIG)/credentials_test || ( echo test credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing end2end_test"
 	$(Q) ./bins/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing tips_client_test"
+	$(Q) ./bins/$(CONFIG)/tips_client_test || ( echo test tips_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_client"
 	$(Q) ./bins/$(CONFIG)/qps_client || ( echo test qps_client failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_server"
@@ -1007,6 +1023,21 @@ strip-shared_c: shared_c
 strip-shared_cxx: shared_cxx
 	$(E) "[STRIP]   Stripping libgrpc++.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc++.$(SHARED_EXT)
+
+gens/examples/tips/empty.pb.cc: examples/tips/empty.proto $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+
+gens/examples/tips/label.pb.cc: examples/tips/label.proto $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+
+gens/examples/tips/pubsub.pb.cc: examples/tips/pubsub.proto $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
 
 gens/test/cpp/interop/empty.pb.cc: test/cpp/interop/empty.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
@@ -1220,7 +1251,11 @@ LIBGPR_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_S
 libs/$(CONFIG)/libgpr.a: $(ZLIB_DEP) $(LIBGPR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgpr.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgpr.a $(LIBGPR_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgpr.a 
+endif
 
 
 
@@ -1296,7 +1331,11 @@ endif
 libs/$(CONFIG)/libgpr_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGPR_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgpr_test_util.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgpr_test_util.a $(LIBGPR_TEST_UTIL_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgpr_test_util.a 
+endif
 
 
 
@@ -1356,7 +1395,8 @@ LIBGRPC_SRC = \
     src/core/iomgr/pollset_kick_posix.c \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
-    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/pollset_windows.c \
+    src/core/iomgr/resolve_address.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -1475,7 +1515,8 @@ src/core/iomgr/iomgr_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_kick_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_multipoller_with_poll_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_posix.c: $(OPENSSL_DEP)
-src/core/iomgr/resolve_address_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/pollset_windows.c: $(OPENSSL_DEP)
+src/core/iomgr/resolve_address.c: $(OPENSSL_DEP)
 src/core/iomgr/sockaddr_utils.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_common_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_linux.c: $(OPENSSL_DEP)
@@ -1532,6 +1573,7 @@ endif
 libs/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)
 	$(Q) rm -rf tmp-merge
 	$(Q) mkdir tmp-merge
@@ -1540,6 +1582,9 @@ libs/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) rm -f libs/$(CONFIG)/libgrpc.a tmp-merge/__.SYMDEF*
 	$(Q) ar rcs libs/$(CONFIG)/libgrpc.a tmp-merge/*
 	$(Q) rm -rf tmp-merge
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc.a 
+endif
 
 
 
@@ -1611,7 +1656,8 @@ objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o:
 objs/$(CONFIG)/src/core/iomgr/pollset_kick_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
-objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
+objs/$(CONFIG)/src/core/iomgr/resolve_address.o: 
 objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
@@ -1709,7 +1755,11 @@ endif
 libs/$(CONFIG)/libgrpc_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc_test_util.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc_test_util.a $(LIBGRPC_TEST_UTIL_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc_test_util.a 
+endif
 
 
 
@@ -1767,7 +1817,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/pollset_kick_posix.c \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
-    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/pollset_windows.c \
+    src/core/iomgr/resolve_address.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -1831,7 +1882,11 @@ LIBGRPC_UNSECURE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename 
 libs/$(CONFIG)/libgrpc_unsecure.a: $(ZLIB_DEP) $(LIBGRPC_UNSECURE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc_unsecure.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc_unsecure.a 
+endif
 
 
 
@@ -1886,7 +1941,8 @@ objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o:
 objs/$(CONFIG)/src/core/iomgr/pollset_kick_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
-objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
+objs/$(CONFIG)/src/core/iomgr/resolve_address.o: 
 objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
@@ -2025,7 +2081,11 @@ endif
 libs/$(CONFIG)/libgrpc++.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc++.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++.a $(LIBGRPC++_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc++.a 
+endif
 
 
 
@@ -2078,9 +2138,9 @@ objs/$(CONFIG)/src/cpp/util/time.o:
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
+    gens/test/cpp/util/messages.pb.cc \
     gens/test/cpp/util/echo.pb.cc \
     gens/test/cpp/util/echo_duplicate.pb.cc \
-    gens/test/cpp/util/messages.pb.cc \
     test/cpp/end2end/async_test_server.cc \
     test/cpp/util/create_test_channel.cc \
 
@@ -2097,9 +2157,9 @@ libs/$(CONFIG)/libgrpc++_test_util.a: openssl_dep_error
 else
 
 ifneq ($(OPENSSL_DEP),)
+test/cpp/util/messages.proto: $(OPENSSL_DEP)
 test/cpp/util/echo.proto: $(OPENSSL_DEP)
 test/cpp/util/echo_duplicate.proto: $(OPENSSL_DEP)
-test/cpp/util/messages.proto: $(OPENSSL_DEP)
 test/cpp/end2end/async_test_server.cc: $(OPENSSL_DEP)
 test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
 endif
@@ -2107,7 +2167,11 @@ endif
 libs/$(CONFIG)/libgrpc++_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC++_TEST_UTIL_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc++_test_util.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc++_test_util.a $(LIBGRPC++_TEST_UTIL_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc++_test_util.a 
+endif
 
 
 
@@ -2124,8 +2188,60 @@ endif
 
 
 
-objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
-objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
+objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
+objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
+
+
+LIBTIPS_CLIENT_LIB_SRC = \
+    gens/examples/tips/label.pb.cc \
+    gens/examples/tips/empty.pb.cc \
+    gens/examples/tips/pubsub.pb.cc \
+    examples/tips/client.cc \
+
+
+LIBTIPS_CLIENT_LIB_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBTIPS_CLIENT_LIB_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
+libs/$(CONFIG)/libtips_client_lib.a: openssl_dep_error
+
+
+else
+
+ifneq ($(OPENSSL_DEP),)
+examples/tips/label.proto: $(OPENSSL_DEP)
+examples/tips/empty.proto: $(OPENSSL_DEP)
+examples/tips/pubsub.proto: $(OPENSSL_DEP)
+examples/tips/client.cc: $(OPENSSL_DEP)
+endif
+
+libs/$(CONFIG)/libtips_client_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBTIPS_CLIENT_LIB_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libtips_client_lib.a
+	$(Q) $(AR) rcs libs/$(CONFIG)/libtips_client_lib.a $(LIBTIPS_CLIENT_LIB_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libtips_client_lib.a 
+endif
+
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBTIPS_CLIENT_LIB_OBJS:.o=.dep)
+endif
+endif
+
+
+
+
+objs/$(CONFIG)/examples/tips/client.o:     gens/examples/tips/label.pb.cc    gens/examples/tips/empty.pb.cc    gens/examples/tips/pubsub.pb.cc
 
 
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
@@ -2150,7 +2266,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a $(LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a 
+endif
 
 
 
@@ -2189,7 +2309,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a 
+endif
 
 
 
@@ -2228,7 +2352,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a 
+endif
 
 
 
@@ -2267,7 +2395,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a 
+endif
 
 
 
@@ -2306,7 +2438,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a 
+endif
 
 
 
@@ -2345,7 +2481,11 @@ endif
 libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a $(LIBEND2END_FIXTURE_CHTTP2_SOCKET_PAIR_ONE_BYTE_AT_A_TIME_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a 
+endif
 
 
 
@@ -2371,7 +2511,11 @@ LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_cancel_after_accept.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_after_accept.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_after_accept.a 
+endif
 
 
 
@@ -2393,7 +2537,11 @@ LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS = $(addprefix objs/$(
 libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a $(LIBEND2END_TEST_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a 
+endif
 
 
 
@@ -2415,7 +2563,11 @@ LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBEND2END_TEST_CANCEL_AFTER_INVOKE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_after_invoke.a 
+endif
 
 
 
@@ -2437,7 +2589,11 @@ LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS = $(addprefix objs/$(CONFIG)/, $(addsu
 libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBEND2END_TEST_CANCEL_BEFORE_INVOKE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_before_invoke.a 
+endif
 
 
 
@@ -2459,7 +2615,11 @@ LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuff
 libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBEND2END_TEST_CANCEL_IN_A_VACUUM_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a 
+endif
 
 
 
@@ -2481,7 +2641,11 @@ LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(adds
 libs/$(CONFIG)/libend2end_test_census_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_census_simple_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBEND2END_TEST_CENSUS_SIMPLE_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_census_simple_request.a 
+endif
 
 
 
@@ -2503,7 +2667,11 @@ LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_disappearing_server.a: $(ZLIB_DEP) $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_disappearing_server.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBEND2END_TEST_DISAPPEARING_SERVER_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_disappearing_server.a 
+endif
 
 
 
@@ -2525,7 +2693,11 @@ LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS = $(addprefix
 libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a: $(ZLIB_DEP) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a 
+endif
 
 
 
@@ -2547,7 +2719,11 @@ LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS = $(addprefix objs/$(CO
 libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a: $(ZLIB_DEP) $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a $(LIBEND2END_TEST_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a 
+endif
 
 
 
@@ -2569,7 +2745,11 @@ LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS = $(addprefix objs/$(CONFIG)/, $(a
 libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a: $(ZLIB_DEP) $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBEND2END_TEST_GRACEFUL_SERVER_SHUTDOWN_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_graceful_server_shutdown.a 
+endif
 
 
 
@@ -2591,7 +2771,11 @@ LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsu
 libs/$(CONFIG)/libend2end_test_invoke_large_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_invoke_large_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBEND2END_TEST_INVOKE_LARGE_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_invoke_large_request.a 
+endif
 
 
 
@@ -2613,7 +2797,11 @@ LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS = $(addprefix objs/$(CONFIG)/, $(add
 libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a: $(ZLIB_DEP) $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBEND2END_TEST_MAX_CONCURRENT_STREAMS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_max_concurrent_streams.a 
+endif
 
 
 
@@ -2635,7 +2823,11 @@ LIBEND2END_TEST_NO_OP_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(base
 libs/$(CONFIG)/libend2end_test_no_op.a: $(ZLIB_DEP) $(LIBEND2END_TEST_NO_OP_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_no_op.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_no_op.a $(LIBEND2END_TEST_NO_OP_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_no_op.a 
+endif
 
 
 
@@ -2657,7 +2849,11 @@ LIBEND2END_TEST_PING_PONG_STREAMING_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuf
 libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a: $(ZLIB_DEP) $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBEND2END_TEST_PING_PONG_STREAMING_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_ping_pong_streaming.a 
+endif
 
 
 
@@ -2679,7 +2875,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS = $(addpr
 libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a 
+endif
 
 
 
@@ -2701,7 +2901,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS = $(addprefix ob
 libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a 
+endif
 
 
 
@@ -2723,7 +2927,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS = $(addprefix objs/$(CONFIG)/
 libs/$(CONFIG)/libend2end_test_request_response_with_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_payload.a 
+endif
 
 
 
@@ -2745,7 +2953,11 @@ LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS = $(add
 libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a: $(ZLIB_DEP) $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a $(LIBEND2END_TEST_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload.a 
+endif
 
 
 
@@ -2767,7 +2979,11 @@ LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(add
 libs/$(CONFIG)/libend2end_test_simple_delayed_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_simple_delayed_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBEND2END_TEST_SIMPLE_DELAYED_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_simple_delayed_request.a 
+endif
 
 
 
@@ -2789,7 +3005,11 @@ LIBEND2END_TEST_SIMPLE_REQUEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .
 libs/$(CONFIG)/libend2end_test_simple_request.a: $(ZLIB_DEP) $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_simple_request.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_simple_request.a $(LIBEND2END_TEST_SIMPLE_REQUEST_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_simple_request.a 
+endif
 
 
 
@@ -2811,7 +3031,11 @@ LIBEND2END_TEST_THREAD_STRESS_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o
 libs/$(CONFIG)/libend2end_test_thread_stress.a: $(ZLIB_DEP) $(LIBEND2END_TEST_THREAD_STRESS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_thread_stress.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_thread_stress.a $(LIBEND2END_TEST_THREAD_STRESS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_thread_stress.a 
+endif
 
 
 
@@ -2833,7 +3057,11 @@ LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS = $(addprefix objs/$(CO
 libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a: $(ZLIB_DEP) $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a $(LIBEND2END_TEST_WRITES_DONE_HANGS_WITH_PENDING_READ_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a 
+endif
 
 
 
@@ -2874,7 +3102,11 @@ endif
 libs/$(CONFIG)/libend2end_certs.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_CERTS_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libend2end_certs.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/libend2end_certs.a $(LIBEND2END_CERTS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libend2end_certs.a 
+endif
 
 
 
@@ -5314,6 +5546,68 @@ deps_interop_server: $(INTEROP_SERVER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(INTEROP_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+TIPS_CLIENT_SRC = \
+    examples/tips/client_main.cc \
+
+TIPS_CLIENT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TIPS_CLIENT_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/tips_client: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/tips_client: $(TIPS_CLIENT_OBJS) libs/$(CONFIG)/libtips_client_lib.a libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TIPS_CLIENT_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libtips_client_lib.a libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/tips_client
+
+endif
+
+objs/$(CONFIG)/examples/tips/client_main.o:  libs/$(CONFIG)/libtips_client_lib.a libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_tips_client: $(TIPS_CLIENT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TIPS_CLIENT_OBJS:.o=.dep)
+endif
+endif
+
+
+TIPS_CLIENT_TEST_SRC = \
+    examples/tips/client_test.cc \
+
+TIPS_CLIENT_TEST_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(TIPS_CLIENT_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+bins/$(CONFIG)/tips_client_test: openssl_dep_error
+
+else
+
+bins/$(CONFIG)/tips_client_test: $(TIPS_CLIENT_TEST_OBJS) libs/$(CONFIG)/libtips_client_lib.a libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TIPS_CLIENT_TEST_OBJS) $(GTEST_LIB) libs/$(CONFIG)/libtips_client_lib.a libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS) $(LDLIBS_SECURE) -o bins/$(CONFIG)/tips_client_test
+
+endif
+
+objs/$(CONFIG)/examples/tips/client_test.o:  libs/$(CONFIG)/libtips_client_lib.a libs/$(CONFIG)/libgrpc++_test_util.a libs/$(CONFIG)/libgrpc_test_util.a libs/$(CONFIG)/libgrpc++.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgpr_test_util.a libs/$(CONFIG)/libgpr.a
+
+deps_tips_client_test: $(TIPS_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TIPS_CLIENT_TEST_OBJS:.o=.dep)
 endif
 endif
 

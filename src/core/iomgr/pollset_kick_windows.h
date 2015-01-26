@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,47 +31,15 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_STRING_H__
-#define __GRPC_SUPPORT_STRING_H__
+#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
+#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
 
-#include <stddef.h>
+#include <grpc/support/sync.h>
 
-#include <grpc/support/port_platform.h>
+struct grpc_kick_pipe_info;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct grpc_pollset_kick_state {
+  int unused;
+} grpc_pollset_kick_state;
 
-/* String utility functions */
-
-/* Returns a copy of src that can be passed to gpr_free().
-   If allocation fails or if src is NULL, returns NULL. */
-char *gpr_strdup(const char *src);
-
-/* flag to include plaintext after a hexdump */
-#define GPR_HEXDUMP_PLAINTEXT 0x00000001
-
-/* Converts array buf, of length len, into a hexadecimal dump. Result should
-   be freed with gpr_free() */
-char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags);
-
-/* Parses an array of bytes into an integer (base 10). Returns 1 on success,
-   0 on failure. */
-int gpr_parse_bytes_to_uint32(const char *data, size_t length,
-                              gpr_uint32 *result);
-
-/* printf to a newly-allocated string.  The set of supported formats may vary
-   between platforms.
-
-   On success, returns the number of bytes printed (excluding the final '\0'),
-   and *strp points to a string which must later be destroyed with gpr_free().
-
-   On error, returns -1 and sets *strp to NULL. If the format string is bad,
-   the result is undefined. */
-int gpr_asprintf(char **strp, const char *format, ...);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __GRPC_SUPPORT_STRING_H__ */
+#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_ */

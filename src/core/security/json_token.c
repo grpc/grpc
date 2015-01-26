@@ -37,9 +37,9 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 
 #include "src/core/security/base64.h"
+#include "src/core/support/string.h"
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>

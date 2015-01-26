@@ -36,9 +36,9 @@
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/security/json_token.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -355,7 +355,6 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_json *token_type = NULL;
     grpc_json *expires_in = NULL;
     grpc_json *ptr;
-    size_t new_access_token_size = 0;
     json = grpc_json_parse_string(null_terminated_body);
     if (json == NULL) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s", null_terminated_body);
@@ -391,12 +390,9 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    new_access_token_size =
-        strlen(token_type->value) + 1 + strlen(access_token->value) + 1;
-    new_access_token = gpr_malloc(new_access_token_size);
-    /* C89 does not have snprintf :(. */
-    sprintf(new_access_token, "%s %s", token_type->value, access_token->value);
-    token_lifetime->tv_sec = strtol(expires_in->value, NULL, 10);
+    gpr_asprintf(&new_access_token, "%s %s", token_type->value,
+                 access_token->value);
+    token_lifetime->tv_sec = expires_in->valueint;
     token_lifetime->tv_nsec = 0;
     if (*token_elem != NULL) grpc_mdelem_unref(*token_elem);
     *token_elem = grpc_mdelem_from_strings(ctx, GRPC_AUTHORIZATION_METADATA_KEY,
@@ -545,9 +541,7 @@ static void service_account_fetch_oauth2(
     response_cb(metadata_req, &response);
     return;
   }
-  body = gpr_malloc(strlen(GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX) +
-                    strlen(jwt) + 1);
-  sprintf(body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
+  gpr_asprintf(&body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = GRPC_SERVICE_ACCOUNT_HOST;
   request.path = GRPC_SERVICE_ACCOUNT_TOKEN_PATH;

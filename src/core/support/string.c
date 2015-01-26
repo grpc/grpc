@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc/support/string.h>
+#include "src/core/support/string.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -121,4 +121,34 @@ int gpr_parse_bytes_to_uint32(const char *buf, size_t len, gpr_uint32 *result) {
 
   *result = out;
   return 1;
+}
+
+void gpr_reverse_bytes(char *str, int len) {
+  char *p1, *p2;
+  for (p1 = str, p2 = str + len - 1; p2 > p1; ++p1, --p2) {
+    char temp = *p1;
+    *p1 = *p2;
+    *p2 = temp;
+  }
+}
+
+int gpr_ltoa(long value, char *string) {
+  int i = 0;
+  int neg = value < 0;
+
+  if (value == 0) {
+    string[0] = '0';
+    string[1] = 0;
+    return 1;
+  }
+
+  if (neg) value = -value;
+  while (value) {
+    string[i++] = '0' + value % 10;
+    value /= 10;
+  }
+  if (neg) string[i++] = '-';
+  gpr_reverse_bytes(string, i);
+  string[i] = 0;
+  return i;
 }
