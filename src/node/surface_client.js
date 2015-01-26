@@ -179,6 +179,11 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         callback(e);
       }
     });
+    stream.on('status', function forwardStatus(status) {
+      if (status.code !== client.status.OK) {
+        callback(status);
+      }
+    });
     return emitter;
   }
   return makeUnaryRequest;
@@ -214,6 +219,11 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
         callback(null, chunk);
       } catch (e) {
         callback(e);
+      }
+    });
+    stream.on('status', function forwardStatus(status) {
+      if (status.code !== client.status.OK) {
+        callback(status);
       }
     });
     return obj_stream;

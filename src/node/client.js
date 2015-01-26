@@ -165,7 +165,7 @@ GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
  * with status CANCELLED.
  */
 GrpcClientStream.prototype.cancel = function() {
-  self._call.cancel();
+  this._call.cancel();
 };
 
 /**
