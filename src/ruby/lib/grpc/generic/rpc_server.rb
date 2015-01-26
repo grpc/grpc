@@ -233,10 +233,6 @@ module Google
       end
 
       def new_active_server_call(call, new_server_rpc)
-        # TODO(temiola): perhaps reuse the main server completion queue here,
-        # but for now, create a new completion queue per call, pending best
-        # practice usage advice from the c core.
-
         # Accept the call.  This is necessary even if a status is to be sent
         # back immediately
         finished_tag = Object.new
@@ -340,7 +336,7 @@ module Google
           @workers.size.times { schedule { throw :exit } }
           @stopped = true
 
-          # TODO(temiola): allow configuration of the keepalive period
+          # TODO: allow configuration of the keepalive period
           keep_alive = 5
           @stop_mutex.synchronize do
             @stop_cond.wait(@stop_mutex, keep_alive) if @workers.size > 0

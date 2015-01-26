@@ -206,13 +206,13 @@ SSLOBJ=$(OBJ_D)\s2_meth.obj \
 	$(OBJ_D)\t1_lib.obj $(OBJ_D)\t1_enc.obj $(OBJ_D)\t1_ext.obj \
 	$(OBJ_D)\d1_meth.obj $(OBJ_D)\d1_srvr.obj $(OBJ_D)\d1_clnt.obj \
 	$(OBJ_D)\d1_lib.obj $(OBJ_D)\d1_pkt.obj $(OBJ_D)\d1_both.obj \
-	$(OBJ_D)\d1_enc.obj $(OBJ_D)\d1_srtp.obj $(OBJ_D)\ssl_lib.obj \
-	$(OBJ_D)\ssl_err2.obj $(OBJ_D)\ssl_cert.obj $(OBJ_D)\ssl_sess.obj \
-	$(OBJ_D)\ssl_ciph.obj $(OBJ_D)\ssl_stat.obj $(OBJ_D)\ssl_rsa.obj \
-	$(OBJ_D)\ssl_asn1.obj $(OBJ_D)\ssl_txt.obj $(OBJ_D)\ssl_algs.obj \
-	$(OBJ_D)\ssl_conf.obj $(OBJ_D)\bio_ssl.obj $(OBJ_D)\ssl_err.obj \
-	$(OBJ_D)\kssl.obj $(OBJ_D)\t1_reneg.obj $(OBJ_D)\tls_srp.obj \
-	$(OBJ_D)\t1_trce.obj $(OBJ_D)\ssl_utst.obj 
+	$(OBJ_D)\d1_srtp.obj $(OBJ_D)\ssl_lib.obj $(OBJ_D)\ssl_err2.obj \
+	$(OBJ_D)\ssl_cert.obj $(OBJ_D)\ssl_sess.obj $(OBJ_D)\ssl_ciph.obj \
+	$(OBJ_D)\ssl_stat.obj $(OBJ_D)\ssl_rsa.obj $(OBJ_D)\ssl_asn1.obj \
+	$(OBJ_D)\ssl_txt.obj $(OBJ_D)\ssl_algs.obj $(OBJ_D)\ssl_conf.obj \
+	$(OBJ_D)\bio_ssl.obj $(OBJ_D)\ssl_err.obj $(OBJ_D)\kssl.obj \
+	$(OBJ_D)\t1_reneg.obj $(OBJ_D)\tls_srp.obj $(OBJ_D)\t1_trce.obj \
+	$(OBJ_D)\ssl_utst.obj 
 
 CRYPTOOBJ=$(OBJ_D)\cryptlib.obj \
 	$(OBJ_D)\mem.obj $(OBJ_D)\mem_dbg.obj $(OBJ_D)\cversion.obj \
@@ -1276,9 +1276,6 @@ $(OBJ_D)\d1_pkt.obj: $(SRC_D)\ssl\d1_pkt.c
 
 $(OBJ_D)\d1_both.obj: $(SRC_D)\ssl\d1_both.c
 	$(CC) /Fo$(OBJ_D)\d1_both.obj  $(LIB_CFLAGS) -c $(SRC_D)\ssl\d1_both.c
-
-$(OBJ_D)\d1_enc.obj: $(SRC_D)\ssl\d1_enc.c
-	$(CC) /Fo$(OBJ_D)\d1_enc.obj  $(LIB_CFLAGS) -c $(SRC_D)\ssl\d1_enc.c
 
 $(OBJ_D)\d1_srtp.obj: $(SRC_D)\ssl\d1_srtp.c
 	$(CC) /Fo$(OBJ_D)\d1_srtp.obj  $(LIB_CFLAGS) -c $(SRC_D)\ssl\d1_srtp.c

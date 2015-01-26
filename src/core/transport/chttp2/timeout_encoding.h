@@ -34,7 +34,10 @@
 #ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H_
 #define __GRPC_INTERNAL_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H_
 
+#include "src/core/support/string.h"
 #include <grpc/support/time.h>
+
+#define GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
 
 /* Encode/decode timeouts to the GRPC over HTTP2 format;
    encoding may round up arbitrarily */

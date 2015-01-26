@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,31 +27,44 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'beefcake'
+"""Utility for serialization in the context of test RPC services."""
 
-module Beefcake
-  # Re-open the beefcake message module to add a static encode
-  #
-  # This is a temporary measure while beefcake is used as the default proto
-  # library for developing grpc ruby.  Once that changes to the official proto
-  # library this can be removed.  It's necessary to allow the update the service
-  # module to assume a static encode method.
-  # TODO(temiola): remove this.
-  module Message
-    # additional mixin module that adds static encode method when include
-    module StaticEncode
-      # encodes o with its instance#encode method
-      def encode(o)
-        o.encode
-      end
-    end
+import collections
 
-    # extend self.included in Beefcake::Message to include StaticEncode
-    def self.included(o)
-      o.extend StaticEncode
-      o.extend Dsl
-      o.extend Decode
-      o.send(:include, Encode)
-    end
-  end
-end
+
+class Serialization(
+    collections.namedtuple(
+        '_Serialization',
+        ['request_serializers',
+         'request_deserializers',
+         'response_serializers',
+         'response_deserializers'])):
+  """An aggregation of serialization behaviors for an RPC service.
+
+  Attributes:
+    request_serializers: A dict from method name to request object serializer
+      behavior.
+    request_deserializers: A dict from method name to request object
+      deserializer behavior.
+    response_serializers: A dict from method name to response object serializer
+      behavior.
+    response_deserializers: A dict from method name to response object
+      deserializer behavior.
+  """
+
+
+def serialization(methods):
+  """Creates a Serialization from a sequences of interfaces.Method objects."""
+  request_serializers = {}
+  request_deserializers = {}
+  response_serializers = {}
+  response_deserializers = {}
+  for method in methods:
+    name = method.name()
+    request_serializers[name] = method.serialize_request
+    request_deserializers[name] = method.deserialize_request
+    response_serializers[name] = method.serialize_response
+    response_deserializers[name] = method.deserialize_response
+  return Serialization(
+      request_serializers, request_deserializers, response_serializers,
+      response_deserializers)

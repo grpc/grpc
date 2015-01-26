@@ -37,9 +37,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 

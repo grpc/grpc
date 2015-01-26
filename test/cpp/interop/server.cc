@@ -192,7 +192,7 @@ class TestServiceImpl : public TestService::Service {
 
 void RunServer() {
   std::ostringstream server_address;
-  server_address << "localhost:" << FLAGS_port;
+  server_address << "0.0.0.0:" << FLAGS_port;
   TestServiceImpl service;
 
   SimpleRequest request;

@@ -45,104 +45,94 @@ util.inherits(GrpcClientStream, Duplex);
  * from stream.Duplex.
  * @constructor
  * @param {grpc.Call} call Call object to proxy
- * @param {object} options Stream options
+ * @param {function(*):Buffer=} serialize Serialization function for requests
+ * @param {function(Buffer):*=} deserialize Deserialization function for
+ *     responses
  */
-function GrpcClientStream(call, options) {
-  Duplex.call(this, options);
+function GrpcClientStream(call, serialize, deserialize) {
+  Duplex.call(this, {objectMode: true});
+  if (!serialize) {
+    serialize = function(value) {
+      return value;
+    };
+  }
+  if (!deserialize) {
+    deserialize = function(value) {
+      return value;
+    };
+  }
   var self = this;
-  // Indicates that we can start reading and have not received a null read
-  var can_read = false;
+  var finished = false;
   // Indicates that a read is currently pending
   var reading = false;
-  // Indicates that we can call startWrite
-  var can_write = false;
   // Indicates that a write is currently pending
   var writing = false;
   this._call = call;
+
   /**
-   * Callback to handle receiving a READ event. Pushes the data from that event
-   * onto the read queue and starts reading again if applicable.
-   * @param {grpc.Event} event The READ event object
+   * Serialize a request value to a buffer. Always maps null to null. Otherwise
+   * uses the provided serialize function
+   * @param {*} value The value to serialize
+   * @return {Buffer} The serialized value
    */
-  function readCallback(event) {
-    var data = event.data;
-    if (self.push(data)) {
-      if (data == null) {
-        // Disable starting to read after null read was received
-        can_read = false;
-        reading = false;
-      } else {
-        call.startRead(readCallback);
-      }
-    } else {
-      // Indicate that reading can be resumed by calling startReading
-      reading = false;
+  this.serialize = function(value) {
+    if (value === null || value === undefined) {
+      return null;
     }
+    return serialize(value);
+  };
+
+  /**
+   * Deserialize a response buffer to a value. Always maps null to null.
+   * Otherwise uses the provided deserialize function.
+   * @param {Buffer} buffer The buffer to deserialize
+   * @return {*} The deserialized value
+   */
+  this.deserialize = function(buffer) {
+    if (buffer === null) {
+      return null;
+    }
+    return deserialize(buffer);
   };
   /**
-   * Initiate a read, which continues until self.push returns false (indicating
-   * that reading should be paused) or data is null (indicating that there is no
-   * more data to read).
+   * Callback to be called when a READ event is received. Pushes the data onto
+   * the read queue and starts reading again if applicable
+   * @param {grpc.Event} event READ event object
    */
-  function startReading() {
-    call.startRead(readCallback);
-  }
-  // TODO(mlumish): possibly change queue implementation due to shift slowness
-  var write_queue = [];
-  /**
-   * Write the next chunk of data in the write queue if there is one. Otherwise
-   * indicate that there is no pending write. When the write succeeds, this
-   * function is called again.
-   */
-  function writeNext() {
-    if (write_queue.length > 0) {
-      writing = true;
-      var next = write_queue.shift();
-      var writeCallback = function(event) {
-        next.callback();
-        writeNext();
-      };
-      call.startWrite(next.chunk, writeCallback, 0);
+  function readCallback(event) {
+    if (finished) {
+      self.push(null);
+      return;
+    }
+    var data = event.data;
+    if (self.push(self.deserialize(data)) && data != null) {
+      self._call.startRead(readCallback);
     } else {
-      writing = false;
+      reading = false;
     }
   }
-  call.startInvoke(function(event) {
-    can_read = true;
-    can_write = true;
-    startReading();
-    writeNext();
-  }, function(event) {
+  call.invoke(function(event) {
     self.emit('metadata', event.data);
   }, function(event) {
+    finished = true;
     self.emit('status', event.data);
   }, 0);
   this.on('finish', function() {
     call.writesDone(function() {});
   });
   /**
-   * Indicate that reads should start, and start them if the INVOKE_ACCEPTED
-   * event has been received.
+   * Start reading if there is not already a pending read. Reading will
+   * continue until self.push returns false (indicating reads should slow
+   * down) or the read data is null (indicating that there is no more data).
    */
-  this._enableRead = function() {
-    if (!reading) {
-      reading = true;
-      if (can_read) {
-        startReading();
+  this.startReading = function() {
+    if (finished) {
+      self.push(null);
+    } else {
+      if (!reading) {
+        reading = true;
+        self._call.startRead(readCallback);
       }
-    }
-  };
-  /**
-   * Push the chunk onto the write queue, and write from the write queue if
-   * there is not a pending write
-   * @param {Buffer} chunk The chunk of data to write
-   * @param {function(Error=)} callback The callback to call when the write
-   *     completes
-   */
-  this._tryWrite = function(chunk, callback) {
-    write_queue.push({chunk: chunk, callback: callback});
-    if (can_write && !writing) {
-      writeNext();
     }
   };
 }
@@ -153,7 +143,7 @@ function GrpcClientStream(call, options) {
  * @param {number} size Ignored
  */
 GrpcClientStream.prototype._read = function(size) {
-  this._enableRead();
+  this.startReading();
 };
 
 /**
@@ -164,13 +154,19 @@ GrpcClientStream.prototype._read = function(size) {
  * @param {function(Error=)} callback Ignored
  */
 GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
-  this._tryWrite(chunk, callback);
+  var self = this;
+  self._call.startWrite(self.serialize(chunk), function(event) {
+    callback();
+  }, 0);
 };
 
 /**
  * Make a request on the channel to the given method with the given arguments
  * @param {grpc.Channel} channel The channel on which to make the request
  * @param {string} method The method to request
+ * @param {function(*):Buffer} serialize Serialization function for requests
+ * @param {function(Buffer):*} deserialize Deserialization function for
+ *     responses
  * @param {array=} metadata Array of metadata key/value pairs to add to the call
  * @param {(number|Date)=} deadline The deadline for processing this request.
  *     Defaults to infinite future.
@@ -178,6 +174,8 @@ GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
  */
 function makeRequest(channel,
                      method,
+                     serialize,
+                     deserialize,
                      metadata,
                      deadline) {
   if (deadline === undefined) {
@@ -187,7 +185,7 @@ function makeRequest(channel,
   if (metadata) {
     call.addMetadata(metadata);
   }
-  return new GrpcClientStream(call);
+  return new GrpcClientStream(call, serialize, deserialize);
 }
 
 /**

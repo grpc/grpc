@@ -35,9 +35,9 @@
 
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/useful.h>
 #include "src/core/transport/transport.h"
 
@@ -141,7 +141,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
                             gpr_slice_sub(slice, cur - beg, end - beg));
         p->state = GRPC_CHTTP2_DATA_FH_0;
         return GRPC_CHTTP2_PARSE_OK;
-      } else if (end - cur > p->frame_size) {
+      } else if ((gpr_uint32)(end - cur) > p->frame_size) {
         state->need_flush_reads = 1;
         grpc_sopb_add_slice(
             &p->incoming_sopb,

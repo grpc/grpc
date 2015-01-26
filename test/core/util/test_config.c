@@ -48,8 +48,10 @@ static int seed(void) { return _getpid(); }
 #endif
 
 void grpc_test_init(int argc, char **argv) {
+#ifndef GPR_WIN32
   /* disable SIGPIPE */
   signal(SIGPIPE, SIG_IGN);
+#endif
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());

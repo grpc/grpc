@@ -157,7 +157,8 @@ function handleHalfDuplex(call) {
  * Get a server object bound to the given port
  * @param {string} port Port to which to bind
  * @param {boolean} tls Indicates that the bound port should use TLS
- * @return {Server} Server object bound to the support
+ * @return {{server: Server, port: number}} Server object bound to the support,
+ *     and port number that the server is bound to
  */
 function getServer(port, tls) {
   // TODO(mlumish): enable TLS functionality
@@ -183,8 +184,8 @@ function getServer(port, tls) {
       halfDuplexCall: handleHalfDuplex
     }
   }, options);
-  server.bind('0.0.0.0:' + port, tls);
-  return server;
+  var port_num = server.bind('0.0.0.0:' + port, tls);
+  return {server: server, port: port_num};
 }
 
 if (require.main === module) {
@@ -192,8 +193,9 @@ if (require.main === module) {
   var argv = parseArgs(process.argv, {
     string: ['port', 'use_tls']
   });
-  var server = getServer(argv.port, argv.use_tls === 'true');
-  server.start();
+  var server_obj = getServer(argv.port, argv.use_tls === 'true');
+  console.log('Server attaching to port ' + argv.port);
+  server_obj.server.listen();
 }
 
 /**

@@ -52,7 +52,8 @@ var Server = grpc.buildServer([math.Math.service]);
  */
 function mathDiv(call, cb) {
   var req = call.request;
-  if (req.divisor == 0) {
+  // Unary + is explicit coersion to integer
+  if (+req.divisor === 0) {
     cb(new Error('cannot divide by zero'));
   }
   cb(null, {
@@ -89,7 +90,7 @@ function mathSum(call, cb) {
   // Here, call is a standard readable Node object Stream
   var sum = 0;
   call.on('data', function(data) {
-    sum += data.num | 0;
+    sum += (+data.num);
   });
   call.on('end', function() {
     cb(null, {num: sum});
@@ -104,7 +105,7 @@ function mathDivMany(stream) {
     Transform.call(this, options);
   }
   DivTransform.prototype._transform = function(div_args, encoding, callback) {
-    if (div_args.divisor == 0) {
+    if (+div_args.divisor === 0) {
       callback(new Error('cannot divide by zero'));
     }
     callback(null, {

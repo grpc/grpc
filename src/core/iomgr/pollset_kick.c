@@ -31,6 +31,9 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/pollset_kick.h"
 
 #include <errno.h>
@@ -147,3 +150,4 @@ void grpc_pollset_kick_global_destroy(void) {
 }
 
 
+#endif  /* GPR_POSIX_SOCKET */
