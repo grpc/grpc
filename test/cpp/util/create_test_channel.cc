@@ -44,7 +44,7 @@ namespace grpc {
 // create channel. Otherwise, connect to server and override hostname if
 // override_hostname is provided.
 // When ssl is not enabled, override_hostname is ignored.
-// Set use_prod_root to true to use the SSL root for connecting google.
+// Set use_prod_root to true to use the SSL root for connecting to google.
 // Otherwise, root for test SSL cert will be used.
 // creds will be used to create a channel when enable_ssl is true.
 // Use examples:
