@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Google.GRPC.Interop;
+using System.Threading;
 using math;
 
 namespace Google.GRPC.Demo
@@ -13,7 +14,7 @@ namespace Google.GRPC.Demo
 			using (Channel channel = new Channel("127.0.0.1:12345"))
 			{
 				byte[] result;
-				Status status = channel.SimpleBlockingCall("/grpc.testing.TestService/EmptyCall", new byte[] { }, out result, Timespec.InfFuture);
+				Status status = channel.SimpleBlockingCall("/grpc.testing.TestService/EmptyCall", new byte[] { }, out result, Timespec.InfFuture, default(CancellationToken));
 
 				Console.WriteLine("result length is " + result.Length + " bytes");
 			}

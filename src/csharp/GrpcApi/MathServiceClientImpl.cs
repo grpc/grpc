@@ -21,20 +21,18 @@ namespace math
 			this.channel = channel;
 		}
 
-		// TODO: how to represent a deadline for simple sync call?
-		// statuses different from OK are thrown as an exception....
+		// TODO: add deadline to the API
 		public DivReply Div(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
-			//TODO: throwing exceptions?
-
-			// TODO: implement cancellation
 			byte[] result;
-			Status status = channel.SimpleBlockingCall("/math.Math/Div", args.ToByteArray(), out result, Timespec.InfFuture);
-			// TODO: only parse data if corresponding status is returned..
-			// TODO: only parse data if result is not null...
+			Status status = channel.SimpleBlockingCall("/math.Math/Div", args.ToByteArray(), out result, Timespec.InfFuture, token);
+			if (status.StatusCode != StatusCode.GRPC_STATUS_OK)
+			{
+				throw new RpcException(status);
+			}
 			return DivReply.CreateBuilder().MergeFrom(result).Build();
 		}
-		// statuses different from OK are thrown as an exception....
+
 		public Task<DivReply> DivAsync(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
 			throw new NotImplementedException();
@@ -50,29 +48,21 @@ namespace math
 			throw new NotImplementedException();
 		}
 
-		public void Fib2(FibArgs args, IObserver<Num> output, CancellationToken token = default(CancellationToken))
+		public async Task<Num> Sum(IObservable<Num> inputs, CancellationToken token = default(CancellationToken))
 		{
-
-
-			// FIXME: this is not going to work with IObservable as a result!!!!
-			// TODO: implement IObservable to wait for the streaming output...
-
-			throw new NotImplementedException();
-		}
-
-		public Task<Num> Sum(out IObserver<Num> inputs, CancellationToken token = default(CancellationToken))
-		{
+			// TODO: cancellation support
 			// TODO: timeout support
+
 			CallContext ctx = channel.StreamingCall("/math.Math/Sum", Timespec.InfFuture);
 
 			ctx.Start(false);
 
-			// or we can subscribe this if inputs is IObservable instead.
-			inputs = new StreamingInputObserver<Num>(ctx);
+			// TODO: dispose the subscription....
+			IDisposable subscription = inputs.Subscribe(new StreamingInputObserver<Num>(ctx));
 
 			// TODO: don't create task, but make this method async. Then we can use using to cleanup the context....
 
-			return Task<Num>.Factory.StartNew(
+			return await Task<Num>.Factory.StartNew(
 				() => {
 				// TODO: the read and wait part is the same as for simple call
 				byte[] response = ctx.Read();
@@ -84,13 +74,14 @@ namespace math
 			);
 		}
 
-		public IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token = default(CancellationToken))
+		public IObservable<DivReply> DivMany(IObservable<DivArgs> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: timeout support
 			CallContext ctx = channel.StreamingCall("/math.Math/DivMany", Timespec.InfFuture);
 			ctx.Start(false);
-			
-			inputs = new StreamingInputObserver<DivArgs>(ctx);
+
+			// TODO: dispose the subscription....
+			inputs.Subscribe(new StreamingInputObserver<DivArgs>(ctx));
 
 			return new StreamingOutputObservable<DivReply>(ctx, (payload) => DivReply.CreateBuilder().MergeFrom(payload).Build());
 		}

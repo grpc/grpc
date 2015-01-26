@@ -9,6 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>GrpcCore</RootNamespace>
     <AssemblyName>GrpcCore</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,6 +36,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamingOutputObservable.cs" />
     <Compile Include="StreamingInputObserver.cs" />
+    <Compile Include="RpcException.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
