@@ -4,29 +4,24 @@ using System.IO;
 
 namespace Google.GRPC.Interop
 {
-	public class ByteBuffer : WrappedNative
+	public class ByteBuffer : WrappedNativeObject<ByteBufferSafeHandle>
 	{
 		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_byte_buffer_create(Slice[] slices, UIntPtr nslices);
+		static extern ByteBufferSafeHandle grpc_byte_buffer_create(Slice[] slices, UIntPtr nslices);
 
 		[DllImport("libgrpc.so")]
-		static extern UIntPtr grpc_byte_buffer_length(IntPtr byteBuffer);
+		static extern UIntPtr grpc_byte_buffer_length(ByteBufferSafeHandle byteBuffer);
 
+		// buffer pointer is IntPtr because we obtain that in the read event.
 		[DllImport("libgrpc.so")]
-		static extern void grpc_byte_buffer_destroy(IntPtr byteBuffer);
+		static extern ByteBufferReaderSafeHandle grpc_byte_buffer_reader_create(IntPtr buffer);
 
-		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_byte_buffer_reader_create(IntPtr buffer);
-		// returns grpc_byte_buffer_reader *
 		// TODO: what is the size of returned int?
 		[DllImport("libgrpc.so")]
-		static extern int grpc_byte_buffer_reader_next(IntPtr reader, IntPtr slice);
+		static extern int grpc_byte_buffer_reader_next(ByteBufferReaderSafeHandle reader, IntPtr slice);
 
-		[DllImport("libgrpc.so")]
-		static extern void grpc_byte_buffer_reader_destroy(IntPtr reader);
-
-		public ByteBuffer(Slice[] slices) : 
-			base(() => grpc_byte_buffer_create(slices, new UIntPtr((ulong) slices.Length)))
+		public ByteBuffer(Slice[] slices)
+			: base(grpc_byte_buffer_create(slices, new UIntPtr((ulong) slices.Length)))
 		{
 			//TODO: we need to unref the slices!!!
 		}
@@ -35,39 +30,25 @@ namespace Google.GRPC.Interop
 		{
 			get
 			{
-				return grpc_byte_buffer_length(RawPointer);
+				return grpc_byte_buffer_length(handle);
 			}
-		}
-
-		protected override void Destroy()
-		{
-			grpc_byte_buffer_destroy(RawPointer);
 		}
 
 		/// <summary>
 		/// Reads all data from the byte buffer (does not take ownership of the byte buffer).
 		/// </summary>
 		public static byte[] ReadByteBuffer(IntPtr byteBuffer)
-		{
+		{	
 			using (MemoryStream ms = new MemoryStream())
 			{
-				IntPtr reader = IntPtr.Zero;
-				try
+				using (ByteBufferReaderSafeHandle reader = grpc_byte_buffer_reader_create(byteBuffer))
 				{
-					reader = grpc_byte_buffer_reader_create(byteBuffer);
 					byte[] sliceData;
 					while ((sliceData = ByteBufferReadNext(reader)) != null)
 					{
 						ms.Write(sliceData, 0, sliceData.Length);
 					}
 					return ms.ToArray();
-				}
-				finally
-				{
-					if (reader != IntPtr.Zero)
-					{
-						grpc_byte_buffer_reader_destroy(reader);
-					}
 				}
 			}
 		}
@@ -76,9 +57,10 @@ namespace Google.GRPC.Interop
 		/// Reads data of next slice from the byte buffer.
 		/// Returns null if there is end of buffer has been reached.
 		/// </summary>
-		/// <param name="byteBufferReader">Byte buffer reader (does not take ownership)</param>
-		private static byte[] ByteBufferReadNext(IntPtr byteBufferReader)
+		private static byte[] ByteBufferReadNext(ByteBufferReaderSafeHandle byteBufferReader)
 		{
+			// TODO: inspect this....
+
 			IntPtr slicePtr = IntPtr.Zero;
 			try
 			{
@@ -110,6 +92,30 @@ namespace Google.GRPC.Interop
 					Marshal.FreeHGlobal(slicePtr);
 				}
 			}
+		}
+	}
+
+	public class ByteBufferSafeHandle : SafeHandleZeroIsInvalid
+	{
+		[DllImport("libgrpc.so")]
+		static extern void grpc_byte_buffer_destroy(IntPtr byteBuffer);
+
+		protected override bool ReleaseHandle()
+		{
+			grpc_byte_buffer_destroy(handle);
+			return true;
+		}
+	}
+
+	public class ByteBufferReaderSafeHandle : SafeHandleZeroIsInvalid
+	{
+		[DllImport("libgrpc.so")]
+		static extern void grpc_byte_buffer_reader_destroy(IntPtr reader);
+
+		protected override bool ReleaseHandle()
+		{
+			grpc_byte_buffer_reader_destroy(handle);
+			return true;
 		}
 	}
 }

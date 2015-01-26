@@ -18,7 +18,7 @@ namespace Google.GRPC.Interop
 		public CallContext(Call call)
 		{
 			this.call = call;
-			this.cq = new CompletionQueue(true);
+			this.cq = new CompletionQueue();
 		}
 
 		~CallContext()

@@ -3,58 +3,54 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Interop
 {
-	public class Call : WrappedNative
+	public class Call : WrappedNativeObject<CallSafeHandle>
 	{
 		const UInt32 GRPC_WRITE_BUFFER_HINT = 1;
 
-		// returns grpc_call*
 		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_channel_create_call(IntPtr channel, string method, string host, Timespec deadline);
+		static extern CallSafeHandle grpc_channel_create_call(ChannelSafeHandle channel, string method, string host, Timespec deadline);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_add_metadata(IntPtr call, IntPtr metadata, UInt32 flags);
+		static extern GRPCCallError grpc_call_add_metadata(CallSafeHandle call, IntPtr metadata, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_start_invoke(IntPtr call, IntPtr completionQueue, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags);
+		static extern GRPCCallError grpc_call_start_invoke(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_accept(IntPtr call, IntPtr completionQueue, IntPtr finishedTag, UInt32 flags);
+		static extern GRPCCallError grpc_call_accept(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, IntPtr finishedTag, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_server_accept(IntPtr call, IntPtr completionQueue, IntPtr finishedTag);
+		static extern GRPCCallError grpc_call_server_accept(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, IntPtr finishedTag);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_server_end_initial_metadata(IntPtr call, UInt32 flags);
+		static extern GRPCCallError grpc_call_server_end_initial_metadata(CallSafeHandle call, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_cancel(IntPtr call);
+		static extern GRPCCallError grpc_call_cancel(CallSafeHandle call);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_cancel_with_status(IntPtr call, StatusCode status, string description);
+		static extern GRPCCallError grpc_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_start_write(IntPtr call, IntPtr byteBuffer, IntPtr tag, UInt32 flags);
+		static extern GRPCCallError grpc_call_start_write(CallSafeHandle call, ByteBufferSafeHandle byteBuffer, IntPtr tag, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_start_write_status(IntPtr call, StatusCode statusCode, string statusMessage, IntPtr tag);
+		static extern GRPCCallError grpc_call_start_write_status(CallSafeHandle call, StatusCode statusCode, string statusMessage, IntPtr tag);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_writes_done(IntPtr call, IntPtr tag);
+		static extern GRPCCallError grpc_call_writes_done(CallSafeHandle call, IntPtr tag);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_start_read(IntPtr call, IntPtr tag);
-
-		[DllImport("libgrpc.so")]
-		static extern void grpc_call_destroy(IntPtr call);
+		static extern GRPCCallError grpc_call_start_read(CallSafeHandle call, IntPtr tag);
 
 		readonly Channel channel;
 		readonly string method;
 		readonly string host;
 		readonly Timespec deadline;
 
-		// TODO: refer to this.method, this.host, this.deadline, otherwise it might be unsafe...
+		// TODO: check if referring to this.method, this.host, this.deadline is safe
 		public Call(Channel channel, string method, string host, Timespec deadline)
-			: base(() => grpc_channel_create_call(channel.RawPointer, method, host, deadline))
+			: base(grpc_channel_create_call(channel.Handle, method, host, deadline))
 		{
 			this.channel = channel;
 			this.method = method;
@@ -65,33 +61,40 @@ namespace Google.GRPC.Interop
 		public GRPCCallError StartInvoke(CompletionQueue cq, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
 		{
 			UInt32 flags = buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
-			return grpc_call_start_invoke(RawPointer, cq.RawPointer, invokeAcceptedTag, metadataReadTag, finishedTag, flags);
+			return grpc_call_start_invoke(handle, cq.Handle, invokeAcceptedTag, metadataReadTag, finishedTag, flags);
 		}
 
 		public GRPCCallError StartWrite(ByteBuffer bb, IntPtr tag, bool buffered)
 		{
 			UInt32 flags = buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
-			return grpc_call_start_write(RawPointer, bb.RawPointer, tag, flags);
+			return grpc_call_start_write(handle, bb.Handle, tag, flags);
 		}
 
 		public GRPCCallError WritesDone(IntPtr tag)
 		{
-			return grpc_call_writes_done(RawPointer, tag);
+			return grpc_call_writes_done(handle, tag);
 		}
 
 		public GRPCCallError StartRead(IntPtr tag)
 		{
-			return grpc_call_start_read(RawPointer, tag);
+			return grpc_call_start_read(handle, tag);
 		}
 
 		public GRPCCallError Cancel()
 		{
-			return grpc_call_cancel(RawPointer);
+			return grpc_call_cancel(handle);
 		}
+	}
 
-		protected override void Destroy()
+	public class CallSafeHandle : SafeHandleZeroIsInvalid
+	{
+		[DllImport("libgrpc.so")]
+		static extern void grpc_call_destroy(IntPtr call);
+
+		protected override bool ReleaseHandle()
 		{
-			grpc_call_destroy(RawPointer);
+			grpc_call_destroy(handle);
+			return true;
 		}
 	}
 }

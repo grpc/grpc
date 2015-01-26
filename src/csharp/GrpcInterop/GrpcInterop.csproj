@@ -40,12 +40,13 @@
     <Compile Include="Event.cs" />
     <Compile Include="Status.cs" />
     <Compile Include="Utils.cs" />
-    <Compile Include="WrappedNative.cs" />
     <Compile Include="CallContext.cs" />
     <Compile Include="StatusCode.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Timespec.cs" />
     <Compile Include="Slice.cs" />
+    <Compile Include="SafeHandleZeroIsInvalid.cs" />
+    <Compile Include="WrappedNativeObject.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
