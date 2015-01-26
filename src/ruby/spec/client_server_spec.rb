@@ -294,7 +294,7 @@ shared_examples 'GRPC metadata delivery works OK' do
       expect_next_event_on(@server_queue, WRITE_ACCEPTED, @server_tag)
 
       # there is the HTTP status metadata, though there should not be any
-      # TODO(temiola): update this with the bug number to be resolved
+      # TODO: update this with the bug number to be resolved
       ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ, @tag)
       expect(ev.result).to eq(':status' => '200')
     end

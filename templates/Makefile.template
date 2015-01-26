@@ -19,6 +19,14 @@
     return 'gens/' + m.group(1) + '.pb.cc'
 %>
 
+
+# Basic platform detection
+HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
+ifeq ($(SYSTEM),)
+SYSTEM = $(HOST_SYSTEM)
+endif
+
+
 # Configurations
 
 VALID_CONFIG_opt = 1
@@ -132,10 +140,15 @@ LDFLAGS += $(LDFLAGS_$(CONFIG))
 CFLAGS += -std=c89 -pedantic
 CXXFLAGS += -std=c++11
 CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
-LDFLAGS += -g -pthread -fPIC
+LDFLAGS += -g -fPIC
 
 INCLUDES = . include gens
+ifeq ($(SYSTEM),Darwin)
+LIBS = m z
+else
 LIBS = rt m z pthread
+LDFLAGS += -pthread
+endif
 LIBSXX = protobuf
 LIBS_PROTOC = protoc protobuf
 
@@ -172,11 +185,6 @@ HOST_LDLIBS = $(LDLIBS)
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
-
-HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
-ifeq ($(SYSTEM),)
-SYSTEM = $(HOST_SYSTEM)
-endif
 
 ifeq ($(SYSTEM),MINGW32)
 SHARED_EXT = dll
@@ -340,8 +348,12 @@ libs/$(CONFIG)/zlib/libz.a:
 	$(Q)cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
 
 libs/$(CONFIG)/openssl/libssl.a:
-	$(E) "[MAKE]    Building openssl"
+	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
+ifeq ($(SYSTEM),Darwin)
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc $(OPENSSL_CONFIG_$(CONFIG)))
+else
 	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+endif
 	$(Q)$(MAKE) -C third_party/openssl clean
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
 	$(Q)mkdir -p libs/$(CONFIG)/openssl
@@ -695,6 +707,7 @@ libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
 % endif
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/lib${lib.name}.a
 	$(Q) $(AR) rcs libs/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 % if lib.get('baselib', False):
 % if lib.get('secure', True):
@@ -707,6 +720,9 @@ libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
 	$(Q) rm -rf tmp-merge
 % endif
 % endif
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/lib${lib.name}.a 
+endif
 
 <%
   if lib.language == 'c++':

@@ -19,9 +19,6 @@
       'link_settings': {
         'libraries': [
           '-lgrpc',
-          '-levent',
-          '-levent_pthreads',
-          '-levent_core',
           '-lrt',
           '-lgpr',
           '-lpthread'

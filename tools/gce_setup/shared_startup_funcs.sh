@@ -367,11 +367,12 @@ grpc_docker_launch_registry() {
 grpc_docker_pull_known() {
   local addr=$1
   [[ -n $addr ]] || addr="0.0.0.0:5000"
-  local known="base cxx php_base php ruby_base ruby java_base java"
+  local known="base cxx php_base php ruby_base ruby java_base java go"
   echo "... pulling docker images for '$known'"
   for i in $known
   do
-    sudo docker pull ${addr}/grpc/$i \
+    echo "<--- grpc/$i"
+    sudo docker pull ${addr}/grpc/$i > /dev/null 2>&1 \
       && sudo docker tag ${addr}/grpc/$i grpc/$i || {
       # log and continue
       echo "docker op error:  could not pull ${addr}/grpc/$i"
@@ -388,7 +389,7 @@ grpc_docker_pull_known() {
 # grpc_dockerfile_install "grpc/image" /var/local/dockerfile/grpc_image
 grpc_dockerfile_install() {
   local image_label=$1
-  [[ -n $image_label ]] || { echo "missing arg: image_label" >&2; return 1; }
+  [[ -n $image_label ]] || { echo "$FUNCNAME: missing arg: image_label" >&2; return 1; }
   local docker_img_url=0.0.0.0:5000/$image_label
 
   local dockerfile_dir=$2
@@ -400,19 +401,30 @@ grpc_dockerfile_install() {
   [[ $cache == "cache=1" ]] && { cache_opt=''; }
   [[ $cache == "cache=true" ]] && { cache_opt=''; }
 
-  [[ -d $dockerfile_dir ]] || { echo "not a valid dir: $dockerfile_dir"; return 1; }
+  [[ -d $dockerfile_dir ]] || { echo "$FUNCNAME: not a valid dir: $dockerfile_dir"; return 1; }
+
+  # For specific base images, sync the ssh key into the .ssh dir in the dockerfile context
+  [[ $image_label == "grpc/base" ]] && {
+    grpc_docker_sync_github_key $dockerfile_dir/.ssh 'base_ssh_key'|| return 1;
+  }
+  [[ $image_label == "grpc/go" ]] && {
+    grpc_docker_sync_github_key $dockerfile_dir/.ssh 'go_ssh_key'|| return 1;
+  }
+  [[ $image_label == "grpc/java_base" ]] && {
+    grpc_docker_sync_github_key $dockerfile_dir/.ssh 'java_base_ssh_key'|| return 1;
+  }
 
   # TODO(temiola): maybe make cache/no-cache a func option?
   sudo docker build $cache_opt -t $image_label $dockerfile_dir || {
-    echo "docker op error: build of $image_label <- $dockerfile_dir"
+    echo "$FUNCNAME:: build of $image_label <- $dockerfile_dir"
     return 1
   }
   sudo docker tag $image_label $docker_img_url || {
-    echo "docker op error: tag of $docker_img_url"
+    echo "$FUNCNAME: failed to tag $docker_img_url as $image_label"
     return 1
   }
   sudo docker push $docker_img_url || {
-    echo "docker op error: push of $docker_img_url"
+    echo "$FUNCNAME: failed to push $docker_img_url"
     return 1
   }
 }
@@ -427,4 +439,35 @@ grpc_dockerfile_install() {
 #   grpc_dockerfile_refresh "grpc/mylabel" /var/local/dockerfile/dir_containing_my_dockerfile
 grpc_dockerfile_refresh() {
   grpc_dockerfile_install "$@"
+}
+
+# grpc_docker_sync_github_key.
+#
+# Copies the docker github key from GCS to the target dir
+#
+# call-seq:
+#   grpc_docker_sync_github_key <target_dir>
+grpc_docker_sync_github_key() {
+  local target_dir=$1
+  [[ -n $target_dir ]] || { echo "$FUNCNAME: missing arg: target_dir" >&2; return 1; }
+
+  local key_file=$2
+  [[ -n $key_file ]] || { echo "$FUNCNAME: missing arg: key_file" >&2; return 1; }
+
+  # determine the admin root; the parent of the dockerfile root,
+  local gs_dockerfile_root=$(load_metadata "attributes/gs_dockerfile_root")
+  [[ -n $gs_dockerfile_root ]] || {
+    echo "$FUNCNAME: missing metadata: gs_dockerfile_root" >&2
+    return 1
+  }
+  local gcs_admin_root=$(dirname $gs_dockerfile_root)
+
+  # cp the file from gsutil to a known local area
+  local gcs_key_path=$gcs_admin_root/github/$key_file
+  local local_key_path=$target_dir/github.rsa
+  mkdir -p $target_dir || {
+    echo "$FUNCNAME: could not create dir: $target_dir" 1>&2
+    return 1
+  }
+  gsutil cp $src $gcs_key_path $local_key_path
 }

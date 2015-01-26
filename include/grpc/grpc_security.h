@@ -54,22 +54,26 @@ void grpc_credentials_release(grpc_credentials *creds);
 /* Creates default credentials. */
 grpc_credentials *grpc_default_credentials_create(void);
 
+/* Object that holds a private key / certificate chain pair in PEM format. */
+typedef struct {
+  /* private_key is the NULL-terminated string containing the PEM encoding of
+     the client's private key. */
+  const char *private_key;
+
+  /* cert_chain is the NULL-terminated string containing the PEM encoding of
+     the client's certificate chain. */
+  const char *cert_chain;
+} grpc_ssl_pem_key_cert_pair;
+
 /* Creates an SSL credentials object.
-   - pem_roots_cert is the buffer containing the PEM encoding of the server
-     root certificates. This parameter cannot be NULL.
-   - pem_roots_cert_size is the size of the associated buffer.
-   - pem_private_key is the buffer containing the PEM encoding of the client's
-     private key. This parameter can be NULL if the client does not have a
-     private key.
-   - pem_private_key_size is the size of the associated buffer.
-   - pem_cert_chain is the buffer containing the PEM encoding of the client's
-     certificate chain. This parameter can be NULL if the client does not have
-     a certificate chain.
-   - pem_cert_chain_size is the size of the associated buffer. */
+   - pem_roots_cert is the NULL-terminated string containing the PEM encoding
+     of the server root certificates. If this parameter is NULL, the default
+     roots will be used.
+   - pem_key_cert_pair is a pointer on the object containing client's private
+     key and certificate chain. This parameter can be NULL if the client does
+     not have such a key/cert pair.  */
 grpc_credentials *grpc_ssl_credentials_create(
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const unsigned char *pem_private_key, size_t pem_private_key_size,
-    const unsigned char *pem_cert_chain, size_t pem_cert_chain_size);
+    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair);
 
 /* Creates a composite credentials object. */
 grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
@@ -130,22 +134,16 @@ typedef struct grpc_server_credentials grpc_server_credentials;
 void grpc_server_credentials_release(grpc_server_credentials *creds);
 
 /* Creates an SSL server_credentials object.
-   TODO(jboeuf): Change the constructor so that it can support multiple
-   key/cert pairs.
-   - pem_roots_cert is the buffer containing the PEM encoding of the server
-     root certificates. This parameter may be NULL if the server does not want
-     the client to be authenticated with SSL.
-   - pem_roots_cert_size is the size of the associated buffer.
-   - pem_private_key is the buffer containing the PEM encoding of the client's
-     private key. This parameter cannot be NULL.
-   - pem_private_key_size is the size of the associated buffer.
-   - pem_cert_chain is the buffer containing the PEM encoding of the client's
-     certificate chain. This parameter cannot be NULL.
-   - pem_cert_chain_size is the size of the associated buffer. */
+   - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
+     the client root certificates. This parameter may be NULL if the server does
+     not want the client to be authenticated with SSL.
+   - pem_key_cert_pairs is an array private key / certificate chains of the
+     server. This parameter cannot be NULL.
+   - num_key_cert_pairs indicates the number of items in the private_key_files
+     and cert_chain_files parameters. It should be at least 1. */
 grpc_server_credentials *grpc_ssl_server_credentials_create(
-    const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const unsigned char *pem_private_key, size_t pem_private_key_size,
-    const unsigned char *pem_cert_chain, size_t pem_cert_chain_size);
+    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs);
 
 /* Creates a fake server transport security credentials object for testing. */
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(

@@ -17,7 +17,7 @@ A typical unix installation won't require any more steps than running:
 You don't need anything else than GNU Make and gcc. Under a Debian or
 Ubuntu system, this should boil down to the following package:
 
-  # apt-get install build-essential
+  # apt-get install build-essential python-all-dev python-virtualenv
 
 
 *******************************

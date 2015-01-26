@@ -77,24 +77,25 @@ PHP_METHOD(Credentials, createDefault) {
  */
 PHP_METHOD(Credentials, createSsl) {
   char *pem_root_certs;
-  char *pem_private_key = NULL;
-  char *pem_cert_chain = NULL;
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
 
   int root_certs_length, private_key_length = 0, cert_chain_length = 0;
+
+  pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
 
   /* "s|s!s! == 1 string, 2 optional nullable strings */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!s!",
                             &pem_root_certs, &root_certs_length,
-                            &pem_private_key, &private_key_length,
-                            &pem_cert_chain, &cert_chain_length) == FAILURE) {
+                            &pem_key_cert_pair.private_key, &private_key_length,
+                            &pem_key_cert_pair.cert_chain,
+                            &cert_chain_length) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "createSsl expects 1 to 3 strings", 1 TSRMLS_CC);
     return;
   }
   grpc_credentials *creds = grpc_ssl_credentials_create(
-      (unsigned char *)pem_root_certs, (size_t)root_certs_length,
-      (unsigned char *)pem_private_key, (size_t)private_key_length,
-      (unsigned char *)pem_cert_chain, (size_t)cert_chain_length);
+      pem_root_certs,
+      pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair);
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }

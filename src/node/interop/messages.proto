@@ -1,0 +1,94 @@
+// Message definitions to be used by integration test service definitions.
+
+syntax = "proto2";
+
+package grpc.testing;
+
+// The type of payload that should be returned.
+enum PayloadType {
+  // Compressable text format.
+  COMPRESSABLE = 0;
+
+  // Uncompressable binary format.
+  UNCOMPRESSABLE = 1;
+
+  // Randomly chosen from all other formats defined in this enum.
+  RANDOM = 2;
+}
+
+// A block of data, to simply increase gRPC message size.
+message Payload {
+  // The type of data in body.
+  optional PayloadType type = 1;
+  // Primary contents of payload.
+  optional bytes body = 2;
+}
+
+// Unary request.
+message SimpleRequest {
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, server randomly chooses one from other formats.
+  optional PayloadType response_type = 1;
+
+  // Desired payload size in the response from the server.
+  // If response_type is COMPRESSABLE, this denotes the size before compression.
+  optional int32 response_size = 2;
+
+  // Optional input payload sent along with the request.
+  optional Payload payload = 3;
+}
+
+// Unary response, as configured by the request.
+message SimpleResponse {
+  // Payload to increase message size.
+  optional Payload payload = 1;
+  // The user the request came from, for verifying authentication was
+  // successful when the client expected it.
+  optional int64 effective_gaia_user_id = 2;
+}
+
+// Client-streaming request.
+message StreamingInputCallRequest {
+  // Optional input payload sent along with the request.
+  optional Payload payload = 1;
+
+  // Not expecting any payload from the response.
+}
+
+// Client-streaming response.
+message StreamingInputCallResponse {
+  // Aggregated size of payloads received from the client.
+  optional int32 aggregated_payload_size = 1;
+}
+
+// Configuration for a particular response.
+message ResponseParameters {
+  // Desired payload sizes in responses from the server.
+  // If response_type is COMPRESSABLE, this denotes the size before compression.
+  optional int32 size = 1;
+
+  // Desired interval between consecutive responses in the response stream in
+  // microseconds.
+  optional int32 interval_us = 2;
+}
+
+// Server-streaming request.
+message StreamingOutputCallRequest {
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, the payload from each response in the stream
+  // might be of different types. This is to simulate a mixed type of payload
+  // stream.
+  optional PayloadType response_type = 1;
+
+  // Configuration for each expected response message.
+  repeated ResponseParameters response_parameters = 2;
+
+  // Optional input payload sent along with the request.
+  optional Payload payload = 3;
+}
+
+// Server-streaming response, as configured by the request and parameters.
+message StreamingOutputCallResponse {
+  // Payload to increase response size.
+  optional Payload payload = 1;
+}

@@ -41,8 +41,10 @@
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/pollset_kick_posix.h"
-#else
-#error "No pollset kick support on platform"
+#endif
+
+#ifdef GPR_WIN32
+#include "src/core/iomgr/pollset_kick_windows.h"
 #endif
 
 void grpc_pollset_kick_global_init(void);

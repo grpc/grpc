@@ -33,6 +33,9 @@
 
 var _ = require('underscore');
 
+var capitalize = require('underscore.string/capitalize');
+var decapitalize = require('underscore.string/decapitalize');
+
 var Server = require('./server.js');
 
 var stream = require('stream');
@@ -332,15 +335,16 @@ function makeServerConstructor(services) {
             method_type = 'unary';
           }
         }
-        if (service_handlers[service_name][method.name] === undefined) {
+        if (service_handlers[service_name][decapitalize(method.name)] ===
+            undefined) {
           throw new Error('Method handler for ' +
               common.fullyQualifiedName(method) + ' not provided.');
         }
         var binary_handler = handler_makers[method_type](
-            service_handlers[service_name][method.name],
+            service_handlers[service_name][decapitalize(method.name)],
             common.serializeCls(method.resolvedResponseType.build()),
             common.deserializeCls(method.resolvedRequestType.build()));
-        server.register(prefix + method.name, binary_handler);
+        server.register(prefix + capitalize(method.name), binary_handler);
       });
     }, this);
   }
@@ -353,8 +357,7 @@ function makeServerConstructor(services) {
    * @return {SurfaceServer} this
    */
   SurfaceServer.prototype.bind = function(port, secure) {
-    this.inner_server.bind(port, secure);
-    return this;
+    return this.inner_server.bind(port, secure);
   };
 
   /**

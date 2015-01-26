@@ -32,7 +32,6 @@
  */
 
 var assert = require('assert');
-var port_picker = require('../port_picker');
 
 var grpc = require('..');
 var math = grpc.load(__dirname + '/../examples/math.proto').math;
@@ -50,18 +49,17 @@ var server = require('../examples/math_server.js');
 
 describe('Math client', function() {
   before(function(done) {
-    port_picker.nextAvailablePort(function(port) {
-      server.bind(port).listen();
-      math_client = new math.Math(port);
-      done();
-    });
+    var port_num = server.bind('0.0.0.0:0');
+    server.listen();
+    math_client = new math.Math('localhost:' + port_num);
+    done();
   });
   after(function() {
     server.shutdown();
   });
   it('should handle a single request', function(done) {
     var arg = {dividend: 7, divisor: 4};
-    var call = math_client.Div(arg, function handleDivResult(err, value) {
+    var call = math_client.div(arg, function handleDivResult(err, value) {
       assert.ifError(err);
       assert.equal(value.quotient, 1);
       assert.equal(value.remainder, 3);
@@ -72,7 +70,7 @@ describe('Math client', function() {
     });
   });
   it('should handle a server streaming request', function(done) {
-    var call = math_client.Fib({limit: 7});
+    var call = math_client.fib({limit: 7});
     var expected_results = [1, 1, 2, 3, 5, 8, 13];
     var next_expected = 0;
     call.on('data', function checkResponse(value) {
@@ -85,7 +83,7 @@ describe('Math client', function() {
     });
   });
   it('should handle a client streaming request', function(done) {
-    var call = math_client.Sum(function handleSumResult(err, value) {
+    var call = math_client.sum(function handleSumResult(err, value) {
       assert.ifError(err);
       assert.equal(value.num, 21);
     });
@@ -103,7 +101,7 @@ describe('Math client', function() {
       assert.equal(value.quotient, index);
       assert.equal(value.remainder, 1);
     }
-    var call = math_client.DivMany();
+    var call = math_client.divMany();
     var response_index = 0;
     call.on('data', function(value) {
       checkResponse(response_index, value);
