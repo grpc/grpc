@@ -9,9 +9,6 @@ namespace Google.GRPC.Interop
 		static extern CompletionQueueSafeHandle grpc_completion_queue_create();
 
 		[DllImport("libgrpc.so")]
-		static extern EventSafeHandle grpc_completion_queue_next(CompletionQueueSafeHandle cq, Timespec deadline);
-
-		[DllImport("libgrpc.so")]
 		static extern EventSafeHandle grpc_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag, Timespec deadline);
 
 		public CompletionQueue() : base(grpc_completion_queue_create())
@@ -26,18 +23,6 @@ namespace Google.GRPC.Interop
 		public Event Pluck(IntPtr tag, Timespec deadline)
 		{
 			using (EventSafeHandle eventHandle = grpc_completion_queue_pluck(handle, tag, deadline))
-			{
-				if (eventHandle.IsInvalid)
-				{
-					return null;
-				}
-				return new Event(eventHandle);
-			}
-		}
-
-		internal static Event Next(CompletionQueueSafeHandle cq, Timespec deadline)
-		{
-			using (EventSafeHandle eventHandle = grpc_completion_queue_next(cq, deadline))
 			{
 				if (eventHandle.IsInvalid)
 				{

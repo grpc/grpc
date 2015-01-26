@@ -5,6 +5,12 @@ namespace Google.GRPC.Interop
 {
     /// <summary>
     /// gpr_slice from grpc/support/slice.h
+    /// 
+    /// Working with slices is a bit tricky, because they need you to call Unref() when
+    /// disposing them, but we can't implement safe disposal using SafeHandle, because
+    /// gpr_slice is a struct rather than a simple pointer.
+    /// Avoid working with Slice if possible (or make sure you understand the
+    /// disposal logic).
     /// </summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct Slice
@@ -24,11 +30,11 @@ namespace Google.GRPC.Interop
 		IntPtr refcount;
 		Data data;
 
-        //TODO: figure out an ellegant way to do Unrefs.
-
-        //TODO: this should basically return true if this != default(Slice).
-        //TODO: rename this!
-        public bool NeedsUnref
+        /// <summary>
+        /// Returns true if this slice is refcounted and therefore needs Unref() call
+        /// when disposed.
+        /// </summary>
+        public bool IsRefcounted
         {
             get
             {
@@ -62,20 +68,23 @@ namespace Google.GRPC.Interop
 			}
 		}
 
-		public static Slice Empty
+		public static Slice CreateEmpty()
 		{
-			get
-			{
-				return gpr_empty_slice();
-			}
+			return gpr_empty_slice();
 		}
 
-		public static Slice FromString(string s)
+        /// <summary>
+        /// You need to call Unref() once done with the slice.
+        /// </summary>
+		public static Slice CreateFromString(string s)
 		{
 			return gpr_slice_from_copied_string(s);
 		}
 
-		public static Slice FromByteArray(byte[] data)
+        /// <summary>
+        /// You need to call Unref() once done with the slice.
+        /// </summary>
+		public static Slice CreateFromByteArray(byte[] data)
 		{
 			return gpr_slice_from_copied_buffer(data, new UIntPtr((ulong)data.Length));
 		}

@@ -23,7 +23,7 @@ namespace Google.GRPC.Interop
         /// </summary>
         internal Event(EventSafeHandle eventHandle)
         {
-            GRPCEvent ev = GRPCEvent.FromIntPtr(eventHandle.DangerousGetHandle());
+            GRPCEvent ev = GRPCEvent.FromHandle(eventHandle);
             this.completionType = ev.type;
             this.tag = ev.tag;
 
@@ -34,7 +34,7 @@ namespace Google.GRPC.Interop
                     break;
 
                 case GRPCCompletionType.GRPC_FINISHED:
-				// TODO: handle details string encoding
+				    // TODO: handle details string encoding
                     finishedStatus = new Status(ev.data.finished.status, Marshal.PtrToStringAnsi(ev.data.finished.details));
                     break;
 
@@ -104,21 +104,19 @@ namespace Google.GRPC.Interop
         [StructLayout(LayoutKind.Sequential)]
         private struct GRPCEvent
         {
-            [DllImport("libgrpc.so")]
-            static extern void grpc_event_finish(IntPtr ev);
-
             public GRPCCompletionType type;
             public IntPtr tag;
             public IntPtr call;
             public Data data;
 
-            public static GRPCEvent FromIntPtr(IntPtr ptr)
-            {
-                return (GRPCEvent)Marshal.PtrToStructure(ptr, typeof(GRPCEvent));
-            }
 
-            public static void EventDestroy(IntPtr ptr) {
-                grpc_event_finish(ptr);
+            /// <summary>
+            /// Returns a view of event represented by event handle.
+            /// If eventHandle is released, the view becomes invalid.
+            /// </summary>
+            public static GRPCEvent FromHandle(EventSafeHandle eventHandle)
+            {
+                return (GRPCEvent)Marshal.PtrToStructure(eventHandle.DangerousGetHandle(), typeof(GRPCEvent));
             }
 
             // to simulate union
@@ -154,7 +152,7 @@ namespace Google.GRPC.Interop
         }
     }
 
-    internal class EventSafeHandle : SafeHandleZeroIsInvalid
+    public class EventSafeHandle : SafeHandleZeroIsInvalid
     {
         [DllImport("libgrpc.so")]
         static extern void grpc_event_finish(IntPtr ev);
