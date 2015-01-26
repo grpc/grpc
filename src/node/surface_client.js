@@ -260,9 +260,8 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeBidiStreamRequest(metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, serialize,
-                                    deserialize, metadata, deadline);
-    return stream;
+    return client.makeRequest(this.channel, method, serialize,
+                              deserialize, metadata, deadline);
   }
   return makeBidiStreamRequest;
 }
