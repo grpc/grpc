@@ -204,7 +204,7 @@ class TestCache(object):
 
 def _build_and_run(check_cancelled, newline_on_success, cache):
   """Do one pass of building & running tests."""
-  # build latest, sharing cpu between the various makes
+  # build latest sequentially
   if not jobset.run(build_steps, maxjobs=1):
     return 1
 
