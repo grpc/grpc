@@ -86,7 +86,6 @@
     <ClInclude Include="..\..\include\grpc\support\port_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\slice.h" />
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />
-    <ClInclude Include="..\..\include\grpc\support\string.h" />
     <ClInclude Include="..\..\include\grpc\support\sync.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_generic.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_posix.h" />
