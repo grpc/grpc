@@ -31,28 +31,52 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_POSIX_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_POSIX_H_
+#include <grpc/support/port_platform.h>
 
-#include <grpc/support/sync.h>
+#ifdef GPR_LINUX_EVENTFD
 
-typedef struct grpc_kick_fd_info {
-  int read_fd;
-  int write_fd;
-  struct grpc_kick_fd_info *next;
-} grpc_kick_fd_info;
+#include <errno.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
-typedef struct grpc_pollset_kick_vtable {
-  void (*create)(struct grpc_kick_fd_info *fd_info);
-  void (*consume)(struct grpc_kick_fd_info *fd_info);
-  void (*kick)(struct grpc_kick_fd_info *fd_info);
-  void (*destroy)(struct grpc_kick_fd_info *fd_info);
-} grpc_pollset_kick_vtable;
+#include "src/core/iomgr/wakeup_fd.h"
+#include <grpc/support/log.h>
 
-typedef struct grpc_pollset_kick_state {
-  gpr_mu mu;
-  int kicked;
-  struct grpc_kick_fd_info *fd_info;
-} grpc_pollset_kick_state;
+static void eventfd_create(grpc_wakeup_fd_info *fd_info) {
+  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  /* TODO(klempner): Handle failure more gracefully */
+  GPR_ASSERT(efd >= 0);
+  fd_info->read_fd = efd;
+  fd_info->write_fd = -1;
+}
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_POSIX_H_ */
+static void eventfd_consume(grpc_wakeup_fd_info *fd_info) {
+  eventfd_t value;
+  int err;
+  do {
+    err = eventfd_read(fd_info->read_fd, &value);
+  } while (err < 0 && errno == EINTR);
+}
+
+static void eventfd_wakeup(grpc_wakeup_fd_info *fd_info) {
+  int err;
+  do {
+    err = eventfd_write(fd_info->read_fd, 1);
+  } while (err < 0 && errno == EINTR);
+}
+
+static void eventfd_destroy(grpc_wakeup_fd_info *fd_info) {
+  close(fd_info->read_fd);
+}
+
+static int eventfd_check_availability(void) {
+  /* TODO(klempner): Actually check if eventfd is available */
+  return 1;
+}
+
+const grpc_wakeup_fd_vtable specialized_wakeup_fd_vtable = {
+  eventfd_create, eventfd_consume, eventfd_wakeup, eventfd_destroy,
+  eventfd_check_availability
+};
+
+#endif /* GPR_LINUX_EVENTFD */

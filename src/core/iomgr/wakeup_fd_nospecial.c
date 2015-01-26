@@ -31,55 +31,23 @@
  *
  */
 
-#include "src/core/iomgr/pollset_kick_eventfd.h"
-
-#ifdef GPR_LINUX_EVENTFD
-#include <errno.h>
-#include <sys/eventfd.h>
-#include <unistd.h>
+/*
+ * This is a dummy file to provide an invalid specialized_wakeup_fd_vtable on
+ * systems without anything better than pipe.
+ */
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
 
-static void eventfd_create(grpc_kick_fd_info *fd_info) {
-  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-  /* TODO(klempner): Handle failure more gracefully */
-  GPR_ASSERT(efd >= 0);
-  fd_info->read_fd = efd;
-  fd_info->write_fd = -1;
+#ifndef GPR_POSIX_HAS_SPECIAL_WAKEUP_FD
+
+#include "src/core/iomgr/wakeup_fd.h"
+
+static int check_availability_invalid(void) {
+  return 0;
 }
 
-static void eventfd_consume(grpc_kick_fd_info *fd_info) {
-  eventfd_t value;
-  int err;
-  do {
-    err = eventfd_read(fd_info->read_fd, &value);
-  } while (err < 0 && errno == EINTR);
-}
-
-static void eventfd_kick(grpc_kick_fd_info *fd_info) {
-  int err;
-  do {
-    err = eventfd_write(fd_info->read_fd, 1);
-  } while (err < 0 && errno == EINTR);
-}
-
-static void eventfd_destroy(grpc_kick_fd_info *fd_info) {
-  close(fd_info->read_fd);
-}
-
-static const grpc_pollset_kick_vtable eventfd_kick_vtable = {
-  eventfd_create, eventfd_consume, eventfd_kick, eventfd_destroy
+const grpc_wakeup_fd_vtable specialized_wakeup_fd_vtable = {
+  NULL, NULL, NULL, NULL, check_availability_invalid
 };
 
-const grpc_pollset_kick_vtable *grpc_pollset_kick_eventfd_init(void) {
-  /* TODO(klempner): Check that eventfd works */
-  return &eventfd_kick_vtable;
-}
-
-#else  /* GPR_LINUX_EVENTFD not defined */
-const grpc_pollset_kick_vtable *grpc_pollset_kick_eventfd_init(void) {
-  return NULL;
-}
-
-#endif /* GPR_LINUX_EVENTFD */
+#endif /* GPR_POSIX_HAS_SPECIAL_WAKEUP */

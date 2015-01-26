@@ -31,48 +31,63 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
-
+/* TODO(klempner): Allow this code to be disabled. */
 #include "src/core/iomgr/wakeup_fd.h"
-#include <grpc/support/sync.h>
 
-/* This is an abstraction around the typical pipe mechanism for waking up a
-   thread sitting in a poll() style call. */
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
 
-typedef struct grpc_kick_fd_info {
-  grpc_wakeup_fd_info wakeup_fd;
-  struct grpc_kick_fd_info *next;
-} grpc_kick_fd_info;
+#include "src/core/iomgr/socket_utils_posix.h"
+#include <grpc/support/log.h>
 
-typedef struct grpc_pollset_kick_state {
-  gpr_mu mu;
-  int kicked;
-  struct grpc_kick_fd_info *fd_info;
-} grpc_pollset_kick_state;
+static void pipe_create(grpc_wakeup_fd_info *fd_info) {
+  int pipefd[2];
+  /* TODO(klempner): Make this nonfatal */
+  GPR_ASSERT(0 == pipe(pipefd));
+  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[0], 1));
+  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[1], 1));
+  fd_info->read_fd = pipefd[0];
+  fd_info->write_fd = pipefd[1];
+}
 
-void grpc_pollset_kick_global_init(void);
-void grpc_pollset_kick_global_destroy(void);
+static void pipe_consume(grpc_wakeup_fd_info *fd_info) {
+  char buf[128];
+  int r;
 
-void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state);
-void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state);
+  for (;;) {
+    r = read(fd_info->read_fd, buf, sizeof(buf));
+    if (r > 0) continue;
+    if (r == 0) return;
+    switch (errno) {
+      case EAGAIN:
+        return;
+      case EINTR:
+        continue;
+      default:
+        gpr_log(GPR_ERROR, "error reading pipe: %s", strerror(errno));
+        return;
+    }
+  }
+}
 
-/* Guarantees a pure posix implementation rather than a specialized one, if
- * applicable. Intended for testing. */
-void grpc_pollset_kick_global_init_fallback_fd(void);
+static void pipe_wakeup(grpc_wakeup_fd_info *fd_info) {
+  char c = 0;
+  while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
+    ;
+}
 
-/* Must be called before entering poll(). If return value is -1, this consumed
-   an existing kick. Otherwise the return value is an FD to add to the poll set.
- */
-int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state);
+static void pipe_destroy(grpc_wakeup_fd_info *fd_info) {
+  close(fd_info->read_fd);
+  close(fd_info->write_fd);
+}
 
-/* Consume an existing kick. Must be called after poll returns that the fd was
-   readable, and before calling kick_post_poll. */
-void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state);
+static int pipe_check_availability(void) {
+  /* Assume that pipes are always available. */
+  return 1;
+}
 
-/* Must be called after pre_poll, and after consume if applicable */
-void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state);
+const grpc_wakeup_fd_vtable pipe_wakeup_fd_vtable = {
+  pipe_create, pipe_consume, pipe_wakeup, pipe_destroy, pipe_check_availability
+};
 
-void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_ */

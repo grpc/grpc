@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
   run_tests();
   grpc_pollset_kick_global_destroy();
 
-  grpc_pollset_kick_global_init_posix();
+  grpc_pollset_kick_global_init_fallback_fd();
   run_tests();
   grpc_pollset_kick_global_destroy();
   return 0;

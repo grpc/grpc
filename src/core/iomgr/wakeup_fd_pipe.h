@@ -31,12 +31,11 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_EVENTFD_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_EVENTFD_H_
+#ifndef __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_
+#define __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_
 
-#include "src/core/iomgr/pollset_kick_posix.h"
+#include "src/core/iomgr/wakeup_fd.h"
 
-/* Tries to enable eventfd support, returns a kick vtable if successful. */
-const grpc_pollset_kick_vtable *grpc_pollset_kick_eventfd_init(void);
+extern grpc_wakeup_fd_vtable pipe_wakeup_fd_vtable;
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_EVENTFD_H_ */
+#endif  /* __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_ */

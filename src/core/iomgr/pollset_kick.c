@@ -31,28 +31,28 @@
  *
  */
 
-#include "src/core/iomgr/pollset_kick_posix.h"
+#include "src/core/iomgr/pollset_kick.h"
 
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/pollset_kick_eventfd.h"
 #include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/iomgr/wakeup_fd.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-/* This implementation is based on a freelist of pipes. */
+/* This implementation is based on a freelist of wakeup fds, with extra logic to
+ * handle kicks while there is no attached fd. */
 
-#define GRPC_MAX_CACHED_PIPES 50
-#define GRPC_PIPE_LOW_WATERMARK 25
+#define GRPC_MAX_CACHED_WFDS 50
+#define GRPC_WFD_LOW_WATERMARK 25
 
 static grpc_kick_fd_info *fd_freelist = NULL;
 static int fd_freelist_count = 0;
 static gpr_mu fd_freelist_mu;
-static const grpc_pollset_kick_vtable *kick_vtable = NULL;
 
-static grpc_kick_fd_info *allocate_pipe(void) {
+static grpc_kick_fd_info *allocate_wfd(void) {
   grpc_kick_fd_info *info;
   gpr_mu_lock(&fd_freelist_mu);
   if (fd_freelist != NULL) {
@@ -61,30 +61,30 @@ static grpc_kick_fd_info *allocate_pipe(void) {
     --fd_freelist_count;
   } else {
     info = gpr_malloc(sizeof(*info));
-    kick_vtable->create(info);
+    grpc_wakeup_fd_create(&info->wakeup_fd);
     info->next = NULL;
   }
   gpr_mu_unlock(&fd_freelist_mu);
   return info;
 }
 
-static void destroy_pipe(void) {
+static void destroy_wfd(void) {
   /* assumes fd_freelist_mu is held */
   grpc_kick_fd_info *current = fd_freelist;
   fd_freelist = fd_freelist->next;
   fd_freelist_count--;
-  kick_vtable->destroy(current);
+  grpc_wakeup_fd_destroy(&current->wakeup_fd);
   gpr_free(current);
 }
 
-static void free_pipe(grpc_kick_fd_info *fd_info) {
+static void free_wfd(grpc_kick_fd_info *fd_info) {
   gpr_mu_lock(&fd_freelist_mu);
   fd_info->next = fd_freelist;
   fd_freelist = fd_info;
   fd_freelist_count++;
-  if (fd_freelist_count > GRPC_MAX_CACHED_PIPES) {
-    while (fd_freelist_count > GRPC_PIPE_LOW_WATERMARK) {
-      destroy_pipe();
+  if (fd_freelist_count > GRPC_MAX_CACHED_WFDS) {
+    while (fd_freelist_count > GRPC_WFD_LOW_WATERMARK) {
+      destroy_wfd();
     }
   }
   gpr_mu_unlock(&fd_freelist_mu);
@@ -108,18 +108,18 @@ int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state) {
     gpr_mu_unlock(&kick_state->mu);
     return -1;
   }
-  kick_state->fd_info = allocate_pipe();
+  kick_state->fd_info = allocate_wfd();
   gpr_mu_unlock(&kick_state->mu);
-  return kick_state->fd_info->read_fd;
+  return GRPC_WAKEUP_FD_FD(&kick_state->fd_info->wakeup_fd);
 }
 
 void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state) {
-  kick_vtable->consume(kick_state->fd_info);
+  grpc_wakeup_fd_consume_wakeup(&kick_state->fd_info->wakeup_fd);
 }
 
 void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state) {
   gpr_mu_lock(&kick_state->mu);
-  free_pipe(kick_state->fd_info);
+  free_wfd(kick_state->fd_info);
   kick_state->fd_info = NULL;
   gpr_mu_unlock(&kick_state->mu);
 }
@@ -127,81 +127,23 @@ void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state) {
 void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state) {
   gpr_mu_lock(&kick_state->mu);
   if (kick_state->fd_info != NULL) {
-    kick_vtable->kick(kick_state->fd_info);
+    grpc_wakeup_fd_wakeup(&kick_state->fd_info->wakeup_fd);
   } else {
     kick_state->kicked = 1;
   }
   gpr_mu_unlock(&kick_state->mu);
 }
 
-static void pipe_create(grpc_kick_fd_info *fd_info) {
-  int pipefd[2];
-  /* TODO(klempner): Make this nonfatal */
-  GPR_ASSERT(0 == pipe(pipefd));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[0], 1));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[1], 1));
-  fd_info->read_fd = pipefd[0];
-  fd_info->write_fd = pipefd[1];
-}
-
-static void pipe_consume(grpc_kick_fd_info *fd_info) {
-  char buf[128];
-  int r;
-
-  for (;;) {
-    r = read(fd_info->read_fd, buf, sizeof(buf));
-    if (r > 0) continue;
-    if (r == 0) return;
-    switch (errno) {
-      case EAGAIN:
-        return;
-      case EINTR:
-        continue;
-      default:
-        gpr_log(GPR_ERROR, "error reading pipe: %s", strerror(errno));
-        return;
-    }
-  }
-}
-
-static void pipe_kick(grpc_kick_fd_info *fd_info) {
-  char c = 0;
-  while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
-    ;
-}
-
-static void pipe_destroy(grpc_kick_fd_info *fd_info) {
-  close(fd_info->read_fd);
-  close(fd_info->write_fd);
-}
-
-static const grpc_pollset_kick_vtable pipe_kick_vtable = {
-  pipe_create, pipe_consume, pipe_kick, pipe_destroy
-};
-
-static void global_init_common(void) {
-  fd_freelist = NULL;
-  gpr_mu_init(&fd_freelist_mu);
-}
-
-void grpc_pollset_kick_global_init_posix(void) {
-  global_init_common();
-  kick_vtable = &pipe_kick_vtable;
+void grpc_pollset_kick_global_init_fallback_fd(void) {
+  grpc_wakeup_fd_global_init_force_fallback();
 }
 
 void grpc_pollset_kick_global_init(void) {
-  global_init_common();
-  kick_vtable = grpc_pollset_kick_eventfd_init();
-  if (kick_vtable == NULL) {
-    kick_vtable = &pipe_kick_vtable;
-  }
+  grpc_wakeup_fd_global_init();
 }
 
 void grpc_pollset_kick_global_destroy(void) {
-  while (fd_freelist != NULL) {
-    destroy_pipe();
-  }
-  gpr_mu_destroy(&fd_freelist_mu);
+  grpc_wakeup_fd_global_destroy();
 }
 
 
