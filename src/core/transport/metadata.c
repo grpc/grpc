@@ -31,6 +31,7 @@
  *
  */
 
+#include "src/core/iomgr/sockaddr.h"
 #include "src/core/transport/metadata.h"
 
 #include <stddef.h>

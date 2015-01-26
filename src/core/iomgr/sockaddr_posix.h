@@ -34,7 +34,11 @@
 #ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_POSIX_H_
 #define __GRPC_INTERNAL_IOMGR_SOCKADDR_POSIX_H_
 
+#include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
+#include <netdb.h>
+#include <unistd.h>
 
 #endif /* __GRPC_INTERNAL_IOMGR_SOCKADDR_POSIX_H_ */

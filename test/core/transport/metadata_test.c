@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 
+#include "src/core/support/string.h"
 #include "src/core/transport/chttp2/bin_encoder.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -99,7 +100,7 @@ static void test_create_metadata(void) {
 
 static void test_create_many_ephemeral_metadata(void) {
   grpc_mdctx *ctx;
-  char buffer[256];
+  char buffer[GPR_LTOA_MIN_BUFSIZE];
   long i;
   size_t mdtab_capacity_before;
 
@@ -109,7 +110,7 @@ static void test_create_many_ephemeral_metadata(void) {
   mdtab_capacity_before = grpc_mdctx_get_mdtab_capacity_test_only(ctx);
   /* add, and immediately delete a bunch of different elements */
   for (i = 0; i < MANY; i++) {
-    sprintf(buffer, "%ld", i);
+    gpr_ltoa(i, buffer);
     grpc_mdelem_unref(grpc_mdelem_from_strings(ctx, "a", buffer));
   }
   /* capacity should not grow */
@@ -120,7 +121,7 @@ static void test_create_many_ephemeral_metadata(void) {
 
 static void test_create_many_persistant_metadata(void) {
   grpc_mdctx *ctx;
-  char buffer[256];
+  char buffer[GPR_LTOA_MIN_BUFSIZE];
   long i;
   grpc_mdelem **created = gpr_malloc(sizeof(grpc_mdelem *) * MANY);
   grpc_mdelem *md;
@@ -130,12 +131,12 @@ static void test_create_many_persistant_metadata(void) {
   ctx = grpc_mdctx_create();
   /* add phase */
   for (i = 0; i < MANY; i++) {
-    sprintf(buffer, "%ld", i);
+    gpr_ltoa(i, buffer);
     created[i] = grpc_mdelem_from_strings(ctx, "a", buffer);
   }
   /* verify phase */
   for (i = 0; i < MANY; i++) {
-    sprintf(buffer, "%ld", i);
+    gpr_ltoa(i, buffer);
     md = grpc_mdelem_from_strings(ctx, "a", buffer);
     GPR_ASSERT(md == created[i]);
     grpc_mdelem_unref(md);
@@ -176,7 +177,7 @@ static void test_spin_creating_the_same_thing(void) {
 static void test_things_stick_around(void) {
   grpc_mdctx *ctx;
   int i, j;
-  char buffer[64];
+  char *buffer;
   int nstrs = 10000;
   grpc_mdstr **strs = gpr_malloc(sizeof(grpc_mdstr *) * nstrs);
   int *shuf = gpr_malloc(sizeof(int) * nstrs);
@@ -187,9 +188,10 @@ static void test_things_stick_around(void) {
   ctx = grpc_mdctx_create();
 
   for (i = 0; i < nstrs; i++) {
-    sprintf(buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", i);
+    gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", i);
     strs[i] = grpc_mdstr_from_string(ctx, buffer);
     shuf[i] = i;
+    gpr_free(buffer);
   }
 
   for (i = 0; i < nstrs; i++) {
@@ -208,10 +210,11 @@ static void test_things_stick_around(void) {
   for (i = 0; i < nstrs; i++) {
     grpc_mdstr_unref(strs[shuf[i]]);
     for (j = i + 1; j < nstrs; j++) {
-      sprintf(buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", shuf[j]);
+      gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", shuf[j]);
       test = grpc_mdstr_from_string(ctx, buffer);
       GPR_ASSERT(test == strs[shuf[j]]);
       grpc_mdstr_unref(test);
+      gpr_free(buffer);
     }
   }
 

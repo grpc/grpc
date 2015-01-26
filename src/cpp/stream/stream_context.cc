@@ -44,14 +44,14 @@
 namespace grpc {
 
 // Client only ctor
-StreamContext::StreamContext(const RpcMethod& method, ClientContext* context,
-                             const google::protobuf::Message* request,
-                             google::protobuf::Message* result)
+StreamContext::StreamContext(const RpcMethod &method, ClientContext *context,
+                             const google::protobuf::Message *request,
+                             google::protobuf::Message *result)
     : is_client_(true),
       method_(&method),
       call_(context->call()),
       cq_(context->cq()),
-      request_(const_cast<google::protobuf::Message*>(request)),
+      request_(const_cast<google::protobuf::Message *>(request)),
       result_(result),
       peer_halfclosed_(false),
       self_halfclosed_(false) {
@@ -59,10 +59,10 @@ StreamContext::StreamContext(const RpcMethod& method, ClientContext* context,
 }
 
 // Server only ctor
-StreamContext::StreamContext(const RpcMethod& method, grpc_call* call,
-                             grpc_completion_queue* cq,
-                             google::protobuf::Message* request,
-                             google::protobuf::Message* result)
+StreamContext::StreamContext(const RpcMethod &method, grpc_call *call,
+                             grpc_completion_queue *cq,
+                             google::protobuf::Message *request,
+                             google::protobuf::Message *result)
     : is_client_(false),
       method_(&method),
       call_(call),
@@ -80,17 +80,9 @@ void StreamContext::Start(bool buffered) {
   if (is_client_) {
     // TODO(yangg) handle metadata send path
     int flag = buffered ? GRPC_WRITE_BUFFER_HINT : 0;
-    grpc_call_error error = grpc_call_start_invoke(call(), cq(), invoke_tag(),
-                                                   client_metadata_read_tag(),
-                                                   finished_tag(), flag);
+    grpc_call_error error = grpc_call_invoke(
+        call(), cq(), client_metadata_read_tag(), finished_tag(), flag);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    grpc_event* invoke_ev =
-        grpc_completion_queue_pluck(cq(), invoke_tag(), gpr_inf_future);
-    if (invoke_ev->data.invoke_accepted != GRPC_OP_OK) {
-      peer_halfclosed_ = true;
-      self_halfclosed_ = true;
-    }
-    grpc_event_finish(invoke_ev);
   } else {
     // TODO(yangg) metadata needs to be added before accept
     // TODO(yangg) correctly set flag to accept
@@ -101,11 +93,11 @@ void StreamContext::Start(bool buffered) {
   }
 }
 
-bool StreamContext::Read(google::protobuf::Message* msg) {
+bool StreamContext::Read(google::protobuf::Message *msg) {
   // TODO(yangg) check peer_halfclosed_ here for possible early return.
   grpc_call_error err = grpc_call_start_read(call(), read_tag());
   GPR_ASSERT(err == GRPC_CALL_OK);
-  grpc_event* read_ev =
+  grpc_event *read_ev =
       grpc_completion_queue_pluck(cq(), read_tag(), gpr_inf_future);
   GPR_ASSERT(read_ev->type == GRPC_READ);
   bool ret = true;
@@ -123,13 +115,13 @@ bool StreamContext::Read(google::protobuf::Message* msg) {
   return ret;
 }
 
-bool StreamContext::Write(const google::protobuf::Message* msg, bool is_last) {
+bool StreamContext::Write(const google::protobuf::Message *msg, bool is_last) {
   // TODO(yangg) check self_halfclosed_ for possible early return.
   bool ret = true;
-  grpc_event* ev = nullptr;
+  grpc_event *ev = nullptr;
 
   if (msg) {
-    grpc_byte_buffer* out_buf = nullptr;
+    grpc_byte_buffer *out_buf = nullptr;
     if (!SerializeProto(*msg, &out_buf)) {
       grpc_call_cancel_with_status(call(), GRPC_STATUS_INVALID_ARGUMENT,
                                    "Failed to serialize outgoing proto");
@@ -163,16 +155,16 @@ bool StreamContext::Write(const google::protobuf::Message* msg, bool is_last) {
   return ret;
 }
 
-const Status& StreamContext::Wait() {
+const Status &StreamContext::Wait() {
   // TODO(yangg) properly support metadata
-  grpc_event* metadata_ev = grpc_completion_queue_pluck(
+  grpc_event *metadata_ev = grpc_completion_queue_pluck(
       cq(), client_metadata_read_tag(), gpr_inf_future);
   grpc_event_finish(metadata_ev);
   // TODO(yangg) protect states by a mutex, including other places.
   if (!self_halfclosed_ || !peer_halfclosed_) {
     Cancel();
   }
-  grpc_event* finish_ev =
+  grpc_event *finish_ev =
       grpc_completion_queue_pluck(cq(), finished_tag(), gpr_inf_future);
   GPR_ASSERT(finish_ev->type == GRPC_FINISHED);
   final_status_ = Status(

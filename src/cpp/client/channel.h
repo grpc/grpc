@@ -48,24 +48,24 @@ class StreamContextInterface;
 
 class Channel : public ChannelInterface {
  public:
-  Channel(const grpc::string& target, const ChannelArguments& args);
-  Channel(const grpc::string& target, const std::unique_ptr<Credentials>& creds,
-          const ChannelArguments& args);
+  Channel(const grpc::string &target, const ChannelArguments &args);
+  Channel(const grpc::string &target, const std::unique_ptr<Credentials> &creds,
+          const ChannelArguments &args);
 
   ~Channel() override;
 
-  Status StartBlockingRpc(const RpcMethod& method, ClientContext* context,
-                          const google::protobuf::Message& request,
-                          google::protobuf::Message* result) override;
+  Status StartBlockingRpc(const RpcMethod &method, ClientContext *context,
+                          const google::protobuf::Message &request,
+                          google::protobuf::Message *result) override;
 
-  StreamContextInterface* CreateStream(
-      const RpcMethod& method, ClientContext* context,
-      const google::protobuf::Message* request,
-      google::protobuf::Message* result) override;
+  StreamContextInterface *CreateStream(
+      const RpcMethod &method, ClientContext *context,
+      const google::protobuf::Message *request,
+      google::protobuf::Message *result) override;
 
  private:
   const grpc::string target_;
-  grpc_channel* c_channel_;  // owned
+  grpc_channel *c_channel_;  // owned
 };
 
 }  // namespace grpc

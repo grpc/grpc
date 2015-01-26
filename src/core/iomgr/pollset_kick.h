@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,47 +31,40 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_STRING_H__
-#define __GRPC_SUPPORT_STRING_H__
-
-#include <stddef.h>
+#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
+#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
 
 #include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
+/* This is an abstraction around the typical pipe mechanism for waking up a
+   thread sitting in a poll() style call. */
+
+#ifdef GPR_POSIX_SOCKET
+#include "src/core/iomgr/pollset_kick_posix.h"
 #endif
 
-/* String utility functions */
-
-/* Returns a copy of src that can be passed to gpr_free().
-   If allocation fails or if src is NULL, returns NULL. */
-char *gpr_strdup(const char *src);
-
-/* flag to include plaintext after a hexdump */
-#define GPR_HEXDUMP_PLAINTEXT 0x00000001
-
-/* Converts array buf, of length len, into a hexadecimal dump. Result should
-   be freed with gpr_free() */
-char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags);
-
-/* Parses an array of bytes into an integer (base 10). Returns 1 on success,
-   0 on failure. */
-int gpr_parse_bytes_to_uint32(const char *data, size_t length,
-                              gpr_uint32 *result);
-
-/* printf to a newly-allocated string.  The set of supported formats may vary
-   between platforms.
-
-   On success, returns the number of bytes printed (excluding the final '\0'),
-   and *strp points to a string which must later be destroyed with gpr_free().
-
-   On error, returns -1 and sets *strp to NULL. If the format string is bad,
-   the result is undefined. */
-int gpr_asprintf(char **strp, const char *format, ...);
-
-#ifdef __cplusplus
-}
+#ifdef GPR_WIN32
+#include "src/core/iomgr/pollset_kick_windows.h"
 #endif
 
-#endif /* __GRPC_SUPPORT_STRING_H__ */
+void grpc_pollset_kick_global_init(void);
+void grpc_pollset_kick_global_destroy(void);
+
+void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state);
+void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state);
+
+/* Must be called before entering poll(). If return value is -1, this consumed
+   an existing kick. Otherwise the return value is an FD to add to the poll set.
+ */
+int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state);
+
+/* Consume an existing kick. Must be called after poll returns that the fd was
+   readable, and before calling kick_post_poll. */
+void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state);
+
+/* Must be called after pre_poll, and after consume if applicable */
+void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state);
+
+void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
+
+#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_ */

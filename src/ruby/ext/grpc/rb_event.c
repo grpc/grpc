@@ -105,10 +105,6 @@ static VALUE grpc_rb_event_type(VALUE self) {
     case GRPC_READ:
       return rb_const_get(rb_mCompletionType, rb_intern("READ"));
 
-    case GRPC_INVOKE_ACCEPTED:
-      grpc_rb_event_result(self); /* validates the result */
-      return rb_const_get(rb_mCompletionType, rb_intern("INVOKE_ACCEPTED"));
-
     case GRPC_WRITE_ACCEPTED:
       grpc_rb_event_result(self); /* validates the result */
       return rb_const_get(rb_mCompletionType, rb_intern("WRITE_ACCEPTED"));
@@ -359,6 +355,8 @@ void Init_google_rpc_event() {
   rb_define_const(rb_mCompletionType, "FINISHED", INT2NUM(GRPC_FINISHED));
   rb_define_const(rb_mCompletionType, "SERVER_RPC_NEW",
                   INT2NUM(GRPC_SERVER_RPC_NEW));
+  rb_define_const(rb_mCompletionType, "SERVER_SHUTDOWN",
+                  INT2NUM(GRPC_SERVER_SHUTDOWN));
   rb_define_const(rb_mCompletionType, "RESERVED",
                   INT2NUM(GRPC_COMPLETION_DO_NOT_USE));
 }

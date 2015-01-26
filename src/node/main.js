@@ -55,7 +55,7 @@ function loadObject(value) {
     return result;
   } else if (value.className === 'Service') {
     return surface_client.makeClientConstructor(value);
-  } else if (value.className === 'Service.Message') {
+  } else if (value.className === 'Message' || value.className === 'Enum') {
     return value.build();
   } else {
     return value;
@@ -96,3 +96,13 @@ exports.status = grpc.status;
  * Call error name to code number mapping
  */
 exports.callError = grpc.callError;
+
+/**
+ * Credentials factories
+ */
+exports.Credentials = grpc.Credentials;
+
+/**
+ * ServerCredentials factories
+ */
+exports.ServerCredentials = grpc.ServerCredentials;

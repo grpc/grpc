@@ -160,8 +160,8 @@ class Jobset(object):
         self._completed += 1
         self._running.remove(job)
       if dead: return
-      message('WAITING', '%d jobs running, %d complete' % (
-          len(self._running), self._completed))
+      message('WAITING', '%d jobs running, %d complete, %d failed' % (
+          len(self._running), self._completed, self._failures))
       time.sleep(0.1)
 
   def cancelled(self):

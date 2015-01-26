@@ -38,10 +38,10 @@
 #include <assert.h>
 
 #include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/string.h>
 #include <grpc/support/useful.h>
 
 typedef enum {
@@ -1212,7 +1212,7 @@ static int huff_nibble(grpc_chttp2_hpack_parser *p, gpr_uint8 nibble) {
   gpr_int16 next = next_sub_tbl[16 * next_tbl[p->huff_state] + nibble];
   if (emit != -1) {
     if (emit >= 0 && emit < 256) {
-      gpr_uint8 c = emit;
+      gpr_uint8 c = (gpr_uint8) emit;
       if (!append_string(p, &c, (&c) + 1)) return 0;
     } else {
       assert(emit == 256);

@@ -107,11 +107,11 @@ class PingPongPlayer
     @msg_sizes.each do |m|
       req_size, resp_size = m
       req = req_cls.new(payload: Payload.new(body: nulls(req_size)),
-                        response_type: COMPRESSABLE,
+                        response_type: :COMPRESSABLE,
                         response_parameters: [p_cls.new(size: resp_size)])
       yield req
       resp = @queue.pop
-      assert_equal(PayloadType.lookup(COMPRESSABLE), resp.payload.type,
+      assert_equal(:COMPRESSABLE, resp.payload.type,
                    'payload type is wrong')
       assert_equal(resp_size, resp.payload.body.length,
                    'payload body #{i} has the wrong length')
@@ -149,11 +149,13 @@ class NamedTests
   # FAILED
   def large_unary
     req_size, wanted_response_size = 271_828, 314_159
-    payload = Payload.new(type: COMPRESSABLE, body: nulls(req_size))
-    req = SimpleRequest.new(response_type: COMPRESSABLE,
+    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
+    req = SimpleRequest.new(response_type: :COMPRESSABLE,
                             response_size: wanted_response_size,
                             payload: payload)
     resp = @stub.unary_call(req)
+    assert_equal(:COMPRESSABLE, resp.payload.type,
+                 'large_unary: payload had the wrong type')
     assert_equal(wanted_response_size, resp.payload.body.length,
                  'large_unary: payload had the wrong length')
     assert_equal(nulls(wanted_response_size), resp.payload.body,
@@ -185,12 +187,12 @@ class NamedTests
   def server_streaming
     msg_sizes = [31_415, 9, 2653, 58_979]
     response_spec = msg_sizes.map { |s| ResponseParameters.new(size: s) }
-    req = StreamingOutputCallRequest.new(response_type: COMPRESSABLE,
+    req = StreamingOutputCallRequest.new(response_type: :COMPRESSABLE,
                                          response_parameters: response_spec)
     resps = @stub.streaming_output_call(req)
     resps.each_with_index do |r, i|
       assert i < msg_sizes.length, 'too many responses'
-      assert_equal(PayloadType.lookup(COMPRESSABLE), r.payload.type,
+      assert_equal(:COMPRESSABLE, r.payload.type,
                    'payload type is wrong')
       assert_equal(msg_sizes[i], r.payload.body.length,
                    'payload body #{i} has the wrong length')
@@ -235,7 +237,7 @@ def parse_options
     end
   end.parse!
 
-  %w(server_host, server_port, test_case).each do |arg|
+  %w(server_host server_port test_case).each do |arg|
     if options[arg].nil?
       fail(OptionParser::MissingArgument, "please specify --#{arg}")
     end

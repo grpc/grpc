@@ -153,7 +153,7 @@ int grpc_rb_call_add_metadata_hash_cb(VALUE key, VALUE val, VALUE call_obj) {
 
   Add metadata elements to the call from a ruby hash, to be sent upon
   invocation. flags is a bit-field combination of the write flags defined
-  above.  REQUIRES: grpc_call_start_invoke/grpc_call_accept have not been
+  above.  REQUIRES: grpc_call_invoke/grpc_call_accept have not been
   called on this call.  Produces no events. */
 
 static VALUE grpc_rb_call_add_metadata(int argc, VALUE *argv, VALUE self) {
@@ -196,16 +196,15 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
 
 /*
   call-seq:
-     call.start_invoke(completion_queue, tag, flags=nil)
+     call.invoke(completion_queue, tag, flags=nil)
 
    Invoke the RPC. Starts sending metadata and request headers on the wire.
    flags is a bit-field combination of the write flags defined above.
    REQUIRES: Can be called at most once per call.
              Can only be called on the client.
    Produces a GRPC_INVOKE_ACCEPTED event on completion. */
-static VALUE grpc_rb_call_start_invoke(int argc, VALUE *argv, VALUE self) {
+static VALUE grpc_rb_call_invoke(int argc, VALUE *argv, VALUE self) {
   VALUE cqueue = Qnil;
-  VALUE invoke_accepted_tag = Qnil;
   VALUE metadata_read_tag = Qnil;
   VALUE finished_tag = Qnil;
   VALUE flags = Qnil;
@@ -213,17 +212,16 @@ static VALUE grpc_rb_call_start_invoke(int argc, VALUE *argv, VALUE self) {
   grpc_completion_queue *cq = NULL;
   grpc_call_error err;
 
-  /* "41" == 4 mandatory args, 1 (flags) is optional */
-  rb_scan_args(argc, argv, "41", &cqueue, &invoke_accepted_tag,
-               &metadata_read_tag, &finished_tag, &flags);
+  /* "31" == 3 mandatory args, 1 (flags) is optional */
+  rb_scan_args(argc, argv, "31", &cqueue, &metadata_read_tag, &finished_tag,
+               &flags);
   if (NIL_P(flags)) {
     flags = UINT2NUM(0); /* Default to no flags */
   }
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_invoke(call, cq, ROBJECT(invoke_accepted_tag),
-                               ROBJECT(metadata_read_tag),
-                               ROBJECT(finished_tag), NUM2UINT(flags));
+  err = grpc_call_invoke(call, cq, ROBJECT(metadata_read_tag),
+                         ROBJECT(finished_tag), NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "invoke failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -519,7 +517,7 @@ void Init_google_rpc_call() {
                    grpc_rb_call_server_end_initial_metadata, -1);
   rb_define_method(rb_cCall, "add_metadata", grpc_rb_call_add_metadata, -1);
   rb_define_method(rb_cCall, "cancel", grpc_rb_call_cancel, 0);
-  rb_define_method(rb_cCall, "start_invoke", grpc_rb_call_start_invoke, -1);
+  rb_define_method(rb_cCall, "invoke", grpc_rb_call_invoke, -1);
   rb_define_method(rb_cCall, "start_read", grpc_rb_call_start_read, 1);
   rb_define_method(rb_cCall, "start_write", grpc_rb_call_start_write, -1);
   rb_define_method(rb_cCall, "start_write_status",

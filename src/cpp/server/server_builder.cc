@@ -40,30 +40,30 @@ namespace grpc {
 
 ServerBuilder::ServerBuilder() : thread_pool_(nullptr) {}
 
-void ServerBuilder::RegisterService(RpcService* service) {
+void ServerBuilder::RegisterService(RpcService *service) {
   services_.push_back(service);
 }
 
-void ServerBuilder::AddPort(const grpc::string& addr) {
+void ServerBuilder::AddPort(const grpc::string &addr) {
   ports_.push_back(addr);
 }
 
 void ServerBuilder::SetCredentials(
-    const std::shared_ptr<ServerCredentials>& creds) {
+    const std::shared_ptr<ServerCredentials> &creds) {
   GPR_ASSERT(!creds_);
   creds_ = creds;
 }
 
-void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
+void ServerBuilder::SetThreadPool(ThreadPoolInterface *thread_pool) {
   thread_pool_ = thread_pool;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<Server> server(new Server(thread_pool_, creds_.get()));
-  for (auto* service : services_) {
+  for (auto *service : services_) {
     server->RegisterService(service);
   }
-  for (auto& port : ports_) {
+  for (auto &port : ports_) {
     server->AddPort(port);
   }
   server->Start();

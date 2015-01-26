@@ -61,7 +61,7 @@ struct grpc_metadata_buffer_impl {
   size_t elem_cap;
 };
 
-#define ELEMS(buffer) ((qelem *)((buffer) + 1))
+#define ELEMS(buffer) ((qelem *)((buffer)+1))
 
 void grpc_metadata_buffer_init(grpc_metadata_buffer *buffer) {
   /* start buffer as NULL, indicating no elements */

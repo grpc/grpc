@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include "src/core/transport/chttp2/frame_data.h"
 #include "src/core/transport/chttp2/frame_goaway.h"
 #include "src/core/transport/chttp2/frame_ping.h"
@@ -53,7 +54,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
-#include <grpc/support/string.h>
 #include <grpc/support/useful.h>
 
 #define DEFAULT_WINDOW 65535
@@ -525,7 +525,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     lock(t);
     s->id = 0;
   } else {
-    s->id = (gpr_uint32)(gpr_uintptr)server_data;
+    s->id = (gpr_uint32)(gpr_uintptr) server_data;
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
@@ -1002,7 +1002,7 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 grpc_chttp2_error_code error_code,
                                 int send_rst) {
   int had_outgoing;
-  char buffer[32];
+  char buffer[GPR_LTOA_MIN_BUFSIZE];
 
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */
@@ -1015,7 +1015,7 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
       s->cancelled = 1;
       stream_list_join(t, s, CANCELLED);
 
-      sprintf(buffer, "%d", local_status);
+      gpr_ltoa(local_status, buffer);
       grpc_sopb_add_metadata(
           &s->parser.incoming_sopb,
           grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));
@@ -1238,7 +1238,7 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
     t->incoming_stream = NULL;
     /* if stream is accepted, we set incoming_stream in init_stream */
     t->cb->accept_stream(t->cb_user_data, &t->base,
-                         (void *)(gpr_uintptr)t->incoming_stream_id);
+                         (void *)(gpr_uintptr) t->incoming_stream_id);
     s = t->incoming_stream;
     if (!s) {
       gpr_log(GPR_ERROR, "stream not accepted");
@@ -1503,8 +1503,9 @@ static int process_read(transport *t, gpr_slice slice) {
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   CLIENT_CONNECT_STRING[t->deframe_state],
-                  (int)(gpr_uint8)CLIENT_CONNECT_STRING[t->deframe_state], *cur,
-                  (int)*cur, t->deframe_state);
+                  (int)(gpr_uint8) CLIENT_CONNECT_STRING[t->deframe_state],
+                  *cur, (int)*cur, t->deframe_state);
+          drop_connection(t);
           return 0;
         }
         ++cur;
@@ -1610,7 +1611,7 @@ static int process_read(transport *t, gpr_slice slice) {
         }
         t->deframe_state = DTS_FH_0;
         return 1;
-      } else if (end - cur > t->incoming_frame_size) {
+      } else if ((gpr_uint32)(end - cur) > t->incoming_frame_size) {
         if (!parse_frame_slice(
                 t, gpr_slice_sub_no_ref(slice, cur - beg,
                                         cur + t->incoming_frame_size - beg),
@@ -1737,9 +1738,9 @@ static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
  */
 
 static const grpc_transport_vtable vtable = {
-    sizeof(stream), init_stream, send_batch, set_allow_window_updates,
-    add_to_pollset, destroy_stream, abort_stream, goaway, close_transport,
-    send_ping, destroy_transport};
+    sizeof(stream),  init_stream,    send_batch,       set_allow_window_updates,
+    add_to_pollset,  destroy_stream, abort_stream,     goaway,
+    close_transport, send_ping,      destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,

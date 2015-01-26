@@ -49,7 +49,7 @@ class ThreadPool : public ThreadPoolInterface {
   explicit ThreadPool(int num_threads);
   ~ThreadPool();
 
-  void ScheduleCallback(const std::function<void()>& callback) final;
+  void ScheduleCallback(const std::function<void()> &callback) final;
 
  private:
   std::mutex mu_;

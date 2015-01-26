@@ -37,9 +37,9 @@
 
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/security/json_token.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 #include <openssl/rsa.h>
@@ -48,7 +48,7 @@ static const char test_iam_authorization_token[] = "blahblahblhahb";
 static const char test_iam_authority_selector[] = "respectmyauthoritah";
 static const char test_oauth2_bearer_token[] =
     "Bearer blaaslkdjfaslkdfasdsfasf";
-static const unsigned char test_root_cert[] = {0xDE, 0xAD, 0xBE, 0xEF};
+static const char test_root_cert[] = "I am the root!";
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
@@ -275,8 +275,8 @@ static void check_ssl_oauth2_composite_metadata(
 }
 
 static void test_ssl_oauth2_composite_creds(void) {
-  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(
-      test_root_cert, sizeof(test_root_cert), NULL, 0, NULL, 0);
+  grpc_credentials *ssl_creds =
+      grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds =
       grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);
@@ -312,8 +312,8 @@ static void check_ssl_oauth2_iam_composite_metadata(
 }
 
 static void test_ssl_oauth2_iam_composite_creds(void) {
-  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(
-      test_root_cert, sizeof(test_root_cert), NULL, 0, NULL, 0);
+  grpc_credentials *ssl_creds =
+      grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds =
       grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);
@@ -498,10 +498,8 @@ static void validate_service_account_http_request(
   char *expected_body = NULL;
   GPR_ASSERT(body != NULL);
   GPR_ASSERT(body_size != 0);
-  expected_body = gpr_malloc(strlen(expected_service_account_http_body_prefix) +
-                             strlen(test_signed_jwt) + 1);
-  sprintf(expected_body, "%s%s", expected_service_account_http_body_prefix,
-          test_signed_jwt);
+  gpr_asprintf(&expected_body, "%s%s",
+               expected_service_account_http_body_prefix, test_signed_jwt);
   GPR_ASSERT(strlen(expected_body) == body_size);
   GPR_ASSERT(!memcmp(expected_body, body, body_size));
   gpr_free(expected_body);

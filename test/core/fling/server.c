@@ -32,6 +32,7 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include <signal.h>
 #include <stdio.h>
@@ -47,6 +48,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "test/core/util/port.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
@@ -98,8 +100,18 @@ int main(int argc, char **argv) {
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
   cq = grpc_completion_queue_create();
-  server = grpc_server_create(cq, NULL);
-  GPR_ASSERT(grpc_server_add_http2_port(server, addr));
+  if (secure) {
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
+                                                    test_server1_cert};
+    grpc_server_credentials *ssl_creds =
+        grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
+    server = grpc_secure_server_create(ssl_creds, cq, NULL);
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
+    grpc_server_credentials_release(ssl_creds);
+  } else {
+    server = grpc_server_create(cq, NULL);
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr));
+  }
   grpc_server_start(server);
 
   gpr_free(addr_buf);

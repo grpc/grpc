@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,22 +31,15 @@
  *
  */
 
-var net = require('net');
+#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
+#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
 
-/**
- * Finds a free port that a server can bind to, in the format
- * "address:port"
- * @param {function(string)} cb The callback that should execute when the port
- *     is available
- */
-function nextAvailablePort(cb) {
-  var server = net.createServer();
-  server.listen(function() {
-    var address = server.address();
-    server.close(function() {
-      cb(address.address + ':' + address.port.toString());
-    });
-  });
-}
+#include <grpc/support/sync.h>
 
-exports.nextAvailablePort = nextAvailablePort;
+struct grpc_kick_pipe_info;
+
+typedef struct grpc_pollset_kick_state {
+  int unused;
+} grpc_pollset_kick_state;
+
+#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_ */

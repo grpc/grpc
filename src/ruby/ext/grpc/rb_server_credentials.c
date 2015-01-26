@@ -145,8 +145,10 @@ static ID id_pem_cert_chain;
 static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
                                              VALUE pem_private_key,
                                              VALUE pem_cert_chain) {
+  /* TODO support multiple key cert pairs in the ruby API. */
   grpc_rb_server_credentials *wrapper = NULL;
   grpc_server_credentials *creds = NULL;
+  grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
   Data_Get_Struct(self, grpc_rb_server_credentials, wrapper);
   if (pem_cert_chain == Qnil) {
     rb_raise(rb_eRuntimeError,
@@ -157,15 +159,13 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
              "could not create a server credential: nil pem_private_key");
     return Qnil;
   }
+  key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
+  key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
   if (pem_root_certs == Qnil) {
-    creds = grpc_ssl_server_credentials_create(
-        NULL, 0, RSTRING_PTR(pem_private_key), RSTRING_LEN(pem_private_key),
-        RSTRING_PTR(pem_cert_chain), RSTRING_LEN(pem_cert_chain));
+    creds = grpc_ssl_server_credentials_create(NULL, &key_cert_pair, 1);
   } else {
-    creds = grpc_ssl_server_credentials_create(
-        RSTRING_PTR(pem_root_certs), RSTRING_LEN(pem_root_certs),
-        RSTRING_PTR(pem_private_key), RSTRING_LEN(pem_private_key),
-        RSTRING_PTR(pem_cert_chain), RSTRING_LEN(pem_cert_chain));
+    creds = grpc_ssl_server_credentials_create(RSTRING_PTR(pem_root_certs),
+                                               &key_cert_pair, 1);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");

@@ -35,9 +35,9 @@
 
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 
 static int all_ok = 1;
 

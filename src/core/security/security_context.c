@@ -39,12 +39,12 @@
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_endpoint.h"
+#include "src/core/support/string.h"
 #include "src/core/surface/lame_client.h"
 #include "src/core/transport/chttp2/alpn.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
-#include <grpc/support/string.h>
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
@@ -382,7 +382,7 @@ error:
 }
 
 grpc_security_status grpc_ssl_server_security_context_create(
-    const grpc_ssl_config *config, grpc_security_context **ctx) {
+    const grpc_ssl_server_config *config, grpc_security_context **ctx) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const unsigned char **alpn_protocol_strings =
       gpr_malloc(sizeof(const char *) * num_alpn_protocols);
@@ -399,8 +399,7 @@ grpc_security_status grpc_ssl_server_security_context_create(
         strlen(grpc_chttp2_get_alpn_version_index(i));
   }
 
-  if (config == NULL || config->pem_private_key == NULL ||
-      config->pem_cert_chain == NULL) {
+  if (config == NULL || config->num_key_cert_pairs == 0) {
     gpr_log(GPR_ERROR, "An SSL server needs a key and a cert.");
     goto error;
   }
@@ -410,10 +409,10 @@ grpc_security_status grpc_ssl_server_security_context_create(
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &ssl_server_vtable;
   result = tsi_create_ssl_server_handshaker_factory(
-      (const unsigned char **)&config->pem_private_key,
-      &config->pem_private_key_size,
-      (const unsigned char **)&config->pem_cert_chain,
-      &config->pem_cert_chain_size, 1,
+      (const unsigned char **)config->pem_private_keys,
+      config->pem_private_keys_sizes,
+      (const unsigned char **)config->pem_cert_chains,
+      config->pem_cert_chains_sizes, config->num_key_cert_pairs,
       config->pem_root_certs, config->pem_root_certs_size,
       GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
       alpn_protocol_string_lengths, num_alpn_protocols, &c->handshaker_factory);

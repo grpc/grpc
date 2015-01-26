@@ -573,10 +573,11 @@ static tsi_result build_alpn_protocol_name_list(
 
 /* --- tsi_frame_protector methods implementation. ---*/
 
-static tsi_result ssl_protector_protect(
-    tsi_frame_protector* self, const unsigned char* unprotected_bytes,
-    size_t* unprotected_bytes_size, unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size) {
+static tsi_result ssl_protector_protect(tsi_frame_protector* self,
+                                        const unsigned char* unprotected_bytes,
+                                        size_t* unprotected_bytes_size,
+                                        unsigned char* protected_output_frames,
+                                        size_t* protected_output_frames_size) {
   tsi_ssl_frame_protector* impl = (tsi_ssl_frame_protector*)self;
   int read_from_ssl;
   size_t available;
@@ -707,8 +708,9 @@ static const tsi_frame_protector_vtable frame_protector_vtable = {
 
 /* --- tsi_handshaker methods implementation. ---*/
 
-static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
-    tsi_handshaker* self, unsigned char* bytes, size_t* bytes_size) {
+static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
+                                                           unsigned char* bytes,
+                                                           size_t* bytes_size) {
   tsi_ssl_handshaker* impl = (tsi_ssl_handshaker*)self;
   int bytes_read_from_ssl = 0;
   if (bytes == NULL || bytes_size == NULL || *bytes_size == 0 ||
@@ -871,8 +873,10 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
 
 static const tsi_handshaker_vtable handshaker_vtable = {
     ssl_handshaker_get_bytes_to_send_to_peer,
-    ssl_handshaker_process_bytes_from_peer, ssl_handshaker_get_result,
-    ssl_handshaker_extract_peer, ssl_handshaker_create_frame_protector,
+    ssl_handshaker_process_bytes_from_peer,
+    ssl_handshaker_get_result,
+    ssl_handshaker_extract_peer,
+    ssl_handshaker_create_frame_protector,
     ssl_handshaker_destroy,
 };
 
@@ -1157,8 +1161,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
 
 tsi_result tsi_create_ssl_server_handshaker_factory(
     const unsigned char** pem_private_keys,
-    const size_t* pem_private_keys_sizes,
-    const unsigned char** pem_cert_chains,
+    const size_t* pem_private_keys_sizes, const unsigned char** pem_cert_chains,
     const size_t* pem_cert_chains_sizes, size_t key_cert_pair_count,
     const unsigned char* pem_client_root_certs,
     size_t pem_client_root_certs_size, const char* cipher_list,
