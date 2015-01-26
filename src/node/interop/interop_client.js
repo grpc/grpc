@@ -183,7 +183,7 @@ function pingPong(client, done) {
     assert.equal(response.payload.body.limit - response.payload.body.offset,
                  response_sizes[index]);
     index += 1;
-    if (index == 4) {
+    if (index === 4) {
       call.end();
     } else {
       call.write({
