@@ -655,7 +655,7 @@ grpc_interop_gen_go_cmd() {
 grpc_interop_gen_java_cmd() {
     local cmd_prefix="sudo docker run grpc/java";
     local test_script="/var/local/git/grpc-java/run-test-client.sh";
-    local test_script+=" --transport=NETTY_TLS --grpc_version=2"
+    local test_script+=" --server_host_override=foo.test.google.com --use_test_ca=true --use_tls=true"
     local the_cmd="$cmd_prefix $test_script $@";
     echo $the_cmd
 }
@@ -683,7 +683,7 @@ grpc_interop_gen_php_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_cxx_cmd() {
-    local cmd_prefix="sudo docker run grpc/cxx"; 
+    local cmd_prefix="sudo docker run grpc/cxx";
     local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl";
     local the_cmd="$cmd_prefix $test_script $@";
     echo $the_cmd
