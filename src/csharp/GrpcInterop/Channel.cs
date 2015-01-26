@@ -3,19 +3,15 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Interop
 {
-	public class Channel : WrappedNative
+	public class Channel : WrappedNativeObject<ChannelSafeHandle>
 	{
-		// returns grpc_channel*
 		[DllImport("libgrpc.so")]
-		static extern IntPtr grpc_channel_create(string target, IntPtr channelArgs);
-
-		[DllImport("libgrpc.so")]
-		static extern void grpc_channel_destroy(IntPtr channel);
+		static extern ChannelSafeHandle grpc_channel_create(string target, IntPtr channelArgs);
 
 		readonly String target;
 
-		// TODO: add args...
-		public Channel(string target) : base(() => grpc_channel_create(target, IntPtr.Zero))
+		// TODO: add support for channel args...
+		public Channel(string target) : base(grpc_channel_create(target, IntPtr.Zero))
 		{
 			this.target = target;
 		}
@@ -45,10 +41,17 @@ namespace Google.GRPC.Interop
 			Call call = new Call(this, methodName, target, deadline);
 			return new CallContext(call);
 		}
+	}
 
-		protected override void Destroy()
+	public class ChannelSafeHandle : SafeHandleZeroIsInvalid
+	{
+		[DllImport("libgrpc.so")]
+		static extern void grpc_channel_destroy(IntPtr channel);
+
+		protected override bool ReleaseHandle()
 		{
-			grpc_channel_destroy(RawPointer);
+			grpc_channel_destroy(handle);
+			return true;
 		}
 	}
 }

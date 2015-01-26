@@ -21,9 +21,9 @@ namespace Google.GRPC.Interop
         /// <summary>
         /// Does not take ownership of the eventPtr.
         /// </summary>
-        public Event(IntPtr eventPtr)
+        internal Event(EventSafeHandle eventHandle)
         {
-            GRPCEvent ev = GRPCEvent.FromIntPtr(eventPtr);
+            GRPCEvent ev = GRPCEvent.FromIntPtr(eventHandle.DangerousGetHandle());
             this.completionType = ev.type;
             this.tag = ev.tag;
 
@@ -151,6 +151,18 @@ namespace Google.GRPC.Interop
                 public IntPtr metadataElements;
                 // grpc_metadata*
             }
+        }
+    }
+
+    internal class EventSafeHandle : SafeHandleZeroIsInvalid
+    {
+        [DllImport("libgrpc.so")]
+        static extern void grpc_event_finish(IntPtr ev);
+
+        protected override bool ReleaseHandle()
+        {
+            grpc_event_finish(handle);
+            return true;
         }
     }
 }
