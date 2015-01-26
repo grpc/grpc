@@ -148,7 +148,7 @@ static void test_case(size_t key_prefix_len, size_t value_prefix_len,
     op.flags = i;
     op.data.metadata = grpc_mdelem_from_slices(mdctx, key, value);
     op.done_cb = do_nothing;
-    op.user_data = (void *)(gpr_uintptr) i;
+    op.user_data = (void *)(gpr_uintptr)i;
 
     grpc_metadata_buffer_queue(&buffer, &op);
   }

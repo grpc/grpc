@@ -72,7 +72,8 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& connect_to =
         server.empty() ? override_hostname : server;
     if (creds.get()) {
-      channel_creds = CredentialsFactory::ComposeCredentials(creds, channel_creds);
+      channel_creds =
+          CredentialsFactory::ComposeCredentials(creds, channel_creds);
     }
     return CreateChannel(connect_to, channel_creds, channel_args);
   } else {
@@ -83,7 +84,8 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
 std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots) {
-  return CreateTestChannel(server, override_hostname, enable_ssl, use_prod_roots, std::unique_ptr<Credentials>());
+  return CreateTestChannel(server, override_hostname, enable_ssl,
+                           use_prod_roots, std::unique_ptr<Credentials>());
 }
 
 // Shortcut for end2end and interop tests.

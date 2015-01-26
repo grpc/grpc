@@ -484,8 +484,7 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
 }
 
 static grpc_endpoint_test_config configs[] = {
-    {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up},
-};
+    {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up}, };
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

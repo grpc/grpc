@@ -37,6 +37,7 @@
 #include <memory>
 
 #include <grpc++/config.h>
+#include <grpc++/credentials.h>
 
 namespace grpc {
 class ChannelInterface;
@@ -50,7 +51,8 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
 
 std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots, const std::unique_ptr<Credentials>& creds);
+    bool enable_ssl, bool use_prod_roots,
+    const std::unique_ptr<Credentials>& creds);
 
 }  // namespace grpc
 

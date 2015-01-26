@@ -230,8 +230,8 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair = {RSTRING_PTR(pem_private_key),
                                                 RSTRING_PTR(pem_cert_chain)};
-    creds = grpc_ssl_credentials_create(
-        RSTRING_PTR(pem_root_certs), &key_cert_pair);
+    creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs),
+                                        &key_cert_pair);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");

@@ -118,9 +118,9 @@ grpc_credentials *grpc_credentials_contains_type(
 
 /* Exposed for testing only. */
 grpc_credentials_status
-grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_httpcli_response *response, grpc_mdctx *ctx,
-    grpc_mdelem **token_elem, gpr_timespec *token_lifetime);
+    grpc_oauth2_token_fetcher_credentials_parse_server_response(
+        const struct grpc_httpcli_response *response, grpc_mdctx *ctx,
+        grpc_mdelem **token_elem, gpr_timespec *token_lifetime);
 
 /* Simulates an oauth2 token fetch with the specified value for testing. */
 grpc_credentials *grpc_fake_oauth2_credentials_create(

@@ -61,7 +61,7 @@ class ServerCredentials final {
 
 // Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
-  struct PemKeyCertPair{
+  struct PemKeyCertPair {
     grpc::string private_key;
     grpc::string cert_chain;
   };
