@@ -233,7 +233,7 @@ function Server(options) {
     function handleNewCall(event) {
       var call = event.call;
       var data = event.data;
-      if (data == null) {
+      if (data === null) {
         return;
       }
       server.requestCall(handleNewCall);
