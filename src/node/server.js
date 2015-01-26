@@ -151,7 +151,7 @@ function GrpcServerStream(call, serialize, deserialize) {
       return;
     }
     var data = event.data;
-    if (self.push(deserialize(data)) && data != null) {
+    if (self.push(self.deserialize(data)) && data != null) {
       self._call.startRead(readCallback);
     } else {
       reading = false;
