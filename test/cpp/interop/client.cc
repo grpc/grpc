@@ -32,7 +32,9 @@
  */
 
 #include <chrono>
+#include <fstream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -43,6 +45,7 @@
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/util/create_test_channel.h"
@@ -51,7 +54,7 @@
 #include "test/cpp/interop/messages.pb.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
-DEFINE_bool(use_prod_roots, false, "True to use SSL roots for production GFE");
+DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
 DEFINE_string(server_host_override, "foo.test.google.com",
@@ -62,15 +65,21 @@ DEFINE_string(test_case, "large_unary",
               "large_unary : single request and (large) response; "
               "client_streaming : request streaming with single response; "
               "server_streaming : single request with response streaming; "
-              "slow_consumer : single request with response"
+              "slow_consumer : single request with response; "
               " streaming with slow client consumer; "
-              "half_duplex : half-duplex streaming;"
-              "ping_pong : full-duplex streaming;"
+              "half_duplex : half-duplex streaming; "
+              "ping_pong : full-duplex streaming; "
+              "service_account_creds : large_unary with service_account auth; "
               "all : all of above.");
+DEFINE_string(service_account_key_file, "",
+              "Path to service account json key file.");
+DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
 
 using grpc::ChannelInterface;
 using grpc::ClientContext;
 using grpc::CreateTestChannel;
+using grpc::Credentials;
+using grpc::CredentialsFactory;
 using grpc::testing::ResponseParameters;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
@@ -91,6 +100,17 @@ const int kLargeRequestSize = 314159;
 const int kLargeResponseSize = 271812;
 }  // namespace
 
+grpc::string GetServiceAccountJsonKey() {
+  static grpc::string json_key;
+  if (json_key.empty()) {
+    std::ifstream json_key_file(FLAGS_service_account_key_file);
+    std::stringstream key_stream;
+    key_stream << json_key_file.rdbuf();
+    json_key = key_stream.str();
+  }
+  return json_key;
+}
+
 void DoEmpty(std::shared_ptr<ChannelInterface> channel) {
   gpr_log(GPR_INFO, "Sending an empty rpc...");
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
@@ -105,7 +125,7 @@ void DoEmpty(std::shared_ptr<ChannelInterface> channel) {
   gpr_log(GPR_INFO, "Empty rpc done.");
 }
 
-void DoLargeUnary(std::shared_ptr<ChannelInterface> channel) {
+void DoLargeUnary(std::shared_ptr<ChannelInterface> channel, bool auth) {
   gpr_log(GPR_INFO, "Sending a large unary rpc...");
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
 
@@ -114,6 +134,10 @@ void DoLargeUnary(std::shared_ptr<ChannelInterface> channel) {
   ClientContext context;
   request.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
   request.set_response_size(kLargeResponseSize);
+  if (auth) {
+    request.set_fill_username(true);
+    request.set_fill_oauth_scope(true);
+  }
   grpc::string payload(kLargeRequestSize, '\0');
   request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
@@ -124,6 +148,15 @@ void DoLargeUnary(std::shared_ptr<ChannelInterface> channel) {
              grpc::testing::PayloadType::COMPRESSABLE);
   GPR_ASSERT(response.payload().body() ==
              grpc::string(kLargeResponseSize, '\0'));
+  if (auth) {
+    GPR_ASSERT(!response.username().empty());
+    GPR_ASSERT(!response.oauth_scope().empty());
+    grpc::string json_key = GetServiceAccountJsonKey();
+    GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
+    GPR_ASSERT(FLAGS_oauth_scope.find(response.oauth_scope()) !=
+               grpc::string::npos);
+  }
+
   gpr_log(GPR_INFO, "Large unary done.");
 }
 
@@ -292,7 +325,7 @@ int main(int argc, char** argv) {
   if (FLAGS_test_case == "empty_unary") {
     DoEmpty(channel);
   } else if (FLAGS_test_case == "large_unary") {
-    DoLargeUnary(channel);
+    DoLargeUnary(channel, false);
   } else if (FLAGS_test_case == "client_streaming") {
     DoRequestStreaming(channel);
   } else if (FLAGS_test_case == "server_streaming") {
@@ -303,13 +336,24 @@ int main(int argc, char** argv) {
     DoHalfDuplex(channel);
   } else if (FLAGS_test_case == "ping_pong") {
     DoPingPong(channel);
+  } else if (FLAGS_test_case == "service_account_creds") {
+    std::unique_ptr<Credentials> creds;
+    GPR_ASSERT(FLAGS_enable_ssl);
+    grpc::string json_key = GetServiceAccountJsonKey();
+    creds = CredentialsFactory::ServiceAccountCredentials(
+        json_key, FLAGS_oauth_scope, std::chrono::seconds(3600));
+    std::shared_ptr<ChannelInterface> auth_channel(
+        CreateTestChannel(host_port, FLAGS_server_host_override,
+                          FLAGS_enable_ssl, FLAGS_use_prod_roots, creds));
+    DoLargeUnary(auth_channel, true);
   } else if (FLAGS_test_case == "all") {
     DoEmpty(channel);
-    DoLargeUnary(channel);
+    DoLargeUnary(channel, false);
     DoRequestStreaming(channel);
     DoResponseStreaming(channel);
     DoHalfDuplex(channel);
     DoPingPong(channel);
+    // TODO(yangg) add service_account_creds?
   } else {
     gpr_log(
         GPR_ERROR,
