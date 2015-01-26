@@ -68,7 +68,7 @@ class NodeLanguage(object):
     return ['tools/run_tests/run_node.sh']
 
   def make_targets(self):
-    return []
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
@@ -205,7 +205,7 @@ class TestCache(object):
 def _build_and_run(check_cancelled, newline_on_success, cache):
   """Do one pass of building & running tests."""
   # build latest, sharing cpu between the various makes
-  if not jobset.run(build_steps):
+  if not jobset.run(build_steps, maxjobs=1):
     return 1
 
   # run all the tests
