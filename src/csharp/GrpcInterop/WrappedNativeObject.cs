@@ -4,21 +4,14 @@ using System.Diagnostics.Contracts;
 
 namespace Google.GRPC.Interop
 {
-   
-    // use safehandle instead....
-
     /// <summary>
-    /// Wraps a native resource and provides a standardized way how to dispose it.
-    /// Destroy() method is called by Dispose() appropriately.
+    /// Wraps a native resource referenced by a SafeHandle.
     /// </summary>
     public abstract class WrappedNativeObject<T> : IDisposable
         where T : SafeHandle
     {
         protected readonly T handle;
 
-        /// <summary>
-        /// Runs the delegate to allocate resource.
-        /// </summary>
         protected WrappedNativeObject(T handle)
         {
             this.handle = handle;

@@ -48,7 +48,6 @@ namespace Google.GRPC.Interop
 		readonly string host;
 		readonly Timespec deadline;
 
-		// TODO: check if referring to this.method, this.host, this.deadline is safe
 		public Call(Channel channel, string method, string host, Timespec deadline)
 			: base(grpc_channel_create_call(channel.Handle, method, host, deadline))
 		{

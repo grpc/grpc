@@ -10,6 +10,7 @@ namespace Google.GRPC.Interop
 	public struct Timespec
 	{
 		// TODO: this only works on 64bit linux, can we autoselect the right size of ints?
+		// perhaps using IntPtr would work.
 		public System.Int64 tv_sec;
 		public System.Int64 tv_nsec;
 

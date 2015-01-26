@@ -21,11 +21,6 @@ namespace Google.GRPC.Interop
 			this.cq = new CompletionQueue();
 		}
 
-		~CallContext()
-		{
-			Dispose(false);
-		}
-
 		public void Dispose()
 		{
 			Dispose(true);
@@ -60,8 +55,7 @@ namespace Google.GRPC.Interop
 		// blocking write...
 		public bool Write(byte[] payload)
 		{
-			//TODO: we need to call unref on the slice!!!
-			using (ByteBuffer byteBuffer = new ByteBuffer(new Slice[] { Slice.FromByteArray(payload)}))
+			using (ByteBuffer byteBuffer = new ByteBuffer(payload))
 			{
 				Utils.AssertCallOk(call.StartWrite(byteBuffer, write_tag, false));
 			}

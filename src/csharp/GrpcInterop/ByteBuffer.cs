@@ -12,7 +12,6 @@ namespace Google.GRPC.Interop
 		[DllImport("libgrpc.so")]
 		static extern UIntPtr grpc_byte_buffer_length(ByteBufferSafeHandle byteBuffer);
 
-		// buffer pointer is IntPtr because we obtain that in the read event.
 		[DllImport("libgrpc.so")]
 		static extern ByteBufferReaderSafeHandle grpc_byte_buffer_reader_create(IntPtr buffer);
 
@@ -20,10 +19,8 @@ namespace Google.GRPC.Interop
 		[DllImport("libgrpc.so")]
 		static extern int grpc_byte_buffer_reader_next(ByteBufferReaderSafeHandle reader, IntPtr slice);
 
-		public ByteBuffer(Slice[] slices)
-			: base(grpc_byte_buffer_create(slices, new UIntPtr((ulong) slices.Length)))
+		public ByteBuffer(byte[] data) : base(CreateByteBufferSafeHandleFromByteArray(data))
 		{
-			//TODO: we need to unref the slices!!!
 		}
 
 		public UIntPtr Length
@@ -34,6 +31,23 @@ namespace Google.GRPC.Interop
 			}
 		}
 
+		private static ByteBufferSafeHandle CreateByteBufferSafeHandleFromByteArray(byte[] data)
+		{
+			Slice slice = default(Slice);
+			try
+			{
+				slice = Slice.CreateFromByteArray(data);
+				return grpc_byte_buffer_create(new Slice[] {slice}, new UIntPtr(1));
+
+			} finally
+			{
+				if (slice.IsRefcounted) {
+					slice.Unref();
+				}
+			}
+		}
+
+		// TODO: we are using IntPtr for byteBuffer because we obtain that in the read event.
 		/// <summary>
 		/// Reads all data from the byte buffer (does not take ownership of the byte buffer).
 		/// </summary>
@@ -53,17 +67,19 @@ namespace Google.GRPC.Interop
 			}
 		}
 
+		
+
 		/// <summary>
 		/// Reads data of next slice from the byte buffer.
-		/// Returns null if there is end of buffer has been reached.
+		/// Returns null if end of buffer has been reached.
 		/// </summary>
 		private static byte[] ByteBufferReadNext(ByteBufferReaderSafeHandle byteBufferReader)
 		{
-			// TODO: inspect this....
-
 			IntPtr slicePtr = IntPtr.Zero;
 			try
 			{
+				// TODO: is there a nicer way how to accomplish this?
+				// Allocate memory where the resulting slice will be saved.
 				slicePtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(Slice)));
 				if (grpc_byte_buffer_reader_next(byteBufferReader, slicePtr) == 0)
 				{
@@ -79,7 +95,7 @@ namespace Google.GRPC.Interop
 				}
 				finally
 				{
-					if (slice.NeedsUnref)
+					if (slice.IsRefcounted)
 					{
 						slice.Unref();
 					}
