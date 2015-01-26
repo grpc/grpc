@@ -48,6 +48,9 @@ describe('Interop tests', function() {
     port = 'localhost:' + server_obj.port;
     done();
   });
+  after(function() {
+    server.shutdown();
+  });
   // This depends on not using a binary stream
   it('should pass empty_unary', function(done) {
     interop_client.runTest(port, name_override, 'empty_unary', true, done);
