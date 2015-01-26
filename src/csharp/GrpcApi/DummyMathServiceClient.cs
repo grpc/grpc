@@ -34,14 +34,14 @@ namespace math
 			throw new NotImplementedException("Not implemented yet");
 		}
 
-		public Task<Num> Sum(out IObserver<Num> inputs, CancellationToken token = default(CancellationToken))
+		public Task<Num> Sum(IObservable<Num> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: implement
 			inputs = null;
 			return Task.Factory.StartNew(() => Num.CreateBuilder().Build(), token);
 		}
 
-		public IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token = default(CancellationToken))
+		public IObservable<DivReply> DivMany(IObservable<DivArgs> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: implement
 			inputs = null;

@@ -46,6 +46,8 @@ namespace Google.GRPC.Interop
 			}
 		}
 
+		//TODO: access to call methods might need to be synchronized.
+
 		public void Start(bool buffered)
 		{
 			Utils.AssertCallOk(call.StartInvoke(cq, invoke_tag, metadata_read_tag, finished_tag, buffered));

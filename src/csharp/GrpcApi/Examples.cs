@@ -41,24 +41,24 @@ namespace math
 			// Cancellation options:
 			// -- inputs.OnError() can be used to cancel
 			// -- add CancellationToken as a parameter
-			IObserver<Num> numbers;
-			Task<Num> call = stub.Sum(out numbers);
-			numbers.OnNext(new Num.Builder { Num_ = 1 }.Build());
-			numbers.OnNext(new Num.Builder { Num_ = 2 }.Build());
-			numbers.OnNext(new Num.Builder { Num_ = 3 }.Build());
-			numbers.OnCompleted();
+			//IObserver<Num> numbers;
+			List<Num> numbers = new List<Num>{new Num.Builder { Num_ = 1 }.Build(), 
+				new Num.Builder { Num_ = 2 }.Build(),
+				new Num.Builder { Num_ = 3 }.Build()};
+			Task<Num> call = stub.Sum(numbers.ToObservable());
+
 
 			Console.WriteLine("Sum Result: " + call.Result);
 		}
 
 		public static void DivManyExample(IMathServiceClient stub)
 		{
-			IObserver<DivArgs> requestSink;
-			IObservable<DivReply> response = stub.DivMany(out requestSink);
-			requestSink.OnNext(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
-			requestSink.OnNext(new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build());
-			requestSink.OnNext(new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build());
-			requestSink.OnCompleted();
+			List<DivArgs> divArgsList = new List<DivArgs>{
+				new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build(),
+				new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build(),
+				new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build()
+			};
+			IObservable<DivReply> response = stub.DivMany(divArgsList.ToObservable());
 
 			Console.WriteLine("DivMany Result: " + string.Join("|", response.ToList().Wait()));
 		}
@@ -72,17 +72,17 @@ namespace math
 
 			numberList.ToObservable();
 
-			IObserver<Num> numbers;
-			Task<Num> call = stub.Sum(out numbers);            
-			foreach (var num in numberList)
-			{
-				numbers.OnNext(num);
-			}
-			numbers.OnCompleted();
+			//IObserver<Num> numbers;
+			//Task<Num> call = stub.Sum(out numbers);            
+			//foreach (var num in numberList)
+			//{
+			//	numbers.OnNext(num);
+			//}
+			//numbers.OnCompleted();
 
-			Num sum = call.Result;
+			//Num sum = call.Result;
 
-			DivReply result = stub.Div(new DivArgs.Builder { Dividend = sum.Num_, Divisor = numberList.Count }.Build());
+			//DivReply result = stub.Div(new DivArgs.Builder { Dividend = sum.Num_, Divisor = numberList.Count }.Build());
 		}
 	}
 }

@@ -22,9 +22,9 @@ namespace math
 		IObservable<Num> Fib(FibArgs args, CancellationToken token = default(CancellationToken));
 
 		// Cancellation can also be done through inputs.OnError
-		Task<Num> Sum(out IObserver<Num> inputs, CancellationToken token = default(CancellationToken));
+		Task<Num> Sum(IObservable<Num> inputs, CancellationToken token = default(CancellationToken));
 
 		// Cancellation can also be be done through inputs.OnError
-		IObservable<DivReply> DivMany(out IObserver<DivArgs> inputs, CancellationToken token = default(CancellationToken));
+		IObservable<DivReply> DivMany(IObservable<DivArgs> inputs, CancellationToken token = default(CancellationToken));
 	}
 }

@@ -29,7 +29,7 @@ namespace Google.GRPC.Core
 			Task.Factory.StartNew(ReaderTaskBody);
 			// add task that reads the next response from the context....
 
-			return null; // TODO: return unsubscriber...
+			return new Unsubscriber();
 		}
 
 		private void ReaderTaskBody()
@@ -47,30 +47,22 @@ namespace Google.GRPC.Core
 				onlyObserver.OnNext(response);
 			}
 
+
 			ctx.Wait();
+			//TODO: read the status and propagate error if needed.
+
 			ctx.Dispose();
 
 			onlyObserver.OnCompleted();
-
-			//TODO: how to read the finished status???
 		}
-		//		private class Unsubscriber : IDisposable
-		//		{
-		//			private List<IObserver<Location>>_observers;
-		//			private IObserver<Location> _observer;
-		//
-		//			public Unsubscriber(List<IObserver<Location>> observers, IObserver<Location> observer)
-		//			{
-		//				this._observers = observers;
-		//				this._observer = observer;
-		//			}
-		//
-		//			public void Dispose()
-		//			{
-		//				if (_observer != null && _observers.Contains(_observer))
-		//					_observers.Remove(_observer);
-		//			}
-		//		}
+			
+		private class Unsubscriber : IDisposable
+		{
+			public void Dispose()
+			{
+				//TODO: implement this
+			}
+		}
 	}
 }
 

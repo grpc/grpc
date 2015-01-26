@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Google.GRPC.Interop
 {
@@ -16,9 +18,13 @@ namespace Google.GRPC.Interop
 			this.target = target;
 		}
 
-		public Status SimpleBlockingCall(String methodName, byte[] requestData, out byte[] result, Timespec deadline)
+		public Status SimpleBlockingCall(String methodName, byte[] requestData, out byte[] result, Timespec deadline, CancellationToken token)
 		{
+			// TODO: implement cancellation
+
 			result = null;
+
+			// TODO: strange way of disposing call here
 			Call call = new Call(this, methodName, target, deadline);
 			using (CallContext ctx = new CallContext(call))
 			{
