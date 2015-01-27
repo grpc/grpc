@@ -322,14 +322,13 @@ end
 
 describe 'the http client/server' do
   before(:example) do
-    port = find_unused_tcp_port
-    host = "localhost:#{port}"
+    server_host = 'localhost:0'
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    @server.add_http2_port(host)
+    server_port = @server.add_http2_port(server_host)
     @server.start
-    @ch = Channel.new(host, nil)
+    @ch = Channel.new("localhost:#{server_port}", nil)
   end
 
   after(:example) do
@@ -347,15 +346,15 @@ describe 'the secure http client/server' do
   before(:example) do
     certs = load_test_certs
     port = find_unused_tcp_port
-    host = "localhost:#{port}"
+    server_host = 'localhost:0'
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
     @server = GRPC::Core::Server.new(@server_queue, nil, server_creds)
-    @server.add_http2_port(host, true)
+    server_port =  @server.add_http2_port(host, true)
     @server.start
     args = { Channel::SSL_TARGET => 'foo.test.google.com' }
-    @ch = Channel.new(host, args,
+    @ch = Channel.new("localhost:#{server_port}", args,
                       GRPC::Core::Credentials.new(certs[0], nil, nil))
   end
 
