@@ -42,7 +42,7 @@ namespace Google.GRPC.Interop
 			}
 		}
 
-		public CallContext StreamingCall(String methodName, Timespec deadline)
+		public CallContext CreateCall(String methodName, Timespec deadline)
 		{
 			Call call = new Call(this, methodName, target, deadline);
 			return new CallContext(call);

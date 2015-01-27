@@ -6,12 +6,12 @@ namespace Google.GRPC.Core
 {
 	public class StreamingOutputObservable<TResponse> : IObservable<TResponse>
 	{
-		readonly CallContext ctx;
+		readonly ICallContext ctx;
 		// only one observer allowed currently
 		IObserver<TResponse> onlyObserver;
 		Func<byte[], TResponse> demarshaller;
 
-		public StreamingOutputObservable(CallContext ctx, Func<byte[], TResponse> demarshaller)
+		public StreamingOutputObservable(ICallContext ctx, Func<byte[], TResponse> demarshaller)
 		{
 			this.ctx = ctx;
 			this.demarshaller = demarshaller;
@@ -36,24 +36,29 @@ namespace Google.GRPC.Core
 		{
 			// TODO: reading should be split into more tasks to prevent deadlock
 
-			while (true)
-			{
-				byte[] payload = ctx.Read();
-				if (payload == null)
-				{
-					break;
-				}
-				TResponse response = demarshaller(payload);
-				onlyObserver.OnNext(response);
-			}
+            try {
+			    while (true)
+			    {
+				    byte[] payload = ctx.Read();
+				    if (payload == null)
+				    {
+					    break;
+				    }
+				    TResponse response = demarshaller(payload);
+				    
+                    // TODO: catch exceptions from user code...
+                    onlyObserver.OnNext(response);
+			    }
 
+                Status status = ctx.Wait();
+                // TODO: propagate error if status not OK.
 
-			ctx.Wait();
-			//TODO: read the status and propagate error if needed.
-
-			ctx.Dispose();
-
-			onlyObserver.OnCompleted();
+                // TODO: catch exceptions from user code...
+			    onlyObserver.OnCompleted();
+            }
+            finally {
+                ctx.Dispose();
+            }
 		}
 			
 		private class Unsubscriber : IDisposable
