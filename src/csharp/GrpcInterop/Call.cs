@@ -14,7 +14,7 @@ namespace Google.GRPC.Interop
 		static extern GRPCCallError grpc_call_add_metadata(CallSafeHandle call, IntPtr metadata, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_start_invoke(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags);
+		static extern GRPCCallError grpc_call_invoke(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags);
 
 		[DllImport("libgrpc.so")]
 		static extern GRPCCallError grpc_call_accept(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, IntPtr finishedTag, UInt32 flags);
@@ -57,10 +57,10 @@ namespace Google.GRPC.Interop
 			this.deadline = deadline;
 		}
 
-		public GRPCCallError StartInvoke(CompletionQueue cq, IntPtr invokeAcceptedTag, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
+		public GRPCCallError Invoke(CompletionQueue cq, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
 		{
 			UInt32 flags = buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
-			return grpc_call_start_invoke(handle, cq.Handle, invokeAcceptedTag, metadataReadTag, finishedTag, flags);
+			return grpc_call_invoke(handle, cq.Handle, metadataReadTag, finishedTag, flags);
 		}
 
 		public GRPCCallError StartWrite(ByteBuffer bb, IntPtr tag, bool buffered)
