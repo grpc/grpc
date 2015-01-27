@@ -39,9 +39,9 @@
 #include "src/core/statistics/census_tracing.h"
 #include "src/core/statistics/window_stats.h"
 #include "src/core/support/murmur_hash.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 
 #define NUM_INTERVALS 3

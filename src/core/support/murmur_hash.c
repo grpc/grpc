@@ -52,7 +52,7 @@ gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
   int i;
 
   gpr_uint32 h1 = seed;
-  gpr_uint32 k1 = 0;
+  gpr_uint32 k1;
 
   const gpr_uint32 c1 = 0xcc9e2d51;
   const gpr_uint32 c2 = 0x1b873593;
@@ -62,7 +62,7 @@ gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
 
   /* body */
   for (i = -nblocks; i; i++) {
-    gpr_uint32 k1 = GETBLOCK32(blocks, i);
+    k1 = GETBLOCK32(blocks, i);
 
     k1 *= c1;
     k1 = ROTL32(k1, 15);
@@ -72,6 +72,8 @@ gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
     h1 = ROTL32(h1, 13);
     h1 = h1 * 5 + 0xe6546b64;
   }
+
+  k1 = 0;
 
   /* tail */
   switch (len & 3) {

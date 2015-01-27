@@ -1396,7 +1396,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
     src/core/iomgr/pollset_windows.c \
-    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/resolve_address.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -1515,7 +1515,7 @@ src/core/iomgr/pollset_kick_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_multipoller_with_poll_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_windows.c: $(OPENSSL_DEP)
-src/core/iomgr/resolve_address_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/resolve_address.c: $(OPENSSL_DEP)
 src/core/iomgr/sockaddr_utils.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_common_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_linux.c: $(OPENSSL_DEP)
@@ -1655,7 +1655,7 @@ objs/$(CONFIG)/src/core/iomgr/pollset_kick_posix.o:
 objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
-objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/resolve_address.o: 
 objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
@@ -1815,7 +1815,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
     src/core/iomgr/pollset_windows.c \
-    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/resolve_address.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -1938,7 +1938,7 @@ objs/$(CONFIG)/src/core/iomgr/pollset_kick_posix.o:
 objs/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
-objs/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/resolve_address.o: 
 objs/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
@@ -2133,9 +2133,9 @@ objs/$(CONFIG)/src/cpp/util/time.o:
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
+    gens/test/cpp/util/messages.pb.cc \
     gens/test/cpp/util/echo.pb.cc \
     gens/test/cpp/util/echo_duplicate.pb.cc \
-    gens/test/cpp/util/messages.pb.cc \
     test/cpp/end2end/async_test_server.cc \
     test/cpp/util/create_test_channel.cc \
 
@@ -2152,9 +2152,9 @@ libs/$(CONFIG)/libgrpc++_test_util.a: openssl_dep_error
 else
 
 ifneq ($(OPENSSL_DEP),)
+test/cpp/util/messages.proto: $(OPENSSL_DEP)
 test/cpp/util/echo.proto: $(OPENSSL_DEP)
 test/cpp/util/echo_duplicate.proto: $(OPENSSL_DEP)
-test/cpp/util/messages.proto: $(OPENSSL_DEP)
 test/cpp/end2end/async_test_server.cc: $(OPENSSL_DEP)
 test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
 endif
@@ -2183,8 +2183,8 @@ endif
 
 
 
-objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
-objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
+objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
+objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
 
 
 LIBTIPS_CLIENT_LIB_SRC = \

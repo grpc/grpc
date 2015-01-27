@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'port_picker'
 
 include GRPC::Core::StatusCodes
 
@@ -71,16 +70,8 @@ describe GRPC::Core::Call do
   before(:each) do
     @tag = Object.new
     @client_queue = GRPC::Core::CompletionQueue.new
-    @server_queue = GRPC::Core::CompletionQueue.new
-    port = find_unused_tcp_port
-    host = "localhost:#{port}"
-    @server = GRPC::Core::Server.new(@server_queue, nil)
-    @server.add_http2_port(host)
-    @ch = GRPC::Core::Channel.new(host, nil)
-  end
-
-  after(:each) do
-    @server.close
+    fake_host = 'localhost:10101'
+    @ch = GRPC::Core::Channel.new(fake_host, nil)
   end
 
   describe '#start_read' do
@@ -119,33 +110,6 @@ describe GRPC::Core::Call do
       one_md = proc { |x| [sprintf('key%d', x), sprintf('value%d', x)] }
       metadata = Hash[n.times.collect { |i| one_md.call i }]
       expect { call.add_metadata(metadata) }.to_not raise_error
-    end
-  end
-
-  describe '#start_invoke' do
-    it 'should cause the INVOKE_ACCEPTED event' do
-      call = make_test_call
-      expect(call.start_invoke(@client_queue, @tag, @tag, @tag)).to be_nil
-      ev = @client_queue.next(deadline)
-      expect(ev.call).to be_a(GRPC::Core::Call)
-      expect(ev.tag).to be(@tag)
-      expect(ev.type).to be(GRPC::Core::CompletionType::INVOKE_ACCEPTED)
-      expect(ev.call).to_not be(call)
-    end
-  end
-
-  describe '#start_write' do
-    it 'should cause the WRITE_ACCEPTED event' do
-      call = make_test_call
-      call.start_invoke(@client_queue, @tag, @tag, @tag)
-      ev = @client_queue.next(deadline)
-      expect(ev.type).to be(GRPC::Core::CompletionType::INVOKE_ACCEPTED)
-      expect(call.start_write(GRPC::Core::ByteBuffer.new('test_start_write'),
-                              @tag)).to be_nil
-      ev = @client_queue.next(deadline)
-      expect(ev.call).to be_a(GRPC::Core::Call)
-      expect(ev.type).to be(GRPC::Core::CompletionType::WRITE_ACCEPTED)
-      expect(ev.tag).to be(@tag)
     end
   end
 

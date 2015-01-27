@@ -14,7 +14,7 @@
  * in the documentation and/or other materials provided with the
  * distribution.
  *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
+ * contributors may be used to endorse or promote products derived from 
  * this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc/support/string.h>
+#include "src/core/support/string.h"
 
 #include <ctype.h>
 #include <stddef.h>
@@ -121,4 +121,80 @@ int gpr_parse_bytes_to_uint32(const char *buf, size_t len, gpr_uint32 *result) {
 
   *result = out;
   return 1;
+}
+
+void gpr_reverse_bytes(char *str, int len) {
+  char *p1, *p2;
+  for (p1 = str, p2 = str + len - 1; p2 > p1; ++p1, --p2) {
+    char temp = *p1;
+    *p1 = *p2;
+    *p2 = temp;
+  }
+}
+
+int gpr_ltoa(long value, char *string) {
+  int i = 0;
+  int neg = value < 0;
+
+  if (value == 0) {
+    string[0] = '0';
+    string[1] = 0;
+    return 1;
+  }
+
+  if (neg) value = -value;
+  while (value) {
+    string[i++] = '0' + value % 10;
+    value /= 10;
+  }
+  if (neg) string[i++] = '-';
+  gpr_reverse_bytes(string, i);
+  string[i] = 0;
+  return i;
+}
+
+char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
+  size_t out_length = 0;
+  size_t i;
+  char *out;
+  for (i = 0; i < nstrs; i++) {
+    out_length += strlen(strs[i]);
+  }
+  out_length += 1;  /* null terminator */
+  out = gpr_malloc(out_length);
+  out_length = 0;
+  for (i = 0; i < nstrs; i++) {
+    size_t slen = strlen(strs[i]);
+    memcpy(out + out_length, strs[i], slen);
+    out_length += slen;
+  }
+  out[out_length] = 0;
+  if (final_length != NULL) {
+    *final_length = out_length;
+  }
+  return out;
+}
+
+void gpr_strvec_init(gpr_strvec *sv) {
+  memset(sv, 0, sizeof(*sv));
+}
+
+void gpr_strvec_destroy(gpr_strvec *sv) {
+  size_t i;
+  for (i = 0; i < sv->count; i++) {
+    gpr_free(sv->strs[i]);
+  }
+  gpr_free(sv->strs);
+}
+
+void gpr_strvec_add(gpr_strvec *sv, char *str) {
+  if (sv->count == sv->capacity) {
+    sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 2);
+    sv->strs = gpr_realloc(sv->strs, sizeof(char*) * sv->capacity);
+  }
+  sv->strs[sv->count++] = str;
+}
+
+char *gpr_strvec_flatten(gpr_strvec *sv, size_t *final_length) {
+  return gpr_strjoin((const char**)sv->strs, sv->count, final_length);
 }

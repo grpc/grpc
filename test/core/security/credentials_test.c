@@ -37,9 +37,9 @@
 
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/security/json_token.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 #include <openssl/rsa.h>
@@ -498,10 +498,8 @@ static void validate_service_account_http_request(
   char *expected_body = NULL;
   GPR_ASSERT(body != NULL);
   GPR_ASSERT(body_size != 0);
-  expected_body = gpr_malloc(strlen(expected_service_account_http_body_prefix) +
-                             strlen(test_signed_jwt) + 1);
-  sprintf(expected_body, "%s%s", expected_service_account_http_body_prefix,
-          test_signed_jwt);
+  gpr_asprintf(&expected_body, "%s%s",
+               expected_service_account_http_body_prefix, test_signed_jwt);
   GPR_ASSERT(strlen(expected_body) == body_size);
   GPR_ASSERT(!memcmp(expected_body, body, body_size));
   gpr_free(expected_body);

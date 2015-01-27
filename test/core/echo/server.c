@@ -41,12 +41,12 @@
 #include <string.h>
 #include <time.h>
 
+#include "src/core/support/string.h"
 #include "test/core/util/test_config.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/time.h>
 #include "test/core/util/port.h"
 #include "test/core/end2end/data/ssl_test_data.h"

@@ -393,6 +393,53 @@ grpc_interop_test_args() {
   }
 }
 
+# checks the positional args and assigns them to variables visible in the caller
+#
+# these are the positional args passed to grpc_cloud_prod_test after option flags
+# are removed
+#
+# three args are expected, in order
+# - test_case
+# - host <the gce docker instance on which to run the test>
+# - client to run
+grpc_cloud_prod_test_args() {
+  [[ -n $1 ]] && {  # test_case
+    test_case=$1
+    shift
+  } || {
+    echo "$FUNCNAME: missing arg: test_case" 1>&2
+    return 1
+  }
+
+  [[ -n $1 ]] && {  # host
+    host=$1
+    shift
+  } || {
+    echo "$FUNCNAME: missing arg: host" 1>&2
+    return 1
+  }
+
+  [[ -n $1 ]] && {  # client_type
+    case $1 in
+      cxx|go|java|nodejs|php|python|ruby)
+        grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
+        declare -F $grpc_gen_test_cmd >> /dev/null || {
+          echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
+          return 2
+        }
+        shift
+        ;;
+      *)
+        echo "bad client_type: $1" 1>&2
+        return 1
+        ;;
+    esac
+  } || {
+    echo "$FUNCNAME: missing arg: client_type" 1>&2
+    return 1
+  }
+}
+
 _grpc_sync_scripts_args() {
   grpc_gce_script_root='tools/gce_setup'
 
@@ -622,6 +669,52 @@ grpc_interop_test() {
   gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
 }
 
+# Runs a test command on a docker instance.
+#
+# call-seq:
+#   grpc_cloud_prod_test <test_name> <host> <client_type>
+#
+# requirements:
+#   host is a GCE instance running docker with access to the gRPC docker images
+#   test_name is one of the named gRPC tests [http://go/grpc_interop_tests]
+#   client_type is one of [cxx,go,java,php,python,ruby]
+#
+# it assumes:
+#   that each grpc-imp has a docker image named grpc/<imp>, e.g, grpc/java
+#   a test is run using $ docker run 'path/to/interop_test_bin --flags'
+#   the required images are available on <host>
+#
+# each client_type should have an associated bash func:
+#   grpc_cloud_prod_gen_<client_type>_cmd
+# the func provides the dockerized commmand for running client_type's test.
+# If no such func is available, tests for that client type cannot be run.
+grpc_cloud_prod_test() {
+  _grpc_ensure_gcloud_ssh || return 1;
+  # declare vars local so that they don't pollute the shell environment
+  # where they this func is used.
+
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  #  grpc_cloud_prod_test_args
+  local test_case host grpc_gen_test_cmd
+
+  # set the project zone and check that all necessary args are provided
+  _grpc_set_project_and_zone -f grpc_cloud_prod_test_args "$@" || return 1
+  gce_has_instance $grpc_project $host || return 1;
+
+  local test_case_flag=" --test_case=$test_case"
+  cmd=$($grpc_gen_test_cmd $test_case_flag)
+  [[ -n $cmd ]] || return 1
+
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  local ssh_cmd="bash -l -c \"$cmd\""
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+}
+
 # constructs the full dockerized ruby interop test cmd.
 #
 # call-seq:
@@ -640,10 +733,11 @@ grpc_interop_gen_ruby_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_go_cmd() {
-  local cmd_prefix="sudo docker run grpc/go bin/bash -c";
-  local test_script="cd /go/src/github.com/google/grpc-go/interop/client";
-  local test_script+=" && go run client.go --use_tls=true";
-  local the_cmd="$cmd_prefix '$test_script $@ 1>&2'";
+  local cmd_prefix="sudo docker run grpc/go /bin/bash -c"
+  local test_script="cd /go/src/github.com/google/grpc-go/rpc/interop/client"
+  local test_script+=" && go run client.go --use_tls=true"
+  local the_cmd="$cmd_prefix '$test_script $@'"
+  echo $the_cmd
 }
 
 # constructs the full dockerized java interop test cmd.
@@ -654,8 +748,22 @@ grpc_interop_gen_go_cmd() {
 grpc_interop_gen_java_cmd() {
     local cmd_prefix="sudo docker run grpc/java";
     local test_script="/var/local/git/grpc-java/run-test-client.sh";
-    local test_script+=" --transport=NETTY_TLS --grpc_version=2"
+    local test_script+=" --server_host_override=foo.test.google.fr --use_test_ca=true --use_tls=true"
     local the_cmd="$cmd_prefix $test_script $@";
+    echo $the_cmd
+}
+
+# constructs the full dockerized java interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_java_cmd() {
+    local cmd_prefix="sudo docker run grpc/java";
+    local test_script="/var/local/git/grpc-java/run-test-client.sh";
+    local test_script+=" --use_tls=true"
+    local gfe_flags=" --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com"
+    local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
     echo $the_cmd
 }
 
@@ -675,5 +783,31 @@ grpc_interop_gen_php_cmd() {
     echo $the_cmd
 }
 
+# constructs the full dockerized cpp interop test cmd.
+#
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_interop_gen_cxx_cmd() {
+    local cmd_prefix="sudo docker run grpc/cxx";
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl";
+    local the_cmd="$cmd_prefix $test_script $@";
+    echo $the_cmd
+}
+
+# constructs the full dockerized cpp interop test cmd.
+#
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_cxx_cmd() {
+    local cmd_prefix="sudo docker run grpc/cxx"; 
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl";
+    local gfe_flags=" --use_prod_roots --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com"
+    local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+    echo $the_cmd
+}
 
 # TODO(grpc-team): add grpc_interop_gen_xxx_cmd for python|cxx|nodejs
