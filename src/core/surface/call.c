@@ -50,7 +50,7 @@
 typedef struct {
   size_t md_out_count;
   size_t md_out_capacity;
-  grpc_mdelem **md_out;
+  grpc_metadata *md_out;
   grpc_byte_buffer *msg_out;
 
   /* input buffers */
@@ -203,8 +203,8 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op,
                 ? NULL
                 : TOMBSTONE_MASTER;
       }
-      master->on_complete(call, status, master->user_data);
     }
+    master->on_complete(call, status, master->user_data);
   }
 }
 
@@ -237,22 +237,42 @@ static void finish_finish_step(void *pc, grpc_op_error error) {
   }
 }
 
+static void finish_start_step(void *pc, grpc_op_error error) {
+  grpc_call *call = pc;
+  if (error == GRPC_OP_OK) {
+    finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, GRPC_OP_OK);
+    start_next_step_and_unlock(
+        call, call->requests[GRPC_IOREQ_SEND_INITIAL_METADATA].master);
+  } else {
+    gpr_log(GPR_ERROR, "not implemented");
+    abort();
+  }
+}
+
 static void start_next_step_and_unlock(grpc_call *call, reqinfo *master) {
   reqinfo *requests = call->requests;
   grpc_byte_buffer *send_message = NULL;
   size_t i;
-  gpr_uint32 incomplete = master->need_mask & ~master->complete_mask;
+  grpc_call_op op;
+  gpr_uint32 incomplete;
   gpr_uint8 send_initial_metadata = 0;
   gpr_uint8 send_trailing_metadata = 0;
   gpr_uint8 send_blocked = 0;
   gpr_uint8 send_finished = 0;
-  gpr_uint8 completed;
+
+  if (!IS_LIVE_MASTER(master)) {
+    gpr_mu_unlock(&call->mu);
+    return;
+  }
+
+  incomplete = master->need_mask & ~master->complete_mask;
 
   if (!send_blocked &&
       OP_IN_MASK(GRPC_IOREQ_SEND_INITIAL_METADATA, incomplete)) {
     send_initial_metadata = 1;
     finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, GRPC_OP_OK);
     master->complete_mask |= 1 << GRPC_IOREQ_SEND_INITIAL_METADATA;
+    send_blocked = 1;
   }
 
   if (!send_blocked && OP_IN_MASK(GRPC_IOREQ_SEND_MESSAGES, incomplete)) {
@@ -262,29 +282,15 @@ static void start_next_step_and_unlock(grpc_call *call, reqinfo *master) {
     call->write_index++;
   }
 
-  if (!send_blocked && (OP_IN_MASK(GRPC_IOREQ_SEND_CLOSE, incomplete))) {
-    send_finished = 1;
-    send_blocked = 1;
-  }
-
   if (!send_blocked &&
       OP_IN_MASK(GRPC_IOREQ_SEND_TRAILING_METADATA, incomplete)) {
     send_trailing_metadata = 1;
     finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, GRPC_OP_OK);
   }
 
-  completed = !send_blocked && master->complete_mask == master->need_mask;
-
-  if (completed) {
-    master->on_complete(call, GRPC_OP_OK, master->user_data);
-    for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
-      if (call->requests[i].master == master) {
-        call->requests[i].master =
-            (i == GRPC_IOREQ_SEND_MESSAGES || i == GRPC_IOREQ_RECV_MESSAGES)
-                ? NULL
-                : TOMBSTONE_MASTER;
-      }
-    }
+  if (!send_blocked && (OP_IN_MASK(GRPC_IOREQ_SEND_CLOSE, incomplete))) {
+    send_finished = 1;
+    send_blocked = 1;
   }
 
   gpr_mu_unlock(&call->mu);
@@ -299,25 +305,20 @@ static void start_next_step_and_unlock(grpc_call *call, reqinfo *master) {
                                              (const gpr_uint8 *)md->value,
                                              md->value_length));
     }
+    op.type = GRPC_SEND_START;
+    op.dir = GRPC_CALL_DOWN;
+    op.flags = 0;
+    op.done_cb = finish_start_step;
+    op.user_data = call;
+    grpc_call_execute_op(call, &op);
   }
 
   if (send_message) {
-    grpc_call_op op;
     op.type = GRPC_SEND_MESSAGE;
     op.dir = GRPC_CALL_DOWN;
     op.flags = 0;
     op.data.message = send_message;
     op.done_cb = finish_write_step;
-    op.user_data = call;
-    grpc_call_execute_op(call, &op);
-  }
-
-  if (send_finished) {
-    grpc_call_op op;
-    op.type = GRPC_SEND_FINISH;
-    op.dir = GRPC_CALL_DOWN;
-    op.flags = 0;
-    op.done_cb = finish_finish_step;
     op.user_data = call;
     grpc_call_execute_op(call, &op);
   }
@@ -332,6 +333,16 @@ static void start_next_step_and_unlock(grpc_call *call, reqinfo *master) {
                                              (const gpr_uint8 *)md->value,
                                              md->value_length));
     }
+  }
+
+  if (send_finished) {
+    grpc_call_op op;
+    op.type = GRPC_SEND_FINISH;
+    op.dir = GRPC_CALL_DOWN;
+    op.flags = 0;
+    op.done_cb = finish_finish_step;
+    op.user_data = call;
+    grpc_call_execute_op(call, &op);
   }
 }
 
@@ -489,9 +500,13 @@ void grpc_call_execute_op(grpc_call *call, grpc_call_op *op) {
   elem->filter->call_op(elem, NULL, op);
 }
 
-void grpc_call_add_mdelem(grpc_call *call, grpc_mdelem *mdelem,
-                          gpr_uint32 flags) {
-  legacy_state *ls = get_legacy_state(call);
+grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
+                                       gpr_uint32 flags) {
+  legacy_state *ls;
+  grpc_metadata *mdout;
+
+  gpr_mu_lock(&call->mu);
+  ls = get_legacy_state(call);
 
   if (ls->md_out_count == ls->md_out_capacity) {
     ls->md_out_capacity =
@@ -499,16 +514,14 @@ void grpc_call_add_mdelem(grpc_call *call, grpc_mdelem *mdelem,
     ls->md_out =
         gpr_realloc(ls->md_out, sizeof(grpc_mdelem *) * ls->md_out_capacity);
   }
-  ls->md_out[ls->md_out_count++] = mdelem;
-}
+  mdout = &ls->md_out[ls->md_out_count++];
+  mdout->key = gpr_strdup(metadata->key);
+  mdout->value = gpr_malloc(metadata->value_length);
+  mdout->value_length = metadata->value_length;
+  memcpy(mdout->value, metadata->value, metadata->value_length);
 
-grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
-                                       gpr_uint32 flags) {
-  grpc_call_add_mdelem(
-      call, grpc_mdelem_from_string_and_buffer(
-                call->metadata_context, metadata->key,
-                (gpr_uint8 *)metadata->value, metadata->value_length),
-      flags);
+  gpr_mu_unlock(&call->mu);
+
   return GRPC_CALL_OK;
 }
 
@@ -531,7 +544,6 @@ static void finish_status(grpc_call *call, grpc_op_error status, void *tag) {
 
 static void finish_recv_metadata(grpc_call *call, grpc_op_error status,
                                  void *tag) {
-  grpc_ioreq reqs[2];
   legacy_state *ls;
 
   gpr_mu_lock(&call->mu);
@@ -540,24 +552,50 @@ static void finish_recv_metadata(grpc_call *call, grpc_op_error status,
     grpc_cq_end_client_metadata_read(call->cq, tag, call, do_nothing, NULL,
                                      ls->md_in.count, ls->md_in.metadata);
 
+  } else {
+    grpc_cq_end_client_metadata_read(call->cq, tag, call, do_nothing, NULL, 0,
+                                     NULL);
+  }
+  gpr_mu_unlock(&call->mu);
+}
+
+static void finish_send_metadata(grpc_call *call, grpc_op_error status,
+                                 void *metadata_read_tag) {
+  grpc_ioreq reqs[2];
+  legacy_state *ls;
+
+  if (status == GRPC_OP_OK) {
+    /* Initially I thought about refactoring so that I could acquire this mutex
+       only
+       once, and then I remembered this API surface is deprecated and I moved
+       on. */
+
+    gpr_mu_lock(&call->mu);
+    ls = get_legacy_state(call);
+    reqs[0].op = GRPC_IOREQ_RECV_INITIAL_METADATA;
+    reqs[0].data.recv_metadata = &ls->md_in;
+    GPR_ASSERT(GRPC_CALL_OK == start_ioreq_and_unlock(call, reqs, 1,
+                                                      finish_recv_metadata,
+                                                      metadata_read_tag));
+
+    gpr_mu_lock(&call->mu);
+    ls = get_legacy_state(call);
     reqs[0].op = GRPC_IOREQ_RECV_TRAILING_METADATA;
     reqs[0].data.recv_metadata = &ls->trail_md_in;
     reqs[1].op = GRPC_IOREQ_RECV_STATUS;
     reqs[1].data.recv_status = &ls->status_in;
-    if (GRPC_CALL_OK != start_ioreq_and_unlock(call, reqs, GPR_ARRAY_SIZE(reqs),
-                                               finish_status,
-                                               ls->finished_tag)) {
-      grpc_cq_end_finished(call->cq, ls->finished_tag, call, do_nothing, NULL,
-                           GRPC_STATUS_UNKNOWN,
-                           "Failed to start reading status", NULL, 0);
-    }
+    GPR_ASSERT(GRPC_CALL_OK !=
+               start_ioreq_and_unlock(call, reqs, GPR_ARRAY_SIZE(reqs),
+                                      finish_status, ls->finished_tag));
   } else {
-    gpr_mu_unlock(&call->mu);
-    grpc_cq_end_client_metadata_read(call->cq, tag, call, do_nothing, NULL, 0,
-                                     NULL);
+    gpr_mu_lock(&call->mu);
+    ls = get_legacy_state(call);
+    grpc_cq_end_client_metadata_read(call->cq, metadata_read_tag, call,
+                                     do_nothing, NULL, 0, NULL);
     grpc_cq_end_finished(call->cq, ls->finished_tag, call, do_nothing, NULL,
                          GRPC_STATUS_UNKNOWN, "Failed to read initial metadata",
                          NULL, 0);
+    gpr_mu_unlock(&call->mu);
   }
 }
 
@@ -575,9 +613,10 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   err = bind_cq(call, cq);
   if (err != GRPC_CALL_OK) return err;
 
-  req.op = GRPC_IOREQ_RECV_INITIAL_METADATA;
-  req.data.recv_metadata = &ls->md_in;
-  return start_ioreq_and_unlock(call, &req, 1, finish_recv_metadata,
+  req.op = GRPC_IOREQ_SEND_INITIAL_METADATA;
+  req.data.send_metadata.count = ls->md_out_count;
+  req.data.send_metadata.metadata = ls->md_out;
+  return start_ioreq_and_unlock(call, &req, 1, finish_send_metadata,
                                 metadata_read_tag);
 }
 

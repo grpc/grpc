@@ -51,7 +51,7 @@ struct grpc_channel {
   grpc_mdstr *authority_string;
 };
 
-#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
+#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c)+1))
 
 grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t num_filters,
@@ -74,12 +74,13 @@ grpc_channel *grpc_channel_create_from_filters(
 
 static void do_nothing(void *ignored, grpc_op_error error) {}
 
-grpc_call *grpc_channel_create_call_old(grpc_channel *channel, const char *method,
-                                    const char *host,
-                                    gpr_timespec absolute_deadline) {
+grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
+                                        const char *method, const char *host,
+                                        gpr_timespec absolute_deadline) {
   grpc_call *call;
   grpc_mdelem *path_mdelem;
   grpc_mdelem *authority_mdelem;
+  grpc_call_op op;
 
   if (!channel->is_client) {
     gpr_log(GPR_ERROR, "Cannot create a call on the server.");
@@ -95,16 +96,22 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel, const char *metho
   path_mdelem = grpc_mdelem_from_metadata_strings(
       channel->metadata_context, channel->path_string,
       grpc_mdstr_from_string(channel->metadata_context, method));
-  grpc_call_add_mdelem(call, path_mdelem, 0);
+  op.type = GRPC_SEND_METADATA;
+  op.dir = GRPC_CALL_DOWN;
+  op.flags = 0;
+  op.data.metadata = path_mdelem;
+  op.done_cb = do_nothing;
+  op.user_data = NULL;
+  grpc_call_execute_op(call, &op);
 
   grpc_mdstr_ref(channel->authority_string);
   authority_mdelem = grpc_mdelem_from_metadata_strings(
       channel->metadata_context, channel->authority_string,
       grpc_mdstr_from_string(channel->metadata_context, host));
-  grpc_call_add_mdelem(call, authority_mdelem, 0);
+  op.data.metadata = authority_mdelem;
+  grpc_call_execute_op(call, &op);
 
   if (0 != gpr_time_cmp(absolute_deadline, gpr_inf_future)) {
-    grpc_call_op op;
     op.type = GRPC_SEND_DEADLINE;
     op.dir = GRPC_CALL_DOWN;
     op.flags = 0;
