@@ -38,7 +38,6 @@ var grpc = require('bindings')('grpc.node');
 var Server = require('../src/server');
 var client = require('../src/client');
 var common = require('../src/common');
-var _ = require('highland');
 
 var ca_path = path.join(__dirname, 'data/ca.pem');
 
@@ -85,6 +84,24 @@ function cancelHandler(stream) {
   // do nothing
 }
 
+/**
+ * Serialize a string to a Buffer
+ * @param {string} value The string to serialize
+ * @return {Buffer} The serialized value
+ */
+function stringSerialize(value) {
+  return new Buffer(value);
+}
+
+/**
+ * Deserialize a Buffer to a string
+ * @param {Buffer} buffer The buffer to deserialize
+ * @return {string} The string value of the buffer
+ */
+function stringDeserialize(buffer) {
+  return buffer.toString();
+}
+
 describe('echo client', function() {
   var server;
   var channel;
@@ -105,16 +122,23 @@ describe('echo client', function() {
     var messages = ['echo1', 'echo2', 'echo3', 'echo4'];
     var stream = client.makeRequest(
         channel,
-        'echo');
-    _(messages).map(function(val) {
-      return new Buffer(val);
-    }).pipe(stream);
+        'echo',
+        stringSerialize,
+        stringDeserialize);
+    for (var i = 0; i < messages.length; i++) {
+      stream.write(messages[i]);
+    }
+    stream.end();
     var index = 0;
     stream.on('data', function(chunk) {
-      assert.equal(messages[index], chunk.toString());
+      assert.equal(messages[index], chunk);
       index += 1;
     });
+    stream.on('status', function(status) {
+      assert.equal(status.code, client.status.OK);
+    });
     stream.on('end', function() {
+      assert.equal(index, messages.length);
       done();
     });
   });
@@ -186,18 +210,23 @@ describe('secure echo client', function() {
     var messages = ['echo1', 'echo2', 'echo3', 'echo4'];
     var stream = client.makeRequest(
         channel,
-        'echo');
-
-    _(messages).map(function(val) {
-      return new Buffer(val);
-    }).pipe(stream);
+        'echo',
+        stringSerialize,
+        stringDeserialize);
+    for (var i = 0; i < messages.length; i++) {
+      stream.write(messages[i]);
+    }
+    stream.end();
     var index = 0;
     stream.on('data', function(chunk) {
-      assert.equal(messages[index], chunk.toString());
+      assert.equal(messages[index], chunk);
       index += 1;
     });
+    stream.on('status', function(status) {
+      assert.equal(status.code, client.status.OK);
+    });
     stream.on('end', function() {
-      server.shutdown();
+      assert.equal(index, messages.length);
       done();
     });
   });
