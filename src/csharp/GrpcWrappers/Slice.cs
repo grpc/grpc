@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
     /// <summary>
     /// gpr_slice from grpc/support/slice.h

@@ -40,13 +40,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\GrpcInterop\GrpcInterop.csproj">
-      <Project>{49E430FF-C8AE-4824-81CA-DAAAFF441977}</Project>
-      <Name>GrpcInterop</Name>
-    </ProjectReference>
     <ProjectReference Include="..\GrpcApi\GrpcApi.csproj">
       <Project>{7DC1433E-3225-42C7-B7EA-546D56E27A4B}</Project>
       <Name>GrpcApi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GrpcWrappers\GrpcWrappers.csproj">
+      <Project>{49E430FF-C8AE-4824-81CA-DAAAFF441977}</Project>
+      <Name>GrpcWrappers</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

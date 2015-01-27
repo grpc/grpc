@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.IO;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
 	public class ByteBuffer : WrappedNativeObject<ByteBufferSafeHandle>
 	{

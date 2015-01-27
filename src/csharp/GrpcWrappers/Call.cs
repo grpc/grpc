@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
 	public class Call : WrappedNativeObject<CallSafeHandle>
 	{

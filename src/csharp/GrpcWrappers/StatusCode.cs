@@ -1,6 +1,6 @@
 using System;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
     // TODO: this should not be in Interop namespace.
     /// <summary>

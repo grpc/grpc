@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
     public static class Utils
     {

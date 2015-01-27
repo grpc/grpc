@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reactive.Linq;
-using Google.GRPC.Interop;
+using Google.GRPC.Wrappers;
 using Google.GRPC.Core;
 
 namespace math

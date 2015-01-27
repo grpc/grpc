@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics.Contracts;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
     /// <summary>
     /// Wraps a native resource referenced by a SafeHandle.

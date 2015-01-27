@@ -1,5 +1,5 @@
 using System;
-using Google.GRPC.Interop;
+using Google.GRPC.Wrappers;
 using System.Threading.Tasks;
 
 namespace Google.GRPC.Core
