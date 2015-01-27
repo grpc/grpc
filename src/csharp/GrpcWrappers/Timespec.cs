@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
 	/// <summary>
 	/// gpr_timespec from grpc/support/time.h

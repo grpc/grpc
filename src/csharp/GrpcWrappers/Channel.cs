@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
 	public class Channel : WrappedNativeObject<ChannelSafeHandle>
 	{

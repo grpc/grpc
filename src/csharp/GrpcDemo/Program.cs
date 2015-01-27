@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using Google.GRPC.Interop;
+using Google.GRPC.Wrappers;
 using System.Threading;
 using math;
 

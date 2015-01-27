@@ -2,7 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 
-namespace Google.GRPC.Interop
+namespace Google.GRPC.Wrappers
 {
     public interface ICallContext : IDisposable {
     

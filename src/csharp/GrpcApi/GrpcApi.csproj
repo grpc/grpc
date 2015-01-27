@@ -52,10 +52,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\GrpcInterop\GrpcInterop.csproj">
-      <Project>{49E430FF-C8AE-4824-81CA-DAAAFF441977}</Project>
-      <Name>GrpcInterop</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\protobuf\csharp\src\ProtocolBuffers\ProtocolBuffers.NET40.csproj">
       <Project>{6908BDCE-D925-43F3-94AC-A531E6DF2591}</Project>
       <Name>ProtocolBuffers.NET40</Name>
@@ -63,6 +59,10 @@
     <ProjectReference Include="..\GrpcCore\GrpcCore.csproj">
       <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
       <Name>GrpcCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\GrpcWrappers\GrpcWrappers.csproj">
+      <Project>{49E430FF-C8AE-4824-81CA-DAAAFF441977}</Project>
+      <Name>GrpcWrappers</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>
