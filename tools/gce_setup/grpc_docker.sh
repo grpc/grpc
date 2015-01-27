@@ -723,9 +723,26 @@ grpc_cloud_prod_test() {
 grpc_interop_gen_ruby_cmd() {
   local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c"
   local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
+  local the_cmd="$cmd_prefix 'ruby $test_script --use_test_ca --use_tls $@'"
+  echo $the_cmd
+}
+
+
+# constructs the full dockerized java interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_ruby_cmd() {
+  local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c"
+  local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
+  local test_script+=" --use_tls-true"
+  local gfe_flags=" --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com"
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
   local the_cmd="$cmd_prefix 'ruby $test_script $@'"
   echo $the_cmd
 }
+
 
 # constructs the full dockerized Go interop test cmd.
 #
@@ -803,7 +820,7 @@ grpc_interop_gen_cxx_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_gen_cxx_cmd() {
-    local cmd_prefix="sudo docker run grpc/cxx"; 
+    local cmd_prefix="sudo docker run grpc/cxx";
     local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl";
     local gfe_flags=" --use_prod_roots --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com"
     local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
