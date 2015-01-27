@@ -34,8 +34,6 @@
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
 
-var channel = new grpc.Channel('localhost:7070');
-
 /**
  * Helper function to return an absolute deadline given a relative timeout in
  * seconds.
@@ -49,6 +47,17 @@ function getDeadline(timeout_secs) {
 }
 
 describe('call', function() {
+  var channel;
+  var server;
+  before(function() {
+    server = new grpc.Server();
+    var port = server.addHttp2Port('localhost:0');
+    server.start();
+    channel = new grpc.Channel('localhost:' + port);
+  });
+  after(function() {
+    server.shutdown();
+  });
   describe('constructor', function() {
     it('should reject anything less than 3 arguments', function() {
       assert.throws(function() {
