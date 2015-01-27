@@ -140,6 +140,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       grpc_sopb_add_begin_message(&calld->outgoing_sopb,
                                   grpc_byte_buffer_length(op->data.message),
                                   op->flags);
+      /* fall-through */
+    case GRPC_SEND_PREFORMATTED_MESSAGE:
       copy_byte_buffer_to_stream_ops(op->data.message, &calld->outgoing_sopb);
       calld->outgoing_buffer_length_estimate +=
           (5 + grpc_byte_buffer_length(op->data.message));
