@@ -1268,11 +1268,11 @@
       ]
     },
     {
-      "name": "poll_kick_test",
+      "name": "poll_kick_posix_test",
       "build": "test",
       "language": "c",
       "src": [
-        "test/core/iomgr/poll_kick_test.c"
+        "test/core/iomgr/poll_kick_posix_test.c"
       ],
       "deps": [
         "grpc_test_util",
