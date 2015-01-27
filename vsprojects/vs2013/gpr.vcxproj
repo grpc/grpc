@@ -86,7 +86,6 @@
     <ClInclude Include="..\..\include\grpc\support\port_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\slice.h" />
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />
-    <ClInclude Include="..\..\include\grpc\support\string.h" />
     <ClInclude Include="..\..\include\grpc\support\sync.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_generic.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_posix.h" />
@@ -102,6 +101,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\core\support\cpu.h" />
     <ClInclude Include="..\..\src\core\support\murmur_hash.h" />
+    <ClInclude Include="..\..\src\core\support\string.h" />
     <ClInclude Include="..\..\src\core\support\thd_internal.h" />
   </ItemGroup>
   <ItemGroup>

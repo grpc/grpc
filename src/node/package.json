@@ -17,5 +17,5 @@
     "mocha": "~1.21.0",
     "minimist": "^1.1.0"
   },
-  "main": "main.js"
+  "main": "index.js"
 }

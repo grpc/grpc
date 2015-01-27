@@ -63,80 +63,25 @@ util.inherits(ClientReadableObjectStream, Readable);
  * client side. Extends from stream.Readable.
  * @constructor
  * @param {stream} stream Underlying binary Duplex stream for the call
- * @param {function(Buffer)} deserialize Function for deserializing binary data
- * @param {object} options Stream options
  */
-function ClientReadableObjectStream(stream, deserialize, options) {
-  options = _.extend(options, {objectMode: true});
+function ClientReadableObjectStream(stream) {
+  var options = {objectMode: true};
   Readable.call(this, options);
   this._stream = stream;
   var self = this;
   forwardEvent(stream, this, 'status');
   forwardEvent(stream, this, 'metadata');
   this._stream.on('data', function forwardData(chunk) {
-    if (!self.push(deserialize(chunk))) {
+    if (!self.push(chunk)) {
       self._stream.pause();
     }
   });
   this._stream.pause();
-}
-
-util.inherits(ClientWritableObjectStream, Writable);
-
-/**
- * Class for representing a gRPC client streaming call as a Node stream on the
- * client side. Extends from stream.Writable.
- * @constructor
- * @param {stream} stream Underlying binary Duplex stream for the call
- * @param {function(*):Buffer} serialize Function for serializing objects
- * @param {object} options Stream options
- */
-function ClientWritableObjectStream(stream, serialize, options) {
-  options = _.extend(options, {objectMode: true});
-  Writable.call(this, options);
-  this._stream = stream;
-  this._serialize = serialize;
-  forwardEvent(stream, this, 'status');
-  forwardEvent(stream, this, 'metadata');
-  this.on('finish', function() {
-    this._stream.end();
-  });
-}
-
-
-util.inherits(ClientBidiObjectStream, Duplex);
-
-/**
- * Class for representing a gRPC bidi streaming call as a Node stream on the
- * client side. Extends from stream.Duplex.
- * @constructor
- * @param {stream} stream Underlying binary Duplex stream for the call
- * @param {function(*):Buffer} serialize Function for serializing objects
- * @param {function(Buffer)} deserialize Function for deserializing binary data
- * @param {object} options Stream options
- */
-function ClientBidiObjectStream(stream, serialize, deserialize, options) {
-  options = _.extend(options, {objectMode: true});
-  Duplex.call(this, options);
-  this._stream = stream;
-  this._serialize = serialize;
-  var self = this;
-  forwardEvent(stream, this, 'status');
-  forwardEvent(stream, this, 'metadata');
-  this._stream.on('data', function forwardData(chunk) {
-    if (!self.push(deserialize(chunk))) {
-      self._stream.pause();
-    }
-  });
-  this._stream.pause();
-  this.on('finish', function() {
-    this._stream.end();
-  });
 }
 
 /**
  * _read implementation for both types of streams that allow reading.
- * @this {ClientReadableObjectStream|ClientBidiObjectStream}
+ * @this {ClientReadableObjectStream}
  * @param {number} size Ignored
  */
 function _read(size) {
@@ -147,30 +92,51 @@ function _read(size) {
  * See docs for _read
  */
 ClientReadableObjectStream.prototype._read = _read;
+
+util.inherits(ClientWritableObjectStream, Writable);
+
 /**
- * See docs for _read
+ * Class for representing a gRPC client streaming call as a Node stream on the
+ * client side. Extends from stream.Writable.
+ * @constructor
+ * @param {stream} stream Underlying binary Duplex stream for the call
  */
-ClientBidiObjectStream.prototype._read = _read;
+function ClientWritableObjectStream(stream) {
+  var options = {objectMode: true};
+  Writable.call(this, options);
+  this._stream = stream;
+  forwardEvent(stream, this, 'status');
+  forwardEvent(stream, this, 'metadata');
+  this.on('finish', function() {
+    this._stream.end();
+  });
+}
 
 /**
  * _write implementation for both types of streams that allow writing
- * @this {ClientWritableObjectStream|ClientBidiObjectStream}
+ * @this {ClientWritableObjectStream}
  * @param {*} chunk The value to write to the stream
  * @param {string} encoding Ignored
  * @param {function(Error)} callback Callback to call when finished writing
  */
 function _write(chunk, encoding, callback) {
-  this._stream.write(this._serialize(chunk), encoding, callback);
+  this._stream.write(chunk, encoding, callback);
 }
 
 /**
  * See docs for _write
  */
 ClientWritableObjectStream.prototype._write = _write;
+
 /**
- * See docs for _write
+ * Cancel the underlying call
  */
-ClientBidiObjectStream.prototype._write = _write;
+function cancel() {
+  this._stream.cancel();
+}
+
+ClientReadableObjectStream.prototype.cancel = cancel;
+ClientWritableObjectStream.prototype.cancel = cancel;
 
 /**
  * Get a function that can make unary requests to the specified method.
@@ -196,17 +162,26 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeUnaryRequest(argument, callback, metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
+    var stream = client.makeRequest(this.channel, method, serialize,
+                                    deserialize, metadata, deadline);
     var emitter = new EventEmitter();
+    emitter.cancel = function cancel() {
+      stream.cancel();
+    };
     forwardEvent(stream, emitter, 'status');
     forwardEvent(stream, emitter, 'metadata');
-    stream.write(serialize(argument));
+    stream.write(argument);
     stream.end();
     stream.on('data', function forwardData(chunk) {
       try {
-        callback(null, deserialize(chunk));
+        callback(null, chunk);
       } catch (e) {
         callback(e);
+      }
+    });
+    stream.on('status', function forwardStatus(status) {
+      if (status.code !== client.status.OK) {
+        callback(status);
       }
     });
     return emitter;
@@ -236,13 +211,19 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeClientStreamRequest(callback, metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
-    var obj_stream = new ClientWritableObjectStream(stream, serialize, {});
+    var stream = client.makeRequest(this.channel, method, serialize,
+                                    deserialize, metadata, deadline);
+    var obj_stream = new ClientWritableObjectStream(stream);
     stream.on('data', function forwardData(chunk) {
       try {
-        callback(null, deserialize(chunk));
+        callback(null, chunk);
       } catch (e) {
         callback(e);
+      }
+    });
+    stream.on('status', function forwardStatus(status) {
+      if (status.code !== client.status.OK) {
+        callback(status);
       }
     });
     return obj_stream;
@@ -272,9 +253,10 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeServerStreamRequest(argument, metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
-    var obj_stream = new ClientReadableObjectStream(stream, deserialize, {});
-    stream.write(serialize(argument));
+    var stream = client.makeRequest(this.channel, method, serialize,
+                                    deserialize, metadata, deadline);
+    var obj_stream = new ClientReadableObjectStream(stream);
+    stream.write(argument);
     stream.end();
     return obj_stream;
   }
@@ -301,12 +283,8 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeBidiStreamRequest(metadata, deadline) {
-    var stream = client.makeRequest(this.channel, method, metadata, deadline);
-    var obj_stream = new ClientBidiObjectStream(stream,
-                                                serialize,
-                                                deserialize,
-                                                {});
-    return obj_stream;
+    return client.makeRequest(this.channel, method, serialize,
+                              deserialize, metadata, deadline);
   }
   return makeBidiStreamRequest;
 }

@@ -140,6 +140,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       grpc_sopb_add_begin_message(&calld->outgoing_sopb,
                                   grpc_byte_buffer_length(op->data.message),
                                   op->flags);
+      /* fall-through */
+    case GRPC_SEND_PREFORMATTED_MESSAGE:
       copy_byte_buffer_to_stream_ops(op->data.message, &calld->outgoing_sopb);
       calld->outgoing_buffer_length_estimate +=
           (5 + grpc_byte_buffer_length(op->data.message));
@@ -445,6 +447,7 @@ static void recv_batch(void *user_data, grpc_transport *transport,
                    (int)calld->incoming_message.length,
                    (int)calld->incoming_message_length);
       recv_error(chand, calld, __LINE__, message);
+      gpr_free(message);
     }
     call_op.type = GRPC_RECV_HALF_CLOSE;
     call_op.dir = GRPC_CALL_UP;

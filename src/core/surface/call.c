@@ -981,3 +981,8 @@ void grpc_call_set_deadline(grpc_call_element *elem, gpr_timespec deadline) {
   call->have_alarm = 1;
   grpc_alarm_init(&call->alarm, deadline, call_alarm, call, gpr_now());
 }
+
+grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
+  return CALL_STACK_FROM_CALL(call);
+}
+

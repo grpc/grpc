@@ -84,7 +84,6 @@ static void grpc_rb_credentials_mark(void *p) {
 }
 
 /* Allocates Credential instances.
-
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_credentials_alloc(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
@@ -95,7 +94,6 @@ static VALUE grpc_rb_credentials_alloc(VALUE cls) {
 }
 
 /* Clones Credentials instances.
-
    Gives Credentials a consistent implementation of Ruby's object copy/dup
    protocol. */
 static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
@@ -124,7 +122,6 @@ static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
 /*
   call-seq:
     creds = Credentials.default()
-
     Creates the default credential instances. */
 static VALUE grpc_rb_default_credentials_create(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
@@ -143,7 +140,6 @@ static VALUE grpc_rb_default_credentials_create(VALUE cls) {
 /*
   call-seq:
     creds = Credentials.compute_engine()
-
     Creates the default credential instances. */
 static VALUE grpc_rb_compute_engine_credentials_create(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
@@ -164,7 +160,6 @@ static VALUE grpc_rb_compute_engine_credentials_create(VALUE cls) {
     creds1 = ...
     creds2 = ...
     creds3 = creds1.add(creds2)
-
     Creates the default credential instances. */
 static VALUE grpc_rb_composite_credentials_create(VALUE self, VALUE other) {
   grpc_rb_credentials *self_wrapper = NULL;
@@ -202,11 +197,9 @@ static ID id_pem_cert_chain;
     ...
     creds2 = Credentials.new(pem_root_certs, pem_private_key,
                              pem_cert_chain)
-
     pem_root_certs: (required) PEM encoding of the server root certificate
     pem_private_key: (optional) PEM encoding of the client's private key
     pem_cert_chain: (optional) PEM encoding of the client's cert chain
-
     Initializes Credential instances. */
 static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   VALUE pem_root_certs = Qnil;
@@ -214,6 +207,8 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   VALUE pem_cert_chain = Qnil;
   grpc_rb_credentials *wrapper = NULL;
   grpc_credentials *creds = NULL;
+  grpc_ssl_pem_key_cert_pair key_cert_pair;
+  MEMZERO(&key_cert_pair, grpc_ssl_pem_key_cert_pair, 1);
   /* TODO: Remove mandatory arg when we support default roots. */
   /* "12" == 1 mandatory arg, 2 (credentials) is optional */
   rb_scan_args(argc, argv, "12", &pem_root_certs, &pem_private_key,
@@ -228,10 +223,10 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
     creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs), NULL);
   } else {
-    grpc_ssl_pem_key_cert_pair key_cert_pair = {RSTRING_PTR(pem_private_key),
-                                                RSTRING_PTR(pem_cert_chain)};
-    creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs),
-                                        &key_cert_pair);
+    key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
+    key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
+    creds = grpc_ssl_credentials_create(
+        RSTRING_PTR(pem_root_certs), &key_cert_pair);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");

@@ -31,29 +31,37 @@
  *
  */
 
-#ifndef __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
-#define __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
+#ifndef __GRPC_GRPC_HTTP_H__
+#define __GRPC_GRPC_HTTP_H__
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "examples/tips/pubsub.pb.h"
+/* HTTP GET support.
 
-namespace grpc {
-namespace examples {
-namespace tips {
+   HTTP2 servers can publish statically generated text content served
+   via HTTP2 GET queries by publishing one or more grpc_http_server_page
+   elements via repeated GRPC_ARG_SERVE_OVER_HTTP elements in the servers
+   channel_args.
 
-class Client {
- public:
-  Client(std::shared_ptr<grpc::ChannelInterface> channel);
-  Status CreateTopic(grpc::string topic);
+   This is not:
+    - a general purpose web server
+    - particularly fast
 
- private:
-  std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
-};
+   It's useful for being able to serve up some static content (maybe some
+   javascript to be able to interact with your GRPC server?) */
 
-}  // namespace tips
-}  // namespace examples
-}  // namespace grpc
+typedef struct {
+  const char *path;
+  const char *content_type;
+  const char *content;
+} grpc_http_server_page;
 
-#endif  // __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
+#define GRPC_ARG_SERVE_OVER_HTTP "grpc.serve_over_http"
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __GRPC_GRPC_HTTP_H__ */

@@ -35,9 +35,9 @@ var _ = require('underscore');
 
 var ProtoBuf = require('protobufjs');
 
-var surface_client = require('./surface_client.js');
+var surface_client = require('./src/surface_client.js');
 
-var surface_server = require('./surface_server.js');
+var surface_server = require('./src/surface_server.js');
 
 var grpc = require('bindings')('grpc');
 
