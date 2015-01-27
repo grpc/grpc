@@ -31,7 +31,7 @@ require 'grpc'
 require 'xray/thread_dump_signal_handler'
 
 NOOP = proc { |x| x }
-FAKE_HOST = 'localhost:50505'
+FAKE_HOST = 'localhost:0'
 
 def wakey_thread(&blk)
   awake_mutex, awake_cond = Mutex.new, ConditionVariable.new
