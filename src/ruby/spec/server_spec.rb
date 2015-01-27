@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'port_picker'
 
 def load_test_certs
   test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -205,10 +204,8 @@ describe Server do
   end
 
   def start_a_server
-    port = find_unused_tcp_port
-    host = "localhost:#{port}"
     s = Server.new(@cq, nil)
-    s.add_http2_port(host)
+    s.add_http2_port('0.0.0.0:0')
     s.start
     s
   end
