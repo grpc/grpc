@@ -127,6 +127,7 @@ describe('echo client', function() {
     for (var i = 0; i < messages.length; i++) {
       stream.write(messages[i]);
     }
+    stream.end();
     var index = 0;
     stream.on('data', function(chunk) {
       assert.equal(messages[index], chunk.toString());
@@ -210,6 +211,7 @@ describe('secure echo client', function() {
     for (var i = 0; i < messages.length; i++) {
       stream.write(messages[i]);
     }
+    stream.end();
     var index = 0;
     stream.on('data', function(chunk) {
       assert.equal(messages[index], chunk.toString());
