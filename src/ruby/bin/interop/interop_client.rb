@@ -69,12 +69,12 @@ def test_creds
 end
 
 # creates a test stub that accesses host:port securely.
-def create_stub(host, port, is_secure)
+def create_stub(host, port, is_secure, host_override)
   address = "#{host}:#{port}"
   if is_secure
     stub_opts = {
       :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com'
+      GRPC::Core::Channel::SSL_TARGET => host_override
     }
     logger.info("... connecting securely to #{address}")
     Grpc::Testing::TestService::Stub.new(address, **stub_opts)
@@ -212,6 +212,7 @@ def parse_options
   options = {
     'secure' => false,
     'server_host' => nil,
+    'server_host_override' => nil,
     'server_port' => nil,
     'test_case' => nil
   }
@@ -219,6 +220,10 @@ def parse_options
     opts.banner = 'Usage: --server_host <server_host> --server_port server_port'
     opts.on('--server_host SERVER_HOST', 'server hostname') do |v|
       options['server_host'] = v
+    end
+    opts.on('--server_host_override HOST_OVERRIDE',
+            'override host via a HTTP header') do |v|
+      options['server_host_override'] = v
     end
     opts.on('--server_port SERVER_PORT', 'server port') do |v|
       options['server_port'] = v
@@ -240,12 +245,16 @@ def parse_options
       fail(OptionParser::MissingArgument, "please specify --#{arg}")
     end
   end
+  if options['server_host_override'].nil?
+    options['server_host_override'] = options['server_host']
+  end
   options
 end
 
 def main
   opts = parse_options
-  stub = create_stub(opts['server_host'], opts['server_port'], opts['secure'])
+  stub = create_stub(opts['server_host'], opts['server_port'], opts['secure'],
+                     opts['server_host_override'])
   NamedTests.new(stub).method(opts['test_case']).call
 end
 
