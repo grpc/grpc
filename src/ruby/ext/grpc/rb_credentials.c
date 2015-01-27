@@ -214,6 +214,8 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   VALUE pem_cert_chain = Qnil;
   grpc_rb_credentials *wrapper = NULL;
   grpc_credentials *creds = NULL;
+  grpc_ssl_pem_key_cert_pair key_cert_pair;
+  MEMZERO(&key_cert_pair, grpc_ssl_pem_key_cert_pair, 1);
   /* TODO: Remove mandatory arg when we support default roots. */
   /* "12" == 1 mandatory arg, 2 (credentials) is optional */
   rb_scan_args(argc, argv, "12", &pem_root_certs, &pem_private_key,
@@ -228,8 +230,8 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
     creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs), NULL);
   } else {
-    grpc_ssl_pem_key_cert_pair key_cert_pair = {RSTRING_PTR(pem_private_key),
-                                                RSTRING_PTR(pem_cert_chain)};
+    key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
+    key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
     creds = grpc_ssl_credentials_create(
         RSTRING_PTR(pem_root_certs), &key_cert_pair);
   }
