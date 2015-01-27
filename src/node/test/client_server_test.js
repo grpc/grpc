@@ -99,6 +99,7 @@ function stringSerialize(value) {
  * @return {string} The string value of the buffer
  */
 function stringDeserialize(buffer) {
+  return buffer.toString();
 }
 
 describe('echo client', function() {
@@ -130,10 +131,14 @@ describe('echo client', function() {
     stream.end();
     var index = 0;
     stream.on('data', function(chunk) {
-      assert.equal(messages[index], chunk.toString());
+      assert.equal(messages[index], chunk);
       index += 1;
     });
+    stream.on('status', function(status) {
+      assert.equal(status.code, client.status.OK);
+    });
     stream.on('end', function() {
+      assert.equal(index, messages.length);
       done();
     });
   });
@@ -214,11 +219,14 @@ describe('secure echo client', function() {
     stream.end();
     var index = 0;
     stream.on('data', function(chunk) {
-      assert.equal(messages[index], chunk.toString());
+      assert.equal(messages[index], chunk);
       index += 1;
     });
+    stream.on('status', function(status) {
+      assert.equal(status.code, client.status.OK);
+    });
     stream.on('end', function() {
-      server.shutdown();
+      assert.equal(index, messages.length);
       done();
     });
   });
