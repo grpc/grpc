@@ -32,7 +32,7 @@
  */
 
 /* TODO(klempner): Allow this code to be disabled. */
-#include "src/core/iomgr/wakeup_fd.h"
+#include "src/core/iomgr/wakeup_fd_posix.h"
 
 #include <errno.h>
 #include <string.h>

@@ -34,22 +34,18 @@
 #ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
 #define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
 
-#include "src/core/iomgr/wakeup_fd.h"
-#include <grpc/support/sync.h>
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SOCKET
+#include "src/core/iomgr/pollset_kick_posix.h"
+#endif
+
+#ifdef GPR_WIN32
+#include "src/core/iomgr/pollset_kick_windows.h"
+#endif
 
 /* This is an abstraction around the typical pipe mechanism for waking up a
    thread sitting in a poll() style call. */
-
-typedef struct grpc_kick_fd_info {
-  grpc_wakeup_fd_info wakeup_fd;
-  struct grpc_kick_fd_info *next;
-} grpc_kick_fd_info;
-
-typedef struct grpc_pollset_kick_state {
-  gpr_mu mu;
-  int kicked;
-  struct grpc_kick_fd_info *fd_info;
-} grpc_pollset_kick_state;
 
 void grpc_pollset_kick_global_init(void);
 void grpc_pollset_kick_global_destroy(void);

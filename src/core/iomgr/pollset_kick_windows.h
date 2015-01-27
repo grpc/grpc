@@ -31,40 +31,15 @@
  *
  */
 
-#include "src/core/iomgr/wakeup_fd.h"
-#include "src/core/iomgr/wakeup_fd_pipe.h"
-#include <stddef.h>
+#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
+#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
 
-static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
+#include <grpc/support/sync.h>
 
-void grpc_wakeup_fd_global_init(void) {
-  if (specialized_wakeup_fd_vtable.check_availability()) {
-    wakeup_fd_vtable = &specialized_wakeup_fd_vtable;
-  } else {
-    wakeup_fd_vtable = &pipe_wakeup_fd_vtable;
-  }
-}
+struct grpc_kick_fd_info;
 
-void grpc_wakeup_fd_global_init_force_fallback(void) {
-  wakeup_fd_vtable = &pipe_wakeup_fd_vtable;
-}
+typedef struct grpc_pollset_kick_state {
+  int unused;
+} grpc_pollset_kick_state;
 
-void grpc_wakeup_fd_global_destroy(void) {
-  wakeup_fd_vtable = NULL;
-}
-
-void grpc_wakeup_fd_create(grpc_wakeup_fd_info *fd_info) {
-  wakeup_fd_vtable->create(fd_info);
-}
-
-void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd_info *fd_info) {
-  wakeup_fd_vtable->consume(fd_info);
-}
-
-void grpc_wakeup_fd_wakeup(grpc_wakeup_fd_info *fd_info) {
-  wakeup_fd_vtable->wakeup(fd_info);
-}
-
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info) {
-  wakeup_fd_vtable->destroy(fd_info);
-}
+#endif  /* __GRPC_INTERNALIOMGR_POLLSET_KICK_WINDOWS_H_ */

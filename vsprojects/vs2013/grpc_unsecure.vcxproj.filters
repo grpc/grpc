@@ -118,9 +118,6 @@
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -128,6 +125,9 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_pipe.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
@@ -359,6 +359,12 @@
     <ClInclude Include="..\..\src\core\iomgr\pollset_kick.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_kick_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -395,7 +401,10 @@
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd.h">
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\census_interface.h">

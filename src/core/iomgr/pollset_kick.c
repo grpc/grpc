@@ -41,7 +41,7 @@
 #include <unistd.h>
 
 #include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/iomgr/wakeup_fd.h"
+#include "src/core/iomgr/wakeup_fd_posix.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

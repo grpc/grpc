@@ -31,52 +31,40 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
-#ifdef GPR_LINUX_EVENTFD
-
-#include <errno.h>
-#include <sys/eventfd.h>
-#include <unistd.h>
-
 #include "src/core/iomgr/wakeup_fd_posix.h"
-#include <grpc/support/log.h>
+#include "src/core/iomgr/wakeup_fd_pipe.h"
+#include <stddef.h>
 
-static void eventfd_create(grpc_wakeup_fd_info *fd_info) {
-  int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-  /* TODO(klempner): Handle failure more gracefully */
-  GPR_ASSERT(efd >= 0);
-  fd_info->read_fd = efd;
-  fd_info->write_fd = -1;
+static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
+
+void grpc_wakeup_fd_global_init(void) {
+  if (specialized_wakeup_fd_vtable.check_availability()) {
+    wakeup_fd_vtable = &specialized_wakeup_fd_vtable;
+  } else {
+    wakeup_fd_vtable = &pipe_wakeup_fd_vtable;
+  }
 }
 
-static void eventfd_consume(grpc_wakeup_fd_info *fd_info) {
-  eventfd_t value;
-  int err;
-  do {
-    err = eventfd_read(fd_info->read_fd, &value);
-  } while (err < 0 && errno == EINTR);
+void grpc_wakeup_fd_global_init_force_fallback(void) {
+  wakeup_fd_vtable = &pipe_wakeup_fd_vtable;
 }
 
-static void eventfd_wakeup(grpc_wakeup_fd_info *fd_info) {
-  int err;
-  do {
-    err = eventfd_write(fd_info->read_fd, 1);
-  } while (err < 0 && errno == EINTR);
+void grpc_wakeup_fd_global_destroy(void) {
+  wakeup_fd_vtable = NULL;
 }
 
-static void eventfd_destroy(grpc_wakeup_fd_info *fd_info) {
-  close(fd_info->read_fd);
+void grpc_wakeup_fd_create(grpc_wakeup_fd_info *fd_info) {
+  wakeup_fd_vtable->create(fd_info);
 }
 
-static int eventfd_check_availability(void) {
-  /* TODO(klempner): Actually check if eventfd is available */
-  return 1;
+void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd_info *fd_info) {
+  wakeup_fd_vtable->consume(fd_info);
 }
 
-const grpc_wakeup_fd_vtable specialized_wakeup_fd_vtable = {
-  eventfd_create, eventfd_consume, eventfd_wakeup, eventfd_destroy,
-  eventfd_check_availability
-};
+void grpc_wakeup_fd_wakeup(grpc_wakeup_fd_info *fd_info) {
+  wakeup_fd_vtable->wakeup(fd_info);
+}
 
-#endif /* GPR_LINUX_EVENTFD */
+void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info) {
+  wakeup_fd_vtable->destroy(fd_info);
+}

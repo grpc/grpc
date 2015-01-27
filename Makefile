@@ -1405,10 +1405,10 @@ LIBGRPC_SRC = \
     src/core/iomgr/tcp_posix.c \
     src/core/iomgr/tcp_server_posix.c \
     src/core/iomgr/time_averaged_stats.c \
-    src/core/iomgr/wakeup_fd.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
     src/core/iomgr/wakeup_fd_nospecial.c \
     src/core/iomgr/wakeup_fd_pipe.c \
+    src/core/iomgr/wakeup_fd_posix.c \
     src/core/statistics/census_init.c \
     src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
@@ -1528,10 +1528,10 @@ src/core/iomgr/tcp_client_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/tcp_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/tcp_server_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/time_averaged_stats.c: $(OPENSSL_DEP)
-src/core/iomgr/wakeup_fd.c: $(OPENSSL_DEP)
 src/core/iomgr/wakeup_fd_eventfd.c: $(OPENSSL_DEP)
 src/core/iomgr/wakeup_fd_nospecial.c: $(OPENSSL_DEP)
 src/core/iomgr/wakeup_fd_pipe.c: $(OPENSSL_DEP)
+src/core/iomgr/wakeup_fd_posix.c: $(OPENSSL_DEP)
 src/core/statistics/census_init.c: $(OPENSSL_DEP)
 src/core/statistics/census_log.c: $(OPENSSL_DEP)
 src/core/statistics/census_rpc_stats.c: $(OPENSSL_DEP)
@@ -1672,10 +1672,10 @@ objs/$(CONFIG)/src/core/iomgr/tcp_client_posix.o:
 objs/$(CONFIG)/src/core/iomgr/tcp_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_server_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/time_averaged_stats.o: 
-objs/$(CONFIG)/src/core/iomgr/wakeup_fd.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_eventfd.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_nospecial.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_pipe.o: 
+objs/$(CONFIG)/src/core/iomgr/wakeup_fd_posix.o: 
 objs/$(CONFIG)/src/core/statistics/census_init.o: 
 objs/$(CONFIG)/src/core/statistics/census_log.o: 
 objs/$(CONFIG)/src/core/statistics/census_rpc_stats.o: 
@@ -1836,10 +1836,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/tcp_posix.c \
     src/core/iomgr/tcp_server_posix.c \
     src/core/iomgr/time_averaged_stats.c \
-    src/core/iomgr/wakeup_fd.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
     src/core/iomgr/wakeup_fd_nospecial.c \
     src/core/iomgr/wakeup_fd_pipe.c \
+    src/core/iomgr/wakeup_fd_posix.c \
     src/core/statistics/census_init.c \
     src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
@@ -1963,10 +1963,10 @@ objs/$(CONFIG)/src/core/iomgr/tcp_client_posix.o:
 objs/$(CONFIG)/src/core/iomgr/tcp_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_server_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/time_averaged_stats.o: 
-objs/$(CONFIG)/src/core/iomgr/wakeup_fd.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_eventfd.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_nospecial.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_pipe.o: 
+objs/$(CONFIG)/src/core/iomgr/wakeup_fd_posix.o: 
 objs/$(CONFIG)/src/core/statistics/census_init.o: 
 objs/$(CONFIG)/src/core/statistics/census_log.o: 
 objs/$(CONFIG)/src/core/statistics/census_rpc_stats.o: 
