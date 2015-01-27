@@ -19,7 +19,7 @@ class SimpleConfig(object):
 
   def __init__(self, config):
     self.build_config = config
-    self.maxjobs = 32 * multiprocessing.cpu_count()
+    self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
 
   def run_command(self, binary):
@@ -32,7 +32,7 @@ class ValgrindConfig(object):
   def __init__(self, config, tool):
     self.build_config = config
     self.tool = tool
-    self.maxjobs = 4 * multiprocessing.cpu_count()
+    self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
   def run_command(self, binary):
