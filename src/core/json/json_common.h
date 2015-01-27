@@ -31,8 +31,11 @@
  *
  */
 
-/* The various json types. "NONE" may only used on top-level. */
-enum grpc_json_type_t {
+#ifndef __GRPC_SRC_CORE_JSON_JSON_COMMON_H__
+#define __GRPC_SRC_CORE_JSON_JSON_COMMON_H__
+
+/* The various json types. */
+typedef enum {
   GRPC_JSON_OBJECT,
   GRPC_JSON_ARRAY,
   GRPC_JSON_STRING,
@@ -40,5 +43,7 @@ enum grpc_json_type_t {
   GRPC_JSON_TRUE,
   GRPC_JSON_FALSE,
   GRPC_JSON_NULL,
-  GRPC_JSON_NONE
-};
+  GRPC_JSON_TOP_LEVEL
+} grpc_json_type;
+
+#endif /* __GRPC_SRC_CORE_JSON_JSON_COMMON_H__ */

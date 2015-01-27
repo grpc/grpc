@@ -31,39 +31,31 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+#include "src/core/json/json_writer.h"
 
-/* The idea of the writer is basically symmetrical of the reader. While the
- * reader emits various calls to your code, the writer takes basically the
- * same calls and emit json out of it. It doesn't try to make any check on
- * the order of the calls you do on it.
- *
- * Also, unlike the reader, the writer expects UTF-8 encoded input strings.
- *
- * The following need to be defined:
- *
- * // Adds a character to the output stream.
- * void grpc_json_writer_output_char(struct grpc_json_writer_t *, char);
- * // Adds a zero-terminated string to the output stream.
- * void grpc_json_writer_output_string(
- *   struct grpc_json_writer_t *writer, const char *str);
- * // Adds a fixed-length string to the output stream.
- * void grpc_json_writer_output_string_with_len(
- *   struct grpc_json_writer_t *writer, const char *str, size_t len);
+static void grpc_json_writer_output_char(grpc_json_writer* writer, char c) {
+  writer->output_char(writer, c);
+}
 
- */
+static void grpc_json_writer_output_string(grpc_json_writer* writer, const char* str) {
+  writer->output_string(writer, str);
+}
+
+static void grpc_json_writer_output_string_with_len(grpc_json_writer* writer, const char* str, size_t len) {
+  writer->output_string_with_len(writer, str, len);
+}
 
 /* Call this function to initialize the writer structure. */
-grpc_json_static_inline void grpc_json_writer_init(
-    struct grpc_json_writer_t* writer, int indent) {
+void grpc_json_writer_init(grpc_json_writer* writer, int indent) {
   writer->depth = 0;
   writer->container_empty = 1;
   writer->got_key = 0;
   writer->indent = indent;
 }
 
-/* This function is fully private. */
-grpc_json_static_inline void grpc_json_writer_output_indent(
-    struct grpc_json_writer_t* writer) {
+static void grpc_json_writer_output_indent(
+    grpc_json_writer* writer) {
   static const char spacesstr[] =
       "                "
       "                "
@@ -89,9 +81,8 @@ grpc_json_static_inline void grpc_json_writer_output_indent(
       writer, spacesstr + sizeof(spacesstr) - 1 - spaces, spaces);
 }
 
-/* This function is fully private. */
-grpc_json_static_inline void grpc_json_writer_value_end(
-    struct grpc_json_writer_t* writer) {
+static void grpc_json_writer_value_end(
+    grpc_json_writer* writer) {
   if (writer->container_empty) {
     writer->container_empty = 0;
     if (!writer->indent || !writer->depth) return;
@@ -103,10 +94,18 @@ grpc_json_static_inline void grpc_json_writer_value_end(
   }
 }
 
-/* This function is fully private. */
-grpc_json_static_inline void grpc_json_writer_escape_string(
-    struct grpc_json_writer_t* writer, const char* string) {
+static void grpc_json_writer_escape_utf16(grpc_json_writer* writer, gpr_uint16 utf16) {
   static const char hex[] = "0123456789abcdef";
+
+  grpc_json_writer_output_string_with_len(writer, "\\u", 2);
+  grpc_json_writer_output_char(writer, hex[(utf16 >> 12) & 0x0f]);
+  grpc_json_writer_output_char(writer, hex[(utf16 >> 8) & 0x0f]);
+  grpc_json_writer_output_char(writer, hex[(utf16 >> 4) & 0x0f]);
+  grpc_json_writer_output_char(writer, hex[(utf16) & 0x0f]);
+}
+
+static void grpc_json_writer_escape_string(
+    grpc_json_writer* writer, const char* string) {
   grpc_json_writer_output_char(writer, '"');
 
   for (;;) {
@@ -135,46 +134,72 @@ grpc_json_static_inline void grpc_json_writer_escape_string(
           grpc_json_writer_output_char(writer, 't');
           break;
         default:
-          grpc_json_writer_output_string_with_len(writer, "u00", 3);
-          grpc_json_writer_output_char(writer, c >= 16 ? '1' : '0');
-          grpc_json_writer_output_char(writer, hex[c & 15]);
+          grpc_json_writer_escape_utf16(writer, c);
           break;
       }
     } else {
-      unsigned unicode = 0;
+      gpr_uint32 utf32 = 0;
+      int extra = 0;
+      int i;
+      int valid = 1;
       if ((c & 0xe0) == 0xc0) {
-        unicode = c & 0x1f;
-        unicode <<= 6;
-        c = *string++;
-        if ((c & 0xc0) != 0x80) break;
-        unicode |= c & 0x3f;
+        utf32 = c & 0x1f;
+        extra = 1;
       } else if ((c & 0xf0) == 0xe0) {
-        unicode = c & 0x0f;
-        unicode <<= 6;
-        c = *string++;
-        if ((c & 0xc0) != 0x80) break;
-        unicode |= c & 0x3f;
-        unicode <<= 6;
-        c = *string++;
-        if ((c & 0xc0) != 0x80) break;
-        unicode |= c & 0x3f;
+        utf32 = c & 0x0f;
+        extra = 2;
+      } else if ((c & 0xf8) == 0xf0) {
+        utf32 = c & 0x07;
+        extra = 3;
       } else {
         break;
       }
-      grpc_json_writer_output_string_with_len(writer, "\\u", 2);
-      grpc_json_writer_output_char(writer, hex[(unicode >> 12) & 0x0f]);
-      grpc_json_writer_output_char(writer, hex[(unicode >> 8) & 0x0f]);
-      grpc_json_writer_output_char(writer, hex[(unicode >> 4) & 0x0f]);
-      grpc_json_writer_output_char(writer, hex[(unicode) & 0x0f]);
+      for (i = 0; i < extra; i++) {
+        utf32 <<= 6;
+        c = *string++;
+        if ((c & 0xc0) != 0x80) {
+          valid = 0;
+          break;
+        }
+        utf32 |= c & 0x3f;
+      }
+      if (!valid) break;
+      /* The range 0xd800 - 0xdfff is reserved by the surrogates ad vitam.
+       * Any other range is technically reserved for future usage, so if we
+       * don't want the software to break in the future, we have to allow
+       * anything else. The first non-unicode character is 0x110000. */
+      if (((utf32 >= 0xd800) && (utf32 <= 0xdfff)) ||
+          (utf32 >= 0x110000)) break;
+      if (utf32 >= 0x10000) {
+        /* If utf32 contains a character that is above 0xffff, it needs to be
+         * broken down into a utf-16 surrogate pair. A surrogate pair is first
+         * a high surrogate, followed by a low surrogate. Each surrogate holds
+         * 10 bits of usable data, thus allowing a total of 20 bits of data.
+         * The high surrogate marker is 0xd800, while the low surrogate marker
+         * is 0xdc00. The low 10 bits of each will be the usable data.
+         *
+         * After re-combining the 20 bits of data, one has to add 0x10000 to
+         * the resulting value, in order to obtain the original character.
+         * This is obviously because the range 0x0000 - 0xffff can be written
+         * without any special trick.
+         *
+         * Since 0x10ffff is the highest allowed character, we're working in
+         * the range 0x00000 - 0xfffff after we decrement it by 0x10000.
+         * That range is exactly 20 bits.
+         */
+        utf32 -= 0x10000;
+        grpc_json_writer_escape_utf16(writer, 0xd800 | (utf32 >> 10));
+        grpc_json_writer_escape_utf16(writer, 0xdc00 | (utf32 && 0x3ff));
+      } else {
+        grpc_json_writer_escape_utf16(writer, utf32);
+      }
     }
   }
 
   grpc_json_writer_output_char(writer, '"');
 }
 
-/* Call that function to start a new json container. */
-grpc_json_static_inline void grpc_json_writer_container_begins(
-    struct grpc_json_writer_t* writer, enum grpc_json_type_t type) {
+void grpc_json_writer_container_begins(grpc_json_writer* writer, grpc_json_type type) {
   if (!writer->got_key) grpc_json_writer_value_end(writer);
   grpc_json_writer_output_indent(writer);
   grpc_json_writer_output_char(writer, type == GRPC_JSON_OBJECT ? '{' : '[');
@@ -183,9 +208,7 @@ grpc_json_static_inline void grpc_json_writer_container_begins(
   writer->depth++;
 }
 
-/* Call that function to end the current json container. */
-grpc_json_static_inline void grpc_json_writer_container_ends(
-    struct grpc_json_writer_t* writer, enum grpc_json_type_t type) {
+void grpc_json_writer_container_ends(grpc_json_writer* writer, grpc_json_type type) {
   if (writer->indent && !writer->container_empty)
     grpc_json_writer_output_char(writer, '\n');
   writer->depth--;
@@ -195,9 +218,7 @@ grpc_json_static_inline void grpc_json_writer_container_ends(
   writer->got_key = 0;
 }
 
-/* If you are in a GRPC_JSON_OBJECT container, call this to set up a key. */
-grpc_json_static_inline void grpc_json_writer_object_key(
-    struct grpc_json_writer_t* writer, const char* string) {
+void grpc_json_writer_object_key(grpc_json_writer* writer, const char* string) {
   grpc_json_writer_value_end(writer);
   grpc_json_writer_output_indent(writer);
   grpc_json_writer_escape_string(writer, string);
@@ -205,27 +226,21 @@ grpc_json_static_inline void grpc_json_writer_object_key(
   writer->got_key = 1;
 }
 
-/* Sets a raw value - use it for numbers. */
-grpc_json_static_inline void grpc_json_writer_value_raw(
-    struct grpc_json_writer_t* writer, const char* string) {
+void grpc_json_writer_value_raw(grpc_json_writer* writer, const char* string) {
   if (!writer->got_key) grpc_json_writer_value_end(writer);
   grpc_json_writer_output_indent(writer);
   grpc_json_writer_output_string(writer, string);
   writer->got_key = 0;
 }
 
-/* Sets a raw value with a known length - use it for true, false and null. */
-grpc_json_static_inline void grpc_json_writer_value_raw_with_len(
-    struct grpc_json_writer_t* writer, const char* string, unsigned len) {
+void grpc_json_writer_value_raw_with_len(grpc_json_writer* writer, const char* string, size_t len) {
   if (!writer->got_key) grpc_json_writer_value_end(writer);
   grpc_json_writer_output_indent(writer);
   grpc_json_writer_output_string_with_len(writer, string, len);
   writer->got_key = 0;
 }
 
-/* Outputs a string value. This will add double quotes, and escape it. */
-grpc_json_static_inline void grpc_json_writer_value_string(
-    struct grpc_json_writer_t* writer, const char* string) {
+void grpc_json_writer_value_string(grpc_json_writer* writer, const char* string) {
   if (!writer->got_key) grpc_json_writer_value_end(writer);
   grpc_json_writer_output_indent(writer);
   grpc_json_writer_escape_string(writer, string);

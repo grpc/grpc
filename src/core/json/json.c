@@ -35,8 +35,8 @@
 
 #include "src/core/json/json.h"
 
-grpc_json *grpc_json_new(enum grpc_json_type_t type) {
-  grpc_json *json = (grpc_json *)gpr_malloc(sizeof(grpc_json));
+grpc_json *grpc_json_new(grpc_json_type type) {
+  grpc_json *json = gpr_malloc(sizeof(grpc_json));
   json->parent = json->child = json->next = json->prev = NULL;
   json->type = type;
 

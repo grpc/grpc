@@ -31,113 +31,93 @@
  *
  */
 
-/* the following need to be pre-defined:
- *    grpc_json_static_inline      // A macro to declare a static inline
- *                                 // function
- *    grpc_json_eof                // A macro that can be used in a switch
- *                                 // statement, that grpc_json_read_char
- *                                 // can return
- *    grpc_json_eagain             // A macro that can be used in a switch
- *                                 // statement, that grpc_json_read_char
- *                                 // can return
- *    grpc_json_error              // A macro that can be used in a switch
- *                                 // statement, that grpc_json_read_char
- *                                 // can return
- *
- *    // A macro or a function that clears your internal scratchpad.
- *    grpc_json_reader_string_clear(struct grpc_json_reader_t*);
- *    // A macro or a function that adds a character to your internal
- *    // scratchpad.
- *    grpc_json_reader_string_add_char(struct grpc_json_reader_t*, int);
- *    // A macro or a function that adds a unicode character to your internal
- *    // scratchpad.
- *    grpc_json_reader_string_add_wchar(struct grpc_json_reader_t*,
- *                                      grpc_json_wchar_t);
- *
- *    // A macro or a function that returns the next character from the input.
- *    // It can return:
- *    //  . an actual character into an int - unicode, wchar_t, whatever, as
- *    //    long as it's going to work in a switch statement, and can be tested
- *    //    against typical json tokens, such as '{', '[', ',', '}', ']', digits
- *    //    and whitespaces.
- *    //  . grpc_json_eof, which means the end of the input has been reached.
- *    //  . grpc_json_eagain, which means the parser needs to yield before
- *    //    getting more input.
- *    //  . grpc_json_error, which means the parser needs to exit with an error.
- *    int grpc_json_reader_read_char(struct grpc_json_reader_t*);
- *
- *    // A macro or a function that will be called to signal the beginning of a
- *    // container.
- *    // The argument "type" can be either GRPC_JSON_OBJECT, or GRPC_JSON_ARRAY.
- *    void grpc_json_reader_container_begins(struct grpc_json_reader_t*,
- *                                           enum *grpc_json_type_t type)
- *    // A macro or a function that will be called to signal the end of the
- *    // current container. It must return GRPC_JSON_OBJECT or GRPC_JSON_ARRAY
- *    // to signal what is the new current container, or GRPC_JSON_NONE if the
- *    // stack of containers is now empty.
- *    enum grpc_json_type_t
- *      grpc_json_reader_container_ends(struct grpc_json_reader_t*);
- *
- *    // A macro or a function that will be called to signal that json->string
- *    // contains the string of a object's key that is being added.
- *    void grpc_json_reader_object_set_key(struct grpc_json_reader_t*);
- *
- *    // A set of macro or functions that will be called to signal that the
- *    // current container is getting a new value. set_string and set_number
- *    // are reading their value from your internal scratchpad. set_number
- *    // must return a boolean to signal if the number parsing succeeded or
- *    // not. There is little reason for it not to.
- *    void grpc_json_reader_container_set_string(struct grpc_json_reader_t*);
- *    int grpc_json_reader_container_set_number(struct grpc_json_reader_t*);
- *    void grpc_json_reader_container_set_true(struct grpc_json_reader_t*);
- *    void grpc_json_reader_container_set_false(struct grpc_json_reader_t*);
- *    void grpc_json_reader_container_set_null(struct grpc_json_reader_t*);
- */
+#include <grpc/support/port_platform.h>
+#include "src/core/json/json_reader.h"
+
+static void grpc_json_reader_string_clear(grpc_json_reader* reader) {
+  reader->string_clear(reader);
+}
+
+static void grpc_json_reader_string_add_char(grpc_json_reader* reader,
+                                             gpr_uint32 c) {
+  reader->string_add_char(reader, c);
+}
+
+static void grpc_json_reader_string_add_utf32(grpc_json_reader* reader,
+                                              gpr_uint32 utf32) {
+  reader->string_add_utf32(reader, utf32);
+}
+
+static gpr_uint32
+    grpc_json_reader_read_char(grpc_json_reader* reader) {
+  return reader->read_char(reader);
+}
+
+static void grpc_json_reader_container_begins(grpc_json_reader* reader,
+                                              grpc_json_type type) {
+  reader->container_begins(reader, type);
+}
+
+static grpc_json_type
+    grpc_json_reader_container_ends(grpc_json_reader* reader) {
+  return reader->container_ends(reader);
+}
+
+static void grpc_json_reader_set_key(grpc_json_reader* reader) {
+  reader->set_key(reader);
+}
+
+static void grpc_json_reader_set_string(grpc_json_reader* reader) {
+  reader->set_string(reader);
+}
+
+static int grpc_json_reader_set_number(grpc_json_reader* reader) {
+  return reader->set_number(reader);
+}
+
+static void grpc_json_reader_set_true(grpc_json_reader* reader) {
+  reader->set_true(reader);
+}
+
+static void grpc_json_reader_set_false(grpc_json_reader* reader) {
+  reader->set_false(reader);
+}
+
+static void grpc_json_reader_set_null(grpc_json_reader* reader) {
+  reader->set_null(reader);
+}
 
 /* Call this function to initialize the reader structure. */
-grpc_json_static_inline void grpc_json_reader_init(
-    struct grpc_json_reader_t* reader) {
+void grpc_json_reader_init(grpc_json_reader* reader) {
   reader->depth = 0;
   reader->in_object = 0;
   reader->in_array = 0;
+  reader->unicode_high_surrogate = 0;
   grpc_json_reader_string_clear(reader);
   reader->state = GRPC_JSON_STATE_VALUE_BEGIN;
 }
 
-/* Call this function to start parsing the input. It will return the following:
- *    . GRPC_JSON_DONE if the input got eof, and the parsing finished
- *      successfully.
- *    . GRPC_JSON_EAGAIN if the read_char function returned again. Call the
- *      parser again as needed. It is okay to call the parser in polling mode,
- *      although a bit dull.
- *    . GRPC_JSON_READ_ERROR if the read_char function returned an error. The
- *      state isn't broken however, and the function can be called again if the
- *      error has been corrected. But please use the EAGAIN feature instead for
- *      consistency.
- *    . GRPC_JSON_PARSE_ERROR if the input was somehow invalid.
- *    . GRPC_JSON_INTERNAL_ERROR if the parser somehow ended into an invalid
- *      internal state.
- */
+int grpc_json_reader_is_complete(grpc_json_reader* reader) {
+  return ((reader->depth == 0) && ((reader->state == GRPC_JSON_STATE_END) ||
+          (reader->state == GRPC_JSON_STATE_VALUE_END)));
+}
 
-grpc_json_static_inline grpc_json_reader_ret_t
-grpc_json_reader_run(struct grpc_json_reader_t* reader) {
+grpc_json_reader_ret grpc_json_reader_run(grpc_json_reader* reader) {
   int c, success;
 
-  /* This state-machine is a strict implementation of http://json.org/ */
+  /* This state-machine is a strict implementation of ECMA-404 */
   for (;;) {
     c = grpc_json_reader_read_char(reader);
     switch (c) {
       /* Let's process the error cases first. */
-      case grpc_json_error:
+      case GRPC_JSON_READ_CHAR_ERROR:
         return GRPC_JSON_READ_ERROR;
 
-      case grpc_json_eagain:
+      case GRPC_JSON_READ_CHAR_EAGAIN:
         return GRPC_JSON_EAGAIN;
 
-      case grpc_json_eof:
-        if ((reader->depth == 0) &&
-            ((reader->state == GRPC_JSON_STATE_END) ||
-             (reader->state == GRPC_JSON_STATE_VALUE_END))) {
+      case GRPC_JSON_READ_CHAR_EOF:
+        if (grpc_json_reader_is_complete(reader)) {
           return GRPC_JSON_DONE;
         } else {
           return GRPC_JSON_PARSE_ERROR;
@@ -159,6 +139,8 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
 
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
           case GRPC_JSON_STATE_VALUE_STRING:
+            if (c != ' ') return GRPC_JSON_PARSE_ERROR;
+            if (reader->unicode_high_surrogate) return GRPC_JSON_PARSE_ERROR;
             grpc_json_reader_string_add_char(reader, c);
             break;
 
@@ -166,7 +148,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            success = grpc_json_reader_container_set_number(reader);
+            success = grpc_json_reader_set_number(reader);
             if (!success) return GRPC_JSON_PARSE_ERROR;
             grpc_json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
@@ -184,6 +166,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
         switch (reader->state) {
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
           case GRPC_JSON_STATE_VALUE_STRING:
+            if (reader->unicode_high_surrogate) return GRPC_JSON_PARSE_ERROR;
             grpc_json_reader_string_add_char(reader, c);
             break;
 
@@ -191,7 +174,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
           case GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
           case GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            success = grpc_json_reader_container_set_number(reader);
+            success = grpc_json_reader_set_number(reader);
             if (!success) return GRPC_JSON_PARSE_ERROR;
             grpc_json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
@@ -235,7 +218,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
                   reader->in_object = 0;
                   reader->in_array = 1;
                   break;
-                case GRPC_JSON_NONE:
+                case GRPC_JSON_TOP_LEVEL:
                   if (reader->depth != 0) return GRPC_JSON_INTERNAL_ERROR;
                   reader->in_object = 0;
                   reader->in_array = 0;
@@ -267,6 +250,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
 
           /* This is the \\ case. */
           case GRPC_JSON_STATE_STRING_ESCAPE:
+            if (reader->unicode_high_surrogate) return GRPC_JSON_PARSE_ERROR;
             grpc_json_reader_string_add_char(reader, '\\');
             if (reader->escaped_string_was_key) {
               reader->state = GRPC_JSON_STATE_OBJECT_KEY_STRING;
@@ -289,21 +273,25 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
             break;
 
           case GRPC_JSON_STATE_OBJECT_KEY_STRING:
+            if (reader->unicode_high_surrogate) return GRPC_JSON_PARSE_ERROR;
             if (c == '"') {
               reader->state = GRPC_JSON_STATE_OBJECT_KEY_END;
-              grpc_json_reader_object_set_key(reader);
+              grpc_json_reader_set_key(reader);
               grpc_json_reader_string_clear(reader);
             } else {
+              if (c < 32) return GRPC_JSON_PARSE_ERROR;
               grpc_json_reader_string_add_char(reader, c);
             }
             break;
 
           case GRPC_JSON_STATE_VALUE_STRING:
+            if (reader->unicode_high_surrogate) return GRPC_JSON_PARSE_ERROR;
             if (c == '"') {
               reader->state = GRPC_JSON_STATE_VALUE_END;
-              grpc_json_reader_container_set_string(reader);
+              grpc_json_reader_set_string(reader);
               grpc_json_reader_string_clear(reader);
             } else {
+              if (c < 32) return GRPC_JSON_PARSE_ERROR;
               grpc_json_reader_string_add_char(reader, c);
             }
             break;
@@ -374,6 +362,8 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
             } else {
               reader->state = GRPC_JSON_STATE_VALUE_STRING;
             }
+            if (reader->unicode_high_surrogate && c != 'u')
+              return GRPC_JSON_PARSE_ERROR;
             switch (c) {
               case '"':
               case '/':
@@ -396,7 +386,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
                 break;
               case 'u':
                 reader->state = GRPC_JSON_STATE_STRING_ESCAPE_U1;
-                reader->unicode = 0;
+                reader->unicode_char = 0;
                 break;
               default:
                 return GRPC_JSON_PARSE_ERROR;
@@ -416,8 +406,8 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
             } else {
               return GRPC_JSON_PARSE_ERROR;
             }
-            reader->unicode <<= 4;
-            reader->unicode |= c;
+            reader->unicode_char <<= 4;
+            reader->unicode_char |= c;
 
             switch (reader->state) {
               case GRPC_JSON_STATE_STRING_ESCAPE_U1:
@@ -430,7 +420,27 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
                 reader->state = GRPC_JSON_STATE_STRING_ESCAPE_U4;
                 break;
               case GRPC_JSON_STATE_STRING_ESCAPE_U4:
-                grpc_json_reader_string_add_wchar(reader, reader->unicode);
+                if ((reader->unicode_char & 0xfc00) == 0xd800) {
+                  /* high surrogate utf-16 */
+                  if (reader->unicode_high_surrogate)
+                    return GRPC_JSON_PARSE_ERROR;
+                  reader->unicode_high_surrogate = reader->unicode_char;
+                } else if ((reader->unicode_char & 0xfc00) == 0xdc00) {
+                  /* low surrogate utf-16 */
+                  gpr_uint32 utf32;
+                  if (!reader->unicode_high_surrogate)
+                    return GRPC_JSON_PARSE_ERROR;
+                  utf32 = 0x10000;
+                  utf32 += (reader->unicode_high_surrogate - 0xd800) * 0x400;
+                  utf32 += reader->unicode_char - 0xdc00;
+                  grpc_json_reader_string_add_utf32(reader, utf32);
+                  reader->unicode_high_surrogate = 0;
+                } else {
+                  /* anything else */
+                  if (reader->unicode_high_surrogate)
+                    return GRPC_JSON_PARSE_ERROR;
+                  grpc_json_reader_string_add_utf32(reader, reader->unicode_char);
+                }
                 if (reader->escaped_string_was_key) {
                   reader->state = GRPC_JSON_STATE_OBJECT_KEY_STRING;
                 } else {
@@ -564,7 +574,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
 
           case GRPC_JSON_STATE_VALUE_TRUE_E:
             if (c != 'e') return GRPC_JSON_PARSE_ERROR;
-            grpc_json_reader_container_set_true(reader);
+            grpc_json_reader_set_true(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
             break;
 
@@ -585,7 +595,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
 
           case GRPC_JSON_STATE_VALUE_FALSE_E:
             if (c != 'e') return GRPC_JSON_PARSE_ERROR;
-            grpc_json_reader_container_set_false(reader);
+            grpc_json_reader_set_false(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
             break;
 
@@ -601,7 +611,7 @@ grpc_json_reader_run(struct grpc_json_reader_t* reader) {
 
           case GRPC_JSON_STATE_VALUE_NULL_L2:
             if (c != 'l') return GRPC_JSON_PARSE_ERROR;
-            grpc_json_reader_container_set_null(reader);
+            grpc_json_reader_set_null(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
             break;
 

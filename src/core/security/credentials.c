@@ -392,7 +392,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     }
     gpr_asprintf(&new_access_token, "%s %s", token_type->value,
                  access_token->value);
-    token_lifetime->tv_sec = expires_in->valueint;
+    token_lifetime->tv_sec = strtol(expires_in->value, NULL, 10);
     token_lifetime->tv_nsec = 0;
     if (*token_elem != NULL) grpc_mdelem_unref(*token_elem);
     *token_elem = grpc_mdelem_from_strings(ctx, GRPC_AUTHORIZATION_METADATA_KEY,

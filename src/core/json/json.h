@@ -36,12 +36,18 @@
 
 #include <stdlib.h>
 
-#include "src/core/json/json-defs.h"
+#include "src/core/json/json_common.h"
 
-typedef struct grpc_json_t {
-  struct grpc_json_t* next, *prev, *child, *parent;
-  enum grpc_json_type_t type;
+/* A tree-like structure to hold json values. The key and value pointers
+ * are not owned by it.
+ */
+typedef struct grpc_json {
+  struct grpc_json* next;
+  struct grpc_json* prev;
+  struct grpc_json* child;
+  struct grpc_json* parent;
 
+  grpc_json_type type;
   const char* key;
   const char* value;
 } grpc_json;
@@ -51,7 +57,11 @@ typedef struct grpc_json_t {
  * all of the keys and values for the returned object tree.
  *
  * They assume UTF-8 input stream, and will output UTF-8 encoded
- * strings in the tree.
+ * strings in the tree. The input stream's UTF-8 isn't validated,
+ * as in, what you input is what you get as an output.
+ *
+ * All the keys and values in the grpc_json_t objects will be strings
+ * pointing at your input buffer.
  *
  * Delete the allocated tree afterward using grpc_json_delete().
  */
@@ -72,7 +82,7 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
  * Deletion is recursive. We will not attempt to free any of the strings
  * in any of the objects of that tree.
  */
-grpc_json* grpc_json_new(enum grpc_json_type_t type);
+grpc_json* grpc_json_new(grpc_json_type type);
 void grpc_json_delete(grpc_json* json);
 
 #endif /* __GRPC_SRC_CORE_JSON_JSON_H__ */
