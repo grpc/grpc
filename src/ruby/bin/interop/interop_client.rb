@@ -69,14 +69,19 @@ def test_creds
 end
 
 # creates a test stub that accesses host:port securely.
-def create_stub(host, port)
+def create_stub(host, port, is_secure)
   address = "#{host}:#{port}"
-  stub_opts = {
-    :creds => test_creds,
-    GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com'
-  }
-  logger.info("... connecting securely to #{address}")
-  Grpc::Testing::TestService::Stub.new(address, **stub_opts)
+  if is_secure
+    stub_opts = {
+      :creds => test_creds,
+      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com'
+    }
+    logger.info("... connecting securely to #{address}")
+    Grpc::Testing::TestService::Stub.new(address, **stub_opts)
+  else
+    logger.info("... connecting insecurely to #{address}")
+    Grpc::Testing::TestService::Stub.new(address)
+  end
 end
 
 # produces a string of null chars (\0) of length l.
@@ -216,6 +221,7 @@ end
 # validates the the command line options, returning them as a Hash.
 def parse_options
   options = {
+    'secure' => false,
     'server_host' => nil,
     'server_port' => nil,
     'test_case' => nil
@@ -235,6 +241,9 @@ def parse_options
             "  (#{test_case_list})") do |v|
       options['test_case'] = v
     end
+    opts.on('-u', '--use_tls', 'access using test creds') do |v|
+      options['secure'] = v
+    end
   end.parse!
 
   %w(server_host server_port test_case).each do |arg|
@@ -247,7 +256,7 @@ end
 
 def main
   opts = parse_options
-  stub = create_stub(opts['server_host'], opts['server_port'])
+  stub = create_stub(opts['server_host'], opts['server_port'], opts['secure'])
   NamedTests.new(stub).method(opts['test_case']).call
 end
 

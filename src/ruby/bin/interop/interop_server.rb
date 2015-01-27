@@ -154,13 +154,18 @@ end
 # validates the the command line options, returning them as a Hash.
 def parse_options
   options = {
-    'port' => nil
+    'port' => nil,
+    'secure' => false
   }
   OptionParser.new do |opts|
     opts.banner = 'Usage: --port port'
     opts.on('--port PORT', 'server port') do |v|
       options['port'] = v
     end
+    opts.on('-u', '--use_tls', 'access using test creds') do |v|
+      options['secure'] = v
+    end
+
   end.parse!
 
   if options['port'].nil?
@@ -172,10 +177,15 @@ end
 def main
   opts = parse_options
   host = "0.0.0.0:#{opts['port']}"
-  s = GRPC::RpcServer.new(creds: test_server_creds)
-  s.add_http2_port(host, true)
-  logger.info("... running securely on #{host}")
-
+  if opts['secure']
+    s = GRPC::RpcServer.new(creds: test_server_creds)
+    s.add_http2_port(host, true)
+    logger.info("... running securely on #{host}")
+  else
+    s = GRPC::RpcServer.new
+    s.add_http2_port(host)
+    logger.info("... running insecurely on #{host}")
+  end
   s.handle(TestTarget)
   s.run
 end
