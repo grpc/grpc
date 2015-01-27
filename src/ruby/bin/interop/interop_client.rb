@@ -196,6 +196,15 @@ class NamedTests
     resps.each { |r| ppp.queue.push(r) }
     p 'OK: ping_pong'
   end
+
+  def all
+    all_methods = NamedTests.instance_methods(false).map(&:to_s)
+    all_methods.each do |m|
+      next if m == 'all' or m.start_with?('assert')
+      p "TESTCASE: #{m}"
+      self.method(m).call
+    end
+  end
 end
 
 # validates the the command line options, returning them as a Hash.
