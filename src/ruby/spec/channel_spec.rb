@@ -28,7 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'port_picker'
+
+FAKE_HOST='localhost:0'
 
 def load_test_certs
   test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -114,8 +115,7 @@ describe GRPC::Core::Channel do
 
   describe '#create_call' do
     it 'creates a call OK' do
-      port = find_unused_tcp_port
-      host = "localhost:#{port}"
+      host = FAKE_HOST
       ch = GRPC::Core::Channel.new(host, nil)
 
       deadline = Time.now + 5
@@ -127,8 +127,7 @@ describe GRPC::Core::Channel do
     end
 
     it 'raises an error if called on a closed channel' do
-      port = find_unused_tcp_port
-      host = "localhost:#{port}"
+      host = FAKE_HOST
       ch = GRPC::Core::Channel.new(host, nil)
       ch.close
 
@@ -142,16 +141,14 @@ describe GRPC::Core::Channel do
 
   describe '#destroy' do
     it 'destroys a channel ok' do
-      port = find_unused_tcp_port
-      host = "localhost:#{port}"
+      host = FAKE_HOST
       ch = GRPC::Core::Channel.new(host, nil)
       blk = proc { ch.destroy }
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
-      port = find_unused_tcp_port
-      host = "localhost:#{port}"
+      host = FAKE_HOST
       ch = GRPC::Core::Channel.new(host, nil)
       blk = proc { ch.destroy }
       blk.call
@@ -167,16 +164,14 @@ describe GRPC::Core::Channel do
 
   describe '#close' do
     it 'closes a channel ok' do
-      port = find_unused_tcp_port
-      host = "localhost:#{port}"
+      host = FAKE_HOST
       ch = GRPC::Core::Channel.new(host, nil)
       blk = proc { ch.close }
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
-      port = find_unused_tcp_port
-      host = "localhost:#{port}"
+      host = FAKE_HOST
       ch = GRPC::Core::Channel.new(host, nil)
       blk = proc { ch.close }
       blk.call
