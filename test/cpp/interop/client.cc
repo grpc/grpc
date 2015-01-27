@@ -124,7 +124,7 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
     creds = CredentialsFactory::ServiceAccountCredentials(
-        json_key, FLAGS_oauth_scope, std::chrono::seconds(3600));
+        json_key, FLAGS_oauth_scope, std::chrono::hours(1));
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {
@@ -149,8 +149,9 @@ void DoEmpty() {
   gpr_log(GPR_INFO, "Empty rpc done.");
 }
 
-void LargeUnaryShared(std::shared_ptr<ChannelInterface> channel,
-                      SimpleRequest* request, SimpleResponse* response) {
+// Shared code to set large payload, make rpc and check response payload.
+void PerformLargeUnary(std::shared_ptr<ChannelInterface> channel,
+                       SimpleRequest* request, SimpleResponse* response) {
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
 
   ClientContext context;
@@ -177,7 +178,7 @@ void DoServiceAccountCreds() {
   SimpleResponse response;
   request.set_fill_username(true);
   request.set_fill_oauth_scope(true);
-  LargeUnaryShared(channel, &request, &response);
+  PerformLargeUnary(channel, &request, &response);
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(!response.oauth_scope().empty());
   grpc::string json_key = GetServiceAccountJsonKey();
@@ -193,7 +194,7 @@ void DoLargeUnary() {
       CreateChannelForTestCase("large_unary");
   SimpleRequest request;
   SimpleResponse response;
-  LargeUnaryShared(channel, &request, &response);
+  PerformLargeUnary(channel, &request, &response);
   gpr_log(GPR_INFO, "Large unary done.");
 }
 
@@ -381,6 +382,7 @@ int main(int argc, char** argv) {
     DoResponseStreaming();
     DoHalfDuplex();
     DoPingPong();
+    // service_account_creds can only run with ssl.
     if (FLAGS_enable_ssl) {
       DoServiceAccountCreds();
     }
