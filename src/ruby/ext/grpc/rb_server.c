@@ -223,7 +223,7 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
   VALUE port = Qnil;
   VALUE is_secure = Qnil;
   grpc_rb_server *s = NULL;
-  int added_ok = 0;
+  int recvd_port = 0;
 
   /* "11" == 1 mandatory args, 1 (is_secure) is optional */
   rb_scan_args(argc, argv, "11", &port, &is_secure);
@@ -233,22 +233,22 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
   } else if (is_secure == Qnil || TYPE(is_secure) != T_TRUE) {
-    added_ok = grpc_server_add_http2_port(s->wrapped, StringValueCStr(port));
-    if (added_ok == 0) {
+    recvd_port = grpc_server_add_http2_port(s->wrapped, StringValueCStr(port));
+    if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add port %s to server, not sure why",
                StringValueCStr(port));
     }
   } else if (TYPE(is_secure) != T_FALSE) {
-    added_ok =
+    recvd_port =
         grpc_server_add_secure_http2_port(s->wrapped, StringValueCStr(port));
-    if (added_ok == 0) {
+    if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add secure port %s to server, not sure why",
                StringValueCStr(port));
     }
   }
-  return Qnil;
+  return INT2NUM(recvd_port);
 }
 
 void Init_google_rpc_server() {
