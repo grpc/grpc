@@ -162,10 +162,9 @@ def parse_options
     opts.on('--port PORT', 'server port') do |v|
       options['port'] = v
     end
-    opts.on('-u', '--use_tls', 'access using test creds') do |v|
+    opts.on('-s', '--use_tls', 'require a secure connection?') do |v|
       options['secure'] = v
     end
-
   end.parse!
 
   if options['port'].nil?

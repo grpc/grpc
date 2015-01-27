@@ -54,6 +54,8 @@ require 'test/cpp/interop/test_services'
 require 'test/cpp/interop/messages'
 require 'test/cpp/interop/empty'
 
+require 'signet/ssl_config'
+
 # loads the certificates used to access the test server securely.
 def load_test_certs
   this_dir = File.expand_path(File.dirname(__FILE__))
@@ -62,18 +64,41 @@ def load_test_certs
   files.map { |f| File.open(File.join(data_dir, f)).read }
 end
 
+# loads the certificates used to access the test server securely.
+def load_prod_cert
+  fail 'could not find a production cert' if ENV['SSL_CERT_FILE'].nil?
+  p "loading prod certs from #{ENV['SSL_CERT_FILE']}"
+  File.open(ENV['SSL_CERT_FILE']).read
+end
+
 # creates a Credentials from the test certificates.
 def test_creds
   certs = load_test_certs
   GRPC::Core::Credentials.new(certs[0])
 end
 
+RX_CERT = /-----BEGIN CERTIFICATE-----\n.*?-----END CERTIFICATE-----\n/m
+
+
+# creates a Credentials from the production certificates.
+def prod_creds
+  cert_text = load_prod_cert
+  GRPC::Core::Credentials.new(cert_text)
+end
+
 # creates a test stub that accesses host:port securely.
-def create_stub(host, port, is_secure, host_override)
+def create_stub(host, port, is_secure, host_override, use_test_ca)
   address = "#{host}:#{port}"
   if is_secure
+    creds = nil
+    if use_test_ca
+      creds = test_creds
+    else
+      creds = prod_creds
+    end
+
     stub_opts = {
-      :creds => test_creds,
+      :creds => creds,
       GRPC::Core::Channel::SSL_TARGET => host_override
     }
     logger.info("... connecting securely to #{address}")
@@ -200,9 +225,9 @@ class NamedTests
   def all
     all_methods = NamedTests.instance_methods(false).map(&:to_s)
     all_methods.each do |m|
-      next if m == 'all' or m.start_with?('assert')
+      next if m == 'all' || m.start_with?('assert')
       p "TESTCASE: #{m}"
-      self.method(m).call
+      method(m).call
     end
   end
 end
@@ -235,26 +260,33 @@ def parse_options
             "  (#{test_case_list})") do |v|
       options['test_case'] = v
     end
-    opts.on('-u', '--use_tls', 'access using test creds') do |v|
+    opts.on('-s', '--use_tls', 'require a secure connection?') do |v|
       options['secure'] = v
     end
+    opts.on('-t', '--use_test_ca',
+            'if secure, use the test certificate?') do |v|
+      options['use_test_ca'] = v
+    end
   end.parse!
+  _check_options(options)
+end
 
+def _check_options(opts)
   %w(server_host server_port test_case).each do |arg|
-    if options[arg].nil?
+    if opts[arg].nil?
       fail(OptionParser::MissingArgument, "please specify --#{arg}")
     end
   end
-  if options['server_host_override'].nil?
-    options['server_host_override'] = options['server_host']
+  if opts['server_host_override'].nil?
+    opts['server_host_override'] = opts['server_host']
   end
-  options
+  opts
 end
 
 def main
   opts = parse_options
   stub = create_stub(opts['server_host'], opts['server_port'], opts['secure'],
-                     opts['server_host_override'])
+                     opts['server_host_override'], opts['use_test_ca'])
   NamedTests.new(stub).method(opts['test_case']).call
 end
 
