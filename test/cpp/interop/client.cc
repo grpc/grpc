@@ -72,7 +72,7 @@ DEFINE_string(test_case, "large_unary",
               "service_account_creds : large_unary with service_account auth; "
               "compute_engine_creds: large_unary with compute engine auth; "
               "all : all of above.");
-DEFINE_string(compute_engine_default_username, "",
+DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
 DEFINE_string(service_account_key_file, "",
               "Path to service account json key file.");
@@ -191,7 +191,8 @@ void DoComputeEngineCreds() {
   gpr_log(GPR_INFO, "Got username %s", response.username().c_str());
   gpr_log(GPR_INFO, "Got oauth_scope %s", response.oauth_scope().c_str());
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(response.username() == FLAGS_compute_engine_default_username);
+  GPR_ASSERT(response.username() ==
+             FLAGS_default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(
       FLAGS_oauth_scope.find(response.oauth_scope()) != grpc::string::npos);
