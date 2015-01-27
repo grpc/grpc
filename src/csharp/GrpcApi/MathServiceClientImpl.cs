@@ -35,55 +35,75 @@ namespace math
 
 		public Task<DivReply> DivAsync(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
+            // TODO: implement this. just return a task same as for Sum
+
 			throw new NotImplementedException();
 		}
 
 		public IObservable<Num> Fib(FibArgs args, CancellationToken token = default(CancellationToken))
 		{
+            using (CallContext ctx = channel.CreateCall("/math.Math/Fib", Timespec.InfFuture))
+            {
+                ctx.Start(false);
+               
+                // TODO: this is the same code as for blocking call!!!
+                ctx.Write(args.ToByteArray());
+                ctx.WritesDone();
 
-
-			// FIXME: this is not going to work with IObservable as a result!!!!
-			// TODO: implement IObservable to wait for the streaming output...
-
-			throw new NotImplementedException();
+                return new StreamingOutputObservable<Num>(ctx.AddRef(), (payload) => Num.CreateBuilder().MergeFrom(payload).Build());
+            }
 		}
 
-		public async Task<Num> Sum(IObservable<Num> inputs, CancellationToken token = default(CancellationToken))
+		public Task<Num> Sum(IObservable<Num> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: cancellation support
 			// TODO: timeout support
 
-			CallContext ctx = channel.StreamingCall("/math.Math/Sum", Timespec.InfFuture);
+            using (CallContext ctx = channel.CreateCall("/math.Math/Sum", Timespec.InfFuture))
+            {
+                ctx.Start(false);
 
-			ctx.Start(false);
+                // TODO: dispose the subscription....
+                IDisposable subscription = inputs.Subscribe(new StreamingInputObserver<Num>(ctx.AddRef()));
 
-			// TODO: dispose the subscription....
-			IDisposable subscription = inputs.Subscribe(new StreamingInputObserver<Num>(ctx));
+                // TODO: don't create task, but make this method async. Then we can use using to cleanup the context....
 
-			// TODO: don't create task, but make this method async. Then we can use using to cleanup the context....
+                ICallContext ctxRef = ctx.AddRef();
 
-			return await Task<Num>.Factory.StartNew(
-				() => {
-				// TODO: the read and wait part is the same as for simple call
-				byte[] response = ctx.Read();
-				Status s = ctx.Wait();
-				// TODO: figure out a good way how to dispose ctx (even when errors happen...)
-				ctx.Dispose();  
-				return Num.CreateBuilder().MergeFrom(response).Build();
-			}
-			);
+                // TODO: factor this out!!!
+                return Task<Num>.Factory.StartNew(
+                    () => {
+                        try
+                        {
+                            // TODO: the read and wait part is the same as for simple call
+                            byte[] response = ctxRef.Read();
+                            Status s = ctxRef.Wait();
+
+                            // TOOD: throw if status not OK.
+                            // TODO: figure out a good way how to dispose ctx (even when errors happen...)
+                            return Num.CreateBuilder().MergeFrom(response).Build();
+                        } 
+                        finally
+                        {
+                            ctxRef.Dispose();
+                        }
+                });
+            }
+
 		}
 
 		public IObservable<DivReply> DivMany(IObservable<DivArgs> inputs, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: timeout support
-			CallContext ctx = channel.StreamingCall("/math.Math/DivMany", Timespec.InfFuture);
-			ctx.Start(false);
+            using (CallContext ctx = channel.CreateCall("/math.Math/DivMany", Timespec.InfFuture))
+            {
+                ctx.Start(false);
 
-			// TODO: dispose the subscription....
-			inputs.Subscribe(new StreamingInputObserver<DivArgs>(ctx));
+                // TODO: dispose the subscription....
+                IDisposable inputSubscription = inputs.Subscribe(new StreamingInputObserver<DivArgs>(ctx.AddRef()));
 
-			return new StreamingOutputObservable<DivReply>(ctx, (payload) => DivReply.CreateBuilder().MergeFrom(payload).Build());
+                return new StreamingOutputObservable<DivReply>(ctx.AddRef(), (payload) => DivReply.CreateBuilder().MergeFrom(payload).Build());
+            }
 		}
 	}
 }
