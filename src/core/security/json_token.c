@@ -68,7 +68,7 @@ static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override = NULL;
 static const char *json_get_string_property(grpc_json *json,
                                             const char *prop_name) {
   grpc_json *child;
-  for (child = json->child; child; child = child->next) {
+  for (child = json->child; child != NULL; child = child->next) {
     if (strcmp(child->key, prop_name) == 0) break;
   }
   if (child == NULL || child->type != GRPC_JSON_STRING) {
@@ -173,7 +173,7 @@ static grpc_json *create_child(grpc_json *brother, grpc_json *parent,
                          const char *key, const char *value,
                          grpc_json_type type) {
   grpc_json *child = grpc_json_new(type);
-  if (brother) (brother)->next = child;
+  if (brother) brother->next = child;
   if (!parent->child) parent->child = child;
   child->parent = parent;
   child->value = value;
@@ -192,7 +192,7 @@ static char *encoded_jwt_header(const char *algorithm) {
 
   json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
-  free(json_str);
+  gpr_free(json_str);
   grpc_json_delete(json);
   return result;
 }
@@ -224,7 +224,7 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
 
   json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
-  free(json_str);
+  gpr_free(json_str);
   grpc_json_delete(json);
   return result;
 }

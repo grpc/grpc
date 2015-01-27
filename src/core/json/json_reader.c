@@ -103,7 +103,7 @@ int grpc_json_reader_is_complete(grpc_json_reader* reader) {
 }
 
 grpc_json_reader_ret grpc_json_reader_run(grpc_json_reader* reader) {
-  int c, success;
+  gpr_uint32 c, success;
 
   /* This state-machine is a strict implementation of ECMA-404 */
   for (;;) {
