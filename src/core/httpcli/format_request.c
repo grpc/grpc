@@ -37,67 +37,57 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/useful.h>
 
-typedef struct {
-  size_t length;
-  size_t capacity;
-  char *data;
-} sbuf;
-
-static void sbuf_append(sbuf *buf, const char *bytes, size_t len) {
-  if (buf->length + len > buf->capacity) {
-    buf->capacity = GPR_MAX(buf->length + len, buf->capacity * 3 / 2);
-    buf->data = gpr_realloc(buf->data, buf->capacity);
-  }
-  memcpy(buf->data + buf->length, bytes, len);
-  buf->length += len;
-}
-
-static void sbprintf(sbuf *buf, const char *fmt, ...) {
-  char temp[GRPC_HTTPCLI_MAX_HEADER_LENGTH];
-  size_t len;
-  va_list args;
-
-  va_start(args, fmt);
-  len = vsprintf(temp, fmt, args);
-  va_end(args);
-
-  sbuf_append(buf, temp, len);
-}
-
-static void fill_common_header(const grpc_httpcli_request *request, sbuf *buf) {
+static void fill_common_header(const grpc_httpcli_request *request, gpr_strvec *buf) {
   size_t i;
-  sbprintf(buf, "%s HTTP/1.0\r\n", request->path);
+  gpr_strvec_add(buf, gpr_strdup(request->path));
+  gpr_strvec_add(buf, gpr_strdup(" HTTP/1.0\r\n"));
   /* just in case some crazy server really expects HTTP/1.1 */
-  sbprintf(buf, "Host: %s\r\n", request->host);
-  sbprintf(buf, "Connection: close\r\n");
-  sbprintf(buf, "User-Agent: %s\r\n", GRPC_HTTPCLI_USER_AGENT);
+  gpr_strvec_add(buf, gpr_strdup("Host: "));
+  gpr_strvec_add(buf, gpr_strdup(request->host));
+  gpr_strvec_add(buf, gpr_strdup("\r\n"));
+  gpr_strvec_add(buf, gpr_strdup("Connection: close\r\n"));
+  gpr_strvec_add(buf, gpr_strdup("User-Agent: "GRPC_HTTPCLI_USER_AGENT"\r\n"));
   /* user supplied headers */
   for (i = 0; i < request->hdr_count; i++) {
-    sbprintf(buf, "%s: %s\r\n", request->hdrs[i].key, request->hdrs[i].value);
+    gpr_strvec_add(buf, gpr_strdup(request->hdrs[i].key));
+    gpr_strvec_add(buf, gpr_strdup(": "));
+    gpr_strvec_add(buf, gpr_strdup(request->hdrs[i].value));
+    gpr_strvec_add(buf, gpr_strdup("\r\n"));
   }
 }
 
 gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request) {
-  sbuf out = {0, 0, NULL};
+  gpr_strvec out;
+  char *flat;
+  size_t flat_len;
 
-  sbprintf(&out, "GET ");
+  gpr_strvec_init(&out);
+  gpr_strvec_add(&out, gpr_strdup("GET "));
   fill_common_header(request, &out);
-  sbprintf(&out, "\r\n");
+  gpr_strvec_add(&out, gpr_strdup("\r\n"));
 
-  return gpr_slice_new(out.data, out.length, gpr_free);
+  flat = gpr_strvec_flatten(&out, &flat_len);
+  gpr_strvec_destroy(&out);
+
+  return gpr_slice_new(flat, flat_len, gpr_free);
 }
 
 gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
                                            const char *body_bytes,
                                            size_t body_size) {
-  sbuf out = {0, 0, NULL};
+  gpr_strvec out;
+  char *tmp;
+  size_t out_len;
   size_t i;
 
-  sbprintf(&out, "POST ");
+  gpr_strvec_init(&out);
+
+  gpr_strvec_add(&out, gpr_strdup("POST "));
   fill_common_header(request, &out);
   if (body_bytes) {
     gpr_uint8 has_content_type = 0;
@@ -108,14 +98,18 @@ gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
       }
     }
     if (!has_content_type) {
-      sbprintf(&out, "Content-Type: text/plain\r\n");
+      gpr_strvec_add(&out, gpr_strdup("Content-Type: text/plain\r\n"));
     }
-    sbprintf(&out, "Content-Length: %lu\r\n", (unsigned long)body_size);
+    gpr_asprintf(&tmp, "Content-Length: %lu\r\n", (unsigned long)body_size);
+    gpr_strvec_add(&out, tmp);
   }
-  sbprintf(&out, "\r\n");
+  gpr_strvec_add(&out, gpr_strdup("\r\n"));
+  tmp = gpr_strvec_flatten(&out, &out_len);
   if (body_bytes) {
-    sbuf_append(&out, body_bytes, body_size);
+    tmp = gpr_realloc(tmp, out_len + body_size);
+    memcpy(tmp + out_len, body_bytes, body_size);
+    out_len += body_size;
   }
 
-  return gpr_slice_new(out.data, out.length, gpr_free);
+  return gpr_slice_new(tmp, out_len, gpr_free);
 }

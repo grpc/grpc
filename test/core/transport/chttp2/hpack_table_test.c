@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
@@ -131,8 +132,8 @@ static void test_static_lookup(void) {
 static void test_many_additions(void) {
   grpc_chttp2_hptbl tbl;
   int i;
-  char key[32];
-  char value[32];
+  char *key;
+  char *value;
   grpc_mdctx *mdctx;
 
   LOG_TEST();
@@ -141,14 +142,18 @@ static void test_many_additions(void) {
   grpc_chttp2_hptbl_init(&tbl, mdctx);
 
   for (i = 0; i < 1000000; i++) {
-    sprintf(key, "K:%d", i);
-    sprintf(value, "VALUE:%d", i);
+    gpr_asprintf(&key, "K:%d", i);
+    gpr_asprintf(&value, "VALUE:%d", i);
     grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, key, value));
     assert_index(&tbl, 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key, value);
+    gpr_free(key);
+    gpr_free(value);
     if (i) {
-      sprintf(key, "K:%d", i - 1);
-      sprintf(value, "VALUE:%d", i - 1);
+      gpr_asprintf(&key, "K:%d", i - 1);
+      gpr_asprintf(&value, "VALUE:%d", i - 1);
       assert_index(&tbl, 2 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key, value);
+      gpr_free(key);
+      gpr_free(value);
     }
   }
 
@@ -226,7 +231,7 @@ static void test_find(void) {
 
   /* overflow the string buffer, check find still works */
   for (i = 0; i < 10000; i++) {
-    sprintf(buffer, "%d", i);
+    gpr_ltoa(i, buffer);
     grpc_chttp2_hptbl_add(&tbl,
                           grpc_mdelem_from_strings(mdctx, "test", buffer));
   }
@@ -245,7 +250,7 @@ static void test_find(void) {
 
   for (i = 0; i < tbl.num_ents; i++) {
     int expect = 9999 - i;
-    sprintf(buffer, "%d", expect);
+    gpr_ltoa(expect, buffer);
 
     r = find_simple(&tbl, "test", buffer);
     GPR_ASSERT(r.index == i + 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY);

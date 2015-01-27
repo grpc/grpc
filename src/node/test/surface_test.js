@@ -35,6 +35,8 @@ var assert = require('assert');
 
 var surface_server = require('../surface_server.js');
 
+var surface_client = require('../surface_client.js');
+
 var ProtoBuf = require('protobufjs');
 
 var grpc = require('..');
@@ -71,5 +73,56 @@ describe('Surface server constructor', function() {
     assert.throws(function() {
       new Server({});
     }, /math.Math/);
+  });
+});
+describe('Surface client', function() {
+  var client;
+  var server;
+  before(function() {
+    var Server = grpc.buildServer([mathService]);
+    server = new Server({
+      'math.Math': {
+        'div': function(stream) {},
+        'divMany': function(stream) {},
+        'fib': function(stream) {},
+        'sum': function(stream) {}
+      }
+    });
+    var port = server.bind('localhost:0');
+    var Client = surface_client.makeClientConstructor(mathService);
+    client = new Client('localhost:' + port);
+  });
+  after(function() {
+    server.shutdown();
+  });
+  it('Should correctly cancel a unary call', function(done) {
+    var call = client.div({'divisor': 0, 'dividend': 0}, function(err, resp) {
+      assert.strictEqual(err.code, surface_client.status.CANCELLED);
+      done();
+    });
+    call.cancel();
+  });
+  it('Should correctly cancel a client stream call', function(done) {
+    var call = client.sum(function(err, resp) {
+      assert.strictEqual(err.code, surface_client.status.CANCELLED);
+      done();
+    });
+    call.cancel();
+  });
+  it('Should correctly cancel a server stream call', function(done) {
+    var call = client.fib({'limit': 5});
+    call.on('status', function(status) {
+      assert.strictEqual(status.code, surface_client.status.CANCELLED);
+      done();
+    });
+    call.cancel();
+  });
+  it('Should correctly cancel a bidi stream call', function(done) {
+    var call = client.divMany();
+    call.on('status', function(status) {
+      assert.strictEqual(status.code, surface_client.status.CANCELLED);
+      done();
+    });
+    call.cancel();
   });
 });

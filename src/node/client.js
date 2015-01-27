@@ -105,7 +105,7 @@ function GrpcClientStream(call, serialize, deserialize) {
       return;
     }
     var data = event.data;
-    if (self.push(data) && data != null) {
+    if (self.push(self.deserialize(data)) && data != null) {
       self._call.startRead(readCallback);
     } else {
       reading = false;
@@ -155,9 +155,17 @@ GrpcClientStream.prototype._read = function(size) {
  */
 GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
   var self = this;
-  self._call.startWrite(chunk, function(event) {
+  self._call.startWrite(self.serialize(chunk), function(event) {
     callback();
   }, 0);
+};
+
+/**
+ * Cancel the ongoing call. If the call has not already finished, it will finish
+ * with status CANCELLED.
+ */
+GrpcClientStream.prototype.cancel = function() {
+  this._call.cancel();
 };
 
 /**
@@ -185,7 +193,7 @@ function makeRequest(channel,
   if (metadata) {
     call.addMetadata(metadata);
   }
-  return new GrpcClientStream(call);
+  return new GrpcClientStream(call, serialize, deserialize);
 }
 
 /**
