@@ -217,6 +217,7 @@
       "headers": [
         "src/core/support/cpu.h",
         "src/core/support/murmur_hash.h",
+        "src/core/support/string.h",
         "src/core/support/thd_internal.h"
       ],
       "src": [

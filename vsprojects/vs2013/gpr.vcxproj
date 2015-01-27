@@ -101,6 +101,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\core\support\cpu.h" />
     <ClInclude Include="..\..\src\core\support\murmur_hash.h" />
+    <ClInclude Include="..\..\src\core\support\string.h" />
     <ClInclude Include="..\..\src\core\support\thd_internal.h" />
   </ItemGroup>
   <ItemGroup>
