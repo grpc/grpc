@@ -67,7 +67,7 @@ module Google
           fail(ArgumentError, 'not a CompletionQueue')
         end
         call.add_metadata(kw) if kw.length > 0
-        invoke_accepted, client_metadata_read = Object.new, Object.new
+        client_metadata_read = Object.new
         finished_tag = Object.new
         call.invoke(q, client_metadata_read, finished_tag)
         [finished_tag, client_metadata_read]
