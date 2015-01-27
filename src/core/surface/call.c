@@ -228,6 +228,7 @@ static void finish_finish_step(void *pc, grpc_op_error error) {
   grpc_call *call = pc;
   if (error == GRPC_OP_OK) {
     gpr_mu_lock(&call->mu);
+    finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, GRPC_OP_OK);
     start_next_step_and_unlock(call,
                                call->requests[GRPC_IOREQ_SEND_CLOSE].master);
   } else {
