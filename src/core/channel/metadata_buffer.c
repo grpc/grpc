@@ -61,7 +61,7 @@ struct grpc_metadata_buffer_impl {
   size_t elem_cap;
 };
 
-#define ELEMS(buffer) ((qelem *)((buffer)+1))
+#define ELEMS(buffer) ((qelem *)((buffer) + 1))
 
 void grpc_metadata_buffer_init(grpc_metadata_buffer *buffer) {
   /* start buffer as NULL, indicating no elements */
@@ -152,7 +152,9 @@ size_t grpc_metadata_buffer_count(const grpc_metadata_buffer *buffer) {
   return *buffer ? (*buffer)->elems : 0;
 }
 
-typedef struct { grpc_metadata_buffer_impl *impl; } elems_hdr;
+typedef struct {
+  grpc_metadata_buffer_impl *impl;
+} elems_hdr;
 
 grpc_metadata *grpc_metadata_buffer_extract_elements(
     grpc_metadata_buffer *buffer) {

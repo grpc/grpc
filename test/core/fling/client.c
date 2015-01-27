@@ -98,8 +98,7 @@ typedef struct {
 
 static const scenario scenarios[] = {
     {"ping-pong-request", init_ping_pong_request, step_ping_pong_request},
-    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
-};
+    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream}, };
 
 int main(int argc, char **argv) {
   gpr_slice slice = gpr_slice_from_copied_string("x");

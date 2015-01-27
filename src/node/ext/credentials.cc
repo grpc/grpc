@@ -157,8 +157,7 @@ NAN_METHOD(Credentials::CreateSsl) {
   }
 
   NanReturnValue(WrapStruct(grpc_ssl_credentials_create(
-      root_certs,
-      key_cert_pair.private_key == NULL ? NULL : &key_cert_pair)));
+      root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair)));
 }
 
 NAN_METHOD(Credentials::CreateComposite) {

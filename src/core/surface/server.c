@@ -411,14 +411,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    call_op,              channel_op,
-
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
-
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-
-    "server",
-};
+    call_op,           channel_op,           sizeof(call_data),
+    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, "server", };
 
 static void early_terminate_requested_calls(grpc_completion_queue *cq,
                                             void **tags, size_t ntags) {

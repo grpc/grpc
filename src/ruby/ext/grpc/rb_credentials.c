@@ -84,7 +84,6 @@ static void grpc_rb_credentials_mark(void *p) {
 }
 
 /* Allocates Credential instances.
-
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_credentials_alloc(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
@@ -95,7 +94,6 @@ static VALUE grpc_rb_credentials_alloc(VALUE cls) {
 }
 
 /* Clones Credentials instances.
-
    Gives Credentials a consistent implementation of Ruby's object copy/dup
    protocol. */
 static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
@@ -124,7 +122,6 @@ static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
 /*
   call-seq:
     creds = Credentials.default()
-
     Creates the default credential instances. */
 static VALUE grpc_rb_default_credentials_create(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
@@ -143,7 +140,6 @@ static VALUE grpc_rb_default_credentials_create(VALUE cls) {
 /*
   call-seq:
     creds = Credentials.compute_engine()
-
     Creates the default credential instances. */
 static VALUE grpc_rb_compute_engine_credentials_create(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
@@ -164,7 +160,6 @@ static VALUE grpc_rb_compute_engine_credentials_create(VALUE cls) {
     creds1 = ...
     creds2 = ...
     creds3 = creds1.add(creds2)
-
     Creates the default credential instances. */
 static VALUE grpc_rb_composite_credentials_create(VALUE self, VALUE other) {
   grpc_rb_credentials *self_wrapper = NULL;
@@ -202,11 +197,9 @@ static ID id_pem_cert_chain;
     ...
     creds2 = Credentials.new(pem_root_certs, pem_private_key,
                              pem_cert_chain)
-
     pem_root_certs: (required) PEM encoding of the server root certificate
     pem_private_key: (optional) PEM encoding of the client's private key
     pem_cert_chain: (optional) PEM encoding of the client's cert chain
-
     Initializes Credential instances. */
 static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   VALUE pem_root_certs = Qnil;

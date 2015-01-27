@@ -246,7 +246,9 @@ typedef struct {
 
 /* A call stack tracks a set of related filters for one call, and guarantees
    they live within a single malloc() allocation */
-typedef struct { size_t count; } grpc_call_stack;
+typedef struct {
+  size_t count;
+} grpc_call_stack;
 
 /* Get a channel element given a channel stack and its index */
 grpc_channel_element *grpc_channel_stack_element(grpc_channel_stack *stack,

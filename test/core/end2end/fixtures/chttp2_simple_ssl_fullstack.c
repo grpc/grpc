@@ -125,8 +125,7 @@ static grpc_end2end_test_config configs[] = {
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
-     chttp2_tear_down_secure_fullstack},
-};
+     chttp2_tear_down_secure_fullstack}, };
 
 int main(int argc, char **argv) {
   size_t i;

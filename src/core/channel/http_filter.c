@@ -132,10 +132,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_filter = {
-    call_op,              channel_op,
-
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
-
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-
-    "http"};
+    call_op,           channel_op,           sizeof(call_data),
+    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, "http"};

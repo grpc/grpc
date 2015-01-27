@@ -69,7 +69,7 @@ typedef struct {
 /* We perform a small hack to locate transport data alongside the connected
    channel data in call allocations, to allow everything to be pulled in minimal
    cache line requests */
-#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) ((grpc_stream *)((calld)+1))
+#define TRANSPORT_STREAM_FROM_CALL_DATA(calld) ((grpc_stream *)((calld) + 1))
 #define CALL_DATA_FROM_TRANSPORT_STREAM(transport_stream) \
   (((call_data *)(transport_stream)) - 1)
 
@@ -259,14 +259,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_connected_channel_filter = {
-    call_op,              channel_op,
-
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
-
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-
-    "connected",
-};
+    call_op,           channel_op,           sizeof(call_data),
+    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, "connected", };
 
 static gpr_slice alloc_recv_buffer(void *user_data, grpc_transport *transport,
                                    grpc_stream *stream, size_t size_hint) {
@@ -510,8 +505,7 @@ static void transport_closed(void *user_data, grpc_transport *transport) {
 
 const grpc_transport_callbacks connected_channel_transport_callbacks = {
     alloc_recv_buffer, accept_stream,    recv_batch,
-    transport_goaway,  transport_closed,
-};
+    transport_goaway,  transport_closed, };
 
 grpc_transport_setup_result grpc_connected_channel_bind_transport(
     grpc_channel_stack *channel_stack, grpc_transport *transport) {

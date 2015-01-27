@@ -104,8 +104,7 @@ static struct {
       /* 58: */ {"user-agent", ""},
       /* 59: */ {"vary", ""},
       /* 60: */ {"via", ""},
-      /* 61: */ {"www-authenticate", ""},
-};
+      /* 61: */ {"www-authenticate", ""}, };
 
 void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
   size_t i;

@@ -703,8 +703,7 @@ static void ssl_protector_destroy(tsi_frame_protector* self) {
 
 static const tsi_frame_protector_vtable frame_protector_vtable = {
     ssl_protector_protect, ssl_protector_protect_flush, ssl_protector_unprotect,
-    ssl_protector_destroy,
-};
+    ssl_protector_destroy, };
 
 /* --- tsi_handshaker methods implementation. ---*/
 
@@ -877,8 +876,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     ssl_handshaker_get_result,
     ssl_handshaker_extract_peer,
     ssl_handshaker_create_frame_protector,
-    ssl_handshaker_destroy,
-};
+    ssl_handshaker_destroy, };
 
 /* --- tsi_ssl_handshaker_factory common methods. --- */
 

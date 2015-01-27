@@ -525,7 +525,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     lock(t);
     s->id = 0;
   } else {
-    s->id = (gpr_uint32)(gpr_uintptr) server_data;
+    s->id = (gpr_uint32)(gpr_uintptr)server_data;
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
@@ -1238,7 +1238,7 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
     t->incoming_stream = NULL;
     /* if stream is accepted, we set incoming_stream in init_stream */
     t->cb->accept_stream(t->cb_user_data, &t->base,
-                         (void *)(gpr_uintptr) t->incoming_stream_id);
+                         (void *)(gpr_uintptr)t->incoming_stream_id);
     s = t->incoming_stream;
     if (!s) {
       gpr_log(GPR_ERROR, "stream not accepted");
@@ -1503,8 +1503,8 @@ static int process_read(transport *t, gpr_slice slice) {
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   CLIENT_CONNECT_STRING[t->deframe_state],
-                  (int)(gpr_uint8) CLIENT_CONNECT_STRING[t->deframe_state],
-                  *cur, (int)*cur, t->deframe_state);
+                  (int)(gpr_uint8)CLIENT_CONNECT_STRING[t->deframe_state], *cur,
+                  (int)*cur, t->deframe_state);
           drop_connection(t);
           return 0;
         }
@@ -1518,7 +1518,7 @@ static int process_read(transport *t, gpr_slice slice) {
     dts_fh_0:
     case DTS_FH_0:
       GPR_ASSERT(cur < end);
-      t->incoming_frame_size = ((gpr_uint32)*cur) << 16;
+      t->incoming_frame_size = ((gpr_uint32) * cur) << 16;
       if (++cur == end) {
         t->deframe_state = DTS_FH_1;
         return 1;
@@ -1526,7 +1526,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_1:
       GPR_ASSERT(cur < end);
-      t->incoming_frame_size |= ((gpr_uint32)*cur) << 8;
+      t->incoming_frame_size |= ((gpr_uint32) * cur) << 8;
       if (++cur == end) {
         t->deframe_state = DTS_FH_2;
         return 1;
@@ -1558,7 +1558,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_5:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id = (((gpr_uint32)*cur) << 24) & 0x7f;
+      t->incoming_stream_id = (((gpr_uint32) * cur) << 24) & 0x7f;
       if (++cur == end) {
         t->deframe_state = DTS_FH_6;
         return 1;
@@ -1566,7 +1566,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_6:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id |= ((gpr_uint32)*cur) << 16;
+      t->incoming_stream_id |= ((gpr_uint32) * cur) << 16;
       if (++cur == end) {
         t->deframe_state = DTS_FH_7;
         return 1;
@@ -1574,7 +1574,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_7:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id |= ((gpr_uint32)*cur) << 8;
+      t->incoming_stream_id |= ((gpr_uint32) * cur) << 8;
       if (++cur == end) {
         t->deframe_state = DTS_FH_8;
         return 1;
@@ -1582,7 +1582,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FH_8:
       GPR_ASSERT(cur < end);
-      t->incoming_stream_id |= ((gpr_uint32)*cur);
+      t->incoming_stream_id |= ((gpr_uint32) * cur);
       t->deframe_state = DTS_FRAME;
       if (!init_frame_parser(t)) {
         return 0;
