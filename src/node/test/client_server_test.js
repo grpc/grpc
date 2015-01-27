@@ -35,9 +35,9 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var grpc = require('bindings')('grpc.node');
-var Server = require('../server');
-var client = require('../client');
-var common = require('../common');
+var Server = require('../src/server');
+var client = require('../src/client');
+var common = require('../src/common');
 var _ = require('highland');
 
 var ca_path = path.join(__dirname, 'data/ca.pem');

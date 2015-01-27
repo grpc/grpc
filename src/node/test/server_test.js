@@ -33,7 +33,7 @@
 
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
-var Server = require('../server');
+var Server = require('../src/server');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
