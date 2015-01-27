@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
@@ -43,7 +45,7 @@
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
 static void assert_encodes_as(gpr_timespec ts, const char *s) {
-  char buffer[32];
+  char buffer[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_chttp2_encode_timeout(ts, buffer);
   gpr_log(GPR_INFO, "check '%s' == '%s'", buffer, s);
   GPR_ASSERT(0 == strcmp(buffer, s));
@@ -93,16 +95,23 @@ void decode_suite(char ext, gpr_timespec (*answer)(long x)) {
                       1234567, 12345678, 123456789, 98765432, 9876543, 987654,
                       98765,   9876,     987,       98,       9};
   int i;
-  char input[32];
+  char *input;
   for (i = 0; i < GPR_ARRAY_SIZE(test_vals); i++) {
-    sprintf(input, "%ld%c", test_vals[i], ext);
+    gpr_asprintf(&input, "%ld%c", test_vals[i], ext);
     assert_decodes_as(input, answer(test_vals[i]));
-    sprintf(input, "   %ld%c", test_vals[i], ext);
+    gpr_free(input);
+
+    gpr_asprintf(&input, "   %ld%c", test_vals[i], ext);
     assert_decodes_as(input, answer(test_vals[i]));
-    sprintf(input, "%ld %c", test_vals[i], ext);
+    gpr_free(input);
+
+    gpr_asprintf(&input, "%ld %c", test_vals[i], ext);
     assert_decodes_as(input, answer(test_vals[i]));
-    sprintf(input, "%ld %c  ", test_vals[i], ext);
+    gpr_free(input);
+
+    gpr_asprintf(&input, "%ld %c  ", test_vals[i], ext);
     assert_decodes_as(input, answer(test_vals[i]));
+    gpr_free(input);
   }
 }
 

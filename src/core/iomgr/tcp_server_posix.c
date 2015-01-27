@@ -255,8 +255,7 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     /* append it to the list under a lock */
     if (s->nports == s->port_capacity) {
       s->port_capacity *= 2;
-      s->ports =
-          gpr_realloc(s->ports, sizeof(server_port) * s->port_capacity);
+      s->ports = gpr_realloc(s->ports, sizeof(server_port) * s->port_capacity);
     }
     sp = &s->ports[s->nports++];
     sp->server = s;

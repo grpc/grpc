@@ -93,7 +93,7 @@ static void test_basic_add_find(size_t n) {
   grpc_chttp2_stream_map_init(&map, 8);
   GPR_ASSERT(0 == grpc_chttp2_stream_map_size(&map));
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void *)(gpr_uintptr) i);
+    grpc_chttp2_stream_map_add(&map, i, (void *)(gpr_uintptr)i);
   }
   GPR_ASSERT(n == grpc_chttp2_stream_map_size(&map));
   GPR_ASSERT(NULL == grpc_chttp2_stream_map_find(&map, 0));
@@ -148,7 +148,7 @@ static void test_delete_evens_sweep(size_t n) {
 
   grpc_chttp2_stream_map_init(&map, 8);
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void *)(gpr_uintptr) i);
+    grpc_chttp2_stream_map_add(&map, i, (void *)(gpr_uintptr)i);
   }
   for (i = 1; i <= n; i++) {
     if ((i & 1) == 0) {
@@ -170,7 +170,7 @@ static void test_delete_evens_incremental(size_t n) {
 
   grpc_chttp2_stream_map_init(&map, 8);
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void *)(gpr_uintptr) i);
+    grpc_chttp2_stream_map_add(&map, i, (void *)(gpr_uintptr)i);
     if ((i & 1) == 0) {
       grpc_chttp2_stream_map_delete(&map, i);
     }

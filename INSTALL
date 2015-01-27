@@ -58,7 +58,7 @@ for that particular dependency if you want to reduce the libraries' size.
 The recommended version of OpenSSL that provides ALPN support is available
 at this URL:
 
-  https://www.openssl.org/source/openssl-1.0.2-beta3.tar.gz
+  https://www.openssl.org/source/openssl-1.0.2.tar.gz
 
 
 Dependencies to compile and run the tests
@@ -101,7 +101,7 @@ A word on OpenSSL
 
 Secure HTTP2 requires to have the TLS extension ALPN (see rfc 7301 and
 http://http2.github.io/http2-spec/ section 3.3). Our HTTP2 implementation
-relies on OpenSSL's implementation. OpenSSL 1.0.2beta3 is the first version
+relies on OpenSSL's implementation. OpenSSL 1.0.2 is the first released version
 of OpenSSL that has ALPN support, and this explains our dependency on it.
 
 Note that the Makefile supports compiling only the unsecure elements of grpc,

@@ -35,7 +35,9 @@
 #include <string.h>
 #include <grpc/support/log.h>
 
-typedef struct call_data { int sent_headers; } call_data;
+typedef struct call_data {
+  int sent_headers;
+} call_data;
 
 typedef struct channel_data {
   grpc_mdelem *te_trailers;
@@ -67,8 +69,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         /* Send : prefixed headers, which have to be before any application
          * layer headers. */
         calld->sent_headers = 1;
-        grpc_call_element_send_metadata(elem, channeld->method);
-        grpc_call_element_send_metadata(elem, channeld->scheme);
+        grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->method));
+        grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->scheme));
       }
       grpc_call_next_op(elem, op);
       break;
@@ -76,12 +78,12 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       if (!calld->sent_headers) {
         /* Send : prefixed headers, if we haven't already */
         calld->sent_headers = 1;
-        grpc_call_element_send_metadata(elem, channeld->method);
-        grpc_call_element_send_metadata(elem, channeld->scheme);
+        grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->method));
+        grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->scheme));
       }
       /* Send non : prefixed headers */
-      grpc_call_element_send_metadata(elem, channeld->te_trailers);
-      grpc_call_element_send_metadata(elem, channeld->content_type);
+      grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->te_trailers));
+      grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->content_type));
       grpc_call_next_op(elem, op);
       break;
     default:
@@ -178,10 +180,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_client_filter = {
-    call_op,              channel_op,
-
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
-
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-
-    "http-client"};
+    call_op,           channel_op,           sizeof(call_data),
+    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, "http-client"};

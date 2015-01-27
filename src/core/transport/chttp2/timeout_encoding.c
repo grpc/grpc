@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
+
 static int round_up(int x, int divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;
 }
@@ -53,15 +55,21 @@ static int round_up_to_three_sig_figs(int x) {
 }
 
 /* encode our minimum viable timeout value */
-static void enc_tiny(char *buffer) { strcpy(buffer, "1n"); }
+static void enc_tiny(char *buffer) { memcpy(buffer, "1n", 3); }
+
+static void enc_ext(char *buffer, long value, char ext) {
+  int n = gpr_ltoa(value, buffer);
+  buffer[n] = ext;
+  buffer[n + 1] = 0;
+}
 
 static void enc_seconds(char *buffer, long sec) {
   if (sec % 3600 == 0) {
-    sprintf(buffer, "%ldH", sec / 3600);
+    enc_ext(buffer, sec / 3600, 'H');
   } else if (sec % 60 == 0) {
-    sprintf(buffer, "%ldM", sec / 60);
+    enc_ext(buffer, sec / 60, 'M');
   } else {
-    sprintf(buffer, "%ldS", sec);
+    enc_ext(buffer, sec, 'S');
   }
 }
 
@@ -69,23 +77,23 @@ static void enc_nanos(char *buffer, int x) {
   x = round_up_to_three_sig_figs(x);
   if (x < 100000) {
     if (x % 1000 == 0) {
-      sprintf(buffer, "%du", x / 1000);
+      enc_ext(buffer, x / 1000, 'u');
     } else {
-      sprintf(buffer, "%dn", x);
+      enc_ext(buffer, x, 'n');
     }
   } else if (x < 100000000) {
     if (x % 1000000 == 0) {
-      sprintf(buffer, "%dm", x / 1000000);
+      enc_ext(buffer, x / 1000000, 'm');
     } else {
-      sprintf(buffer, "%du", x / 1000);
+      enc_ext(buffer, x / 1000, 'u');
     }
   } else if (x < 1000000000) {
-    sprintf(buffer, "%dm", x / 1000000);
+    enc_ext(buffer, x / 1000000, 'm');
   } else {
     /* note that this is only ever called with times of less than one second,
        so if we reach here the time must have been rounded up to a whole second
        (and no more) */
-    strcpy(buffer, "1S");
+    memcpy(buffer, "1S", 3);
   }
 }
 
@@ -93,18 +101,18 @@ static void enc_micros(char *buffer, int x) {
   x = round_up_to_three_sig_figs(x);
   if (x < 100000) {
     if (x % 1000 == 0) {
-      sprintf(buffer, "%dm", x / 1000);
+      enc_ext(buffer, x / 1000, 'm');
     } else {
-      sprintf(buffer, "%du", x);
+      enc_ext(buffer, x, 'u');
     }
   } else if (x < 100000000) {
     if (x % 1000000 == 0) {
-      sprintf(buffer, "%dS", x / 1000000);
+      enc_ext(buffer, x / 1000000, 'S');
     } else {
-      sprintf(buffer, "%dm", x / 1000);
+      enc_ext(buffer, x / 1000, 'm');
     }
   } else {
-    sprintf(buffer, "%dS", x / 1000000);
+    enc_ext(buffer, x / 1000000, 'S');
   }
 }
 

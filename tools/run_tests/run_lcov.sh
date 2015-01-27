@@ -7,7 +7,7 @@ out=`realpath ${1:-coverage}`
 root=`realpath $(dirname $0)/../..`
 tmp=`mktemp`
 cd $root
-tools/run_tests/run_tests.py -c gcov
+tools/run_tests/run_tests.py -c gcov -l c c++
 lcov --capture --directory . --output-file $tmp
 genhtml $tmp --output-directory $out
 rm $tmp

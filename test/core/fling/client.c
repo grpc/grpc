@@ -55,15 +55,13 @@ static void init_ping_pong_request(void) {}
 static void step_ping_pong_request(void) {
   call = grpc_channel_create_call(channel, "/Reflector/reflectUnary",
                                   "localhost", gpr_inf_future);
-  GPR_ASSERT(grpc_call_start_invoke(call, cq, (void *)1, (void *)1, (void *)1,
-                                    GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  GPR_ASSERT(grpc_call_invoke(call, cq, (void *)1, (void *)1,
+                              GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   GPR_ASSERT(grpc_call_start_write(call, the_buffer, (void *)1,
                                    GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   GPR_ASSERT(grpc_call_start_read(call, (void *)1) == GRPC_CALL_OK);
   GPR_ASSERT(grpc_call_writes_done(call, (void *)1) == GRPC_CALL_OK);
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
@@ -74,9 +72,8 @@ static void step_ping_pong_request(void) {
 static void init_ping_pong_stream(void) {
   call = grpc_channel_create_call(channel, "/Reflector/reflectStream",
                                   "localhost", gpr_inf_future);
-  GPR_ASSERT(grpc_call_start_invoke(call, cq, (void *)1, (void *)1, (void *)1,
-                                    0) == GRPC_CALL_OK);
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  GPR_ASSERT(grpc_call_invoke(call, cq, (void *)1, (void *)1, 0) ==
+             GRPC_CALL_OK);
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
 }
 
@@ -101,8 +98,7 @@ typedef struct {
 
 static const scenario scenarios[] = {
     {"ping-pong-request", init_ping_pong_request, step_ping_pong_request},
-    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
-};
+    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream}, };
 
 int main(int argc, char **argv) {
   gpr_slice slice = gpr_slice_from_copied_string("x");

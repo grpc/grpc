@@ -158,6 +158,7 @@ typedef struct grpc_byte_buffer grpc_byte_buffer;
 
 /* Sample helpers to obtain byte buffers (these will certainly move place */
 grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices);
+grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb);
 size_t grpc_byte_buffer_length(grpc_byte_buffer *bb);
 void grpc_byte_buffer_destroy(grpc_byte_buffer *byte_buffer);
 
@@ -182,17 +183,17 @@ typedef struct grpc_metadata {
 } grpc_metadata;
 
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
-  GRPC_READ,                 /* A read has completed */
-  GRPC_INVOKE_ACCEPTED,      /* An invoke call has been accepted by flow
-                                control */
-  GRPC_WRITE_ACCEPTED,       /* A write has been accepted by
-                                flow control */
+  GRPC_QUEUE_SHUTDOWN,  /* Shutting down */
+  GRPC_READ,            /* A read has completed */
+  GRPC_INVOKE_ACCEPTED, /* An invoke call has been accepted by flow
+                           control */
+  GRPC_WRITE_ACCEPTED, /* A write has been accepted by
+                          flow control */
   GRPC_FINISH_ACCEPTED,      /* writes_done or write_status has been accepted */
   GRPC_CLIENT_METADATA_READ, /* The metadata array sent by server received at
                                 client */
-  GRPC_FINISHED,             /* An RPC has finished. The event contains status.
-                                On the server this will be OK or Cancelled. */
+  GRPC_FINISHED, /* An RPC has finished. The event contains status.
+                    On the server this will be OK or Cancelled. */
   GRPC_SERVER_RPC_NEW,       /* A new RPC has arrived at the server */
   GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
   GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
@@ -313,18 +314,14 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
    flags is a bit-field combination of the write flags defined above.
    REQUIRES: Can be called at most once per call.
              Can only be called on the client.
-   Produces a GRPC_INVOKE_ACCEPTED event with invoke_accepted_tag when the
-       call has been invoked (meaning bytes can start flowing to the wire).
    Produces a GRPC_CLIENT_METADATA_READ event with metadata_read_tag when
        the servers initial metadata has been read.
    Produces a GRPC_FINISHED event with finished_tag when the call has been
        completed (there may be other events for the call pending at this
        time) */
-grpc_call_error grpc_call_start_invoke(grpc_call *call,
-                                       grpc_completion_queue *cq,
-                                       void *invoke_accepted_tag,
-                                       void *metadata_read_tag,
-                                       void *finished_tag, gpr_uint32 flags);
+grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
+                                 void *metadata_read_tag, void *finished_tag,
+                                 gpr_uint32 flags);
 
 /* Accept an incoming RPC, binding a completion queue to it.
    To be called before sending or receiving messages.

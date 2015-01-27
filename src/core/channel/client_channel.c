@@ -40,9 +40,9 @@
 #include "src/core/channel/connected_channel.h"
 #include "src/core/channel/metadata_buffer.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
@@ -410,7 +410,7 @@ static void init_channel_elem(grpc_channel_element *elem,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
   channel_data *chand = elem->channel_data;
-  char temp[16];
+  char temp[GPR_LTOA_MIN_BUFSIZE];
 
   GPR_ASSERT(!is_first);
   GPR_ASSERT(is_last);
@@ -425,7 +425,7 @@ static void init_channel_elem(grpc_channel_element *elem,
   chand->transport_setup_initiated = 0;
   chand->args = grpc_channel_args_copy(args);
 
-  sprintf(temp, "%d", GRPC_STATUS_CANCELLED);
+  gpr_ltoa(GRPC_STATUS_CANCELLED, temp);
   chand->cancel_status =
       grpc_mdelem_from_strings(metadata_context, "grpc-status", temp);
 }
@@ -450,14 +450,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_channel_filter = {
-    call_op,              channel_op,
-
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
-
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-
-    "client-channel",
-};
+    call_op,           channel_op,           sizeof(call_data),
+    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, "client-channel", };
 
 grpc_transport_setup_result grpc_client_channel_transport_setup_complete(
     grpc_channel_stack *channel_stack, grpc_transport *transport,

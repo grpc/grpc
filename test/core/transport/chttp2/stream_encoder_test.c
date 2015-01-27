@@ -35,10 +35,10 @@
 
 #include <stdio.h>
 
+#include "src/core/support/string.h"
 #include "src/core/transport/chttp2/hpack_parser.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string.h>
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
@@ -186,7 +186,7 @@ static void encode_int_to_str(int i, char *p) {
 static void test_decode_table_overflow(void) {
   int i;
   char key[3], value[3];
-  char expect[128];
+  char *expect;
 
   for (i = 0; i < 114; i++) {
     if (i > 0) {
@@ -197,18 +197,21 @@ static void test_decode_table_overflow(void) {
     encode_int_to_str(i + 1, value);
 
     if (i + 61 >= 127) {
-      sprintf(expect, "000009 0104 deadbeef ff%02x 40 02%02x%02x 02%02x%02x",
-              i + 61 - 127, key[0], key[1], value[0], value[1]);
+      gpr_asprintf(&expect,
+                   "000009 0104 deadbeef ff%02x 40 02%02x%02x 02%02x%02x",
+                   i + 61 - 127, key[0], key[1], value[0], value[1]);
     } else if (i > 0) {
-      sprintf(expect, "000008 0104 deadbeef %02x 40 02%02x%02x 02%02x%02x",
-              0x80 + 61 + i, key[0], key[1], value[0], value[1]);
+      gpr_asprintf(&expect,
+                   "000008 0104 deadbeef %02x 40 02%02x%02x 02%02x%02x",
+                   0x80 + 61 + i, key[0], key[1], value[0], value[1]);
     } else {
-      sprintf(expect, "000007 0104 deadbeef 40 02%02x%02x 02%02x%02x", key[0],
-              key[1], value[0], value[1]);
+      gpr_asprintf(&expect, "000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",
+                   key[0], key[1], value[0], value[1]);
     }
 
     add_sopb_header(key, value);
     verify_sopb(0, 0, 0, expect);
+    gpr_free(expect);
   }
 
   /* if the above passes, then we must have just knocked this pair out of the

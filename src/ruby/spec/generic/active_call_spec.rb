@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require_relative '../port_picker'
 
 include GRPC::Core::StatusCodes
 
@@ -45,12 +44,11 @@ describe GRPC::ActiveCall do
 
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
-    port = find_unused_tcp_port
-    host = "localhost:#{port}"
+    host = '0.0.0.0:0'
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    @server.add_http2_port(host)
+    server_port = @server.add_http2_port(host)
     @server.start
-    @ch = GRPC::Core::Channel.new(host, nil)
+    @ch = GRPC::Core::Channel.new("localhost:#{server_port}", nil)
   end
 
   after(:each) do
@@ -60,8 +58,8 @@ describe GRPC::ActiveCall do
   describe 'restricted view methods' do
     before(:each) do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       @client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                     @pass_through, deadline,
                                     finished_tag: done_tag,
@@ -92,8 +90,8 @@ describe GRPC::ActiveCall do
   describe '#remote_send' do
     it 'allows a client to send a payload to the server' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       @client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                     @pass_through, deadline,
                                     finished_tag: done_tag,
@@ -118,8 +116,8 @@ describe GRPC::ActiveCall do
 
     it 'marshals the payload using the marshal func' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       marshal = proc { |x| 'marshalled:' + x }
       client_call = ActiveCall.new(call, @client_queue, marshal,
                                    @pass_through, deadline,
@@ -139,11 +137,11 @@ describe GRPC::ActiveCall do
     end
   end
 
-  describe '#client_start_invoke' do
+  describe '#client_invoke' do
     it 'sends keywords as metadata to the server when the are present' do
       call = make_test_call
-      ActiveCall.client_start_invoke(call, @client_queue, deadline,
-                                     k1: 'v1', k2: 'v2')
+      ActiveCall.client_invoke(call, @client_queue, deadline,
+                               k1: 'v1', k2: 'v2')
       @server.request_call(@server_tag)
       ev = @server_queue.next(deadline)
       expect(ev).to_not be_nil
@@ -155,8 +153,8 @@ describe GRPC::ActiveCall do
   describe '#remote_read' do
     it 'reads the response sent by a server' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    finished_tag: done_tag,
@@ -170,8 +168,8 @@ describe GRPC::ActiveCall do
 
     it 'saves metadata { status=200 } when the server adds no metadata' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    finished_tag: done_tag,
@@ -187,8 +185,8 @@ describe GRPC::ActiveCall do
 
     it 'saves metadata add by the server' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    finished_tag: done_tag,
@@ -205,8 +203,8 @@ describe GRPC::ActiveCall do
 
     it 'get a nil msg before a status when an OK status is sent' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    finished_tag: done_tag,
@@ -224,8 +222,8 @@ describe GRPC::ActiveCall do
 
     it 'unmarshals the response using the unmarshal func' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       unmarshal = proc { |x| 'unmarshalled:' + x }
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    unmarshal, deadline,
@@ -251,8 +249,8 @@ describe GRPC::ActiveCall do
 
     it 'the returns an enumerator that can read n responses' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    finished_tag: done_tag,
@@ -271,8 +269,8 @@ describe GRPC::ActiveCall do
 
     it 'the returns an enumerator that stops after an OK Status' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    read_metadata_tag: meta_tag,
@@ -296,8 +294,8 @@ describe GRPC::ActiveCall do
   describe '#writes_done' do
     it 'finishes ok if the server sends a status response' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    finished_tag: done_tag,
@@ -315,8 +313,8 @@ describe GRPC::ActiveCall do
 
     it 'finishes ok if the server sends an early status response' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    read_metadata_tag: meta_tag,
@@ -334,8 +332,8 @@ describe GRPC::ActiveCall do
 
     it 'finishes ok if writes_done is true' do
       call = make_test_call
-      done_tag, meta_tag = ActiveCall.client_start_invoke(call, @client_queue,
-                                                          deadline)
+      done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
+                                                    deadline)
       client_call = ActiveCall.new(call, @client_queue, @pass_through,
                                    @pass_through, deadline,
                                    read_metadata_tag: meta_tag,

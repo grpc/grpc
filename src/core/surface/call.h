@@ -64,6 +64,8 @@ void grpc_call_client_initial_metadata_complete(
 void grpc_call_set_deadline(grpc_call_element *surface_element,
                             gpr_timespec deadline);
 
+grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
+
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
 

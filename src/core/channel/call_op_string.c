@@ -37,114 +37,93 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
-#include <grpc/support/string.h>
 #include <grpc/support/useful.h>
 
-#define MAX_APPEND 1024
+static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
+  gpr_strvec_add(b, gpr_strdup(" key="));
+  gpr_strvec_add(b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->key->slice),
+                    GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT));
 
-typedef struct {
-  size_t cap;
-  size_t len;
-  char *buffer;
-} buf;
-
-static void bprintf(buf *b, const char *fmt, ...) {
-  va_list arg;
-  if (b->len + MAX_APPEND > b->cap) {
-    b->cap = GPR_MAX(b->len + MAX_APPEND, b->cap * 3 / 2);
-    b->buffer = gpr_realloc(b->buffer, b->cap);
-  }
-  va_start(arg, fmt);
-  b->len += vsprintf(b->buffer + b->len, fmt, arg);
-  va_end(arg);
-}
-
-static void bputs(buf *b, const char *s) {
-  size_t slen = strlen(s);
-  if (b->len + slen + 1 > b->cap) {
-    b->cap = GPR_MAX(b->len + slen + 1, b->cap * 3 / 2);
-    b->buffer = gpr_realloc(b->buffer, b->cap);
-  }
-  strcat(b->buffer, s);
-  b->len += slen;
-}
-
-static void put_metadata(buf *b, grpc_mdelem *md) {
-  char *txt;
-
-  txt = gpr_hexdump((char *)GPR_SLICE_START_PTR(md->key->slice),
-                    GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT);
-  bputs(b, " key=");
-  bputs(b, txt);
-  gpr_free(txt);
-
-  txt = gpr_hexdump((char *)GPR_SLICE_START_PTR(md->value->slice),
-                    GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT);
-  bputs(b, " value=");
-  bputs(b, txt);
-  gpr_free(txt);
+  gpr_strvec_add(b, gpr_strdup(" value="));
+  gpr_strvec_add(b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->value->slice),
+                    GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT));
 }
 
 char *grpc_call_op_string(grpc_call_op *op) {
-  buf b = {0, 0, 0};
+  char *tmp;
+  char *out;
+
+  gpr_strvec b;
+  gpr_strvec_init(&b);
 
   switch (op->dir) {
     case GRPC_CALL_DOWN:
-      bprintf(&b, ">");
+      gpr_strvec_add(&b, gpr_strdup(">"));
       break;
     case GRPC_CALL_UP:
-      bprintf(&b, "<");
+      gpr_strvec_add(&b, gpr_strdup("<"));
       break;
   }
   switch (op->type) {
     case GRPC_SEND_METADATA:
-      bprintf(&b, "SEND_METADATA");
+      gpr_strvec_add(&b, gpr_strdup("SEND_METADATA"));
       put_metadata(&b, op->data.metadata);
       break;
     case GRPC_SEND_DEADLINE:
-      bprintf(&b, "SEND_DEADLINE %d.%09d", op->data.deadline.tv_sec,
+      gpr_asprintf(&tmp, "SEND_DEADLINE %d.%09d", op->data.deadline.tv_sec,
               op->data.deadline.tv_nsec);
+      gpr_strvec_add(&b, tmp);
       break;
     case GRPC_SEND_START:
-      bprintf(&b, "SEND_START pollset=%p", op->data.start.pollset);
+      gpr_asprintf(&tmp, "SEND_START pollset=%p", op->data.start.pollset);
+      gpr_strvec_add(&b, tmp);
       break;
     case GRPC_SEND_MESSAGE:
-      bprintf(&b, "SEND_MESSAGE");
+      gpr_strvec_add(&b, gpr_strdup("SEND_MESSAGE"));
+      break;
+    case GRPC_SEND_PREFORMATTED_MESSAGE:
+      gpr_strvec_add(&b, gpr_strdup("SEND_PREFORMATTED_MESSAGE"));
       break;
     case GRPC_SEND_FINISH:
-      bprintf(&b, "SEND_FINISH");
+      gpr_strvec_add(&b, gpr_strdup("SEND_FINISH"));
       break;
     case GRPC_REQUEST_DATA:
-      bprintf(&b, "REQUEST_DATA");
+      gpr_strvec_add(&b, gpr_strdup("REQUEST_DATA"));
       break;
     case GRPC_RECV_METADATA:
-      bprintf(&b, "RECV_METADATA");
+      gpr_strvec_add(&b, gpr_strdup("RECV_METADATA"));
       put_metadata(&b, op->data.metadata);
       break;
     case GRPC_RECV_DEADLINE:
-      bprintf(&b, "RECV_DEADLINE %d.%09d", op->data.deadline.tv_sec,
+      gpr_asprintf(&tmp, "RECV_DEADLINE %d.%09d", op->data.deadline.tv_sec,
               op->data.deadline.tv_nsec);
+      gpr_strvec_add(&b, tmp);
       break;
     case GRPC_RECV_END_OF_INITIAL_METADATA:
-      bprintf(&b, "RECV_END_OF_INITIAL_METADATA");
+      gpr_strvec_add(&b, gpr_strdup("RECV_END_OF_INITIAL_METADATA"));
       break;
     case GRPC_RECV_MESSAGE:
-      bprintf(&b, "RECV_MESSAGE");
+      gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
       break;
     case GRPC_RECV_HALF_CLOSE:
-      bprintf(&b, "RECV_HALF_CLOSE");
+      gpr_strvec_add(&b, gpr_strdup("RECV_HALF_CLOSE"));
       break;
     case GRPC_RECV_FINISH:
-      bprintf(&b, "RECV_FINISH");
+      gpr_strvec_add(&b, gpr_strdup("RECV_FINISH"));
       break;
     case GRPC_CANCEL_OP:
-      bprintf(&b, "CANCEL_OP");
+      gpr_strvec_add(&b, gpr_strdup("CANCEL_OP"));
       break;
   }
-  bprintf(&b, " flags=0x%08x", op->flags);
+  gpr_asprintf(&tmp, " flags=0x%08x", op->flags);
+  gpr_strvec_add(&b, tmp);
 
-  return b.buffer;
+  out = gpr_strvec_flatten(&b, NULL);
+  gpr_strvec_destroy(&b);
+
+  return out;
 }
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,

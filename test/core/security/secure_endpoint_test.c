@@ -131,8 +131,7 @@ static grpc_endpoint_test_config configs[] = {
     {"secure_ep/tcp_socketpair",
      secure_endpoint_create_fixture_tcp_socketpair_noleftover, clean_up},
     {"secure_ep/tcp_socketpair_leftover",
-     secure_endpoint_create_fixture_tcp_socketpair_leftover, clean_up},
-};
+     secure_endpoint_create_fixture_tcp_socketpair_leftover, clean_up}, };
 
 static void verify_leftover(void *user_data, gpr_slice *slices, size_t nslices,
                             grpc_endpoint_cb_status error) {

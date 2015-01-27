@@ -125,9 +125,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_invoke(c, f.client_cq, tag(1), tag(2), tag(3), 0));
-  cq_expect_invoke_accepted(v_client, tag(1), GRPC_OP_OK);
-  cq_verify(v_client);
+             grpc_call_invoke(c, f.client_cq, tag(2), tag(3), 0));
 
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_write(c, request_payload, tag(4), 0));

@@ -33,12 +33,11 @@
 
 #include "src/core/iomgr/sockaddr_utils.h"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <string.h>
 
+#include "src/core/support/string.h"
 #include <grpc/support/host_port.h>
-#include <grpc/support/string.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
