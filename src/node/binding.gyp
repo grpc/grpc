@@ -28,17 +28,17 @@
       },
       "target_name": "grpc",
       "sources": [
-        "byte_buffer.cc",
-        "call.cc",
-        "channel.cc",
-        "completion_queue_async_worker.cc",
-        "credentials.cc",
-        "event.cc",
-        "node_grpc.cc",
-        "server.cc",
-        "server_credentials.cc",
-        "tag.cc",
-        "timeval.cc"
+        "ext/byte_buffer.cc",
+        "ext/call.cc",
+        "ext/channel.cc",
+        "ext/completion_queue_async_worker.cc",
+        "ext/credentials.cc",
+        "ext/event.cc",
+        "ext/node_grpc.cc",
+        "ext/server.cc",
+        "ext/server_credentials.cc",
+        "ext/tag.cc",
+        "ext/timeval.cc"
       ],
       'conditions' : [
         ['no_install=="yes"', {
