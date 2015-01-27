@@ -140,7 +140,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
 
 end:
   if (bio != NULL) BIO_free(bio);
-  if (json != NULL) grpc_json_delete(json);
+  if (json != NULL) grpc_json_destroy(json);
   if (!success) grpc_auth_json_key_destruct(&result);
   gpr_free(scratchpad);
   return result;
@@ -172,7 +172,7 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key) {
 static grpc_json *create_child(grpc_json *brother, grpc_json *parent,
                          const char *key, const char *value,
                          grpc_json_type type) {
-  grpc_json *child = grpc_json_new(type);
+  grpc_json *child = grpc_json_create(type);
   if (brother) brother->next = child;
   if (!parent->child) parent->child = child;
   child->parent = parent;
@@ -182,7 +182,7 @@ static grpc_json *create_child(grpc_json *brother, grpc_json *parent,
 }
 
 static char *encoded_jwt_header(const char *algorithm) {
-  grpc_json *json = grpc_json_new(GRPC_JSON_OBJECT);
+  grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
@@ -193,13 +193,13 @@ static char *encoded_jwt_header(const char *algorithm) {
   json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
   gpr_free(json_str);
-  grpc_json_delete(json);
+  grpc_json_destroy(json);
   return result;
 }
 
 static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
                                const char *scope, gpr_timespec token_lifetime) {
-  grpc_json *json = grpc_json_new(GRPC_JSON_OBJECT);
+  grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
@@ -225,7 +225,7 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
   gpr_free(json_str);
-  grpc_json_delete(json);
+  grpc_json_destroy(json);
   return result;
 }
 

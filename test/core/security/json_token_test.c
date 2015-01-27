@@ -341,7 +341,7 @@ static void test_jwt_encode_and_sign(void) {
   GPR_ASSERT(parsed_header != NULL);
   check_jwt_header(parsed_header);
   offset = dot - jwt + 1;
-  grpc_json_delete(parsed_header);
+  grpc_json_destroy(parsed_header);
   gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
@@ -350,7 +350,7 @@ static void test_jwt_encode_and_sign(void) {
   GPR_ASSERT(parsed_claim != NULL);
   check_jwt_claim(parsed_claim);
   offset = dot - jwt + 1;
-  grpc_json_delete(parsed_claim);
+  grpc_json_destroy(parsed_claim);
   gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');

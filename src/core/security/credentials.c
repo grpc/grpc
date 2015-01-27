@@ -407,7 +407,7 @@ end:
   }
   if (null_terminated_body != NULL) gpr_free(null_terminated_body);
   if (new_access_token != NULL) gpr_free(new_access_token);
-  if (json != NULL) grpc_json_delete(json);
+  if (json != NULL) grpc_json_destroy(json);
   return status;
 }
 

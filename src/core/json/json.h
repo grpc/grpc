@@ -63,7 +63,7 @@ typedef struct grpc_json {
  * All the keys and values in the grpc_json_t objects will be strings
  * pointing at your input buffer.
  *
- * Delete the allocated tree afterward using grpc_json_delete().
+ * Delete the allocated tree afterward using grpc_json_destroy().
  */
 grpc_json* grpc_json_parse_string_with_len(char* input, size_t size);
 grpc_json* grpc_json_parse_string(char* input);
@@ -82,7 +82,7 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
  * Deletion is recursive. We will not attempt to free any of the strings
  * in any of the objects of that tree.
  */
-grpc_json* grpc_json_new(grpc_json_type type);
-void grpc_json_delete(grpc_json* json);
+grpc_json* grpc_json_create(grpc_json_type type);
+void grpc_json_destroy(grpc_json* json);
 
 #endif /* __GRPC_SRC_CORE_JSON_JSON_H__ */

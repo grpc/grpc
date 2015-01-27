@@ -31,23 +31,23 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 
 #include "src/core/json/json.h"
 
-grpc_json *grpc_json_new(grpc_json_type type) {
+grpc_json *grpc_json_create(grpc_json_type type) {
   grpc_json *json = gpr_malloc(sizeof(grpc_json));
-  json->parent = json->child = json->next = json->prev = NULL;
+  memset(json, 0, sizeof(grpc_json));
   json->type = type;
-
-  json->value = json->key = NULL;
 
   return json;
 }
 
-void grpc_json_delete(grpc_json *json) {
+void grpc_json_destroy(grpc_json *json) {
   while (json->child) {
-    grpc_json_delete(json->child);
+    grpc_json_destroy(json->child);
   }
 
   if (json->next) {

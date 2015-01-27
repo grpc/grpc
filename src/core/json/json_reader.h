@@ -78,39 +78,40 @@ enum {
   GRPC_JSON_READ_CHAR_ERROR
 };
 
-typedef struct grpc_json_reader {
-  /* You are responsible for your own opaque userdata.
-   * Among other things, it needs to hold a string scratchpad.
-   */
-  void* userdata;
+struct grpc_json_reader;
 
-  /* You also need to set up these callbacks. */
-
+typedef struct grpc_json_reader_vtable {
   /* Clears your internal string scratchpad. */
-  void (*string_clear)(struct grpc_json_reader*);
+  void (*string_clear)(void* userdata);
   /* Adds a char to the string scratchpad. */
-  void (*string_add_char)(struct grpc_json_reader*, gpr_uint32 c);
+  void (*string_add_char)(void* userdata, gpr_uint32 c);
   /* Adds a utf32 char to the string scratchpad. */
-  void (*string_add_utf32)(struct grpc_json_reader*, gpr_uint32 c);
+  void (*string_add_utf32)(void* userdata, gpr_uint32 c);
   /* Reads a character from your input. May be utf-8, 16 or 32. */
-  gpr_uint32 (*read_char)(struct grpc_json_reader*);
+  gpr_uint32 (*read_char)(void* userdata);
   /* Starts a container of type GRPC_JSON_ARRAY or GRPC_JSON_OBJECT. */
-  void (*container_begins)(struct grpc_json_reader*, grpc_json_type type);
+  void (*container_begins)(void* userdata, grpc_json_type type);
   /* Ends the current container. Must return the type of its parent. */
-  grpc_json_type (*container_ends)(struct grpc_json_reader*);
+  grpc_json_type (*container_ends)(void* userdata);
   /* Your internal string scratchpad is an object's key. */
-  void (*set_key)(struct grpc_json_reader*);
+  void (*set_key)(void* userdata);
   /* Your internal string scratchpad is a string value. */
-  void (*set_string)(struct grpc_json_reader*);
+  void (*set_string)(void* userdata);
   /* Your internal string scratchpad is a numerical value. Return 1 if valid. */
-  int (*set_number)(struct grpc_json_reader*);
+  int (*set_number)(void* userdata);
   /* Sets the values true, false or null. */
-  void (*set_true)(struct grpc_json_reader*);
-  void (*set_false)(struct grpc_json_reader*);
-  void (*set_null)(struct grpc_json_reader*);
+  void (*set_true)(void* userdata);
+  void (*set_false)(void* userdata);
+  void (*set_null)(void* userdata);
+} grpc_json_reader_vtable;
 
-  /* Everything down here is private,
-     and initialized by grpc_json_reader_init. */
+typedef struct grpc_json_reader {
+  /* That structure is fully private, and initialized by grpc_json_reader_init.
+   * The definition is public so you can put it on your stack.
+   */
+
+  void* userdata;
+  grpc_json_reader_vtable* vtable;
   int depth;
   int in_object;
   int in_array;
@@ -127,7 +128,7 @@ typedef enum {
   GRPC_JSON_READ_ERROR,    /* The parser passes through a read error. */
   GRPC_JSON_PARSE_ERROR,   /* The parser found an error in the json stream. */
   GRPC_JSON_INTERNAL_ERROR /* The parser got an internal error. */
-} grpc_json_reader_ret;
+} grpc_json_reader_status;
 
 /* Call this function to start parsing the input. It will return the following:
  *    . GRPC_JSON_DONE if the input got eof, and the parsing finished
@@ -143,10 +144,11 @@ typedef enum {
  *    . GRPC_JSON_INTERNAL_ERROR if the parser somehow ended into an invalid
  *      internal state.
  */
-grpc_json_reader_ret grpc_json_reader_run(grpc_json_reader* reader);
+grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader);
 
 /* Call this function to initialize the reader structure. */
-void grpc_json_reader_init(grpc_json_reader* reader);
+void grpc_json_reader_init(grpc_json_reader* reader,
+                           grpc_json_reader_vtable* vtable, void* userdata);
 
 /* You may call this from the read_char callback if you don't know where is the
  * end of your input stream, and you'd like the json reader to hint you that it

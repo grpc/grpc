@@ -31,30 +31,34 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/support/port_platform.h>
+
 #include "src/core/json/json_writer.h"
 
-static void grpc_json_writer_output_char(grpc_json_writer* writer, char c) {
-  writer->output_char(writer, c);
+static void json_writer_output_char(grpc_json_writer* writer, char c) {
+  writer->vtable->output_char(writer->userdata, c);
 }
 
-static void grpc_json_writer_output_string(grpc_json_writer* writer, const char* str) {
-  writer->output_string(writer, str);
+static void json_writer_output_string(grpc_json_writer* writer, const char* str) {
+  writer->vtable->output_string(writer->userdata, str);
 }
 
-static void grpc_json_writer_output_string_with_len(grpc_json_writer* writer, const char* str, size_t len) {
-  writer->output_string_with_len(writer, str, len);
+static void json_writer_output_string_with_len(grpc_json_writer* writer, const char* str, size_t len) {
+  writer->vtable->output_string_with_len(writer->userdata, str, len);
 }
 
-/* Call this function to initialize the writer structure. */
-void grpc_json_writer_init(grpc_json_writer* writer, int indent) {
-  writer->depth = 0;
+void grpc_json_writer_init(grpc_json_writer* writer, int indent,
+                           grpc_json_writer_vtable* vtable, void* userdata) {
+  memset(writer, 0, sizeof(grpc_json_writer));
   writer->container_empty = 1;
-  writer->got_key = 0;
   writer->indent = indent;
+  writer->vtable = vtable;
+  writer->userdata = userdata;
 }
 
-static void grpc_json_writer_output_indent(
+static void json_writer_output_indent(
     grpc_json_writer* writer) {
   static const char spacesstr[] =
       "                "
@@ -64,77 +68,78 @@ static void grpc_json_writer_output_indent(
 
   int spaces = writer->depth * writer->indent;
 
+  if (writer->indent == 0) return;
+
   if (writer->got_key) {
-    grpc_json_writer_output_char(writer, ' ');
+    json_writer_output_char(writer, ' ');
     return;
   }
 
   while (spaces >= (sizeof(spacesstr) - 1)) {
-    grpc_json_writer_output_string_with_len(writer, spacesstr,
+    json_writer_output_string_with_len(writer, spacesstr,
                                             sizeof(spacesstr) - 1);
     spaces -= (sizeof(spacesstr) - 1);
   }
 
-  if (!spaces) return;
+  if (spaces == 0) return;
 
-  grpc_json_writer_output_string_with_len(
+  json_writer_output_string_with_len(
       writer, spacesstr + sizeof(spacesstr) - 1 - spaces, spaces);
 }
 
-static void grpc_json_writer_value_end(
-    grpc_json_writer* writer) {
+static void json_writer_value_end(grpc_json_writer* writer) {
   if (writer->container_empty) {
     writer->container_empty = 0;
-    if (!writer->indent || !writer->depth) return;
-    grpc_json_writer_output_char(writer, '\n');
+    if ((writer->indent == 0) || (writer->depth == 0)) return;
+    json_writer_output_char(writer, '\n');
   } else {
-    grpc_json_writer_output_char(writer, ',');
-    if (!writer->indent) return;
-    grpc_json_writer_output_char(writer, '\n');
+    json_writer_output_char(writer, ',');
+    if (writer->indent == 0) return;
+    json_writer_output_char(writer, '\n');
   }
 }
 
-static void grpc_json_writer_escape_utf16(grpc_json_writer* writer, gpr_uint16 utf16) {
+static void json_writer_escape_utf16(grpc_json_writer* writer, gpr_uint16 utf16) {
   static const char hex[] = "0123456789abcdef";
 
-  grpc_json_writer_output_string_with_len(writer, "\\u", 2);
-  grpc_json_writer_output_char(writer, hex[(utf16 >> 12) & 0x0f]);
-  grpc_json_writer_output_char(writer, hex[(utf16 >> 8) & 0x0f]);
-  grpc_json_writer_output_char(writer, hex[(utf16 >> 4) & 0x0f]);
-  grpc_json_writer_output_char(writer, hex[(utf16) & 0x0f]);
+  json_writer_output_string_with_len(writer, "\\u", 2);
+  json_writer_output_char(writer, hex[(utf16 >> 12) & 0x0f]);
+  json_writer_output_char(writer, hex[(utf16 >> 8) & 0x0f]);
+  json_writer_output_char(writer, hex[(utf16 >> 4) & 0x0f]);
+  json_writer_output_char(writer, hex[(utf16) & 0x0f]);
 }
 
-static void grpc_json_writer_escape_string(
-    grpc_json_writer* writer, const char* string) {
-  grpc_json_writer_output_char(writer, '"');
+static void json_writer_escape_string(grpc_json_writer* writer,
+                                      const char* string) {
+  json_writer_output_char(writer, '"');
 
   for (;;) {
-    unsigned char c = (unsigned char)*string++;
-    if (!c) {
+    gpr_uint8 c = (gpr_uint8)*string++;
+    if (c == 0) {
       break;
     } else if ((c >= 32) && (c <= 127)) {
-      if ((c == '\\') || (c == '"')) grpc_json_writer_output_char(writer, '\\');
-      grpc_json_writer_output_char(writer, c);
+      if ((c == '\\') || (c == '"')) json_writer_output_char(writer, '\\');
+      json_writer_output_char(writer, c);
     } else if (c < 32) {
-      grpc_json_writer_output_char(writer, '\\');
+      json_writer_output_char(writer, '\\');
       switch (c) {
         case '\b':
-          grpc_json_writer_output_char(writer, 'b');
+          json_writer_output_char(writer, 'b');
           break;
         case '\f':
-          grpc_json_writer_output_char(writer, 'f');
+          json_writer_output_char(writer, 'f');
           break;
         case '\n':
-          grpc_json_writer_output_char(writer, 'n');
+          json_writer_output_char(writer, 'n');
           break;
         case '\r':
-          grpc_json_writer_output_char(writer, 'r');
+          json_writer_output_char(writer, 'r');
           break;
         case '\t':
-          grpc_json_writer_output_char(writer, 't');
+          json_writer_output_char(writer, 't');
           break;
         default:
-          grpc_json_writer_escape_utf16(writer, c);
+          json_writer_escape_utf16(writer, c);
           break;
       }
     } else {
@@ -188,21 +193,21 @@ static void grpc_json_writer_escape_string(
          * That range is exactly 20 bits.
          */
         utf32 -= 0x10000;
-        grpc_json_writer_escape_utf16(writer, 0xd800 | (utf32 >> 10));
-        grpc_json_writer_escape_utf16(writer, 0xdc00 | (utf32 && 0x3ff));
+        json_writer_escape_utf16(writer, 0xd800 | (utf32 >> 10));
+        json_writer_escape_utf16(writer, 0xdc00 | (utf32 && 0x3ff));
       } else {
-        grpc_json_writer_escape_utf16(writer, utf32);
+        json_writer_escape_utf16(writer, utf32);
       }
     }
   }
 
-  grpc_json_writer_output_char(writer, '"');
+  json_writer_output_char(writer, '"');
 }
 
 void grpc_json_writer_container_begins(grpc_json_writer* writer, grpc_json_type type) {
-  if (!writer->got_key) grpc_json_writer_value_end(writer);
-  grpc_json_writer_output_indent(writer);
-  grpc_json_writer_output_char(writer, type == GRPC_JSON_OBJECT ? '{' : '[');
+  if (!writer->got_key) json_writer_value_end(writer);
+  json_writer_output_indent(writer);
+  json_writer_output_char(writer, type == GRPC_JSON_OBJECT ? '{' : '[');
   writer->container_empty = 1;
   writer->got_key = 0;
   writer->depth++;
@@ -210,39 +215,39 @@ void grpc_json_writer_container_begins(grpc_json_writer* writer, grpc_json_type 
 
 void grpc_json_writer_container_ends(grpc_json_writer* writer, grpc_json_type type) {
   if (writer->indent && !writer->container_empty)
-    grpc_json_writer_output_char(writer, '\n');
+    json_writer_output_char(writer, '\n');
   writer->depth--;
-  if (!writer->container_empty) grpc_json_writer_output_indent(writer);
-  grpc_json_writer_output_char(writer, type == GRPC_JSON_OBJECT ? '}' : ']');
+  if (!writer->container_empty) json_writer_output_indent(writer);
+  json_writer_output_char(writer, type == GRPC_JSON_OBJECT ? '}' : ']');
   writer->container_empty = 0;
   writer->got_key = 0;
 }
 
 void grpc_json_writer_object_key(grpc_json_writer* writer, const char* string) {
-  grpc_json_writer_value_end(writer);
-  grpc_json_writer_output_indent(writer);
-  grpc_json_writer_escape_string(writer, string);
-  grpc_json_writer_output_char(writer, ':');
+  json_writer_value_end(writer);
+  json_writer_output_indent(writer);
+  json_writer_escape_string(writer, string);
+  json_writer_output_char(writer, ':');
   writer->got_key = 1;
 }
 
 void grpc_json_writer_value_raw(grpc_json_writer* writer, const char* string) {
-  if (!writer->got_key) grpc_json_writer_value_end(writer);
-  grpc_json_writer_output_indent(writer);
-  grpc_json_writer_output_string(writer, string);
+  if (!writer->got_key) json_writer_value_end(writer);
+  json_writer_output_indent(writer);
+  json_writer_output_string(writer, string);
   writer->got_key = 0;
 }
 
 void grpc_json_writer_value_raw_with_len(grpc_json_writer* writer, const char* string, size_t len) {
-  if (!writer->got_key) grpc_json_writer_value_end(writer);
-  grpc_json_writer_output_indent(writer);
-  grpc_json_writer_output_string_with_len(writer, string, len);
+  if (!writer->got_key) json_writer_value_end(writer);
+  json_writer_output_indent(writer);
+  json_writer_output_string_with_len(writer, string, len);
   writer->got_key = 0;
 }
 
 void grpc_json_writer_value_string(grpc_json_writer* writer, const char* string) {
-  if (!writer->got_key) grpc_json_writer_value_end(writer);
-  grpc_json_writer_output_indent(writer);
-  grpc_json_writer_escape_string(writer, string);
+  if (!writer->got_key) json_writer_value_end(writer);
+  json_writer_output_indent(writer);
+  json_writer_escape_string(writer, string);
   writer->got_key = 0;
 }
