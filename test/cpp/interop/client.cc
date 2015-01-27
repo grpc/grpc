@@ -191,8 +191,7 @@ void DoComputeEngineCreds() {
   gpr_log(GPR_INFO, "Got username %s", response.username().c_str());
   gpr_log(GPR_INFO, "Got oauth_scope %s", response.oauth_scope().c_str());
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(response.username() ==
-             FLAGS_default_service_account);
+  GPR_ASSERT(response.username() == FLAGS_default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(
       FLAGS_oauth_scope.find(response.oauth_scope()) != grpc::string::npos);
