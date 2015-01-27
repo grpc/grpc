@@ -38,6 +38,7 @@
 #include "src/core/statistics/hash_table.h"
 
 #include "src/core/support/murmur_hash.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -187,15 +188,15 @@ static void test_insertion_and_deletion_with_high_collision_rate(void) {
   census_ht_option opt = {CENSUS_HT_POINTER, 13,   &force_collision,
                           &cmp_str_keys,     NULL, NULL};
   census_ht* ht = census_ht_create(&opt);
-  char key_str[1000][10];
+  char key_str[1000][GPR_LTOA_MIN_BUFSIZE];
   gpr_uint64 val = 0;
   int i = 0;
   for (i = 0; i < 1000; i++) {
     census_ht_key key;
     key.ptr = key_str[i];
-    sprintf(key_str[i], "%d", i);
+    gpr_ltoa(i, key_str[i]);
     census_ht_insert(ht, key, (void*)(&val));
-    printf("%d\n", i);
+    gpr_log(GPR_INFO, "%d\n", i);
     GPR_ASSERT(census_ht_get_size(ht) == (i + 1));
   }
   for (i = 0; i < 1000; i++) {

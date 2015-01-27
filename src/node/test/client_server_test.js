@@ -77,6 +77,14 @@ function errorHandler(stream) {
   };
 }
 
+/**
+ * Wait for a cancellation instead of responding
+ * @param {Stream} stream
+ */
+function cancelHandler(stream) {
+  // do nothing
+}
+
 describe('echo client', function() {
   it('should receive echo responses', function(done) {
     var server = new Server();
@@ -121,6 +129,26 @@ describe('echo client', function() {
     stream.on('status', function(status) {
       assert.equal(status.code, grpc.status.UNIMPLEMENTED);
       assert.equal(status.details, 'error details');
+      server.shutdown();
+      done();
+    });
+  });
+  it('should be able to cancel a call', function(done) {
+    var server = new Server();
+    var port_num = server.bind('0.0.0.0:0');
+    server.register('cancellation', cancelHandler);
+    server.start();
+
+    var channel = new grpc.Channel('localhost:' + port_num);
+    var stream = client.makeRequest(
+        channel,
+        'cancellation',
+        null,
+        getDeadline(1));
+
+    stream.cancel();
+    stream.on('status', function(status) {
+      assert.equal(status.code, grpc.status.CANCELLED);
       server.shutdown();
       done();
     });

@@ -129,6 +129,16 @@ function _write(chunk, encoding, callback) {
 ClientWritableObjectStream.prototype._write = _write;
 
 /**
+ * Cancel the underlying call
+ */
+function cancel() {
+  this._stream.cancel();
+}
+
+ClientReadableObjectStream.prototype.cancel = cancel;
+ClientWritableObjectStream.prototype.cancel = cancel;
+
+/**
  * Get a function that can make unary requests to the specified method.
  * @param {string} method The name of the method to request
  * @param {function(*):Buffer} serialize The serialization function for inputs
@@ -155,6 +165,9 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     var stream = client.makeRequest(this.channel, method, serialize,
                                     deserialize, metadata, deadline);
     var emitter = new EventEmitter();
+    emitter.cancel = function cancel() {
+      stream.cancel();
+    };
     forwardEvent(stream, emitter, 'status');
     forwardEvent(stream, emitter, 'metadata');
     stream.write(argument);
@@ -164,6 +177,11 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         callback(null, chunk);
       } catch (e) {
         callback(e);
+      }
+    });
+    stream.on('status', function forwardStatus(status) {
+      if (status.code !== client.status.OK) {
+        callback(status);
       }
     });
     return emitter;
@@ -201,6 +219,11 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
         callback(null, chunk);
       } catch (e) {
         callback(e);
+      }
+    });
+    stream.on('status', function forwardStatus(status) {
+      if (status.code !== client.status.OK) {
+        callback(status);
       }
     });
     return obj_stream;
