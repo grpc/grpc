@@ -5,7 +5,6 @@ namespace Google.GRPC.Interop
 {
 	public class CallContext : IDisposable
 	{
-		IntPtr invoke_tag = new IntPtr(1);
 		IntPtr metadata_read_tag = new IntPtr(2);
 		IntPtr finished_tag = new IntPtr(3);
 		IntPtr write_tag = new IntPtr(4);
@@ -50,8 +49,7 @@ namespace Google.GRPC.Interop
 
 		public void Start(bool buffered)
 		{
-			Utils.AssertCallOk(call.StartInvoke(cq, invoke_tag, metadata_read_tag, finished_tag, buffered));
-			cq.Pluck(invoke_tag, Timespec.InfFuture);
+			Utils.AssertCallOk(call.Invoke(cq, metadata_read_tag, finished_tag, buffered));
 		}
 
 		// blocking write...
