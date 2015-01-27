@@ -84,7 +84,7 @@ char *grpc_call_op_string(grpc_call_op *op) {
       gpr_strvec_add(&b, gpr_strdup("SEND_MESSAGE"));
       break;
     case GRPC_SEND_PREFORMATTED_MESSAGE:
-      bprintf(&b, "SEND_PREFORMATTED_MESSAGE");
+      gpr_strvec_add(&b, gpr_strdup("SEND_PREFORMATTED_MESSAGE"));
       break;
     case GRPC_SEND_FINISH:
       gpr_strvec_add(&b, gpr_strdup("SEND_FINISH"));
