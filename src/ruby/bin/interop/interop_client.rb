@@ -138,20 +138,12 @@ class NamedTests
     @stub = stub
   end
 
-  # TESTING
-  # PASSED
-  # FAIL
-  #   ruby server: fails protobuf-ruby can't pass an empty message
   def empty_unary
     resp = @stub.empty_call(Empty.new)
     assert resp.is_a?(Empty), 'empty_unary: invalid response'
     p 'OK: empty_unary'
   end
 
-  # TESTING
-  # PASSED
-  #   ruby server
-  # FAILED
   def large_unary
     req_size, wanted_response_size = 271_828, 314_159
     payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
@@ -168,10 +160,6 @@ class NamedTests
     p 'OK: large_unary'
   end
 
-  # TESTING:
-  # PASSED
-  #   ruby server
-  # FAILED
   def client_streaming
     msg_sizes = [27_182, 8, 1828, 45_904]
     wanted_aggregate_size = 74_922
@@ -185,10 +173,6 @@ class NamedTests
     p 'OK: client_streaming'
   end
 
-  # TESTING:
-  # PASSED
-  #   ruby server
-  # FAILED
   def server_streaming
     msg_sizes = [31_415, 9, 2653, 58_979]
     response_spec = msg_sizes.map { |s| ResponseParameters.new(size: s) }
@@ -205,10 +189,6 @@ class NamedTests
     p 'OK: server_streaming'
   end
 
-  # TESTING:
-  # PASSED
-  #   ruby server
-  # FAILED
   def ping_pong
     msg_sizes = [[27_182, 31_415], [8, 9], [1828, 2653], [45_904, 58_979]]
     ppp = PingPongPlayer.new(msg_sizes)
