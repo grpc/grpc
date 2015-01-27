@@ -736,7 +736,7 @@ grpc_interop_gen_ruby_cmd() {
 grpc_cloud_prod_gen_ruby_cmd() {
   local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c"
   local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
-  local test_script+=" --use_tls-true"
+  local test_script+=" --use_tls"
   local gfe_flags=" --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com"
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
   local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $@'"
