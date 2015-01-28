@@ -40,14 +40,6 @@ namespace Google.GRPC.Core
                 return this.responseDeserializer;
             }
         }
-
-        public TResponse DeserializeResponse(byte[] payload) {
-            return responseDeserializer(payload);
-        }
-
-        public byte[] SerializeRequest(TRequest req) {
-            return requestSerializer(req);
-        }
     }
 }
 

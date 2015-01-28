@@ -7,6 +7,13 @@ namespace Google.GRPC.Wrappers
 {
 	public class Channel : WrappedNativeObject<ChannelSafeHandle>
 	{
+        /// <summary>
+        /// Make sure GPRC environment is initialized before any channels get used.
+        /// </summary>
+        static Channel() {
+            GrpcEnvironment.EnsureInitialized();
+        }
+
 		[DllImport("libgrpc.so")]
 		static extern ChannelSafeHandle grpc_channel_create(string target, IntPtr channelArgs);
 

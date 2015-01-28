@@ -40,7 +40,6 @@
     <Compile Include="CompletionQueue.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="Status.cs" />
-    <Compile Include="Utils.cs" />
     <Compile Include="CallContext.cs" />
     <Compile Include="StatusCode.cs" />
     <Compile Include="Enums.cs" />
@@ -48,6 +47,7 @@
     <Compile Include="Slice.cs" />
     <Compile Include="SafeHandleZeroIsInvalid.cs" />
     <Compile Include="WrappedNativeObject.cs" />
+    <Compile Include="GrpcEnvironment.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

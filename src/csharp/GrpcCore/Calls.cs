@@ -16,7 +16,7 @@ namespace Google.GRPC.Core
             {
                 ctx.Start(false);
 
-                // TODO: handle the result
+                // TODO: handle errors
                 WriteUnaryRequest(ctx, req, call.RequestSerializer);
 
                 return ReadUnaryResponseAndWait(ctx, call.ResponseDeserializer);
@@ -25,7 +25,8 @@ namespace Google.GRPC.Core
 
         public static Task<TResponse> AsyncUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
         {
-            throw new InvalidOperationException("Not implemented");
+            // TODO: implement
+            throw new NotImplementedException();
         }
 
 
@@ -36,7 +37,7 @@ namespace Google.GRPC.Core
                 ctx.Start(false);
 
                 // TODO: handle the result
-                WriteUnaryRequest(ctx, req, call.SerializeRequest);
+                WriteUnaryRequest(ctx, req, call.RequestSerializer);
 
                 return new StreamingOutputObservable<TResponse>(ctx.AddRef(), call.ResponseDeserializer);
             }
@@ -69,7 +70,8 @@ namespace Google.GRPC.Core
 
         public static TResponse BlockingClientStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, IObservable<TRequest> inputs, CancellationToken token)
         {
-            throw new InvalidOperationException("Not implemented");
+            // TODO: implement
+            throw new NotImplementedException();
         }
 
         public static IObservable<TResponse> DuplexStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, IObservable<TRequest> inputs, CancellationToken token)
@@ -81,11 +83,11 @@ namespace Google.GRPC.Core
                 //  TODO: dispose the subscription....
                 IDisposable subscription = inputs.Subscribe(new StreamingInputObserver<TRequest>(ctx.AddRef(), call.RequestSerializer));
 
-                return new StreamingOutputObservable<TResponse>(ctx.AddRef(), call.DeserializeResponse);
+                return new StreamingOutputObservable<TResponse>(ctx.AddRef(), call.ResponseDeserializer);
             }
         }
 
-        private static bool WriteUnaryRequest<TRequest>(ICallContext ctx, TRequest req, Func<TRequest, byte[]> serializer) {
+        private static void WriteUnaryRequest<TRequest>(ICallContext ctx, TRequest req, Func<TRequest, byte[]> serializer) {
 
             // TODO: handle serialize error...
             byte[] requestPayload = serializer(req);
@@ -95,7 +97,6 @@ namespace Google.GRPC.Core
                 throw new Exception();
             }
             ctx.WritesDone();
-            return true;
         }
 
         private static TResponse ReadUnaryResponseAndWait<TResponse>(ICallContext ctx, Func<byte[], TResponse> deserializer) {

@@ -82,7 +82,7 @@ namespace Google.GRPC.Wrappers
 
 		public void Start(bool buffered)
 		{
-			Utils.AssertCallOk(call.Invoke(cq, metadata_read_tag, finished_tag, buffered));
+			AssertCallOk(call.Invoke(cq, metadata_read_tag, finished_tag, buffered));
 		}
 
 		// blocking write...
@@ -90,7 +90,7 @@ namespace Google.GRPC.Wrappers
 		{
 			using (ByteBuffer byteBuffer = new ByteBuffer(payload))
 			{
-				Utils.AssertCallOk(call.StartWrite(byteBuffer, write_tag, false));
+				AssertCallOk(call.StartWrite(byteBuffer, write_tag, false));
 			}
 			Event writeEvent = cq.Pluck(write_tag, Timespec.InfFuture);
 			return (writeEvent.WriteAcceptedSuccess == GRPCOpError.GRPC_OP_OK);
@@ -98,13 +98,13 @@ namespace Google.GRPC.Wrappers
 
 		public void WritesDone()
 		{
-			Utils.AssertCallOk(call.WritesDone(halfclose_tag));
+			AssertCallOk(call.WritesDone(halfclose_tag));
 			cq.Pluck(halfclose_tag, Timespec.InfFuture);
 		}
 
 		public void Cancel()
 		{
-			Utils.AssertCallOk(call.Cancel());
+			AssertCallOk(call.Cancel());
 		}
 
 		public Status Wait()
@@ -116,7 +116,7 @@ namespace Google.GRPC.Wrappers
 		// blocking read...
 		public byte[] Read()
 		{
-			Utils.AssertCallOk(call.StartRead(read_tag));
+			AssertCallOk(call.StartRead(read_tag));
 			Event readEvent = cq.Pluck(read_tag, Timespec.InfFuture);
 			return readEvent.ReadData;
 		}
@@ -148,6 +148,11 @@ namespace Google.GRPC.Wrappers
             {
                 cq.Dispose();
             }
+        }
+
+        private static void AssertCallOk(GRPCCallError callError)
+        {
+            Trace.Assert(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
         }
 
 		private class CallContextReference : ICallContext {
