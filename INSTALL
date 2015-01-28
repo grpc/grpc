@@ -85,11 +85,12 @@ Compiling and installing protobuf 3.0.0 requires a few more dependencies in
 itself, notably the autoconf suite, curl, and unzip. If you have apt-get, you
 can install these dependencies this way:
 
-  # apt-get install unzip curl autotools-dev
+  # apt-get install unzip curl autoconf libtool
 
 Then, you can build and install protobuf 3.0.0:
 
   $ cd third_party/protobuf
+  $ ./autogen.sh
   $ ./configure
   $ make
   # make install
