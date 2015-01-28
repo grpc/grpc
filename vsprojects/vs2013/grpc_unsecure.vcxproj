@@ -134,6 +134,8 @@
     <ClInclude Include="..\..\src\core\iomgr\tcp_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_server.h" />
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h" />
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\src\core\statistics\census_log.h" />
     <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
@@ -250,7 +252,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
+    <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
     </ClCompile>
@@ -275,6 +277,14 @@
     <ClCompile Include="..\..\src\core\iomgr\tcp_server_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_nospecial.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_pipe.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
     </ClCompile>

@@ -36,9 +36,6 @@
 
 #include <grpc/support/port_platform.h>
 
-/* This is an abstraction around the typical pipe mechanism for waking up a
-   thread sitting in a poll() style call. */
-
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/pollset_kick_posix.h"
 #endif
@@ -47,11 +44,18 @@
 #include "src/core/iomgr/pollset_kick_windows.h"
 #endif
 
+/* This is an abstraction around the typical pipe mechanism for waking up a
+   thread sitting in a poll() style call. */
+
 void grpc_pollset_kick_global_init(void);
 void grpc_pollset_kick_global_destroy(void);
 
 void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state);
 void grpc_pollset_kick_destroy(grpc_pollset_kick_state *kick_state);
+
+/* Guarantees a pure posix implementation rather than a specialized one, if
+ * applicable. Intended for testing. */
+void grpc_pollset_kick_global_init_fallback_fd(void);
 
 /* Must be called before entering poll(). If return value is -1, this consumed
    an existing kick. Otherwise the return value is an FD to add to the poll set.
