@@ -4,6 +4,9 @@ using System.IO;
 
 namespace Google.GRPC.Wrappers
 {
+    /// <summary>
+    /// Wrapper to work with native grpc_byte_buffer.
+    /// </summary>
 	internal class ByteBuffer : WrappedNativeObject<ByteBufferSafeHandle>
 	{
 		[DllImport("libgrpc.so")]
@@ -109,7 +112,7 @@ namespace Google.GRPC.Wrappers
 		}
 	}
 
-	public class ByteBufferSafeHandle : SafeHandleZeroIsInvalid
+	internal class ByteBufferSafeHandle : SafeHandleZeroIsInvalid
 	{
 		[DllImport("libgrpc.so")]
 		static extern void grpc_byte_buffer_destroy(IntPtr byteBuffer);
@@ -121,7 +124,7 @@ namespace Google.GRPC.Wrappers
 		}
 	}
 
-	public class ByteBufferReaderSafeHandle : SafeHandleZeroIsInvalid
+	internal class ByteBufferReaderSafeHandle : SafeHandleZeroIsInvalid
 	{
 		[DllImport("libgrpc.so")]
 		static extern void grpc_byte_buffer_reader_destroy(IntPtr reader);

@@ -6,7 +6,7 @@ namespace Google.GRPC.Wrappers
     /// <summary>
     /// Event of a completion queue.
     /// </summary>
-    public class Event
+    internal class Event
     {
         readonly GRPCCompletionType completionType;
         readonly IntPtr tag;

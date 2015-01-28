@@ -12,42 +12,44 @@ namespace math
 	/// Implementation of math service stub (this is handwritten version of code 
 	/// that will normally be generated).
 	/// </summary>
-	public class MathServiceClientImpl : IMathServiceClient
+	public class MathServiceClientStub : IMathServiceClient
 	{
 		readonly Channel channel;
+        readonly TimeSpan methodTimeout;
 
-		public MathServiceClientImpl(Channel channel)
+		public MathServiceClientStub(Channel channel, TimeSpan methodTimeout)
 		{
 			this.channel = channel;
+            this.methodTimeout = methodTimeout;
 		}
 
 		public DivReply Div(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
-            var call = new Google.GRPC.Core.Call<DivArgs, DivReply>("/math.Math/Div", Serialize_DivArgs, Deserialize_DivReply, channel);
+            var call = new Google.GRPC.Core.Call<DivArgs, DivReply>("/math.Math/Div", Serialize_DivArgs, Deserialize_DivReply, methodTimeout, channel);
             return Calls.BlockingUnaryCall(call, args, token);
 		}
 
 		public Task<DivReply> DivAsync(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
-            var call = new Google.GRPC.Core.Call<DivArgs, DivReply>("/math.Math/Div", Serialize_DivArgs, Deserialize_DivReply, channel);
+            var call = new Google.GRPC.Core.Call<DivArgs, DivReply>("/math.Math/Div", Serialize_DivArgs, Deserialize_DivReply, methodTimeout, channel);
             return Calls.AsyncUnaryCall(call, args, token);
 		}
 
 		public IObservable<Num> Fib(FibArgs args, CancellationToken token = default(CancellationToken))
 		{
-            var call = new Google.GRPC.Core.Call<FibArgs, Num>("/math.Math/Fib", Serialize_FibArgs, Deserialize_Num, channel);
+            var call = new Google.GRPC.Core.Call<FibArgs, Num>("/math.Math/Fib", Serialize_FibArgs, Deserialize_Num, methodTimeout, channel);
             return Calls.AsyncServerStreamingCall(call, args, token);
 		}
 
 		public Task<Num> Sum(IObservable<Num> inputs, CancellationToken token = default(CancellationToken))
 		{
-            var call = new Google.GRPC.Core.Call<Num, Num>("/math.Math/Sum", Serialize_Num, Deserialize_Num, channel);
+            var call = new Google.GRPC.Core.Call<Num, Num>("/math.Math/Sum", Serialize_Num, Deserialize_Num, methodTimeout, channel);
             return Calls.AsyncClientStreamingCall(call, inputs, token);
 		}
 
 		public IObservable<DivReply> DivMany(IObservable<DivArgs> inputs, CancellationToken token = default(CancellationToken))
 		{
-            var call = new Google.GRPC.Core.Call<DivArgs, DivReply>("/math.Math/DivMany", Serialize_DivArgs, Deserialize_DivReply, channel);
+            var call = new Google.GRPC.Core.Call<DivArgs, DivReply>("/math.Math/DivMany", Serialize_DivArgs, Deserialize_DivReply, methodTimeout, channel);
             return Calls.DuplexStreamingCall(call, inputs, token);
 		}
 

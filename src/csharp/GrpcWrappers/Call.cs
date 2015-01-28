@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Wrappers
 {
+    /// <summary>
+    /// Wrapper to work with native grpc_call.
+    /// </summary>
 	internal class Call : WrappedNativeObject<CallSafeHandle>
 	{
 		const UInt32 GRPC_WRITE_BUFFER_HINT = 1;
@@ -43,18 +46,9 @@ namespace Google.GRPC.Wrappers
 		[DllImport("libgrpc.so")]
 		static extern GRPCCallError grpc_call_start_read(CallSafeHandle call, IntPtr tag);
 
-		readonly Channel channel;
-		readonly string method;
-		readonly string host;
-		readonly Timespec deadline;
-
 		public Call(Channel channel, string method, string host, Timespec deadline)
 			: base(grpc_channel_create_call(channel.Handle, method, host, deadline))
 		{
-			this.channel = channel;
-			this.method = method;
-			this.host = host;
-			this.deadline = deadline;
 		}
 
 		public GRPCCallError Invoke(CompletionQueue cq, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
@@ -90,7 +84,7 @@ namespace Google.GRPC.Wrappers
         }
 	}
 
-	public class CallSafeHandle : SafeHandleZeroIsInvalid
+	internal class CallSafeHandle : SafeHandleZeroIsInvalid
 	{
 		[DllImport("libgrpc.so")]
 		static extern void grpc_call_destroy(IntPtr call);

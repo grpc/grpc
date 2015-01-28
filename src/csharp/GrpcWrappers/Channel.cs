@@ -25,14 +25,26 @@ namespace Google.GRPC.Wrappers
 			this.target = target;
 		}
 
-		public CallContext CreateCallContext(String methodName)
-		{
-			Call call = new Call(this, methodName, target, CreateDeadline());
-			return new CallContext(call);
-		}
+        public string Target
+        {
+            get
+            {
+                return this.target;
+            }
+        }
 
-        private Timespec CreateDeadline() {
-            // TODO: create deadline based on stub configuration. For now, no deadline is used.
+        internal Call CreateCall(String methodName, TimeSpan timeout)
+        {
+            return new Call(this, methodName, target, CreateDeadline(timeout));
+        }
+
+        private Timespec CreateDeadline(TimeSpan timeout) {
+            if (timeout == Timeout.InfiniteTimeSpan)
+            {
+                return Timespec.InfFuture;
+            }
+
+            // TODO: convert TimeSpan to timespec.
             return Timespec.InfFuture;
         }
 	}

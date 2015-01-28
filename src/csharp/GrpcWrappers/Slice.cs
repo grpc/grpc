@@ -13,7 +13,7 @@ namespace Google.GRPC.Wrappers
     /// disposal logic).
     /// </summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public struct Slice
+	internal struct Slice
 	{
 		[DllImport("libgpr.so")]
 		static extern Slice gpr_empty_slice();

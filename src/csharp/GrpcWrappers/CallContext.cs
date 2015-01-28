@@ -4,6 +4,9 @@ using System.Diagnostics;
 
 namespace Google.GRPC.Wrappers
 {
+    /// <summary>
+    /// Call context interface.
+    /// </summary>
     public interface ICallContext : IDisposable {
     
         bool Write(byte[] payload);
@@ -21,7 +24,6 @@ namespace Google.GRPC.Wrappers
         //TODO: metadata read and write
     }
 
-    // TODO: this class is work in progress
     /// <summary>
     /// Holds resources for an active call and implements reference counting to
     /// allow more actors to work with the call context while still maintaining
@@ -30,23 +32,40 @@ namespace Google.GRPC.Wrappers
 	public class CallContext : ICallContext
 	{
         // Any set of distinct values for tags will do.
-		IntPtr metadata_read_tag = new IntPtr(2);
-		IntPtr finished_tag = new IntPtr(3);
-		IntPtr write_tag = new IntPtr(4);
-		IntPtr halfclose_tag = new IntPtr(5);
-		IntPtr read_tag = new IntPtr(6);
+		static readonly IntPtr metadata_read_tag = new IntPtr(1);
+		static readonly IntPtr finished_tag = new IntPtr(2);
+		static readonly IntPtr write_tag = new IntPtr(3);
+		static readonly IntPtr halfclose_tag = new IntPtr(4);
+		static readonly IntPtr read_tag = new IntPtr(5);
 
         readonly object myLock = new object();
-		readonly Call call;
-		readonly CompletionQueue cq;
-		bool disposed = false;
         int refcount = 1;
+        bool disposed = false;
 
-		internal CallContext(Call call)
+        Call call;
+        CompletionQueue cq;
+
+		public CallContext()
 		{
-			this.call = call;
-			this.cq = new CompletionQueue();
+            // No work should be done here!
 		}
+
+        /// <summary>
+        /// Initialized the call context with given call.
+        /// This is not done in the constructor to provide 
+        /// a straightforward way of releasing resources
+        /// (with "using" statement) in case there would be
+        /// an error initializing.
+        /// </summary>
+        /// <param name="call">Call.</param>
+        public void Initialize(Channel channel, String methodName, TimeSpan timeout)
+        {
+            lock (myLock)
+            {
+                cq = new CompletionQueue();
+                call = channel.CreateCall(methodName, timeout);
+            }
+        }
 
         /// <summary>
         /// Adds a reference to this call context.
@@ -80,11 +99,12 @@ namespace Google.GRPC.Wrappers
 			}
 		}
 
-		//TODO: access to call methods might need to be synchronized.
-
 		public void Start(bool buffered)
 		{
-			AssertCallOk(call.Invoke(cq, metadata_read_tag, finished_tag, buffered));
+            lock (myLock)
+            {
+                AssertCallOk(call.Invoke(cq, metadata_read_tag, finished_tag, buffered));
+            }
 		}
 
 		// blocking write...
@@ -92,7 +112,10 @@ namespace Google.GRPC.Wrappers
 		{
 			using (ByteBuffer byteBuffer = new ByteBuffer(payload))
 			{
-				AssertCallOk(call.StartWrite(byteBuffer, write_tag, false));
+                lock (myLock)
+                {
+                    AssertCallOk(call.StartWrite(byteBuffer, write_tag, false));
+                }
 			}
 			Event writeEvent = cq.Pluck(write_tag, Timespec.InfFuture);
 			return (writeEvent.WriteAcceptedSuccess == GRPCOpError.GRPC_OP_OK);
@@ -100,16 +123,21 @@ namespace Google.GRPC.Wrappers
 
 		public void WritesDone()
 		{
-			AssertCallOk(call.WritesDone(halfclose_tag));
+            lock (myLock)
+            {
+                AssertCallOk(call.WritesDone(halfclose_tag));
+            }
 			cq.Pluck(halfclose_tag, Timespec.InfFuture);
 		}
 
 		public void Cancel()
 		{
-			AssertCallOk(call.Cancel());
+            // grpc_call_cancel is threadsafe
+            AssertCallOk(call.Cancel());
 		}
 
         public void CancelWithStatus(Status status) {
+            // grpc_call_cancel_with_status is threadsafe
             AssertCallOk(call.CancelWithStatus(status));
         }
 
@@ -122,7 +150,10 @@ namespace Google.GRPC.Wrappers
 		// blocking read...
 		public byte[] Read()
 		{
-			AssertCallOk(call.StartRead(read_tag));
+            lock (myLock)
+            {
+                AssertCallOk(call.StartRead(read_tag));
+            }
 			Event readEvent = cq.Pluck(read_tag, Timespec.InfFuture);
 			return readEvent.ReadData;
 		}
@@ -148,11 +179,16 @@ namespace Google.GRPC.Wrappers
             // dispose both call and completion queue...
             try
             {
-                call.Dispose();
+                if (call != null) {
+                    call.Dispose();
+                }
             }
             finally
             {
-                cq.Dispose();
+                if (cq != null)
+                {
+                    cq.Dispose();
+                }
             }
         }
 
