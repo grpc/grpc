@@ -10,9 +10,6 @@ namespace Google.GRPC.Demo
     {
 		public static void Main (string[] args)
 		{
-            //TestUsing();
-
-			Utils.Init();
 			using (Channel channel = new Channel("127.0.0.1:23456"))
 			{
 				IMathServiceClient stub = new MathServiceClientImpl (channel);
@@ -22,7 +19,8 @@ namespace Google.GRPC.Demo
 
 				Examples.DivManyExample(stub);
 			}
-			Utils.Shutdown();
+           
+            GrpcEnvironment.Shutdown();
 		}
 	}
 }
