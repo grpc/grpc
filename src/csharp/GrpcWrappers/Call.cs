@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Wrappers
 {
-	public class Call : WrappedNativeObject<CallSafeHandle>
+	internal class Call : WrappedNativeObject<CallSafeHandle>
 	{
 		const UInt32 GRPC_WRITE_BUFFER_HINT = 1;
 
@@ -84,7 +84,10 @@ namespace Google.GRPC.Wrappers
 			return grpc_call_cancel(handle);
 		}
 
-        // TODO: add CancelWithStatus
+        public GRPCCallError CancelWithStatus(Status status)
+        {
+            return grpc_call_cancel_with_status(handle, status.StatusCode, status.Detail);
+        }
 	}
 
 	public class CallSafeHandle : SafeHandleZeroIsInvalid

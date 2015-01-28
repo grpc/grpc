@@ -12,6 +12,8 @@ namespace Google.GRPC.Wrappers
 
         void Cancel();
 
+        void CancelWithStatus(Status status);
+
         Status Wait();
 
         byte[] Read();
@@ -40,7 +42,7 @@ namespace Google.GRPC.Wrappers
 		bool disposed = false;
         int refcount = 1;
 
-		public CallContext(Call call)
+		internal CallContext(Call call)
 		{
 			this.call = call;
 			this.cq = new CompletionQueue();
@@ -106,6 +108,10 @@ namespace Google.GRPC.Wrappers
 		{
 			AssertCallOk(call.Cancel());
 		}
+
+        public void CancelWithStatus(Status status) {
+            AssertCallOk(call.CancelWithStatus(status));
+        }
 
 		public Status Wait()
 		{
@@ -177,6 +183,11 @@ namespace Google.GRPC.Wrappers
             public void Cancel()
             {
                 parent.Cancel();
+            }
+
+            public void CancelWithStatus(Status status)
+            {
+                parent.CancelWithStatus(status);
             }
 
             public Status Wait()

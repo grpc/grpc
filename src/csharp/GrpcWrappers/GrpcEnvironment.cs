@@ -9,7 +9,7 @@ namespace Google.GRPC.Wrappers
     /// You should not need to initialize it manually, as static constructors
     /// should load the library when needed.
     /// </summary>
-    public class GrpcEnvironment
+    public static class GrpcEnvironment
     {
         [DllImport("libgrpc.so")]
         static extern void grpc_init();
@@ -17,34 +17,20 @@ namespace Google.GRPC.Wrappers
         [DllImport("libgrpc.so")]
         static extern void grpc_shutdown();
 
-        private static object staticLock = new object();
-        private static volatile GrpcEnvironment instance;
+        static object staticLock = new object();
+        static bool initCalled = false;
+        static bool shutdownCalled = false;
 
-        private object myLock = new object();
-        private bool shutdown = false;
-
-        private GrpcEnvironment()
-        {
-            GrpcInit();
-        }
-
-        public static GrpcEnvironment Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    EnsureInitialized();
-                }
-                return instance;
-            }
-        }
-
+        /// <summary>
+        /// Makes sure GRPC environment is initialized.
+        /// </summary>
         public static void EnsureInitialized() {
             lock(staticLock)
             {
-                if (instance == null) {
-                    instance = new GrpcEnvironment();
+                if (!initCalled)
+                {
+                    initCalled = true;
+                    GrpcInit();                      
                 }
             }
         }
@@ -55,15 +41,13 @@ namespace Google.GRPC.Wrappers
         /// </summary>
         public static void Shutdown()
         {
-            bool instanceExists;    
             lock(staticLock)
             {
-                instanceExists = instance != null;
-            }
-
-            if (instanceExists)
-            {
-                Instance.ShutdownInstance();
+                if (initCalled && !shutdownCalled)
+                {
+                    shutdownCalled = true;
+                    GrpcShutdown();
+                }
             }
         }
 
@@ -87,23 +71,6 @@ namespace Google.GRPC.Wrappers
 
             // TODO: use proper logging here
             Console.WriteLine("GRPC shutdown.");
-        }
-
-        /// <summary>
-        /// Shuts down the GRPC environment.
-        /// Repeated invocations have no effect.
-        /// </summary>
-        private void ShutdownInstance()
-        {
-            bool invokeShutdown = false;
-
-            lock (myLock)
-            {
-                invokeShutdown = !shutdown;
-                shutdown = true;
-            }
-
-            GrpcShutdown();
         }
     }
 }
