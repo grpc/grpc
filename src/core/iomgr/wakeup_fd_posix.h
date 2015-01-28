@@ -73,7 +73,7 @@ void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd_info *fd_info);
 void grpc_wakeup_fd_wakeup(grpc_wakeup_fd_info *fd_info);
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info);
 
-#define GRPC_WAKEUP_FD_FD(fd_info) ((fd_info)->read_fd)
+#define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
 /* Force using the fallback implementation. This is intended for testing
  * purposes only.*/

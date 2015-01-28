@@ -113,7 +113,7 @@ int grpc_pollset_kick_pre_poll(grpc_pollset_kick_state *kick_state) {
   }
   kick_state->fd_info = allocate_wfd();
   gpr_mu_unlock(&kick_state->mu);
-  return GRPC_WAKEUP_FD_FD(&kick_state->fd_info->wakeup_fd);
+  return GRPC_WAKEUP_FD_GET_READ_FD(&kick_state->fd_info->wakeup_fd);
 }
 
 void grpc_pollset_kick_consume(grpc_pollset_kick_state *kick_state) {
