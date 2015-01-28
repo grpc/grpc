@@ -123,11 +123,11 @@ static void assert_log_empty(void) {
 /* Given log size and record size, computes the minimum usable space. */
 static gpr_int32 min_usable_space(size_t log_size, size_t record_size) {
   gpr_int32 usable_space;
-  gpr_int32 num_blocks = log_size / CENSUS_LOG_MAX_RECORD_SIZE;
+  gpr_int32 num_blocks = GPR_MAX(log_size / CENSUS_LOG_MAX_RECORD_SIZE,
+                                 gpr_cpu_num_cores());
   gpr_int32 waste_per_block = CENSUS_LOG_MAX_RECORD_SIZE % record_size;
   /* In the worst case, all except one core-local block is full. */
-  gpr_int32 num_full_blocks = GPR_MAX(gpr_cpu_num_cores() - 2, 2);
-  GPR_ASSERT(num_blocks >= num_full_blocks);
+  gpr_int32 num_full_blocks = num_blocks - 1;
   usable_space = (gpr_int32)log_size -
                  (num_full_blocks * CENSUS_LOG_MAX_RECORD_SIZE) -
                  ((num_blocks - num_full_blocks) * waste_per_block);

@@ -207,7 +207,7 @@
   }, 
   {
     "language": "c", 
-    "name": "poll_kick_test"
+    "name": "poll_kick_posix_test"
   }, 
   {
     "language": "c", 
