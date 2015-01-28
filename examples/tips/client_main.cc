@@ -31,22 +31,43 @@
  *
  */
 
-var net = require('net');
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <google/gflags.h>
+#include <grpc++/channel_interface.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/status.h>
 
-/**
- * Finds a free port that a server can bind to, in the format
- * "address:port"
- * @param {function(string)} cb The callback that should execute when the port
- *     is available
- */
-function nextAvailablePort(cb) {
-  var server = net.createServer();
-  server.listen(function() {
-    var address = server.address();
-    server.close(function() {
-      cb(address.address + ':' + address.port.toString());
-    });
-  });
+#include "examples/tips/client.h"
+#include "test/cpp/util/create_test_channel.h"
+
+DEFINE_bool(enable_ssl, true, "Whether to use ssl/tls.");
+DEFINE_bool(use_prod_roots, true, "True to use SSL roots for production GFE");
+DEFINE_int32(server_port, 0, "Server port.");
+DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
+DEFINE_string(server_host_override, "foo.test.google.com",
+              "Override the server host which is sent in HTTP header");
+
+int main(int argc, char** argv) {
+  grpc_init();
+  google::ParseCommandLineFlags(&argc, &argv, true);
+  gpr_log(GPR_INFO, "Start TIPS client");
+
+  GPR_ASSERT(FLAGS_server_port);
+  const int host_port_buf_size = 1024;
+  char host_port[host_port_buf_size];
+  snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
+           FLAGS_server_port);
+
+  std::shared_ptr<grpc::ChannelInterface> channel(
+      grpc::CreateTestChannel(host_port, FLAGS_server_host_override,
+                              FLAGS_enable_ssl, FLAGS_use_prod_roots));
+
+  grpc::examples::tips::Client client(channel);
+  grpc::Status s = client.CreateTopic("test");
+  GPR_ASSERT(s.IsOk());
+
+  channel.reset();
+  grpc_shutdown();
+  return 0;
 }
-
-exports.nextAvailablePort = nextAvailablePort;

@@ -34,7 +34,7 @@ include Logging.globally  # logger is accessible everywhere
 Logging.logger.root.appenders = Logging.appenders.stdout
 Logging.logger.root.level = :info
 
-# TODO(temiola): provide command-line configuration for logging
+# TODO: provide command-line configuration for logging
 Logging.logger['Google::RPC'].level = :debug
 Logging.logger['Google::RPC::ActiveCall'].level = :info
 Logging.logger['Google::RPC::BidiCall'].level = :info

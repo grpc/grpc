@@ -194,7 +194,7 @@ NAN_METHOD(Server::AddHttp2Port) {
     return NanThrowTypeError("addHttp2Port's argument must be a String");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
-  NanReturnValue(NanNew<Boolean>(grpc_server_add_http2_port(
+  NanReturnValue(NanNew<Number>(grpc_server_add_http2_port(
       server->wrapped_server, *NanUtf8String(args[0]))));
 }
 
@@ -208,7 +208,7 @@ NAN_METHOD(Server::AddSecureHttp2Port) {
     return NanThrowTypeError("addSecureHttp2Port's argument must be a String");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
-  NanReturnValue(NanNew<Boolean>(grpc_server_add_secure_http2_port(
+  NanReturnValue(NanNew<Number>(grpc_server_add_secure_http2_port(
       server->wrapped_server, *NanUtf8String(args[0]))));
 }
 

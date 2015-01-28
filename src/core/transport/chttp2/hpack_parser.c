@@ -1212,7 +1212,7 @@ static int huff_nibble(grpc_chttp2_hpack_parser *p, gpr_uint8 nibble) {
   gpr_int16 next = next_sub_tbl[16 * next_tbl[p->huff_state] + nibble];
   if (emit != -1) {
     if (emit >= 0 && emit < 256) {
-      gpr_uint8 c = emit;
+      gpr_uint8 c = (gpr_uint8) emit;
       if (!append_string(p, &c, (&c) + 1)) return 0;
     } else {
       assert(emit == 256);

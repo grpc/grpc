@@ -357,8 +357,7 @@ function makeServerConstructor(services) {
    * @return {SurfaceServer} this
    */
   SurfaceServer.prototype.bind = function(port, secure) {
-    this.inner_server.bind(port, secure);
-    return this;
+    return this.inner_server.bind(port, secure);
   };
 
   /**
