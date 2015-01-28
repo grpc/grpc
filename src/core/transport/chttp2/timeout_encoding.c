@@ -60,7 +60,7 @@ static void enc_tiny(char *buffer) { memcpy(buffer, "1n", 3); }
 static void enc_ext(char *buffer, long value, char ext) {
   int n = gpr_ltoa(value, buffer);
   buffer[n] = ext;
-  buffer[n+1] = 0;
+  buffer[n + 1] = 0;
 }
 
 static void enc_seconds(char *buffer, long sec) {

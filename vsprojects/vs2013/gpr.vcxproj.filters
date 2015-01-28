@@ -120,9 +120,6 @@
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\string.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\sync.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
@@ -162,6 +159,9 @@
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\support\murmur_hash.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\support\string.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\support\thd_internal.h">

@@ -183,17 +183,17 @@ typedef struct grpc_metadata {
 } grpc_metadata;
 
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
-  GRPC_READ,                 /* A read has completed */
-  GRPC_INVOKE_ACCEPTED,      /* An invoke call has been accepted by flow
-                                control */
-  GRPC_WRITE_ACCEPTED,       /* A write has been accepted by
-                                flow control */
+  GRPC_QUEUE_SHUTDOWN,  /* Shutting down */
+  GRPC_READ,            /* A read has completed */
+  GRPC_INVOKE_ACCEPTED, /* An invoke call has been accepted by flow
+                           control */
+  GRPC_WRITE_ACCEPTED, /* A write has been accepted by
+                          flow control */
   GRPC_FINISH_ACCEPTED,      /* writes_done or write_status has been accepted */
   GRPC_CLIENT_METADATA_READ, /* The metadata array sent by server received at
                                 client */
-  GRPC_FINISHED,             /* An RPC has finished. The event contains status.
-                                On the server this will be OK or Cancelled. */
+  GRPC_FINISHED, /* An RPC has finished. The event contains status.
+                    On the server this will be OK or Cancelled. */
   GRPC_SERVER_RPC_NEW,       /* A new RPC has arrived at the server */
   GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
   GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include

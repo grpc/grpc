@@ -44,8 +44,8 @@
 struct grpc_fd;
 
 typedef struct grpc_pollset {
-	gpr_mu mu;
-	gpr_cv cv;
+  gpr_mu mu;
+  gpr_cv cv;
 } grpc_pollset;
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)

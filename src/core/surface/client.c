@@ -38,9 +38,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-typedef struct { void *unused; } call_data;
+typedef struct {
+  void *unused;
+} call_data;
 
-typedef struct { void *unused; } channel_data;
+typedef struct {
+  void *unused;
+} channel_data;
 
 static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                     grpc_call_op *op) {
@@ -109,11 +113,6 @@ static void init_channel_elem(grpc_channel_element *elem,
 static void destroy_channel_elem(grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_client_surface_filter = {
-    call_op,              channel_op,
-
-    sizeof(call_data),    init_call_elem,    destroy_call_elem,
-
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-
-    "client",
-};
+    call_op,           channel_op,           sizeof(call_data),
+    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem, destroy_channel_elem, "client", };

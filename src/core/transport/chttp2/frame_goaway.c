@@ -75,7 +75,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI0;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id = ((gpr_uint32)*cur) << 24;
+      p->last_stream_id = ((gpr_uint32) * cur) << 24;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI1:
@@ -83,7 +83,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI1;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32)*cur) << 16;
+      p->last_stream_id |= ((gpr_uint32) * cur) << 16;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI2:
@@ -91,7 +91,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI2;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32)*cur) << 8;
+      p->last_stream_id |= ((gpr_uint32) * cur) << 8;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_LSI3:
@@ -99,7 +99,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_LSI3;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->last_stream_id |= ((gpr_uint32)*cur);
+      p->last_stream_id |= ((gpr_uint32) * cur);
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR0:
@@ -107,7 +107,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR0;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code = ((gpr_uint32)*cur) << 24;
+      p->error_code = ((gpr_uint32) * cur) << 24;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR1:
@@ -115,7 +115,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR1;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32)*cur) << 16;
+      p->error_code |= ((gpr_uint32) * cur) << 16;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR2:
@@ -123,7 +123,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR2;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32)*cur) << 8;
+      p->error_code |= ((gpr_uint32) * cur) << 8;
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_ERR3:
@@ -131,7 +131,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
         p->state = GRPC_CHTTP2_GOAWAY_ERR3;
         return GRPC_CHTTP2_PARSE_OK;
       }
-      p->error_code |= ((gpr_uint32)*cur);
+      p->error_code |= ((gpr_uint32) * cur);
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_DEBUG:

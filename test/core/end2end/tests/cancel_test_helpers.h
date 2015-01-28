@@ -46,7 +46,6 @@ static grpc_call_error wait_for_deadline(grpc_call *call) {
 
 static const cancellation_mode cancellation_modes[] = {
     {grpc_call_cancel, GRPC_STATUS_CANCELLED, NULL},
-    {wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED, "Deadline Exceeded"},
-};
+    {wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED, "Deadline Exceeded"}, };
 
 #endif

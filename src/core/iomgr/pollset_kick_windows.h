@@ -36,10 +36,10 @@
 
 #include <grpc/support/sync.h>
 
-struct grpc_kick_pipe_info;
+struct grpc_kick_fd_info;
 
 typedef struct grpc_pollset_kick_state {
   int unused;
 } grpc_pollset_kick_state;
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_ */
+#endif  /* __GRPC_INTERNALIOMGR_POLLSET_KICK_WINDOWS_H_ */

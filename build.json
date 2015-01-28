@@ -61,6 +61,8 @@
         "src/core/iomgr/tcp_posix.h",
         "src/core/iomgr/tcp_server.h",
         "src/core/iomgr/time_averaged_stats.h",
+        "src/core/iomgr/wakeup_fd_posix.h",
+        "src/core/iomgr/wakeup_fd_pipe.h",
         "src/core/json/json.h",
         "src/core/json/json_common.h",
         "src/core/json/json_reader.h",
@@ -129,7 +131,7 @@
         "src/core/iomgr/fd_posix.c",
         "src/core/iomgr/iomgr.c",
         "src/core/iomgr/iomgr_posix.c",
-        "src/core/iomgr/pollset_kick_posix.c",
+        "src/core/iomgr/pollset_kick.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
@@ -142,6 +144,10 @@
         "src/core/iomgr/tcp_posix.c",
         "src/core/iomgr/tcp_server_posix.c",
         "src/core/iomgr/time_averaged_stats.c",
+        "src/core/iomgr/wakeup_fd_eventfd.c",
+        "src/core/iomgr/wakeup_fd_nospecial.c",
+        "src/core/iomgr/wakeup_fd_pipe.c",
+        "src/core/iomgr/wakeup_fd_posix.c",
         "src/core/json/json.c",
         "src/core/json/json_reader.c",
         "src/core/json/json_string.c",
@@ -209,7 +215,6 @@
         "include/grpc/support/port_platform.h",
         "include/grpc/support/slice.h",
         "include/grpc/support/slice_buffer.h",
-        "include/grpc/support/string.h",
         "include/grpc/support/sync.h",
         "include/grpc/support/sync_generic.h",
         "include/grpc/support/sync_posix.h",
@@ -225,6 +230,7 @@
       "headers": [
         "src/core/support/cpu.h",
         "src/core/support/murmur_hash.h",
+        "src/core/support/string.h",
         "src/core/support/thd_internal.h"
       ],
       "src": [
@@ -1269,11 +1275,11 @@
       ]
     },
     {
-      "name": "poll_kick_test",
+      "name": "poll_kick_posix_test",
       "build": "test",
       "language": "c",
       "src": [
-        "test/core/iomgr/poll_kick_test.c"
+        "test/core/iomgr/poll_kick_posix_test.c"
       ],
       "deps": [
         "grpc_test_util",

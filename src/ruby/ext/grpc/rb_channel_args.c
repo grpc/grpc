@@ -143,7 +143,7 @@ void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
   /* Make a protected call to grpc_rb_hash_convert_channel_args */
   params.src_hash = src_hash;
   params.dst = dst;
-  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE)&params, &status);
+  rb_protect(grpc_rb_hash_convert_to_channel_args0, (VALUE) & params, &status);
   if (status != 0) {
     if (dst->args != NULL) {
       /* Free any allocated memory before propagating the error */

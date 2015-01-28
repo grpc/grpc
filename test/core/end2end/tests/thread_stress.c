@@ -278,11 +278,11 @@ static void run_test(grpc_end2end_test_config config, int requests_in_flight) {
   /* kick off threads */
   for (i = 0; i < CLIENT_THREADS; i++) {
     gpr_event_init(&g_client_done[i]);
-    gpr_thd_new(&thd_id, client_thread, (void *)(gpr_intptr) i, NULL);
+    gpr_thd_new(&thd_id, client_thread, (void *)(gpr_intptr)i, NULL);
   }
   for (i = 0; i < SERVER_THREADS; i++) {
     gpr_event_init(&g_server_done[i]);
-    gpr_thd_new(&thd_id, server_thread, (void *)(gpr_intptr) i, NULL);
+    gpr_thd_new(&thd_id, server_thread, (void *)(gpr_intptr)i, NULL);
   }
 
   /* start requests */

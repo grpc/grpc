@@ -203,7 +203,7 @@ struct grpc_call {
   gpr_refcount internal_refcount;
 };
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call)+1))
+#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -863,7 +863,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
@@ -880,8 +880,7 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_call_op *op) {
   grpc_call *call = CALL_FROM_TOP_ELEM(elem);
   grpc_mdelem *md = op->data.metadata;
   grpc_mdstr *key = md->key;
-  gpr_log(GPR_DEBUG, "call %p got metadata %s %s", call,
-          grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
+
   if (key == grpc_channel_get_status_string(call->channel)) {
     maybe_set_status_code(call, decode_status(md));
     grpc_mdelem_unref(md);
@@ -981,3 +980,8 @@ void grpc_call_set_deadline(grpc_call_element *elem, gpr_timespec deadline) {
   call->have_alarm = 1;
   grpc_alarm_init(&call->alarm, deadline, call_alarm, call, gpr_now());
 }
+
+grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
+  return CALL_STACK_FROM_CALL(call);
+}
+

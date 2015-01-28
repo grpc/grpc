@@ -107,17 +107,23 @@ static void test_over_free(void) {
   }
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-
-  grpc_pollset_kick_global_init();
-
+static void run_tests(void) {
   test_allocation();
   test_basic_kick();
   test_non_poll_kick();
   test_non_kick();
   test_over_free();
+}
 
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+
+  grpc_pollset_kick_global_init();
+  run_tests();
+  grpc_pollset_kick_global_destroy();
+
+  grpc_pollset_kick_global_init_fallback_fd();
+  run_tests();
   grpc_pollset_kick_global_destroy();
   return 0;
 }
