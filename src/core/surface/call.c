@@ -719,9 +719,24 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
   return err;
 }
 
+static void finish_send_initial_metadata(grpc_call *call, grpc_op_error status, void *tag) {
+}
+
 grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
                                                       gpr_uint32 flags) {
-  return GRPC_CALL_OK;
+  grpc_ioreq req;
+  grpc_call_error err;
+  legacy_state *ls;
+
+  lock(call);
+  ls = get_legacy_state(call);
+  req.op = GRPC_IOREQ_SEND_INITIAL_METADATA;
+  req.data.send_metadata.count = ls->md_out_count;
+  req.data.send_metadata.metadata = ls->md_out;
+  err = start_ioreq(call, &req, 1, finish_send_initial_metadata, NULL);
+  unlock(call);
+  
+  return err;
 }
 
 void grpc_call_client_initial_metadata_complete(
