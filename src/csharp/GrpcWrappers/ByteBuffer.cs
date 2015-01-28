@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Google.GRPC.Wrappers
 {
-	public class ByteBuffer : WrappedNativeObject<ByteBufferSafeHandle>
+	internal class ByteBuffer : WrappedNativeObject<ByteBufferSafeHandle>
 	{
 		[DllImport("libgrpc.so")]
 		static extern ByteBufferSafeHandle grpc_byte_buffer_create(Slice[] slices, UIntPtr nslices);

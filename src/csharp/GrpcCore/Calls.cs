@@ -87,16 +87,28 @@ namespace Google.GRPC.Core
             }
         }
 
-        private static void WriteUnaryRequest<TRequest>(ICallContext ctx, TRequest req, Func<TRequest, byte[]> serializer) {
+        private static bool WriteUnaryRequest<TRequest>(ICallContext ctx, TRequest req, Func<TRequest, byte[]> serializer) {
 
             // TODO: handle serialize error...
-            byte[] requestPayload = serializer(req);
+            byte[] requestPayload;
+            try
+            {
+                requestPayload = serializer(req);
+            }
+            catch(Exception e)
+            {
+                // TODO: log exception...
+                ctx.CancelWithStatus(new Status(StatusCode.GRPC_STATUS_INVALID_ARGUMENT, "Failed to serialize outgoing proto"));
+                return false;
+            }
+
             if (!ctx.Write(requestPayload))
             {
+                return false;
                 // TODO: throw some meaningful exception...
-                throw new Exception();
             }
             ctx.WritesDone();
+            return true;
         }
 
         private static TResponse ReadUnaryResponseAndWait<TResponse>(ICallContext ctx, Func<byte[], TResponse> deserializer) {
