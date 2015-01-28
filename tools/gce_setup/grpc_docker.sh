@@ -350,7 +350,7 @@ grpc_interop_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|nodejs|php|python|ruby)
+      cxx|go|java|node|php|python|ruby)
         grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -381,7 +381,7 @@ grpc_interop_test_args() {
       cxx)    grpc_port=8010 ;;
       go)     grpc_port=8020 ;;
       java)   grpc_port=8030 ;;
-      nodejs) grpc_port=8040 ;;
+      node) grpc_port=8040 ;;
       python) grpc_port=8050 ;;
       ruby)   grpc_port=8060 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
@@ -421,7 +421,7 @@ grpc_cloud_prod_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|nodejs|php|python|ruby)
+      cxx|go|java|node|php|python|ruby)
         grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -555,7 +555,7 @@ grpc_launch_server_args() {
       cxx)    grpc_port=8010 ;;
       go)     grpc_port=8020 ;;
       java)   grpc_port=8030 ;;
-      nodejs) grpc_port=8040 ;;
+      node) grpc_port=8040 ;;
       python) grpc_port=8050 ;;
       ruby)   grpc_port=8060 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
@@ -627,7 +627,7 @@ grpc_launch_server() {
 #   cxx:    8010
 #   go:     8020
 #   java:   8030
-#   nodejs: 8040
+#   node: 8040
 #   python: 8050
 #   ruby:   8060
 #
@@ -813,6 +813,13 @@ grpc_interop_gen_cxx_cmd() {
     echo $the_cmd
 }
 
+grpc_interop_gen_node_cmd() {
+  local cmd_prefix="sudo docker run grpc/node";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local the_cmd="$cmd_prefix $test_script $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized cpp interop test cmd.
 #
 #
@@ -827,4 +834,4 @@ grpc_cloud_prod_gen_cxx_cmd() {
     echo $the_cmd
 }
 
-# TODO(grpc-team): add grpc_interop_gen_xxx_cmd for python|cxx|nodejs
+# TODO(grpc-team): add grpc_interop_gen_python_cmd
