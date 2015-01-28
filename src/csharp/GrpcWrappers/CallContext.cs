@@ -19,6 +19,12 @@ namespace Google.GRPC.Wrappers
         //TODO: metadata read and write
     }
 
+    // TODO: this class is work in progress
+    /// <summary>
+    /// Holds resources for an active call and implements reference counting to
+    /// allow more actors to work with the call context while still maintaining
+    /// the correct disposal logic.
+    /// </summary>
 	public class CallContext : ICallContext
 	{
         // Any set of distinct values for tags will do.

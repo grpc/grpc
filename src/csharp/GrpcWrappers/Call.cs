@@ -83,6 +83,8 @@ namespace Google.GRPC.Wrappers
 		{
 			return grpc_call_cancel(handle);
 		}
+
+        // TODO: add CancelWithStatus
 	}
 
 	public class CallSafeHandle : SafeHandleZeroIsInvalid

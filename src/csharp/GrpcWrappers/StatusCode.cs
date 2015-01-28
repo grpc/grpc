@@ -2,7 +2,8 @@ using System;
 
 namespace Google.GRPC.Wrappers
 {
-    // TODO: this should not be in Interop namespace.
+    // TODO: this should not be in Wrappers namespace.
+    // TODO: element names should changed to comply with C# naming conventions.
     /// <summary>
     /// grpc_status_code from grpc/status.h
     /// </summary>

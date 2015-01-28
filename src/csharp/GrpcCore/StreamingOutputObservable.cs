@@ -9,12 +9,12 @@ namespace Google.GRPC.Core
 		readonly ICallContext ctx;
 		// only one observer allowed currently
 		IObserver<TResponse> onlyObserver;
-		Func<byte[], TResponse> demarshaller;
+		Func<byte[], TResponse> deserializer;
 
-		public StreamingOutputObservable(ICallContext ctx, Func<byte[], TResponse> demarshaller)
+		public StreamingOutputObservable(ICallContext ctx, Func<byte[], TResponse> deserializer)
 		{
 			this.ctx = ctx;
-			this.demarshaller = demarshaller;
+			this.deserializer = deserializer;
 		}
 
 		public IDisposable Subscribe(IObserver<TResponse> observer)
@@ -44,7 +44,7 @@ namespace Google.GRPC.Core
 				    {
 					    break;
 				    }
-				    TResponse response = demarshaller(payload);
+				    TResponse response = deserializer(payload);
 				    
                     // TODO: catch exceptions from user code...
                     onlyObserver.OnNext(response);
