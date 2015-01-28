@@ -11,13 +11,12 @@ namespace math
 	/// </summary>
 	public class DummyMathServiceClient : IMathServiceClient
 	{
-		// possibly use Thread.interrupt to trigger cancellation?
 		public DivReply Div(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
 			// TODO: cancellation...
 			return DivInternal(args);
 		}
-		// token is here to support cancellation
+		
 		public Task<DivReply> DivAsync(DivArgs args, CancellationToken token = default(CancellationToken))
 		{
 			return Task.Factory.StartNew(() => DivInternal(args), token);
