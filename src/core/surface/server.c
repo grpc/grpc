@@ -732,6 +732,8 @@ static void begin_legacy_request(grpc_server *server, grpc_completion_queue *cq,
   }
   req.op = GRPC_IOREQ_RECV_INITIAL_METADATA;
   req.data.recv_metadata = initial_metadata;
+  calld->legacy = gpr_malloc(sizeof(legacy_data));
+  memset(calld->legacy, 0, sizeof(legacy_data));
   grpc_call_start_ioreq_and_call_back(calld->call, &req, 1,
                                       publish_legacy_request, tag);
 }
