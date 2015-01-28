@@ -323,6 +323,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
                 break;
 
               case '0':
+                json_reader_string_add_char(reader, c);
                 reader->state = GRPC_JSON_STATE_VALUE_NUMBER_ZERO;
                 break;
 
@@ -454,7 +455,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
                 }
                 break;
               default:
-                return GRPC_JSON_PARSE_ERROR;
+                return GRPC_JSON_INTERNAL_ERROR;
             }
             break;
 
@@ -471,6 +472,10 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
               case '7':
               case '8':
               case '9':
+                break;
+              case 'e':
+              case 'E':
+                reader->state = GRPC_JSON_STATE_VALUE_NUMBER_E;
                 break;
               case '.':
                 reader->state = GRPC_JSON_STATE_VALUE_NUMBER_DOT;
@@ -549,6 +554,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
               default:
                 return GRPC_JSON_PARSE_ERROR;
             }
+            break;
 
           case GRPC_JSON_STATE_VALUE_NUMBER_EPM:
             json_reader_string_add_char(reader, c);
@@ -567,6 +573,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
               default:
                 return GRPC_JSON_PARSE_ERROR;
             }
+            break;
 
           case GRPC_JSON_STATE_VALUE_TRUE_R:
             if (c != 'r') return GRPC_JSON_PARSE_ERROR;

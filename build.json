@@ -1423,6 +1423,35 @@
       ]
     },
     {
+      "name": "json_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "json_rewrite",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "run": false
+    },
+    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",

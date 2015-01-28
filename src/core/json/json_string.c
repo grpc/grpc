@@ -56,10 +56,10 @@ typedef struct {
   grpc_json* top;
   grpc_json* current_container;
   grpc_json* current_value;
-  char* input;
-  char* key;
-  char* string;
-  char* string_ptr;
+  gpr_uint8* input;
+  gpr_uint8* key;
+  gpr_uint8* string;
+  gpr_uint8* string_ptr;
   size_t remaining_input;
 } json_reader_userdata;
 
@@ -201,7 +201,7 @@ static grpc_json* json_create_and_link(void* userdata,
       json->parent->child = json;
     }
     if (json->parent->type == GRPC_JSON_OBJECT) {
-      json->key = state->key;
+      json->key = (char*) state->key;
     }
   }
   if (!state->top) {
@@ -261,13 +261,13 @@ static void json_reader_set_key(void* userdata) {
 static void json_reader_set_string(void* userdata) {
   json_reader_userdata* state = userdata;
   grpc_json* json = json_create_and_link(userdata, GRPC_JSON_STRING);
-  json->value = state->string;
+  json->value = (char*) state->string;
 }
 
 static int json_reader_set_number(void* userdata) {
   json_reader_userdata* state = userdata;
   grpc_json* json = json_create_and_link(userdata, GRPC_JSON_NUMBER);
-  json->value = state->string;
+  json->value = (char*) state->string;
   return 1;
 }
 
@@ -312,7 +312,7 @@ grpc_json* grpc_json_parse_string_with_len(char* input, size_t size) {
 
   state.top = state.current_container = state.current_value = NULL;
   state.string = state.key = NULL;
-  state.string_ptr = state.input = input;
+  state.string_ptr = state.input = (gpr_uint8*) input;
   state.remaining_input = size;
   grpc_json_reader_init(&reader, &reader_vtable, &state);
 

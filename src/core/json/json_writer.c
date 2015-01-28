@@ -121,22 +121,21 @@ static void json_writer_escape_string(grpc_json_writer* writer,
       if ((c == '\\') || (c == '"')) json_writer_output_char(writer, '\\');
       json_writer_output_char(writer, c);
     } else if (c < 32) {
-      json_writer_output_char(writer, '\\');
       switch (c) {
         case '\b':
-          json_writer_output_char(writer, 'b');
+          json_writer_output_string_with_len(writer, "\\b", 2);
           break;
         case '\f':
-          json_writer_output_char(writer, 'f');
+          json_writer_output_string_with_len(writer, "\\f", 2);
           break;
         case '\n':
-          json_writer_output_char(writer, 'n');
+          json_writer_output_string_with_len(writer, "\\n", 2);
           break;
         case '\r':
-          json_writer_output_char(writer, 'r');
+          json_writer_output_string_with_len(writer, "\\r", 2);
           break;
         case '\t':
-          json_writer_output_char(writer, 't');
+          json_writer_output_string_with_len(writer, "\\t", 2);
           break;
         default:
           json_writer_escape_utf16(writer, c);
@@ -194,7 +193,7 @@ static void json_writer_escape_string(grpc_json_writer* writer,
          */
         utf32 -= 0x10000;
         json_writer_escape_utf16(writer, 0xd800 | (utf32 >> 10));
-        json_writer_escape_utf16(writer, 0xdc00 | (utf32 && 0x3ff));
+        json_writer_escape_utf16(writer, 0xdc00 | (utf32 & 0x3ff));
       } else {
         json_writer_escape_utf16(writer, utf32);
       }
