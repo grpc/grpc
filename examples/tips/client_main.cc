@@ -31,6 +31,13 @@
  *
  */
 
+#include <chrono>
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <thread>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <google/gflags.h>
@@ -45,6 +52,22 @@
 DEFINE_int32(server_port, 443, "Server port.");
 DEFINE_string(server_host,
               "pubsub-staging.googleapis.com", "Server host to connect to");
+DEFINE_string(default_service_account, "",
+              "Email of GCE default service account");
+DEFINE_string(service_account_key_file, "",
+              "Path to service account json key file.");
+DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
+
+grpc::string GetServiceAccountJsonKey() {
+  static grpc::string json_key;
+  if (json_key.empty()) {
+    std::ifstream json_key_file(FLAGS_service_account_key_file);
+    std::stringstream key_stream;
+    key_stream << json_key_file.rdbuf();
+    json_key = key_stream.str();
+  }
+  return json_key;
+}
 
 int main(int argc, char** argv) {
   grpc_init();
@@ -56,8 +79,15 @@ int main(int argc, char** argv) {
   snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
            FLAGS_server_port);
 
-  std::unique_ptr<grpc::Credentials> creds =
-      grpc::CredentialsFactory::ComputeEngineCredentials();
+  std::unique_ptr<grpc::Credentials> creds;
+  if (FLAGS_service_account_key_file != "") {
+    grpc::string json_key = GetServiceAccountJsonKey();
+    creds = grpc::CredentialsFactory::ServiceAccountCredentials(
+        json_key, FLAGS_oauth_scope, std::chrono::hours(1));
+  } else {
+    creds = grpc::CredentialsFactory::ComputeEngineCredentials();
+  }
+
   std::shared_ptr<grpc::ChannelInterface> channel(
       grpc::CreateTestChannel(
           host_port,
