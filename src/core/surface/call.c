@@ -247,7 +247,6 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op,
     case REQ_INITIAL: /* not started yet */
       return;
     case REQ_DONE: /* already finished */
-      abort();
       return;
     case REQ_READY:
       master->complete_mask |= 1 << op;
@@ -830,15 +829,18 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
 grpc_call_error grpc_call_start_write_status(grpc_call *call,
                                              grpc_status_code status,
                                              const char *details, void *tag) {
-  grpc_ioreq req;
+  grpc_ioreq reqs[2];
   grpc_call_error err;
   grpc_cq_begin_op(call->cq, call, GRPC_FINISH_ACCEPTED);
 
   lock(call);
-  req.op = GRPC_IOREQ_SEND_CLOSE;
-  req.data.send_close.status = status;
-  req.data.send_close.details = details;
-  err = start_ioreq(call, &req, 1, finish_finish, tag);
+  reqs[0].op = GRPC_IOREQ_SEND_TRAILING_METADATA;
+  reqs[0].data.send_metadata.count = call->legacy_state->md_out_count;
+  reqs[0].data.send_metadata.metadata = call->legacy_state->md_out;
+  reqs[1].op = GRPC_IOREQ_SEND_CLOSE;
+  reqs[1].data.send_close.status = status;
+  reqs[1].data.send_close.details = details;
+  err = start_ioreq(call, reqs, 2, finish_finish, tag);
   unlock(call);
 
   return err;
