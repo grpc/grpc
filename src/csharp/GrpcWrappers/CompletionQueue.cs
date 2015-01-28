@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Wrappers
 {
-	public class CompletionQueue : WrappedNativeObject<CompletionQueueSafeHandle>
+	internal class CompletionQueue : WrappedNativeObject<CompletionQueueSafeHandle>
 	{
 		[DllImport("libgrpc.so")]
 		static extern CompletionQueueSafeHandle grpc_completion_queue_create();
@@ -33,7 +33,7 @@ namespace Google.GRPC.Wrappers
 		}
 	}
 
-	public class CompletionQueueSafeHandle : SafeHandleZeroIsInvalid
+	internal class CompletionQueueSafeHandle : SafeHandleZeroIsInvalid
 	{
 		[DllImport("libgrpc.so")]
 		static extern EventSafeHandle grpc_completion_queue_next(IntPtr cq, Timespec deadline);

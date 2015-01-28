@@ -7,7 +7,7 @@ namespace Google.GRPC.Wrappers
 	/// gpr_timespec from grpc/support/time.h
 	/// </summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public struct Timespec
+	internal struct Timespec
 	{
 		// TODO: this only works on 64bit linux, can we autoselect the right size of ints?
 		// perhaps using IntPtr would work.

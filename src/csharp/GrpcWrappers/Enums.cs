@@ -6,7 +6,7 @@ namespace Google.GRPC.Wrappers
     /// <summary>
     /// from grpc/grpc.h
     /// </summary>
-    public enum GRPCCallError
+    internal enum GRPCCallError
     {
         /* everything went ok */
         GRPC_CALL_OK = 0,
@@ -34,7 +34,7 @@ namespace Google.GRPC.Wrappers
     /// <summary>
     /// grpc_completion_type from grpc/grpc.h
     /// </summary>
-    public enum GRPCCompletionType
+    internal enum GRPCCompletionType
     {
         GRPC_QUEUE_SHUTDOWN,
         /* Shutting down */
@@ -64,7 +64,7 @@ namespace Google.GRPC.Wrappers
     /// <summary>
     /// grpc_op_error from grpc/grpc.h
     /// </summary>
-    public enum GRPCOpError
+    internal enum GRPCOpError
     {
         /* everything went ok */
         GRPC_OP_OK = 0,

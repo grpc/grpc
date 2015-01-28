@@ -12,7 +12,7 @@ namespace Google.GRPC.Demo
 		{
 			using (Channel channel = new Channel("127.0.0.1:23456"))
 			{
-				IMathServiceClient stub = new MathServiceClientImpl (channel);
+				IMathServiceClient stub = new MathServiceClientStub(channel, Timeout.InfiniteTimeSpan);
 				Examples.DivExample(stub);
 
 				Examples.SumExample(stub);

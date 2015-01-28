@@ -12,8 +12,9 @@ namespace Google.GRPC.Core
     {
         public static TResponse BlockingUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
         {
-            using (CallContext ctx = call.CreateCallContext())
+            using (CallContext ctx = new CallContext())
             {
+                ctx.Initialize(call.Channel, call.MethodName, call.Timeout);
                 ctx.Start(false);
 
                 // TODO: handle errors
@@ -32,8 +33,9 @@ namespace Google.GRPC.Core
 
         public static IObservable<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
         {
-            using (CallContext ctx = call.CreateCallContext())
+            using (CallContext ctx = new CallContext())
             {
+                ctx.Initialize(call.Channel, call.MethodName, call.Timeout);
                 ctx.Start(false);
 
                 // TODO: handle the result
@@ -46,8 +48,9 @@ namespace Google.GRPC.Core
 
         public static Task<TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, IObservable<TRequest> inputs, CancellationToken token)
         {
-            using (CallContext ctx = call.CreateCallContext())
+            using (CallContext ctx = new CallContext())
             {
+                ctx.Initialize(call.Channel, call.MethodName, call.Timeout);
                 ctx.Start(false);
 
                 //  TODO: dispose the subscription....
@@ -76,8 +79,9 @@ namespace Google.GRPC.Core
 
         public static IObservable<TResponse> DuplexStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, IObservable<TRequest> inputs, CancellationToken token)
         {
-            using (CallContext ctx = call.CreateCallContext())
+            using (CallContext ctx = new CallContext())
             {
+                ctx.Initialize(call.Channel, call.MethodName, call.Timeout);
                 ctx.Start(false);
 
                 //  TODO: dispose the subscription....
