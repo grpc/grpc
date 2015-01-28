@@ -12,19 +12,14 @@ namespace math
 	/// </summary>
 	public interface IMathServiceClient
 	{
-		// TODO: how about a deadline?
-		// statuses different from OK are thrown as an exception....
 		DivReply Div(DivArgs args, CancellationToken token = default(CancellationToken));
 
-		// statuses different from OK are thrown as an exception....
 		Task<DivReply> DivAsync(DivArgs args, CancellationToken token = default(CancellationToken));
 
 		IObservable<Num> Fib(FibArgs args, CancellationToken token = default(CancellationToken));
 
-		// Cancellation can also be done through inputs.OnError
 		Task<Num> Sum(IObservable<Num> inputs, CancellationToken token = default(CancellationToken));
 
-		// Cancellation can also be be done through inputs.OnError
 		IObservable<DivReply> DivMany(IObservable<DivArgs> inputs, CancellationToken token = default(CancellationToken));
 	}
 }
