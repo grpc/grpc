@@ -149,6 +149,9 @@ grpc_call *grpc_call_create(grpc_channel *channel,
   gpr_mu_init(&call->mu);
   call->channel = channel;
   call->is_client = server_transport_data == NULL;
+  if (call->is_client) {
+    call->requests[GRPC_IOREQ_SEND_TRAILING_METADATA].state = REQ_DONE;
+  }
   grpc_channel_internal_ref(channel);
   call->metadata_context = grpc_channel_get_metadata_context(channel);
   gpr_ref_init(&call->internal_refcount, 1);
@@ -427,6 +430,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
   reqinfo *master = NULL;
   reqinfo *requests = call->requests;
   grpc_ioreq_data data;
+  gpr_uint8 have_send_closed = 0;
 
   for (i = 0; i < nreqs; i++) {
     op = reqs[i].op;
@@ -465,6 +469,9 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
       case GRPC_IOREQ_SEND_MESSAGES:
         call->write_index = 0;
         break;
+      case GRPC_IOREQ_SEND_CLOSE:
+        have_send_closed = 1;
+        break;
     }
 
     requests[op].state = REQ_READY;
@@ -477,6 +484,12 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
   master->complete_mask = precomplete;
   master->on_complete = completion;
   master->user_data = user_data;
+
+  if (have_send_closed) {
+    if (requests[GRPC_IOREQ_SEND_MESSAGES].state == REQ_INITIAL) {
+      requests[GRPC_IOREQ_SEND_MESSAGES].state = REQ_DONE;
+    }
+  }
 
   if (OP_IN_MASK(GRPC_IOREQ_RECV_MESSAGES, have_ops & ~precomplete)) {
     request_more_data(call);
