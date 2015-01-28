@@ -4,14 +4,15 @@ using Google.GRPC.Wrappers;
 namespace Google.GRPC.Core
 {
 	public class StreamingInputObserver<TRequest> : IObserver<TRequest>
-		where TRequest : Google.ProtocolBuffers.IMessage
 	{
 		readonly ICallContext ctx;
+        readonly Func<TRequest, byte[]> serializer;
         bool writingFinished = false;
 
-		public StreamingInputObserver(ICallContext ctx)
+        public StreamingInputObserver(ICallContext ctx, Func<TRequest, byte[]> serializer)
 		{
 			this.ctx = ctx;
+            this.serializer = serializer;
 		}
 
 		public void OnCompleted()
@@ -35,7 +36,7 @@ namespace Google.GRPC.Core
 
 			// TODO: do some checks....
 			// TODO: check serialization result...
-			ctx.Write(value.ToByteArray());
+			ctx.Write(serializer(value));
 		}
 
         private void checkWritingNotFinished() {

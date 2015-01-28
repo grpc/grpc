@@ -67,8 +67,6 @@ namespace Google.GRPC.Wrappers
 			}
 		}
 
-		
-
 		/// <summary>
 		/// Reads data of next slice from the byte buffer.
 		/// Returns null if end of buffer has been reached.

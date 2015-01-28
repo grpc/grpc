@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Google.GRPC.Wrappers
 {
-	// TODO: this should not be in Interop namespace.
+	// TODO: this should not be in Wrappers namespace.
 	/// <summary>
 	/// Represents RPC result.
 	/// </summary>

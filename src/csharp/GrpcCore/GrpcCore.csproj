@@ -37,6 +37,8 @@
     <Compile Include="StreamingOutputObservable.cs" />
     <Compile Include="StreamingInputObserver.cs" />
     <Compile Include="RpcException.cs" />
+    <Compile Include="Calls.cs" />
+    <Compile Include="Call.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

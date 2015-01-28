@@ -18,35 +18,16 @@ namespace Google.GRPC.Wrappers
 			this.target = target;
 		}
 
-		public Status SimpleBlockingCall(String methodName, byte[] requestData, out byte[] result, Timespec deadline, CancellationToken token)
+		public CallContext CreateCallContext(String methodName)
 		{
-			// TODO: implement cancellation
-
-			result = null;
-
-			// TODO: strange way of disposing call here
-			Call call = new Call(this, methodName, target, deadline);
-			using (CallContext ctx = new CallContext(call))
-			{
-				ctx.Start(false);
-
-				if (!ctx.Write(requestData))
-				{
-					return ctx.Wait();
-				}
-				ctx.WritesDone();
-
-				result = ctx.Read();
-
-				return ctx.Wait();
-			}
-		}
-
-		public CallContext CreateCall(String methodName, Timespec deadline)
-		{
-			Call call = new Call(this, methodName, target, deadline);
+			Call call = new Call(this, methodName, target, CreateDeadline());
 			return new CallContext(call);
 		}
+
+        private Timespec CreateDeadline() {
+            // TODO: create deadline based on stub configuration. For now, no deadline is used.
+            return Timespec.InfFuture;
+        }
 	}
 
 	public class ChannelSafeHandle : SafeHandleZeroIsInvalid
