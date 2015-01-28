@@ -122,7 +122,7 @@ struct grpc_call {
   legacy_state *legacy_state;
 };
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call)+1))
+#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -396,6 +396,26 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       unlock(call);
       break;
     case SEND_FINISH:
+      if (!call->is_client) {
+        /* TODO(ctiller): cache common status values */
+        char status_str[GPR_LTOA_MIN_BUFSIZE];
+        gpr_ltoa(data.send_close.status, status_str);
+        grpc_call_element_send_metadata(
+            CALL_ELEM_FROM_CALL(call, 0),
+            grpc_mdelem_from_metadata_strings(
+                call->metadata_context,
+                grpc_channel_get_status_string(call->channel),
+                grpc_mdstr_from_string(call->metadata_context, status_str)));
+        if (data.send_close.details) {
+          grpc_call_element_send_metadata(
+              CALL_ELEM_FROM_CALL(call, 0),
+              grpc_mdelem_from_metadata_strings(
+                  call->metadata_context,
+                  grpc_channel_get_message_string(call->channel),
+                  grpc_mdstr_from_string(call->metadata_context,
+                                         data.send_close.details)));
+        }
+      }
       op.type = GRPC_SEND_FINISH;
       op.dir = GRPC_CALL_DOWN;
       op.flags = 0;
@@ -718,8 +738,8 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
   return err;
 }
 
-static void finish_send_initial_metadata(grpc_call *call, grpc_op_error status, void *tag) {
-}
+static void finish_send_initial_metadata(grpc_call *call, grpc_op_error status,
+                                         void *tag) {}
 
 grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
                                                       gpr_uint32 flags) {
@@ -734,7 +754,7 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   req.data.send_metadata.metadata = ls->md_out;
   err = start_ioreq(call, &req, 1, finish_send_initial_metadata, NULL);
   unlock(call);
-  
+
   return err;
 }
 
@@ -909,7 +929,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
