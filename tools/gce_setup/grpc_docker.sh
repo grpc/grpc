@@ -442,7 +442,7 @@ grpc_cloud_prod_test_args() {
 
 # checks the positional args and assigns them to variables visible in the caller
 #
-# these are the positional args passed to grpc_cloud_prod_test after option flags
+# these are the positional args passed to grpc_cloud_prod_auth_test after option flags
 # are removed
 #
 # three args are expected, in order
@@ -764,6 +764,25 @@ grpc_cloud_prod_test() {
   gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
 }
 
+# Runs a test command on a docker instance.
+#
+# call-seq:
+#   grpc_cloud_prod_auth_test <test_name> <host> <client_type>
+#
+# requirements:
+#   host is a GCE instance running docker with access to the gRPC docker images
+#   test_name is one of the named gRPC tests [http://go/grpc_interop_tests]
+#   client_type is one of [cxx,go,java,php,python,ruby]
+#
+# it assumes:
+#   that each grpc-imp has a docker image named grpc/<imp>, e.g, grpc/java
+#   a test is run using $ docker run 'path/to/interop_test_bin --flags'
+#   the required images are available on <host>
+#
+# each client_type should have an associated bash func:
+#   grpc_cloud_prod_auth_<test_case>_gen_<client_type>_cmd
+# the func provides the dockerized commmand for running client_type's test.
+# If no such func is available, tests for that client type cannot be run.
 grpc_cloud_prod_auth_test() {
   _grpc_ensure_gcloud_ssh || return 1;
   # declare vars local so that they don't pollute the shell environment
@@ -913,7 +932,7 @@ grpc_cloud_prod_gen_cxx_cmd() {
     local cmd_prefix="sudo docker run grpc/cxx";
     local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl";
     local gfe_flags=" --use_prod_roots --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com"
-    local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+    local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
     echo $the_cmd
 }
 
