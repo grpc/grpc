@@ -368,6 +368,17 @@ static send_action choose_send_action(grpc_call *call) {
   }
 }
 
+static void send_metadata(grpc_call *call, grpc_mdelem *elem) {
+  grpc_call_op op;
+  op.type = GRPC_SEND_METADATA;
+  op.dir = GRPC_CALL_DOWN;
+  op.flags = 0;
+  op.data.metadata = elem;
+  op.done_cb = do_nothing;
+  op.user_data = NULL;
+  grpc_call_execute_op(call, &op);
+}
+
 static void enact_send_action(grpc_call *call, send_action sa) {
   grpc_ioreq_data data;
   grpc_call_op op;
@@ -381,8 +392,8 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       data = call->requests[GRPC_IOREQ_SEND_INITIAL_METADATA].data;
       for (i = 0; i < data.send_metadata.count; i++) {
         const grpc_metadata *md = &data.send_metadata.metadata[i];
-        grpc_call_element_send_metadata(
-            CALL_ELEM_FROM_CALL(call, 0),
+        send_metadata(
+            call,
             grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
                                                (const gpr_uint8 *)md->value,
                                                md->value_length));
@@ -409,8 +420,8 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       data = call->requests[GRPC_IOREQ_SEND_TRAILING_METADATA].data;
       for (i = 0; i < data.send_metadata.count; i++) {
         const grpc_metadata *md = &data.send_metadata.metadata[i];
-        grpc_call_element_send_metadata(
-            CALL_ELEM_FROM_CALL(call, 0),
+        send_metadata(
+            call,
             grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
                                                (const gpr_uint8 *)md->value,
                                                md->value_length));
@@ -426,15 +437,15 @@ static void enact_send_action(grpc_call *call, send_action sa) {
         char status_str[GPR_LTOA_MIN_BUFSIZE];
         data = call->requests[GRPC_IOREQ_SEND_CLOSE].data;
         gpr_ltoa(data.send_close.status, status_str);
-        grpc_call_element_send_metadata(
-            CALL_ELEM_FROM_CALL(call, 0),
+        send_metadata(
+            call,
             grpc_mdelem_from_metadata_strings(
                 call->metadata_context,
                 grpc_mdstr_ref(grpc_channel_get_status_string(call->channel)),
                 grpc_mdstr_from_string(call->metadata_context, status_str)));
         if (data.send_close.details) {
-          grpc_call_element_send_metadata(
-              CALL_ELEM_FROM_CALL(call, 0),
+          send_metadata(
+              call,
               grpc_mdelem_from_metadata_strings(
                   call->metadata_context,
                   grpc_mdstr_ref(grpc_channel_get_message_string(call->channel)),
