@@ -75,7 +75,7 @@ describe('Surface server constructor', function() {
     }, /math.Math/);
   });
 });
-describe('Surface client', function() {
+describe('Cancelling surface client', function() {
   var client;
   var server;
   before(function() {

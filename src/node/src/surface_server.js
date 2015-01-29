@@ -256,10 +256,13 @@ function makeServerConstructor(services) {
    * @constructor
    * @param {Object} service_handlers Map from service names to map from method
    *     names to handlers
-   * @param {Object} options Options to pass to the underlying server
+   * @param {function(string, Object<string, Array<Buffer>>):
+             Object<string, Array<Buffer|string>>=} getMetadata Callback that
+   *     gets metatada for a given method
+   * @param {Object=} options Options to pass to the underlying server
    */
-  function SurfaceServer(service_handlers, options) {
-    var server = new Server(options);
+  function SurfaceServer(service_handlers, getMetadata, options) {
+    var server = new Server(getMetadata, options);
     this.inner_server = server;
     _.each(services, function(service) {
       var service_name = common.fullyQualifiedName(service);

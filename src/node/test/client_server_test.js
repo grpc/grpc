@@ -84,6 +84,10 @@ function cancelHandler(stream) {
   // do nothing
 }
 
+function metadataHandler(stream, metadata) {
+  stream.end();
+}
+
 /**
  * Serialize a string to a Buffer
  * @param {string} value The string to serialize
@@ -106,11 +110,14 @@ describe('echo client', function() {
   var server;
   var channel;
   before(function() {
-    server = new Server();
+    server = new Server(function getMetadata(method, metadata) {
+      return {method: [method]};
+    });
     var port_num = server.bind('0.0.0.0:0');
     server.register('echo', echoHandler);
     server.register('error', errorHandler);
     server.register('cancellation', cancelHandler);
+    server.register('metadata', metadataHandler);
     server.start();
 
     channel = new grpc.Channel('localhost:' + port_num);
@@ -142,12 +149,19 @@ describe('echo client', function() {
       done();
     });
   });
+  it('should recieve metadata set by the server', function(done) {
+    var stream = client.makeRequest(channel, 'metadata');
+    stream.on('metadata', function(metadata) {
+      assert.strictEqual(metadata.method[0].toString(), 'metadata');
+    });
+    stream.on('status', function(status) {
+      assert.equal(status.code, client.status.OK);
+      done();
+    });
+    stream.end();
+  });
   it('should get an error status that the server throws', function(done) {
-    var stream = client.makeRequest(
-        channel,
-        'error',
-        null,
-        getDeadline(1));
+    var stream = client.makeRequest(channel, 'error');
 
     stream.on('data', function() {});
     stream.write(new Buffer('test'));
@@ -189,7 +203,7 @@ describe('secure echo client', function() {
                                                               key_data,
                                                               pem_data);
 
-          server = new Server({'credentials' : server_creds});
+          server = new Server(null, {'credentials' : server_creds});
           var port_num = server.bind('0.0.0.0:0', true);
           server.register('echo', echoHandler);
           server.start();
