@@ -169,6 +169,18 @@
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_reader.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_string.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_writer.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
       <Filter>src\core\statistics</Filter>
     </ClCompile>
@@ -291,9 +303,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\transport.c">
       <Filter>src\core\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\cJSON\cJSON.c">
-      <Filter>third_party\cJSON</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -482,6 +491,18 @@
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_common.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_reader.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_writer.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
@@ -617,6 +638,9 @@
     <Filter Include="src\core\iomgr">
       <UniqueIdentifier>{1baf3894-af37-e647-bdbc-95dc17ed0073}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\json">
+      <UniqueIdentifier>{e665cc0e-b994-d7c5-cc18-2007392019f0}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\security">
       <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>
     </Filter>
@@ -634,12 +658,6 @@
     </Filter>
     <Filter Include="src\core\tsi">
       <UniqueIdentifier>{0b0f9ab1-efa4-7f03-e446-6fb9b5227e84}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party">
-      <UniqueIdentifier>{aaab30a4-2a15-732e-c141-3fbc0f0f5a7a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\cJSON">
-      <UniqueIdentifier>{332d0840-2c7a-bb09-8e58-585a6fb3959f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

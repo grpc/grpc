@@ -31,32 +31,34 @@
  *
  */
 
-#ifndef __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
-#define __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
+#include <string.h>
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+#include <grpc/support/alloc.h>
 
-#include "examples/tips/pubsub.pb.h"
+#include "src/core/json/json.h"
 
-namespace grpc {
-namespace examples {
-namespace tips {
+grpc_json *grpc_json_create(grpc_json_type type) {
+  grpc_json *json = gpr_malloc(sizeof(grpc_json));
+  memset(json, 0, sizeof(grpc_json));
+  json->type = type;
 
-class Client {
- public:
-  Client(std::shared_ptr<grpc::ChannelInterface> channel);
-  Status CreateTopic(grpc::string topic);
-  Status GetTopic(grpc::string topic);
-  Status DeleteTopic(grpc::string topic);
-  Status ListTopics();
+  return json;
+}
 
- private:
-  std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
-};
+void grpc_json_destroy(grpc_json *json) {
+  while (json->child) {
+    grpc_json_destroy(json->child);
+  }
 
-}  // namespace tips
-}  // namespace examples
-}  // namespace grpc
+  if (json->next) {
+    json->next->prev = json->prev;
+  }
 
-#endif  // __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
+  if (json->prev) {
+    json->prev->next = json->next;
+  } else if (json->parent) {
+    json->parent->child = json->next;
+  }
+
+  gpr_free(json);
+}
