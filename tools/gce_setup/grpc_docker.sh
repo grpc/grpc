@@ -381,7 +381,7 @@ grpc_interop_test_args() {
       cxx)    grpc_port=8010 ;;
       go)     grpc_port=8020 ;;
       java)   grpc_port=8030 ;;
-      node) grpc_port=8040 ;;
+      node)   grpc_port=8040 ;;
       python) grpc_port=8050 ;;
       ruby)   grpc_port=8060 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
@@ -555,7 +555,7 @@ grpc_launch_server_args() {
       cxx)    grpc_port=8010 ;;
       go)     grpc_port=8020 ;;
       java)   grpc_port=8030 ;;
-      node) grpc_port=8040 ;;
+      node)   grpc_port=8040 ;;
       python) grpc_port=8050 ;;
       ruby)   grpc_port=8060 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
@@ -627,7 +627,7 @@ grpc_launch_server() {
 #   cxx:    8010
 #   go:     8020
 #   java:   8030
-#   node: 8040
+#   node:   8040
 #   python: 8050
 #   ruby:   8060
 #
