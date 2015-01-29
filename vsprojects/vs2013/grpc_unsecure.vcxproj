@@ -136,6 +136,10 @@
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h" />
+    <ClInclude Include="..\..\src\core\json\json.h" />
+    <ClInclude Include="..\..\src\core\json\json_common.h" />
+    <ClInclude Include="..\..\src\core\json\json_reader.h" />
+    <ClInclude Include="..\..\src\core\json\json_writer.h" />
     <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\src\core\statistics\census_log.h" />
     <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
@@ -286,6 +290,14 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_reader.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_writer.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_log.c">
@@ -367,8 +379,6 @@
     <ClCompile Include="..\..\src\core\transport\stream_op.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\transport.c">
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\cJSON\cJSON.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
