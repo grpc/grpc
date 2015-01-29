@@ -313,6 +313,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elemn,
       break;
     case GRPC_RECV_END_OF_INITIAL_METADATA:
       start_new_rpc(elem);
+      grpc_call_initial_metadata_complete(elem);
       break;
     case GRPC_RECV_MESSAGE:
       grpc_call_recv_message(elem, op->data.message);

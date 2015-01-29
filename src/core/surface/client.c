@@ -72,7 +72,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       grpc_call_stream_closed(elem);
       break;
     case GRPC_RECV_END_OF_INITIAL_METADATA:
-      grpc_call_client_initial_metadata_complete(elem);
+      grpc_call_initial_metadata_complete(elem);
       break;
     default:
       GPR_ASSERT(op->dir == GRPC_CALL_DOWN);

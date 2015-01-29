@@ -799,7 +799,7 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   return err;
 }
 
-void grpc_call_client_initial_metadata_complete(
+void grpc_call_initial_metadata_complete(
     grpc_call_element *surface_element) {
   grpc_call *call = grpc_call_from_top_element(surface_element);
   lock(call);

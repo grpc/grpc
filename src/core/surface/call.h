@@ -62,9 +62,8 @@ grpc_call_error grpc_call_start_ioreq_and_call_back(
     grpc_call *call, const grpc_ioreq *reqs, size_t nreqs,
     grpc_ioreq_completion_func on_complete, void *user_data);
 
-/* Called when it's known that the initial batch of metadata is complete on the
-   client side (must not be called on the server) */
-void grpc_call_client_initial_metadata_complete(
+/* Called when it's known that the initial batch of metadata is complete */
+void grpc_call_initial_metadata_complete(
     grpc_call_element *surface_element);
 
 void grpc_call_set_deadline(grpc_call_element *surface_element,
