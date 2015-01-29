@@ -943,7 +943,6 @@ grpc_cloud_prod_gen_cxx_cmd() {
     echo $the_cmd
 }
 
-<<<<<<< HEAD
 # constructs the full dockerized cpp interop test cmd.
 #
 #
