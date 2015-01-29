@@ -70,23 +70,23 @@
       "window": {
         "title": "Sample Konfabulator Widget",
         "name": "main_window",
-        "width": 50,
-        "height": 50
+        "width": 500,
+        "height": 500
       },
       "image": {
         "src": "Images/Sun.png",
         "name": "sun1",
-        "hOffset": 25,
-        "vOffset": 25,
+        "hOffset": 250,
+        "vOffset": 250,
         "alignment": "center"
       },
       "text": {
         "data": "Click Here",
-        "size": 3,
+        "size": 36,
         "style": "bold",
         "name": "text1",
-        "hOffset": 25,
-        "vOffset": 10,
+        "hOffset": 250,
+        "vOffset": 100,
         "alignment": "center",
         "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;"
       }
@@ -113,16 +113,16 @@
             "useJSP": false,
             "jspListTemplate": "listTemplate.jsp",
             "jspFileTemplate": "articleTemplate.jsp",
-            "cachePackageTagsTrack": 20,
-            "cachePackageTagsStore": 20,
-            "cachePackageTagsRefresh": 6,
-            "cacheTemplatesTrack": 10,
-            "cacheTemplatesStore": 5,
-            "cacheTemplatesRefresh": 1,
-            "cachePagesTrack": 20,
-            "cachePagesStore": 10,
-            "cachePagesRefresh": 1,
-            "cachePagesDirtyRead": 1,
+            "cachePackageTagsTrack": 200,
+            "cachePackageTagsStore": 200,
+            "cachePackageTagsRefresh": 60,
+            "cacheTemplatesTrack": 100,
+            "cacheTemplatesStore": 50,
+            "cacheTemplatesRefresh": 15,
+            "cachePagesTrack": 200,
+            "cachePagesStore": 100,
+            "cachePagesRefresh": 10,
+            "cachePagesDirtyRead": 10,
             "searchEngineListTemplate": "forSearchEnginesList.htm",
             "searchEngineFileTemplate": "forSearchEngines.htm",
             "searchEngineRobotsDb": "WEB-INF/robots.db",
@@ -136,11 +136,11 @@
             "dataStorePassword": "dataStoreTestQuery",
             "dataStoreTestQuery": "SET NOCOUNT ON;select test='test';",
             "dataStoreLogFile": "/usr/local/tomcat/logs/datastore.log",
-            "dataStoreInitConns": 1,
-            "dataStoreMaxConns": 10,
-            "dataStoreConnUsageLimit": 10,
+            "dataStoreInitConns": 10,
+            "dataStoreMaxConns": 100,
+            "dataStoreConnUsageLimit": 100,
             "dataStoreLogLevel": "debug",
-            "maxUrlLength": 50
+            "maxUrlLength": 500
           }
         },
         {
@@ -164,17 +164,17 @@
           "servlet-class": "org.cofax.cms.CofaxToolsServlet",
           "init-param": {
             "templatePath": "toolstemplates/",
-            "log": ,
+            "log": 1,
             "logLocation": "/usr/local/tomcat/logs/CofaxTools.log",
             "logMaxSize": "",
-            "dataLog": ,
+            "dataLog": 1,
             "dataLogLocation": "/usr/local/tomcat/logs/dataLog.log",
             "dataLogMaxSize": "",
             "removePageCache": "/content/admin/remove?cache=pages&id=",
             "removeTemplateCache": "/content/admin/remove?cache=templates&id=",
             "fileTransferFolder": "/usr/local/tomcat/webapps/content/fileTransferFolder",
-            "lookInContext": ,
-            "adminGroupID": ,
+            "lookInContext": 1,
+            "adminGroupID": 4,
             "betaServer": true
           }
         }

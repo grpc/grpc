@@ -51,17 +51,21 @@ static testing_pair testing_pairs[] = {
 
   /* Testing trivial parses, with de-indentation. */
   { " 0 ", "0" },
+  { " 1 ", "1" },
   { " \"a\" ", "\"a\"" },
   { " true ", "true" },
   /* Testing the parser's ability to decode trivial UTF-16. */
   { "\"\\u0020\\\\\\u0010\\u000a\\u000D\"", "\" \\\\\\u0010\\n\\r\"" },
+  /* Testing various UTF-8 sequences. */
+  { "\"ßâñć௵⇒\"", "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"" },
+  { "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"", "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"" },
   /* Testing UTF-8 character "𝄞", U+11D1E. */
   { "\"\xf0\x9d\x84\x9e\"", "\"\\ud834\\udd1e\"" },
   { "\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\"" },
   /* Testing nested empty containers. */
   { " [ [ ] , { } , [ ] ] ", "[[],{},[]]", },
   /* Testing escapes and control chars in key strings. */
-  { " { \"\\n\\\\a , b\": [] } ", "{\"\\n\\\\a , b\":[]}" },
+  { " { \"\\n\\\\a , b\": 1, \"\": 0 } ", "{\"\\n\\\\a , b\":1,\"\":0}" },
   /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
   { "\"abc\xf0\x9d\x24\"", "\"abc\"" },
   { "\"\xff\"", "\"\"" },

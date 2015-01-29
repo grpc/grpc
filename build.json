@@ -1450,6 +1450,19 @@
         "test/core/json/json_rewrite.c"
       ],
       "deps": [
+        "grpc",
+        "gpr"
+      ],
+      "run": false
+    },
+    {
+      "name": "json_rewrite_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite_test.c"
+      ],
+      "deps": [
         "grpc_test_util",
         "grpc",
         "gpr_test_util",

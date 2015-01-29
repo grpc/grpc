@@ -34,14 +34,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <grpc/support/cmdline.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/useful.h>
+#include <grpc/support/log.h>
+#include "test/core/util/test_config.h"
 
 #include "src/core/json/json_reader.h"
 #include "src/core/json/json_writer.h"
 
 typedef struct json_writer_userdata {
-  FILE* out;
+  FILE* cmp;
 } json_writer_userdata;
 
 typedef struct stacked_container {
@@ -58,22 +60,27 @@ typedef struct json_reader_userdata {
   size_t allocated;
   size_t string_len;
   stacked_container* top;
+  int did_eagain;
 } json_reader_userdata;
 
 static void json_writer_output_char(void* userdata, char c) {
   json_writer_userdata* state = userdata;
-  fputc(c, state->out);
+  int cmp = fgetc(state->cmp);
+  GPR_ASSERT(cmp == c);
 }
 
 static void json_writer_output_string(void* userdata, const char* str) {
-  json_writer_userdata* state = userdata;
-  fputs(str, state->out);
+  while (*str) {
+    json_writer_output_char(userdata, *str++);
+  }
 }
 
 static void json_writer_output_string_with_len(void* userdata, const char* str,
                                                size_t len) {
-  json_writer_userdata* state = userdata;
-  fwrite(str, len, 1, state->out);
+  size_t i;
+  for (i = 0; i < len; i++) {
+    json_writer_output_char(userdata, str[i]);
+  }
 }
 
 grpc_json_writer_vtable writer_vtable = {
@@ -133,6 +140,13 @@ static void json_reader_string_add_utf32(void* userdata, gpr_uint32 c) {
 static gpr_uint32 json_reader_read_char(void* userdata) {
   gpr_uint32 r;
   json_reader_userdata* state = userdata;
+
+  if (!state->did_eagain) {
+    state->did_eagain = 1;
+    return GRPC_JSON_READ_CHAR_EAGAIN;
+  }
+
+  state->did_eagain = 0;
 
   r = fgetc(state->in);
   if (r == EOF) r = GRPC_JSON_READ_CHAR_EOF;
@@ -216,12 +230,15 @@ static grpc_json_reader_vtable reader_vtable = {
   json_reader_set_null
 };
 
-int rewrite(FILE* in, FILE* out, int indent) {
+int rewrite_and_compare(FILE* in, FILE* cmp, int indent) {
   grpc_json_writer writer;
   grpc_json_reader reader;
   grpc_json_reader_status status;
   json_writer_userdata writer_user;
   json_reader_userdata reader_user;
+
+  GPR_ASSERT(in);
+  GPR_ASSERT(cmp);
 
   reader_user.writer = &writer;
   reader_user.in = in;
@@ -230,13 +247,16 @@ int rewrite(FILE* in, FILE* out, int indent) {
   reader_user.string_len = 0;
   reader_user.free_space = 0;
   reader_user.allocated = 0;
+  reader_user.did_eagain = 0;
 
-  writer_user.out = out;
+  writer_user.cmp = cmp;
 
   grpc_json_writer_init(&writer, indent, &writer_vtable, &writer_user);
   grpc_json_reader_init(&reader, &reader_vtable, &reader_user);
 
-  status = grpc_json_reader_run(&reader);
+  do {
+    status = grpc_json_reader_run(&reader);
+  } while (status == GRPC_JSON_EAGAIN);
 
   free(reader_user.scratchpad);
   while (reader_user.top) {
@@ -248,14 +268,55 @@ int rewrite(FILE* in, FILE* out, int indent) {
   return status == GRPC_JSON_DONE;
 }
 
+typedef struct test_file {
+  const char* input;
+  const char* cmp;
+  int indent;
+} test_file;
+
+static test_file test_files[] = {
+  {
+    "test/core/json/rewrite_test_input.json",
+    "test/core/json/rewrite_test_output_condensed.json",
+    0
+  },
+  {
+    "test/core/json/rewrite_test_input.json",
+    "test/core/json/rewrite_test_output_indented.json",
+    2
+  },
+  {
+    "test/core/json/rewrite_test_output_indented.json",
+    "test/core/json/rewrite_test_output_condensed.json",
+    0
+  },
+  {
+    "test/core/json/rewrite_test_output_condensed.json",
+    "test/core/json/rewrite_test_output_indented.json",
+    2
+  },
+};
+
+void test_rewrites() {
+  int i;
+
+  for (i = 0; i < GPR_ARRAY_SIZE(test_files); i++) {
+    test_file* test = test_files + i;
+    FILE* input = fopen(test->input, "rb");
+    FILE* cmp = fopen(test->cmp, "rb");
+    int status;
+    gpr_log(GPR_INFO, "Testing file %s against %s using indent=%i",
+            test->input, test->cmp, test->indent);
+    status = rewrite_and_compare(input, cmp, test->indent);
+    GPR_ASSERT(status);
+    fclose(input);
+    fclose(cmp);
+  }
+}
+
 int main(int argc, char** argv) {
-  int indent = 2;
-  gpr_cmdline* cl;
-
-  cl = gpr_cmdline_create(NULL);
-  gpr_cmdline_add_int(cl, "indent", NULL, &indent);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
-
-  return rewrite(stdin, stdout, indent) ? 0 : 1;
+  grpc_test_init(argc, argv);
+  test_rewrites();
+  gpr_log(GPR_INFO, "json_rewrite_test success");
+  return 0;
 }
