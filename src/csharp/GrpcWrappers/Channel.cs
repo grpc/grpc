@@ -35,17 +35,7 @@ namespace Google.GRPC.Wrappers
 
         internal Call CreateCall(String methodName, TimeSpan timeout)
         {
-            return new Call(this, methodName, target, CreateDeadline(timeout));
-        }
-
-        private Timespec CreateDeadline(TimeSpan timeout) {
-            if (timeout == Timeout.InfiniteTimeSpan)
-            {
-                return Timespec.InfFuture;
-            }
-
-            // TODO: convert TimeSpan to timespec.
-            return Timespec.InfFuture;
+            return new Call(this, methodName, target, Timespec.DeadlineFromTimeout(timeout));
         }
 	}
 
