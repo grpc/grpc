@@ -69,7 +69,7 @@ class LonelyRearLinkTest(unittest.TestCase):
 
     front_to_back_ticket = packets.FrontToBackPacket(
         test_operation_id, 0, front_to_back_ticket_kind, test_method,
-        interfaces.FULL, None, None, _TIMEOUT)
+        interfaces.ServicedSubscription.Kind.FULL, None, None, _TIMEOUT)
     rear_link.accept_front_to_back_ticket(front_to_back_ticket)
 
     with fore_link.condition:
