@@ -92,9 +92,8 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
   /* Add :path and :authority headers. */
   /* TODO(klempner): Consider optimizing this by stashing mdelems for common
      values of method and host. */
-  grpc_mdstr_ref(channel->path_string);
   path_mdelem = grpc_mdelem_from_metadata_strings(
-      channel->metadata_context, channel->path_string,
+      channel->metadata_context, grpc_mdstr_ref(channel->path_string),
       grpc_mdstr_from_string(channel->metadata_context, method));
   op.type = GRPC_SEND_METADATA;
   op.dir = GRPC_CALL_DOWN;
