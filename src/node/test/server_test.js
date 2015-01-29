@@ -75,6 +75,9 @@ describe('echo server', function() {
 
     channel = new grpc.Channel('localhost:' + port_num);
   });
+  after(function() {
+    server.shutdown();
+  });
   it('should echo inputs as responses', function(done) {
     done = multiDone(done, 4);
 
@@ -95,7 +98,6 @@ describe('echo server', function() {
       var status = event.data;
       assert.strictEqual(status.code, grpc.status.OK);
       assert.strictEqual(status.details, status_text);
-      server.shutdown();
       done();
     }, 0);
     call.startWrite(
