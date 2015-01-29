@@ -216,10 +216,10 @@ static char *dot_concat_and_free_strings(char *str1, char *str2) {
   size_t result_len = str1_len + 1 /* dot */ + str2_len;
   char *result = gpr_malloc(result_len + 1 /* NULL terminated */);
   char *current = result;
-  strncpy(current, str1, str1_len);
+  memcpy(current, str1, str1_len);
   current += str1_len;
   *(current++) = '.';
-  strncpy(current, str2, str2_len);
+  memcpy(current, str2, str2_len);
   current += str2_len;
   GPR_ASSERT((current - result) == result_len);
   *current = '\0';
