@@ -44,7 +44,8 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#include "third_party/cJSON/cJSON.h"
+
+#include "src/core/json/json.h"
 
 /* --- Constants. --- */
 
@@ -64,18 +65,20 @@ static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override = NULL;
 
 /* --- grpc_auth_json_key. --- */
 
-static const char *json_get_string_property(cJSON *json,
+static const char *json_get_string_property(grpc_json *json,
                                             const char *prop_name) {
-  cJSON *child = NULL;
-  child = cJSON_GetObjectItem(json, prop_name);
-  if (child == NULL || child->type != cJSON_String) {
+  grpc_json *child;
+  for (child = json->child; child != NULL; child = child->next) {
+    if (strcmp(child->key, prop_name) == 0) break;
+  }
+  if (child == NULL || child->type != GRPC_JSON_STRING) {
     gpr_log(GPR_ERROR, "Invalid or missing %s property.", prop_name);
     return NULL;
   }
-  return child->valuestring;
+  return child->value;
 }
 
-static int set_json_key_string_property(cJSON *json, const char *prop_name,
+static int set_json_key_string_property(grpc_json *json, const char *prop_name,
                                         char **json_key_field) {
   const char *prop_value = json_get_string_property(json, prop_name);
   if (prop_value == NULL) return 0;
@@ -91,7 +94,8 @@ int grpc_auth_json_key_is_valid(const grpc_auth_json_key *json_key) {
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char *json_string) {
   grpc_auth_json_key result;
-  cJSON *json = cJSON_Parse(json_string);
+  char *scratchpad = gpr_strdup(json_string);
+  grpc_json *json = grpc_json_parse_string(scratchpad);
   BIO *bio = NULL;
   const char *prop_value;
   int success = 0;
@@ -100,7 +104,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
   result.type = GRPC_AUTH_JSON_KEY_TYPE_INVALID;
   if (json == NULL) {
     gpr_log(GPR_ERROR, "Invalid json string %s", json_string);
-    return result;
+    goto end;
   }
 
   prop_value = json_get_string_property(json, "type");
@@ -136,8 +140,9 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
 
 end:
   if (bio != NULL) BIO_free(bio);
-  if (json != NULL) cJSON_Delete(json);
+  if (json != NULL) grpc_json_destroy(json);
   if (!success) grpc_auth_json_key_destruct(&result);
+  gpr_free(scratchpad);
   return result;
 }
 
@@ -164,49 +169,63 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key) {
 
 /* --- jwt encoding and signature. --- */
 
+static grpc_json *create_child(grpc_json *brother, grpc_json *parent,
+                         const char *key, const char *value,
+                         grpc_json_type type) {
+  grpc_json *child = grpc_json_create(type);
+  if (brother) brother->next = child;
+  if (!parent->child) parent->child = child;
+  child->parent = parent;
+  child->value = value;
+  child->key = key;
+  return child;
+}
+
 static char *encoded_jwt_header(const char *algorithm) {
-  cJSON *json = cJSON_CreateObject();
-  cJSON *child = cJSON_CreateString(algorithm);
+  grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
-  cJSON_AddItemToObject(json, "alg", child);
-  child = cJSON_CreateString(GRPC_JWT_TYPE);
-  cJSON_AddItemToObject(json, "typ", child);
-  json_str = cJSON_PrintUnformatted(json);
+
+  child = create_child(NULL, json, "alg", algorithm, GRPC_JSON_STRING);
+  create_child(child, json, "typ", GRPC_JWT_TYPE, GRPC_JSON_STRING);
+
+  json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
-  free(json_str);
-  cJSON_Delete(json);
+  gpr_free(json_str);
+  grpc_json_destroy(json);
   return result;
 }
 
 static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
                                const char *scope, gpr_timespec token_lifetime) {
-  cJSON *json = cJSON_CreateObject();
-  cJSON *child = NULL;
+  grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
   gpr_timespec now = gpr_now();
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
+  /* log10(2^64) ~= 20 */
+  char now_str[24];
+  char expiration_str[24];
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime) > 0) {
     gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime);
   }
-  child = cJSON_CreateString(json_key->client_email);
-  cJSON_AddItemToObject(json, "iss", child);
-  child = cJSON_CreateString(scope);
-  cJSON_AddItemToObject(json, "scope", child);
-  child = cJSON_CreateString(GRPC_JWT_AUDIENCE);
-  cJSON_AddItemToObject(json, "aud", child);
-  child = cJSON_CreateNumber(now.tv_sec);
-  cJSON_SetIntValue(child, now.tv_sec);
-  cJSON_AddItemToObject(json, "iat", child);
-  child = cJSON_CreateNumber(expiration.tv_sec);
-  cJSON_SetIntValue(child, expiration.tv_sec);
-  cJSON_AddItemToObject(json, "exp", child);
-  json_str = cJSON_PrintUnformatted(json);
+  sprintf(now_str, "%ld", now.tv_sec);
+  sprintf(expiration_str, "%ld", expiration.tv_sec);
+
+  child = create_child(NULL, json, "iss", json_key->client_email,
+                       GRPC_JSON_STRING);
+  child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
+  child = create_child(child, json, "aud", GRPC_JWT_AUDIENCE, GRPC_JSON_STRING);
+  child = create_child(child, json, "iat", now_str, GRPC_JSON_NUMBER);
+  create_child(child, json, "exp", expiration_str, GRPC_JSON_NUMBER);
+
+  json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
-  free(json_str);
-  cJSON_Delete(json);
+  gpr_free(json_str);
+  grpc_json_destroy(json);
   return result;
 }
 
