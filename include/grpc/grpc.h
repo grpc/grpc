@@ -247,9 +247,7 @@ typedef struct {
 
 typedef struct {
   grpc_status_code status;
-  size_t details_length;
-  size_t details_capacity;
-  char *details;
+  const char *details;
 } grpc_recv_status;
 
 typedef struct {

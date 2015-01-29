@@ -179,7 +179,7 @@ void grpc_call_internal_unref(grpc_call *c) {
       gpr_free(c->legacy_state->md_out);
       gpr_free(c->legacy_state->md_in.metadata);
       gpr_free(c->legacy_state->trail_md_in.metadata);
-      gpr_free(c->legacy_state->status_in.details);
+      /*gpr_free(c->legacy_state->status_in.details);*/
       gpr_free(c->legacy_state);
     }
     gpr_free(c);
@@ -256,6 +256,10 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op,
               : REQ_DONE;
       if (master->complete_mask == master->need_mask ||
           status == GRPC_OP_ERROR) {
+        if (OP_IN_MASK(GRPC_IOREQ_RECV_STATUS, master->need_mask)) {
+          call->requests[GRPC_IOREQ_RECV_STATUS].data.recv_status->status = call->status_code;
+          call->requests[GRPC_IOREQ_RECV_STATUS].data.recv_status->details = call->status_details? grpc_mdstr_as_c_string(call->status_details) : NULL;
+        }
         for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
           if (call->requests[i].master == master) {
             call->requests[i].master = NULL;
@@ -399,6 +403,7 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       if (!call->is_client) {
         /* TODO(ctiller): cache common status values */
         char status_str[GPR_LTOA_MIN_BUFSIZE];
+        data = call->requests[GRPC_IOREQ_SEND_CLOSE].data;
         gpr_ltoa(data.send_close.status, status_str);
         grpc_call_element_send_metadata(
             CALL_ELEM_FROM_CALL(call, 0),
@@ -543,13 +548,13 @@ grpc_call_error grpc_call_start_ioreq_and_call_back(
 
 void grpc_call_destroy(grpc_call *c) {
   int cancel;
-  gpr_mu_lock(&c->mu);
+  lock(c);
   if (c->have_alarm) {
     grpc_alarm_cancel(&c->alarm);
     c->have_alarm = 0;
   }
   cancel = !c->stream_closed;
-  gpr_mu_unlock(&c->mu);
+  unlock(c);
   if (cancel) grpc_call_cancel(c);
   grpc_call_internal_unref(c);
 }
@@ -590,12 +595,12 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   grpc_mdstr *details =
       description ? grpc_mdstr_from_string(c->metadata_context, description)
                   : NULL;
-  gpr_mu_lock(&c->mu);
+  lock(c);
   maybe_set_status_code(c, status);
   if (details) {
     maybe_set_status_details(c, details);
   }
-  gpr_mu_unlock(&c->mu);
+  unlock(c);
   return grpc_call_cancel(c);
 }
 
@@ -709,6 +714,8 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   lock(call);
   err = bind_cq(call, cq);
   if (err != GRPC_CALL_OK) return err;
+
+  get_legacy_state(call)->finished_tag = finished_tag;
 
   req.op = GRPC_IOREQ_SEND_INITIAL_METADATA;
   req.data.send_metadata.count = ls->md_out_count;
