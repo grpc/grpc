@@ -122,7 +122,7 @@ struct grpc_call {
   legacy_state *legacy_state;
 };
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
+#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call)+1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -257,8 +257,12 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op,
       if (master->complete_mask == master->need_mask ||
           status == GRPC_OP_ERROR) {
         if (OP_IN_MASK(GRPC_IOREQ_RECV_STATUS, master->need_mask)) {
-          call->requests[GRPC_IOREQ_RECV_STATUS].data.recv_status->status = call->status_code;
-          call->requests[GRPC_IOREQ_RECV_STATUS].data.recv_status->details = call->status_details? grpc_mdstr_as_c_string(call->status_details) : NULL;
+          call->requests[GRPC_IOREQ_RECV_STATUS].data.recv_status->status =
+              call->status_code;
+          call->requests[GRPC_IOREQ_RECV_STATUS].data.recv_status->details =
+              call->status_details
+                  ? grpc_mdstr_as_c_string(call->status_details)
+                  : NULL;
         }
         for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
           if (call->requests[i].master == master) {
@@ -936,7 +940,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
