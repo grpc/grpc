@@ -209,6 +209,7 @@ void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
   metadata_op.dir = GRPC_CALL_UP;
   metadata_op.done_cb = do_nothing;
   metadata_op.user_data = NULL;
+  metadata_op.flags = 0;
   metadata_op.data.metadata = mdelem;
   grpc_call_next_op(cur_elem, &metadata_op);
 }
