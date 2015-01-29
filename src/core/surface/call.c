@@ -212,7 +212,7 @@ static void request_more_data(grpc_call *call) {
 static void lock(grpc_call *call) { gpr_mu_lock(&call->mu); }
 
 static void unlock(grpc_call *call) {
-  send_action sa;
+  send_action sa = SEND_NOTHING;
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   int num_completed_requests = call->num_completed_requests;
   int i;
