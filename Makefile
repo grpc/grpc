@@ -1006,28 +1006,36 @@ strip-shared: strip-shared_c strip-shared_cxx
 # This prevents proper debugging after running make install.
 
 strip-static_c: static_c
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgpr.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgpr.a
 	$(E) "[STRIP]   Stripping libgrpc.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_unsecure.a
+endif
 
 strip-static_cxx: static_cxx
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc++.a
+endif
 
 strip-shared_c: shared_c
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgpr.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgpr.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+endif
 
 strip-shared_cxx: shared_cxx
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc++.$(SHARED_EXT)
+endif
 
 gens/examples/tips/empty.pb.cc: examples/tips/empty.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
