@@ -1019,7 +1019,7 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_mdelem *md) {
     maybe_set_status_code(call, decode_status(md));
     grpc_mdelem_unref(md);
   } else if (key == grpc_channel_get_message_string(call->channel)) {
-    maybe_set_status_details(call, md->value);
+    maybe_set_status_details(call, grpc_mdstr_ref(md->value));
     grpc_mdelem_unref(md);
   } else {
     if (!call->got_initial_metadata) {
