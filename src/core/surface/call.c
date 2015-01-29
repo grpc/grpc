@@ -236,7 +236,6 @@ static void unlock(grpc_call *call) {
 
   if (!call->sending) {
     sa = choose_send_action(call);
-    gpr_log(GPR_DEBUG, "sa=%d", sa);
     if (sa != SEND_NOTHING) {
       call->sending = 1;
       grpc_call_internal_ref(call);
@@ -264,7 +263,6 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   reqinfo *master = call->requests[op].master;
   completed_request *cr;
   size_t i;
-  gpr_log(GPR_DEBUG, "finish op %d refs=%d", (int)op, (int)call->internal_refcount.count);
   switch (call->requests[op].state) {
     case REQ_INITIAL: /* not started yet */
       return;
