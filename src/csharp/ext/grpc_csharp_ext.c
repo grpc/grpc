@@ -18,7 +18,6 @@ void grpc_call_start_write_from_copied_buffer(grpc_call *call,
   GPR_ASSERT(grpc_call_start_write(call, byte_buffer, tag, flags) ==
              GRPC_CALL_OK);
   grpc_byte_buffer_destroy(byte_buffer);
-
 }
 
 grpc_completion_type grpc_event_get_type(const grpc_event *event) {
@@ -62,7 +61,8 @@ gpr_intptr grpc_event_read_length(const grpc_event *event) {
  * Copies data from read event to a buffer. Fatal error occurs if
  * buffer is too small.
  */
-void grpc_event_read_copy_to_buffer(const grpc_event *event, char *buffer, size_t buffer_len) {
+void grpc_event_read_copy_to_buffer(const grpc_event *event, char *buffer,
+                                    size_t buffer_len) {
   grpc_byte_buffer_reader *reader;
   gpr_slice slice;
   size_t offset = 0;
@@ -74,13 +74,13 @@ void grpc_event_read_copy_to_buffer(const grpc_event *event, char *buffer, size_
   while (grpc_byte_buffer_reader_next(reader, &slice)) {
     size_t len = GPR_SLICE_LENGTH(slice);
     GPR_ASSERT(offset + len <= buffer_len);
-    memcpy(buffer + offset, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice));
+    memcpy(buffer + offset, GPR_SLICE_START_PTR(slice),
+           GPR_SLICE_LENGTH(slice));
     offset += len;
     gpr_slice_unref(slice);
   }
   grpc_byte_buffer_reader_destroy(reader);
 }
-
 
 void grpc_completion_queue_shutdown_drain_destroy(grpc_completion_queue *cq) {
   grpc_event *ev;
