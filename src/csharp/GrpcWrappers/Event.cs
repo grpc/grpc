@@ -57,6 +57,7 @@ namespace Google.GRPC.Wrappers
 
         public Status GetFinished()
         {
+            // TODO: can the native method return string directly?
             String details = Marshal.PtrToStringAnsi(grpc_event_finished_details(this));
             return new Status(grpc_event_finished_status(this), details);
         }
