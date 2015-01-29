@@ -316,12 +316,7 @@ static void finish_write_step(void *pc, grpc_op_error error) {
 static void finish_finish_step(void *pc, grpc_op_error error) {
   grpc_call *call = pc;
   lock(call);
-  if (error == GRPC_OP_OK) {
-    finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, GRPC_OP_OK);
-  } else {
-    gpr_log(GPR_ERROR, "not implemented");
-    abort();
-  }
+  finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, error);
   call->sending = 0;
   unlock(call);
   grpc_call_internal_unref(call);
@@ -330,12 +325,7 @@ static void finish_finish_step(void *pc, grpc_op_error error) {
 static void finish_start_step(void *pc, grpc_op_error error) {
   grpc_call *call = pc;
   lock(call);
-  if (error == GRPC_OP_OK) {
-    finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, GRPC_OP_OK);
-  } else {
-    gpr_log(GPR_ERROR, "not implemented");
-    abort();
-  }
+  finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, error);
   call->sending = 0;
   unlock(call);
   grpc_call_internal_unref(call);
