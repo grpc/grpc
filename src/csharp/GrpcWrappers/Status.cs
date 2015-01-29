@@ -7,7 +7,7 @@ namespace Google.GRPC.Wrappers
 	/// <summary>
 	/// Represents RPC result.
 	/// </summary>
-	public class Status
+	public struct Status
 	{
 		readonly StatusCode statusCode;
 		readonly string detail;
