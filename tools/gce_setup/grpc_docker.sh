@@ -974,7 +974,4 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_cxx_cmd() {
     echo $the_cmd
 }
 
-# TODO(grpc-team): add grpc_interop_gen_xxx_cmd for python|cxx|nodejs
-=======
-# TODO(grpc-team): add grpc_interop_gen_python_cmd
->>>>>>> 415bca7939809aa5156c7163defc89712b800cb7
+# TODO(grpc-team): add grpc_interop_gen_xxx_cmd for python|nodejs
