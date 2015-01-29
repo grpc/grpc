@@ -202,10 +202,13 @@ GrpcServerStream.prototype._write = function(chunk, encoding, callback) {
  * Constructs a server object that stores request handlers and delegates
  * incoming requests to those handlers
  * @constructor
- * @param {Array} options Options that should be passed to the internal server
+ * @param {function(string, Object<string, Array<Buffer>>):
+           Object<string, Array<Buffer|string>>=} getMetadata Callback that gets
+ *     metatada for a given method
+ * @param {Object=} options Options that should be passed to the internal server
  *     implementation
  */
-function Server(options) {
+function Server(getMetadata, options) {
   this.handlers = {};
   var handlers = this.handlers;
   var server = new grpc.Server(options);
@@ -249,6 +252,9 @@ function Server(options) {
           stream.emit('cancelled');
         }
       }, 0);
+      if (getMetadata) {
+        call.addMetadata(getMetadata(data.method, data.metadata));
+      }
       call.serverEndInitialMetadata(0);
       var stream = new GrpcServerStream(call, handler.serialize,
                                         handler.deserialize);
