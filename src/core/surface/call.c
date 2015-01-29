@@ -169,12 +169,12 @@ legacy_state *get_legacy_state(grpc_call *call) {
 }
 
 void grpc_call_internal_ref(grpc_call *c, const char *reason) { 
-  gpr_log(GPR_DEBUG, "ref %p %s", c, reason);
+  gpr_log(GPR_DEBUG, "ref %p %s %d", c, reason, (int)c->internal_refcount.count);
   gpr_ref(&c->internal_refcount); 
 }
 
 void grpc_call_internal_unref(grpc_call *c, const char *reason) {
-  gpr_log(GPR_DEBUG, "unref %p %s", c, reason);
+  gpr_log(GPR_DEBUG, "unref %p %s %d", c, reason, (int)c->internal_refcount.count);
   if (gpr_unref(&c->internal_refcount)) {
     grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
     grpc_channel_internal_unref(c->channel);
@@ -417,14 +417,14 @@ static void enact_send_action(grpc_call *call, send_action sa) {
             CALL_ELEM_FROM_CALL(call, 0),
             grpc_mdelem_from_metadata_strings(
                 call->metadata_context,
-                grpc_channel_get_status_string(call->channel),
+                grpc_mdstr_ref(grpc_channel_get_status_string(call->channel)),
                 grpc_mdstr_from_string(call->metadata_context, status_str)));
         if (data.send_close.details) {
           grpc_call_element_send_metadata(
               CALL_ELEM_FROM_CALL(call, 0),
               grpc_mdelem_from_metadata_strings(
                   call->metadata_context,
-                  grpc_channel_get_message_string(call->channel),
+                  grpc_mdstr_ref(grpc_channel_get_message_string(call->channel)),
                   grpc_mdstr_from_string(call->metadata_context,
                                          data.send_close.details)));
         }
@@ -743,6 +743,7 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
      finished_tag) */
   grpc_cq_begin_op(cq, call, GRPC_FINISHED);
 
+  lock(call);
   err = bind_cq(call, cq);
   if (err != GRPC_CALL_OK) return err;
 
