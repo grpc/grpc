@@ -43,7 +43,6 @@
     <Compile Include="StatusCode.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Timespec.cs" />
-    <Compile Include="Slice.cs" />
     <Compile Include="SafeHandleZeroIsInvalid.cs" />
     <Compile Include="WrappedNativeObject.cs" />
     <Compile Include="GrpcEnvironment.cs" />
