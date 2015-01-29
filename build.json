@@ -61,6 +61,12 @@
         "src/core/iomgr/tcp_posix.h",
         "src/core/iomgr/tcp_server.h",
         "src/core/iomgr/time_averaged_stats.h",
+        "src/core/iomgr/wakeup_fd_posix.h",
+        "src/core/iomgr/wakeup_fd_pipe.h",
+        "src/core/json/json.h",
+        "src/core/json/json_common.h",
+        "src/core/json/json_reader.h",
+        "src/core/json/json_writer.h",
         "src/core/statistics/census_interface.h",
         "src/core/statistics/census_log.h",
         "src/core/statistics/census_rpc_stats.h",
@@ -125,7 +131,7 @@
         "src/core/iomgr/fd_posix.c",
         "src/core/iomgr/iomgr.c",
         "src/core/iomgr/iomgr_posix.c",
-        "src/core/iomgr/pollset_kick_posix.c",
+        "src/core/iomgr/pollset_kick.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
@@ -138,6 +144,14 @@
         "src/core/iomgr/tcp_posix.c",
         "src/core/iomgr/tcp_server_posix.c",
         "src/core/iomgr/time_averaged_stats.c",
+        "src/core/iomgr/wakeup_fd_eventfd.c",
+        "src/core/iomgr/wakeup_fd_nospecial.c",
+        "src/core/iomgr/wakeup_fd_pipe.c",
+        "src/core/iomgr/wakeup_fd_posix.c",
+        "src/core/json/json.c",
+        "src/core/json/json_reader.c",
+        "src/core/json/json_string.c",
+        "src/core/json/json_writer.c",
         "src/core/statistics/census_init.c",
         "src/core/statistics/census_log.c",
         "src/core/statistics/census_rpc_stats.c",
@@ -178,8 +192,7 @@
         "src/core/transport/chttp2_transport.c",
         "src/core/transport/metadata.c",
         "src/core/transport/stream_op.c",
-        "src/core/transport/transport.c",
-        "third_party/cJSON/cJSON.c"
+        "src/core/transport/transport.c"
       ]
     }
   ],
@@ -1262,11 +1275,11 @@
       ]
     },
     {
-      "name": "poll_kick_test",
+      "name": "poll_kick_posix_test",
       "build": "test",
       "language": "c",
       "src": [
-        "test/core/iomgr/poll_kick_test.c"
+        "test/core/iomgr/poll_kick_posix_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1414,6 +1427,48 @@
         "gpr_test_util",
         "gpr"
       ]
+    },
+    {
+      "name": "json_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "json_rewrite",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite.c"
+      ],
+      "deps": [
+        "grpc",
+        "gpr"
+      ],
+      "run": false
+    },
+    {
+      "name": "json_rewrite_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "run": false
     },
     {
       "name": "channel_arguments_test",

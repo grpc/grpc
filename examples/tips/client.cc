@@ -36,7 +36,11 @@
 #include "examples/tips/client.h"
 
 using tech::pubsub::Topic;
+using tech::pubsub::DeleteTopicRequest;
+using tech::pubsub::GetTopicRequest;
 using tech::pubsub::PublisherService;
+using tech::pubsub::ListTopicsRequest;
+using tech::pubsub::ListTopicsResponse;
 
 namespace grpc {
 namespace examples {
@@ -53,6 +57,34 @@ Status Client::CreateTopic(grpc::string topic) {
   ClientContext context;
 
   return stub_->CreateTopic(&context, request, &response);
+}
+
+Status Client::ListTopics() {
+  ListTopicsRequest request;
+  ListTopicsResponse response;
+  ClientContext context;
+
+  return stub_->ListTopics(&context, request, &response);
+}
+
+Status Client::GetTopic(grpc::string topic) {
+  GetTopicRequest request;
+  Topic response;
+  ClientContext context;
+
+  request.set_topic(topic);
+
+  return stub_->GetTopic(&context, request, &response);
+}
+
+Status Client::DeleteTopic(grpc::string topic) {
+  DeleteTopicRequest request;
+  proto2::Empty response;
+  ClientContext context;
+
+  request.set_topic(topic);
+
+  return stub_->DeleteTopic(&context, request, &response);
 }
 
 }  // namespace tips

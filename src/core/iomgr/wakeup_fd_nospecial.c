@@ -31,15 +31,23 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
+/*
+ * This is a dummy file to provide an invalid specialized_wakeup_fd_vtable on
+ * systems without anything better than pipe.
+ */
 
-#include <grpc/support/sync.h>
+#include <grpc/support/port_platform.h>
 
-struct grpc_kick_fd_info;
+#ifndef GPR_POSIX_HAS_SPECIAL_WAKEUP_FD
 
-typedef struct grpc_pollset_kick_state {
-  int unused;
-} grpc_pollset_kick_state;
+#include "src/core/iomgr/wakeup_fd.h"
 
-#endif  /* __GRPC_INTERNALIOMGR_POLLSET_KICK_WINDOWS_H_ */
+static int check_availability_invalid(void) {
+  return 0;
+}
+
+const grpc_wakeup_fd_vtable specialized_wakeup_fd_vtable = {
+  NULL, NULL, NULL, NULL, check_availability_invalid
+};
+
+#endif /* GPR_POSIX_HAS_SPECIAL_WAKEUP */

@@ -367,7 +367,7 @@ grpc_docker_launch_registry() {
 grpc_docker_pull_known() {
   local addr=$1
   [[ -n $addr ]] || addr="0.0.0.0:5000"
-  local known="base cxx php_base php ruby_base ruby java_base java go"
+  local known="base cxx php_base php ruby_base ruby java_base java go node_base node"
   echo "... pulling docker images for '$known'"
   for i in $known
   do

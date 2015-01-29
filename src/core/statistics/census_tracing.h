@@ -34,6 +34,10 @@
 #ifndef __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
 #define __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Opaque structure for trace object */
 typedef struct trace_obj trace_obj;
 
@@ -55,5 +59,9 @@ void census_internal_unlock_trace_store(void);
 
 /* Gets method tag name associated with the input trace object. */
 const char* census_get_trace_method_name(const trace_obj* trace);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_ */

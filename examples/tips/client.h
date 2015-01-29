@@ -47,6 +47,9 @@ class Client {
  public:
   Client(std::shared_ptr<grpc::ChannelInterface> channel);
   Status CreateTopic(grpc::string topic);
+  Status GetTopic(grpc::string topic);
+  Status DeleteTopic(grpc::string topic);
+  Status ListTopics();
 
  private:
   std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;

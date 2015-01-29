@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015, Google Inc.
+ * Copyright 2014, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,34 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
+#include <string.h>
 
-#include <grpc/support/sync.h>
+#include <grpc/support/alloc.h>
 
-struct grpc_kick_fd_info;
+#include "src/core/json/json.h"
 
-typedef struct grpc_pollset_kick_state {
-  int unused;
-} grpc_pollset_kick_state;
+grpc_json *grpc_json_create(grpc_json_type type) {
+  grpc_json *json = gpr_malloc(sizeof(grpc_json));
+  memset(json, 0, sizeof(grpc_json));
+  json->type = type;
 
-#endif  /* __GRPC_INTERNALIOMGR_POLLSET_KICK_WINDOWS_H_ */
+  return json;
+}
+
+void grpc_json_destroy(grpc_json *json) {
+  while (json->child) {
+    grpc_json_destroy(json->child);
+  }
+
+  if (json->next) {
+    json->next->prev = json->prev;
+  }
+
+  if (json->prev) {
+    json->prev->next = json->next;
+  } else if (json->parent) {
+    json->parent->child = json->next;
+  }
+
+  gpr_free(json);
+}

@@ -31,15 +31,11 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_WINDOWS_H_
+#ifndef __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_
+#define __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_
 
-#include <grpc/support/sync.h>
+#include "src/core/iomgr/wakeup_fd_posix.h"
 
-struct grpc_kick_fd_info;
+extern grpc_wakeup_fd_vtable pipe_wakeup_fd_vtable;
 
-typedef struct grpc_pollset_kick_state {
-  int unused;
-} grpc_pollset_kick_state;
-
-#endif  /* __GRPC_INTERNALIOMGR_POLLSET_KICK_WINDOWS_H_ */
+#endif  /* __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_ */
