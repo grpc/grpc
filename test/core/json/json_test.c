@@ -47,32 +47,67 @@ typedef struct testing_pair {
 } testing_pair;
 
 static testing_pair testing_pairs[] = {
+  /* Testing valid parsing. */
+
+  /* Testing trivial parses, with de-indentation. */
+  { " 0 ", "0" },
   { " \"a\" ", "\"a\"" },
+  { " true ", "true" },
+  /* Testing the parser's ability to decode trivial UTF-16. */
   { "\"\\u0020\\\\\\u0010\\u000a\\u000D\"", "\" \\\\\\u0010\\n\\r\"" },
-  { "\"𝄞\"", "\"\\ud834\\udd1e\"" },
-  { "\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\"" },
+  /* Testing UTF-8 character "𝄞", U+11D1E. */
   { "\"\xf0\x9d\x84\x9e\"", "\"\\ud834\\udd1e\"" },
+  { "\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\"" },
+  /* Testing nested empty containers. */
   { " [ [ ] , { } , [ ] ] ", "[[],{},[]]", },
-  { " { \"\\na , b\": [] } ", "{\"\\na , b\":[]}" },
+  /* Testing escapes and control chars in key strings. */
+  { " { \"\\n\\\\a , b\": [] } ", "{\"\\n\\\\a , b\":[]}" },
+  /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
   { "\"abc\xf0\x9d\x24\"", "\"abc\"" },
+  { "\"\xff\"", "\"\"" },
+  /* Testing valid number parsing. */
   { "[0, 42 , 0.0123, 123.456]", "[0,42,0.0123,123.456]"},
   { "[1e4,-53.235e-31, 0.3e+3]", "[1e4,-53.235e-31,0.3e+3]" },
+  /* Testing keywords parsing. */
   { "[true, false, null]", "[true,false,null]" },
+
+
+  /* Testing invalid parsing. */
+
+  /* Testing plain invalid things, exercising the state machine. */
   { "\\", NULL },
+  { "nu ll", NULL },
+  { "fals", NULL },
+  /* Testing unterminated string. */
   { "\"\\x", NULL },
+  /* Testing invalid UTF-16 number. */
   { "\"\\u123x", NULL },
+  /* Testing imbalanced surrogate pairs. */
   { "\"\\ud834f", NULL },
+  { "\"\\ud834\\n", NULL },
   { "\"\\udd1ef", NULL },
   { "\"\\ud834\\ud834\"", NULL },
   { "\"\\ud834\\u1234\"", NULL },
+  /* Testing embedded invalid whitechars. */
   { "\"\n\"", NULL },
+  { "\"\t\"", NULL },
+  /* Testing empty json data. */
   { "", NULL },
+  /* Testing extra characters after end of parsing. */
   { "{},", NULL },
+  /* Testing imbalanced containers. */
   { "{}}", NULL },
   { "[]]", NULL },
+  { "{{}", NULL },
+  { "[[]", NULL },
+  { "[}", NULL },
+  { "{]", NULL },
+  /*Testing trailing comma. */
   { "{,}", NULL },
   { "[1,2,3,4,]", NULL },
+  /* Testing having a key syntax in an array. */
   { "[\"x\":0]", NULL },
+  /* Testing invalid numbers. */
   { "1.", NULL },
   { "1e", NULL },
   { ".12", NULL },
@@ -116,9 +151,23 @@ static void test_pairs() {
   }
 }
 
+static void test_atypical() {
+  char* scratchpad = gpr_strdup("[[],[]]");
+  grpc_json* json = grpc_json_parse_string(scratchpad);
+  grpc_json* brother;
+
+  GPR_ASSERT(json);
+  GPR_ASSERT(json->child);
+  brother = json->child->next;
+  grpc_json_destroy(json->child);
+  json->child = brother;
+  grpc_json_destroy(json);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_pairs();
+  test_atypical();
   gpr_log(GPR_INFO, "json_test success");
   return 0;
 }
