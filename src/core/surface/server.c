@@ -121,7 +121,7 @@ typedef enum {
   ZOMBIED
 } call_state;
 
-typedef struct legacy_data { grpc_metadata_array client_metadata; } legacy_data;
+typedef struct legacy_data { grpc_metadata_array *initial_metadata; } legacy_data;
 
 struct call_data {
   grpc_call *call;
@@ -397,6 +397,7 @@ static void init_call_elem(grpc_call_element *elem,
 
 static void destroy_call_elem(grpc_call_element *elem) {
   channel_data *chand = elem->channel_data;
+  call_data *calld = elem->call_data;
   int i;
 
   gpr_mu_lock(&chand->server->mu);
@@ -408,6 +409,10 @@ static void destroy_call_elem(grpc_call_element *elem) {
     grpc_cq_end_server_shutdown(chand->server->cq, chand->server->shutdown_tag);
   }
   gpr_mu_unlock(&chand->server->mu);
+
+  if (calld->legacy) {
+    gpr_free(calld->legacy);
+  }
 
   server_unref(chand->server);
 }
@@ -712,12 +717,11 @@ static void publish_legacy_request(grpc_call *call, grpc_op_error status,
   grpc_server *server = chand->server;
 
   if (status == GRPC_OP_OK) {
-    grpc_call_internal_ref(call);
     grpc_cq_end_new_rpc(server->cq, tag, call, do_nothing, NULL,
                         grpc_mdstr_as_c_string(calld->path),
                         grpc_mdstr_as_c_string(calld->host), calld->deadline,
-                        calld->legacy->client_metadata.count,
-                        calld->legacy->client_metadata.metadata);
+                        calld->legacy->initial_metadata->count,
+                        calld->legacy->initial_metadata->metadata);
   } else {
     abort();
   }
@@ -737,6 +741,8 @@ static void begin_legacy_request(grpc_server *server, grpc_completion_queue *cq,
   req.data.recv_metadata = initial_metadata;
   calld->legacy = gpr_malloc(sizeof(legacy_data));
   memset(calld->legacy, 0, sizeof(legacy_data));
+  calld->legacy->initial_metadata = initial_metadata;
+  grpc_call_internal_ref(calld->call);
   grpc_call_start_ioreq_and_call_back(calld->call, &req, 1,
                                       publish_legacy_request, tag);
 }
