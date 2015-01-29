@@ -37,10 +37,11 @@
  */
 
 #include <grpc/support/port_platform.h>
+#include "src/core/iomgr/wakeup_fd_posix.h"
+#include "src/core/iomgr/wakeup_fd_pipe.h"
+#include <stddef.h>
 
 #ifndef GPR_POSIX_HAS_SPECIAL_WAKEUP_FD
-
-#include "src/core/iomgr/wakeup_fd.h"
 
 static int check_availability_invalid(void) {
   return 0;
