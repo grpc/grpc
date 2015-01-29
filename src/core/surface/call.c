@@ -291,7 +291,9 @@ static void get_final_status(grpc_call *call, grpc_status_code *code,
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (call->status[i].set) {
       *code = call->status[i].code;
-      *details = grpc_mdstr_as_c_string(call->status[i].details);
+      *details = call->status[i].details
+                     ? grpc_mdstr_as_c_string(call->status[i].details)
+                     : NULL;
       return;
     }
   }
