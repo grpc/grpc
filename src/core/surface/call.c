@@ -490,7 +490,6 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                    void *user_data) {
   size_t i;
   gpr_uint32 have_ops = 0;
-  gpr_uint32 precomplete = 0;
   grpc_ioreq_op op;
   reqinfo *master = NULL;
   reqinfo *requests = call->requests;
@@ -525,7 +524,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
 
   GPR_ASSERT(master != NULL);
   master->need_mask = have_ops;
-  master->complete_mask = precomplete;
+  master->complete_mask = 0;
   master->on_complete = completion;
   master->user_data = user_data;
 
@@ -536,10 +535,12 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
       break;
     case GRPC_IOREQ_RECV_MESSAGES:
       data.recv_messages->count = 0;
-      if (call->buffered_messages.count > 0) {
+      if (call->buffered_messages.count > 0 || call->read_closed) {
         SWAP(grpc_byte_buffer_array, *data.recv_messages,
              call->buffered_messages);
         finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGES, GRPC_OP_OK);
+      } else {
+        call->need_more_data = 1;
       }
       break;
     case GRPC_IOREQ_SEND_MESSAGES:
@@ -550,11 +551,25 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
         requests[GRPC_IOREQ_SEND_MESSAGES].state = REQ_DONE;
       }
       break;
+    case GRPC_IOREQ_RECV_INITIAL_METADATA:
+      data.recv_metadata->count = 0;
+      if (call->buffered_initial_metadata.count > 0) {
+        SWAP(grpc_metadata_array, *data.recv_metadata, call->buffered_initial_metadata);
+      }
+      if (call->got_initial_metadata) {
+        finish_ioreq_op(call, GRPC_IOREQ_RECV_INITIAL_METADATA, GRPC_OP_OK);
+      }
+      break;
+    case GRPC_IOREQ_RECV_TRAILING_METADATA:
+      data.recv_metadata->count = 0;
+      if (call->buffered_trailing_metadata.count > 0) {
+        SWAP(grpc_metadata_array, *data.recv_metadata, call->buffered_trailing_metadata);
+      }
+      if (call->read_closed) {
+        finish_ioreq_op(call, GRPC_IOREQ_RECV_TRAILING_METADATA, GRPC_OP_OK);
+      }
+      break;
     }
-  }
-
-  if (OP_IN_MASK(GRPC_IOREQ_RECV_MESSAGES, have_ops & ~precomplete)) {
-    call->need_more_data = 1;
   }
 
   return GRPC_CALL_OK;
