@@ -97,8 +97,17 @@ int main(int argc, char** argv) {
           creds));
 
   grpc::examples::tips::Client client(channel);
-  grpc::Status s = client.CreateTopic("test");
-  gpr_log(GPR_INFO, "return code %d", s.code());
+
+  grpc::Status s = client.CreateTopic("/topics/stoked-keyword-656/testtopics");
+  gpr_log(GPR_INFO, "return code %d, %s", s.code(), s.details().c_str());
+  GPR_ASSERT(s.IsOk());
+
+  s = client.GetTopic("/topics/stoked-keyword-656/testtopics");
+  gpr_log(GPR_INFO, "return code %d, %s", s.code(), s.details().c_str());
+  GPR_ASSERT(s.IsOk());
+
+  s = client.DeleteTopic("/topics/stoked-keyword-656/testtopics");
+  gpr_log(GPR_INFO, "return code %d, %s", s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
   channel.reset();
