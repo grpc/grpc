@@ -416,6 +416,9 @@ grpc_dockerfile_install() {
   [[ $image_label == "grpc/ruby" ]] && {
     grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
   }
+  [[ $image_label == "grpc/cxx" ]] && {
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
 
 
   # TODO(temiola): maybe make cache/no-cache a func option?
@@ -502,4 +505,32 @@ grpc_docker_sync_roots_pem() {
     return 1
   }
   gsutil cp $src $gcs_certs_path $local_certs_path
+}
+
+# grpc_docker_sync_service_account.
+#
+# Copies the service account from GCS to the target dir
+#
+# call-seq:
+#   grpc_docker_sync_service_account <target_dir>
+grpc_docker_sync_service_account() {
+  local target_dir=$1
+  [[ -n $target_dir ]] || { echo "$FUNCNAME: missing arg: target_dir" >&2; return 1; }
+
+  # determine the admin root; the parent of the dockerfile root,
+  local gs_dockerfile_root=$(load_metadata "attributes/gs_dockerfile_root")
+  [[ -n $gs_dockerfile_root ]] || {
+    echo "$FUNCNAME: missing metadata: gs_dockerfile_root" >&2
+    return 1
+  }
+  local gcs_admin_root=$(dirname $gs_dockerfile_root)
+
+  # cp the file from gsutil to a known local area
+  local gcs_acct_path=$gcs_admin_root/service_account/stubbyCloudTestingTest-7dd63462c60c.json
+  local local_acct_path=$target_dir/stubbyCloudTestingTest-7dd63462c60c.json
+  mkdir -p $target_dir || {
+    echo "$FUNCNAME: could not create dir: $target_dir" 1>&2
+    return 1
+  }
+  gsutil cp $src $gcs_acct_path $local_acct_path
 }

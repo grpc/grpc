@@ -87,6 +87,7 @@ add_instance() {
   local the_image='container-vm-v20140925'
   local scopes='compute-rw storage-full'
   scopes+=' https://www.googleapis.com/auth/gerritcodereview'
+  scopes+=' https://www.googleapis.com/auth/xapi.zoo'
   gcloud --project $project compute instances create $instance \
     $address_flag \
     --image $the_image \
