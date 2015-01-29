@@ -80,3 +80,17 @@ void grpc_event_read_copy_to_buffer(const grpc_event *event, char *buffer, size_
   }
   grpc_byte_buffer_reader_destroy(reader);
 }
+
+
+void grpc_completion_queue_shutdown_drain_destroy(grpc_completion_queue *cq) {
+  grpc_event *ev;
+  grpc_completion_type t;
+
+  grpc_completion_queue_shutdown(cq);
+  do {
+    ev = grpc_completion_queue_next(cq, gpr_inf_future);
+    t = ev->type;
+    grpc_event_finish(ev);
+  } while (t != GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cq);
+}

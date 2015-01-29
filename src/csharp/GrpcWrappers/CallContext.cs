@@ -32,11 +32,11 @@ namespace Google.GRPC.Wrappers
 	public class CallContext : ICallContext
 	{
         // Any set of distinct values for tags will do.
-		static readonly IntPtr metadata_read_tag = new IntPtr(1);
-		static readonly IntPtr finished_tag = new IntPtr(2);
-		static readonly IntPtr write_tag = new IntPtr(3);
-		static readonly IntPtr halfclose_tag = new IntPtr(4);
-		static readonly IntPtr read_tag = new IntPtr(5);
+		static readonly IntPtr MetadataReadTag = new IntPtr(1);
+		static readonly IntPtr FinishedTag = new IntPtr(2);
+		static readonly IntPtr WriteTag = new IntPtr(3);
+		static readonly IntPtr HalfcloseTag = new IntPtr(4);
+		static readonly IntPtr ReadTag = new IntPtr(5);
 
         readonly object myLock = new object();
         int refcount = 1;
@@ -103,48 +103,53 @@ namespace Google.GRPC.Wrappers
 		{
             lock (myLock)
             {
-                AssertCallOk(call.Invoke(cq, metadata_read_tag, finished_tag, buffered));
+                call.Invoke(cq, MetadataReadTag, FinishedTag, buffered);
             }
 		}
 
 		// blocking write...
 		public bool Write(byte[] payload)
 		{
-			using (ByteBuffer byteBuffer = new ByteBuffer(payload))
-			{
-                lock (myLock)
-                {
-                    AssertCallOk(call.StartWrite(byteBuffer, write_tag, false));
-                }
-			}
-			Event writeEvent = cq.Pluck(write_tag, Timespec.InfFuture);
-			return (writeEvent.WriteAcceptedSuccess == GRPCOpError.GRPC_OP_OK);
+            lock (myLock)
+            {
+                call.StartWrite(payload, WriteTag, false);
+            }
+            using (EventSafeHandle ev = cq.Pluck(WriteTag, Timespec.InfFuture))
+            {
+                return (ev.GetWriteAccepted() == GRPCOpError.GRPC_OP_OK);
+            }
 		}
 
 		public void WritesDone()
 		{
             lock (myLock)
             {
-                AssertCallOk(call.WritesDone(halfclose_tag));
+                call.WritesDone(HalfcloseTag);
             }
-			cq.Pluck(halfclose_tag, Timespec.InfFuture);
+
+            // TODO: check that event was successful...
+            using (EventSafeHandle ev = cq.Pluck(HalfcloseTag, Timespec.InfFuture))
+            {
+            }
 		}
 
 		public void Cancel()
 		{
             // grpc_call_cancel is threadsafe
-            AssertCallOk(call.Cancel());
+            call.Cancel();
 		}
 
         public void CancelWithStatus(Status status) {
             // grpc_call_cancel_with_status is threadsafe
-            AssertCallOk(call.CancelWithStatus(status));
+            call.CancelWithStatus(status);
         }
 
 		public Status Wait()
-		{
-			Event ev = cq.Pluck(finished_tag, Timespec.InfFuture);
-			return ev.FinishedStatus;
+        { 
+            using (EventSafeHandle ev = cq.Pluck(FinishedTag, Timespec.InfFuture))
+            {
+                return ev.GetFinished();
+            }
 		}
 
 		// blocking read...
@@ -152,10 +157,12 @@ namespace Google.GRPC.Wrappers
 		{
             lock (myLock)
             {
-                AssertCallOk(call.StartRead(read_tag));
+                call.StartRead(ReadTag);
             }
-			Event readEvent = cq.Pluck(read_tag, Timespec.InfFuture);
-			return readEvent.ReadData;
+            using (EventSafeHandle ev = cq.Pluck(ReadTag, Timespec.InfFuture))
+            {
+                return ev.GetReadData();
+            }
 		}
 
         private void RemoveRef() {
@@ -190,11 +197,6 @@ namespace Google.GRPC.Wrappers
                     cq.Dispose();
                 }
             }
-        }
-
-        private static void AssertCallOk(GRPCCallError callError)
-        {
-            Trace.Assert(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
         }
 
 		private class CallContextReference : ICallContext {

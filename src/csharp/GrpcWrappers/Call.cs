@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace Google.GRPC.Wrappers
 {
@@ -35,9 +36,6 @@ namespace Google.GRPC.Wrappers
 		static extern GRPCCallError grpc_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
 
 		[DllImport("libgrpc.so")]
-		static extern GRPCCallError grpc_call_start_write(CallSafeHandle call, ByteBufferSafeHandle byteBuffer, IntPtr tag, UInt32 flags);
-
-		[DllImport("libgrpc.so")]
 		static extern GRPCCallError grpc_call_start_write_status(CallSafeHandle call, StatusCode statusCode, string statusMessage, IntPtr tag);
 
 		[DllImport("libgrpc.so")]
@@ -46,41 +44,54 @@ namespace Google.GRPC.Wrappers
 		[DllImport("libgrpc.so")]
 		static extern GRPCCallError grpc_call_start_read(CallSafeHandle call, IntPtr tag);
 
+        [DllImport("libgrpc_csharp_ext.so")]
+        static extern void grpc_call_start_write_from_copied_buffer(CallSafeHandle call,
+                                                            byte[] buffer, UIntPtr length,
+                                                            IntPtr tag, UInt32 flags);
+
+
 		public Call(Channel channel, string method, string host, Timespec deadline)
 			: base(grpc_channel_create_call(channel.Handle, method, host, deadline))
 		{
 		}
 
-		public GRPCCallError Invoke(CompletionQueue cq, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
-		{
-			UInt32 flags = buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
-			return grpc_call_invoke(handle, cq.Handle, metadataReadTag, finishedTag, flags);
+		public void Invoke(CompletionQueue cq, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
+		{	
+			AssertCallOk(grpc_call_invoke(handle, cq.Handle, metadataReadTag, finishedTag, GetFlags(buffered)));
 		}
 
-		public GRPCCallError StartWrite(ByteBuffer bb, IntPtr tag, bool buffered)
+		public void StartWrite(byte[] payload, IntPtr tag, bool buffered)
 		{
-			UInt32 flags = buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
-			return grpc_call_start_write(handle, bb.Handle, tag, flags);
+			grpc_call_start_write_from_copied_buffer(handle, payload, new UIntPtr((ulong) payload.Length), tag, GetFlags(buffered));
 		}
 
-		public GRPCCallError WritesDone(IntPtr tag)
+		public void WritesDone(IntPtr tag)
 		{
-			return grpc_call_writes_done(handle, tag);
+            AssertCallOk(grpc_call_writes_done(handle, tag));
 		}
 
-		public GRPCCallError StartRead(IntPtr tag)
+		public void StartRead(IntPtr tag)
 		{
-			return grpc_call_start_read(handle, tag);
+			AssertCallOk(grpc_call_start_read(handle, tag));
 		}
 
-		public GRPCCallError Cancel()
+		public void Cancel()
 		{
-			return grpc_call_cancel(handle);
+            AssertCallOk(grpc_call_cancel(handle));
 		}
 
-        public GRPCCallError CancelWithStatus(Status status)
+        public void CancelWithStatus(Status status)
         {
-            return grpc_call_cancel_with_status(handle, status.StatusCode, status.Detail);
+            AssertCallOk(grpc_call_cancel_with_status(handle, status.StatusCode, status.Detail));
+        }
+
+        private static void AssertCallOk(GRPCCallError callError)
+        {
+            Trace.Assert(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
+        }
+
+        private static UInt32 GetFlags(bool buffered) {
+            return buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
         }
 	}
 

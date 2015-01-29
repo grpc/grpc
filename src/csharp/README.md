@@ -17,8 +17,10 @@ EXPERIMENTAL ONLY
 CONTENTS
 --------
 
+- ext:
+  The extension library that wraps C API to be more digestible by C#.
 - GrpcWrappers:
-  wrappers for gRPC C core library.
+  Wrappers for gRPC C core library.
 - GrpcApi:
   API examples for math.proto.
 
