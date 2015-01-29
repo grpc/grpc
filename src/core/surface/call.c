@@ -232,6 +232,7 @@ static void unlock(grpc_call *call) {
 
   if (!call->sending) {
     sa = choose_send_action(call);
+    gpr_log(GPR_DEBUG, "sa=%d", sa);
     if (sa != SEND_NOTHING) {
       call->sending = 1;
       grpc_call_internal_ref(call);
@@ -411,7 +412,7 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       op.type = GRPC_SEND_MESSAGE;
       op.dir = GRPC_CALL_DOWN;
       op.flags = 0;
-      op.data.message = data.send_messages.messages[call->write_index];
+      op.data.message = data.send_messages.messages[call->write_index++];
       op.done_cb = finish_write_step;
       op.user_data = call;
       grpc_call_execute_op(call, &op);
