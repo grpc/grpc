@@ -52,8 +52,6 @@
 DEFINE_int32(server_port, 443, "Server port.");
 DEFINE_string(server_host,
               "pubsub-staging.googleapis.com", "Server host to connect to");
-DEFINE_string(default_service_account, "",
-              "Email of GCE default service account");
 DEFINE_string(service_account_key_file, "",
               "Path to service account json key file.");
 DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
