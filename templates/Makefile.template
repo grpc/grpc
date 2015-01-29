@@ -765,6 +765,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) ${ld} $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
 else
 	$(Q) ${ld} $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so.${settings.version.major}
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so
 endif
 endif
