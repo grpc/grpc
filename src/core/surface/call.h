@@ -45,8 +45,8 @@ typedef void (*grpc_ioreq_completion_func)(grpc_call *call,
 grpc_call *grpc_call_create(grpc_channel *channel,
                             const void *server_transport_data);
 
-void grpc_call_internal_ref(grpc_call *call, const char *reason);
-void grpc_call_internal_unref(grpc_call *call, const char *reason);
+void grpc_call_internal_ref(grpc_call *call);
+void grpc_call_internal_unref(grpc_call *call);
 
 /* Helpers for grpc_client, grpc_server filters to publish received data to
    the completion queue/surface layer */

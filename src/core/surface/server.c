@@ -712,7 +712,7 @@ static void publish_legacy_request(grpc_call *call, grpc_op_error status,
   grpc_server *server = chand->server;
 
   if (status == GRPC_OP_OK) {
-    grpc_call_internal_ref(call, "rpc_new");
+    grpc_call_internal_ref(call);
     grpc_cq_end_new_rpc(server->cq, tag, call, do_nothing, NULL,
                         grpc_mdstr_as_c_string(calld->path),
                         grpc_mdstr_as_c_string(calld->host), calld->deadline,
