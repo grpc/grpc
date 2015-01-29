@@ -168,9 +168,13 @@ legacy_state *get_legacy_state(grpc_call *call) {
   return call->legacy_state;
 }
 
-void grpc_call_internal_ref(grpc_call *c) { gpr_ref(&c->internal_refcount); }
+void grpc_call_internal_ref(grpc_call *c, const char *reason) { 
+  gpr_log(GPR_DEBUG, "ref %p %s", c, reason);
+  gpr_ref(&c->internal_refcount); 
+}
 
-void grpc_call_internal_unref(grpc_call *c) {
+void grpc_call_internal_unref(grpc_call *c, const char *reason) {
+  gpr_log(GPR_DEBUG, "unref %p %s", c, reason);
   if (gpr_unref(&c->internal_refcount)) {
     grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
     grpc_channel_internal_unref(c->channel);
@@ -560,7 +564,7 @@ void grpc_call_destroy(grpc_call *c) {
   cancel = !c->stream_closed;
   unlock(c);
   if (cancel) grpc_call_cancel(c);
-  grpc_call_internal_unref(c);
+  grpc_call_internal_unref(c, "destroy");
 }
 
 static void maybe_set_status_code(grpc_call *call, gpr_uint32 status) {
@@ -891,7 +895,7 @@ static void call_alarm(void *arg, int success) {
       grpc_call_cancel(call);
     }
   }
-  grpc_call_internal_unref(call);
+  grpc_call_internal_unref(call, "alarm");
 }
 
 void grpc_call_set_deadline(grpc_call_element *elem, gpr_timespec deadline) {
@@ -900,7 +904,7 @@ void grpc_call_set_deadline(grpc_call_element *elem, gpr_timespec deadline) {
   if (call->have_alarm) {
     gpr_log(GPR_ERROR, "Attempt to set deadline alarm twice");
   }
-  grpc_call_internal_ref(call);
+  grpc_call_internal_ref(call, "alarm");
   call->have_alarm = 1;
   grpc_alarm_init(&call->alarm, deadline, call_alarm, call, gpr_now());
 }

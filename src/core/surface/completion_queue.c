@@ -132,10 +132,26 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
   return ev;
 }
 
+static char *op_string(grpc_completion_type type) {
+  switch (type) {
+    case GRPC_QUEUE_SHUTDOWN: return "shutdown";
+    case GRPC_IOREQ: return "ioreq";
+    case GRPC_WRITE_ACCEPTED: return "write_accepted";
+    case GRPC_READ: return "read";
+    case GRPC_FINISH_ACCEPTED: return "finish_accepted";
+    case GRPC_CLIENT_METADATA_READ: return "client_metadata_read";
+    case GRPC_FINISHED: return "finished";
+    case GRPC_SERVER_RPC_NEW: return "rpc_new";
+    case GRPC_SERVER_SHUTDOWN: return "server_shutdown";
+    case GRPC_COMPLETION_DO_NOT_USE: return "do_not_use";
+  }
+  return "unknown";
+}
+
 void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call,
                       grpc_completion_type type) {
   gpr_ref(&cc->refs);
-  if (call) grpc_call_internal_ref(call);
+  if (call) grpc_call_internal_ref(call, op_string(type));
 #ifndef NDEBUG
   gpr_atm_no_barrier_fetch_add(&cc->pending_op_count[type], 1);
 #endif
@@ -388,7 +404,7 @@ void grpc_event_finish(grpc_event *base) {
   event *ev = (event *)base;
   ev->on_finish(ev->on_finish_user_data, GRPC_OP_OK);
   if (ev->base.call) {
-    grpc_call_internal_unref(ev->base.call);
+    grpc_call_internal_unref(ev->base.call, op_string(base->type));
   }
   gpr_free(ev);
 }
