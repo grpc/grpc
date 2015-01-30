@@ -36,7 +36,7 @@ class ValgrindConfig(object):
     self.allow_hashing = False
 
   def run_command(self, binary):
-    return ['valgrind', binary, '--tool=%s' % self.tool]
+    return ['valgrind', '--tool=%s' % self.tool, binary]
 
 
 class CLanguage(object):
@@ -125,7 +125,7 @@ _LANGUAGES = {
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
-}
+    }
 
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
