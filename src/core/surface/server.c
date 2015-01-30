@@ -671,8 +671,8 @@ static grpc_call_error queue_call_request(grpc_server *server,
   }
   calld = call_list_remove_head(server, PENDING_START);
   if (calld) {
-    calld->state = ACTIVATED;
     GPR_ASSERT(calld->state == PENDING);
+    calld->state = ACTIVATED;
     gpr_mu_unlock(&server->mu);
     cb(server, cq, initial_metadata, calld, user_data);
     return GRPC_CALL_OK;
