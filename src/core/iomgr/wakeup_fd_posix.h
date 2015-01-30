@@ -62,7 +62,7 @@
 #ifndef __GRPC_INTERNAL_IOMGR_WAKEUP_FD_POSIX_H_
 #define __GRPC_INTERNAL_IOMGR_WAKEUP_FD_POSIX_H_
 
-typedef struct grpc_wakeup_fd_info grpc_wakeup_fd_info;
+#include "src/core/iomgr/wakeup_fd.h"
 
 void grpc_wakeup_fd_global_init(void);
 void grpc_wakeup_fd_global_destroy(void);
@@ -78,22 +78,6 @@ void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info);
 /* Force using the fallback implementation. This is intended for testing
  * purposes only.*/
 void grpc_wakeup_fd_global_init_force_fallback(void);
-
-/* Private structures; don't access their fields directly outside of wakeup fd
- * code. */
-struct grpc_wakeup_fd_info {
-  int read_fd;
-  int write_fd;
-};
-
-typedef struct grpc_wakeup_fd_vtable {
-  void (*create)(grpc_wakeup_fd_info *fd_info);
-  void (*consume)(grpc_wakeup_fd_info *fd_info);
-  void (*wakeup)(grpc_wakeup_fd_info *fd_info);
-  void (*destroy)(grpc_wakeup_fd_info *fd_info);
-  /* Must be called before calling any other functions */
-  int (*check_availability)(void);
-} grpc_wakeup_fd_vtable;
 
 /* Defined in some specialized implementation's .c file, or by
  * wakeup_fd_nospecial.c if no such implementation exists. */

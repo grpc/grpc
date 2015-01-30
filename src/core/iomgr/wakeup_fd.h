@@ -31,67 +31,29 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef __GRPC_INTERNAL_IOMGR_WAKEUP_FD_H_
+#define __GRPC_INTERNAL_IOMGR_WAKEUP_FD_H_
 
-#ifdef GPR_POSIX_WAKEUP_FD
+typedef struct grpc_wakeup_fd_info grpc_wakeup_fd_info;
 
-#include "src/core/iomgr/wakeup_fd.h"
+typedef struct grpc_wakeup_fd_vtable {
+  void (*create)(grpc_wakeup_fd_info *fd_info);
+  void (*consume)(grpc_wakeup_fd_info *fd_info);
+  void (*wakeup)(grpc_wakeup_fd_info *fd_info);
+  void (*destroy)(grpc_wakeup_fd_info *fd_info);
+  /* Must be called before calling any other functions */
+  int (*check_availability)(void);
+} grpc_wakeup_fd_vtable;
 
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "src/core/iomgr/socket_utils_posix.h"
-#include <grpc/support/log.h>
-
-static void pipe_create(grpc_wakeup_fd_info *fd_info) {
-  int pipefd[2];
-  /* TODO(klempner): Make this nonfatal */
-  GPR_ASSERT(0 == pipe(pipefd));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[0], 1));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[1], 1));
-  fd_info->read_fd = pipefd[0];
-  fd_info->write_fd = pipefd[1];
-}
-
-static void pipe_consume(grpc_wakeup_fd_info *fd_info) {
-  char buf[128];
-  int r;
-
-  for (;;) {
-    r = read(fd_info->read_fd, buf, sizeof(buf));
-    if (r > 0) continue;
-    if (r == 0) return;
-    switch (errno) {
-      case EAGAIN:
-        return;
-      case EINTR:
-        continue;
-      default:
-        gpr_log(GPR_ERROR, "error reading pipe: %s", strerror(errno));
-        return;
-    }
-  }
-}
-
-static void pipe_wakeup(grpc_wakeup_fd_info *fd_info) {
-  char c = 0;
-  while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
-    ;
-}
-
-static void pipe_destroy(grpc_wakeup_fd_info *fd_info) {
-  close(fd_info->read_fd);
-  close(fd_info->write_fd);
-}
-
-static int pipe_check_availability(void) {
-  /* Assume that pipes are always available. */
-  return 1;
-}
-
-const grpc_wakeup_fd_vtable pipe_wakeup_fd_vtable = {
-  pipe_create, pipe_consume, pipe_wakeup, pipe_destroy, pipe_check_availability
+/* Private structures; don't access their fields directly outside of wakeup fd
+ * code. */
+struct grpc_wakeup_fd_info {
+  int read_fd;
+  int write_fd;
 };
 
-#endif  /* GPR_POSIX_WAKUP_FD */
+/* Defined in some specialized implementation's .c file, or by
+ * wakeup_fd_nospecial.c if no such implementation exists. */
+extern const grpc_wakeup_fd_vtable specialized_wakeup_fd_vtable;
+
+#endif /* __GRPC_INTERNAL_IOMGR_WAKEUP_FD_POSIX_H_ */

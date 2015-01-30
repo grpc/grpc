@@ -31,6 +31,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_WAKEUP_FD
+
 #include "src/core/iomgr/wakeup_fd_posix.h"
 #include "src/core/iomgr/wakeup_fd_pipe.h"
 #include <stddef.h>
@@ -68,3 +72,5 @@ void grpc_wakeup_fd_wakeup(grpc_wakeup_fd_info *fd_info) {
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info) {
   wakeup_fd_vtable->destroy(fd_info);
 }
+
+#endif  /* GPR_POSIX_WAKEUP_FD */
