@@ -419,6 +419,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
   }
 
   if (calld->legacy) {
+    gpr_free(calld->legacy->initial_metadata->metadata);
     gpr_free(calld->legacy->initial_metadata);
     gpr_free(calld->legacy);
   }
