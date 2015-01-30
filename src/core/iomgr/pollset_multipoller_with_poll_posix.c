@@ -147,8 +147,6 @@ static int multipoll_with_poll_pollset_maybe_work(
       grpc_fd_unref(h->fds[i]);
     } else {
       h->fds[nf++] = h->fds[i];
-      h->pfds[np].events =
-          grpc_fd_begin_poll(h->fds[i], pollset, POLLIN, POLLOUT);
       h->selfds[np] = h->fds[i];
       h->pfds[np].fd = h->fds[i]->fd;
       h->pfds[np].revents = 0;
@@ -167,6 +165,11 @@ static int multipoll_with_poll_pollset_maybe_work(
   }
   pollset->counter = 1;
   gpr_mu_unlock(&pollset->mu);
+
+  for (i = 1; i < np; i++) {
+    h->pfds[i].events =
+        grpc_fd_begin_poll(h->selfds[i], pollset, POLLIN, POLLOUT);
+  }
 
   r = poll(h->pfds, h->pfd_count, timeout);
   if (r < 0) {

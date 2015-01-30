@@ -75,11 +75,12 @@ static void backup_poller(void *p) {
 }
 
 void grpc_pollset_kick(grpc_pollset *p) {
-  if (!p->counter) return;
-  grpc_pollset_kick_kick(&p->kick_state);
+  if (p->counter) {
+    grpc_pollset_kick_kick(&p->kick_state);
+  }
 }
 
-void grpc_pollset_force_kick(grpc_pollset *p) { grpc_pollset_kick(p); }
+void grpc_pollset_force_kick(grpc_pollset *p) { grpc_pollset_kick_kick(&p->kick_state); }
 
 /* global state management */
 
@@ -244,10 +245,11 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   pfd[0].events = POLLIN;
   pfd[0].revents = 0;
   pfd[1].fd = fd->fd;
-  pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT);
   pfd[1].revents = 0;
   pollset->counter = 1;
   gpr_mu_unlock(&pollset->mu);
+
+  pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT);
 
   r = poll(pfd, GPR_ARRAY_SIZE(pfd), timeout);
   if (r < 0) {
@@ -269,9 +271,9 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   }
 
   grpc_pollset_kick_post_poll(&pollset->kick_state);
+  grpc_fd_end_poll(fd, pollset);
 
   gpr_mu_lock(&pollset->mu);
-  grpc_fd_end_poll(fd, pollset);
   pollset->counter = 0;
   gpr_cv_broadcast(&pollset->cv);
   return 1;

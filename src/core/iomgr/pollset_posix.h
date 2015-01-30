@@ -78,7 +78,9 @@ void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);
    poll after an fd is orphaned) */
 void grpc_pollset_del_fd(grpc_pollset *pollset, struct grpc_fd *fd);
 
-/* Force any current pollers to break polling */
+/* Force any current pollers to break polling: it's the callers responsibility
+   to ensure that the pollset indeed needs to be kicked.
+   Does not touch pollset->mu. */
 void grpc_pollset_force_kick(grpc_pollset *pollset);
 /* Returns the fd to listen on for kicks */
 int grpc_kick_read_fd(grpc_pollset *p);
