@@ -188,6 +188,15 @@ legacy_state *get_legacy_state(grpc_call *call) {
 
 void grpc_call_internal_ref(grpc_call *c) { gpr_ref(&c->internal_refcount); }
 
+static void destroy_message_array(grpc_byte_buffer_array *array,
+                                  size_t start_idx) {
+  size_t i;
+  for (i = start_idx; i < array->count; i++) {
+    grpc_byte_buffer_destroy(array->buffers[i]);
+  }
+  gpr_free(array->buffers);
+}
+
 static void destroy_call(void *call, int ignored_success) {
   size_t i;
   grpc_call *c = call;
@@ -203,11 +212,13 @@ static void destroy_call(void *call, int ignored_success) {
     grpc_mdelem_unref(c->owned_metadata[i]);
   }
   gpr_free(c->owned_metadata);
+  destroy_message_array(&c->buffered_messages, 0);
   if (c->legacy_state) {
     gpr_free(c->legacy_state->md_out);
     gpr_free(c->legacy_state->md_in.metadata);
     gpr_free(c->legacy_state->trail_md_in.metadata);
-    /*gpr_free(c->legacy_state->status_in.details);*/
+    destroy_message_array(&c->legacy_state->msg_in,
+                          c->legacy_state->msg_in_read_idx);
     gpr_free(c->legacy_state);
   }
   gpr_free(c);
