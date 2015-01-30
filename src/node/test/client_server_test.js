@@ -185,6 +185,14 @@ describe('echo client', function() {
       done();
     });
   });
+  it('should get correct status for unimplemented method', function(done) {
+    var stream = client.makeRequest(channel, 'unimplemented_method');
+    stream.end();
+    stream.on('status', function(status) {
+      assert.equal(status.code, grpc.status.UNIMPLEMENTED);
+      done();
+    });
+  });
 });
 /* TODO(mlumish): explore options for reducing duplication between this test
  * and the insecure echo client test */
