@@ -138,7 +138,7 @@ struct grpc_call {
   legacy_state *legacy_state;
 };
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call)+1))
+#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -905,6 +905,7 @@ grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
   legacy_state *ls;
   grpc_ioreq req;
   grpc_call_error err;
+  grpc_byte_buffer *msg;
 
   grpc_cq_begin_op(call->cq, call, GRPC_READ);
 
@@ -918,8 +919,8 @@ grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
     err = start_ioreq(call, &req, 1, finish_read, tag);
   } else {
     err = GRPC_CALL_OK;
-    grpc_cq_end_read(call->cq, tag, call, do_nothing, NULL,
-                     ls->msg_in.buffers[ls->msg_in_read_idx++]);
+    msg = ls->msg_in.buffers[ls->msg_in_read_idx++];
+    grpc_cq_end_read(call->cq, tag, call, finish_read_event, msg, msg);
     maybe_finish_legacy(call);
   }
   unlock(call);
@@ -1060,7 +1061,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
