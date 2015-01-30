@@ -411,6 +411,13 @@ static void destroy_call_elem(grpc_call_element *elem) {
   }
   gpr_mu_unlock(&chand->server->mu);
 
+  if (calld->host) {
+    grpc_mdstr_unref(calld->host);
+  }
+  if (calld->path) {
+    grpc_mdstr_unref(calld->path);
+  }
+
   if (calld->legacy) {
     gpr_free(calld->legacy->initial_metadata);
     gpr_free(calld->legacy);
