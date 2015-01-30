@@ -732,7 +732,6 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
 
 static void maybe_finish_legacy(grpc_call *call) {
   legacy_state *ls = get_legacy_state(call);
-  gpr_log(GPR_DEBUG, "%d %d %d", ls->got_status, ls->msg_in_read_idx, ls->msg_in.count);
   if (ls->got_status && ls->msg_in_read_idx == ls->msg_in.count) {
     grpc_cq_end_finished(call->cq, ls->finished_tag, call, do_nothing, NULL,
                          ls->status_in.status, ls->status_in.details,
