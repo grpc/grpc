@@ -103,7 +103,7 @@ static const scenario scenarios[] = {
 int main(int argc, char **argv) {
   gpr_slice slice = gpr_slice_from_copied_string("x");
   double start, stop;
-  int i;
+  unsigned i;
 
   char *fake_argv[1];
 

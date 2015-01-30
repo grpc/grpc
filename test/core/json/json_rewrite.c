@@ -131,7 +131,7 @@ static void json_reader_string_add_utf32(void* userdata, gpr_uint32 c) {
 }
 
 static gpr_uint32 json_reader_read_char(void* userdata) {
-  gpr_uint32 r;
+  int r;
   json_reader_userdata* state = userdata;
 
   r = fgetc(state->in);

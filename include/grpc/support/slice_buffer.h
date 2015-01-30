@@ -73,7 +73,7 @@ size_t gpr_slice_buffer_add_indexed(gpr_slice_buffer *sb, gpr_slice slice);
 void gpr_slice_buffer_addn(gpr_slice_buffer *sb, gpr_slice *slices, size_t n);
 /* add a very small (less than 8 bytes) amount of data to the end of a slice
    buffer: returns a pointer into which to add the data */
-gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, int len);
+gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned len);
 /* clear a slice buffer, unref all elements */
 void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb);
 

@@ -43,7 +43,8 @@ static void join_host_port_expect(const char *host, int port,
   char *buf;
   int len;
   len = gpr_join_host_port(&buf, host, port);
-  GPR_ASSERT(strlen(expected) == len);
+  GPR_ASSERT(len >= 0);
+  GPR_ASSERT(strlen(expected) == (size_t)len);
   GPR_ASSERT(strcmp(expected, buf) == 0);
   gpr_free(buf);
 }

@@ -43,6 +43,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
+#include <grpc/support/useful.h>
 
 struct thd_arg {
   void (*body)(void *arg); /* body of a thread */

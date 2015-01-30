@@ -66,7 +66,7 @@ static void json_writer_output_indent(
       "                "
       "                ";
 
-  int spaces = writer->depth * writer->indent;
+  unsigned spaces = writer->depth * writer->indent;
 
   if (writer->indent == 0) return;
 

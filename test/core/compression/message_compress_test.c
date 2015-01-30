@@ -166,7 +166,7 @@ static void test_bad_data(void) {
 }
 
 int main(int argc, char **argv) {
-  int i, j, k, m;
+  unsigned i, j, k, m;
   grpc_slice_split_mode uncompressed_split_modes[] = {
       GRPC_SLICE_SPLIT_IDENTITY, GRPC_SLICE_SPLIT_ONE_BYTE};
   grpc_slice_split_mode compressed_split_modes[] = {GRPC_SLICE_SPLIT_MERGE_ALL,

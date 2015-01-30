@@ -122,7 +122,7 @@ LDFLAGS += $(LDFLAGS_$(CONFIG))
 
 CFLAGS += -std=c89 -pedantic
 CXXFLAGS += -std=c++11
-CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
+CPPFLAGS += -g -fPIC -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g -fPIC
 
 INCLUDES = . include gens

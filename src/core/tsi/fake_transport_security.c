@@ -38,6 +38,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/useful.h>
 #include "src/core/tsi/transport_security.h"
 
 /* --- Constants. ---*/
@@ -412,7 +413,7 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
     tsi_handshaker* self, const unsigned char* bytes, size_t* bytes_size) {
   tsi_result result = TSI_OK;
   tsi_fake_handshaker* impl = (tsi_fake_handshaker*)self;
-  int expected_msg = impl->next_message_to_send - 1;
+  tsi_fake_handshake_message expected_msg = impl->next_message_to_send - 1;
   tsi_fake_handshake_message received_msg;
 
   if (!impl->needs_incoming_message || impl->result == TSI_OK) {

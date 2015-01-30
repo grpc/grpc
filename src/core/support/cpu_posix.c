@@ -45,7 +45,7 @@
 
 static __thread char magic_thread_local;
 
-int gpr_cpu_num_cores(void) {
+unsigned gpr_cpu_num_cores(void) {
   static int ncpus = 0;
   if (ncpus == 0) {
     ncpus = sysconf(_SC_NPROCESSORS_ONLN);
@@ -63,7 +63,7 @@ static size_t shard_ptr(const void *info) {
   return ((x >> 4) ^ (x >> 9) ^ (x >> 14)) % gpr_cpu_num_cores();
 }
 
-int gpr_cpu_current_cpu(void) {
+unsigned gpr_cpu_current_cpu(void) {
   /* NOTE: there's no way I know to return the actual cpu index portably...
      most code that's using this is using it to shard across work queues though,
      so here we use thread identity instead to achieve a similar though not

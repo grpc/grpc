@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   grpc_completion_queue *cq = NULL;
   int bytes_written = 0;
   int bytes_read = 0;
-  int i = 0;
+  unsigned i = 0;
   int waiting_finishes;
   gpr_slice read_slice;
 

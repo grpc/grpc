@@ -75,7 +75,7 @@ int grpc_server_add_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   size_t i;
-  int count = 0;
+  unsigned count = 0;
   int port_num = -1;
   int port_temp;
 

@@ -134,7 +134,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
 }
 
 static const char *scheme_from_args(const grpc_channel_args *args) {
-  int i;
+  unsigned i;
   if (args != NULL) {
     for (i = 0; i < args->num_args; ++i) {
       if (args->args[i].type == GRPC_ARG_STRING &&

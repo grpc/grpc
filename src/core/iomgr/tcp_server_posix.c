@@ -272,7 +272,7 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
                              int addr_len) {
   int allocated_port1 = -1;
   int allocated_port2 = -1;
-  int i;
+  unsigned i;
   int fd;
   grpc_dualstack_mode dsmode;
   struct sockaddr_in6 addr6_v4mapped;
@@ -345,8 +345,8 @@ done:
   return allocated_port1 >= 0 ? allocated_port1 : allocated_port2;
 }
 
-int grpc_tcp_server_get_fd(grpc_tcp_server *s, int index) {
-  return (0 <= index && index < s->nports) ? s->ports[index].fd : -1;
+int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index) {
+  return (index < s->nports) ? s->ports[index].fd : -1;
 }
 
 void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset *pollset,
