@@ -118,7 +118,6 @@ struct grpc_call {
   gpr_uint8 got_status_code;
   gpr_uint8 sending;
   gpr_uint8 num_completed_requests;
-  gpr_uint8 got_any_data;
   gpr_uint8 need_more_data;
 
   reqinfo requests[GRPC_IOREQ_OP_COUNT];
@@ -257,10 +256,14 @@ static void unlock(grpc_call *call) {
   send_action sa = SEND_NOTHING;
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   int num_completed_requests = call->num_completed_requests;
-  int need_more_data = call->need_more_data;
+  int need_more_data =
+      call->need_more_data &&
+      call->requests[GRPC_IOREQ_SEND_INITIAL_METADATA].state == REQ_DONE;
   int i;
 
-  call->need_more_data = 0;
+  if (need_more_data) {
+    call->need_more_data = 0;
+  }
 
   if (num_completed_requests != 0) {
     memcpy(completed_requests, call->completed_requests,
@@ -576,7 +579,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                call->buffered_messages);
           finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGES, GRPC_OP_OK);
         } else {
-          call->need_more_data = call->got_any_data;
+          call->need_more_data = 1;
         }
         if (call->stream_closed) {
           finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
@@ -1054,7 +1057,6 @@ void grpc_call_recv_message(grpc_call_element *elem,
   grpc_call *call = CALL_FROM_TOP_ELEM(elem);
   grpc_byte_buffer_array *dest;
   lock(call);
-  call->got_any_data = 1;
   if (call->requests[GRPC_IOREQ_RECV_MESSAGES].master != NULL) {
     dest = call->requests[GRPC_IOREQ_RECV_MESSAGES].data.recv_messages;
   } else {
