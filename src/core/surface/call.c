@@ -55,8 +55,8 @@ typedef struct {
   grpc_byte_buffer *msg_out;
 
   /* input buffers */
-  grpc_metadata_array md_in;
-  grpc_metadata_array trail_md_in;
+  grpc_metadata_array initial_md_in;
+  grpc_metadata_array trailing_md_in;
   grpc_recv_status status_in;
   size_t msg_in_read_idx;
   grpc_byte_buffer_array msg_in;
@@ -224,8 +224,8 @@ static void destroy_call(void *call, int ignored_success) {
       }
       gpr_free(c->legacy_state->md_out[i]);
     }
-    gpr_free(c->legacy_state->md_in.metadata);
-    gpr_free(c->legacy_state->trail_md_in.metadata);
+    gpr_free(c->legacy_state->initial_md_in.metadata);
+    gpr_free(c->legacy_state->trailing_md_in.metadata);
     destroy_message_array(&c->legacy_state->msg_in,
                           c->legacy_state->msg_in_read_idx);
     gpr_free(c->legacy_state);
@@ -765,7 +765,7 @@ static void maybe_finish_legacy(grpc_call *call) {
   if (ls->got_status && ls->msg_in_read_idx == ls->msg_in.count) {
     grpc_cq_end_finished(call->cq, ls->finished_tag, call, do_nothing, NULL,
                          ls->status_in.status, ls->status_in.details,
-                         ls->trail_md_in.metadata, ls->trail_md_in.count);
+                         ls->trailing_md_in.metadata, ls->trailing_md_in.count);
   }
 }
 
@@ -788,7 +788,7 @@ static void finish_recv_metadata(grpc_call *call, grpc_op_error status,
   ls = get_legacy_state(call);
   if (status == GRPC_OP_OK) {
     grpc_cq_end_client_metadata_read(call->cq, tag, call, do_nothing, NULL,
-                                     ls->md_in.count, ls->md_in.metadata);
+                                     ls->initial_md_in.count, ls->initial_md_in.metadata);
 
   } else {
     grpc_cq_end_client_metadata_read(call->cq, tag, call, do_nothing, NULL, 0,
@@ -825,12 +825,12 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   if (err != GRPC_CALL_OK) goto done;
 
   reqs[0].op = GRPC_IOREQ_RECV_INITIAL_METADATA;
-  reqs[0].data.recv_metadata = &ls->md_in;
+  reqs[0].data.recv_metadata = &ls->initial_md_in;
   err = start_ioreq(call, reqs, 1, finish_recv_metadata, metadata_read_tag);
   if (err != GRPC_CALL_OK) goto done;
 
   reqs[0].op = GRPC_IOREQ_RECV_TRAILING_METADATA;
-  reqs[0].data.recv_metadata = &ls->trail_md_in;
+  reqs[0].data.recv_metadata = &ls->trailing_md_in;
   reqs[1].op = GRPC_IOREQ_RECV_STATUS;
   reqs[1].data.recv_status = &ls->status_in;
   err = start_ioreq(call, reqs, 2, finish_status, NULL);
@@ -1117,12 +1117,15 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_mdelem *md) {
     set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
     grpc_mdelem_unref(md);
   } else {
+    char *sel;
     if (!call->got_initial_metadata) {
+      sel = call->requests[GRPC_IOREQ_RECV_INITIAL_METADATA].state == REQ_READY? "req_init" : "buf_init";
       dest = call->requests[GRPC_IOREQ_RECV_INITIAL_METADATA].state == REQ_READY
                  ? call->requests[GRPC_IOREQ_RECV_INITIAL_METADATA]
                        .data.recv_metadata
                  : &call->buffered_initial_metadata;
     } else {
+      sel = call->requests[GRPC_IOREQ_RECV_TRAILING_METADATA].state == REQ_READY? "req_trail" : "buf_trail";
       dest =
           call->requests[GRPC_IOREQ_RECV_TRAILING_METADATA].state == REQ_READY
               ? call->requests[GRPC_IOREQ_RECV_TRAILING_METADATA]
