@@ -178,6 +178,7 @@ function pingPong(client, done) {
       payload: {body: zeroBuffer(payload_sizes[index])}
   });
   call.on('data', function(response) {
+    debugger;
     assert.strictEqual(response.payload.type,
                        testProto.PayloadType.COMPRESSABLE);
     assert.equal(response.payload.body.limit - response.payload.body.offset,
