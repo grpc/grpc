@@ -93,7 +93,6 @@ typedef struct reqinfo {
 typedef enum {
   STATUS_FROM_API_OVERRIDE = 0,
   STATUS_FROM_WIRE,
-  STATUS_FROM_FAILED_OP,
   STATUS_SOURCE_COUNT
 } status_source;
 
