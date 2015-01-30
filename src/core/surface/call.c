@@ -48,9 +48,10 @@
 #define OP_IN_MASK(op, mask) (((1 << (op)) & (mask)) != 0)
 
 typedef struct {
-  size_t md_out_count;
-  size_t md_out_capacity;
-  grpc_metadata *md_out;
+  gpr_uint8 md_out_buffer;
+  size_t md_out_count[2];
+  size_t md_out_capacity[2];
+  grpc_metadata *md_out[2];
   grpc_byte_buffer *msg_out;
 
   /* input buffers */
@@ -198,7 +199,7 @@ static void destroy_message_array(grpc_byte_buffer_array *array,
 }
 
 static void destroy_call(void *call, int ignored_success) {
-  size_t i;
+  size_t i, j;
   grpc_call *c = call;
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
   grpc_channel_internal_unref(c->channel);
@@ -213,8 +214,16 @@ static void destroy_call(void *call, int ignored_success) {
   }
   gpr_free(c->owned_metadata);
   destroy_message_array(&c->buffered_messages, 0);
+  gpr_free(c->buffered_initial_metadata.metadata);
+  gpr_free(c->buffered_trailing_metadata.metadata);
   if (c->legacy_state) {
-    gpr_free(c->legacy_state->md_out);
+    for (i = 0; i < 2; i++) {
+      for (j = 0; j < c->legacy_state->md_out_count[i]; j++) {
+        gpr_free(c->legacy_state->md_out[i][j].key);
+        gpr_free(c->legacy_state->md_out[i][j].value);
+      }
+      gpr_free(c->legacy_state->md_out[i]);
+    }
     gpr_free(c->legacy_state->md_in.metadata);
     gpr_free(c->legacy_state->trail_md_in.metadata);
     destroy_message_array(&c->legacy_state->msg_in,
@@ -734,13 +743,13 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
   lock(call);
   ls = get_legacy_state(call);
 
-  if (ls->md_out_count == ls->md_out_capacity) {
-    ls->md_out_capacity =
-        GPR_MAX(ls->md_out_capacity * 3 / 2, ls->md_out_capacity + 8);
-    ls->md_out =
-        gpr_realloc(ls->md_out, sizeof(grpc_metadata) * ls->md_out_capacity);
+  if (ls->md_out_count[ls->md_out_buffer] == ls->md_out_capacity[ls->md_out_buffer]) {
+    ls->md_out_capacity[ls->md_out_buffer] =
+        GPR_MAX(ls->md_out_capacity[ls->md_out_buffer] * 3 / 2, ls->md_out_capacity[ls->md_out_buffer] + 8);
+    ls->md_out[ls->md_out_buffer] =
+        gpr_realloc(ls->md_out[ls->md_out_buffer], sizeof(grpc_metadata) * ls->md_out_capacity[ls->md_out_buffer]);
   }
-  mdout = &ls->md_out[ls->md_out_count++];
+  mdout = &ls->md_out[ls->md_out_buffer][ls->md_out_count[ls->md_out_buffer]++];
   mdout->key = gpr_strdup(metadata->key);
   mdout->value = gpr_malloc(metadata->value_length);
   mdout->value_length = metadata->value_length;
@@ -809,9 +818,9 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   ls->finished_tag = finished_tag;
 
   reqs[0].op = GRPC_IOREQ_SEND_INITIAL_METADATA;
-  reqs[0].data.send_metadata.count = ls->md_out_count;
-  reqs[0].data.send_metadata.metadata = ls->md_out;
-  ls->md_out_count = 0;
+  reqs[0].data.send_metadata.count = ls->md_out_count[ls->md_out_buffer];
+  reqs[0].data.send_metadata.metadata = ls->md_out[ls->md_out_buffer];
+  ls->md_out_buffer++;
   err = start_ioreq(call, reqs, 1, finish_send_metadata, NULL);
   if (err != GRPC_CALL_OK) goto done;
 
@@ -867,8 +876,8 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   lock(call);
   ls = get_legacy_state(call);
   req.op = GRPC_IOREQ_SEND_INITIAL_METADATA;
-  req.data.send_metadata.count = ls->md_out_count;
-  req.data.send_metadata.metadata = ls->md_out;
+  req.data.send_metadata.count = ls->md_out_count[ls->md_out_buffer];
+  req.data.send_metadata.metadata = ls->md_out[ls->md_out_buffer];
   err = start_ioreq(call, &req, 1, finish_send_initial_metadata, NULL);
   unlock(call);
 
@@ -983,8 +992,8 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
   lock(call);
   ls = get_legacy_state(call);
   reqs[0].op = GRPC_IOREQ_SEND_TRAILING_METADATA;
-  reqs[0].data.send_metadata.count = ls->md_out_count;
-  reqs[0].data.send_metadata.metadata = ls->md_out;
+  reqs[0].data.send_metadata.count = ls->md_out_count[ls->md_out_buffer];
+  reqs[0].data.send_metadata.metadata = ls->md_out[ls->md_out_buffer];
   reqs[1].op = GRPC_IOREQ_SEND_CLOSE;
   reqs[1].data.send_close.status = status;
   reqs[1].data.send_close.details = details;
