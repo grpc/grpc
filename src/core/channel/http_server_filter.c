@@ -328,6 +328,7 @@ static void init_channel_elem(grpc_channel_element *elem,
           grpc_mdelem_from_strings(mdctx, "content-type", p->content_type);
       slice = gpr_slice_from_copied_string(p->content);
       g->content = grpc_byte_buffer_create(&slice, 1);
+      gpr_slice_unref(slice);
     }
   }
 }
@@ -342,6 +343,7 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   for (i = 0; i < channeld->gettable_count; i++) {
     grpc_mdelem_unref(channeld->gettables[i].path);
     grpc_mdelem_unref(channeld->gettables[i].content_type);
+    grpc_byte_buffer_destroy(channeld->gettables[i].content);
   }
   gpr_free(channeld->gettables);
 
