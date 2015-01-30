@@ -80,7 +80,9 @@ void grpc_pollset_kick(grpc_pollset *p) {
   }
 }
 
-void grpc_pollset_force_kick(grpc_pollset *p) { grpc_pollset_kick_kick(&p->kick_state); }
+void grpc_pollset_force_kick(grpc_pollset *p) {
+  grpc_pollset_kick_kick(&p->kick_state);
+}
 
 /* global state management */
 
