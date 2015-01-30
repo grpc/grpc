@@ -71,4 +71,12 @@ describe('Interop tests', function() {
   it('should pass empty_stream', function(done) {
     interop_client.runTest(port, name_override, 'empty_stream', true, done);
   });
+  it('should pass cancel_after_begin', function(done) {
+    interop_client.runTest(port, name_override, 'cancel_after_begin', true,
+                           done);
+  });
+  it('should pass cancel_after_first_response', function(done) {
+    interop_client.runTest(port, name_override, 'cancel_after_first_response',
+                           true, done);
+  });
 });

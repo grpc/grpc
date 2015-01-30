@@ -94,7 +94,7 @@ void decode_suite(char ext, gpr_timespec (*answer)(long x)) {
   long test_vals[] = {1,       12,       123,       1234,     12345,   123456,
                       1234567, 12345678, 123456789, 98765432, 9876543, 987654,
                       98765,   9876,     987,       98,       9};
-  int i;
+  unsigned i;
   char *input;
   for (i = 0; i < GPR_ARRAY_SIZE(test_vals); i++) {
     gpr_asprintf(&input, "%ld%c", test_vals[i], ext);

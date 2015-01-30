@@ -138,7 +138,7 @@ static void json_reader_string_add_utf32(void* userdata, gpr_uint32 c) {
 }
 
 static gpr_uint32 json_reader_read_char(void* userdata) {
-  gpr_uint32 r;
+  int r;
   json_reader_userdata* state = userdata;
 
   if (!state->did_eagain) {
@@ -298,7 +298,7 @@ static test_file test_files[] = {
 };
 
 void test_rewrites() {
-  int i;
+  unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(test_files); i++) {
     test_file* test = test_files + i;

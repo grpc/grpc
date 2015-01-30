@@ -49,18 +49,19 @@
 #include "test/core/util/port.h"
 
 int test_client(const char *root, const char *host, int port) {
-  char *args[3];
   int status;
   pid_t cli;
   cli = fork();
   if (cli == 0) {
-    gpr_asprintf(&args[0], "%s/echo_client", root);
-    gpr_join_host_port(&args[1], host, port);
-    args[2] = 0;
-    execv(args[0], args);
+    char *binary_path;
+    char *binding;
+    gpr_asprintf(&binary_path, "%s/echo_client", root);
+    gpr_join_host_port(&binding, host, port);
 
-    gpr_free(args[0]);
-    gpr_free(args[1]);
+    execl(binary_path, binary_path, binding, NULL);
+
+    gpr_free(binary_path);
+    gpr_free(binding);
     return 1;
   }
   /* wait for client */
@@ -76,7 +77,6 @@ int main(int argc, char **argv) {
   char *lslash = strrchr(me, '/');
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
-  char *args[3];
   int status;
   pid_t svr;
   int ret;
@@ -98,14 +98,15 @@ int main(int argc, char **argv) {
   /* start the server */
   svr = fork();
   if (svr == 0) {
-    gpr_asprintf(&args[0], "%s/echo_server", root);
-    args[1] = "-bind";
-    gpr_join_host_port(&args[2], "::", port);
-    args[3] = 0;
-    execv(args[0], args);
+    char *binary_path;
+    char *binding;
+    gpr_asprintf(&binary_path, "%s/echo_server", root);
+    gpr_join_host_port(&binding, "::", port);
 
-    gpr_free(args[0]);
-    gpr_free(args[2]);
+    execl(binary_path, binary_path, "-bind", binding, NULL);
+
+    gpr_free(binary_path);
+    gpr_free(binding);
     return 1;
   }
   /* wait a little */

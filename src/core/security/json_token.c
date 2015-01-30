@@ -127,7 +127,8 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
     goto end;
   }
   bio = BIO_new(BIO_s_mem());
-  if (BIO_puts(bio, prop_value) != strlen(prop_value)) {
+  success = BIO_puts(bio, prop_value);
+  if ((success < 0) || ((size_t)success != strlen(prop_value))) {
     gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
     goto end;
   }
@@ -240,7 +241,8 @@ static char *dot_concat_and_free_strings(char *str1, char *str2) {
   *(current++) = '.';
   memcpy(current, str2, str2_len);
   current += str2_len;
-  GPR_ASSERT((current - result) == result_len);
+  GPR_ASSERT(current >= result);
+  GPR_ASSERT((gpr_uintptr)(current - result) == result_len);
   *current = '\0';
   gpr_free(str1);
   gpr_free(str2);

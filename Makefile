@@ -122,7 +122,7 @@ LDFLAGS += $(LDFLAGS_$(CONFIG))
 
 CFLAGS += -std=c89 -pedantic
 CXXFLAGS += -std=c++11
-CPPFLAGS += -g -fPIC -Wall -Werror -Wno-long-long
+CPPFLAGS += -g -fPIC -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g -fPIC
 
 INCLUDES = . include gens
@@ -1006,28 +1006,36 @@ strip-shared: strip-shared_c strip-shared_cxx
 # This prevents proper debugging after running make install.
 
 strip-static_c: static_c
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgpr.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgpr.a
 	$(E) "[STRIP]   Stripping libgrpc.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_unsecure.a
+endif
 
 strip-static_cxx: static_cxx
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc++.a
+endif
 
 strip-shared_c: shared_c
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgpr.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgpr.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+endif
 
 strip-shared_cxx: shared_cxx
+ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc++.$(SHARED_EXT)
+endif
 
 gens/examples/tips/empty.pb.cc: examples/tips/empty.proto $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
@@ -1276,6 +1284,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
 else
 	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgpr.so.0 -o libs/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
+	$(Q) ln -sf libgpr.$(SHARED_EXT) libs/$(CONFIG)/libgpr.so.0
 	$(Q) ln -sf libgpr.$(SHARED_EXT) libs/$(CONFIG)/libgpr.so
 endif
 endif
@@ -1617,6 +1626,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
 else
 	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc.so.0 -o libs/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
+	$(Q) ln -sf libgrpc.$(SHARED_EXT) libs/$(CONFIG)/libgrpc.so.0
 	$(Q) ln -sf libgrpc.$(SHARED_EXT) libs/$(CONFIG)/libgrpc.so
 endif
 endif
@@ -1931,6 +1941,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
 else
 	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.0 -o libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
+	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_unsecure.so.0
 	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_unsecure.so
 endif
 endif
@@ -2136,6 +2147,7 @@ ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
 else
 	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+	$(Q) ln -sf libgrpc++.$(SHARED_EXT) libs/$(CONFIG)/libgrpc++.so.0
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) libs/$(CONFIG)/libgrpc++.so
 endif
 endif

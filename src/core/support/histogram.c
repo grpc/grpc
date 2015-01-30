@@ -77,7 +77,6 @@ static size_t bucket_for_unchecked(gpr_histogram *h, double x) {
 /* bounds checked version of the above */
 static size_t bucket_for(gpr_histogram *h, double x) {
   size_t bucket = bucket_for_unchecked(h, GPR_CLAMP(x, 0, h->max_possible));
-  GPR_ASSERT(bucket >= 0);
   GPR_ASSERT(bucket < h->num_buckets);
   return bucket;
 }
