@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package examples;
+
+// Protocol type definitions
+message StockRequest {
+  optional string symbol = 1;
+  optional int32 num_trades_to_watch = 2 [default=0];
+};
+
+message StockReply {
+  optional float price = 1;
+  optional string symbol = 2;
+};
+
+
+// Interface exported by the server
+service Stock {
+  // Simple blocking RPC
+  rpc GetLastTradePrice(StockRequest) returns (StockReply) {
+  };
+  // Bidirectional streaming RPC
+  rpc GetLastTradePriceMultiple(stream StockRequest) returns
+    (stream StockReply) {
+  };
+  // Unidirectional server-to-client streaming RPC
+  rpc WatchFutureTrades(StockRequest) returns (stream StockReply) {
+  };
+  // Unidirectional client-to-server streaming RPC
+  rpc GetHighestTradePrice(stream StockRequest) returns (StockReply) {
+  };
+
+};
