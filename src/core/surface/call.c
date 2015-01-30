@@ -569,13 +569,29 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
         } else {
           call->need_more_data = 1;
         }
+        if (call->stream_closed) {
+          finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+        }
+        break;
+      case GRPC_IOREQ_RECV_STATUS:
+        if (call->stream_closed && call->buffered_messages.count == 0) {
+          finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+        }
         break;
       case GRPC_IOREQ_SEND_MESSAGES:
+        if (call->stream_closed) {
+          finish_ioreq_op(call, GRPC_IOREQ_SEND_MESSAGES, GRPC_OP_ERROR);
+        }
         call->write_index = 0;
         break;
       case GRPC_IOREQ_SEND_CLOSE:
         if (requests[GRPC_IOREQ_SEND_MESSAGES].state == REQ_INITIAL) {
           requests[GRPC_IOREQ_SEND_MESSAGES].state = REQ_DONE;
+        }
+        break;
+      case GRPC_IOREQ_SEND_INITIAL_METADATA:
+        if (call->stream_closed) {
+          finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, GRPC_OP_ERROR);
         }
         break;
       case GRPC_IOREQ_RECV_INITIAL_METADATA:
@@ -586,6 +602,8 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
         }
         if (call->got_initial_metadata) {
           finish_ioreq_op(call, GRPC_IOREQ_RECV_INITIAL_METADATA, GRPC_OP_OK);
+        } else if (call->stream_closed) {
+          finish_ioreq_op(call, GRPC_IOREQ_RECV_INITIAL_METADATA, GRPC_OP_ERROR);
         }
         break;
       case GRPC_IOREQ_RECV_TRAILING_METADATA:
@@ -976,7 +994,9 @@ void grpc_call_stream_closed(grpc_call_element *elem) {
     finish_ioreq_op(call, GRPC_IOREQ_RECV_TRAILING_METADATA, GRPC_OP_OK);
   }
   call->stream_closed = 1;
-  finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+  if (call->buffered_messages.count == 0) {
+    finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+  }
   unlock(call);
   grpc_call_internal_unref(call);
 }
