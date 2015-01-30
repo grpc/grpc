@@ -125,6 +125,9 @@ struct grpc_call {
   grpc_metadata_array buffered_initial_metadata;
   grpc_metadata_array buffered_trailing_metadata;
   size_t write_index;
+  grpc_mdelem **owned_metadata;
+  size_t owned_metadata_count;
+  size_t owned_metadata_capacity;
 
   received_status status[STATUS_SOURCE_COUNT];
 
@@ -186,7 +189,7 @@ legacy_state *get_legacy_state(grpc_call *call) {
 void grpc_call_internal_ref(grpc_call *c) { gpr_ref(&c->internal_refcount); }
 
 static void destroy_call(void *call, int ignored_success) {
-  int i;
+  size_t i;
   grpc_call *c = call;
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c));
   grpc_channel_internal_unref(c->channel);
@@ -196,6 +199,10 @@ static void destroy_call(void *call, int ignored_success) {
       grpc_mdstr_unref(c->status[i].details);
     }
   }
+  for (i = 0; i < c->owned_metadata_count; i++) {
+    grpc_mdelem_unref(c->owned_metadata[i]);
+  }
+  gpr_free(c->owned_metadata);
   if (c->legacy_state) {
     gpr_free(c->legacy_state->md_out);
     gpr_free(c->legacy_state->md_in.metadata);
@@ -1106,6 +1113,14 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_mdelem *md) {
     mdusr->key = (char *)grpc_mdstr_as_c_string(md->key);
     mdusr->value = (char *)grpc_mdstr_as_c_string(md->value);
     mdusr->value_length = GPR_SLICE_LENGTH(md->value->slice);
+    if (call->owned_metadata_count == call->owned_metadata_capacity) {
+      call->owned_metadata_capacity = GPR_MAX(
+          call->owned_metadata_capacity + 8, call->owned_metadata_capacity * 2);
+      call->owned_metadata =
+          gpr_realloc(call->owned_metadata,
+                      sizeof(grpc_mdelem *) * call->owned_metadata_capacity);
+    }
+    call->owned_metadata[call->owned_metadata_count++] = md;
   }
   unlock(call);
 }
