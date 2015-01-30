@@ -872,6 +872,10 @@ void grpc_call_initial_metadata_complete(grpc_call_element *surface_element) {
   unlock(call);
 }
 
+static void finish_read_event(void *p, grpc_op_error error) {
+  grpc_byte_buffer_destroy(p);
+}
+
 static void finish_read(grpc_call *call, grpc_op_error error, void *tag) {
   legacy_state *ls;
   lock(call);
@@ -879,8 +883,8 @@ static void finish_read(grpc_call *call, grpc_op_error error, void *tag) {
   if (ls->msg_in.count == 0) {
     grpc_cq_end_read(call->cq, tag, call, do_nothing, NULL, NULL);
   } else {
-    grpc_cq_end_read(call->cq, tag, call, do_nothing, NULL,
-                     ls->msg_in.buffers[ls->msg_in_read_idx++]);
+    grpc_byte_buffer *msg = ls->msg_in.buffers[ls->msg_in_read_idx++];
+    grpc_cq_end_read(call->cq, tag, call, finish_read_event, msg, msg);
     maybe_finish_legacy(call);
   }
   unlock(call);
