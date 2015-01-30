@@ -1117,15 +1117,12 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_mdelem *md) {
     set_status_details(call, STATUS_FROM_WIRE, grpc_mdstr_ref(md->value));
     grpc_mdelem_unref(md);
   } else {
-    char *sel;
     if (!call->got_initial_metadata) {
-      sel = call->requests[GRPC_IOREQ_RECV_INITIAL_METADATA].state == REQ_READY? "req_init" : "buf_init";
       dest = call->requests[GRPC_IOREQ_RECV_INITIAL_METADATA].state == REQ_READY
                  ? call->requests[GRPC_IOREQ_RECV_INITIAL_METADATA]
                        .data.recv_metadata
                  : &call->buffered_initial_metadata;
     } else {
-      sel = call->requests[GRPC_IOREQ_RECV_TRAILING_METADATA].state == REQ_READY? "req_trail" : "buf_trail";
       dest =
           call->requests[GRPC_IOREQ_RECV_TRAILING_METADATA].state == REQ_READY
               ? call->requests[GRPC_IOREQ_RECV_TRAILING_METADATA]
