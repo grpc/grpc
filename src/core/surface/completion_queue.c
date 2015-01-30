@@ -388,7 +388,7 @@ void grpc_event_finish(grpc_event *base) {
   event *ev = (event *)base;
   ev->on_finish(ev->on_finish_user_data, GRPC_OP_OK);
   if (ev->base.call) {
-    grpc_call_internal_unref(ev->base.call);
+    grpc_call_internal_unref(ev->base.call, 1);
   }
   gpr_free(ev);
 }
