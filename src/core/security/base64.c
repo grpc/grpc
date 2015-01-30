@@ -113,7 +113,8 @@ char *grpc_base64_encode(const void *vdata, size_t data_size, int url_safe,
     *current++ = GRPC_BASE64_PAD_CHAR;
   }
 
-  GPR_ASSERT((current - result) < result_projected_size);
+  GPR_ASSERT(current >= result);
+  GPR_ASSERT((gpr_uintptr)(current - result) < result_projected_size);
   result[current - result] = '\0';
   return result;
 }

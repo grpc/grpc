@@ -37,6 +37,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/useful.h>
 #include "src/core/tsi/transport_security.h"
 
 #include <openssl/bio.h>
@@ -565,7 +566,8 @@ static tsi_result build_alpn_protocol_name_list(
     current += alpn_protocols_lengths[i];
   }
   /* Safety check. */
-  if ((current - *protocol_name_list) != *protocol_name_list_length) {
+  if ((current < *protocol_name_list) ||
+      ((gpr_uintptr)(current - *protocol_name_list) != *protocol_name_list_length)) {
     return TSI_INTERNAL_ERROR;
   }
   return TSI_OK;
@@ -1063,7 +1065,8 @@ static int server_handshaker_factory_alpn_callback(
   while ((client_current - in) < inlen) {
     unsigned char client_current_len = *(client_current++);
     const unsigned char* server_current = factory->alpn_protocol_list;
-    while ((server_current - factory->alpn_protocol_list) <
+    while ((server_current >= factory->alpn_protocol_list) &&
+           (gpr_uintptr)(server_current - factory->alpn_protocol_list) <
            factory->alpn_protocol_list_length) {
       unsigned char server_current_len = *(server_current++);
       if ((client_current_len == server_current_len) &&

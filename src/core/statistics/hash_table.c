@@ -292,7 +292,7 @@ static void ht_delete_entry_chain(const census_ht_option* options,
 }
 
 void census_ht_destroy(census_ht* ht) {
-  int i;
+  unsigned i;
   for (i = 0; i < ht->num_buckets; ++i) {
     ht_delete_entry_chain(&ht->options, ht->buckets[i].next);
   }

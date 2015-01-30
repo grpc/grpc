@@ -124,7 +124,7 @@ static testing_pair testing_pairs[] = {
 };
 
 static void test_pairs() {
-  int i;
+  unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(testing_pairs); i++) {
     testing_pair* pair = testing_pairs + i;

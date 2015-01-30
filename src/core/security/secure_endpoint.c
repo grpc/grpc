@@ -111,7 +111,7 @@ static void call_read_cb(secure_endpoint *ep, gpr_slice *slices, size_t nslices,
 
 static void on_read(void *user_data, gpr_slice *slices, size_t nslices,
                     grpc_endpoint_cb_status error) {
-  int i = 0;
+  unsigned i;
   gpr_uint8 keep_looping = 0;
   int input_buffer_count = 0;
   tsi_result result = TSI_OK;
@@ -221,7 +221,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
                                                  size_t nslices,
                                                  grpc_endpoint_write_cb cb,
                                                  void *user_data) {
-  int i = 0;
+  unsigned i;
   int output_buffer_count = 0;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)secure_ep;

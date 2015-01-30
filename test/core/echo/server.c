@@ -70,7 +70,7 @@ static void request_call(void) {
 static void assert_read_ok(call_state *s, grpc_byte_buffer *b) {
   grpc_byte_buffer_reader *bb_reader = NULL;
   gpr_slice read_slice;
-  int i;
+  unsigned i;
 
   bb_reader = grpc_byte_buffer_reader_create(b);
   while (grpc_byte_buffer_reader_next(bb_reader, &read_slice)) {

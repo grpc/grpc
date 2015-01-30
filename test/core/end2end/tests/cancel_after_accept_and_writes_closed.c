@@ -157,7 +157,7 @@ static void test_cancel_after_accept_and_writes_closed(
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  int i;
+  unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
     test_cancel_after_accept_and_writes_closed(config, cancellation_modes[i]);
