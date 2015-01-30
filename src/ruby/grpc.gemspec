@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'faraday', '~> 0.9'
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'
   s.add_dependency 'logging', '~> 1.8'
+  s.add_dependency 'jwt', '~> 1.2.1'
   s.add_dependency 'minitest', '~> 5.4'  # reqd for interop tests
   s.add_dependency 'signet', '~> 0.6.0'
   s.add_dependency 'xray', '~> 1.1'

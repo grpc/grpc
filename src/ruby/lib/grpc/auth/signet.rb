@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,25 +27,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-spec_dir = File.expand_path(File.dirname(__FILE__))
-root_dir = File.expand_path(File.join(spec_dir, '..'))
-lib_dir = File.expand_path(File.join(root_dir, 'lib'))
+require 'signet/oauth_2/client'
 
-$LOAD_PATH.unshift(spec_dir)
-$LOAD_PATH.unshift(lib_dir)
-$LOAD_PATH.uniq!
+module Signet
+  module OAuth2
+    # Google::RPC creates an OAuth2 client
+    #
+    # Here client is re-opened to add the #apply and #apply! methods which
+    # update a hash map with the fetched authentication token
+    #
+    # Eventually, this change may be merged into signet itself, or some other
+    # package that provides Google-specific auth via signet, and this extension
+    # will be unnecessary.
+    class Client
+      # Updates a_hash updated with the authentication token
+      def apply!(a_hash, opts = {})
+        # fetch the access token there is currently not one, or if the client
+        # has expired
+        fetch_access_token!(opts) if access_token.nil? || expired?
+        a_hash['auth'] = access_token
+      end
 
-require 'faraday'
-require 'rspec'
-require 'logging'
-require 'rspec/logging_helper'
-
-# Allow Faraday to support test stubs
-Faraday::Adapter.load_middleware(:test)
-
-# Configure RSpec to capture log messages for each test. The output from the
-# logs will be stored in the @log_output variable. It is a StringIO instance.
-RSpec.configure do |config|
-  include RSpec::LoggingHelper
-  config.capture_log_messages
+      # Returns a clone of a_hash updated with the authentication token
+      def apply(a_hash, opts = {})
+        a_copy = a_hash.clone
+        apply!(a_copy, opts)
+        a_copy
+      end
+    end
+  end
 end
