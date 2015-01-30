@@ -79,7 +79,6 @@ end
 
 RX_CERT = /-----BEGIN CERTIFICATE-----\n.*?-----END CERTIFICATE-----\n/m
 
-
 # creates a Credentials from the production certificates.
 def prod_creds
   cert_text = load_prod_cert

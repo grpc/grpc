@@ -35,18 +35,20 @@ namespace :spec do
 
         t.pattern = spec_files
         t.rspec_opts = "--tag #{suite[:tag]}" if suite[:tag]
-        t.rspec_opts = suite[:tags].map{ |t| "--tag #{t}" }.join(' ') if suite[:tags]
+        if suite[:tags]
+          t.rspec_opts = suite[:tags].map { |x| "--tag #{x}" }.join(' ')
+        end
       end
     end
   end
 end
 
-desc 'Run compiles the extension, runs all the tests'
+desc 'Compiles the extension then runs all the tests'
 task :all
 
 task default: :all
-task 'spec:suite:wrapper' => :compile
+task 'spec:suite:wrapper' => [:compile, :rubocop]
 task 'spec:suite:idiomatic' => 'spec:suite:wrapper'
 task 'spec:suite:bidi' => 'spec:suite:wrapper'
 task 'spec:suite:server' => 'spec:suite:wrapper'
-task :all => ['spec:suite:idiomatic', 'spec:suite:bidi', 'spec:suite:server']
+task all: ['spec:suite:idiomatic', 'spec:suite:bidi', 'spec:suite:server']
