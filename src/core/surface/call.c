@@ -424,7 +424,7 @@ static void send_metadata(grpc_call *call, grpc_mdelem *elem) {
 static void enact_send_action(grpc_call *call, send_action sa) {
   grpc_ioreq_data data;
   grpc_call_op op;
-  int i;
+  size_t i;
 
   switch (sa) {
     case SEND_NOTHING:
