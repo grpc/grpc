@@ -59,6 +59,7 @@ class CLanguage(object):
   def build_steps(self):
     return []
 
+
 class NodeLanguage(object):
 
   def __init__(self):
@@ -72,6 +73,7 @@ class NodeLanguage(object):
 
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
+
 
 class PhpLanguage(object):
 
