@@ -25,7 +25,7 @@ function hardAssert($value, $error_message) {
  * @param $stub Stub object that has service methods
  */
 function emptyUnary($stub) {
-  list($result, $status) = $stub->EmptyCall(new proto2\EmptyMessage())->wait();
+  list($result, $status) = $stub->EmptyCall(new grpc\testing\EmptyMessage())->wait();
   hardAssert($status->code == Grpc\STATUS_OK, 'Call did not complete successfully');
   hardAssert($result != null, 'Call completed with a null response');
 }

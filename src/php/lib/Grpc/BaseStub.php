@@ -10,8 +10,8 @@ class BaseStub {
 
   private $channel;
 
-  public function __construct($hostname) {
-    $this->channel = new Channel($hostname, []);
+  public function __construct($hostname, $opts) {
+    $this->channel = new Channel($hostname, $opts);
   }
 
   /**
