@@ -346,7 +346,6 @@ static void unref_transport(transport *t) {
   grpc_chttp2_hpack_parser_destroy(&t->hpack_parser);
   grpc_chttp2_hpack_compressor_destroy(&t->hpack_compressor);
   grpc_chttp2_goaway_parser_destroy(&t->goaway_parser);
-  grpc_sopb_destroy(&t->nuke_later_sopb);
 
   grpc_mdstr_unref(t->str_grpc_timeout);
 
@@ -373,6 +372,8 @@ static void unref_transport(transport *t) {
     gpr_slice_unref(t->pending_goaways[i].debug);
   }
   gpr_free(t->pending_goaways);
+
+  grpc_sopb_destroy(&t->nuke_later_sopb);
 
   gpr_free(t);
 }
@@ -530,7 +531,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     lock(t);
     s->id = 0;
   } else {
-    s->id = (gpr_uint32)(gpr_uintptr) server_data;
+    s->id = (gpr_uint32)(gpr_uintptr)server_data;
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
@@ -766,7 +767,7 @@ static void unlock(transport *t) {
   }
 
   if (nuke_now.nops) {
-    grpc_sopb_reset(&nuke_now);
+    grpc_sopb_destroy(&nuke_now);
   }
 
   gpr_free(goaways);
@@ -1257,7 +1258,7 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
     t->incoming_stream = NULL;
     /* if stream is accepted, we set incoming_stream in init_stream */
     t->cb->accept_stream(t->cb_user_data, &t->base,
-                         (void *)(gpr_uintptr) t->incoming_stream_id);
+                         (void *)(gpr_uintptr)t->incoming_stream_id);
     s = t->incoming_stream;
     if (!s) {
       gpr_log(GPR_ERROR, "stream not accepted");
@@ -1522,8 +1523,8 @@ static int process_read(transport *t, gpr_slice slice) {
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   CLIENT_CONNECT_STRING[t->deframe_state],
-                  (int)(gpr_uint8) CLIENT_CONNECT_STRING[t->deframe_state],
-                  *cur, (int)*cur, t->deframe_state);
+                  (int)(gpr_uint8)CLIENT_CONNECT_STRING[t->deframe_state], *cur,
+                  (int)*cur, t->deframe_state);
           drop_connection(t);
           return 0;
         }
@@ -1757,9 +1758,9 @@ static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
  */
 
 static const grpc_transport_vtable vtable = {
-    sizeof(stream),  init_stream,    send_batch,       set_allow_window_updates,
-    add_to_pollset,  destroy_stream, abort_stream,     goaway,
-    close_transport, send_ping,      destroy_transport};
+    sizeof(stream), init_stream, send_batch, set_allow_window_updates,
+    add_to_pollset, destroy_stream, abort_stream, goaway, close_transport,
+    send_ping, destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,
