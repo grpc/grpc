@@ -161,11 +161,12 @@ $server_address = $args['server_host'] . ':' . $args['server_port'];
 $credentials = Grpc\Credentials::createSsl(
     file_get_contents(dirname(__FILE__) . '/../data/ca.pem'));
 $stub = new grpc\testing\TestServiceClient(
-    $server_address,
-    [
-        'grpc.ssl_target_name_override' => 'foo.test.google.com',
-        'credentials' => $credentials
-     ]);
+    new Grpc\BaseStub(
+        $server_address,
+        [
+            'grpc.ssl_target_name_override' => 'foo.test.google.com',
+            'credentials' => $credentials
+         ]));
 
 echo "Connecting to $server_address\n";
 echo "Running test case $args[test_case]\n";

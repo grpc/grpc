@@ -33,10 +33,10 @@ class BaseStub {
    * @param array $metadata A metadata map to send to the server
    * @return SimpleSurfaceActiveCall The active call object
    */
-  protected function _simpleRequest($method,
-                                    $argument,
-                                    callable $deserialize,
-                                    $metadata = array()) {
+  public function _simpleRequest($method,
+                                 $argument,
+                                 callable $deserialize,
+                                 $metadata = array()) {
     return new SimpleSurfaceActiveCall($this->channel,
                                        $method,
                                        $deserialize,
@@ -55,10 +55,10 @@ class BaseStub {
    * @param array $metadata A metadata map to send to the server
    * @return ClientStreamingSurfaceActiveCall The active call object
    */
-  protected function _clientStreamRequest($method,
-                                          $arguments,
-                                          callable $deserialize,
-                                          $metadata = array()) {
+  public function _clientStreamRequest($method,
+                                       $arguments,
+                                       callable $deserialize,
+                                       $metadata = array()) {
     return new ClientStreamingSurfaceActiveCall($this->channel,
                                                 $method,
                                                 $deserialize,
@@ -76,10 +76,10 @@ class BaseStub {
    * @param array $metadata A metadata map to send to the server
    * @return ServerStreamingSurfaceActiveCall The active call object
    */
-  protected function _serverStreamRequest($method,
-                                          $argument,
-                                          callable $deserialize,
-                                          $metadata = array()) {
+  public function _serverStreamRequest($method,
+                                       $argument,
+                                       callable $deserialize,
+                                       $metadata = array()) {
     return new ServerStreamingSurfaceActiveCall($this->channel,
                                                 $method,
                                                 $deserialize,
@@ -95,9 +95,9 @@ class BaseStub {
    * @param array $metadata A metadata map to send to the server
    * @return BidiStreamingSurfaceActiveCall The active call object
    */
-  protected function _bidiRequest($method,
-                                  callable $deserialize,
-                                  $metadata = array()) {
+  public function _bidiRequest($method,
+                               callable $deserialize,
+                               $metadata = array()) {
     return new BidiStreamingSurfaceActiveCall($this->channel,
                                               $method,
                                               $deserialize,
