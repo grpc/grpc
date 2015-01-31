@@ -43,7 +43,6 @@ end
 WANTED_AUTH_KEY = :Authorization
 
 shared_examples 'apply/apply! are OK' do
-
   # tests that use these examples need to define
   #
   # @client which should be an auth client
