@@ -27,60 +27,60 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""Datatypes passed between Python and C code."""
 
-from distutils import core as _core
+import collections
+import enum
 
-_EXTENSION_SOURCES = (
-    'src/_adapter/_c.c',
-    'src/_adapter/_call.c',
-    'src/_adapter/_channel.c',
-    'src/_adapter/_completion_queue.c',
-    'src/_adapter/_error.c',
-    'src/_adapter/_server.c',
-)
 
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    'src',
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../include',
-)
+@enum.unique
+class Code(enum.IntEnum):
+  """One Platform error codes (see status.h and codes.proto)."""
 
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
+  OK = 0
+  CANCELLED = 1
+  UNKNOWN = 2
+  INVALID_ARGUMENT = 3
+  EXPIRED = 4
+  NOT_FOUND = 5
+  ALREADY_EXISTS = 6
+  PERMISSION_DENIED = 7
+  UNAUTHENTICATED = 16
+  RESOURCE_EXHAUSTED = 8
+  FAILED_PRECONDITION = 9
+  ABORTED = 10
+  OUT_OF_RANGE = 11
+  UNIMPLEMENTED = 12
+  INTERNAL_ERROR = 13
+  UNAVAILABLE = 14
+  DATA_LOSS = 15
 
-_EXTENSION_LIBRARY_DIRECTORIES = (
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../libs/dbg',
-)
 
-_EXTENSION_MODULE = _core.Extension(
-    '_adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    library_dirs=_EXTENSION_LIBRARY_DIRECTORIES)
+class Status(collections.namedtuple('Status', ['code', 'details'])):
+  """Describes an RPC's overall status."""
 
-_PACKAGES=(
-    '_adapter',
-    '_framework',
-    '_framework.base',
-    '_framework.base.packets',
-    '_framework.common',
-    '_framework.face',
-    '_framework.face.testing',
-    '_framework.foundation',
-    '_junkdrawer',
-)
 
-_PACKAGE_DIRECTORIES = {
-    '_adapter': 'src/_adapter',
-    '_framework': 'src/_framework',
-    '_junkdrawer': 'src/_junkdrawer',
-}
+class ServiceAcceptance(
+    collections.namedtuple(
+        'ServiceAcceptance', ['call', 'method', 'host', 'deadline'])):
+  """Describes an RPC on the service side at the start of service."""
 
-_core.setup(
-    name='grpc', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+
+class Event(
+    collections.namedtuple(
+        'Event',
+        ['kind', 'tag', 'write_accepted', 'complete_accepted',
+         'service_acceptance', 'bytes', 'status'])):
+  """Describes an event emitted from a completion queue."""
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Describes the kind of an event."""
+
+    STOP = object()
+    WRITE_ACCEPTED = object()
+    COMPLETE_ACCEPTED = object()
+    SERVICE_ACCEPTED = object()
+    READ_ACCEPTED = object()
+    METADATA_ACCEPTED = object()
+    FINISH = object()

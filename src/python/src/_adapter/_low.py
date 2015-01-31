@@ -27,60 +27,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""A Python interface for GRPC C core structures and behaviors."""
 
-from distutils import core as _core
+import atexit
+import gc
 
-_EXTENSION_SOURCES = (
-    'src/_adapter/_c.c',
-    'src/_adapter/_call.c',
-    'src/_adapter/_channel.c',
-    'src/_adapter/_completion_queue.c',
-    'src/_adapter/_error.c',
-    'src/_adapter/_server.c',
-)
+from _adapter import _c
+from _adapter import _datatypes
 
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    'src',
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../include',
-)
+def _shut_down():
+  # force garbage collection before shutting down grpc, to ensure all grpc
+  # objects are cleaned up
+  gc.collect()
+  _c.shut_down()
 
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
+_c.init()
+atexit.register(_shut_down)
 
-_EXTENSION_LIBRARY_DIRECTORIES = (
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../libs/dbg',
-)
-
-_EXTENSION_MODULE = _core.Extension(
-    '_adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    library_dirs=_EXTENSION_LIBRARY_DIRECTORIES)
-
-_PACKAGES=(
-    '_adapter',
-    '_framework',
-    '_framework.base',
-    '_framework.base.packets',
-    '_framework.common',
-    '_framework.face',
-    '_framework.face.testing',
-    '_framework.foundation',
-    '_junkdrawer',
-)
-
-_PACKAGE_DIRECTORIES = {
-    '_adapter': 'src/_adapter',
-    '_framework': 'src/_framework',
-    '_junkdrawer': 'src/_junkdrawer',
-}
-
-_core.setup(
-    name='grpc', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+# pylint: disable=invalid-name
+Code = _datatypes.Code
+Status = _datatypes.Status
+Event = _datatypes.Event
+Call = _c.Call
+Channel = _c.Channel
+CompletionQueue = _c.CompletionQueue
+Server = _c.Server
+# pylint: enable=invalid-name

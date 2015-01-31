@@ -27,60 +27,50 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""State used by both invocation-side and service-side code."""
 
-from distutils import core as _core
+import enum
 
-_EXTENSION_SOURCES = (
-    'src/_adapter/_c.c',
-    'src/_adapter/_call.c',
-    'src/_adapter/_channel.c',
-    'src/_adapter/_completion_queue.c',
-    'src/_adapter/_error.c',
-    'src/_adapter/_server.c',
-)
 
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    'src',
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../include',
-)
+@enum.unique
+class HighWrite(enum.Enum):
+  """The possible categories of high-level write state."""
 
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
+  OPEN = 'OPEN'
+  CLOSED = 'CLOSED'
 
-_EXTENSION_LIBRARY_DIRECTORIES = (
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../libs/dbg',
-)
 
-_EXTENSION_MODULE = _core.Extension(
-    '_adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    library_dirs=_EXTENSION_LIBRARY_DIRECTORIES)
+class WriteState(object):
+  """A description of the state of writing to an RPC.
 
-_PACKAGES=(
-    '_adapter',
-    '_framework',
-    '_framework.base',
-    '_framework.base.packets',
-    '_framework.common',
-    '_framework.face',
-    '_framework.face.testing',
-    '_framework.foundation',
-    '_junkdrawer',
-)
+  Attributes:
+    low: A side-specific value describing the low-level state of writing.
+    high: A HighWrite value describing the high-level state of writing.
+    pending: A list of bytestrings for the RPC waiting to be written to the
+      other side of the RPC.
+  """
 
-_PACKAGE_DIRECTORIES = {
-    '_adapter': 'src/_adapter',
-    '_framework': 'src/_framework',
-    '_junkdrawer': 'src/_junkdrawer',
-}
+  def __init__(self, low, high, pending):
+    self.low = low
+    self.high = high
+    self.pending = pending
 
-_core.setup(
-    name='grpc', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+
+class CommonRPCState(object):
+  """A description of an RPC's state.
+
+  Attributes:
+    write: A WriteState describing the state of writing to the RPC.
+    sequence_number: The lowest-unused sequence number for use in generating
+      tickets locally describing the progress of the RPC.
+    deserializer: The behavior to be used to deserialize payload bytestreams
+      taken off the wire.
+    serializer: The behavior to be used to serialize payloads to be sent on the
+      wire.
+  """
+
+  def __init__(self, write, sequence_number, deserializer, serializer):
+    self.write = write
+    self.sequence_number = sequence_number
+    self.deserializer = deserializer
+    self.serializer = serializer

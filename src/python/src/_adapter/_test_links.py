@@ -27,60 +27,54 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""Links suitable for use in tests."""
 
-from distutils import core as _core
+import threading
 
-_EXTENSION_SOURCES = (
-    'src/_adapter/_c.c',
-    'src/_adapter/_call.c',
-    'src/_adapter/_channel.c',
-    'src/_adapter/_completion_queue.c',
-    'src/_adapter/_error.c',
-    'src/_adapter/_server.c',
-)
+from _framework.base.packets import interfaces
 
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    'src',
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../include',
-)
 
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
+class ForeLink(interfaces.ForeLink):
+  """A ForeLink suitable for use in tests of RearLinks."""
 
-_EXTENSION_LIBRARY_DIRECTORIES = (
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../libs/dbg',
-)
+  def __init__(self, action, rear_link):
+    self.condition = threading.Condition()
+    self.tickets = []
+    self.action = action
+    self.rear_link = rear_link
 
-_EXTENSION_MODULE = _core.Extension(
-    '_adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    library_dirs=_EXTENSION_LIBRARY_DIRECTORIES)
+  def accept_back_to_front_ticket(self, ticket):
+    with self.condition:
+      self.tickets.append(ticket)
+      self.condition.notify_all()
+      action, rear_link = self.action, self.rear_link
 
-_PACKAGES=(
-    '_adapter',
-    '_framework',
-    '_framework.base',
-    '_framework.base.packets',
-    '_framework.common',
-    '_framework.face',
-    '_framework.face.testing',
-    '_framework.foundation',
-    '_junkdrawer',
-)
+    if action is not None:
+      action(ticket, rear_link)
 
-_PACKAGE_DIRECTORIES = {
-    '_adapter': 'src/_adapter',
-    '_framework': 'src/_framework',
-    '_junkdrawer': 'src/_junkdrawer',
-}
+  def join_rear_link(self, rear_link):
+    with self.condition:
+      self.rear_link = rear_link
 
-_core.setup(
-    name='grpc', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+
+class RearLink(interfaces.RearLink):
+  """A RearLink suitable for use in tests of ForeLinks."""
+
+  def __init__(self, action, fore_link):
+    self.condition = threading.Condition()
+    self.tickets = []
+    self.action = action
+    self.fore_link = fore_link
+
+  def accept_front_to_back_ticket(self, ticket):
+    with self.condition:
+      self.tickets.append(ticket)
+      self.condition.notify_all()
+      action, fore_link = self.action, self.fore_link
+
+    if action is not None:
+      action(ticket, fore_link)
+
+  def join_fore_link(self, fore_link):
+    with self.condition:
+      self.fore_link = fore_link
