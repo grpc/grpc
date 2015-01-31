@@ -118,8 +118,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
   gpr_log(GPR_INFO, "testing with %d message pairs.", messages);
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
-                                   deadline);
+  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==

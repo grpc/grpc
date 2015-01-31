@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
   chan = grpc_lame_client_channel_create();
   GPR_ASSERT(chan);
-  call = grpc_channel_create_call_old(
+  call = grpc_channel_create_call(
       chan, "/Foo", "anywhere",
       gpr_time_add(gpr_now(), gpr_time_from_seconds(100)));
   GPR_ASSERT(call);

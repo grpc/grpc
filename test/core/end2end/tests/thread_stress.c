@@ -108,7 +108,7 @@ static void drain_cq(int client, grpc_completion_queue *cq) {
 static void start_request(void) {
   gpr_slice slice = gpr_slice_malloc(100);
   grpc_byte_buffer *buf;
-  grpc_call *call = grpc_channel_create_call_old(
+  grpc_call *call = grpc_channel_create_call(
       g_fixture.client, "/Foo", "test.google.com", g_test_end_time);
 
   memset(GPR_SLICE_START_PTR(slice), 1, GPR_SLICE_LENGTH(slice));

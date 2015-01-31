@@ -240,12 +240,6 @@ typedef struct {
 } grpc_metadata_array;
 
 typedef struct {
-  size_t count;
-  size_t capacity;
-  grpc_byte_buffer **buffers;
-} grpc_byte_buffer_array;
-
-typedef struct {
   grpc_status_code status;
   const char *details;
 } grpc_recv_status;
@@ -257,40 +251,43 @@ typedef struct {
 } grpc_call_details;
 
 typedef enum {
-  GRPC_IOREQ_SEND_INITIAL_METADATA = 0,
-  GRPC_IOREQ_SEND_TRAILING_METADATA,
-  GRPC_IOREQ_SEND_MESSAGES,
-  GRPC_IOREQ_SEND_CLOSE,
-  GRPC_IOREQ_RECV_INITIAL_METADATA,
-  GRPC_IOREQ_RECV_TRAILING_METADATA,
-  GRPC_IOREQ_RECV_MESSAGES,
-  GRPC_IOREQ_RECV_STATUS,
-  GRPC_IOREQ_OP_COUNT
-} grpc_ioreq_op;
+  GRPC_OP_SEND_INITIAL_METADATA = 0,
+  GRPC_OP_SEND_MESSAGE,
+  GRPC_OP_SEND_CLOSE_FROM_CLIENT,
+  GRPC_OP_SEND_STATUS_FROM_SERVER,
+  GRPC_OP_RECV_INITIAL_METADATA,
+  GRPC_OP_RECV_MESSAGES,
+  GRPC_OP_RECV_STATUS_ON_CLIENT,
+  GRPC_OP_RECV_CLOSE_ON_SERVER
+} grpc_op_type;
 
-typedef union {
-  struct {
-    size_t count;
-    const grpc_metadata *metadata;
-  } send_metadata;
-  struct {
-    size_t count;
-    grpc_byte_buffer **messages;
-  } send_messages;
-  struct {
-    /* fields only make sense on the server */
-    grpc_status_code status;
-    const char *details;
-  } send_close;
-  grpc_metadata_array *recv_metadata;
-  grpc_byte_buffer_array *recv_messages;
-  grpc_recv_status *recv_status;
-} grpc_ioreq_data;
-
-typedef struct grpc_ioreq {
-  grpc_ioreq_op op;
-  grpc_ioreq_data data;
-} grpc_ioreq;
+typedef struct grpc_op {
+  grpc_op_type op;
+  union {
+    struct {
+      size_t count;
+      const grpc_metadata *metadata;
+    } send_initial_metadata;
+    grpc_byte_buffer *send_message;
+    struct {
+      size_t trailing_metadata_count;
+      grpc_metadata *trailing_metadata;
+      grpc_status_code status;
+      const char *status_details;
+    } send_status_from_server;
+    grpc_metadata_array *recv_initial_metadata;
+    grpc_byte_buffer **recv_message;
+    struct {
+      grpc_metadata_array *trailing_metadata;
+      grpc_status_code *status;
+      char **status_details;
+      size_t *status_details_capacity;
+    } recv_status_on_client;
+    struct {
+      int *cancelled;
+    } recv_close_on_server;
+  } data;
+} grpc_op;
 
 /* Initialize the grpc library */
 void grpc_init(void);
@@ -335,14 +332,12 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
    is not sent until grpc_call_invoke is called. All completions are sent to
    'completion_queue'. */
 
-grpc_call *grpc_channel_create_call_old(grpc_channel *channel, const char *method, const char *host, gpr_timespec deadline);
+grpc_call *grpc_channel_create_call(grpc_channel *channel, const char *method,
+                                    const char *host, gpr_timespec deadline);
 
-grpc_call *grpc_channel_create_call(grpc_channel *channel,
-                                    grpc_completion_queue *cq,
-                                    const grpc_call_details *details);
-
-grpc_call_error grpc_call_start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
-                                      size_t nreqs, void *tag);
+grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
+                                      size_t nops, grpc_completion_queue *cq, 
+                                      void *tag);
 
 /* Create a client channel */
 grpc_channel *grpc_channel_create(const char *target,
@@ -483,8 +478,8 @@ void grpc_call_destroy(grpc_call *call);
 grpc_call_error grpc_server_request_call_old(grpc_server *server, void *tag_new);
 
 grpc_call_error grpc_server_request_call(
-    grpc_server *server, grpc_completion_queue *cq, grpc_call_details *details,
-    grpc_metadata_array *initial_metadata, void *tag);
+    grpc_server *server, grpc_call_details *details,
+    grpc_metadata_array *initial_metadata, grpc_completion_queue *cq, void *tag);
 
 /* Create a server */
 grpc_server *grpc_server_create(grpc_completion_queue *cq,

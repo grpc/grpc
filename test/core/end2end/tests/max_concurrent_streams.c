@@ -109,8 +109,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
-                                   deadline);
+  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -182,11 +181,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
   deadline = five_seconds_time();
-  c1 = grpc_channel_create_call_old(f.client, "/alpha", "test.google.com",
-                                    deadline);
+  c1 =
+      grpc_channel_create_call(f.client, "/alpha", "test.google.com", deadline);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call_old(f.client, "/beta", "test.google.com",
-                                    deadline);
+  c2 = grpc_channel_create_call(f.client, "/beta", "test.google.com", deadline);
   GPR_ASSERT(c1);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));

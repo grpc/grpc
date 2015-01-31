@@ -111,8 +111,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
-                                   deadline);
+  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==

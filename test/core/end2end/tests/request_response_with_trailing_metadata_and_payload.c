@@ -130,8 +130,7 @@ static void test_request_response_with_metadata_and_payload(
   gpr_slice_unref(request_payload_slice);
   gpr_slice_unref(response_payload_slice);
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
-                                   deadline);
+  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
 
   /* add multiple metadata */

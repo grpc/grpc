@@ -38,6 +38,47 @@
 #include "src/core/channel/metadata_buffer.h"
 #include <grpc/grpc.h>
 
+/* Primitive operation types - grpc_op's get rewritten into these */
+typedef enum {
+  GRPC_IOREQ_RECV_INITIAL_METADATA,
+  GRPC_IOREQ_RECV_MESSAGE,
+  GRPC_IOREQ_RECV_TRAILING_METADATA,
+  GRPC_IOREQ_RECV_STATUS,
+  GPRC_IOREQ_RECV_CLOSE,
+  GRPC_IOREQ_SEND_INITIAL_METADATA,
+  GRPC_IOREQ_SEND_MESSAGE,
+  GRPC_IOREQ_SEND_TRAILING_METADATA,
+  GRPC_IOREQ_SEND_STATUS,
+  GRPC_IOREQ_SEND_CLOSE,
+  GRPC_IOREQ_OP_COUNT
+} grpc_ioreq_op;
+
+typedef struct {
+  grpc_status_code *code;
+  char **details;
+  size_t *details_capacity;
+} grpc_recv_status_args;
+
+typedef union {
+  grpc_metadata_array *recv_metadata;
+  grpc_byte_buffer **recv_message;
+  grpc_recv_status_args recv_status;
+  struct {
+    size_t count;
+    grpc_metadata *metadata;
+  } send_metadata;
+  grpc_byte_buffer *send_message;
+  struct {
+    grpc_status_code code;
+    char *details;
+  } send_status;
+} grpc_ioreq_data;
+
+typedef struct {
+  grpc_ioreq_op op;
+  grpc_ioreq_data data;
+} grpc_ioreq;
+
 typedef void (*grpc_ioreq_completion_func)(grpc_call *call,
                                            grpc_op_error status,
                                            void *user_data);

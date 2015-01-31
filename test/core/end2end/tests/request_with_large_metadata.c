@@ -121,8 +121,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   meta.value[large_size] = 0;
   meta.value_length = large_size;
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
-                                   deadline);
+  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
   GPR_ASSERT(c);
 
   /* add the metadata */
