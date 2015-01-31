@@ -61,8 +61,8 @@
         "src/core/iomgr/tcp_posix.h",
         "src/core/iomgr/tcp_server.h",
         "src/core/iomgr/time_averaged_stats.h",
-        "src/core/iomgr/wakeup_fd_posix.h",
         "src/core/iomgr/wakeup_fd_pipe.h",
+        "src/core/iomgr/wakeup_fd_posix.h",
         "src/core/json/json.h",
         "src/core/json/json_common.h",
         "src/core/json/json_reader.h",
@@ -73,6 +73,7 @@
         "src/core/statistics/census_tracing.h",
         "src/core/statistics/hash_table.h",
         "src/core/statistics/window_stats.h",
+        "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
         "src/core/surface/client.h",
@@ -159,6 +160,7 @@
         "src/core/statistics/hash_table.c",
         "src/core/statistics/window_stats.c",
         "src/core/surface/byte_buffer.c",
+        "src/core/surface/byte_buffer_queue.c",
         "src/core/surface/byte_buffer_reader.c",
         "src/core/surface/call.c",
         "src/core/surface/channel.c",
@@ -418,9 +420,9 @@
       "build": "private",
       "language": "c++",
       "src": [
-        "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
+        "test/cpp/util/messages.proto",
         "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
@@ -430,8 +432,8 @@
       "build": "private",
       "language": "c++",
       "src": [
-        "examples/tips/label.proto",
         "examples/tips/empty.proto",
+        "examples/tips/label.proto",
         "examples/tips/pubsub.proto",
         "examples/tips/client.cc"
       ],
@@ -1193,6 +1195,48 @@
       ]
     },
     {
+      "name": "json_rewrite",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite.c"
+      ],
+      "deps": [
+        "grpc",
+        "gpr"
+      ],
+      "run": false
+    },
+    {
+      "name": "json_rewrite_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "run": false
+    },
+    {
+      "name": "json_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "lame_client_test",
       "build": "test",
       "language": "c",
@@ -1429,48 +1473,6 @@
       ]
     },
     {
-      "name": "json_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/json/json_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "json_rewrite",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/json/json_rewrite.c"
-      ],
-      "deps": [
-        "grpc",
-        "gpr"
-      ],
-      "run": false
-    },
-    {
-      "name": "json_rewrite_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/json/json_rewrite_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ],
-      "run": false
-    },
-    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",
@@ -1568,41 +1570,6 @@
       "run": false
     },
     {
-      "name": "tips_client",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "examples/tips/client_main.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_client_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/client_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "qps_client",
       "build": "test",
       "language": "c++",
@@ -1692,6 +1659,41 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "tips_client",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/tips/client_main.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "run": false
+    },
+    {
+      "name": "tips_client_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/tips/client_test.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
