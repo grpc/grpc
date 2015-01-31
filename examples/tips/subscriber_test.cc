@@ -41,7 +41,7 @@
 #include <grpc++/status.h>
 #include <gtest/gtest.h>
 
-#include "examples/tips/client.h"
+#include "examples/tips/subscriber.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -52,43 +52,66 @@ namespace testing {
 namespace {
 
 const char kTopic[] = "test topic";
+const char kSubscriptionName[] = "subscription name";
 
-class PublishServiceImpl : public tech::pubsub::PublisherService::Service {
+class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
  public:
-  Status CreateTopic(::grpc::ServerContext* context,
-                     const ::tech::pubsub::Topic* request,
-                     ::tech::pubsub::Topic* response) override {
-    EXPECT_EQ(request->name(), kTopic);
+  Status CreateSubscription(ServerContext* context,
+                            const tech::pubsub::Subscription* request,
+                            tech::pubsub::Subscription* response) override {
+    EXPECT_EQ(request->topic(), kTopic);
+    EXPECT_EQ(request->name(), kSubscriptionName);
     return Status::OK;
   }
+
+  Status GetSubscription(ServerContext* context,
+                         const tech::pubsub::GetSubscriptionRequest* request,
+                         tech::pubsub::Subscription* response) override {
+    EXPECT_EQ(request->subscription(), kSubscriptionName);
+    response->set_topic(kTopic);
+    return Status::OK;
+  }
+
 };
 
-class End2endTest : public ::testing::Test {
+class SubscriberTest : public ::testing::Test {
  protected:
+  // Setup a server and a client for SubscriberService.
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
-    // Setup server
     ServerBuilder builder;
     builder.AddPort(server_address_.str());
     builder.RegisterService(service_.service());
     server_ = builder.BuildAndStart();
 
     channel_ = CreateChannel(server_address_.str(), ChannelArguments());
+
+    subscriber_.reset(new grpc::examples::tips::Subscriber(channel_));
   }
 
-  void TearDown() override { server_->Shutdown(); }
+  void TearDown() override {
+    server_->Shutdown();
+    subscriber_->Shutdown();
+  }
 
-  std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
-  PublishServiceImpl service_;
+  std::unique_ptr<Server> server_;
+  SubscriberServiceImpl service_;
 
   std::shared_ptr<ChannelInterface> channel_;
+
+  std::unique_ptr<grpc::examples::tips::Subscriber> subscriber_;
 };
 
-TEST_F(End2endTest, CreateTopic) {
-  grpc::examples::tips::Client client(channel_);
-  client.CreateTopic(kTopic);
+TEST_F(SubscriberTest, TestSubscriber) {
+  EXPECT_TRUE(subscriber_->CreateSubscription(kTopic,
+                                              kSubscriptionName).IsOk());
+
+  grpc::string topic;
+  EXPECT_TRUE(subscriber_->GetSubscription(kSubscriptionName,
+                                           &topic).IsOk());
+  EXPECT_EQ(topic, kTopic);
 }
 
 }  // namespace

@@ -31,32 +31,80 @@
  *
  */
 
-#ifndef __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
-#define __GRPCPP_EXAMPLES_TIPS_CLIENT_H_
+#include <grpc++/client_context.h>
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+#include "examples/tips/publisher.h"
 
-#include "examples/tips/pubsub.pb.h"
+using tech::pubsub::Topic;
+using tech::pubsub::DeleteTopicRequest;
+using tech::pubsub::GetTopicRequest;
+using tech::pubsub::PublisherService;
+using tech::pubsub::ListTopicsRequest;
+using tech::pubsub::ListTopicsResponse;
+using tech::pubsub::PublishRequest;
+using tech::pubsub::PubsubMessage;
 
 namespace grpc {
 namespace examples {
 namespace tips {
 
-class Client {
- public:
-  Client(std::shared_ptr<grpc::ChannelInterface> channel);
-  Status CreateTopic(grpc::string topic);
-  Status GetTopic(grpc::string topic);
-  Status DeleteTopic(grpc::string topic);
-  Status ListTopics();
+Publisher::Publisher(std::shared_ptr<ChannelInterface> channel)
+    : stub_(PublisherService::NewStub(channel)) {
+}
 
- private:
-  std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
-};
+void Publisher::Shutdown() {
+  stub_.reset();
+}
+
+Status Publisher::CreateTopic(grpc::string topic) {
+  Topic request;
+  Topic response;
+  request.set_name(topic);
+  ClientContext context;
+
+  return stub_->CreateTopic(&context, request, &response);
+}
+
+Status Publisher::ListTopics() {
+  ListTopicsRequest request;
+  ListTopicsResponse response;
+  ClientContext context;
+
+  return stub_->ListTopics(&context, request, &response);
+}
+
+Status Publisher::GetTopic(grpc::string topic) {
+  GetTopicRequest request;
+  Topic response;
+  ClientContext context;
+
+  request.set_topic(topic);
+
+  return stub_->GetTopic(&context, request, &response);
+}
+
+Status Publisher::DeleteTopic(grpc::string topic) {
+  DeleteTopicRequest request;
+  proto2::Empty response;
+  ClientContext context;
+
+  request.set_topic(topic);
+
+  return stub_->DeleteTopic(&context, request, &response);
+}
+
+Status Publisher::Publish(const grpc::string& topic,
+                          const grpc::string& data) {
+  PublishRequest request;
+  proto2::Empty response;
+  ClientContext context;
+
+  request.mutable_message()->set_data(data);
+  request.set_topic(topic);
+
+  return stub_->Publish(&context, request, &response);
+}
 
 }  // namespace tips
 }  // namespace examples
 }  // namespace grpc
-
-#endif  // __GRPCPP_EXAMPLES_TIPS_CLIENT_H_

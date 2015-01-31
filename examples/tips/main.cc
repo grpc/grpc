@@ -46,7 +46,8 @@
 #include <grpc++/credentials.h>
 #include <grpc++/status.h>
 
-#include "examples/tips/client.h"
+#include "examples/tips/publisher.h"
+#include "examples/tips/subscriber.h"
 #include "test/cpp/util/create_test_channel.h"
 
 DEFINE_int32(server_port, 443, "Server port.");
@@ -54,7 +55,17 @@ DEFINE_string(server_host,
               "pubsub-staging.googleapis.com", "Server host to connect to");
 DEFINE_string(service_account_key_file, "",
               "Path to service account json key file.");
-DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
+DEFINE_string(oauth_scope,
+              "https://www.googleapis.com/auth/cloud-platform",
+              "Scope for OAuth tokens.");
+
+namespace {
+
+const char kTopic[] = "/topics/stoked-keyword-656/testtopics";
+const char kSubscriptionName[] = "stoked-keyword-656/testsubscription";
+const char kMessageData[] = "Message Data";
+
+}  // namespace
 
 grpc::string GetServiceAccountJsonKey() {
   static grpc::string json_key;
@@ -94,20 +105,40 @@ int main(int argc, char** argv) {
           true,                // use prod roots
           creds));
 
-  grpc::examples::tips::Client client(channel);
+  grpc::examples::tips::Publisher publisher(channel);
+  grpc::examples::tips::Subscriber subscriber(channel);
 
-  grpc::Status s = client.CreateTopic("/topics/stoked-keyword-656/testtopics");
-  gpr_log(GPR_INFO, "return code %d, %s", s.code(), s.details().c_str());
+  grpc::string topic = kTopic;
+
+  if (publisher.GetTopic(topic).IsOk()) publisher.DeleteTopic(topic);
+
+  grpc::Status s = publisher.CreateTopic(topic);
+  gpr_log(GPR_INFO, "Create topic returns code %d, %s",
+          s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
-  s = client.GetTopic("/topics/stoked-keyword-656/testtopics");
-  gpr_log(GPR_INFO, "return code %d, %s", s.code(), s.details().c_str());
+  s = publisher.GetTopic(topic);
+  gpr_log(GPR_INFO, "Get topic returns code %d, %s",
+          s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
-  s = client.DeleteTopic("/topics/stoked-keyword-656/testtopics");
-  gpr_log(GPR_INFO, "return code %d, %s", s.code(), s.details().c_str());
+  s = publisher.Publish(topic, kMessageData);
+  gpr_log(GPR_INFO, "Publish returns code %d, %s",
+          s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
+  s = subscriber.CreateSubscription(kTopic, kSubscriptionName);
+  gpr_log(GPR_INFO, "create subscrption returns code %d, %s",
+          s.code(), s.details().c_str());
+  GPR_ASSERT(s.IsOk());
+
+  s = publisher.DeleteTopic(kTopic);
+  gpr_log(GPR_INFO, "Delete topic returns code %d, %s",
+          s.code(), s.details().c_str());
+  GPR_ASSERT(s.IsOk());
+
+  subscriber.Shutdown();
+  publisher.Shutdown();
   channel.reset();
   grpc_shutdown();
   return 0;
