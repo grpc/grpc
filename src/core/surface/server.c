@@ -710,9 +710,9 @@ static void begin_request(grpc_server *server, grpc_completion_queue *cq,
 }
 
 grpc_call_error grpc_server_request_call(grpc_server *server,
-                                         grpc_completion_queue *cq,
                                          grpc_call_details *details,
                                          grpc_metadata_array *initial_metadata,
+                                         grpc_completion_queue *cq,
                                          void *tag) {
   grpc_cq_begin_op(cq, NULL, GRPC_IOREQ);
   return queue_call_request(server, cq, initial_metadata, begin_request, tag);
