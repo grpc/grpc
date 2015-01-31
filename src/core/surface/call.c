@@ -66,7 +66,6 @@ typedef struct {
   size_t msg_in_read_idx;
   grpc_byte_buffer *msg_in;
 
-  gpr_uint8 got_status;
   void *finished_tag;
 } legacy_state;
 
@@ -134,7 +133,6 @@ struct grpc_call {
   gpr_uint8 have_alarm;
   gpr_uint8 read_closed;
   gpr_uint8 stream_closed;
-  gpr_uint8 got_status_code;
   gpr_uint8 sending;
   gpr_uint8 num_completed_requests;
   gpr_uint8 need_more_data;
@@ -337,6 +335,7 @@ static void get_final_status(grpc_call *call, grpc_recv_status_args args) {
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
     if (call->status[i].set) {
       *args.code = call->status[i].code;
+      if (!args.details) return;
       if (call->status[i].details) {
         gpr_slice details = call->status[i].details->slice;
         size_t len = GPR_SLICE_LENGTH(details);
@@ -354,6 +353,7 @@ static void get_final_status(grpc_call *call, grpc_recv_status_args args) {
     }
   }
   *args.code = GRPC_STATUS_UNKNOWN;
+  if (!args.details) return;
 
 no_details:
   if (0 == *args.details_capacity) {
@@ -444,6 +444,8 @@ static send_action choose_send_action(grpc_call *call) {
       } else if (call->requests[GRPC_IOREQ_SEND_TRAILING_METADATA].set !=
                      REQSET_EMPTY &&
                  call->requests[GRPC_IOREQ_SEND_STATUS].set != REQSET_EMPTY) {
+        finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, GRPC_OP_OK);
+        finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, GRPC_OP_OK);
         return SEND_TRAILING_METADATA_AND_FINISH;
       } else {
         return SEND_NOTHING;
@@ -602,15 +604,14 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
         *data.recv_message = grpc_bbq_pop(&call->incoming_queue);
         if (*data.recv_message) {
           finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGE, GRPC_OP_OK);
+        } else if (call->stream_closed) {
+          finish_ioreq_op(call, GRPC_IOREQ_RECV_CLOSE, GRPC_OP_OK);
         } else {
           call->need_more_data = 1;
         }
-        if (call->stream_closed) {
-          finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
-        }
         break;
       case GRPC_IOREQ_RECV_STATUS:
-        if (call->stream_closed) {
+        if (call->read_closed) {
           finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
         }
         break;
@@ -760,23 +761,15 @@ grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
   return GRPC_CALL_OK;
 }
 
-static void maybe_finish_legacy(grpc_call *call) {
-  legacy_state *ls = get_legacy_state(call);
-  if (ls->got_status) {
-    grpc_cq_end_finished(call->cq, ls->finished_tag, call, do_nothing, NULL,
-                         ls->status, ls->details, ls->trailing_md_in.metadata,
-                         ls->trailing_md_in.count);
-  }
-}
-
 static void finish_status(grpc_call *call, grpc_op_error status,
                           void *ignored) {
   legacy_state *ls;
 
   lock(call);
   ls = get_legacy_state(call);
-  ls->got_status = 1;
-  maybe_finish_legacy(call);
+  grpc_cq_end_finished(call->cq, ls->finished_tag, call, do_nothing, NULL,
+                       ls->status, ls->details, ls->trailing_md_in.metadata,
+                       ls->trailing_md_in.count);
   unlock(call);
 }
 
@@ -1028,14 +1021,19 @@ void grpc_call_set_deadline(grpc_call_element *elem, gpr_timespec deadline) {
   grpc_alarm_init(&call->alarm, deadline, call_alarm, call, gpr_now());
 }
 
-void grpc_call_read_closed(grpc_call_element *elem) {
-  grpc_call *call = CALL_FROM_TOP_ELEM(elem);
-  lock(call);
-  GPR_ASSERT(!call->read_closed);
+static void mark_read_closed(grpc_call *call) {
   call->read_closed = 1;
   finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGE, GRPC_OP_OK);
   finish_ioreq_op(call, GRPC_IOREQ_RECV_INITIAL_METADATA, GRPC_OP_OK);
   finish_ioreq_op(call, GRPC_IOREQ_RECV_TRAILING_METADATA, GRPC_OP_OK);
+  finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+}
+
+void grpc_call_read_closed(grpc_call_element *elem) {
+  grpc_call *call = CALL_FROM_TOP_ELEM(elem);
+  lock(call);
+  GPR_ASSERT(!call->read_closed);
+  mark_read_closed(call);
   unlock(call);
 }
 
@@ -1044,14 +1042,11 @@ void grpc_call_stream_closed(grpc_call_element *elem) {
   lock(call);
   GPR_ASSERT(!call->stream_closed);
   if (!call->read_closed) {
-    call->read_closed = 1;
-    finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGE, GRPC_OP_OK);
-    finish_ioreq_op(call, GRPC_IOREQ_RECV_INITIAL_METADATA, GRPC_OP_OK);
-    finish_ioreq_op(call, GRPC_IOREQ_RECV_TRAILING_METADATA, GRPC_OP_OK);
+    mark_read_closed(call);
   }
   call->stream_closed = 1;
   if (grpc_bbq_empty(&call->incoming_queue)) {
-    finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+    finish_ioreq_op(call, GRPC_IOREQ_RECV_CLOSE, GRPC_OP_OK);
   }
   unlock(call);
   grpc_call_internal_unref(call, 0);
