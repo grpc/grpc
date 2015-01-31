@@ -106,15 +106,14 @@ def create_stub(opts)
         fd = StringIO.new(File.read(opts.oauth_key_file))
         logger.info("loading oauth certs from #{opts.oauth_key_file}")
         auth_creds = ServiceAccountCredentials.new(opts.oauth_scope, fd)
-        stub_opts[:update_metadata] = lambda(&auth_creds.method(:apply))
+        stub_opts[:update_metadata] = auth_creds.updater_proc
       end
     end
 
     # Add compute engine creds if specified
     if %w(all compute_engine_creds).include?(opts.test_case)
       unless opts.oauth_scope.nil?
-        auth_creds = GCECredentials.new
-        stub_opts[:update_metadata] = lambda(&auth_creds.method(:apply))
+        stub_opts[:update_metadata] = GCECredentials.new.update_proc
       end
     end
 
