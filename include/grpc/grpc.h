@@ -240,11 +240,6 @@ typedef struct {
 } grpc_metadata_array;
 
 typedef struct {
-  grpc_status_code status;
-  const char *details;
-} grpc_recv_status;
-
-typedef struct {
   const char *method;
   const char *host;
   gpr_timespec deadline;
