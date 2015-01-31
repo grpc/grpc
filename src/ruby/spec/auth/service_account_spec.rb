@@ -32,26 +32,31 @@ $LOAD_PATH.unshift(spec_dir)
 $LOAD_PATH.uniq!
 
 require 'apply_auth_examples'
-require 'grpc/auth/signet'
+require 'grpc/auth/service_account'
 require 'jwt'
+require 'multi_json'
 require 'openssl'
 require 'spec_helper'
 
-describe Signet::OAuth2::Client do
+describe Google::RPC::Auth::ServiceAccountCredentials do
   before(:example) do
     @key = OpenSSL::PKey::RSA.new(2048)
-    @client = Signet::OAuth2::Client.new(
-        token_credential_uri: 'https://accounts.google.com/o/oauth2/token',
-        scope: 'https://www.googleapis.com/auth/userinfo.profile',
-        issuer: 'app@example.com',
-        audience: 'https://accounts.google.com/o/oauth2/token',
-        signing_key: @key
-      )
+    cred_json = {
+      private_key_id: 'a_private_key_id',
+      private_key: @key.to_pem,
+      client_email: 'app@developer.gserviceaccount.com',
+      client_id: 'app.apps.googleusercontent.com',
+      type: 'service_account'
+    }
+    cred_json_text = MultiJson.dump(cred_json)
+    @client = Google::RPC::Auth::ServiceAccountCredentials.new(
+        'https://www.googleapis.com/auth/userinfo.profile',
+        StringIO.new(cred_json_text))
   end
 
   def make_auth_stubs(with_access_token: '')
     Faraday::Adapter::Test::Stubs.new do |stub|
-      stub.post('/o/oauth2/token') do |env|
+      stub.post('/oauth2/v3/token') do |env|
         params = Addressable::URI.form_unencode(env[:body])
         _claim, _header = JWT.decode(params.assoc('assertion').last,
                                      @key.public_key)

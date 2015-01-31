@@ -27,44 +27,42 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-spec_dir = File.expand_path(File.join(File.dirname(__FILE__)))
-$LOAD_PATH.unshift(spec_dir)
-$LOAD_PATH.uniq!
-
-require 'apply_auth_examples'
 require 'grpc/auth/signet'
-require 'jwt'
+require 'multi_json'
 require 'openssl'
-require 'spec_helper'
 
-describe Signet::OAuth2::Client do
-  before(:example) do
-    @key = OpenSSL::PKey::RSA.new(2048)
-    @client = Signet::OAuth2::Client.new(
-        token_credential_uri: 'https://accounts.google.com/o/oauth2/token',
-        scope: 'https://www.googleapis.com/auth/userinfo.profile',
-        issuer: 'app@example.com',
-        audience: 'https://accounts.google.com/o/oauth2/token',
-        signing_key: @key
-      )
-  end
+# Reads the private key and client email fields from service account JSON key.
+def read_json_key(json_key_io)
+  json_key = MultiJson.load(json_key_io.read)
+  fail 'missing client_email' unless json_key.key?('client_email')
+  fail 'missing private_key' unless json_key.key?('private_key')
+  [json_key['private_key'], json_key['client_email']]
+end
 
-  def make_auth_stubs(with_access_token: '')
-    Faraday::Adapter::Test::Stubs.new do |stub|
-      stub.post('/o/oauth2/token') do |env|
-        params = Addressable::URI.form_unencode(env[:body])
-        _claim, _header = JWT.decode(params.assoc('assertion').last,
-                                     @key.public_key)
-        want = ['grant_type', 'urn:ietf:params:oauth:grant-type:jwt-bearer']
-        expect(params.assoc('grant_type')).to eq(want)
-        build_json_response(
-          'access_token' => with_access_token,
-          'token_type' => 'Bearer',
-          'expires_in' => 3600
-        )
+module Google
+  module RPC
+    # Module Auth provides classes that provide Google-specific authentication
+    # used to access Google gRPC services.
+    module Auth
+      # Authenticates requests using Google's Service Account credentials.
+      # (cf https://developers.google.com/accounts/docs/OAuth2ServiceAccount)
+      class ServiceAccountCredentials < Signet::OAuth2::Client
+        TOKEN_CRED_URI = 'https://www.googleapis.com/oauth2/v3/token'
+        AUDIENCE = TOKEN_CRED_URI
+
+        # Initializes a ServiceAccountCredentials.
+        #
+        # @param scope [string|array] the scope(s) to access
+        # @param json_key_io [IO] an IO from which the JSON key can be read
+        def initialize(scope, json_key_io)
+          private_key, client_email = read_json_key(json_key_io)
+          super(token_credential_uri: TOKEN_CRED_URI,
+                audience: AUDIENCE,
+                scope: scope,
+                issuer: client_email,
+                signing_key: OpenSSL::PKey::RSA.new(private_key))
+        end
       end
     end
   end
-
-  it_behaves_like 'apply/apply! are OK'
 end

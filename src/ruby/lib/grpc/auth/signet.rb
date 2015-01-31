@@ -31,7 +31,8 @@ require 'signet/oauth_2/client'
 
 module Signet
   module OAuth2
-    # Google::RPC creates an OAuth2 client
+    AUTH_METADATA_KEY = :Authorization
+    # Signet::OAuth2::Client creates an OAuth2 client
     #
     # Here client is re-opened to add the #apply and #apply! methods which
     # update a hash map with the fetched authentication token
@@ -45,7 +46,7 @@ module Signet
         # fetch the access token there is currently not one, or if the client
         # has expired
         fetch_access_token!(opts) if access_token.nil? || expired?
-        a_hash['auth'] = access_token
+        a_hash[AUTH_METADATA_KEY] = "Bearer: #{access_token}"
       end
 
       # Returns a clone of a_hash updated with the authentication token
