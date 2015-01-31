@@ -56,6 +56,12 @@ module Signet
         apply!(a_copy, opts)
         a_copy
       end
+
+      # Returns a reference to the #apply method, suitable for passing as
+      # a closure
+      def updater_proc
+        lambda(&method(:apply))
+      end
     end
   end
 end
