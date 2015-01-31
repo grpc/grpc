@@ -86,11 +86,11 @@ def prod_creds
 end
 
 # creates a test stub that accesses host:port securely.
-def create_stub(host, port, is_secure, host_override, use_test_ca)
-  address = "#{host}:#{port}"
-  if is_secure
+def create_stub(opts)
+  address = "#{opts.host}:#{opts.port}"
+  if opts.secure
     creds = nil
-    if use_test_ca
+    if opts.use_test_ca
       creds = test_creds
     else
       creds = prod_creds
@@ -98,8 +98,17 @@ def create_stub(host, port, is_secure, host_override, use_test_ca)
 
     stub_opts = {
       :creds => creds,
-      GRPC::Core::Channel::SSL_TARGET => host_override
+      GRPC::Core::Channel::SSL_TARGET => opts.host_override
     }
+
+    # Allow service account updates if specified
+    unless opts.oauth_scope.nil?
+      cred_clz = Google::RPC::Auth::ServiceAccountCredentials
+      json_key_io = StringIO.new(File.read(opts.oauth_key_file))
+      auth_creds = cred_clz.new(opts.oauth_scope, json_key_io)
+      stub_opts[:update_metadata] = lambda(&auth_creds.method(:apply))
+    end
+
     logger.info("... connecting securely to #{address}")
     Grpc::Testing::TestService::Stub.new(address, **stub_opts)
   else
@@ -157,9 +166,10 @@ class NamedTests
   include Grpc::Testing::PayloadType
   attr_accessor :assertions # required by Minitest::Assertions
 
-  def initialize(stub)
+  def initialize(stub, opts)
     @assertions = 0  # required by Minitest::Assertions
     @stub = stub
+    @opts = opts
   end
 
   def empty_unary
@@ -169,19 +179,22 @@ class NamedTests
   end
 
   def large_unary
-    req_size, wanted_response_size = 271_828, 314_159
-    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
-    req = SimpleRequest.new(response_type: :COMPRESSABLE,
-                            response_size: wanted_response_size,
-                            payload: payload)
-    resp = @stub.unary_call(req)
-    assert_equal(:COMPRESSABLE, resp.payload.type,
-                 'large_unary: payload had the wrong type')
-    assert_equal(wanted_response_size, resp.payload.body.length,
-                 'large_unary: payload had the wrong length')
-    assert_equal(nulls(wanted_response_size), resp.payload.body,
-                 'large_unary: payload content is invalid')
+    perform_large_unary
     p 'OK: large_unary'
+  end
+
+  def service_account_creds
+    # ignore this test if the oauth options are not set
+    if @opts.oauth_scope.nil? || @opts.oauth_key_file.nil?
+      p 'NOT RUN: service_account_creds; no service_account settings'
+    end
+    json_key = File.read(@opts.oauth_key_file)
+    wanted_email = MultiJson.load(json_key)['client_email']
+    resp = perform_large_unary
+    assert_equal(@opts.oauth_scope, resp.oauth_scope,
+                 'service_account_creds: incorrect oauth_scope')
+    assert_equal(wanted_email, resp.username)
+    p 'OK: service_account_creds'
   end
 
   def client_streaming
@@ -229,28 +242,54 @@ class NamedTests
       method(m).call
     end
   end
+
+  private
+
+  def perform_large_unary(fill_username: false, fill_oauth_scope: false)
+    req_size, wanted_response_size = 271_828, 314_159
+    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
+    req = SimpleRequest.new(response_type: :COMPRESSABLE,
+                            response_size: wanted_response_size,
+                            payload: payload)
+    req.fill_username = fill_username
+    req.fill_oauth_scope = fill_oauth_scope
+    resp = @stub.unary_call(req)
+    assert_equal(:COMPRESSABLE, resp.payload.type,
+                 'large_unary: payload had the wrong type')
+    assert_equal(wanted_response_size, resp.payload.body.length,
+                 'large_unary: payload had the wrong length')
+    assert_equal(nulls(wanted_response_size), resp.payload.body,
+                 'large_unary: payload content is invalid')
+    resp
+  end
 end
+
+Options = Struct.new(:oauth_scope, :oauth_key_file, :secure, :host,
+                     :host_override, :port, :test_case, :use_test_ca)
 
 # validates the the command line options, returning them as a Hash.
 def parse_options
-  options = {
-    'secure' => false,
-    'server_host' => nil,
-    'server_host_override' => nil,
-    'server_port' => nil,
-    'test_case' => nil
-  }
+  options = Options.new
+  options.host_override = 'foo.test.google.com'
   OptionParser.new do |opts|
     opts.banner = 'Usage: --server_host <server_host> --server_port server_port'
+    opts.on('--oauth_scope scope',
+            'Scope for OAuth tokens') do |v|
+      options['oauth_scope'] = v
+    end
     opts.on('--server_host SERVER_HOST', 'server hostname') do |v|
-      options['server_host'] = v
+      options['host'] = v
+    end
+    opts.on('--service_account_key_file PATH',
+            'Path to the service account json key file') do |v|
+      options['oauth_key_file'] = v
     end
     opts.on('--server_host_override HOST_OVERRIDE',
             'override host via a HTTP header') do |v|
-      options['server_host_override'] = v
+      options['host_override'] = v
     end
     opts.on('--server_port SERVER_PORT', 'server port') do |v|
-      options['server_port'] = v
+      options['port'] = v
     end
     # instance_methods(false) gives only the methods defined in that class
     test_cases = NamedTests.instance_methods(false).map(&:to_s)
@@ -271,22 +310,22 @@ def parse_options
 end
 
 def _check_options(opts)
-  %w(server_host server_port test_case).each do |arg|
+  %w(host port test_case).each do |arg|
     if opts[arg].nil?
       fail(OptionParser::MissingArgument, "please specify --#{arg}")
     end
   end
-  if opts['server_host_override'].nil?
-    opts['server_host_override'] = opts['server_host']
+  if opts['oauth_key_file'].nil? ^ opts['oauth_scope'].nil?
+    fail(OptionParser::MissingArgument,
+         'please specify both of --service_account_key_file and --oauth_scope')
   end
   opts
 end
 
 def main
   opts = parse_options
-  stub = create_stub(opts['server_host'], opts['server_port'], opts['secure'],
-                     opts['server_host_override'], opts['use_test_ca'])
-  NamedTests.new(stub).method(opts['test_case']).call
+  stub = create_stub(opts)
+  NamedTests.new(stub, opts).method(opts['test_case']).call
 end
 
 main
