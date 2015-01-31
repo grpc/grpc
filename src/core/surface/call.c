@@ -511,7 +511,7 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       }
       /* send status */
       /* TODO(ctiller): cache common status values */
-      data = call->requests[GRPC_IOREQ_SEND_CLOSE].data;
+      data = call->requests[GRPC_IOREQ_SEND_STATUS].data;
       gpr_ltoa(data.send_status.code, status_str);
       send_metadata(
           call,
