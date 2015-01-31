@@ -27,33 +27,42 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'signet/oauth_2/client'
+require 'faraday'
+require 'grpc/auth/signet'
 
-module Signet
-  module OAuth2
-    AUTH_METADATA_KEY = :Authorization
-    # Signet::OAuth2::Client creates an OAuth2 client
-    #
-    # Here client is re-opened to add the #apply and #apply! methods which
-    # update a hash map with the fetched authentication token
-    #
-    # Eventually, this change may be merged into signet itself, or some other
-    # package that provides Google-specific auth via signet, and this extension
-    # will be unnecessary.
-    class Client
-      # Updates a_hash updated with the authentication token
-      def apply!(a_hash, opts = {})
-        # fetch the access token there is currently not one, or if the client
-        # has expired
-        fetch_access_token!(opts) if access_token.nil? || expired?
-        a_hash[AUTH_METADATA_KEY] = "Bearer #{access_token}"
-      end
+module Google
+  module RPC
+    # Module Auth provides classes that provide Google-specific authentication
+    # used to access Google gRPC services.
+    module Auth
+      # Extends Signet::OAuth2::Client so that the auth token is obtained from
+      # the GCE metadata server.
+      class GCECredentials < Signet::OAuth2::Client
+        COMPUTE_AUTH_TOKEN_URI = 'http://metadata/computeMetadata/v1/'\
+                                 'instance/service-accounts/default/token'
+        COMPUTE_CHECK_URI = 'http://metadata.google.internal'
 
-      # Returns a clone of a_hash updated with the authentication token
-      def apply(a_hash, opts = {})
-        a_copy = a_hash.clone
-        apply!(a_copy, opts)
-        a_copy
+        # Detect if this appear to be a GCE instance, by checking if metadata
+        # is available
+        def self.on_gce?(options = {})
+          c = options[:connection] || Faraday.default_connection
+          resp = c.get(COMPUTE_CHECK_URI)
+          return false unless resp.status == 200
+          return false unless resp.headers.key?('Metadata-Flavor')
+          return resp.headers['Metadata-Flavor'] == 'Google'
+        rescue Faraday::ConnectionFailed
+          return false
+        end
+
+        # Overrides the super class method to change how access tokens are
+        # fetched.
+        def fetch_access_token(options = {})
+          c = options[:connection] || Faraday.default_connection
+          c.headers = { 'Metadata-Flavor' => 'Google' }
+          resp = c.get(COMPUTE_AUTH_TOKEN_URI)
+          Signet::OAuth2.parse_credentials(resp.body,
+                                           resp.headers['content-type'])
+        end
       end
     end
   end

@@ -74,8 +74,25 @@ shared_examples 'apply/apply! are OK' do
 
       md = { foo: 'bar' }
       @client.apply!(md, connection: c)
-      want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer: #{token}" }
+      want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer #{token}" }
       expect(md).to eq(want)
+      stubs.verify_stubbed_calls
+    end
+  end
+
+  describe 'updater_proc' do
+    it 'should provide a proc that updates a hash with the access token' do
+      token = '1/abcdef1234567890'
+      stubs = make_auth_stubs with_access_token: token
+      c = Faraday.new do |b|
+        b.adapter(:test, stubs)
+      end
+
+      md = { foo: 'bar' }
+      the_proc = @client.updater_proc
+      got = the_proc.call(md, connection: c)
+      want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer #{token}" }
+      expect(got).to eq(want)
       stubs.verify_stubbed_calls
     end
   end
@@ -104,7 +121,7 @@ shared_examples 'apply/apply! are OK' do
 
       md = { foo: 'bar' }
       got = @client.apply(md, connection: c)
-      want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer: #{token}" }
+      want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer #{token}" }
       expect(got).to eq(want)
       stubs.verify_stubbed_calls
     end
@@ -120,7 +137,7 @@ shared_examples 'apply/apply! are OK' do
       n.times do |_t|
         md = { foo: 'bar' }
         got = @client.apply(md, connection: c)
-        want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer: #{token}" }
+        want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer #{token}" }
         expect(got).to eq(want)
       end
       stubs.verify_stubbed_calls
@@ -137,7 +154,7 @@ shared_examples 'apply/apply! are OK' do
         end
         md = { foo: 'bar' }
         got = @client.apply(md, connection: c)
-        want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer: #{t}" }
+        want = { :foo => 'bar', WANTED_AUTH_KEY => "Bearer #{t}" }
         expect(got).to eq(want)
         stubs.verify_stubbed_calls
         @client.expires_at -= 3601 # default is to expire in 1hr
