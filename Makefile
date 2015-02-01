@@ -2191,9 +2191,9 @@ objs/$(CONFIG)/src/cpp/util/time.o:
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
+    gens/test/cpp/util/messages.pb.cc \
     gens/test/cpp/util/echo.pb.cc \
     gens/test/cpp/util/echo_duplicate.pb.cc \
-    gens/test/cpp/util/messages.pb.cc \
     test/cpp/end2end/async_test_server.cc \
     test/cpp/util/create_test_channel.cc \
 
@@ -2210,9 +2210,9 @@ libs/$(CONFIG)/libgrpc++_test_util.a: openssl_dep_error
 else
 
 ifneq ($(OPENSSL_DEP),)
+test/cpp/util/messages.proto: $(OPENSSL_DEP)
 test/cpp/util/echo.proto: $(OPENSSL_DEP)
 test/cpp/util/echo_duplicate.proto: $(OPENSSL_DEP)
-test/cpp/util/messages.proto: $(OPENSSL_DEP)
 test/cpp/end2end/async_test_server.cc: $(OPENSSL_DEP)
 test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
 endif
@@ -2241,13 +2241,13 @@ endif
 
 
 
-objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
-objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc    gens/test/cpp/util/messages.pb.cc
+objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
+objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
 
 
 LIBTIPS_CLIENT_LIB_SRC = \
-    gens/examples/tips/empty.pb.cc \
     gens/examples/tips/label.pb.cc \
+    gens/examples/tips/empty.pb.cc \
     gens/examples/tips/pubsub.pb.cc \
     examples/tips/client.cc \
 
@@ -2264,8 +2264,8 @@ libs/$(CONFIG)/libtips_client_lib.a: openssl_dep_error
 else
 
 ifneq ($(OPENSSL_DEP),)
-examples/tips/empty.proto: $(OPENSSL_DEP)
 examples/tips/label.proto: $(OPENSSL_DEP)
+examples/tips/empty.proto: $(OPENSSL_DEP)
 examples/tips/pubsub.proto: $(OPENSSL_DEP)
 examples/tips/client.cc: $(OPENSSL_DEP)
 endif
@@ -2294,7 +2294,7 @@ endif
 
 
 
-objs/$(CONFIG)/examples/tips/client.o:     gens/examples/tips/empty.pb.cc    gens/examples/tips/label.pb.cc    gens/examples/tips/pubsub.pb.cc
+objs/$(CONFIG)/examples/tips/client.o:     gens/examples/tips/label.pb.cc    gens/examples/tips/empty.pb.cc    gens/examples/tips/pubsub.pb.cc
 
 
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
