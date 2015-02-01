@@ -24,7 +24,7 @@ Developers using gRPC typically start with the description of an RPC service
 (a collection of methods), and generate client and server side interfaces
 which they use on the client-side and implement on the server side.
 
-By default, gRPC uses [Protocol Buffers](github.com/google/protobuf) as the
+By default, gRPC uses [Protocol Buffers](https://github.com/google/protobuf) as the
 Interface Definition Language (IDL) for describing both the service interface
 and the structure of the payload messages. It is possible to use other 
 alternatives if desired.
@@ -67,7 +67,7 @@ fleshing out the details of each of the required operations.
 A gRPC RPC comprises of a bidirectional stream of messages, initiated by the client. In the client-to-server direction, this stream begins with a mandatory `Call Header`, followed by optional `Initial-Metadata`, followed by zero or more `Payload Messages`. The server-to-client direction contains an optional `Initial-Metadata`, followed by zero or more `Payload Messages` terminated with a mandatory `Status` and optional `Status-Metadata` (a.k.a.,`Trailing-Metadata`).
 
 ## Implementation over HTTP/2
-The abstract protocol defined above is implemented over [HTTP/2](https://http2.github.io/). gRPC bidirectional streams are mapped to HTTP/2 streams. The contents of `Call Header` and `Initial Metadata` are sent as HTTP/2 headers and subject to HPAC compression. `Payload Messages` are serialized into a byte stream of length prefixed gRPC frames which are then fragmented into HTTP/2 frames at the sender and reassembled at the receiver. `Status` and `Trailing-Metadata` are sent as HTTP/2 trailing headers (a.k.a., trailers).     
+The abstract protocol defined above is implemented over [HTTP/2](https://http2.github.io/). gRPC bidirectional streams are mapped to HTTP/2 streams. The contents of `Call Header` and `Initial Metadata` are sent as HTTP/2 headers and subject to HPACK compression. `Payload Messages` are serialized into a byte stream of length prefixed gRPC frames which are then fragmented into HTTP/2 frames at the sender and reassembled at the receiver. `Status` and `Trailing-Metadata` are sent as HTTP/2 trailing headers (a.k.a., trailers).     
 
 ## Flow Control
-gRPC inherits the flow control mchanims in HTTP/2 and uses them to enable fine-grained control of the amount of memory used for buffering in-flight messages.
+gRPC inherits the flow control mechanisms in HTTP/2 and uses them to enable fine-grained control of the amount of memory used for buffering in-flight messages.
