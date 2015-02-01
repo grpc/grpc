@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,30 +31,13 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_BYTE_BUFFER_H_
-#define NET_GRPC_NODE_BYTE_BUFFER_H_
+var grpc = require('..');
+var examples = grpc.load(__dirname + '/stock.proto').examples;
 
-#include <string.h>
-
-#include <node.h>
-#include <nan.h>
-#include "grpc/grpc.h"
-
-namespace grpc {
-namespace node {
-
-/* Convert a Node.js Buffer to grpc_byte_buffer. Requires that
-   ::node::Buffer::HasInstance(buffer) */
-grpc_byte_buffer *BufferToByteBuffer(v8::Handle<v8::Value> buffer);
-
-/* Convert a grpc_byte_buffer to a Node.js Buffer */
-v8::Handle<v8::Value> ByteBufferToBuffer(grpc_byte_buffer *buffer);
-
-/* Convert a ::node::Buffer to a fast Buffer, as defined in the Node
-   Buffer documentation */
-v8::Handle<v8::Value> MakeFastBuffer(v8::Handle<v8::Value> slowBuffer);
-
-}  // namespace node
-}  // namespace grpc
-
-#endif  // NET_GRPC_NODE_BYTE_BUFFER_H_
+/**
+ * This exports a client constructor for the Stock service. The usage looks like
+ *
+ * var StockClient = require('stock_client.js');
+ * var stockClient = new StockClient(server_address);
+ */
+module.exports = examples.Stock;

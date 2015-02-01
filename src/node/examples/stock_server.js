@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,30 +31,53 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_BYTE_BUFFER_H_
-#define NET_GRPC_NODE_BYTE_BUFFER_H_
+var _ = require('underscore');
+var grpc = require('..');
+var examples = grpc.load(__dirname + '/stock.proto').examples;
 
-#include <string.h>
+var StockServer = grpc.makeServerConstructor([examples.Stock.service]);
 
-#include <node.h>
-#include <nan.h>
-#include "grpc/grpc.h"
+function getLastTradePrice(call, callback) {
+  callback(null, {price: 88});
+}
 
-namespace grpc {
-namespace node {
+function watchFutureTrades(call) {
+  for (var i = 0; i < call.request.num_trades_to_watch; i++) {
+    call.write({price: 88.00 + i * 10.00});
+  }
+  call.end();
+}
 
-/* Convert a Node.js Buffer to grpc_byte_buffer. Requires that
-   ::node::Buffer::HasInstance(buffer) */
-grpc_byte_buffer *BufferToByteBuffer(v8::Handle<v8::Value> buffer);
+function getHighestTradePrice(call, callback) {
+  var trades = [];
+  call.on('data', function(data) {
+    trades.push({symbol: data.symbol, price: _.random(0, 100)});
+  });
+  call.on('end', function() {
+    if(_.isEmpty(trades)) {
+      callback(null, {});
+    } else {
+      callback(null, _.max(trades, function(trade){return trade.price;}));
+    }
+  });
+}
 
-/* Convert a grpc_byte_buffer to a Node.js Buffer */
-v8::Handle<v8::Value> ByteBufferToBuffer(grpc_byte_buffer *buffer);
+function getLastTradePriceMultiple(call) {
+  call.on('data', function(data) {
+    call.write({price: 88});
+  });
+  call.on('end', function() {
+    call.end();
+  });
+}
 
-/* Convert a ::node::Buffer to a fast Buffer, as defined in the Node
-   Buffer documentation */
-v8::Handle<v8::Value> MakeFastBuffer(v8::Handle<v8::Value> slowBuffer);
+var stockServer = new StockServer({
+  'examples.Stock' : {
+    getLastTradePrice: getLastTradePrice,
+    getLastTradePriceMultiple: getLastTradePriceMultiple,
+    watchFutureTrades: watchFutureTrades,
+    getHighestTradePrice: getHighestTradePrice
+  }
+});
 
-}  // namespace node
-}  // namespace grpc
-
-#endif  // NET_GRPC_NODE_BYTE_BUFFER_H_
+exports.module = stockServer;

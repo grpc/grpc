@@ -28,9 +28,9 @@ class ActiveCall {
     $this->flags = $flags;
 
     // Invoke the call.
-    $this->call->start_invoke($this->completion_queue,
-                              CLIENT_METADATA_READ,
-                              FINISHED, 0);
+    $this->call->invoke($this->completion_queue,
+                        CLIENT_METADATA_READ,
+                        FINISHED, 0);
     $metadata_event = $this->completion_queue->pluck(CLIENT_METADATA_READ,
                                                      Timeval::inf_future());
     $this->metadata = $metadata_event->data;

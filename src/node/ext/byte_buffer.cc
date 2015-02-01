@@ -39,13 +39,17 @@
 #include "grpc/grpc.h"
 #include "grpc/support/slice.h"
 
+#include "byte_buffer.h"
+
 namespace grpc {
 namespace node {
 
-#include "byte_buffer.h"
-
 using ::node::Buffer;
+using v8::Context;
+using v8::Function;
 using v8::Handle;
+using v8::Object;
+using v8::Number;
 using v8::Value;
 
 grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
@@ -73,7 +77,19 @@ Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
   }
-  return NanEscapeScope(NanNewBufferHandle(result, length));
+  return NanEscapeScope(MakeFastBuffer(NanNewBufferHandle(result, length)));
+}
+
+Handle<Value> MakeFastBuffer(Handle<Value> slowBuffer) {
+  NanEscapableScope();
+  Handle<Object> globalObj = Context::GetCurrent()->Global();
+  Handle<Function> bufferConstructor = Handle<Function>::Cast(
+      globalObj->Get(NanNew("Buffer")));
+  Handle<Value> consArgs[3] = { slowBuffer,
+                                NanNew<Number>(Buffer::Length(slowBuffer)),
+                                NanNew<Number>(0) };
+  Handle<Object> fastBuffer = bufferConstructor->NewInstance(3, consArgs);
+  return NanEscapeScope(fastBuffer);
 }
 }  // namespace node
 }  // namespace grpc
