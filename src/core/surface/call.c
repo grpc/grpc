@@ -896,7 +896,7 @@ void grpc_call_initial_metadata_complete(grpc_call_element *surface_element) {
 }
 
 static void finish_read_event(void *p, grpc_op_error error) {
-  grpc_byte_buffer_destroy(p);
+  if (p) grpc_byte_buffer_destroy(p);
 }
 
 static void finish_read(grpc_call *call, grpc_op_error error, void *tag) {
