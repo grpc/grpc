@@ -44,6 +44,7 @@
 #include <google/gflags.h>
 #include <grpc++/client_context.h>
 #include <grpc++/status.h>
+#include "test/core/util/grpc_profiler.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/qps/qpstest.pb.h"
 
@@ -129,6 +130,8 @@ void RunTest(const int client_threads, const int client_channels,
   grpc::Status status_beg = stub_stats->CollectServerStats(
       &context_stats_begin, stats_request, &server_stats_begin);
 
+  grpc_profiler_start("qps_client.prof");
+
   for (int i = 0; i < client_threads; i++) {
     gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);
     GPR_ASSERT(hist != NULL);
@@ -168,6 +171,9 @@ void RunTest(const int client_threads, const int client_channels,
   for (auto &t : threads) {
     t.join();
   }
+
+  grpc_profiler_stop();
+
   for (int i = 0; i < client_threads; i++) {
     gpr_histogram *h = thread_stats[i];
     gpr_log(GPR_INFO, "latency at thread %d (50/90/95/99/99.9): %f/%f/%f/%f/%f",
