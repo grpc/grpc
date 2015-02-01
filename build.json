@@ -420,9 +420,9 @@
       "build": "private",
       "language": "c++",
       "src": [
+        "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
-        "test/cpp/util/messages.proto",
         "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
@@ -432,8 +432,8 @@
       "build": "private",
       "language": "c++",
       "src": [
-        "examples/tips/empty.proto",
         "examples/tips/label.proto",
+        "examples/tips/empty.proto",
         "examples/tips/pubsub.proto",
         "examples/tips/client.cc"
       ],
