@@ -910,8 +910,9 @@ static void destroy_legacy_state(legacy_state *ls) {
   gpr_free(ls);
 }
 
-grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
-                                       gpr_uint32 flags) {
+grpc_call_error grpc_call_add_metadata_old(grpc_call *call,
+                                           grpc_metadata *metadata,
+                                           gpr_uint32 flags) {
   legacy_state *ls;
   grpc_metadata *mdout;
 
@@ -971,9 +972,9 @@ static void finish_recv_metadata(grpc_call *call, grpc_op_error status,
 static void finish_send_metadata(grpc_call *call, grpc_op_error status,
                                  void *tag) {}
 
-grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
-                                 void *metadata_read_tag, void *finished_tag,
-                                 gpr_uint32 flags) {
+grpc_call_error grpc_call_invoke_old(grpc_call *call, grpc_completion_queue *cq,
+                                     void *metadata_read_tag,
+                                     void *finished_tag, gpr_uint32 flags) {
   grpc_ioreq reqs[3];
   legacy_state *ls;
   grpc_call_error err;
@@ -1015,9 +1016,9 @@ done:
   return err;
 }
 
-grpc_call_error grpc_call_server_accept(grpc_call *call,
-                                        grpc_completion_queue *cq,
-                                        void *finished_tag) {
+grpc_call_error grpc_call_server_accept_old(grpc_call *call,
+                                            grpc_completion_queue *cq,
+                                            void *finished_tag) {
   grpc_ioreq reqs[2];
   grpc_call_error err;
   legacy_state *ls;
@@ -1047,8 +1048,8 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
 static void finish_send_initial_metadata(grpc_call *call, grpc_op_error status,
                                          void *tag) {}
 
-grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
-                                                      gpr_uint32 flags) {
+grpc_call_error grpc_call_server_end_initial_metadata_old(grpc_call *call,
+                                                          gpr_uint32 flags) {
   grpc_ioreq req;
   grpc_call_error err;
   legacy_state *ls;
@@ -1086,7 +1087,7 @@ static void finish_read(grpc_call *call, grpc_op_error error, void *tag) {
   unlock(call);
 }
 
-grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
+grpc_call_error grpc_call_start_read_old(grpc_call *call, void *tag) {
   legacy_state *ls;
   grpc_ioreq req;
   grpc_call_error err;
@@ -1109,9 +1110,9 @@ static void finish_write(grpc_call *call, grpc_op_error status, void *tag) {
   grpc_cq_end_write_accepted(call->cq, tag, call, do_nothing, NULL, status);
 }
 
-grpc_call_error grpc_call_start_write(grpc_call *call,
-                                      grpc_byte_buffer *byte_buffer, void *tag,
-                                      gpr_uint32 flags) {
+grpc_call_error grpc_call_start_write_old(grpc_call *call,
+                                          grpc_byte_buffer *byte_buffer,
+                                          void *tag, gpr_uint32 flags) {
   grpc_ioreq req;
   legacy_state *ls;
   grpc_call_error err;
@@ -1133,7 +1134,7 @@ static void finish_finish(grpc_call *call, grpc_op_error status, void *tag) {
   grpc_cq_end_finish_accepted(call->cq, tag, call, do_nothing, NULL, status);
 }
 
-grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
+grpc_call_error grpc_call_writes_done_old(grpc_call *call, void *tag) {
   grpc_ioreq req;
   grpc_call_error err;
   grpc_cq_begin_op(call->cq, call, GRPC_FINISH_ACCEPTED);
@@ -1146,9 +1147,10 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
   return err;
 }
 
-grpc_call_error grpc_call_start_write_status(grpc_call *call,
-                                             grpc_status_code status,
-                                             const char *details, void *tag) {
+grpc_call_error grpc_call_start_write_status_old(grpc_call *call,
+                                                 grpc_status_code status,
+                                                 const char *details,
+                                                 void *tag) {
   grpc_ioreq reqs[3];
   grpc_call_error err;
   legacy_state *ls;

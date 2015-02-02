@@ -74,7 +74,7 @@ grpc_channel *grpc_channel_create_from_filters(
 
 static void do_nothing(void *ignored, grpc_op_error error) {}
 
-grpc_call *grpc_channel_create_call(grpc_channel *channel,
+grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
                                         const char *method, const char *host,
                                         gpr_timespec absolute_deadline) {
   grpc_call *call;

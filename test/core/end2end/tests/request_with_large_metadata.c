@@ -121,14 +121,15 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   meta.value[large_size] = 0;
   meta.value_length = large_size;
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
   /* add the metadata */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata(c, &meta, 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata_old(c, &meta, 0));
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke(c, f.client_cq, tag(2), tag(3), 0));
+             grpc_call_invoke_old(c, f.client_cq, tag(2), tag(3), 0));
 
   cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
                            deadline, "key", meta.value, NULL);
@@ -140,9 +141,9 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(8)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(8)));
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write_status(s, GRPC_STATUS_OK, NULL, tag(9)));
+             grpc_call_start_write_status_old(s, GRPC_STATUS_OK, NULL, tag(9)));
 
   cq_expect_finish_accepted(v_client, tag(8), GRPC_OP_OK);
   cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_OK, NULL, NULL);

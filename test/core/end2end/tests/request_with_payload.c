@@ -116,15 +116,16 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   /* byte buffer holds the slice, we can unref it already */
   gpr_slice_unref(payload_slice);
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke(c, f.client_cq, tag(2), tag(3), 0));
+             grpc_call_invoke_old(c, f.client_cq, tag(2), tag(3), 0));
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write(c, payload, tag(4), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_old(c, payload, tag(4), 0));
   /* destroy byte buffer early to ensure async code keeps track of its contents
      correctly */
   grpc_byte_buffer_destroy(payload);
@@ -139,11 +140,11 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(s, tag(4)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read_old(s, tag(4)));
   cq_expect_read(v_server, tag(4), gpr_slice_from_copied_string("hello world"));
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(5)));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status(
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(5)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status_old(
                                  s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(6)));
   cq_expect_finish_accepted(v_client, tag(5), GRPC_OP_OK);
   cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,

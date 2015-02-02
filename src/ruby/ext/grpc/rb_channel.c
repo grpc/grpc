@@ -192,9 +192,10 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE method, VALUE host,
     rb_raise(rb_eRuntimeError, "closed!");
   }
 
-  call = grpc_channel_create_call(ch, method_chars, host_chars,
-                                  grpc_rb_time_timeval(deadline,
-                                                       /* absolute time */ 0));
+  call =
+      grpc_channel_create_call_old(ch, method_chars, host_chars,
+                                   grpc_rb_time_timeval(deadline,
+                                                        /* absolute time */ 0));
   if (call == NULL) {
     rb_raise(rb_eRuntimeError, "cannot create call with method %s",
              method_chars);

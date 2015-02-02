@@ -111,13 +111,14 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke(c, f.client_cq, tag(2), tag(3), 0));
+             grpc_call_invoke_old(c, f.client_cq, tag(2), tag(3), 0));
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(4)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(4)));
   cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_OK);
   cq_verify(v_client);
 
@@ -126,8 +127,9 @@ static void test_early_server_shutdown_finishes_inflight_calls(
                            deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, f.server_cq, tag(102)));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_server_accept_old(s, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata_old(s, 0));
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 

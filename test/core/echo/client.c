@@ -52,7 +52,7 @@ static void start_write_next_slice(grpc_call *call, int first, int length) {
   for (i = 0; i < length; i++)
     GPR_SLICE_START_PTR(slice)[i] = (first + i) % 256;
   byte_buffer = grpc_byte_buffer_create(&slice, 1);
-  GPR_ASSERT(grpc_call_start_write(call, byte_buffer, (void *)1, 0) ==
+  GPR_ASSERT(grpc_call_start_write_old(call, byte_buffer, (void *)1, 0) ==
              GRPC_CALL_OK);
   gpr_slice_unref(slice);
   grpc_byte_buffer_destroy(byte_buffer);
@@ -78,15 +78,15 @@ int main(int argc, char **argv) {
 
   GPR_ASSERT(argc == 2);
   channel = grpc_channel_create(argv[1], NULL);
-  call = grpc_channel_create_call(
+  call = grpc_channel_create_call_old(
       channel, "/foo", "localhost",
       gpr_time_add(gpr_time_from_seconds(5), gpr_now()));
-  GPR_ASSERT(grpc_call_invoke(call, cq, (void *)1, (void *)1, 0) ==
+  GPR_ASSERT(grpc_call_invoke_old(call, cq, (void *)1, (void *)1, 0) ==
              GRPC_CALL_OK);
 
   start_write_next_slice(call, bytes_written, WRITE_SLICE_LENGTH);
   bytes_written += WRITE_SLICE_LENGTH;
-  GPR_ASSERT(grpc_call_start_read(call, (void *)1) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_start_read_old(call, (void *)1) == GRPC_CALL_OK);
   waiting_finishes = 2;
   while (waiting_finishes) {
     ev = grpc_completion_queue_next(cq, gpr_inf_future);
@@ -96,7 +96,8 @@ int main(int argc, char **argv) {
           start_write_next_slice(call, bytes_written, WRITE_SLICE_LENGTH);
           bytes_written += WRITE_SLICE_LENGTH;
         } else {
-          GPR_ASSERT(grpc_call_writes_done(call, (void *)1) == GRPC_CALL_OK);
+          GPR_ASSERT(grpc_call_writes_done_old(call, (void *)1) ==
+                     GRPC_CALL_OK);
         }
         break;
       case GRPC_CLIENT_METADATA_READ:
@@ -112,7 +113,7 @@ int main(int argc, char **argv) {
         }
         grpc_byte_buffer_reader_destroy(bb_reader);
         if (bytes_read < TOTAL_BYTES) {
-          GPR_ASSERT(grpc_call_start_read(call, (void *)1) == GRPC_CALL_OK);
+          GPR_ASSERT(grpc_call_start_read_old(call, (void *)1) == GRPC_CALL_OK);
         }
         break;
       case GRPC_FINISHED:

@@ -108,7 +108,7 @@ static void drain_cq(int client, grpc_completion_queue *cq) {
 static void start_request(void) {
   gpr_slice slice = gpr_slice_malloc(100);
   grpc_byte_buffer *buf;
-  grpc_call *call = grpc_channel_create_call(
+  grpc_call *call = grpc_channel_create_call_old(
       g_fixture.client, "/Foo", "test.google.com", g_test_end_time);
 
   memset(GPR_SLICE_START_PTR(slice), 1, GPR_SLICE_LENGTH(slice));
@@ -117,9 +117,9 @@ static void start_request(void) {
 
   g_active_requests++;
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke(call, g_fixture.client_cq, NULL, NULL, 0));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(call, NULL));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write(call, buf, NULL, 0));
+             grpc_call_invoke_old(call, g_fixture.client_cq, NULL, NULL, 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read_old(call, NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_old(call, buf, NULL, 0));
 
   grpc_byte_buffer_destroy(buf);
 }
@@ -143,7 +143,7 @@ static void client_thread(void *p) {
         case GRPC_READ:
           break;
         case GRPC_WRITE_ACCEPTED:
-          GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(ev->call, NULL));
+          GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(ev->call, NULL));
           break;
         case GRPC_FINISH_ACCEPTED:
           break;
@@ -184,8 +184,8 @@ static void request_server_call(void) {
 
 static void maybe_end_server_call(grpc_call *call, gpr_refcount *rc) {
   if (gpr_unref(rc)) {
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_write_status(call, GRPC_STATUS_OK, NULL, NULL));
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status_old(
+                                   call, GRPC_STATUS_OK, NULL, NULL));
     gpr_free(rc);
   }
 }
@@ -215,20 +215,22 @@ static void server_thread(void *p) {
         case GRPC_SERVER_RPC_NEW:
           if (ev->call) {
             GPR_ASSERT(GRPC_CALL_OK ==
-                       grpc_call_server_accept(ev->call, g_fixture.server_cq,
-                                               ev->tag));
+                       grpc_call_server_accept_old(
+                           ev->call, g_fixture.server_cq, ev->tag));
             GPR_ASSERT(GRPC_CALL_OK ==
-                       grpc_call_server_end_initial_metadata(ev->call, 0));
-            GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(ev->call, ev->tag));
+                       grpc_call_server_end_initial_metadata_old(ev->call, 0));
             GPR_ASSERT(GRPC_CALL_OK ==
-                       grpc_call_start_write(ev->call, buf, ev->tag, 0));
+                       grpc_call_start_read_old(ev->call, ev->tag));
+            GPR_ASSERT(GRPC_CALL_OK ==
+                       grpc_call_start_write_old(ev->call, buf, ev->tag, 0));
           } else {
             gpr_free(ev->tag);
           }
           break;
         case GRPC_READ:
           if (ev->data.read) {
-            GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(ev->call, ev->tag));
+            GPR_ASSERT(GRPC_CALL_OK ==
+                       grpc_call_start_read_old(ev->call, ev->tag));
           } else {
             maybe_end_server_call(ev->call, ev->tag);
           }
