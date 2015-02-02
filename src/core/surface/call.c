@@ -554,10 +554,18 @@ static grpc_call_error start_ioreq_error(grpc_call *call,
   return ret;
 }
 
+static void dump_req_state(const char *debug, const char *stage, grpc_call *call) {
+  size_t i;
+  for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
+    gpr_log(GPR_DEBUG, "%p:%s:%s:%d:%d", call, debug, stage, i, call->requests[i].set);
+  }
+}
+
 static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                    size_t nreqs,
                                    grpc_ioreq_completion_func completion,
-                                   void *user_data) {
+                                   void *user_data,
+                                   const char *debug) {
   size_t i;
   gpr_uint32 have_ops = 0;
   grpc_ioreq_op op;
@@ -565,6 +573,8 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
   reqinfo *master;
   grpc_ioreq_data data;
   gpr_uint8 set;
+
+  dump_req_state(debug, "before", call);
 
   if (nreqs == 0) {
     return GRPC_CALL_OK;
@@ -597,21 +607,24 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     op = reqs[i].op;
     data = reqs[i].data;
     switch (op) {
-      default:
+      case GRPC_IOREQ_OP_COUNT:
+        gpr_log(GPR_ERROR, "should never reach here");
+        abort();
         break;
       case GRPC_IOREQ_RECV_MESSAGE:
         *data.recv_message = grpc_bbq_pop(&call->incoming_queue);
         if (*data.recv_message) {
           finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGE, GRPC_OP_OK);
         } else if (call->stream_closed) {
-          finish_ioreq_op(call, GRPC_IOREQ_RECV_CLOSE, GRPC_OP_OK);
+          finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGE, GRPC_OP_OK);
         } else {
           call->need_more_data = 1;
         }
         break;
       case GRPC_IOREQ_RECV_STATUS:
+      case GRPC_IOREQ_RECV_CLOSE:
         if (call->read_closed) {
-          finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+          finish_ioreq_op(call, op, GRPC_OP_OK);
         }
         break;
       case GRPC_IOREQ_SEND_MESSAGE:
@@ -623,11 +636,15 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
         if (requests[GRPC_IOREQ_SEND_MESSAGE].set == REQSET_EMPTY) {
           requests[GRPC_IOREQ_SEND_MESSAGE].set = REQSET_DONE;
         }
+        if (call->stream_closed) {
+          finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, GRPC_OP_ERROR);
+        }
         break;
       case GRPC_IOREQ_SEND_INITIAL_METADATA:
+      case GRPC_IOREQ_SEND_TRAILING_METADATA:
+      case GRPC_IOREQ_SEND_STATUS:
         if (call->stream_closed) {
-          finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA,
-                          GRPC_OP_ERROR);
+          finish_ioreq_op(call, op, GRPC_OP_ERROR);
         }
         break;
       case GRPC_IOREQ_RECV_INITIAL_METADATA:
@@ -656,6 +673,8 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     }
   }
 
+  dump_req_state(debug, "after", call);
+
   return GRPC_CALL_OK;
 }
 
@@ -668,7 +687,7 @@ grpc_call_error grpc_call_start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                       size_t nreqs, void *tag) {
   grpc_call_error err;
   lock(call);
-  err = start_ioreq(call, reqs, nreqs, call_start_ioreq_done, tag);
+  err = start_ioreq(call, reqs, nreqs, call_start_ioreq_done, tag, __FUNCTION__);
   unlock(call);
   return err;
 }
@@ -678,7 +697,7 @@ grpc_call_error grpc_call_start_ioreq_and_call_back(
     grpc_ioreq_completion_func on_complete, void *user_data) {
   grpc_call_error err;
   lock(call);
-  err = start_ioreq(call, reqs, nreqs, on_complete, user_data);
+  err = start_ioreq(call, reqs, nreqs, on_complete, user_data, __FUNCTION__);
   unlock(call);
   return err;
 }
@@ -814,12 +833,12 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   reqs[0].data.send_metadata.count = ls->md_out_count[ls->md_out_buffer];
   reqs[0].data.send_metadata.metadata = ls->md_out[ls->md_out_buffer];
   ls->md_out_buffer++;
-  err = start_ioreq(call, reqs, 1, finish_send_metadata, NULL);
+  err = start_ioreq(call, reqs, 1, finish_send_metadata, NULL, __FUNCTION__);
   if (err != GRPC_CALL_OK) goto done;
 
   reqs[0].op = GRPC_IOREQ_RECV_INITIAL_METADATA;
   reqs[0].data.recv_metadata = &ls->initial_md_in;
-  err = start_ioreq(call, reqs, 1, finish_recv_metadata, metadata_read_tag);
+  err = start_ioreq(call, reqs, 1, finish_recv_metadata, metadata_read_tag, __FUNCTION__);
   if (err != GRPC_CALL_OK) goto done;
 
   reqs[0].op = GRPC_IOREQ_RECV_TRAILING_METADATA;
@@ -829,7 +848,7 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   reqs[1].data.recv_status.details_capacity = &ls->details_capacity;
   reqs[1].data.recv_status.code = &ls->status;
   reqs[2].op = GRPC_IOREQ_RECV_CLOSE;
-  err = start_ioreq(call, reqs, 3, finish_status, NULL);
+  err = start_ioreq(call, reqs, 3, finish_status, NULL, __FUNCTION__);
   if (err != GRPC_CALL_OK) goto done;
 
 done:
@@ -861,7 +880,7 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
   reqs[0].data.recv_status.details_capacity = 0;
   reqs[0].data.recv_status.code = &ls->status;
   reqs[1].op = GRPC_IOREQ_RECV_CLOSE;
-  err = start_ioreq(call, reqs, 2, finish_status, NULL);
+  err = start_ioreq(call, reqs, 2, finish_status, NULL, __FUNCTION__);
   unlock(call);
   return err;
 }
@@ -880,7 +899,7 @@ grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
   req.op = GRPC_IOREQ_SEND_INITIAL_METADATA;
   req.data.send_metadata.count = ls->md_out_count[ls->md_out_buffer];
   req.data.send_metadata.metadata = ls->md_out[ls->md_out_buffer];
-  err = start_ioreq(call, &req, 1, finish_send_initial_metadata, NULL);
+  err = start_ioreq(call, &req, 1, finish_send_initial_metadata, NULL, __FUNCTION__);
   unlock(call);
 
   return err;
@@ -919,7 +938,7 @@ grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
   ls = get_legacy_state(call);
   req.op = GRPC_IOREQ_RECV_MESSAGE;
   req.data.recv_message = &ls->msg_in;
-  err = start_ioreq(call, &req, 1, finish_read, tag);
+  err = start_ioreq(call, &req, 1, finish_read, tag, __FUNCTION__);
   unlock(call);
   return err;
 }
@@ -945,7 +964,7 @@ grpc_call_error grpc_call_start_write(grpc_call *call,
   ls->msg_out = grpc_byte_buffer_copy(byte_buffer);
   req.op = GRPC_IOREQ_SEND_MESSAGE;
   req.data.send_message = ls->msg_out;
-  err = start_ioreq(call, &req, 1, finish_write, tag);
+  err = start_ioreq(call, &req, 1, finish_write, tag, __FUNCTION__);
   unlock(call);
 
   return err;
@@ -962,7 +981,7 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
 
   lock(call);
   req.op = GRPC_IOREQ_SEND_CLOSE;
-  err = start_ioreq(call, &req, 1, finish_finish, tag);
+  err = start_ioreq(call, &req, 1, finish_finish, tag, __FUNCTION__);
   unlock(call);
 
   return err;
@@ -986,7 +1005,7 @@ grpc_call_error grpc_call_start_write_status(grpc_call *call,
   /* MEMLEAK */
   reqs[1].data.send_status.details = gpr_strdup(details);
   reqs[2].op = GRPC_IOREQ_SEND_CLOSE;
-  err = start_ioreq(call, reqs, 3, finish_finish, tag);
+  err = start_ioreq(call, reqs, 3, finish_finish, tag, __FUNCTION__);
   unlock(call);
 
   return err;
