@@ -119,16 +119,17 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   gpr_slice_unref(request_payload_slice);
   gpr_slice_unref(response_payload_slice);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, tag(100)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke(c, f.client_cq, tag(2), tag(3), 0));
+             grpc_call_invoke_old(c, f.client_cq, tag(2), tag(3), 0));
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write(c, request_payload, tag(4), 0));
+             grpc_call_start_write_old(c, request_payload, tag(4), 0));
   /* destroy byte buffer early to ensure async code keeps track of its contents
      correctly */
   grpc_byte_buffer_destroy(request_payload);
@@ -139,28 +140,29 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
                            deadline, NULL);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, f.server_cq, tag(102)));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_server_accept_old(s, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata_old(s, 0));
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
   cq_verify(v_client);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(s, tag(5)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read_old(s, tag(5)));
   cq_expect_read(v_server, tag(5), gpr_slice_from_copied_string("hello world"));
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_write(s, response_payload, tag(6), 0));
+             grpc_call_start_write_old(s, response_payload, tag(6), 0));
   /* destroy byte buffer early to ensure async code keeps track of its contents
      correctly */
   grpc_byte_buffer_destroy(response_payload);
   cq_expect_write_accepted(v_server, tag(6), GRPC_OP_OK);
   cq_verify(v_server);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read(c, tag(7)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_read_old(c, tag(7)));
   cq_expect_read(v_client, tag(7), gpr_slice_from_copied_string("hello you"));
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(8)));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status(
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(8)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status_old(
                                  s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(9)));
 
   cq_expect_finish_accepted(v_client, tag(8), GRPC_OP_OK);
