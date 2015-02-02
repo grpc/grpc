@@ -24,7 +24,7 @@ Developers using gRPC typically start with the description of an RPC service
 (a collection of methods), and generate client and server side interfaces
 which they use on the client-side and implement on the server side.
 
-By default, gRPC uses [Protocol Buffers](github.com/google/protobuf) as the
+By default, gRPC uses [Protocol Buffers](https://github.com/google/protobuf) as the
 Interface Definition Language (IDL) for describing both the service interface
 and the structure of the payload messages. It is possible to use other 
 alternatives if desired.

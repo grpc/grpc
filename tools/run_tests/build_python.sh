@@ -8,3 +8,5 @@ cd $(dirname $0)/../..
 root=`pwd`
 virtualenv python2.7_virtual_environment
 python2.7_virtual_environment/bin/pip install enum34==1.0.4 futures==2.2.0
+python2.7_virtual_environment/bin/pip install third_party/protobuf/python
+python2.7_virtual_environment/bin/pip install src/python
