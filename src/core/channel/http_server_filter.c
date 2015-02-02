@@ -319,8 +319,8 @@ static void init_channel_elem(grpc_channel_element *elem,
       if (channeld->gettable_count == gettable_capacity) {
         gettable_capacity =
             GPR_MAX(gettable_capacity * 3 / 2, gettable_capacity + 1);
-        channeld->gettables =
-            gpr_realloc(channeld->gettables, gettable_capacity * sizeof(gettable));
+        channeld->gettables = gpr_realloc(channeld->gettables,
+                                          gettable_capacity * sizeof(gettable));
       }
       g = &channeld->gettables[channeld->gettable_count++];
       g->path = grpc_mdelem_from_strings(mdctx, ":path", p->path);
@@ -328,14 +328,24 @@ static void init_channel_elem(grpc_channel_element *elem,
           grpc_mdelem_from_strings(mdctx, "content-type", p->content_type);
       slice = gpr_slice_from_copied_string(p->content);
       g->content = grpc_byte_buffer_create(&slice, 1);
+      gpr_slice_unref(slice);
     }
   }
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
+  size_t i;
+
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
+
+  for (i = 0; i < channeld->gettable_count; i++) {
+    grpc_mdelem_unref(channeld->gettables[i].path);
+    grpc_mdelem_unref(channeld->gettables[i].content_type);
+    grpc_byte_buffer_destroy(channeld->gettables[i].content);
+  }
+  gpr_free(channeld->gettables);
 
   grpc_mdelem_unref(channeld->te_trailers);
   grpc_mdelem_unref(channeld->status_ok);
@@ -350,6 +360,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_server_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "http-server"};
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
+    "http-server"};
