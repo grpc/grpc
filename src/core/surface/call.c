@@ -71,8 +71,14 @@ typedef struct {
 #define REQSET_EMPTY 255
 #define REQSET_DONE 254
 
-/* The state of an ioreq */
-typedef struct reqinfo {
+/* The state of an ioreq - we keep one of these on the call for each
+   grpc_ioreq_op type.
+
+   These structures are manipulated in sets, where a set is a set of
+   operations begin with the same call to start_ioreq and the various
+   public and private api's that call it. Each set has a master reqinfo
+   in which we set a few additional fields. */
+typedef struct {
   /* User supplied parameters */
   grpc_ioreq_data data;
   /* In which set is this ioreq?
@@ -84,12 +90,15 @@ typedef struct reqinfo {
        - REQSET_DONE, in which case this reqinfo has been satisfied for
          all time for this call, and no further use will be made of it */
   gpr_uint8 set;
+} reqinfo;
+
+typedef struct {
   grpc_op_error status;
   grpc_ioreq_completion_func on_complete;
   void *user_data;
   gpr_uint32 need_mask;
   gpr_uint32 complete_mask;
-} reqinfo;
+} reqinfo_master;
 
 typedef enum {
   STATUS_FROM_API_OVERRIDE = 0,
@@ -120,6 +129,7 @@ struct grpc_call {
   gpr_uint8 need_more_data;
 
   reqinfo requests[GRPC_IOREQ_OP_COUNT];
+  reqinfo_master masters[GRPC_IOREQ_OP_COUNT];
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   grpc_byte_buffer_queue incoming_queue;
   grpc_metadata_array buffered_initial_metadata;
@@ -333,9 +343,12 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   completed_request *cr;
   size_t i;
   if (call->requests[op].set < GRPC_IOREQ_OP_COUNT) {
-    reqinfo *master = &call->requests[call->requests[op].set];
+    reqinfo_master *master = &call->masters[call->requests[op].set];
     /* ioreq is live: we need to do something */
     master->complete_mask |= 1 << op;
+    if (status != GRPC_OP_OK) {
+      master->status = status;
+    }
     call->requests[op].set =
         (op == GRPC_IOREQ_SEND_MESSAGE || op == GRPC_IOREQ_RECV_MESSAGE)
             ? REQSET_EMPTY
@@ -347,14 +360,11 @@ static void finish_ioreq_op(grpc_call *call, grpc_ioreq_op op,
       }
       for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
         if (call->requests[i].set == op) {
-          if (call->requests[i].status != GRPC_OP_OK) {
-            status = GRPC_OP_ERROR;
-          }
           call->requests[i].set = REQSET_EMPTY;
         }
       }
       cr = &call->completed_requests[call->num_completed_requests++];
-      cr->status = status;
+      cr->status = master->status;
       cr->on_complete = master->on_complete;
       cr->user_data = master->user_data;
     }
@@ -527,7 +537,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
   gpr_uint32 have_ops = 0;
   grpc_ioreq_op op;
   reqinfo *requests = call->requests;
-  reqinfo *master;
+  reqinfo_master *master;
   grpc_ioreq_data data;
   gpr_uint8 set;
 
@@ -552,7 +562,8 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     requests[op].set = set;
   }
 
-  master = &requests[set];
+  master = &call->masters[set];
+  master->status = GRPC_OP_OK;
   master->need_mask = have_ops;
   master->complete_mask = 0;
   master->on_complete = completion;
