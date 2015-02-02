@@ -371,6 +371,6 @@ describe GRPC::ActiveCall do
   end
 
   def deadline
-    Time.now + 0.25  # in 0.25 seconds; arbitrary
+    Time.now + 1  # in 1 second; arbitrary
   end
 end
