@@ -53,6 +53,8 @@ class Subscriber {
 
   Status GetSubscription(const grpc::string& name, grpc::string* topic);
 
+  Status Pull(const grpc::string& name, grpc::string* data);
+
  private:
   std::unique_ptr<tech::pubsub::SubscriberService::Stub> stub_;
 };

@@ -81,6 +81,29 @@ Status Subscriber::GetSubscription(const grpc::string& name,
   return s;
 }
 
+Status Subscriber::Pull(const grpc::string& name,
+                        grpc::string* data) {
+  tech::pubsub::PullRequest request;
+  tech::pubsub::PullResponse response;
+  ClientContext context;
+
+  request.set_subscription(name);
+  Status s = stub_->Pull(&context, request, &response);
+  if (s.IsOk()) {
+    tech::pubsub::PubsubEvent event = response.pubsub_event();
+    if (event.has_message()) {
+      *data = event.message().data();
+    }
+    tech::pubsub::AcknowledgeRequest ack;
+    proto2::Empty empty;
+    ClientContext ack_context;
+    ack.set_subscription(name);
+    ack.add_ack_id(response.ack_id());
+    stub_->Acknowledge(&ack_context, ack, &empty);
+  }
+  return s;
+}
+
 }  // namespace tips
 }  // namespace examples
 }  // namespace grpc

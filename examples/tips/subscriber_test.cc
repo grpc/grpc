@@ -53,6 +53,7 @@ namespace {
 
 const char kTopic[] = "test topic";
 const char kSubscriptionName[] = "subscription name";
+const char kData[] = "Message data";
 
 class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
  public:
@@ -69,6 +70,21 @@ class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
                          tech::pubsub::Subscription* response) override {
     EXPECT_EQ(request->subscription(), kSubscriptionName);
     response->set_topic(kTopic);
+    return Status::OK;
+  }
+
+  Status Pull(ServerContext* context,
+              const tech::pubsub::PullRequest* request,
+              tech::pubsub::PullResponse* response) override {
+    EXPECT_EQ(request->subscription(), kSubscriptionName);
+    response->set_ack_id("1");
+    response->mutable_pubsub_event()->mutable_message()->set_data(kData);
+    return Status::OK;
+  }
+
+  Status Acknowledge(ServerContext* context,
+                     const tech::pubsub::AcknowledgeRequest* request,
+                     proto2::Empty* response) override {
     return Status::OK;
   }
 
@@ -108,10 +124,15 @@ TEST_F(SubscriberTest, TestSubscriber) {
   EXPECT_TRUE(subscriber_->CreateSubscription(kTopic,
                                               kSubscriptionName).IsOk());
 
+
   grpc::string topic;
   EXPECT_TRUE(subscriber_->GetSubscription(kSubscriptionName,
                                            &topic).IsOk());
   EXPECT_EQ(topic, kTopic);
+
+  grpc::string data;
+  EXPECT_TRUE(subscriber_->Pull(kSubscriptionName,
+                                &data).IsOk());
 }
 
 }  // namespace
