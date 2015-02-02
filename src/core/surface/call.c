@@ -622,9 +622,13 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
         }
         break;
       case GRPC_IOREQ_RECV_STATUS:
-      case GRPC_IOREQ_RECV_CLOSE:
         if (call->read_closed) {
-          finish_ioreq_op(call, op, GRPC_OP_OK);
+          finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS, GRPC_OP_OK);
+        }
+        break;
+      case GRPC_IOREQ_RECV_CLOSE:
+        if (call->stream_closed) {
+          finish_ioreq_op(call, GRPC_IOREQ_RECV_CLOSE, GRPC_OP_OK);
         }
         break;
       case GRPC_IOREQ_SEND_CLOSE:
