@@ -88,8 +88,5 @@ RUN wget https://phar.phpunit.de/phpunit.phar \
   && chmod +x phpunit.phar \
   && mv phpunit.phar /usr/local/bin/phpunit
 
-# Build the C core
-RUN make static_c shared_c -j12 -C /var/local/git/grpc
-
 # Define the default command.
 CMD ["bash"]
