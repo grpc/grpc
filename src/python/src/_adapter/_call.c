@@ -70,7 +70,7 @@ static void pygrpc_call_dealloc(Call *self) {
   self->ob_type->tp_free((PyObject *)self);
 }
 
-static const PyObject *pygrpc_call_invoke_old(Call *self, PyObject *args) {
+static const PyObject *pygrpc_call_invoke(Call *self, PyObject *args) {
   const PyObject *completion_queue;
   const PyObject *metadata_tag;
   const PyObject *finish_tag;
