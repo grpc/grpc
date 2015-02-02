@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'logging', '~> 1.8'
   s.add_dependency 'jwt', '~> 1.2.1'
   s.add_dependency 'minitest', '~> 5.4'  # reqd for interop tests
-  s.add_dependency 'multijson', '1.10.1'
+  s.add_dependency 'multi_json', '1.10.1'
   s.add_dependency 'signet', '~> 0.6.0'
   s.add_dependency 'xray', '~> 1.1'
 
