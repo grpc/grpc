@@ -410,10 +410,10 @@
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h">
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\json\json.h">
