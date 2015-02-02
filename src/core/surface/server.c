@@ -709,7 +709,7 @@ static void begin_request(grpc_server *server, grpc_completion_queue *cq,
   abort();
 }
 
-grpc_call_error grpc_server_request_call_old(
+grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call_details *details,
     grpc_metadata_array *initial_metadata, grpc_completion_queue *cq,
     void *tag) {
