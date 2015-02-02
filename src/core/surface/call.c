@@ -571,7 +571,6 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
   }
 
   set = reqs[0].op;
-  master = &requests[set];
 
   for (i = 0; i < nreqs; i++) {
     op = reqs[i].op;
@@ -588,7 +587,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     requests[op].set = set;
   }
 
-  GPR_ASSERT(master != NULL);
+  master = &requests[set];
   master->need_mask = have_ops;
   master->complete_mask = 0;
   master->on_complete = completion;
