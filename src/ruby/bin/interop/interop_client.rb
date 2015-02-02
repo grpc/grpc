@@ -195,6 +195,7 @@ class NamedTests
     # ignore this test if the oauth options are not set
     if @args.oauth_scope.nil? || @args.oauth_key_file.nil?
       p 'NOT RUN: service_account_creds; no service_account settings'
+      return
     end
     json_key = File.read(@args.oauth_key_file)
     wanted_email = MultiJson.load(json_key)['client_email']
