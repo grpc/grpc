@@ -243,7 +243,9 @@ static void metadata_expectation(gpr_strvec *buf, metadata *md) {
       gpr_asprintf(&tmp, "%c%s:%s", i ? ',' : '{', md->keys[i], md->values[i]);
       gpr_strvec_add(buf, tmp);
     }
-    gpr_strvec_add(buf, gpr_strdup("}"));
+    if (md->count) {
+      gpr_strvec_add(buf, gpr_strdup("}"));
+    }
   }
 }
 
