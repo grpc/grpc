@@ -45,15 +45,17 @@ namespace tips {
 
 class Subscriber {
  public:
-  Subscriber(std::shared_ptr<grpc::ChannelInterface> channel);
+  Subscriber(std::shared_ptr<ChannelInterface> channel);
   void Shutdown();
 
-  Status CreateSubscription(const grpc::string& topic,
-                            const grpc::string& name);
+  Status CreateSubscription(const string& topic,
+                            const string& name);
 
-  Status GetSubscription(const grpc::string& name, grpc::string* topic);
+  Status GetSubscription(const string& name, string* topic);
 
-  Status Pull(const grpc::string& name, grpc::string* data);
+  Status DeleteSubscription(const string& name);
+
+  Status Pull(const string& name, string* data);
 
  private:
   std::unique_ptr<tech::pubsub::SubscriberService::Stub> stub_;

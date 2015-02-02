@@ -45,15 +45,15 @@ namespace tips {
 
 class Publisher {
  public:
-  Publisher(std::shared_ptr<grpc::ChannelInterface> channel);
+  Publisher(std::shared_ptr<ChannelInterface> channel);
   void Shutdown();
 
-  Status CreateTopic(grpc::string topic);
-  Status GetTopic(grpc::string topic);
-  Status DeleteTopic(grpc::string topic);
+  Status CreateTopic(const string& topic);
+  Status GetTopic(const string& topic);
+  Status DeleteTopic(const string& topic);
   Status ListTopics();
 
-  Status Publish(const grpc::string& topic, const grpc::string& data);
+  Status Publish(const string& topic, const string& data);
 
  private:
   std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;

@@ -73,6 +73,14 @@ class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
     return Status::OK;
   }
 
+  Status DeleteSubscription(
+      ServerContext* context,
+      const tech::pubsub::DeleteSubscriptionRequest* request,
+      proto2::Empty* response) override {
+    EXPECT_EQ(request->subscription(), kSubscriptionName);
+    return Status::OK;
+  }
+
   Status Pull(ServerContext* context,
               const tech::pubsub::PullRequest* request,
               tech::pubsub::PullResponse* response) override {
@@ -133,6 +141,8 @@ TEST_F(SubscriberTest, TestSubscriber) {
   grpc::string data;
   EXPECT_TRUE(subscriber_->Pull(kSubscriptionName,
                                 &data).IsOk());
+
+  EXPECT_TRUE(subscriber_->DeleteSubscription(kSubscriptionName).IsOk());
 }
 
 }  // namespace

@@ -53,6 +53,7 @@
 DEFINE_int32(server_port, 443, "Server port.");
 DEFINE_string(server_host,
               "pubsub-staging.googleapis.com", "Server host to connect to");
+DEFINE_string(project_id, "", "GCE project id such as stoked-keyword-656");
 DEFINE_string(service_account_key_file, "",
               "Path to service account json key file.");
 DEFINE_string(oauth_scope,
@@ -61,9 +62,9 @@ DEFINE_string(oauth_scope,
 
 namespace {
 
-const char kTopic[] = "/topics/stoked-keyword-656/testtopics";
-const char kSubscriptionName[] = "stoked-keyword-656/testsubscription";
-const char kMessageData[] = "Message Data";
+const char kTopic[] = "testtopics";
+const char kSubscriptionName[] = "testsubscription";
+const char kMessageData[] = "Test Data";
 
 }  // namespace
 
@@ -83,10 +84,7 @@ int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   gpr_log(GPR_INFO, "Start TIPS client");
 
-  const int host_port_buf_size = 1024;
-  char host_port[host_port_buf_size];
-  snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
-           FLAGS_server_port);
+  std::ostringstream ss;
 
   std::unique_ptr<grpc::Credentials> creds;
   if (FLAGS_service_account_key_file != "") {
@@ -97,9 +95,10 @@ int main(int argc, char** argv) {
     creds = grpc::CredentialsFactory::ComputeEngineCredentials();
   }
 
+  ss << FLAGS_server_host << ":" << FLAGS_server_port;
   std::shared_ptr<grpc::ChannelInterface> channel(
       grpc::CreateTestChannel(
-          host_port,
+          ss.str(),
           FLAGS_server_host,
           true,                // enable SSL
           true,                // use prod roots
@@ -108,8 +107,21 @@ int main(int argc, char** argv) {
   grpc::examples::tips::Publisher publisher(channel);
   grpc::examples::tips::Subscriber subscriber(channel);
 
-  grpc::string topic = kTopic;
+  GPR_ASSERT(FLAGS_project_id != "");
+  ss.str("");
+  ss << "/topics/" << FLAGS_project_id << "/" << kTopic;
+  grpc::string topic = ss.str();
 
+  ss.str("");
+  ss << FLAGS_project_id << "/"  << kSubscriptionName;
+  grpc::string subscription_name = ss.str();
+
+  // Clean up test topic and subcription.
+  grpc::string subscription_topic;
+  if (subscriber.GetSubscription(
+      subscription_name, &subscription_topic).IsOk()) {
+    subscriber.DeleteSubscription(subscription_name);
+  }
   if (publisher.GetTopic(topic).IsOk()) publisher.DeleteTopic(topic);
 
   grpc::Status s = publisher.CreateTopic(topic);
@@ -122,17 +134,26 @@ int main(int argc, char** argv) {
           s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
-  s = publisher.Publish(topic, kMessageData);
-  gpr_log(GPR_INFO, "Publish returns code %d, %s",
-          s.code(), s.details().c_str());
-  GPR_ASSERT(s.IsOk());
-
-  s = subscriber.CreateSubscription(kTopic, kSubscriptionName);
+  s = subscriber.CreateSubscription(topic, subscription_name);
   gpr_log(GPR_INFO, "create subscrption returns code %d, %s",
           s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
-  s = publisher.DeleteTopic(kTopic);
+  s = publisher.Publish(topic, kMessageData);
+  gpr_log(GPR_INFO, "Publish %s returns code %d, %s",
+          kMessageData, s.code(), s.details().c_str());
+  GPR_ASSERT(s.IsOk());
+
+  grpc::string data;
+  s = subscriber.Pull(subscription_name, &data);
+  gpr_log(GPR_INFO, "Pull %s", data.c_str());
+
+  s =  subscriber.DeleteSubscription(subscription_name);
+  gpr_log(GPR_INFO, "Delete subscription returns code %d, %s",
+          s.code(), s.details().c_str());
+  GPR_ASSERT(s.IsOk());
+
+  s = publisher.DeleteTopic(topic);
   gpr_log(GPR_INFO, "Delete topic returns code %d, %s",
           s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());

@@ -56,7 +56,7 @@ void Publisher::Shutdown() {
   stub_.reset();
 }
 
-Status Publisher::CreateTopic(grpc::string topic) {
+Status Publisher::CreateTopic(const string& topic) {
   Topic request;
   Topic response;
   request.set_name(topic);
@@ -73,7 +73,7 @@ Status Publisher::ListTopics() {
   return stub_->ListTopics(&context, request, &response);
 }
 
-Status Publisher::GetTopic(grpc::string topic) {
+Status Publisher::GetTopic(const string& topic) {
   GetTopicRequest request;
   Topic response;
   ClientContext context;
@@ -83,7 +83,7 @@ Status Publisher::GetTopic(grpc::string topic) {
   return stub_->GetTopic(&context, request, &response);
 }
 
-Status Publisher::DeleteTopic(grpc::string topic) {
+Status Publisher::DeleteTopic(const string& topic) {
   DeleteTopicRequest request;
   proto2::Empty response;
   ClientContext context;
@@ -93,8 +93,7 @@ Status Publisher::DeleteTopic(grpc::string topic) {
   return stub_->DeleteTopic(&context, request, &response);
 }
 
-Status Publisher::Publish(const grpc::string& topic,
-                          const grpc::string& data) {
+Status Publisher::Publish(const string& topic, const string& data) {
   PublishRequest request;
   proto2::Empty response;
   ClientContext context;

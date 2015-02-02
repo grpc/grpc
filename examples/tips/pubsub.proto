@@ -1,3 +1,5 @@
+// This file will be moved to new location.
+
 // Specification of the Pubsub API.
 
 syntax = "proto2";
