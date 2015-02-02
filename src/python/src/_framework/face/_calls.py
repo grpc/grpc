@@ -94,7 +94,7 @@ class _OperationCancellableIterator(interfaces.CancellableIterator):
 
   def cancel(self):
     self._operation.cancel()
-    self._rendezvous.set_outcome(base_interfaces.CANCELLED)
+    self._rendezvous.set_outcome(base_interfaces.Outcome.CANCELLED)
 
 
 class _OperationFuture(future.Future):
@@ -150,15 +150,12 @@ class _OperationFuture(future.Future):
     """Indicates to this object that the operation has terminated.
 
     Args:
-      operation_outcome: One of base_interfaces.COMPLETED,
-        base_interfaces.CANCELLED, base_interfaces.EXPIRED,
-        base_interfaces.RECEPTION_FAILURE, base_interfaces.TRANSMISSION_FAILURE,
-        base_interfaces.SERVICED_FAILURE, or base_interfaces.SERVICER_FAILURE
-        indicating the categorical outcome of the operation.
+      operation_outcome: A base_interfaces.Outcome value indicating the
+        outcome of the operation.
     """
     with self._condition:
       if (self._outcome is None and
-          operation_outcome != base_interfaces.COMPLETED):
+          operation_outcome is not base_interfaces.Outcome.COMPLETED):
         self._outcome = future.raised(
             _control.abortion_outcome_to_exception(operation_outcome))
         self._condition.notify_all()

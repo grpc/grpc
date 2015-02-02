@@ -29,27 +29,24 @@
 
 """Interfaces defined and used by the base layer of RPC Framework."""
 
-# TODO(nathaniel): Use Python's new enum library for enumerated types rather
-# than constants merely placed close together.
-
 import abc
+import enum
 
 # stream is referenced from specification in this module.
 from _framework.foundation import stream  # pylint: disable=unused-import
 
-# Operation outcomes.
-COMPLETED = 'completed'
-CANCELLED = 'cancelled'
-EXPIRED = 'expired'
-RECEPTION_FAILURE = 'reception failure'
-TRANSMISSION_FAILURE = 'transmission failure'
-SERVICER_FAILURE = 'servicer failure'
-SERVICED_FAILURE = 'serviced failure'
 
-# Subscription categories.
-FULL = 'full'
-TERMINATION_ONLY = 'termination only'
-NONE = 'none'
+@enum.unique
+class Outcome(enum.Enum):
+  """Operation outcomes."""
+
+  COMPLETED = 'completed'
+  CANCELLED = 'cancelled'
+  EXPIRED = 'expired'
+  RECEPTION_FAILURE = 'reception failure'
+  TRANSMISSION_FAILURE = 'transmission failure'
+  SERVICER_FAILURE = 'servicer failure'
+  SERVICED_FAILURE = 'serviced failure'
 
 
 class OperationContext(object):
@@ -70,9 +67,7 @@ class OperationContext(object):
     """Adds a function to be called upon operation termination.
 
     Args:
-      callback: A callable that will be passed one of COMPLETED, CANCELLED,
-        EXPIRED, RECEPTION_FAILURE, TRANSMISSION_FAILURE, SERVICER_FAILURE, or
-        SERVICED_FAILURE.
+      callback: A callable that will be passed an Outcome value.
     """
     raise NotImplementedError()
 
@@ -167,10 +162,19 @@ class ServicedSubscription(object):
   """A sum type representing a serviced's interest in an operation.
 
   Attributes:
-    category: One of FULL, TERMINATION_ONLY, or NONE.
-    ingestor: A ServicedIngestor. Must be present if category is FULL.
+    kind: A Kind value.
+    ingestor: A ServicedIngestor. Must be present if kind is Kind.FULL. Must
+      be None if kind is Kind.TERMINATION_ONLY or Kind.NONE.
   """
   __metaclass__ = abc.ABCMeta
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Kinds of subscription."""
+
+    FULL = 'full'
+    TERMINATION_ONLY = 'termination only'
+    NONE = 'none'
 
 
 class End(object):
@@ -182,9 +186,8 @@ class End(object):
     """Reports the number of terminated operations broken down by outcome.
 
     Returns:
-      A dictionary from operation outcome constant (COMPLETED, CANCELLED,
-        EXPIRED, and so on) to an integer representing the number of operations
-        that terminated with that outcome.
+      A dictionary from Outcome value to an integer identifying the number
+        of operations that terminated with that outcome.
     """
     raise NotImplementedError()
 
