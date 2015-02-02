@@ -31,6 +31,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_WAKEUP_FD
+
 #include "src/core/iomgr/wakeup_fd_posix.h"
 #include "src/core/iomgr/wakeup_fd_pipe.h"
 #include <stddef.h>
@@ -38,15 +42,15 @@
 static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
 
 void grpc_wakeup_fd_global_init(void) {
-  if (specialized_wakeup_fd_vtable.check_availability()) {
-    wakeup_fd_vtable = &specialized_wakeup_fd_vtable;
+  if (grpc_specialized_wakeup_fd_vtable.check_availability()) {
+    wakeup_fd_vtable = &grpc_specialized_wakeup_fd_vtable;
   } else {
-    wakeup_fd_vtable = &pipe_wakeup_fd_vtable;
+    wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
   }
 }
 
 void grpc_wakeup_fd_global_init_force_fallback(void) {
-  wakeup_fd_vtable = &pipe_wakeup_fd_vtable;
+  wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
 }
 
 void grpc_wakeup_fd_global_destroy(void) {
@@ -68,3 +72,5 @@ void grpc_wakeup_fd_wakeup(grpc_wakeup_fd_info *fd_info) {
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info) {
   wakeup_fd_vtable->destroy(fd_info);
 }
+
+#endif  /* GPR_POSIX_WAKEUP_FD */
