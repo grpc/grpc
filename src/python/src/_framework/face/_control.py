@@ -40,13 +40,17 @@ from _framework.foundation import stream
 INTERNAL_ERROR_LOG_MESSAGE = ':-( RPC Framework (Face) Internal Error! :-('
 
 _OPERATION_OUTCOME_TO_RPC_ABORTION = {
-    base_interfaces.CANCELLED: interfaces.CANCELLED,
-    base_interfaces.EXPIRED: interfaces.EXPIRED,
-    base_interfaces.RECEPTION_FAILURE: interfaces.NETWORK_FAILURE,
-    base_interfaces.TRANSMISSION_FAILURE: interfaces.NETWORK_FAILURE,
-    base_interfaces.SERVICED_FAILURE: interfaces.SERVICED_FAILURE,
-    base_interfaces.SERVICER_FAILURE: interfaces.SERVICER_FAILURE,
-    }
+    base_interfaces.Outcome.CANCELLED: interfaces.Abortion.CANCELLED,
+    base_interfaces.Outcome.EXPIRED: interfaces.Abortion.EXPIRED,
+    base_interfaces.Outcome.RECEPTION_FAILURE:
+        interfaces.Abortion.NETWORK_FAILURE,
+    base_interfaces.Outcome.TRANSMISSION_FAILURE:
+        interfaces.Abortion.NETWORK_FAILURE,
+    base_interfaces.Outcome.SERVICED_FAILURE:
+        interfaces.Abortion.SERVICED_FAILURE,
+    base_interfaces.Outcome.SERVICER_FAILURE:
+        interfaces.Abortion.SERVICER_FAILURE,
+}
 
 
 def _as_operation_termination_callback(rpc_abortion_callback):
@@ -59,13 +63,13 @@ def _as_operation_termination_callback(rpc_abortion_callback):
 
 
 def _abortion_outcome_to_exception(abortion_outcome):
-  if abortion_outcome == base_interfaces.CANCELLED:
+  if abortion_outcome == base_interfaces.Outcome.CANCELLED:
     return exceptions.CancellationError()
-  elif abortion_outcome == base_interfaces.EXPIRED:
+  elif abortion_outcome == base_interfaces.Outcome.EXPIRED:
     return exceptions.ExpirationError()
-  elif abortion_outcome == base_interfaces.SERVICER_FAILURE:
+  elif abortion_outcome == base_interfaces.Outcome.SERVICER_FAILURE:
     return exceptions.ServicerError()
-  elif abortion_outcome == base_interfaces.SERVICED_FAILURE:
+  elif abortion_outcome == base_interfaces.Outcome.SERVICED_FAILURE:
     return exceptions.ServicedError()
   else:
     return exceptions.NetworkError()
@@ -133,7 +137,7 @@ class Rendezvous(stream.Consumer):
 
   def set_outcome(self, outcome):
     with self._condition:
-      if outcome != base_interfaces.COMPLETED:
+      if outcome is not base_interfaces.Outcome.COMPLETED:
         self._abortion = outcome
         self._condition.notify()
 

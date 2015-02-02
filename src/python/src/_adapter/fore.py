@@ -116,7 +116,8 @@ class ForeLink(ticket_interfaces.ForeLink):
         self._response_serializers[method])
 
     ticket = tickets.FrontToBackPacket(
-        call, 0, tickets.Kind.COMMENCEMENT, method, interfaces.FULL, None, None,
+        call, 0, tickets.Kind.COMMENCEMENT, method,
+        interfaces.ServicedSubscription.Kind.FULL, None, None,
         service_acceptance.deadline - time.time())
     self._rear_link.accept_front_to_back_ticket(ticket)
 
