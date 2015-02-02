@@ -2,7 +2,7 @@
 class TimevalTest extends PHPUnit_Framework_TestCase{
   public function testCompareSame() {
     $zero = Grpc\Timeval::zero();
-    $this->assertEquals(0, Grpc\Timeval::compare($zero, $zero));
+    $this->assertSame(0, Grpc\Timeval::compare($zero, $zero));
   }
 
   public function testPastIsLessThanZero() {
