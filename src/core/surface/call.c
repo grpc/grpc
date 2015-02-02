@@ -830,7 +830,7 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   reqs[1].data.recv_status.details_capacity = &ls->details_capacity;
   reqs[1].data.recv_status.code = &ls->status;
   reqs[2].op = GRPC_IOREQ_RECV_CLOSE;
-  err = start_ioreq(call, reqs, 2, finish_status, NULL);
+  err = start_ioreq(call, reqs, 3, finish_status, NULL);
   if (err != GRPC_CALL_OK) goto done;
 
 done:
