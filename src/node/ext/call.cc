@@ -33,6 +33,7 @@
 
 #include <node.h>
 
+#include "grpc/support/log.h"
 #include "grpc/grpc.h"
 #include "grpc/support/time.h"
 #include "byte_buffer.h"
@@ -173,31 +174,43 @@ NAN_METHOD(Call::AddMetadata) {
     return NanThrowTypeError("addMetadata can only be called on Call objects");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  for (int i = 0; !args[i]->IsUndefined(); i++) {
-    if (!args[i]->IsObject()) {
+  if (!args[0]->IsObject()) {
+    return NanThrowTypeError("addMetadata's first argument must be an object");
+  }
+  Handle<Object> metadata = args[0]->ToObject();
+  Handle<Array> keys(metadata->GetOwnPropertyNames());
+  for (unsigned int i = 0; i < keys->Length(); i++) {
+    Handle<String> current_key(keys->Get(i)->ToString());
+    if (!metadata->Get(current_key)->IsArray()) {
       return NanThrowTypeError(
-          "addMetadata arguments must be objects with key and value");
+          "addMetadata's first argument's values must be arrays");
     }
-    Handle<Object> item = args[i]->ToObject();
-    Handle<Value> key = item->Get(NanNew("key"));
-    if (!key->IsString()) {
-      return NanThrowTypeError(
-          "objects passed to addMetadata must have key->string");
-    }
-    Handle<Value> value = item->Get(NanNew("value"));
-    if (!Buffer::HasInstance(value)) {
-      return NanThrowTypeError(
-          "objects passed to addMetadata must have value->Buffer");
-    }
-    grpc_metadata metadata;
-    NanUtf8String utf8_key(key);
-    metadata.key = *utf8_key;
-    metadata.value = Buffer::Data(value);
-    metadata.value_length = Buffer::Length(value);
-    grpc_call_error error =
-        grpc_call_add_metadata(call->wrapped_call, &metadata, 0);
-    if (error != GRPC_CALL_OK) {
-      return NanThrowError("addMetadata failed", error);
+    NanUtf8String utf8_key(current_key);
+    Handle<Array> values = Local<Array>::Cast(metadata->Get(current_key));
+    for (unsigned int j = 0; j < values->Length(); j++) {
+      Handle<Value> value = values->Get(j);
+      grpc_metadata metadata;
+      grpc_call_error error;
+      metadata.key = *utf8_key;
+      if (Buffer::HasInstance(value)) {
+        metadata.value = Buffer::Data(value);
+        metadata.value_length = Buffer::Length(value);
+        error = grpc_call_add_metadata(call->wrapped_call, &metadata, 0);
+      } else if (value->IsString()) {
+        Handle<String> string_value = value->ToString();
+        NanUtf8String utf8_value(string_value);
+        metadata.value = *utf8_value;
+        metadata.value_length = string_value->Length();
+        gpr_log(GPR_DEBUG, "adding metadata: %s, %s, %d", metadata.key,
+                metadata.value, metadata.value_length);
+        error = grpc_call_add_metadata(call->wrapped_call, &metadata, 0);
+      } else {
+        return NanThrowTypeError(
+            "addMetadata values must be strings or buffers");
+      }
+      if (error != GRPC_CALL_OK) {
+        return NanThrowError("addMetadata failed", error);
+      }
     }
   }
   NanReturnUndefined();

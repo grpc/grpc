@@ -59,7 +59,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     f.client_ep =
         grpc_secure_endpoint_create(fake_read_protector, tcp.client, NULL, 0);
   } else {
-    int i;
+    unsigned i;
     tsi_result result;
     size_t still_pending_size;
     size_t total_buffer_size = 8192;
@@ -81,9 +81,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
         message_bytes += processed_message_size;
         message_size -= processed_message_size;
         cur += protected_buffer_size_to_send;
+        GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
         buffer_size -= protected_buffer_size_to_send;
-
-        GPR_ASSERT(buffer_size >= 0);
       }
       gpr_slice_unref(plain);
     }
@@ -94,8 +93,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
                                                  &still_pending_size);
       GPR_ASSERT(result == TSI_OK);
       cur += protected_buffer_size_to_send;
+      GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
       buffer_size -= protected_buffer_size_to_send;
-      GPR_ASSERT(buffer_size >= 0);
     } while (still_pending_size > 0);
     encrypted_leftover = gpr_slice_from_copied_buffer(
         (const char *)encrypted_buffer, total_buffer_size - buffer_size);

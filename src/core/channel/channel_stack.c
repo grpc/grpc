@@ -125,7 +125,8 @@ void grpc_channel_stack_init(const grpc_channel_filter **filters,
     call_size += ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_call_data);
   }
 
-  GPR_ASSERT(user_data - (char *)stack ==
+  GPR_ASSERT(user_data > (char *)stack);
+  GPR_ASSERT((gpr_uintptr)(user_data - (char *)stack) ==
              grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;

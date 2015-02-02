@@ -182,7 +182,8 @@ static void expect_sockaddr_str(const char *expected, void *addr,
   gpr_log(GPR_INFO, "  expect_sockaddr_str(%s)", expected);
   result = grpc_sockaddr_to_string(&str, (struct sockaddr *)addr, normalize);
   GPR_ASSERT(str != NULL);
-  GPR_ASSERT(result == strlen(str));
+  GPR_ASSERT(result >= 0);
+  GPR_ASSERT((size_t)result == strlen(str));
   GPR_ASSERT(strcmp(expected, str) == 0);
   gpr_free(str);
 }
@@ -194,7 +195,7 @@ static void test_sockaddr_to_string(void) {
 
   gpr_log(GPR_INFO, "%s", __FUNCTION__);
 
-  errno = 0xDEADBEEF;
+  errno = 0x7EADBEEF;
 
   input4 = make_addr4(kIPv4, sizeof(kIPv4));
   expect_sockaddr_str("192.0.2.1:12345", &input4, 0);
@@ -217,7 +218,7 @@ static void test_sockaddr_to_string(void) {
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
 
-  GPR_ASSERT(errno == 0xDEADBEEF);
+  GPR_ASSERT(errno == 0x7EADBEEF);
 }
 
 int main(int argc, char **argv) {

@@ -69,6 +69,7 @@ typedef struct grpc_fd {
 
   grpc_iomgr_cb_func on_done;
   void *on_done_user_data;
+  struct grpc_fd *freelist_next;
 } grpc_fd;
 
 /* Create a wrapped file descriptor.
@@ -134,5 +135,8 @@ void grpc_fd_become_writable(grpc_fd *fd, int allow_synchronous_callback);
 /* Reference counting for fds */
 void grpc_fd_ref(grpc_fd *fd);
 void grpc_fd_unref(grpc_fd *fd);
+
+void grpc_fd_global_init(void);
+void grpc_fd_global_shutdown(void);
 
 #endif /* __GRPC_INTERNAL_IOMGR_FD_POSIX_H_ */

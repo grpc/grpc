@@ -415,8 +415,8 @@ void test_read_pending_record(void) {
 /* Tries reading beyond pending write. */
 void test_read_beyond_pending_record(void) {
   /* Start a write. */
-  gpr_int32 incomplete_record_size = 10;
-  gpr_int32 complete_record_size = 20;
+  gpr_uint32 incomplete_record_size = 10;
+  gpr_uint32 complete_record_size = 20;
   size_t bytes_available;
   void* complete_record;
   const void* record_read;
@@ -457,7 +457,7 @@ void test_detached_while_reading(void) {
   size_t bytes_available;
   const void* record_read;
   void* record_written;
-  gpr_int32 block_read = 0;
+  gpr_uint32 block_read = 0;
   printf("Starting test: detached while reading\n");
   setup_test(0);
   /* Start a write. */

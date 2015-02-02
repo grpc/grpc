@@ -55,7 +55,7 @@ void gpr_slice_buffer_destroy(gpr_slice_buffer *sb) {
   gpr_free(sb->slices);
 }
 
-gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, int n) {
+gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned n) {
   gpr_slice *back;
   gpr_uint8 *out;
 
@@ -64,7 +64,7 @@ gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, int n) {
   if (sb->count == 0) goto add_new;
   back = &sb->slices[sb->count - 1];
   if (back->refcount) goto add_new;
-  if (back->data.inlined.length + n > sizeof(back->data.inlined.bytes))
+  if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes))
     goto add_new;
   out = back->data.inlined.bytes + back->data.inlined.length;
   back->data.inlined.length += n;

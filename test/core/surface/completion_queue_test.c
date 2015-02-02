@@ -214,7 +214,7 @@ static void test_pluck(void) {
   grpc_event *ev;
   grpc_completion_queue *cc;
   void *tags[128];
-  int i, j;
+  unsigned i, j;
   int on_finish_called = 0;
 
   LOG_TEST();

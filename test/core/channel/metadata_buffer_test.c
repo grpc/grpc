@@ -112,12 +112,12 @@ static void destroy_channel_elem(grpc_channel_element *elem) {}
 static const grpc_channel_filter top_filter = {
     fail_call_op,      fail_channel_op,     sizeof(size_t),
     init_call_elem,    destroy_call_elem,   sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem};
+    init_channel_elem, destroy_channel_elem, "top_filter" };
 
 static const grpc_channel_filter bottom_filter = {
     expect_call_op,    fail_channel_op,     sizeof(size_t),
     init_call_elem,    destroy_call_elem,   sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem};
+    init_channel_elem, destroy_channel_elem, "bottom_filter" };
 
 static const grpc_channel_filter *filters[2] = {&top_filter, &bottom_filter};
 

@@ -199,7 +199,6 @@ function pingPong(client, done) {
 
 /**
  * Run the empty_stream test.
- * NOTE: This does not work, but should with the new invoke API
  * @param {Client} client The client to test against
  * @param {function} done Callback to call when the test is completed. Included
  *     primarily for use with mocha
@@ -219,6 +218,44 @@ function emptyStream(client, done) {
 }
 
 /**
+ * Run the cancel_after_begin test.
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
+function cancelAfterBegin(client, done) {
+  var call = client.streamingInputCall(function(err, resp) {
+    assert.strictEqual(err.code, grpc.status.CANCELLED);
+    done();
+  });
+  call.cancel();
+}
+
+/**
+ * Run the cancel_after_first_response test.
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
+function cancelAfterFirstResponse(client, done) {
+  var call = client.fullDuplexCall();
+  call.write({
+      response_type: testProto.PayloadType.COMPRESSABLE,
+      response_parameters: [
+        {size: 31415}
+      ],
+      payload: {body: zeroBuffer(27182)}
+  });
+  call.on('data', function(data) {
+    call.cancel();
+  });
+  call.on('status', function(status) {
+    assert.strictEqual(status.code, grpc.status.CANCELLED);
+    done();
+  });
+}
+
+/**
  * Map from test case names to test functions
  */
 var test_cases = {
@@ -227,7 +264,9 @@ var test_cases = {
   client_streaming: clientStreaming,
   server_streaming: serverStreaming,
   ping_pong: pingPong,
-  empty_stream: emptyStream
+  empty_stream: emptyStream,
+  cancel_after_begin: cancelAfterBegin,
+  cancel_after_first_response: cancelAfterFirstResponse
 };
 
 /**

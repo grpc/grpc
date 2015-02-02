@@ -190,7 +190,7 @@ static void test_insertion_and_deletion_with_high_collision_rate(void) {
   census_ht* ht = census_ht_create(&opt);
   char key_str[1000][GPR_LTOA_MIN_BUFSIZE];
   gpr_uint64 val = 0;
-  int i = 0;
+  unsigned i = 0;
   for (i = 0; i < 1000; i++) {
     census_ht_key key;
     key.ptr = key_str[i];

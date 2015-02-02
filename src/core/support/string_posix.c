@@ -57,7 +57,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   va_start(args, format);
   ret = vsnprintf(buf, sizeof(buf), format, args);
   va_end(args);
-  if (!(0 <= ret && ret < ~(size_t)0)) {
+  if (!(0 <= ret)) {
     *strp = NULL;
     return -1;
   }
@@ -79,7 +79,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   va_start(args, format);
   ret = vsnprintf(*strp, strp_buflen, format, args);
   va_end(args);
-  if (ret == strp_buflen - 1) {
+  if ((size_t)ret == strp_buflen - 1) {
     return ret;
   }
 
