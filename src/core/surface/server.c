@@ -625,7 +625,8 @@ void grpc_server_add_listener(grpc_server *server, void *arg,
   server->listeners = l;
 }
 
-grpc_call_error grpc_server_request_call(grpc_server *server, void *tag_new) {
+grpc_call_error grpc_server_request_call_old(grpc_server *server,
+                                             void *tag_new) {
   call_data *calld;
 
   grpc_cq_begin_op(server->cq, NULL, GRPC_SERVER_RPC_NEW);
