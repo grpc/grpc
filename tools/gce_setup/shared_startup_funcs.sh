@@ -251,37 +251,6 @@ update_address_to() {
   }
 }
 
-# Allows instances to checkout repos on git-on-borg.
-#
-install_gob_daemon() {
-  local gob_dir=$1
-  [[ -n $gob_dir ]] || { echo "missing args: gob_dir" >&2; return 1;  }
-
-  local gob_repo=$2
-  [[ -n $gob_repo ]] || gob_repo='https://gerrit.googlesource.com/gcompute-tools/'
-
-  if [[ -e $gob_dir ]]
-  then
-    rm -fv $gob_dir || {
-      echo "could not remove existing git repo at $gob_dir" >&2
-      return 1
-    }
-  fi
-
-  git clone $gob_repo $gob_dir || { echo "failed to pull gerrit cookie repo" >&2; return 1; }
-  local startup_script=/etc/profile.d/gob_cookie_daemon.sh
-
-  cat <<EOF >> $startup_script
-#!/bin/bash
-
-$gob_dir/git-cookie-authdaemon
-
-EOF
-
-  chmod 755 $startup_script
-  $startup_script
-}
-
 # grpc_docker_add_docker_group
 #
 # Adds a docker group, restarts docker, relaunches the docker registry
