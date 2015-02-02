@@ -136,7 +136,6 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
-  cq_verify(v_server);
   cq_expect_finished(v_server, tag(102), NULL);
   cq_verify(v_server);
 
