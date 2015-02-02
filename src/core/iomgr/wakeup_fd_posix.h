@@ -80,8 +80,6 @@ typedef struct grpc_wakeup_fd_vtable {
   int (*check_availability)(void);
 } grpc_wakeup_fd_vtable;
 
-/* Private structures; don't access their fields directly outside of wakeup fd
- * code. */
 struct grpc_wakeup_fd_info {
   int read_fd;
   int write_fd;
