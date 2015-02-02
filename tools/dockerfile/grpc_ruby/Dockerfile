@@ -10,6 +10,7 @@ RUN cd /var/local/git/grpc \
 RUN touch /var/local/git/grpc/include/grpc/support/string.h
 
 # Build the C core.
+RUN make clean -C /var/local/git/grpc
 RUN make install_c -C /var/local/git/grpc
 
 # Build ruby gRPC and run its tests

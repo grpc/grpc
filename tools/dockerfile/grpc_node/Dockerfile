@@ -7,6 +7,7 @@ RUN cd /var/local/git/grpc \
   && git submodule update --init --recursive
 
 # Install the C core.
+RUN make clean -C /var/local/git/grpc
 RUN make install_c -C /var/local/git/grpc
 
 RUN cd /var/local/git/grpc/src/node && npm install && node-gyp rebuild
