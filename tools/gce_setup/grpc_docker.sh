@@ -895,7 +895,7 @@ grpc_cloud_prod_gen_java_cmd() {
 
 # constructs the full dockerized php interop test cmd.
 #
-# TODO(mlumish): update this to use the script once that's on git-on-borg
+# TODO(mlumish): update this to use the script once that's on git
 #
 # call-seq:
 #   flags= .... # generic flags to include the command

@@ -45,13 +45,9 @@ RUN cd /var/local \
   && ./configure --with-zlib=/usr --with-libxml-dir=ext/libxml \
   && make -j12 && make install
 
-# Start the daemon that allows access to the protected git-on-borg repos
-RUN git clone https://gerrit.googlesource.com/gcompute-tools /var/local/git/gcompute-tools
-RUN /var/local/git/gcompute-tools/git-cookie-authdaemon
-
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
-RUN git clone https://team.googlesource.com/one-platform-grpc-team/grpc-php-protobuf-php /var/local/git/protobuf-php
+RUN git clone git@github.com:murgatroid99/Protobuf-PHP.git /var/local/git/protobuf-php
 
 # Install ruby (via RVM) as ruby tools are dependencies for building Protobuf
 # PHP extensions.
