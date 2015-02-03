@@ -191,8 +191,8 @@ typedef enum grpc_completion_type {
   GRPC_FINISH_ACCEPTED,      /* writes_done or write_status has been accepted */
   GRPC_CLIENT_METADATA_READ, /* The metadata array sent by server received at
                                 client */
-  GRPC_FINISHED, /* An RPC has finished. The event contains status.
-                    On the server this will be OK or Cancelled. */
+  GRPC_FINISHED,             /* An RPC has finished. The event contains status.
+                                On the server this will be OK or Cancelled. */
   GRPC_SERVER_RPC_NEW,       /* A new RPC has arrived at the server */
   GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
   GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
@@ -331,8 +331,7 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
                                         gpr_timespec deadline);
 
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
-                                      size_t nops, grpc_completion_queue *cq, 
-                                      void *tag);
+                                      size_t nops, void *tag);
 
 /* Create a client channel */
 grpc_channel *grpc_channel_create(const char *target,
