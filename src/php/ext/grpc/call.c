@@ -135,7 +135,7 @@ int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC, int num_args,
       metadata.key = (char *)key;
       metadata.value = Z_STRVAL_P(*data);
       metadata.value_length = Z_STRLEN_P(*data);
-      error_code = grpc_call_add_metadata(call, &metadata, 0u);
+      error_code = grpc_call_add_metadata_old(call, &metadata, 0u);
       MAYBE_THROW_CALL_ERROR(add_metadata, error_code);
       break;
     case IS_ARRAY:
@@ -188,8 +188,8 @@ PHP_METHOD(Call, __construct) {
   wrapped_grpc_timeval *deadline =
       (wrapped_grpc_timeval *)zend_object_store_get_object(
           deadline_obj TSRMLS_CC);
-  call->wrapped = grpc_channel_create_call(channel->wrapped, method,
-                                           channel->target, deadline->wrapped);
+  call->wrapped = grpc_channel_create_call_old(
+      channel->wrapped, method, channel->target, deadline->wrapped);
 }
 
 /**
@@ -252,8 +252,8 @@ PHP_METHOD(Call, invoke) {
   wrapped_grpc_completion_queue *queue =
       (wrapped_grpc_completion_queue *)zend_object_store_get_object(
           queue_obj TSRMLS_CC);
-  error_code = grpc_call_invoke(call->wrapped, queue->wrapped, (void *)tag1,
-                                (void *)tag2, (gpr_uint32)flags);
+  error_code = grpc_call_invoke_old(call->wrapped, queue->wrapped, (void *)tag1,
+                                    (void *)tag2, (gpr_uint32)flags);
   MAYBE_THROW_CALL_ERROR(invoke, error_code);
 }
 
@@ -287,7 +287,7 @@ PHP_METHOD(Call, server_accept) {
       (wrapped_grpc_completion_queue *)zend_object_store_get_object(
           queue_obj TSRMLS_CC);
   error_code =
-      grpc_call_server_accept(call->wrapped, queue->wrapped, (void *)tag);
+      grpc_call_server_accept_old(call->wrapped, queue->wrapped, (void *)tag);
   MAYBE_THROW_CALL_ERROR(server_accept, error_code);
 }
 
@@ -303,7 +303,7 @@ PHP_METHOD(Call, server_end_initial_metadata) {
   }
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  error_code = grpc_call_server_end_initial_metadata(call->wrapped, flags);
+  error_code = grpc_call_server_end_initial_metadata_old(call->wrapped, flags);
   MAYBE_THROW_CALL_ERROR(server_end_initial_metadata, error_code);
 }
 
@@ -342,9 +342,9 @@ PHP_METHOD(Call, start_write) {
                          1 TSRMLS_CC);
     return;
   }
-  error_code = grpc_call_start_write(call->wrapped,
-                                     string_to_byte_buffer(buffer, buffer_len),
-                                     (void *)tag, (gpr_uint32)flags);
+  error_code = grpc_call_start_write_old(
+      call->wrapped, string_to_byte_buffer(buffer, buffer_len), (void *)tag,
+      (gpr_uint32)flags);
   MAYBE_THROW_CALL_ERROR(start_write, error_code);
 }
 
@@ -372,9 +372,9 @@ PHP_METHOD(Call, start_write_status) {
         "start_write_status expects a long, a string, and a long", 1 TSRMLS_CC);
     return;
   }
-  error_code =
-      grpc_call_start_write_status(call->wrapped, (grpc_status_code)status_code,
-                                   status_details, (void *)tag);
+  error_code = grpc_call_start_write_status_old(call->wrapped,
+                                                (grpc_status_code)status_code,
+                                                status_details, (void *)tag);
   MAYBE_THROW_CALL_ERROR(start_write_status, error_code);
 }
 
@@ -393,7 +393,7 @@ PHP_METHOD(Call, writes_done) {
                          "writes_done expects a long", 1 TSRMLS_CC);
     return;
   }
-  error_code = grpc_call_writes_done(call->wrapped, (void *)tag);
+  error_code = grpc_call_writes_done_old(call->wrapped, (void *)tag);
   MAYBE_THROW_CALL_ERROR(writes_done, error_code);
 }
 
@@ -414,7 +414,7 @@ PHP_METHOD(Call, start_read) {
                          "start_read expects a long", 1 TSRMLS_CC);
     return;
   }
-  error_code = grpc_call_start_read(call->wrapped, (void *)tag);
+  error_code = grpc_call_start_read_old(call->wrapped, (void *)tag);
   MAYBE_THROW_CALL_ERROR(start_read, error_code);
 }
 
