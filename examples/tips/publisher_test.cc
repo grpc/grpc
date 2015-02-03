@@ -81,7 +81,7 @@ class PublisherServiceImpl : public tech::pubsub::PublisherService::Service {
  Status ListTopics(ServerContext* context,
                    const ::tech::pubsub::ListTopicsRequest* request,
                    ::tech::pubsub::ListTopicsResponse* response) override {
-   std::stringstream ss;
+   std::ostringstream ss;
    ss << "cloud.googleapis.com/project in (/projects/" << kProjectId << ")";
    EXPECT_EQ(request->query(), ss.str());
    response->add_topic()->set_name(kTopic);
