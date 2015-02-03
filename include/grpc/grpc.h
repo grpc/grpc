@@ -241,7 +241,9 @@ typedef struct {
 
 typedef struct {
   const char *method;
+  size_t method_capacity;
   const char *host;
+  size_t host_capacity;
   gpr_timespec deadline;
 } grpc_call_details;
 
@@ -330,6 +332,16 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
                                         const char *method, const char *host,
                                         gpr_timespec deadline);
 
+/* Create a call given a grpc_channel, in order to call 'method'. The request
+   is not sent until grpc_call_invoke is called. All completions are sent to
+   'completion_queue'. */
+grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
+                                        grpc_completion_queue *completion_queue,
+                                        const char *method, const char *host,
+                                        gpr_timespec deadline);
+
+/* Start a batch of operations defined in the array ops; when complete, post a
+ * completion of type 'tag' to the completion queue bound to the call. */
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
                                       size_t nops, void *tag);
 
@@ -472,6 +484,12 @@ void grpc_call_destroy(grpc_call *call);
    NOTE: calling this is the only way to obtain GRPC_SERVER_RPC_NEW events. */
 grpc_call_error grpc_server_request_call_old(grpc_server *server,
                                              void *tag_new);
+
+grpc_call_error grpc_server_request_call(grpc_server *server,
+                                         grpc_call_details *details,
+                                         grpc_metadata_array *request_metadata,
+                                         grpc_completion_queue *completion_queue,
+                                         void *tag_new);
 
 /* Create a server */
 grpc_server *grpc_server_create(grpc_completion_queue *cq,
