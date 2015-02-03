@@ -46,7 +46,7 @@ class CallTest extends PHPUnit_Framework_TestCase{
   }
 
   public function testAddSingleMetadata() {
-    $this->call->add_metadata(['key' => 'value'], 0);
+    $this->call->add_metadata(['key' => ['value']], 0);
     /* Dummy assert: Checks that the previous call completed without error */
     $this->assertTrue(true);
   }
@@ -59,7 +59,7 @@ class CallTest extends PHPUnit_Framework_TestCase{
 
   public function testAddSingleAndMultiValueMetadata() {
     $this->call->add_metadata(
-        ['key1' => 'value1',
+        ['key1' => ['value1'],
          'key2' => ['value2', 'value3']], 0);
     /* Dummy assert: Checks that the previous call completed without error */
     $this->assertTrue(true);
