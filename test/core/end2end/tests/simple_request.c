@@ -109,17 +109,38 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
+  grpc_op ops[4];
+  grpc_op *op;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  char *details = NULL;
+  size_t details_capacity = NULL;
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+  c = grpc_channel_create_call(f.client, f.client_cq, "/foo", "test.google.com",
                                    deadline);
   GPR_ASSERT(c);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke_old(c, f.client_cq, tag(2), tag(3), 0));
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(4)));
-  cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_OK);
-  cq_verify(v_client);
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_send_batch(call, ops, op - ops, tag(1)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &call_details, &request_metadata_recv, f.server_cq, tag(101)));
+  cq_expect_
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
   cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
