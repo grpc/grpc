@@ -111,6 +111,14 @@
   }, 
   {
     "language": "c", 
+    "name": "gpr_file_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "gpr_env_test"
+  }, 
+  {
+    "language": "c", 
     "name": "gpr_slice_buffer_test"
   }, 
   {
