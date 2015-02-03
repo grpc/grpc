@@ -16,9 +16,10 @@
 #include "grpc/support/slice.h"
 
 grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
-  gpr_slice slice = gpr_slice_malloc(length);
-  memcpy(GPR_SLICE_START_PTR(slice), string, length);
-  return grpc_byte_buffer_create(&slice, 1);
+  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
+  grpc_byte_buffer *buffer = grpc_byte_buffer_create(&slice, 1);
+  gpr_slice_unref(slice);
+  return buffer;
 }
 
 void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,

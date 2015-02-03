@@ -125,7 +125,7 @@ int grpc_rb_call_add_metadata_hash_cb(VALUE key, VALUE val, VALUE call_obj) {
       md_obj_args[1] = rb_ary_entry(val, i);
       md_obj = rb_class_new_instance(2, md_obj_args, rb_cMetadata);
       md = grpc_rb_get_wrapped_metadata(md_obj);
-      err = grpc_call_add_metadata(call, md, NUM2UINT(flags));
+      err = grpc_call_add_metadata_old(call, md, NUM2UINT(flags));
       if (err != GRPC_CALL_OK) {
         rb_raise(rb_eCallError, "add metadata failed: %s (code=%d)",
                  grpc_call_error_detail_of(err), err);
@@ -136,7 +136,7 @@ int grpc_rb_call_add_metadata_hash_cb(VALUE key, VALUE val, VALUE call_obj) {
     md_obj_args[1] = val;
     md_obj = rb_class_new_instance(2, md_obj_args, rb_cMetadata);
     md = grpc_rb_get_wrapped_metadata(md_obj);
-    err = grpc_call_add_metadata(call, md, NUM2UINT(flags));
+    err = grpc_call_add_metadata_old(call, md, NUM2UINT(flags));
     if (err != GRPC_CALL_OK) {
       rb_raise(rb_eCallError, "add metadata failed: %s (code=%d)",
                grpc_call_error_detail_of(err), err);
@@ -220,8 +220,8 @@ static VALUE grpc_rb_call_invoke(int argc, VALUE *argv, VALUE self) {
   }
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_invoke(call, cq, ROBJECT(metadata_read_tag),
-                         ROBJECT(finished_tag), NUM2UINT(flags));
+  err = grpc_call_invoke_old(call, cq, ROBJECT(metadata_read_tag),
+                             ROBJECT(finished_tag), NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "invoke failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -242,7 +242,7 @@ static VALUE grpc_rb_call_start_read(VALUE self, VALUE tag) {
   grpc_call *call = NULL;
   grpc_call_error err;
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_read(call, ROBJECT(tag));
+  err = grpc_call_start_read_old(call, ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "start read failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -330,7 +330,7 @@ static VALUE grpc_rb_call_start_write(int argc, VALUE *argv, VALUE self) {
   }
   bfr = grpc_rb_get_wrapped_byte_buffer(byte_buffer);
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_write(call, bfr, ROBJECT(tag), NUM2UINT(flags));
+  err = grpc_call_start_write_old(call, bfr, ROBJECT(tag), NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "start write failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -358,8 +358,8 @@ static VALUE grpc_rb_call_start_write_status(VALUE self, VALUE code,
   grpc_call *call = NULL;
   grpc_call_error err;
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_write_status(call, NUM2UINT(code),
-                                     StringValueCStr(status), ROBJECT(tag));
+  err = grpc_call_start_write_status_old(call, NUM2UINT(code),
+                                         StringValueCStr(status), ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "start write status: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -374,7 +374,7 @@ static VALUE grpc_rb_call_writes_done(VALUE self, VALUE tag) {
   grpc_call *call = NULL;
   grpc_call_error err;
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_writes_done(call, ROBJECT(tag));
+  err = grpc_call_writes_done_old(call, ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "writes done: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -405,7 +405,7 @@ static VALUE grpc_rb_call_server_end_initial_metadata(int argc, VALUE *argv,
     flags = UINT2NUM(0); /* Default to no flags */
   }
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_server_end_initial_metadata(call, NUM2UINT(flags));
+  err = grpc_call_server_end_initial_metadata_old(call, NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "end_initial_metadata failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -430,7 +430,7 @@ static VALUE grpc_rb_call_server_accept(VALUE self, VALUE cqueue,
   grpc_completion_queue *cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   grpc_call_error err;
   Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_server_accept(call, cq, ROBJECT(finished_tag));
+  err = grpc_call_server_accept_old(call, cq, ROBJECT(finished_tag));
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "server_accept failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);

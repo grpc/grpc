@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 """Run tests in parallel."""
 
 import argparse
@@ -17,13 +17,17 @@ import watch_dirs
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config):
+  def __init__(self, config, environ={}):
     self.build_config = config
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
+    self.environ = environ
 
-  def run_command(self, binary):
-    return [binary]
+  def job_spec(self, binary, hash_targets):
+    return jobset.JobSpec(cmdline=[binary],
+                          environ=self.environ,
+                          hash_targets=hash_targets
+                              if self.allow_hashing else None)
 
 
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
@@ -35,14 +39,14 @@ class ValgrindConfig(object):
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
-  def run_command(self, binary):
-    return ['valgrind', binary, '--tool=%s' % self.tool]
+  def job_spec(self, binary, hash_targets):
+    return JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool, binary],
+                   hash_targets=None)
 
 
 class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
-    self.allow_hashing = True
     self.make_target = make_target
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
@@ -50,8 +54,12 @@ class CLanguage(object):
                        for tgt in js
                        if tgt['language'] == test_lang]
 
-  def test_binaries(self, config):
-    return ['bins/%s/%s' % (config, binary) for binary in self.binaries]
+  def test_specs(self, config):
+    out = []
+    for name in self.binaries:
+      binary = 'bins/%s/%s' % (config.build_config, name)
+      out.append(config.job_spec(binary, [binary]))
+    return out
 
   def make_targets(self):
     return ['buildtests_%s' % self.make_target]
@@ -59,13 +67,11 @@ class CLanguage(object):
   def build_steps(self):
     return []
 
+
 class NodeLanguage(object):
 
-  def __init__(self):
-    self.allow_hashing = False
-
-  def test_binaries(self, config):
-    return ['tools/run_tests/run_node.sh']
+  def test_specs(self, config):
+    return [config.job_spec('tools/run_tests/run_node.sh', None)]
 
   def make_targets(self):
     return ['static_c']
@@ -73,13 +79,11 @@ class NodeLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
 
+
 class PhpLanguage(object):
 
-  def __init__(self):
-    self.allow_hashing = False
-
-  def test_binaries(self, config):
-    return ['src/php/bin/run_tests.sh']
+  def test_specs(self, config):
+    return [config.job_spec('src/php/bin/run_tests.sh', None)]
 
   def make_targets(self):
     return ['static_c']
@@ -90,11 +94,8 @@ class PhpLanguage(object):
 
 class PythonLanguage(object):
 
-  def __init__(self):
-    self.allow_hashing = False
-
-  def test_binaries(self, config):
-    return ['tools/run_tests/run_python.sh']
+  def test_specs(self, config):
+    return [config.job_spec('tools/run_tests/run_python.sh', None)]
 
   def make_targets(self):
     return[]
@@ -109,7 +110,8 @@ _CONFIGS = {
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan'),
     'msan': SimpleConfig('msan'),
-    'asan': SimpleConfig('asan'),
+    'asan': SimpleConfig('asan', environ={
+        'ASAN_OPTIONS': 'detect_leaks=1:color=always'}),
     'gcov': SimpleConfig('gcov'),
     'memcheck': ValgrindConfig('valgrind', 'memcheck'),
     'helgrind': ValgrindConfig('dbg', 'helgrind')
@@ -123,7 +125,7 @@ _LANGUAGES = {
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
-}
+    }
 
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
@@ -155,14 +157,20 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 
 make_targets = []
 languages = set(_LANGUAGES[l] for l in args.language)
-build_steps = [['make',
-                '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                'CONFIG=%s' % cfg] + list(set(
-                    itertools.chain.from_iterable(l.make_targets()
-                                                  for l in languages)))
-               for cfg in build_configs] + list(
-                   itertools.chain.from_iterable(l.build_steps()
-                                                 for l in languages))
+build_steps = [jobset.JobSpec(['make',
+                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                               'CONFIG=%s' % cfg] + list(set(
+                                   itertools.chain.from_iterable(
+                                       l.make_targets() for l in languages))))
+               for cfg in build_configs] + list(set(
+                   jobset.JobSpec(cmdline)
+                   for l in languages
+                   for cmdline in l.build_steps()))
+one_run = set(
+    spec
+    for config in run_configs
+    for language in args.language
+    for spec in _LANGUAGES[language].test_specs(config))
 
 runs_per_test = args.runs_per_test
 forever = args.forever
@@ -175,7 +183,6 @@ class TestCache(object):
     self._last_successful_run = {}
 
   def should_run(self, cmdline, bin_hash):
-    cmdline = ' '.join(cmdline)
     if cmdline not in self._last_successful_run:
       return True
     if self._last_successful_run[cmdline] != bin_hash:
@@ -183,7 +190,7 @@ class TestCache(object):
     return False
 
   def finished(self, cmdline, bin_hash):
-    self._last_successful_run[' '.join(cmdline)] = bin_hash
+    self._last_successful_run[cmdline] = bin_hash
 
   def dump(self):
     return [{'cmdline': k, 'hash': v}
@@ -209,12 +216,6 @@ def _build_and_run(check_cancelled, newline_on_success, cache):
     return 1
 
   # run all the tests
-  one_run = dict(
-      (' '.join(config.run_command(x)), config.run_command(x))
-      for config in run_configs
-      for language in args.language
-      for x in _LANGUAGES[language].test_binaries(config.build_config)
-      ).values()
   all_runs = itertools.chain.from_iterable(
       itertools.repeat(one_run, runs_per_test))
   if not jobset.run(all_runs, check_cancelled,
@@ -226,12 +227,8 @@ def _build_and_run(check_cancelled, newline_on_success, cache):
   return 0
 
 
-test_cache = (None
-              if not all(x.allow_hashing
-                         for x in itertools.chain(languages, run_configs))
-              else TestCache())
-if test_cache:
-  test_cache.maybe_load()
+test_cache = TestCache()
+test_cache.maybe_load()
 
 if forever:
   success = True
@@ -248,7 +245,7 @@ if forever:
                      'All tests are now passing properly',
                      do_newline=True)
     jobset.message('IDLE', 'No change detected')
-    if test_cache: test_cache.save()
+    test_cache.save()
     while not have_files_changed():
       time.sleep(1)
 else:
@@ -259,5 +256,5 @@ else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
-  if test_cache: test_cache.save()
+  test_cache.save()
   sys.exit(result)

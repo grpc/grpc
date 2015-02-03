@@ -184,7 +184,7 @@ static void get_stats(census_ht* store, census_aggregated_rpc_stats* data) {
   gpr_mu_lock(&g_mu);
   if (store != NULL) {
     size_t n;
-    int i, j;
+    unsigned i, j;
     gpr_timespec now = gpr_now();
     census_ht_kv* kv = census_ht_get_all_elements(store, &n);
     if (kv != NULL) {

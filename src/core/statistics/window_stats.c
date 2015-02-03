@@ -150,7 +150,7 @@ window_stats* census_window_stats_create(int nintervals,
     is->width = size_ns / granularity;
     /* Check for possible overflow issues, and maximize interval size if the
        user requested something large enough. */
-    if (GPR_INT64_MAX - is->width > size_ns) {
+    if ((GPR_INT64_MAX - is->width) > size_ns) {
       is->top = size_ns + is->width;
     } else {
       is->top = GPR_INT64_MAX;

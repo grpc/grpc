@@ -31,7 +31,7 @@ class ServerStreamingSurfaceActiveCall extends AbstractSurfaceActiveCall {
    * @return An iterator of response values
    */
   public function responses() {
-    while(($response = $this->_read()) != null) {
+    while(($response = $this->_read()) !== null) {
       yield $response;
     }
   }

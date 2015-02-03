@@ -21,4 +21,6 @@ RUN cd /var/local/git/grpc && ls \
   && make interop_client \
   && make interop_server
 
+ADD service_account service_account
+
 CMD ["/var/local/git/grpc/bins/opt/interop_server", "--enable_ssl", "--port=8010"]

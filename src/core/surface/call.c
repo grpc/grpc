@@ -348,8 +348,9 @@ void grpc_call_add_mdelem(grpc_call *call, grpc_mdelem *mdelem,
   elem->filter->call_op(elem, NULL, &op);
 }
 
-grpc_call_error grpc_call_add_metadata(grpc_call *call, grpc_metadata *metadata,
-                                       gpr_uint32 flags) {
+grpc_call_error grpc_call_add_metadata_old(grpc_call *call,
+                                           grpc_metadata *metadata,
+                                           gpr_uint32 flags) {
   grpc_mdelem *mdelem;
 
   if (call->is_client) {
@@ -455,9 +456,9 @@ static void call_started(void *user_data, grpc_op_error error) {
   grpc_call_internal_unref(call);
 }
 
-grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
-                                 void *metadata_read_tag, void *finished_tag,
-                                 gpr_uint32 flags) {
+grpc_call_error grpc_call_invoke_old(grpc_call *call, grpc_completion_queue *cq,
+                                     void *metadata_read_tag,
+                                     void *finished_tag, gpr_uint32 flags) {
   grpc_call_element *elem;
   grpc_call_op op;
 
@@ -527,9 +528,9 @@ grpc_call_error grpc_call_invoke(grpc_call *call, grpc_completion_queue *cq,
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_server_accept(grpc_call *call,
-                                        grpc_completion_queue *cq,
-                                        void *finished_tag) {
+grpc_call_error grpc_call_server_accept_old(grpc_call *call,
+                                            grpc_completion_queue *cq,
+                                            void *finished_tag) {
   /* validate preconditions */
   if (call->is_client) {
     gpr_log(GPR_ERROR, "can only call %s on servers", __FUNCTION__);
@@ -563,8 +564,8 @@ grpc_call_error grpc_call_server_accept(grpc_call *call,
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_server_end_initial_metadata(grpc_call *call,
-                                                      gpr_uint32 flags) {
+grpc_call_error grpc_call_server_end_initial_metadata_old(grpc_call *call,
+                                                          gpr_uint32 flags) {
   grpc_call_element *elem;
   grpc_call_op op;
 
@@ -634,7 +635,7 @@ static void request_more_data(grpc_call *call) {
   elem->filter->call_op(elem, NULL, &op);
 }
 
-grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
+grpc_call_error grpc_call_start_read_old(grpc_call *call, void *tag) {
   gpr_uint8 request_more = 0;
 
   switch (call->state) {
@@ -677,9 +678,9 @@ grpc_call_error grpc_call_start_read(grpc_call *call, void *tag) {
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_start_write(grpc_call *call,
-                                      grpc_byte_buffer *byte_buffer, void *tag,
-                                      gpr_uint32 flags) {
+grpc_call_error grpc_call_start_write_old(grpc_call *call,
+                                          grpc_byte_buffer *byte_buffer,
+                                          void *tag, gpr_uint32 flags) {
   grpc_call_element *elem;
   grpc_call_op op;
 
@@ -732,7 +733,7 @@ grpc_call_error grpc_call_start_write(grpc_call *call,
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
+grpc_call_error grpc_call_writes_done_old(grpc_call *call, void *tag) {
   grpc_call_element *elem;
   grpc_call_op op;
 
@@ -780,9 +781,10 @@ grpc_call_error grpc_call_writes_done(grpc_call *call, void *tag) {
   return GRPC_CALL_OK;
 }
 
-grpc_call_error grpc_call_start_write_status(grpc_call *call,
-                                             grpc_status_code status,
-                                             const char *details, void *tag) {
+grpc_call_error grpc_call_start_write_status_old(grpc_call *call,
+                                                 grpc_status_code status,
+                                                 const char *details,
+                                                 void *tag) {
   grpc_call_element *elem;
   grpc_call_op op;
 

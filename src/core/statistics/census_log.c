@@ -173,7 +173,7 @@ typedef struct census_log_core_local_block {
 struct census_log {
   int discard_old_records;
   /* Number of cores (aka hardware-contexts) */
-  int num_cores;
+  unsigned num_cores;
   /* number of CENSUS_LOG_2_MAX_RECORD_SIZE blocks in log */
   gpr_int32 num_blocks;
   cl_block* blocks;                       /* Block metadata. */
@@ -183,7 +183,7 @@ struct census_log {
   /* Keeps the state of the reader iterator. A value of 0 indicates that
      iterator has reached the end. census_log_init_reader() resets the
      value to num_core to restart iteration. */
-  gpr_int32 read_iterator_state;
+  gpr_uint32 read_iterator_state;
   /* Points to the block being read. If non-NULL, the block is locked for
      reading (block_being_read_->reader_lock is held). */
   cl_block* block_being_read;

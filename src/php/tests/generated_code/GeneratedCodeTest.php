@@ -17,9 +17,9 @@ class GeneratedCodeTest extends PHPUnit_Framework_TestCase {
     $div_arg->setDividend(7);
     $div_arg->setDivisor(4);
     list($response, $status) = self::$client->Div($div_arg)->wait();
-    $this->assertEquals(1, $response->getQuotient());
-    $this->assertEquals(3, $response->getRemainder());
-    $this->assertEquals(\Grpc\STATUS_OK, $status->code);
+    $this->assertSame(1, $response->getQuotient());
+    $this->assertSame(3, $response->getRemainder());
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
   }
 
   public function testServerStreaming() {
@@ -31,9 +31,9 @@ class GeneratedCodeTest extends PHPUnit_Framework_TestCase {
       return $num->getNum();
     };
     $values = array_map($extract_num, $result_array);
-    $this->assertEquals([1, 1, 2, 3, 5, 8, 13], $values);
+    $this->assertSame([1, 1, 2, 3, 5, 8, 13], $values);
     $status = $call->getStatus();
-    $this->assertEquals(\Grpc\STATUS_OK, $status->code);
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
   }
 
   public function testClientStreaming() {
@@ -46,8 +46,8 @@ class GeneratedCodeTest extends PHPUnit_Framework_TestCase {
     };
     $call = self::$client->Sum($num_iter());
     list($response, $status) = $call->wait();
-    $this->assertEquals(21, $response->getNum());
-    $this->assertEquals(\Grpc\STATUS_OK, $status->code);
+    $this->assertSame(21, $response->getNum());
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
   }
 
   public function testBidiStreaming() {
@@ -58,11 +58,11 @@ class GeneratedCodeTest extends PHPUnit_Framework_TestCase {
       $div_arg->setDivisor(2);
       $call->write($div_arg);
       $response = $call->read();
-      $this->assertEquals($i, $response->getQuotient());
-      $this->assertEquals(1, $response->getRemainder());
+      $this->assertSame($i, $response->getQuotient());
+      $this->assertSame(1, $response->getRemainder());
     }
     $call->writesDone();
     $status = $call->getStatus();
-    $this->assertEquals(\Grpc\STATUS_OK, $status->code);
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
   }
 }

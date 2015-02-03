@@ -175,7 +175,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE tag_new) {
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
   } else {
-    err = grpc_server_request_call(s->wrapped, ROBJECT(tag_new));
+    err = grpc_server_request_call_old(s->wrapped, ROBJECT(tag_new));
     if (err != GRPC_CALL_OK) {
       rb_raise(rb_eCallError, "server request failed: %s (code=%d)",
                grpc_call_error_detail_of(err), err);

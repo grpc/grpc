@@ -80,22 +80,22 @@ void StreamContext::Start(bool buffered) {
   if (is_client_) {
     // TODO(yangg) handle metadata send path
     int flag = buffered ? GRPC_WRITE_BUFFER_HINT : 0;
-    grpc_call_error error = grpc_call_invoke(
+    grpc_call_error error = grpc_call_invoke_old(
         call(), cq(), client_metadata_read_tag(), finished_tag(), flag);
     GPR_ASSERT(GRPC_CALL_OK == error);
   } else {
     // TODO(yangg) metadata needs to be added before accept
     // TODO(yangg) correctly set flag to accept
-    GPR_ASSERT(grpc_call_server_accept(call(), cq(), finished_tag()) ==
+    GPR_ASSERT(grpc_call_server_accept_old(call(), cq(), finished_tag()) ==
                GRPC_CALL_OK);
-    GPR_ASSERT(grpc_call_server_end_initial_metadata(call(), 0) ==
+    GPR_ASSERT(grpc_call_server_end_initial_metadata_old(call(), 0) ==
                GRPC_CALL_OK);
   }
 }
 
 bool StreamContext::Read(google::protobuf::Message *msg) {
   // TODO(yangg) check peer_halfclosed_ here for possible early return.
-  grpc_call_error err = grpc_call_start_read(call(), read_tag());
+  grpc_call_error err = grpc_call_start_read_old(call(), read_tag());
   GPR_ASSERT(err == GRPC_CALL_OK);
   grpc_event *read_ev =
       grpc_completion_queue_pluck(cq(), read_tag(), gpr_inf_future);
@@ -129,7 +129,7 @@ bool StreamContext::Write(const google::protobuf::Message *msg, bool is_last) {
     }
     int flag = is_last ? GRPC_WRITE_BUFFER_HINT : 0;
     grpc_call_error err =
-        grpc_call_start_write(call(), out_buf, write_tag(), flag);
+        grpc_call_start_write_old(call(), out_buf, write_tag(), flag);
     grpc_byte_buffer_destroy(out_buf);
     GPR_ASSERT(err == GRPC_CALL_OK);
 
@@ -140,7 +140,7 @@ bool StreamContext::Write(const google::protobuf::Message *msg, bool is_last) {
     grpc_event_finish(ev);
   }
   if (ret && is_last) {
-    grpc_call_error err = grpc_call_writes_done(call(), halfclose_tag());
+    grpc_call_error err = grpc_call_writes_done_old(call(), halfclose_tag());
     GPR_ASSERT(err == GRPC_CALL_OK);
     ev = grpc_completion_queue_pluck(cq(), halfclose_tag(), gpr_inf_future);
     GPR_ASSERT(ev->type == GRPC_FINISH_ACCEPTED);

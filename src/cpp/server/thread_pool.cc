@@ -41,7 +41,10 @@ ThreadPool::ThreadPool(int num_threads) {
       for (;;) {
         std::unique_lock<std::mutex> lock(mu_);
         // Wait until work is available or we are shutting down.
-        cv_.wait(lock, [=]() { return shutdown_ || !callbacks_.empty(); });
+        auto have_work = [=]() { return shutdown_ || !callbacks_.empty(); };
+        if (!have_work()) {
+          cv_.wait(lock, have_work);
+        }
         // Drain callbacks before considering shutdown to ensure all work
         // gets completed.
         if (!callbacks_.empty()) {
@@ -71,7 +74,7 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::ScheduleCallback(const std::function<void()> &callback) {
   std::lock_guard<std::mutex> lock(mu_);
   callbacks_.push(callback);
-  cv_.notify_all();
+  cv_.notify_one();
 }
 
 }  // namespace grpc

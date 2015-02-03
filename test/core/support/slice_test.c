@@ -103,10 +103,10 @@ static void test_slice_new_with_len_returns_something_sensible(void) {
   GPR_ASSERT(do_nothing_with_len_1_calls == 1);
 }
 
-static void test_slice_sub_works(int length) {
+static void test_slice_sub_works(unsigned length) {
   gpr_slice slice;
   gpr_slice sub;
-  int i, j, k;
+  unsigned i, j, k;
 
   LOG_TEST_NAME();
   gpr_log(GPR_INFO, "length=%d", length);
@@ -212,7 +212,7 @@ static void test_slice_from_copied_string_works(void) {
 }
 
 int main(int argc, char **argv) {
-  int length;
+  unsigned length;
   grpc_test_init(argc, argv);
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
