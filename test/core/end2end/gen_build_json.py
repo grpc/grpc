@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
