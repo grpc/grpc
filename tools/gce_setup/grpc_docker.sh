@@ -317,7 +317,7 @@ grpc_interop_test_flags() {
     echo "$FUNCNAME: missing arg: test_case" 1>&2
     return 1
   }
-  echo "--server_host=$server_ip --server_port=$port --test_case=$test_case"
+  echo "--server_host_override=foo.test.google.fr --server_host=$server_ip --server_port=$port --test_case=$test_case"
 }
 
 # checks the positional args and assigns them to variables visible in the caller
@@ -874,7 +874,7 @@ grpc_cloud_prod_gen_go_cmd() {
 grpc_interop_gen_java_cmd() {
     local cmd_prefix="sudo docker run grpc/java";
     local test_script="/var/local/git/grpc-java/run-test-client.sh";
-    local test_script+=" --server_host_override=foo.test.google.fr --use_test_ca=true --use_tls=true"
+    local test_script+=" --use_test_ca=true --use_tls=true"
     local the_cmd="$cmd_prefix $test_script $@";
     echo $the_cmd
 }
