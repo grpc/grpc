@@ -14,7 +14,7 @@ gcloud compute instances create instance-name
    
 To run the client from GCE:
 make tips_client
-bins/opt/tips_client
+bins/opt/tips_client --project_id="your project id"
     
 A service account credential is required to run the client from other
 environments, which can be generated as a JSON key file from
@@ -22,6 +22,7 @@ https://console.developers.google.com/project/. To run the client with a service
 account credential:
 
 bins/opt/tips_client
+    --project_id="your project id"
     --service_account_key_file="absolute path to the JSON key file"
     --project_id="your project id"
 
