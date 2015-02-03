@@ -31,6 +31,8 @@
  *
  */
 
+#include <sstream>
+
 #include <grpc++/client_context.h>
 
 #include "examples/tips/publisher.h"
@@ -56,7 +58,7 @@ void Publisher::Shutdown() {
   stub_.reset();
 }
 
-Status Publisher::CreateTopic(const string& topic) {
+Status Publisher::CreateTopic(const grpc::string& topic) {
   Topic request;
   Topic response;
   request.set_name(topic);
@@ -65,15 +67,28 @@ Status Publisher::CreateTopic(const string& topic) {
   return stub_->CreateTopic(&context, request, &response);
 }
 
-Status Publisher::ListTopics() {
+Status Publisher::ListTopics(const grpc::string& project_id,
+                             std::vector<grpc::string>* topics) {
   ListTopicsRequest request;
   ListTopicsResponse response;
   ClientContext context;
 
-  return stub_->ListTopics(&context, request, &response);
+  std::stringstream ss;
+  ss << "cloud.googleapis.com/project in (/projects/" << project_id << ")";
+  request.set_query(ss.str());
+
+  Status s = stub_->ListTopics(&context, request, &response);
+
+  tech::pubsub::Topic topic;
+  for (int i = 0; i < response.topic_size(); i++) {
+    topic = response.topic(i);
+    topics->push_back(topic.name());
+  }
+
+  return s;
 }
 
-Status Publisher::GetTopic(const string& topic) {
+Status Publisher::GetTopic(const grpc::string& topic) {
   GetTopicRequest request;
   Topic response;
   ClientContext context;
@@ -83,7 +98,7 @@ Status Publisher::GetTopic(const string& topic) {
   return stub_->GetTopic(&context, request, &response);
 }
 
-Status Publisher::DeleteTopic(const string& topic) {
+Status Publisher::DeleteTopic(const grpc::string& topic) {
   DeleteTopicRequest request;
   proto2::Empty response;
   ClientContext context;
@@ -93,7 +108,7 @@ Status Publisher::DeleteTopic(const string& topic) {
   return stub_->DeleteTopic(&context, request, &response);
 }
 
-Status Publisher::Publish(const string& topic, const string& data) {
+Status Publisher::Publish(const grpc::string& topic, const grpc::string& data) {
   PublishRequest request;
   proto2::Empty response;
   ClientContext context;

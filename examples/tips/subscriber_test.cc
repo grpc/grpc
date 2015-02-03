@@ -45,8 +45,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using grpc::ChannelInterface;
-
 namespace grpc {
 namespace testing {
 namespace {
@@ -131,7 +129,6 @@ class SubscriberTest : public ::testing::Test {
 TEST_F(SubscriberTest, TestSubscriber) {
   EXPECT_TRUE(subscriber_->CreateSubscription(kTopic,
                                               kSubscriptionName).IsOk());
-
 
   grpc::string topic;
   EXPECT_TRUE(subscriber_->GetSubscription(kSubscriptionName,

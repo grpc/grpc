@@ -48,12 +48,13 @@ class Publisher {
   Publisher(std::shared_ptr<ChannelInterface> channel);
   void Shutdown();
 
-  Status CreateTopic(const string& topic);
-  Status GetTopic(const string& topic);
-  Status DeleteTopic(const string& topic);
-  Status ListTopics();
+  Status CreateTopic(const grpc::string& topic);
+  Status GetTopic(const grpc::string& topic);
+  Status DeleteTopic(const grpc::string& topic);
+  Status ListTopics(const grpc::string& project_id,
+                    std::vector<grpc::string>* topics);
 
-  Status Publish(const string& topic, const string& data);
+  Status Publish(const grpc::string& topic, const grpc::string& data);
 
  private:
   std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;

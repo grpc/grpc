@@ -51,6 +51,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
+const char kProjectId[] = "project id";
 const char kTopic[] = "test topic";
 const char kMessageData[] = "test message data";
 
@@ -80,7 +81,11 @@ class PublisherServiceImpl : public tech::pubsub::PublisherService::Service {
  Status ListTopics(ServerContext* context,
                    const ::tech::pubsub::ListTopicsRequest* request,
                    ::tech::pubsub::ListTopicsResponse* response) override {
-    return Status::OK;
+   std::stringstream ss;
+   ss << "cloud.googleapis.com/project in (/projects/" << kProjectId << ")";
+   EXPECT_EQ(request->query(), ss.str());
+   response->add_topic()->set_name(kTopic);
+   return Status::OK;
  }
 
  Status DeleteTopic(ServerContext* context,
@@ -124,9 +129,15 @@ class PublisherTest : public ::testing::Test {
 
 TEST_F(PublisherTest, TestPublisher) {
   EXPECT_TRUE(publisher_->CreateTopic(kTopic).IsOk());
+
   EXPECT_TRUE(publisher_->Publish(kTopic, kMessageData).IsOk());
+
   EXPECT_TRUE(publisher_->GetTopic(kTopic).IsOk());
-  EXPECT_TRUE(publisher_->ListTopics().IsOk());
+
+  std::vector<grpc::string> topics;
+  EXPECT_TRUE(publisher_->ListTopics(kProjectId, &topics).IsOk());
+  EXPECT_EQ(topics.size(), 1);
+  EXPECT_EQ(topics[0], kTopic);
 }
 
 }  // namespace

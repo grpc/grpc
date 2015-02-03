@@ -69,7 +69,7 @@ const char kMessageData[] = "Test Data";
 }  // namespace
 
 grpc::string GetServiceAccountJsonKey() {
-  static grpc::string json_key;
+  grpc::string json_key;
   if (json_key.empty()) {
     std::ifstream json_key_file(FLAGS_service_account_key_file);
     std::stringstream key_stream;
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
   ss << FLAGS_project_id << "/"  << kSubscriptionName;
   grpc::string subscription_name = ss.str();
 
-  // Clean up test topic and subcription.
+  // Clean up test topic and subcription if they exist before.
   grpc::string subscription_topic;
   if (subscriber.GetSubscription(
       subscription_name, &subscription_topic).IsOk()) {
@@ -133,6 +133,18 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Get topic returns code %d, %s",
           s.code(), s.details().c_str());
   GPR_ASSERT(s.IsOk());
+
+  std::vector<grpc::string> topics;
+  s = publisher.ListTopics(FLAGS_project_id, &topics);
+  gpr_log(GPR_INFO, "List topic returns code %d, %s",
+          s.code(), s.details().c_str());
+  bool topic_found = false;
+  for (unsigned int i = 0; i < topics.size(); i++) {
+    if (topics[i] == topic) topic_found = true;
+    gpr_log(GPR_INFO, "topic: %s", topics[i].c_str());
+  }
+  GPR_ASSERT(s.IsOk());
+  GPR_ASSERT(topic_found);
 
   s = subscriber.CreateSubscription(topic, subscription_name);
   gpr_log(GPR_INFO, "create subscrption returns code %d, %s",

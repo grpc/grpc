@@ -56,7 +56,8 @@ void Subscriber::Shutdown() {
   stub_.reset();
 }
 
-Status Subscriber::CreateSubscription(const string& topic, const string& name) {
+Status Subscriber::CreateSubscription(const grpc::string& topic,
+                                      const grpc::string& name) {
   tech::pubsub::Subscription request;
   tech::pubsub::Subscription response;
   ClientContext context;
@@ -67,7 +68,8 @@ Status Subscriber::CreateSubscription(const string& topic, const string& name) {
   return stub_->CreateSubscription(&context, request, &response);
 }
 
-Status Subscriber::GetSubscription(const string& name, string* topic) {
+Status Subscriber::GetSubscription(const grpc::string& name,
+                                   grpc::string* topic) {
   tech::pubsub::GetSubscriptionRequest request;
   tech::pubsub::Subscription response;
   ClientContext context;
@@ -79,7 +81,7 @@ Status Subscriber::GetSubscription(const string& name, string* topic) {
   return s;
 }
 
-Status Subscriber::DeleteSubscription(const string& name) {
+Status Subscriber::DeleteSubscription(const grpc::string& name) {
   tech::pubsub::DeleteSubscriptionRequest request;
   proto2::Empty response;
   ClientContext context;
@@ -89,7 +91,7 @@ Status Subscriber::DeleteSubscription(const string& name) {
   return stub_->DeleteSubscription(&context, request, &response);
 }
 
-Status Subscriber::Pull(const string& name, string* data) {
+Status Subscriber::Pull(const grpc::string& name, grpc::string* data) {
   tech::pubsub::PullRequest request;
   tech::pubsub::PullResponse response;
   ClientContext context;
