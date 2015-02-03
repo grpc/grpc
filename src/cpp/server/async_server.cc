@@ -72,7 +72,7 @@ void AsyncServer::RequestOneRpc() {
     return;
   }
   lock.unlock();
-  grpc_call_error err = grpc_server_request_call(server_, nullptr);
+  grpc_call_error err = grpc_server_request_call_old(server_, nullptr);
   GPR_ASSERT(err == GRPC_CALL_OK);
 }
 

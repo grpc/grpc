@@ -56,9 +56,9 @@ static int pygrpc_call_init(Call *self, PyObject *args, PyObject *kwds) {
   /* TODO(nathaniel): Hoist the gpr_timespec <-> PyFloat arithmetic into its own
    * function with its own test coverage.
    */
-  self->c_call =
-      grpc_channel_create_call(((Channel *)channel)->c_channel, method, host,
-                               gpr_time_from_nanos(deadline * GPR_NS_PER_SEC));
+  self->c_call = grpc_channel_create_call_old(
+      ((Channel *)channel)->c_channel, method, host,
+      gpr_time_from_nanos(deadline * GPR_NS_PER_SEC));
 
   return 0;
 }
@@ -82,7 +82,7 @@ static const PyObject *pygrpc_call_invoke(Call *self, PyObject *args) {
     return NULL;
   }
 
-  call_error = grpc_call_invoke(
+  call_error = grpc_call_invoke_old(
       self->c_call, ((CompletionQueue *)completion_queue)->c_completion_queue,
       (void *)metadata_tag, (void *)finish_tag, 0);
 
@@ -111,7 +111,8 @@ static const PyObject *pygrpc_call_write(Call *self, PyObject *args) {
   byte_buffer = grpc_byte_buffer_create(&slice, 1);
   gpr_slice_unref(slice);
 
-  call_error = grpc_call_start_write(self->c_call, byte_buffer, (void *)tag, 0);
+  call_error =
+      grpc_call_start_write_old(self->c_call, byte_buffer, (void *)tag, 0);
 
   grpc_byte_buffer_destroy(byte_buffer);
 
@@ -131,7 +132,7 @@ static const PyObject *pygrpc_call_complete(Call *self, PyObject *args) {
     return NULL;
   }
 
-  call_error = grpc_call_writes_done(self->c_call, (void *)tag);
+  call_error = grpc_call_writes_done_old(self->c_call, (void *)tag);
 
   result = pygrpc_translate_call_error(call_error);
   if (result != NULL) {
@@ -151,7 +152,7 @@ static const PyObject *pygrpc_call_accept(Call *self, PyObject *args) {
     return NULL;
   }
 
-  call_error = grpc_call_server_accept(
+  call_error = grpc_call_server_accept_old(
       self->c_call, ((CompletionQueue *)completion_queue)->c_completion_queue,
       (void *)tag);
   result = pygrpc_translate_call_error(call_error);
@@ -166,7 +167,7 @@ static const PyObject *pygrpc_call_accept(Call *self, PyObject *args) {
 static const PyObject *pygrpc_call_premetadata(Call *self, PyObject *args) {
   /* TODO(b/18702680): Actually support metadata. */
   return pygrpc_translate_call_error(
-      grpc_call_server_end_initial_metadata(self->c_call, 0));
+      grpc_call_server_end_initial_metadata_old(self->c_call, 0));
 }
 
 static const PyObject *pygrpc_call_read(Call *self, PyObject *args) {
@@ -178,7 +179,7 @@ static const PyObject *pygrpc_call_read(Call *self, PyObject *args) {
     return NULL;
   }
 
-  call_error = grpc_call_start_read(self->c_call, (void *)tag);
+  call_error = grpc_call_start_read_old(self->c_call, (void *)tag);
 
   result = pygrpc_translate_call_error(call_error);
   if (result != NULL) {
@@ -208,8 +209,8 @@ static const PyObject *pygrpc_call_status(Call *self, PyObject *args) {
   Py_DECREF(code);
   Py_DECREF(details);
 
-  call_error = grpc_call_start_write_status(self->c_call, c_code, c_message,
-                                            (void *)tag);
+  call_error = grpc_call_start_write_status_old(self->c_call, c_code, c_message,
+                                                (void *)tag);
 
   result = pygrpc_translate_call_error(call_error);
   if (result != NULL) {

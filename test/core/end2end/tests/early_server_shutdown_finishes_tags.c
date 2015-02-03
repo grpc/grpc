@@ -110,7 +110,7 @@ static void test_early_server_shutdown_finishes_tags(
 
   /* upon shutdown, the server should finish all requested calls indicating
      no new call */
-  grpc_server_request_call(f.server, tag(1000));
+  grpc_server_request_call_old(f.server, tag(1000));
   grpc_server_shutdown(f.server);
   cq_expect_server_rpc_new(v_server, &s, tag(1000), NULL, NULL, gpr_inf_past,
                            NULL);
