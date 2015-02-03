@@ -24,8 +24,3 @@ account credential:
 bins/opt/tips_client
     --project_id="your project id"
     --service_account_key_file="absolute path to the JSON key file"
-    --project_id="your project id"
-
-    
-
-
