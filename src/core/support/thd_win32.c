@@ -77,4 +77,8 @@ gpr_thd_options gpr_thd_options_default(void) {
   return options;
 }
 
+gpr_thd_id gpr_thd_currentid(void) {
+  return (gpr_thd_id)GetCurrentThreadId();
+}
+
 #endif /* GPR_WIN32 */
