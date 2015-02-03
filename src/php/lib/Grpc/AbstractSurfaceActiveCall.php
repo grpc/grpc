@@ -44,7 +44,7 @@ abstract class AbstractSurfaceActiveCall {
 
   protected function _read() {
     $response = $this->active_call->read();
-    if ($response == null) {
+    if ($response === null) {
       return null;
     }
     return call_user_func($this->deserialize, $response);
