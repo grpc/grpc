@@ -33,16 +33,15 @@
 
 #include "src/core/surface/byte_buffer_queue.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/useful.h>
 
-static void bba_destroy(grpc_bbq_array *array) {
-  gpr_free(array->data);
-}
+static void bba_destroy(grpc_bbq_array *array) { gpr_free(array->data); }
 
 /* Append an operation to an array, expanding as needed */
 static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
   if (a->count == a->capacity) {
-    a->capacity *= 2;
-    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer*) * a->capacity);
+    a->capacity = GPR_MAX(a->capacity * 2, 8);
+    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
   }
   a->data[a->count++] = buffer;
 }
