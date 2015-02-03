@@ -290,10 +290,6 @@
     "name": "thread_pool_test"
   }, 
   {
-    "language": "c++", 
-    "name": "tips_client_test"
-  }, 
-  {
     "language": "c", 
     "name": "chttp2_fake_security_cancel_after_accept_test"
   }, 

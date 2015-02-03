@@ -1571,7 +1571,6 @@
     {
       "name": "tips_client",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "examples/tips/main.cc"
@@ -1584,7 +1583,8 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ]
+      ],
+      "run": false
     },
     {
       "name": "tips_publisher_test",
@@ -1710,41 +1710,6 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_client",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/client_main.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ],
-      "run": false
-    },
-    {
-      "name": "tips_client_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/client_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
