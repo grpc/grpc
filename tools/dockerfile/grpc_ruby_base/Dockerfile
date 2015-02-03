@@ -53,6 +53,3 @@ RUN cd /var/local/git/grpc/third_party/protobuf && \
   ./autogen.sh && \
   ./configure --prefix=/usr && \
   make -j12 && make check && make install && make clean
-
-# Build the C core
-RUN make static_c shared_c -j12 -C /var/local/git/grpc
