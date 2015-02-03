@@ -44,6 +44,7 @@ typedef enum {
   GRPC_IOREQ_RECV_MESSAGE,
   GRPC_IOREQ_RECV_TRAILING_METADATA,
   GRPC_IOREQ_RECV_STATUS,
+  GRPC_IOREQ_RECV_STATUS_DETAILS,
   GRPC_IOREQ_RECV_CLOSE,
   GRPC_IOREQ_SEND_INITIAL_METADATA,
   GRPC_IOREQ_SEND_MESSAGE,
@@ -53,24 +54,25 @@ typedef enum {
   GRPC_IOREQ_OP_COUNT
 } grpc_ioreq_op;
 
-typedef struct {
-  grpc_status_code *code;
-  char **details;
-  size_t *details_capacity;
-} grpc_recv_status_args;
-
 typedef union {
   grpc_metadata_array *recv_metadata;
   grpc_byte_buffer **recv_message;
-  grpc_recv_status_args recv_status;
+  struct {
+    void (*set_value)(grpc_status_code status, void *user_data);
+    void *user_data;
+  } recv_status;
+  struct {
+    char **details;
+    size_t *details_capacity;
+  } recv_status_details;
   struct {
     size_t count;
-    grpc_metadata *metadata;
+    const grpc_metadata *metadata;
   } send_metadata;
   grpc_byte_buffer *send_message;
   struct {
     grpc_status_code code;
-    char *details;
+    const char *details;
   } send_status;
 } grpc_ioreq_data;
 
@@ -83,7 +85,7 @@ typedef void (*grpc_ioreq_completion_func)(grpc_call *call,
                                            grpc_op_error status,
                                            void *user_data);
 
-grpc_call *grpc_call_create(grpc_channel *channel,
+grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data);
 
 void grpc_call_internal_ref(grpc_call *call);
@@ -104,8 +106,7 @@ grpc_call_error grpc_call_start_ioreq_and_call_back(
     grpc_ioreq_completion_func on_complete, void *user_data);
 
 /* Called when it's known that the initial batch of metadata is complete */
-void grpc_call_initial_metadata_complete(
-    grpc_call_element *surface_element);
+void grpc_call_initial_metadata_complete(grpc_call_element *surface_element);
 
 void grpc_call_set_deadline(grpc_call_element *surface_element,
                             gpr_timespec deadline);

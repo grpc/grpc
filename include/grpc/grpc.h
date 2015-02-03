@@ -184,7 +184,7 @@ typedef struct grpc_metadata {
 
 typedef enum grpc_completion_type {
   GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
-  GRPC_IOREQ,                /* grpc_call_ioreq completion */
+  GRPC_OP_COMPLETE,          /* operation completion */
   GRPC_READ,                 /* A read has completed */
   GRPC_WRITE_ACCEPTED,       /* A write has been accepted by
                                 flow control */
@@ -212,7 +212,7 @@ typedef struct grpc_event {
     grpc_op_error write_accepted;
     grpc_op_error finish_accepted;
     grpc_op_error invoke_accepted;
-    grpc_op_error ioreq;
+    grpc_op_error op_complete;
     struct {
       size_t count;
       grpc_metadata *elements;
@@ -253,7 +253,7 @@ typedef enum {
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
   GRPC_OP_SEND_STATUS_FROM_SERVER,
   GRPC_OP_RECV_INITIAL_METADATA,
-  GRPC_OP_RECV_MESSAGES,
+  GRPC_OP_RECV_MESSAGE,
   GRPC_OP_RECV_STATUS_ON_CLIENT,
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
@@ -335,10 +335,10 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
 /* Create a call given a grpc_channel, in order to call 'method'. The request
    is not sent until grpc_call_invoke is called. All completions are sent to
    'completion_queue'. */
-grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
-                                        grpc_completion_queue *completion_queue,
-                                        const char *method, const char *host,
-                                        gpr_timespec deadline);
+grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                    grpc_completion_queue *completion_queue,
+                                    const char *method, const char *host,
+                                    gpr_timespec deadline);
 
 /* Start a batch of operations defined in the array ops; when complete, post a
  * completion of type 'tag' to the completion queue bound to the call. */
@@ -485,11 +485,10 @@ void grpc_call_destroy(grpc_call *call);
 grpc_call_error grpc_server_request_call_old(grpc_server *server,
                                              void *tag_new);
 
-grpc_call_error grpc_server_request_call(grpc_server *server,
-                                         grpc_call_details *details,
-                                         grpc_metadata_array *request_metadata,
-                                         grpc_completion_queue *completion_queue,
-                                         void *tag_new);
+grpc_call_error grpc_server_request_call(
+    grpc_server *server, grpc_call_details *details,
+    grpc_metadata_array *request_metadata,
+    grpc_completion_queue *completion_queue, void *tag_new);
 
 /* Create a server */
 grpc_server *grpc_server_create(grpc_completion_queue *cq,

@@ -121,7 +121,9 @@ typedef enum {
   ZOMBIED
 } call_state;
 
-typedef struct legacy_data { grpc_metadata_array *initial_metadata; } legacy_data;
+typedef struct legacy_data {
+  grpc_metadata_array *initial_metadata;
+} legacy_data;
 
 struct call_data {
   grpc_call *call;
@@ -343,7 +345,7 @@ static void channel_op(grpc_channel_element *elem,
   switch (op->type) {
     case GRPC_ACCEPT_CALL:
       /* create a call */
-      grpc_call_create(chand->channel,
+      grpc_call_create(chand->channel, NULL,
                        op->data.accept_call.transport_server_data);
       break;
     case GRPC_TRANSPORT_CLOSED:
@@ -709,11 +711,11 @@ static void begin_request(grpc_server *server, grpc_completion_queue *cq,
   abort();
 }
 
-grpc_call_error grpc_server_request_call(
-    grpc_server *server, grpc_call_details *details,
-    grpc_metadata_array *initial_metadata, grpc_completion_queue *cq,
-    void *tag) {
-  grpc_cq_begin_op(cq, NULL, GRPC_IOREQ);
+grpc_call_error grpc_server_request_call(grpc_server *server,
+                                         grpc_call_details *details,
+                                         grpc_metadata_array *initial_metadata,
+                                         grpc_completion_queue *cq, void *tag) {
+  grpc_cq_begin_op(cq, NULL, GRPC_OP_COMPLETE);
   return queue_call_request(server, cq, initial_metadata, begin_request, tag);
 }
 

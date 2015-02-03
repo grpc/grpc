@@ -70,7 +70,7 @@ typedef struct expectation {
   union {
     grpc_op_error finish_accepted;
     grpc_op_error write_accepted;
-    grpc_op_error ioreq;
+    grpc_op_error op_complete;
     struct {
       const char *method;
       const char *host;
@@ -220,8 +220,8 @@ static void verify_matches(expectation *e, grpc_event *ev) {
         GPR_ASSERT(ev->data.read == NULL);
       }
       break;
-    case GRPC_IOREQ:
-      GPR_ASSERT(e->data.ioreq == ev->data.ioreq);
+    case GRPC_OP_COMPLETE:
+      GPR_ASSERT(e->data.op_complete == ev->data.op_complete);
       break;
     case GRPC_SERVER_SHUTDOWN:
       break;
@@ -256,23 +256,23 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
   switch (e->type) {
     case GRPC_FINISH_ACCEPTED:
       gpr_asprintf(&tmp, "GRPC_FINISH_ACCEPTED result=%d",
-                     e->data.finish_accepted);
+                   e->data.finish_accepted);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_WRITE_ACCEPTED:
       gpr_asprintf(&tmp, "GRPC_WRITE_ACCEPTED result=%d",
-                     e->data.write_accepted);
+                   e->data.write_accepted);
       gpr_strvec_add(buf, tmp);
       break;
-    case GRPC_IOREQ:
-      gpr_asprintf(&tmp, "GRPC_IOREQ result=%d", e->data.ioreq);
+    case GRPC_OP_COMPLETE:
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->data.op_complete);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_SERVER_RPC_NEW:
       timeout = gpr_time_sub(e->data.server_rpc_new.deadline, gpr_now());
       gpr_asprintf(&tmp, "GRPC_SERVER_RPC_NEW method=%s host=%s timeout=%fsec",
-                     e->data.server_rpc_new.method, e->data.server_rpc_new.host,
-                     timeout.tv_sec + 1e-9 * timeout.tv_nsec);
+                   e->data.server_rpc_new.method, e->data.server_rpc_new.host,
+                   timeout.tv_sec + 1e-9 * timeout.tv_nsec);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_CLIENT_METADATA_READ:
@@ -281,14 +281,16 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
       break;
     case GRPC_FINISHED:
       gpr_asprintf(&tmp, "GRPC_FINISHED status=%d details=%s ",
-                    e->data.finished.status, e->data.finished.details);
+                   e->data.finished.status, e->data.finished.details);
       gpr_strvec_add(buf, tmp);
       metadata_expectation(buf, e->data.finished.metadata);
       break;
     case GRPC_READ:
       gpr_strvec_add(buf, gpr_strdup("GRPC_READ data="));
-      gpr_strvec_add(buf, gpr_hexdump((char *)GPR_SLICE_START_PTR(*e->data.read),
-                        GPR_SLICE_LENGTH(*e->data.read), GPR_HEXDUMP_PLAINTEXT));
+      gpr_strvec_add(
+          buf,
+          gpr_hexdump((char *)GPR_SLICE_START_PTR(*e->data.read),
+                      GPR_SLICE_LENGTH(*e->data.read), GPR_HEXDUMP_PLAINTEXT));
       break;
     case GRPC_SERVER_SHUTDOWN:
       gpr_strvec_add(buf, gpr_strdup("GRPC_SERVER_SHUTDOWN"));
