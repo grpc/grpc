@@ -957,7 +957,7 @@ static void send_batch(grpc_transport *gt, grpc_stream *gs, grpc_stream_op *ops,
       stream_list_join(t, s, WRITABLE);
     }
   } else {
-    grpc_stream_ops_unref_owned_objects(ops, ops_count);
+    grpc_sopb_append(&t->nuke_later_sopb, ops, ops_count);
   }
   if (is_last && s->outgoing_sopb.nops == 0 && s->read_closed) {
     stream_list_join(t, s, PENDING_CALLBACKS);
