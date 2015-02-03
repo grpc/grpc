@@ -189,10 +189,12 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/perftools.c -lprofiler $(LDFLAGS)
 
+ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_PERFTOOLS),true)
 DEFINES += GRPC_HAVE_PERFTOOLS
 LIBS += profiler
+endif
 endif
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
@@ -1433,6 +1435,7 @@ LIBGRPC_SRC = \
     src/core/statistics/hash_table.c \
     src/core/statistics/window_stats.c \
     src/core/surface/byte_buffer.c \
+    src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \
     src/core/surface/call.c \
     src/core/surface/channel.c \
@@ -1559,6 +1562,7 @@ src/core/statistics/census_tracing.c: $(OPENSSL_DEP)
 src/core/statistics/hash_table.c: $(OPENSSL_DEP)
 src/core/statistics/window_stats.c: $(OPENSSL_DEP)
 src/core/surface/byte_buffer.c: $(OPENSSL_DEP)
+src/core/surface/byte_buffer_queue.c: $(OPENSSL_DEP)
 src/core/surface/byte_buffer_reader.c: $(OPENSSL_DEP)
 src/core/surface/call.c: $(OPENSSL_DEP)
 src/core/surface/channel.c: $(OPENSSL_DEP)
@@ -1707,6 +1711,7 @@ objs/$(CONFIG)/src/core/statistics/census_tracing.o:
 objs/$(CONFIG)/src/core/statistics/hash_table.o: 
 objs/$(CONFIG)/src/core/statistics/window_stats.o: 
 objs/$(CONFIG)/src/core/surface/byte_buffer.o: 
+objs/$(CONFIG)/src/core/surface/byte_buffer_queue.o: 
 objs/$(CONFIG)/src/core/surface/byte_buffer_reader.o: 
 objs/$(CONFIG)/src/core/surface/call.o: 
 objs/$(CONFIG)/src/core/surface/channel.o: 
@@ -1874,6 +1879,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/statistics/hash_table.c \
     src/core/statistics/window_stats.c \
     src/core/surface/byte_buffer.c \
+    src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \
     src/core/surface/call.c \
     src/core/surface/channel.c \
@@ -2005,6 +2011,7 @@ objs/$(CONFIG)/src/core/statistics/census_tracing.o:
 objs/$(CONFIG)/src/core/statistics/hash_table.o: 
 objs/$(CONFIG)/src/core/statistics/window_stats.o: 
 objs/$(CONFIG)/src/core/surface/byte_buffer.o: 
+objs/$(CONFIG)/src/core/surface/byte_buffer_queue.o: 
 objs/$(CONFIG)/src/core/surface/byte_buffer_reader.o: 
 objs/$(CONFIG)/src/core/surface/call.o: 
 objs/$(CONFIG)/src/core/surface/channel.o: 

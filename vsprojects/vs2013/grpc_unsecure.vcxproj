@@ -146,6 +146,7 @@
     <ClInclude Include="..\..\src\core\statistics\census_tracing.h" />
     <ClInclude Include="..\..\src\core\statistics\hash_table.h" />
     <ClInclude Include="..\..\src\core\statistics\window_stats.h" />
+    <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
     <ClInclude Include="..\..\src\core\surface\client.h" />
@@ -311,6 +312,8 @@
     <ClCompile Include="..\..\src\core\statistics\window_stats.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\byte_buffer_queue.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer_reader.c">
     </ClCompile>
