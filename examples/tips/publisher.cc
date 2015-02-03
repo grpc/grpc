@@ -73,7 +73,7 @@ Status Publisher::ListTopics(const grpc::string& project_id,
   ListTopicsResponse response;
   ClientContext context;
 
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << "cloud.googleapis.com/project in (/projects/" << project_id << ")";
   request.set_query(ss.str());
 
