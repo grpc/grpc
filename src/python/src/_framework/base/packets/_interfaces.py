@@ -58,10 +58,7 @@ class TerminationManager(object):
     immediately.
 
     Args:
-      callback: A callable that will be passed one of base_interfaces.COMPLETED,
-        base_interfaces.CANCELLED, base_interfaces.EXPIRED,
-        base_interfaces.RECEPTION_FAILURE, base_interfaces.TRANSMISSION_FAILURE,
-        base_interfaces.SERVICER_FAILURE, or base_interfaces.SERVICED_FAILURE.
+      callback: A callable that will be passed a base_interfaces.Outcome value.
     """
     raise NotImplementedError()
 

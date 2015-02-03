@@ -138,6 +138,7 @@ void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state) {
 }
 
 void grpc_pollset_kick_global_init_fallback_fd(void) {
+  gpr_mu_init(&fd_freelist_mu);
   grpc_wakeup_fd_global_init_force_fallback();
 }
 
