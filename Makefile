@@ -1834,6 +1834,7 @@ LIBGRPC_SRC = \
     src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \
     src/core/surface/call.c \
+    src/core/surface/call_details.c \
     src/core/surface/channel.c \
     src/core/surface/channel_create.c \
     src/core/surface/client.c \
@@ -1841,6 +1842,7 @@ LIBGRPC_SRC = \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
     src/core/surface/lame_client.c \
+    src/core/surface/metadata_array.c \
     src/core/surface/secure_channel_create.c \
     src/core/surface/secure_server_create.c \
     src/core/surface/server.c \
@@ -1961,6 +1963,7 @@ src/core/surface/byte_buffer.c: $(OPENSSL_DEP)
 src/core/surface/byte_buffer_queue.c: $(OPENSSL_DEP)
 src/core/surface/byte_buffer_reader.c: $(OPENSSL_DEP)
 src/core/surface/call.c: $(OPENSSL_DEP)
+src/core/surface/call_details.c: $(OPENSSL_DEP)
 src/core/surface/channel.c: $(OPENSSL_DEP)
 src/core/surface/channel_create.c: $(OPENSSL_DEP)
 src/core/surface/client.c: $(OPENSSL_DEP)
@@ -1968,6 +1971,7 @@ src/core/surface/completion_queue.c: $(OPENSSL_DEP)
 src/core/surface/event_string.c: $(OPENSSL_DEP)
 src/core/surface/init.c: $(OPENSSL_DEP)
 src/core/surface/lame_client.c: $(OPENSSL_DEP)
+src/core/surface/metadata_array.c: $(OPENSSL_DEP)
 src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/surface/secure_server_create.c: $(OPENSSL_DEP)
 src/core/surface/server.c: $(OPENSSL_DEP)
@@ -2110,6 +2114,7 @@ objs/$(CONFIG)/src/core/surface/byte_buffer.o:
 objs/$(CONFIG)/src/core/surface/byte_buffer_queue.o: 
 objs/$(CONFIG)/src/core/surface/byte_buffer_reader.o: 
 objs/$(CONFIG)/src/core/surface/call.o: 
+objs/$(CONFIG)/src/core/surface/call_details.o: 
 objs/$(CONFIG)/src/core/surface/channel.o: 
 objs/$(CONFIG)/src/core/surface/channel_create.o: 
 objs/$(CONFIG)/src/core/surface/client.o: 
@@ -2117,6 +2122,7 @@ objs/$(CONFIG)/src/core/surface/completion_queue.o:
 objs/$(CONFIG)/src/core/surface/event_string.o: 
 objs/$(CONFIG)/src/core/surface/init.o: 
 objs/$(CONFIG)/src/core/surface/lame_client.o: 
+objs/$(CONFIG)/src/core/surface/metadata_array.o: 
 objs/$(CONFIG)/src/core/surface/secure_channel_create.o: 
 objs/$(CONFIG)/src/core/surface/secure_server_create.o: 
 objs/$(CONFIG)/src/core/surface/server.o: 
@@ -2278,6 +2284,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \
     src/core/surface/call.c \
+    src/core/surface/call_details.c \
     src/core/surface/channel.c \
     src/core/surface/channel_create.c \
     src/core/surface/client.c \
@@ -2285,6 +2292,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/event_string.c \
     src/core/surface/init.c \
     src/core/surface/lame_client.c \
+    src/core/surface/metadata_array.c \
     src/core/surface/secure_channel_create.c \
     src/core/surface/secure_server_create.c \
     src/core/surface/server.c \
@@ -2410,6 +2418,7 @@ objs/$(CONFIG)/src/core/surface/byte_buffer.o:
 objs/$(CONFIG)/src/core/surface/byte_buffer_queue.o: 
 objs/$(CONFIG)/src/core/surface/byte_buffer_reader.o: 
 objs/$(CONFIG)/src/core/surface/call.o: 
+objs/$(CONFIG)/src/core/surface/call_details.o: 
 objs/$(CONFIG)/src/core/surface/channel.o: 
 objs/$(CONFIG)/src/core/surface/channel_create.o: 
 objs/$(CONFIG)/src/core/surface/client.o: 
@@ -2417,6 +2426,7 @@ objs/$(CONFIG)/src/core/surface/completion_queue.o:
 objs/$(CONFIG)/src/core/surface/event_string.o: 
 objs/$(CONFIG)/src/core/surface/init.o: 
 objs/$(CONFIG)/src/core/surface/lame_client.o: 
+objs/$(CONFIG)/src/core/surface/metadata_array.o: 
 objs/$(CONFIG)/src/core/surface/secure_channel_create.o: 
 objs/$(CONFIG)/src/core/surface/secure_server_create.o: 
 objs/$(CONFIG)/src/core/surface/server.o: 

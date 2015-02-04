@@ -424,6 +424,10 @@ void cq_expect_write_accepted(cq_verifier *v, void *tag, grpc_op_error result) {
   add(v, GRPC_WRITE_ACCEPTED, tag)->data.write_accepted = result;
 }
 
+void cq_expect_completion(cq_verifier *v, void *tag, grpc_op_error result) {
+  add(v, GRPC_OP_COMPLETE, tag)->data.op_complete = result;
+}
+
 void cq_expect_finish_accepted(cq_verifier *v, void *tag,
                                grpc_op_error result) {
   add(v, GRPC_FINISH_ACCEPTED, tag)->data.finish_accepted = result;

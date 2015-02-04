@@ -239,13 +239,19 @@ typedef struct {
   grpc_metadata *metadata;
 } grpc_metadata_array;
 
+void grpc_metadata_array_init(grpc_metadata_array *array);
+void grpc_metadata_array_destroy(grpc_metadata_array *array);
+
 typedef struct {
-  const char *method;
+  char *method;
   size_t method_capacity;
-  const char *host;
+  char *host;
   size_t host_capacity;
   gpr_timespec deadline;
 } grpc_call_details;
+
+void grpc_call_details_init(grpc_call_details *details);
+void grpc_call_details_destroy(grpc_call_details *details);
 
 typedef enum {
   GRPC_OP_SEND_INITIAL_METADATA = 0,
@@ -486,7 +492,7 @@ grpc_call_error grpc_server_request_call_old(grpc_server *server,
                                              void *tag_new);
 
 grpc_call_error grpc_server_request_call(
-    grpc_server *server, grpc_call_details *details,
+    grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
     grpc_completion_queue *completion_queue, void *tag_new);
 

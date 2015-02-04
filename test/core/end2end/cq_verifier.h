@@ -60,6 +60,7 @@ void cq_expect_write_accepted(cq_verifier *v, void *tag, grpc_op_error result);
 void cq_expect_finish_accepted(cq_verifier *v, void *tag, grpc_op_error result);
 void cq_expect_read(cq_verifier *v, void *tag, gpr_slice bytes);
 void cq_expect_empty_read(cq_verifier *v, void *tag);
+void cq_expect_completion(cq_verifier *v, void *tag, grpc_op_error result);
 /* *output_call is set the the server call instance */
 void cq_expect_server_rpc_new(cq_verifier *v, grpc_call **output_call,
                               void *tag, const char *method, const char *host,
