@@ -146,7 +146,7 @@ PHP_METHOD(Server, add_http2_port) {
                          "add_http2_port expects a string", 1 TSRMLS_CC);
     return;
   }
-  RETURN_BOOL(grpc_server_add_http2_port(server->wrapped, addr));
+  RETURN_LONG(grpc_server_add_http2_port(server->wrapped, addr));
 }
 
 PHP_METHOD(Server, add_secure_http2_port) {
@@ -161,7 +161,7 @@ PHP_METHOD(Server, add_secure_http2_port) {
                          "add_http2_port expects a string", 1 TSRMLS_CC);
     return;
   }
-  RETURN_BOOL(grpc_server_add_secure_http2_port(server->wrapped, addr));
+  RETURN_LONG(grpc_server_add_secure_http2_port(server->wrapped, addr));
 }
 
 /**

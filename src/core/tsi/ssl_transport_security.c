@@ -37,6 +37,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 #include "src/core/tsi/transport_security.h"
 
@@ -103,11 +104,32 @@ typedef struct {
 /* --- Library Initialization. ---*/
 
 static gpr_once init_openssl_once = GPR_ONCE_INIT;
+static gpr_mu *openssl_mutexes = NULL;
+
+static void openssl_locking_cb(int mode, int type, const char* file, int line) {
+  if (mode & CRYPTO_LOCK) {
+    gpr_mu_lock(&openssl_mutexes[type]);
+  } else {
+    gpr_mu_unlock(&openssl_mutexes[type]);
+  }
+}
+
+static unsigned long openssl_thread_id_cb(void) {
+  return (unsigned long)gpr_thd_currentid();
+}
 
 static void init_openssl(void) {
+  int i;
   SSL_library_init();
   SSL_load_error_strings();
   OpenSSL_add_all_algorithms();
+  openssl_mutexes = malloc(CRYPTO_num_locks() * sizeof(gpr_mu));
+  GPR_ASSERT(openssl_mutexes != NULL);
+  for (i = 0; i < CRYPTO_num_locks(); i++) {
+    gpr_mu_init(&openssl_mutexes[i]);
+  }
+  CRYPTO_set_locking_callback(openssl_locking_cb);
+  CRYPTO_set_id_callback(openssl_thread_id_cb);
 }
 
 /* --- Ssl utils. ---*/

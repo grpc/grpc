@@ -56,9 +56,8 @@ double TimespecToMilliseconds(gpr_timespec timespec) {
   } else if (gpr_time_cmp(timespec, gpr_inf_past) == 0) {
     return -std::numeric_limits<double>::infinity();
   } else {
-    struct timeval time = gpr_timeval_from_timespec(timespec);
-    return (static_cast<double>(time.tv_sec) * 1000 +
-            static_cast<double>(time.tv_usec) / 1000);
+    return (static_cast<double>(timespec.tv_sec) * 1000 +
+            static_cast<double>(timespec.tv_nsec) / 1000000);
   }
 }
 
