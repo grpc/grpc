@@ -72,7 +72,7 @@ $ mvn package
 ```
 
 It can also be run, but doing so now would end up a with a failure as there is
-no server available yet.  The [next step](Step-3.md), describes how to
+no server available yet.  The [next step](Step_3.md), describes how to
 implement, build and run a server that supports the service description.
 
 ## Notes
