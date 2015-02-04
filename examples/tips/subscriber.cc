@@ -33,58 +33,84 @@
 
 #include <grpc++/client_context.h>
 
-#include "examples/tips/client.h"
+#include "examples/tips/subscriber.h"
 
 using tech::pubsub::Topic;
 using tech::pubsub::DeleteTopicRequest;
 using tech::pubsub::GetTopicRequest;
-using tech::pubsub::PublisherService;
+using tech::pubsub::SubscriberService;
 using tech::pubsub::ListTopicsRequest;
 using tech::pubsub::ListTopicsResponse;
+using tech::pubsub::PublishRequest;
+using tech::pubsub::PubsubMessage;
 
 namespace grpc {
 namespace examples {
 namespace tips {
 
-Client::Client(std::shared_ptr<ChannelInterface> channel)
-    : stub_(PublisherService::NewStub(channel)) {
+Subscriber::Subscriber(std::shared_ptr<ChannelInterface> channel)
+    : stub_(SubscriberService::NewStub(channel)) {
 }
 
-Status Client::CreateTopic(grpc::string topic) {
-  Topic request;
-  Topic response;
-  request.set_name(topic);
-  ClientContext context;
-
-  return stub_->CreateTopic(&context, request, &response);
+void Subscriber::Shutdown() {
+  stub_.reset();
 }
 
-Status Client::ListTopics() {
-  ListTopicsRequest request;
-  ListTopicsResponse response;
-  ClientContext context;
-
-  return stub_->ListTopics(&context, request, &response);
-}
-
-Status Client::GetTopic(grpc::string topic) {
-  GetTopicRequest request;
-  Topic response;
+Status Subscriber::CreateSubscription(const grpc::string& topic,
+                                      const grpc::string& name) {
+  tech::pubsub::Subscription request;
+  tech::pubsub::Subscription response;
   ClientContext context;
 
   request.set_topic(topic);
+  request.set_name(name);
 
-  return stub_->GetTopic(&context, request, &response);
+  return stub_->CreateSubscription(&context, request, &response);
 }
 
-Status Client::DeleteTopic(grpc::string topic) {
-  DeleteTopicRequest request;
+Status Subscriber::GetSubscription(const grpc::string& name,
+                                   grpc::string* topic) {
+  tech::pubsub::GetSubscriptionRequest request;
+  tech::pubsub::Subscription response;
+  ClientContext context;
+
+  request.set_subscription(name);
+
+  Status s = stub_->GetSubscription(&context, request, &response);
+  *topic = response.topic();
+  return s;
+}
+
+Status Subscriber::DeleteSubscription(const grpc::string& name) {
+  tech::pubsub::DeleteSubscriptionRequest request;
   proto2::Empty response;
   ClientContext context;
 
-  request.set_topic(topic);
+  request.set_subscription(name);
 
-  return stub_->DeleteTopic(&context, request, &response);
+  return stub_->DeleteSubscription(&context, request, &response);
+}
+
+Status Subscriber::Pull(const grpc::string& name, grpc::string* data) {
+  tech::pubsub::PullRequest request;
+  tech::pubsub::PullResponse response;
+  ClientContext context;
+
+  request.set_subscription(name);
+  Status s = stub_->Pull(&context, request, &response);
+  if (s.IsOk()) {
+    tech::pubsub::PubsubEvent event = response.pubsub_event();
+    if (event.has_message()) {
+      *data = event.message().data();
+    }
+    tech::pubsub::AcknowledgeRequest ack;
+    proto2::Empty empty;
+    ClientContext ack_context;
+    ack.set_subscription(name);
+    ack.add_ack_id(response.ack_id());
+    stub_->Acknowledge(&ack_context, ack, &empty);
+  }
+  return s;
 }
 
 }  // namespace tips
