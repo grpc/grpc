@@ -1,16 +1,17 @@
 <?php
 class CallTest extends PHPUnit_Framework_TestCase{
   static $server;
+  static $port;
 
   public static function setUpBeforeClass() {
     $cq = new Grpc\CompletionQueue();
     self::$server = new Grpc\Server($cq, []);
-    self::$server->add_http2_port('localhost:9001');
+    self::$port = self::$server->add_http2_port('0.0.0.0:0');
   }
 
   public function setUp() {
     $this->cq = new Grpc\CompletionQueue();
-    $this->channel = new Grpc\Channel('localhost:9001', []);
+    $this->channel = new Grpc\Channel('localhost:' . self::$port, []);
     $this->call = new Grpc\Call($this->channel,
                                 '/foo',
                                 Grpc\Timeval::inf_future());
@@ -46,7 +47,7 @@ class CallTest extends PHPUnit_Framework_TestCase{
   }
 
   public function testAddSingleMetadata() {
-    $this->call->add_metadata(['key' => 'value'], 0);
+    $this->call->add_metadata(['key' => ['value']], 0);
     /* Dummy assert: Checks that the previous call completed without error */
     $this->assertTrue(true);
   }
@@ -59,7 +60,7 @@ class CallTest extends PHPUnit_Framework_TestCase{
 
   public function testAddSingleAndMultiValueMetadata() {
     $this->call->add_metadata(
-        ['key1' => 'value1',
+        ['key1' => ['value1'],
          'key2' => ['value2', 'value3']], 0);
     /* Dummy assert: Checks that the previous call completed without error */
     $this->assertTrue(true);

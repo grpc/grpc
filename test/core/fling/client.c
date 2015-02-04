@@ -65,6 +65,7 @@ static void step_ping_pong_request(void) {
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_call_destroy(call);
   call = NULL;
 }
