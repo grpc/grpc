@@ -176,7 +176,7 @@ class EventInvocationSynchronousEventServiceTestCase(
               name, request, callback.complete, callback.abort, _TIMEOUT)
           callback.block_until_terminated()
 
-        self.assertEqual(interfaces.EXPIRED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.EXPIRED, callback.abortion())
 
   def testExpiredUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -190,7 +190,7 @@ class EventInvocationSynchronousEventServiceTestCase(
               name, request, callback, callback.abort, _TIMEOUT)
           callback.block_until_terminated()
 
-        self.assertEqual(interfaces.EXPIRED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.EXPIRED, callback.abortion())
 
   def testExpiredStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
@@ -202,7 +202,7 @@ class EventInvocationSynchronousEventServiceTestCase(
             name, callback.complete, callback.abort, _TIMEOUT)
         callback.block_until_terminated()
 
-        self.assertEqual(interfaces.EXPIRED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.EXPIRED, callback.abortion())
 
   def testExpiredStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -217,7 +217,7 @@ class EventInvocationSynchronousEventServiceTestCase(
           request_consumer.consume(request)
         callback.block_until_terminated()
 
-        self.assertEqual(interfaces.EXPIRED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.EXPIRED, callback.abortion())
 
   def testFailedUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
@@ -231,7 +231,7 @@ class EventInvocationSynchronousEventServiceTestCase(
               name, request, callback.complete, callback.abort, _TIMEOUT)
           callback.block_until_terminated()
 
-        self.assertEqual(interfaces.SERVICER_FAILURE, callback.abortion())
+        self.assertEqual(interfaces.Abortion.SERVICER_FAILURE, callback.abortion())
 
   def testFailedUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -245,7 +245,7 @@ class EventInvocationSynchronousEventServiceTestCase(
               name, request, callback, callback.abort, _TIMEOUT)
           callback.block_until_terminated()
 
-        self.assertEqual(interfaces.SERVICER_FAILURE, callback.abortion())
+        self.assertEqual(interfaces.Abortion.SERVICER_FAILURE, callback.abortion())
 
   def testFailedStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
@@ -262,7 +262,7 @@ class EventInvocationSynchronousEventServiceTestCase(
           request_consumer.terminate()
           callback.block_until_terminated()
 
-        self.assertEqual(interfaces.SERVICER_FAILURE, callback.abortion())
+        self.assertEqual(interfaces.Abortion.SERVICER_FAILURE, callback.abortion())
 
   def testFailedStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -279,7 +279,7 @@ class EventInvocationSynchronousEventServiceTestCase(
           request_consumer.terminate()
           callback.block_until_terminated()
 
-        self.assertEqual(interfaces.SERVICER_FAILURE, callback.abortion())
+        self.assertEqual(interfaces.Abortion.SERVICER_FAILURE, callback.abortion())
 
   def testParallelInvocations(self):
     for name, test_messages_sequence in (
@@ -321,7 +321,7 @@ class EventInvocationSynchronousEventServiceTestCase(
           call.cancel()
           callback.block_until_terminated()
 
-        self.assertEqual(interfaces.CANCELLED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.CANCELLED, callback.abortion())
 
   def testCancelledUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -335,7 +335,7 @@ class EventInvocationSynchronousEventServiceTestCase(
         call.cancel()
         callback.block_until_terminated()
 
-        self.assertEqual(interfaces.CANCELLED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.CANCELLED, callback.abortion())
 
   def testCancelledStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
@@ -351,7 +351,7 @@ class EventInvocationSynchronousEventServiceTestCase(
         call.cancel()
         callback.block_until_terminated()
 
-        self.assertEqual(interfaces.CANCELLED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.CANCELLED, callback.abortion())
 
   def testCancelledStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -364,4 +364,4 @@ class EventInvocationSynchronousEventServiceTestCase(
         call.cancel()
         callback.block_until_terminated()
 
-        self.assertEqual(interfaces.CANCELLED, callback.abortion())
+        self.assertEqual(interfaces.Abortion.CANCELLED, callback.abortion())

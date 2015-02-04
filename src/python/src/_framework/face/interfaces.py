@@ -30,6 +30,7 @@
 """Interfaces for the face layer of RPC Framework."""
 
 import abc
+import enum
 
 # exceptions, abandonment, and future are referenced from specification in this
 # module.
@@ -58,14 +59,15 @@ class CancellableIterator(object):
     raise NotImplementedError()
 
 
-# Constants that categorize RPC abortion.
-# TODO(nathaniel): Learn and use Python's enum library for this de facto
-# enumerated type
-CANCELLED = 'abortion: cancelled'
-EXPIRED = 'abortion: expired'
-NETWORK_FAILURE = 'abortion: network failure'
-SERVICED_FAILURE = 'abortion: serviced failure'
-SERVICER_FAILURE = 'abortion: servicer failure'
+@enum.unique
+class Abortion(enum.Enum):
+  """Categories of RPC abortion."""
+
+  CANCELLED = 'cancelled'
+  EXPIRED = 'expired'
+  NETWORK_FAILURE = 'network failure'
+  SERVICED_FAILURE = 'serviced failure'
+  SERVICER_FAILURE = 'servicer failure'
 
 
 class RpcContext(object):
@@ -93,9 +95,8 @@ class RpcContext(object):
     """Registers a callback to be called if the RPC is aborted.
 
     Args:
-      abortion_callback: A callable to be called and passed one of CANCELLED,
-        EXPIRED, NETWORK_FAILURE, SERVICED_FAILURE, or SERVICER_FAILURE in the
-        event of RPC abortion.
+      abortion_callback: A callable to be called and passed an Abortion value
+        in the event of RPC abortion.
     """
     raise NotImplementedError()
 
@@ -474,9 +475,8 @@ class Stub(object):
       request: The request value for the RPC.
       response_callback: A callback to be called to accept the response value
         of the RPC.
-      abortion_callback: A callback to be called to accept one of CANCELLED,
-        EXPIRED, NETWORK_FAILURE, or SERVICER_FAILURE in the event of RPC
-        abortion.
+      abortion_callback: A callback to be called and passed an Abortion value
+        in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
 
     Returns:
@@ -494,9 +494,8 @@ class Stub(object):
       request: The request value for the RPC.
       response_consumer: A stream.Consumer to be called to accept the response
         values of the RPC.
-      abortion_callback: A callback to be called to accept one of CANCELLED,
-        EXPIRED, NETWORK_FAILURE, or SERVICER_FAILURE in the event of RPC
-        abortion.
+      abortion_callback: A callback to be called and passed an Abortion value
+        in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
 
     Returns:
@@ -513,9 +512,8 @@ class Stub(object):
       name: The RPC method name.
       response_callback: A callback to be called to accept the response value
         of the RPC.
-      abortion_callback: A callback to be called to accept one of CANCELLED,
-        EXPIRED, NETWORK_FAILURE, or SERVICER_FAILURE in the event of RPC
-        abortion.
+      abortion_callback: A callback to be called and passed an Abortion value
+        in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
 
     Returns:
@@ -533,9 +531,8 @@ class Stub(object):
       name: The RPC method name.
       response_consumer: A stream.Consumer to be called to accept the response
         values of the RPC.
-      abortion_callback: A callback to be called to accept one of CANCELLED,
-        EXPIRED, NETWORK_FAILURE, or SERVICER_FAILURE in the event of RPC
-        abortion.
+      abortion_callback: A callback to be called and passed an Abortion value
+        in the event of RPC abortion.
       timeout: A duration of time in seconds to allow for the RPC.
 
     Returns:

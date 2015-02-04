@@ -80,8 +80,8 @@ class RoundTripTest(unittest.TestCase):
     rear_link.start()
 
     front_to_back_ticket = tickets.FrontToBackPacket(
-        test_operation_id, 0, tickets.Kind.ENTIRE, test_method, interfaces.FULL,
-        None, None, _TIMEOUT)
+        test_operation_id, 0, tickets.Kind.ENTIRE, test_method,
+        interfaces.ServicedSubscription.Kind.FULL, None, None, _TIMEOUT)
     rear_link.accept_front_to_back_ticket(front_to_back_ticket)
 
     with test_fore_link.condition:
@@ -133,8 +133,9 @@ class RoundTripTest(unittest.TestCase):
     rear_link.start()
 
     front_to_back_ticket = tickets.FrontToBackPacket(
-        test_operation_id, 0, tickets.Kind.ENTIRE, test_method, interfaces.FULL,
-        None, test_front_to_back_datum, _TIMEOUT)
+        test_operation_id, 0, tickets.Kind.ENTIRE, test_method,
+        interfaces.ServicedSubscription.Kind.FULL, None,
+        test_front_to_back_datum, _TIMEOUT)
     rear_link.accept_front_to_back_ticket(front_to_back_ticket)
 
     with test_fore_link.condition:
@@ -196,7 +197,7 @@ class RoundTripTest(unittest.TestCase):
 
     commencement_ticket = tickets.FrontToBackPacket(
         test_operation_id, 0, tickets.Kind.COMMENCEMENT, test_method,
-        interfaces.FULL, None, None, _TIMEOUT)
+        interfaces.ServicedSubscription.Kind.FULL, None, None, _TIMEOUT)
     fore_sequence_number = 1
     rear_link.accept_front_to_back_ticket(commencement_ticket)
     for request in scenario.requests():

@@ -36,6 +36,6 @@
 
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
-extern grpc_wakeup_fd_vtable pipe_wakeup_fd_vtable;
+extern grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
 
 #endif  /* __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_ */

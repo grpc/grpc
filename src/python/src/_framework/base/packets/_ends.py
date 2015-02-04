@@ -51,13 +51,13 @@ from _framework.foundation import callable_util
 _IDLE_ACTION_EXCEPTION_LOG_MESSAGE = 'Exception calling idle action!'
 
 _OPERATION_OUTCOMES = (
-    base_interfaces.COMPLETED,
-    base_interfaces.CANCELLED,
-    base_interfaces.EXPIRED,
-    base_interfaces.RECEPTION_FAILURE,
-    base_interfaces.TRANSMISSION_FAILURE,
-    base_interfaces.SERVICER_FAILURE,
-    base_interfaces.SERVICED_FAILURE,
+    base_interfaces.Outcome.COMPLETED,
+    base_interfaces.Outcome.CANCELLED,
+    base_interfaces.Outcome.EXPIRED,
+    base_interfaces.Outcome.RECEPTION_FAILURE,
+    base_interfaces.Outcome.TRANSMISSION_FAILURE,
+    base_interfaces.Outcome.SERVICER_FAILURE,
+    base_interfaces.Outcome.SERVICED_FAILURE,
     )
 
 
@@ -193,10 +193,10 @@ def _front_operate(
   lock = threading.Lock()
   with lock:
     termination_manager = _termination.front_termination_manager(
-        work_pool, utility_pool, termination_action, subscription.category)
+        work_pool, utility_pool, termination_action, subscription.kind)
     transmission_manager = _transmission.front_transmission_manager(
         lock, transmission_pool, callback, operation_id, name,
-        subscription.category, trace_id, timeout, termination_manager)
+        subscription.kind, trace_id, timeout, termination_manager)
     operation_context = _context.OperationContext(
         lock, operation_id, packets.Kind.SERVICED_FAILURE,
         termination_manager, transmission_manager)
@@ -225,9 +225,10 @@ def _front_operate(
 
     transmission_manager.inmit(payload, complete)
 
-    returned_reception_manager = (
-        None if subscription.category == base_interfaces.NONE
-        else reception_manager)
+    if subscription.kind is base_interfaces.ServicedSubscription.Kind.NONE:
+      returned_reception_manager = None
+    else:
+      returned_reception_manager = reception_manager
 
     return _FrontManagement(
         returned_reception_manager, emission_manager, operation_context,

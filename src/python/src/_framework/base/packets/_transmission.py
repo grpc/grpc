@@ -91,20 +91,19 @@ class _Packetizer(object):
 class _FrontPacketizer(_Packetizer):
   """Front-side packet-creating behavior."""
 
-  def __init__(self, name, subscription, trace_id, timeout):
+  def __init__(self, name, subscription_kind, trace_id, timeout):
     """Constructor.
 
     Args:
       name: The name of the operation.
-      subscription: One of interfaces.FULL, interfaces.TERMINATION_ONLY, or
-        interfaces.NONE describing the interest the front has in packets sent
-        from the back.
+      subscription_kind: An interfaces.ServicedSubscription.Kind value
+        describing the interest the front has in packets sent from the back.
       trace_id: A uuid.UUID identifying a set of related operations to which
         this operation belongs.
       timeout: A length of time in seconds to allow for the entire operation.
     """
     self._name = name
-    self._subscription = subscription
+    self._subscription_kind = subscription_kind
     self._trace_id = trace_id
     self._timeout = timeout
 
@@ -114,13 +113,13 @@ class _FrontPacketizer(_Packetizer):
       return packets.FrontToBackPacket(
           operation_id, sequence_number,
           packets.Kind.COMPLETION if complete else packets.Kind.CONTINUATION,
-          self._name, self._subscription, self._trace_id, payload,
+          self._name, self._subscription_kind, self._trace_id, payload,
           self._timeout)
     else:
       return packets.FrontToBackPacket(
           operation_id, 0,
           packets.Kind.ENTIRE if complete else packets.Kind.COMMENCEMENT,
-          self._name, self._subscription, self._trace_id, payload,
+          self._name, self._subscription_kind, self._trace_id, payload,
           self._timeout)
 
   def packetize_abortion(self, operation_id, sequence_number, kind):
@@ -335,8 +334,8 @@ class _TransmittingTransmissionManager(TransmissionManager):
 
 
 def front_transmission_manager(
-    lock, pool, callback, operation_id, name, subscription, trace_id, timeout,
-    termination_manager):
+    lock, pool, callback, operation_id, name, subscription_kind, trace_id,
+    timeout, termination_manager):
   """Creates a TransmissionManager appropriate for front-side use.
 
   Args:
@@ -347,9 +346,8 @@ def front_transmission_manager(
       of the operation.
     operation_id: The operation's ID.
     name: The name of the operation.
-    subscription: One of interfaces.FULL, interfaces.TERMINATION_ONLY, or
-      interfaces.NONE describing the interest the front has in packets sent
-      from the back.
+    subscription_kind: An interfaces.ServicedSubscription.Kind value
+      describing the interest the front has in packets sent from the back.
     trace_id: A uuid.UUID identifying a set of related operations to which
       this operation belongs.
     timeout: A length of time in seconds to allow for the entire operation.
@@ -361,12 +359,13 @@ def front_transmission_manager(
   """
   return _TransmittingTransmissionManager(
       lock, pool, callback, operation_id, _FrontPacketizer(
-          name, subscription, trace_id, timeout),
+          name, subscription_kind, trace_id, timeout),
       termination_manager)
 
 
 def back_transmission_manager(
-    lock, pool, callback, operation_id, termination_manager, subscription):
+    lock, pool, callback, operation_id, termination_manager,
+    subscription_kind):
   """Creates a TransmissionManager appropriate for back-side use.
 
   Args:
@@ -378,14 +377,13 @@ def back_transmission_manager(
     operation_id: The operation's ID.
     termination_manager: The _interfaces.TerminationManager associated with
       this operation.
-    subscription: One of interfaces.FULL, interfaces.TERMINATION_ONLY, or
-      interfaces.NONE describing the interest the front has in packets sent from
-      the back.
+    subscription_kind: An interfaces.ServicedSubscription.Kind value
+      describing the interest the front has in packets sent from the back.
 
   Returns:
     A TransmissionManager appropriate for back-side use.
   """
-  if subscription == interfaces.NONE:
+  if subscription_kind is interfaces.ServicedSubscription.Kind.NONE:
     return _EmptyTransmissionManager()
   else:
     return _TransmittingTransmissionManager(

@@ -152,9 +152,9 @@ NAN_METHOD(Call::New) {
       NanUtf8String method(args[1]);
       double deadline = args[2]->NumberValue();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
-      grpc_call *wrapped_call =
-          grpc_channel_create_call(wrapped_channel, *method, channel->GetHost(),
-                                   MillisecondsToTimespec(deadline));
+      grpc_call *wrapped_call = grpc_channel_create_call_old(
+          wrapped_channel, *method, channel->GetHost(),
+          MillisecondsToTimespec(deadline));
       call = new Call(wrapped_call);
       args.This()->SetHiddenValue(String::NewSymbol("channel_"),
                                   channel_object);
@@ -195,7 +195,7 @@ NAN_METHOD(Call::AddMetadata) {
       if (Buffer::HasInstance(value)) {
         metadata.value = Buffer::Data(value);
         metadata.value_length = Buffer::Length(value);
-        error = grpc_call_add_metadata(call->wrapped_call, &metadata, 0);
+        error = grpc_call_add_metadata_old(call->wrapped_call, &metadata, 0);
       } else if (value->IsString()) {
         Handle<String> string_value = value->ToString();
         NanUtf8String utf8_value(string_value);
@@ -203,7 +203,7 @@ NAN_METHOD(Call::AddMetadata) {
         metadata.value_length = string_value->Length();
         gpr_log(GPR_DEBUG, "adding metadata: %s, %s, %d", metadata.key,
                 metadata.value, metadata.value_length);
-        error = grpc_call_add_metadata(call->wrapped_call, &metadata, 0);
+        error = grpc_call_add_metadata_old(call->wrapped_call, &metadata, 0);
       } else {
         return NanThrowTypeError(
             "addMetadata values must be strings or buffers");
@@ -232,7 +232,7 @@ NAN_METHOD(Call::Invoke) {
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   unsigned int flags = args[3]->Uint32Value();
-  grpc_call_error error = grpc_call_invoke(
+  grpc_call_error error = grpc_call_invoke_old(
       call->wrapped_call, CompletionQueueAsyncWorker::GetQueue(),
       CreateTag(args[0], args.This()), CreateTag(args[1], args.This()), flags);
   if (error == GRPC_CALL_OK) {
@@ -253,7 +253,7 @@ NAN_METHOD(Call::ServerAccept) {
     return NanThrowTypeError("accept's first argument must be a function");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  grpc_call_error error = grpc_call_server_accept(
+  grpc_call_error error = grpc_call_server_accept_old(
       call->wrapped_call, CompletionQueueAsyncWorker::GetQueue(),
       CreateTag(args[0], args.This()));
   if (error == GRPC_CALL_OK) {
@@ -277,7 +277,7 @@ NAN_METHOD(Call::ServerEndInitialMetadata) {
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   unsigned int flags = args[1]->Uint32Value();
   grpc_call_error error =
-      grpc_call_server_end_initial_metadata(call->wrapped_call, flags);
+      grpc_call_server_end_initial_metadata_old(call->wrapped_call, flags);
   if (error != GRPC_CALL_OK) {
     return NanThrowError("serverEndInitialMetadata failed", error);
   }
@@ -315,7 +315,7 @@ NAN_METHOD(Call::StartWrite) {
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   grpc_byte_buffer *buffer = BufferToByteBuffer(args[0]);
   unsigned int flags = args[2]->Uint32Value();
-  grpc_call_error error = grpc_call_start_write(
+  grpc_call_error error = grpc_call_start_write_old(
       call->wrapped_call, buffer, CreateTag(args[1], args.This()), flags);
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
@@ -345,7 +345,7 @@ NAN_METHOD(Call::StartWriteStatus) {
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   NanUtf8String details(args[1]);
-  grpc_call_error error = grpc_call_start_write_status(
+  grpc_call_error error = grpc_call_start_write_status_old(
       call->wrapped_call, (grpc_status_code)args[0]->Uint32Value(), *details,
       CreateTag(args[2], args.This()));
   if (error == GRPC_CALL_OK) {
@@ -365,7 +365,7 @@ NAN_METHOD(Call::WritesDone) {
     return NanThrowTypeError("writesDone's first argument must be a function");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  grpc_call_error error = grpc_call_writes_done(
+  grpc_call_error error = grpc_call_writes_done_old(
       call->wrapped_call, CreateTag(args[0], args.This()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
@@ -384,8 +384,8 @@ NAN_METHOD(Call::StartRead) {
     return NanThrowTypeError("startRead's first argument must be a function");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  grpc_call_error error =
-      grpc_call_start_read(call->wrapped_call, CreateTag(args[0], args.This()));
+  grpc_call_error error = grpc_call_start_read_old(
+      call->wrapped_call, CreateTag(args[0], args.This()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();
   } else {

@@ -49,13 +49,13 @@ TRIGGERED_FAILURE = 'triggered failure'
 WAIT_ON_CONDITION = 'wait on condition'
 
 EMPTY_OUTCOME_DICT = {
-    interfaces.COMPLETED: 0,
-    interfaces.CANCELLED: 0,
-    interfaces.EXPIRED: 0,
-    interfaces.RECEPTION_FAILURE: 0,
-    interfaces.TRANSMISSION_FAILURE: 0,
-    interfaces.SERVICER_FAILURE: 0,
-    interfaces.SERVICED_FAILURE: 0,
+    interfaces.Outcome.COMPLETED: 0,
+    interfaces.Outcome.CANCELLED: 0,
+    interfaces.Outcome.EXPIRED: 0,
+    interfaces.Outcome.RECEPTION_FAILURE: 0,
+    interfaces.Outcome.TRANSMISSION_FAILURE: 0,
+    interfaces.Outcome.SERVICER_FAILURE: 0,
+    interfaces.Outcome.SERVICED_FAILURE: 0,
     }
 
 
@@ -169,7 +169,8 @@ class FrontAndBackTest(object):
         SYNCHRONOUS_ECHO, None, True, SMALL_TIMEOUT,
         util.none_serviced_subscription(), 'test trace ID')
     util.wait_for_idle(self.front)
-    self.assertEqual(1, self.front.operation_stats()[interfaces.COMPLETED])
+    self.assertEqual(
+        1, self.front.operation_stats()[interfaces.Outcome.COMPLETED])
 
     # Assuming nothing really pathological (such as pauses on the order of
     # SMALL_TIMEOUT interfering with this test) there are a two different ways
@@ -183,7 +184,7 @@ class FrontAndBackTest(object):
     first_back_possibility = EMPTY_OUTCOME_DICT
     # (2) The packet arrived at the back and the back completed the operation.
     second_back_possibility = dict(EMPTY_OUTCOME_DICT)
-    second_back_possibility[interfaces.COMPLETED] = 1
+    second_back_possibility[interfaces.Outcome.COMPLETED] = 1
     self.assertIn(
         back_operation_stats, (first_back_possibility, second_back_possibility))
     # It's true that if the packet had arrived at the back and the back had
@@ -204,8 +205,10 @@ class FrontAndBackTest(object):
 
     util.wait_for_idle(self.front)
     util.wait_for_idle(self.back)
-    self.assertEqual(1, self.front.operation_stats()[interfaces.COMPLETED])
-    self.assertEqual(1, self.back.operation_stats()[interfaces.COMPLETED])
+    self.assertEqual(
+        1, self.front.operation_stats()[interfaces.Outcome.COMPLETED])
+    self.assertEqual(
+        1, self.back.operation_stats()[interfaces.Outcome.COMPLETED])
     self.assertListEqual([(test_payload, True)], test_consumer.calls)
 
   def testBidirectionalStreamingEcho(self):
@@ -226,8 +229,10 @@ class FrontAndBackTest(object):
 
     util.wait_for_idle(self.front)
     util.wait_for_idle(self.back)
-    self.assertEqual(1, self.front.operation_stats()[interfaces.COMPLETED])
-    self.assertEqual(1, self.back.operation_stats()[interfaces.COMPLETED])
+    self.assertEqual(
+        1, self.front.operation_stats()[interfaces.Outcome.COMPLETED])
+    self.assertEqual(
+        1, self.back.operation_stats()[interfaces.Outcome.COMPLETED])
     self.assertListEqual(test_payloads, test_consumer.values())
 
   def testCancellation(self):
@@ -242,7 +247,8 @@ class FrontAndBackTest(object):
     operation.cancel()
 
     util.wait_for_idle(self.front)
-    self.assertEqual(1, self.front.operation_stats()[interfaces.CANCELLED])
+    self.assertEqual(
+        1, self.front.operation_stats()[interfaces.Outcome.CANCELLED])
     util.wait_for_idle(self.back)
     self.assertListEqual([], test_consumer.calls)
 
@@ -260,7 +266,7 @@ class FrontAndBackTest(object):
     # The back started processing based on the first packet and then stopped
     # upon receiving the cancellation packet.
     second_back_possibility = dict(EMPTY_OUTCOME_DICT)
-    second_back_possibility[interfaces.CANCELLED] = 1
+    second_back_possibility[interfaces.Outcome.CANCELLED] = 1
     self.assertIn(
         back_operation_stats, (first_back_possibility, second_back_possibility))
 
@@ -292,8 +298,10 @@ class FrontAndBackTest(object):
     duration = termination_time_cell[0] - start_time
     self.assertLessEqual(timeout, duration)
     self.assertLess(duration, timeout + allowance)
-    self.assertEqual(interfaces.EXPIRED, outcome_cell[0])
+    self.assertEqual(interfaces.Outcome.EXPIRED, outcome_cell[0])
     util.wait_for_idle(self.front)
-    self.assertEqual(1, self.front.operation_stats()[interfaces.EXPIRED])
+    self.assertEqual(
+        1, self.front.operation_stats()[interfaces.Outcome.EXPIRED])
     util.wait_for_idle(self.back)
-    self.assertLessEqual(1, self.back.operation_stats()[interfaces.EXPIRED])
+    self.assertLessEqual(
+        1, self.back.operation_stats()[interfaces.Outcome.EXPIRED])
