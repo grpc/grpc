@@ -85,71 +85,23 @@ zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements) {
     memcpy(str_val, elem->value, elem->value_length);
     if (zend_hash_find(array_hash, str_key, key_len, (void **)data) ==
         SUCCESS) {
-      switch (Z_TYPE_P(*data)) {
-        case IS_STRING:
-          MAKE_STD_ZVAL(inner_array);
-          array_init(inner_array);
-          add_next_index_zval(inner_array, *data);
-          add_assoc_zval(array, str_key, inner_array);
-          break;
-        case IS_ARRAY:
-          inner_array = *data;
-          break;
-        default:
-          zend_throw_exception(zend_exception_get_default(),
-                               "Metadata hash somehow contains wrong types.",
-                               1 TSRMLS_CC);
+      if (Z_TYPE_P(*data) != IS_ARRAY) {
+        zend_throw_exception(zend_exception_get_default(),
+                             "Metadata hash somehow contains wrong types.",
+                             1 TSRMLS_CC);
           efree(str_key);
           efree(str_val);
           return NULL;
       }
-      add_next_index_stringl(inner_array, str_val, elem->value_length, false);
+      add_next_index_stringl(*data, str_val, elem->value_length, false);
     } else {
-      add_assoc_stringl(array, str_key, str_val, elem->value_length, false);
+      MAKE_STD_ZVAL(inner_array);
+      array_init(inner_array);
+      add_next_index_stringl(inner_array, str_val, elem->value_length, false);
+      add_assoc_zval(array, str_key, inner_array);
     }
   }
   return array;
-}
-
-int php_grpc_call_add_metadata_array_walk(void *elem TSRMLS_DC, int num_args,
-                                          va_list args,
-                                          zend_hash_key *hash_key) {
-  grpc_call_error error_code;
-  zval **data = (zval **)elem;
-  grpc_metadata metadata;
-  grpc_call *call = va_arg(args, grpc_call *);
-  gpr_uint32 flags = va_arg(args, gpr_uint32);
-  const char *key;
-  HashTable *inner_hash;
-  /* We assume that either two args were passed, and we are in the recursive
-     case (and the second argument is the key), or one arg was passed and
-     hash_key is the string key. */
-  if (num_args > 2) {
-    key = va_arg(args, const char *);
-  } else {
-    /* TODO(mlumish): If possible, check that hash_key is a string */
-    key = hash_key->arKey;
-  }
-  switch (Z_TYPE_P(*data)) {
-    case IS_STRING:
-      metadata.key = (char *)key;
-      metadata.value = Z_STRVAL_P(*data);
-      metadata.value_length = Z_STRLEN_P(*data);
-      error_code = grpc_call_add_metadata_old(call, &metadata, 0u);
-      MAYBE_THROW_CALL_ERROR(add_metadata, error_code);
-      break;
-    case IS_ARRAY:
-      inner_hash = Z_ARRVAL_P(*data);
-      zend_hash_apply_with_arguments(inner_hash TSRMLS_CC,
-                                     php_grpc_call_add_metadata_array_walk, 3,
-                                     call, flags, key);
-      break;
-    default:
-      zend_throw_exception(zend_exception_get_default(),
-                           "Metadata hash somehow contains wrong types.",
-                           1 TSRMLS_CC);
-  }
-  return ZEND_HASH_APPLY_KEEP;
 }
 
 /**
@@ -204,8 +156,18 @@ PHP_METHOD(Call, __construct) {
 PHP_METHOD(Call, add_metadata) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  grpc_metadata metadata;
+  grpc_call_error error_code;
   zval *array;
+  zval **inner_array;
+  zval **value;
   HashTable *array_hash;
+  HashPosition array_pointer;
+  HashTable *inner_array_hash;
+  HashPosition inner_array_pointer;
+  char *key;
+  uint key_len;
+  ulong index;
   long flags = 0;
   /* "a|l" == 1 array, 1 optional long */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|l", &array, &flags) ==
@@ -216,9 +178,41 @@ PHP_METHOD(Call, add_metadata) {
     return;
   }
   array_hash = Z_ARRVAL_P(array);
-  zend_hash_apply_with_arguments(array_hash TSRMLS_CC,
-                                 php_grpc_call_add_metadata_array_walk, 2,
-                                 call->wrapped, (gpr_uint32)flags);
+  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
+       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
+                                     &array_pointer) == SUCCESS;
+       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
+    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
+                                     &array_pointer) != HASH_KEY_IS_STRING) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "metadata keys must be strings", 1 TSRMLS_CC);
+      return;
+    }
+    if (Z_TYPE_P(*inner_array) != IS_ARRAY) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "metadata values must be arrays",
+                           1 TSRMLS_CC);
+      return;
+    }
+    inner_array_hash = Z_ARRVAL_P(*inner_array);
+    for (zend_hash_internal_pointer_reset_ex(inner_array_hash,
+                                             &inner_array_pointer);
+         zend_hash_get_current_data_ex(inner_array_hash, (void**)&value,
+                                       &inner_array_pointer) == SUCCESS;
+         zend_hash_move_forward_ex(inner_array_hash, &inner_array_pointer)) {
+      if (Z_TYPE_P(*value) != IS_STRING) {
+        zend_throw_exception(spl_ce_InvalidArgumentException,
+                             "metadata values must be arrays of strings",
+                             1 TSRMLS_CC);
+        return;
+      }
+      metadata.key = key;
+      metadata.value = Z_STRVAL_P(*value);
+      metadata.value_length = Z_STRLEN_P(*value);
+      error_code = grpc_call_add_metadata_old(call->wrapped, &metadata, 0u);
+      MAYBE_THROW_CALL_ERROR(add_metadata, error_code);
+    }
+  }
 }
 
 /**

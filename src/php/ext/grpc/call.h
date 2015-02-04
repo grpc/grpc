@@ -19,6 +19,7 @@
       zend_throw_exception(spl_ce_LogicException,                \
                            #func_name " was called incorrectly", \
                            (long)error_code TSRMLS_CC);          \
+      return;                                                    \
     }                                                            \
   } while (0)
 
