@@ -31,35 +31,27 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#ifndef __GRPC_INTERNAL_IOMGR_TCP_WINDOWS_H__
+#define __GRPC_INTERNAL_IOMGR_TCP_WINDOWS_H__
+/*
+   Low level TCP "bottom half" implementation, for use by transports built on
+   top of a TCP connection.
 
-#include <windows.h>
-#include <grpc/support/sync.h>
+   Note that this file does not (yet) include APIs for creating the socket in
+   the first place.
 
-#include "src/core/iomgr/pollset_kick.h"
+   All calls passing slice transfer ownership of a slice refcount unless
+   otherwise specified.
+*/
+
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/socket_windows.h"
 
-/* forward declare only in this file to avoid leaking impl details via
-   pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
-   use the struct tag */
-struct grpc_fd;
+/* Create a tcp endpoint given a winsock handle.
+ * Takes ownership of the handle.
+ */
+grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket);
 
-typedef struct grpc_pollset {
-  HANDLE iocp;
-} grpc_pollset;
+int grpc_tcp_prepare_socket(SOCKET sock);
 
-#define GRPC_POLLSET_MU(pollset) (NULL)
-#define GRPC_POLLSET_CV(pollset) (NULL)
-
-void grpc_pollset_add_handle(grpc_pollset *, grpc_winsocket *);
-
-grpc_pollset *grpc_global_pollset(void);
-
-void grpc_handle_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
-                                 void *opaque);
-
-void grpc_handle_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
-                                void *opaque);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
+#endif /* __GRPC_INTERNAL_IOMGR_TCP_WINDOWS_H__ */

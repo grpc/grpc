@@ -31,35 +31,46 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#include <grpc/support/port_platform.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include <windows.h>
-#include <grpc/support/sync.h>
+#ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_windows.h"
+#include "src/core/iomgr/pollset.h"
+#include "src/core/iomgr/pollset_windows.h"
 
-/* forward declare only in this file to avoid leaking impl details via
-   pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
-   use the struct tag */
-struct grpc_fd;
+grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
+  grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
+  gpr_log(GPR_DEBUG, "grpc_winsocket_create");
+  memset(r, 0, sizeof(grpc_winsocket));
+  r->socket = socket;
+  gpr_mu_init(&r->state_mu);
+  grpc_iomgr_ref();
+  grpc_pollset_add_handle(grpc_global_pollset(), r);
+  return r;
+}
 
-typedef struct grpc_pollset {
-  HANDLE iocp;
-} grpc_pollset;
+void shutdown_op(grpc_winsocket_callback_info *info) {
+  if (!info->cb) return;
+  info->cb(info->opaque, 0);
+}
 
-#define GRPC_POLLSET_MU(pollset) (NULL)
-#define GRPC_POLLSET_CV(pollset) (NULL)
+void grpc_winsocket_shutdown(grpc_winsocket *socket) {
+  gpr_log(GPR_DEBUG, "grpc_winsocket_shutdown");
+  shutdown_op(&socket->read_info);
+  shutdown_op(&socket->write_info);
+}
 
-void grpc_pollset_add_handle(grpc_pollset *, grpc_winsocket *);
+void grpc_winsocket_orphan(grpc_winsocket *socket) {
+  gpr_log(GPR_DEBUG, "grpc_winsocket_orphan");
+  grpc_iomgr_unref();
+  closesocket(socket->socket);
+  gpr_mu_destroy(&socket->state_mu);
+  gpr_free(socket);
+}
 
-grpc_pollset *grpc_global_pollset(void);
-
-void grpc_handle_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
-                                 void *opaque);
-
-void grpc_handle_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
-                                void *opaque);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
+#endif

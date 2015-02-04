@@ -31,35 +31,23 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#ifndef __GRPC_SUPPORT_LOG_WIN32_H__
+#define __GRPC_SUPPORT_LOG_WIN32_H__
 
 #include <windows.h>
-#include <grpc/support/sync.h>
 
-#include "src/core/iomgr/pollset_kick.h"
-#include "src/core/iomgr/socket_windows.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* forward declare only in this file to avoid leaking impl details via
-   pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
-   use the struct tag */
-struct grpc_fd;
+/* Returns a string allocated with gpr_malloc that contains a UTF-8
+ * formatted error message, corresponding to the error messageid.
+ * Use in cunjunction with GetLastError() et al.
+ */
+char *gpr_format_message(DWORD messageid);
 
-typedef struct grpc_pollset {
-  HANDLE iocp;
-} grpc_pollset;
+#ifdef __cplusplus
+}
+#endif
 
-#define GRPC_POLLSET_MU(pollset) (NULL)
-#define GRPC_POLLSET_CV(pollset) (NULL)
-
-void grpc_pollset_add_handle(grpc_pollset *, grpc_winsocket *);
-
-grpc_pollset *grpc_global_pollset(void);
-
-void grpc_handle_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
-                                 void *opaque);
-
-void grpc_handle_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
-                                void *opaque);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
+#endif /* __GRPC_SUPPORT_LOG_H__ */

@@ -118,6 +118,9 @@
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -145,13 +148,22 @@
     <ClCompile Include="..\..\src\core\iomgr\socket_utils_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_client_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_client_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_server_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
@@ -437,6 +449,9 @@
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\iomgr_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -473,6 +488,9 @@
     <ClInclude Include="..\..\src\core\iomgr\socket_utils_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\socket_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\tcp_client.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -480,6 +498,9 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\tcp_server.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\tcp_windows.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h">

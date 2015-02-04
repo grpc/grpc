@@ -31,35 +31,37 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#include <grpc/support/port_platform.h>
 
-#include <windows.h>
-#include <grpc/support/sync.h>
+#ifdef GPR_WINSOCK_SOCKET
 
-#include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/sockaddr_win32.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/iomgr/socket_windows.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/iomgr_windows.h"
 
-/* forward declare only in this file to avoid leaking impl details via
-   pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
-   use the struct tag */
-struct grpc_fd;
+static void winsock_init(void) {
+  WSADATA wsaData;
+  int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
+  GPR_ASSERT(status == 0);
+}
 
-typedef struct grpc_pollset {
-  HANDLE iocp;
-} grpc_pollset;
+static void winsock_shutdown(void) {
+  int status = WSACleanup();
+  GPR_ASSERT(status == 0);
+}
 
-#define GRPC_POLLSET_MU(pollset) (NULL)
-#define GRPC_POLLSET_CV(pollset) (NULL)
+void grpc_iomgr_platform_init(void) {
+  winsock_init();
+  grpc_pollset_global_init();
+}
 
-void grpc_pollset_add_handle(grpc_pollset *, grpc_winsocket *);
+void grpc_iomgr_platform_shutdown(void) {
+  grpc_pollset_global_shutdown();
+  winsock_shutdown();
+}
 
-grpc_pollset *grpc_global_pollset(void);
-
-void grpc_handle_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
-                                 void *opaque);
-
-void grpc_handle_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
-                                void *opaque);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
+#endif  /* GRPC_IOMGRP_POSIX */

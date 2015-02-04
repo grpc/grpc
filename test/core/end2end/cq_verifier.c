@@ -31,13 +31,6 @@
  *
  */
 
-/* Disable sprintf warnings on Windows (it's fine to do that for test code).
-   Also, cases where sprintf is called are crash sites anyway.
-   TODO(jtattermusch): b/18636890 */
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "test/core/end2end/cq_verifier.h"
 
 #include <stdarg.h>

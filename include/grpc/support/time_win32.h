@@ -35,7 +35,7 @@
 #define __GRPC_SUPPORT_TIME_WIN32_H__
 /* Win32 variant of gpr_time_platform.h */
 
-#include <Winsock.h>
+#include <winsock.h>
 #include <time.h>
 
 typedef struct gpr_timespec {

@@ -31,35 +31,43 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#ifndef __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__
+#define __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__
 
 #include <windows.h>
+
 #include <grpc/support/sync.h>
+#include <grpc/support/atm.h>
 
-#include "src/core/iomgr/pollset_kick.h"
-#include "src/core/iomgr/socket_windows.h"
+typedef struct grpc_winsocket_callback_info {
+  /* I hate Microsoft so much. This is supposed to be a WSAOVERLAPPED,
+   * but in order to get that definition, we need to include ws2tcpip.h,
+   * which needs to be included from the top, otherwise it'll clash with
+   * a previous inclusion of windows.h that in turns includes winsock.h.
+   * If anyone knows a way to do it properly, feel free to send a patch.
+   */
+  OVERLAPPED overlapped;
+  void(*cb)(void *opaque, int success);
+  void *opaque;
+  int has_pending_iocp;
+  DWORD bytes_transfered;
+  int wsa_error;
+} grpc_winsocket_callback_info;
 
-/* forward declare only in this file to avoid leaking impl details via
-   pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
-   use the struct tag */
-struct grpc_fd;
+typedef struct grpc_winsocket {
+  SOCKET socket;
 
-typedef struct grpc_pollset {
-  HANDLE iocp;
-} grpc_pollset;
+  grpc_winsocket_callback_info write_info;
+  grpc_winsocket_callback_info read_info;
 
-#define GRPC_POLLSET_MU(pollset) (NULL)
-#define GRPC_POLLSET_CV(pollset) (NULL)
+  gpr_mu state_mu;
+} grpc_winsocket;
 
-void grpc_pollset_add_handle(grpc_pollset *, grpc_winsocket *);
+/* Create a wrapped windows handle.
+This takes ownership of closing it. */
+grpc_winsocket *grpc_winsocket_create(SOCKET socket);
 
-grpc_pollset *grpc_global_pollset(void);
+void grpc_winsocket_shutdown(grpc_winsocket *socket);
+void grpc_winsocket_orphan(grpc_winsocket *socket);
 
-void grpc_handle_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
-                                 void *opaque);
-
-void grpc_handle_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
-                                void *opaque);
-
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
+#endif /* __GRPC_INTERNAL_IOMGR_FD_POSIX_H_ */
