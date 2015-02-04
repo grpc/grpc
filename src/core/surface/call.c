@@ -163,11 +163,12 @@ struct grpc_call {
      a request, and is valid iff request_set[op] <= GRPC_IOREQ_OP_COUNT.
      The set fields are as per the request type specified by op.
 
-     Finally, one element of masters[op] is set per active _group_ of ioreq
+     Finally, one element of masters is set per active _set_ of ioreq
      operations. It describes work left outstanding, result status, and
      what work to perform upon operation completion. As one ioreq of each
      op type can be active at once, by convention we choose the first element
-     of a the group to be the master. This allows constant time allocation
+     of the group to be the master -- ie the master of in-progress operation
+     op is masters[request_set[op]]. This allows constant time allocation
      and a strong upper bound of a count of masters to be calculated. */
   gpr_uint8 request_set[GRPC_IOREQ_OP_COUNT];
   grpc_ioreq_data request_data[GRPC_IOREQ_OP_COUNT];
