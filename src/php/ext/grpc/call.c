@@ -188,7 +188,13 @@ PHP_METHOD(Call, add_metadata) {
                            "metadata keys must be strings", 1 TSRMLS_CC);
       return;
     }
-    inner_array_hash = Z_ARRVAL_P(array);
+    if (Z_TYPE_P(*inner_array) != IS_ARRAY) {
+      zend_throw_exception(spl_ce_InvalidArgumentException,
+                           "metadata values must be arrays",
+                           1 TSRMLS_CC);
+      return;
+    }
+    inner_array_hash = Z_ARRVAL_P(*inner_array);
     for (zend_hash_internal_pointer_reset_ex(inner_array_hash,
                                              &inner_array_pointer);
          zend_hash_get_current_data_ex(inner_array_hash, (void**)&value,
@@ -198,6 +204,7 @@ PHP_METHOD(Call, add_metadata) {
         zend_throw_exception(spl_ce_InvalidArgumentException,
                              "metadata values must be arrays of strings",
                              1 TSRMLS_CC);
+        return;
       }
       metadata.key = key;
       metadata.value = Z_STRVAL_P(*value);
