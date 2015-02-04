@@ -1,4 +1,4 @@
-# gRPC Helloworld Tutorial
+# gRPC Hello World Tutorial
 
 ## TODO: move this to the tutorial sub-folder
 
@@ -8,7 +8,7 @@ various features of gRPC.
 
 When you finish the tutorial, you will be able to
 
-- Create an protobuf schema that defines a simple RPC service
+- Create a protobuf schema that defines a simple RPC service
 - Create a Java server that implements the schema interface
 - Create a Java client that accesses the server
 - Create a Go client that accesses the Java server
