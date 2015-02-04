@@ -35,7 +35,6 @@
 #define __GRPC_SUPPORT_TIME_POSIX_H__
 /* Posix variant of gpr_time_platform.h */
 
-#include <sys/time.h>
 #include <time.h>
 
 typedef struct timespec gpr_timespec;

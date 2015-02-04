@@ -137,7 +137,7 @@ CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 DEFINES += $(DEFINES_$(CONFIG))
 LDFLAGS += $(LDFLAGS_$(CONFIG))
 
-CFLAGS += -std=c89 -pedantic
+CFLAGS += -std=c89 -pedantic -D_POSIX_C_SOURCE=199309L
 CXXFLAGS += -std=c++11
 CPPFLAGS += -g -fPIC -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g -fPIC
