@@ -166,6 +166,10 @@ static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
   return ok;
 }
 
+int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
+  return byte_buffer_eq_slice(bb, gpr_slice_from_copied_string(str));
+}
+
 static int string_equivalent(const char *a, const char *b) {
   if (a == NULL) return b == NULL || b[0] == 0;
   if (b == NULL) return a[0] == 0;
