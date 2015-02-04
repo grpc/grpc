@@ -37,27 +37,18 @@
    We use gpr_timespec, which is analogous to struct timespec.  On some
    machines, absolute times may be in local time.  */
 
-/* Platform specific header declares gpr_timespec.
-   gpr_timespec contains:
-      time_t tv_sec;  // seconds since start of 1970
-      int tv_nsec;    // nanoseconds;  always in 0..999999999; never negative.
- */
-
 #include <grpc/support/port_platform.h>
-
-#if defined(GPR_POSIX_TIME)
-#include <grpc/support/time_posix.h>
-#elif defined(GPR_WIN32)
-#include <grpc/support/time_win32.h>
-#else
-#error could not determine platform for time
-#endif
-
 #include <stddef.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct gpr_timespec {
+    time_t tv_sec;
+    int tv_nsec;
+} gpr_timespec;
 
 /* Time constants. */
 extern const gpr_timespec gpr_time_0;     /* The zero time interval. */
