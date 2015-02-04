@@ -149,6 +149,25 @@ function pingPong($stub) {
               'Call did not complete successfully');
 }
 
+function cancelAfterFirstResponse($stub) {
+  $call = $stub->StreamingInputCall();
+  $request = new grpc\testing\StreamingOutputCallRequest();
+  $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
+  $response_parameters = new grpc\testing\ResponseParameters();
+  $response_parameters->setSize(31415);
+  $request->addResponseParameters($response_parameters);
+  $payload = new grpc\testing\Payload();
+  $payload->setBody(str_repeat("\0", 27182));
+  $request->setPayload($payload);
+
+  $call->write($request);
+  $response = $call->read();
+
+  $call->cancel();
+  hardAssert($call->getStatus()->code === Grpc\STATUS_CANCELLED,
+             'Call status was not CANCELLED');
+}
+
 $args = getopt('', array('server_host:', 'server_port:', 'test_case:'));
 if (!array_key_exists('server_host', $args) ||
     !array_key_exists('server_port', $args) ||
@@ -187,4 +206,6 @@ switch($args['test_case']) {
   case 'ping_pong':
     pingPong($stub);
     break;
+  case 'cancel_after_first_response':
+    cancelAfterFirstResponse($stub);
 }
