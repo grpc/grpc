@@ -139,9 +139,8 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   /* Set the SSL roots env var. */
-  roots_filename = gpr_strdup("chttp2_simple_ssl_fullstack_test_XXXXXX");
+  roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);
   GPR_ASSERT(roots_filename != NULL);
-  roots_file = gpr_tmpfile(roots_filename);
   GPR_ASSERT(roots_file != NULL);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);

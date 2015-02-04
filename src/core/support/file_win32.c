@@ -41,24 +41,38 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-FILE *gpr_tmpfile(char *template) {
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
   FILE *result = NULL;
+  char *template;
+
+  if (tmp_filename != NULL) *tmp_filename = NULL;
+
+  gpr_asprintf(&template, "%s_XXXXXX", prefix);
+  GPR_ASSERT(template != NULL);
 
   /* _mktemp_s can only create a maximum of 26 file names for any combination of
      base and template values which is kind of sad... We may revisit this
      function later to have something better... */
   if (_mktemp_s(template, strlen(template) + 1) != 0) {
     gpr_log(LOG_ERROR, "Could not create tmp file.");
-    return NULL;
+    goto end;
   }
-  if (fopen_s(&result, template, "wb+") == 0) {
-    return result;
-  } else {
+  if (fopen_s(&result, template, "wb+") != 0) {
     gpr_log(GPR_ERROR, "Could not open file %s", template);
-    return NULL;
+    result = NULL;
+    goto end;
   }
+
+end:
+  if (result != NULL && tmp_filename != NULL) {
+    *tmp_filename = template;
+  } else {
+    gpr_free(template);
+  }
+  return result;
 }
 
 #endif /* GPR_WIN32 */

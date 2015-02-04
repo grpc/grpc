@@ -53,7 +53,8 @@ char *gpr_getenv(const char *name) {
 }
 
 void gpr_setenv(const char *name, const char *value) {
-  GPR_ASSERT(_putenv_s(name, value) == 0);
+  errno_t res = _putenv_s(name, value);
+  GPR_ASSERT(res == 0);
 }
 
 #endif /* GPR_WIN32 */

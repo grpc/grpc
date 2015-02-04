@@ -44,17 +44,18 @@
 
 #define LOG_TEST_NAME() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
-static const char template[] = "file_test_XXXXXX";
+static const char prefix[] = "file_test";
 
 static void test_load_empty_file(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   int success;
-  char *tmp_name = gpr_strdup(template);
+  char *tmp_name;
 
   LOG_TEST_NAME();
 
-  tmp = gpr_tmpfile(tmp_name);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
+  GPR_ASSERT(tmp_name != NULL);
   GPR_ASSERT(tmp != NULL);
   fclose(tmp);
 
@@ -71,16 +72,15 @@ static void test_load_failure(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   int success;
-  char *tmp_name = gpr_strdup(template);
+  char *tmp_name;
 
   LOG_TEST_NAME();
 
-  tmp = gpr_tmpfile(tmp_name);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
+  GPR_ASSERT(tmp_name != NULL);
   GPR_ASSERT(tmp != NULL);
   fclose(tmp);
   remove(tmp_name);
-
-  GPR_ASSERT(tmp_name != NULL);
 
   slice = gpr_load_file(tmp_name, &success);
   GPR_ASSERT(success == 0);
@@ -93,12 +93,13 @@ static void test_load_small_file(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   int success;
-  char *tmp_name = gpr_strdup(template);
+  char *tmp_name;
   const char *blah = "blah";
 
   LOG_TEST_NAME();
 
-  tmp = gpr_tmpfile(tmp_name);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
+  GPR_ASSERT(tmp_name != NULL);
   GPR_ASSERT(tmp != NULL);
   GPR_ASSERT(fwrite(blah, 1, strlen(blah), tmp) == strlen(blah));
   fclose(tmp);
@@ -117,7 +118,7 @@ static void test_load_big_file(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   int success;
-  char *tmp_name = gpr_strdup(template);
+  char *tmp_name;
   unsigned char buffer[124631];
   unsigned char *current;
   size_t i;
@@ -128,8 +129,9 @@ static void test_load_big_file(void) {
     buffer[i] = 42;
   }
 
-  tmp = gpr_tmpfile(tmp_name);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
   GPR_ASSERT(tmp != NULL);
+  GPR_ASSERT(tmp_name != NULL);
   GPR_ASSERT(fwrite(buffer, 1, sizeof(buffer), tmp) == sizeof(buffer));
   fclose(tmp);
 

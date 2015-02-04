@@ -54,15 +54,26 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-FILE *gpr_tmpfile(char *template) {
+#include "src/core/support/string.h"
+
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
   FILE *result = NULL;
-  int fd = mkstemp(template);
+  char *template;
+  int fd;
+
+  if (tmp_filename != NULL) *tmp_filename = NULL;
+
+  gpr_asprintf(&template, "%s_XXXXXX", prefix);
+  GPR_ASSERT(template != NULL);
+
+  fd = mkstemp(template);
   if (fd == -1) {
     gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
             template, strerror(errno));
-    return NULL;
+    goto end;
   }
   result = fdopen(fd, "w+");
   if (result == NULL) {
@@ -70,6 +81,14 @@ FILE *gpr_tmpfile(char *template) {
             template, fd, strerror(errno));
     unlink(template);
     close(fd);
+    goto end;
+  }
+
+end:
+  if (result != NULL && tmp_filename != NULL) {
+    *tmp_filename = template;
+  } else {
+    gpr_free(template);
   }
   return result;
 }

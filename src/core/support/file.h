@@ -48,11 +48,11 @@ extern "C" {
    will be set to 1 in case of success and 0 in case of failure. */
 gpr_slice gpr_load_file(const char *filename, int *success);
 
-/* Creates a temporary file from a template.
-   The last six characters of template must be "XXXXXX" and these are replaced
-   with a string that makes the filename unique.  Since it will be modified,
-   template must not be a string constant. */
-FILE *gpr_tmpfile(char *template);
+/* Creates a temporary file from a prefix.
+   If tmp_filename is not NULL, *tmp_filename is assigned the name of the
+   created file and it is the responsibility of the caller to gpr_free it
+   unless an error occurs in which case it will be set to NULL. */
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename);
 
 #ifdef __cplusplus
 }
