@@ -590,6 +590,45 @@ grpc_sync_images() {
   done
 }
 
+_grpc_show_servers_args() {
+  [[ -n $1 ]] && {  # host
+    host=$1
+    shift
+  } || {
+    echo "$FUNCNAME: missing arg: host" 1>&2
+    return 1
+  }
+}
+
+
+# Shows servers on a docker instance.
+#
+# call-seq;
+#   grpc_show_servers <server_name>
+#   E.g
+#   grpc_show_server grpc-docker-server
+#
+# Shows the grpc servers on the GCE instance <server_name>
+grpc_show_servers() {
+  # declare vars local so that they don't pollute the shell environment
+  # where they this func is used.
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  # set by _grpc_show_servers
+  local host
+
+  # set the project zone and check that all necessary args are provided
+  _grpc_set_project_and_zone -f _grpc_show_servers_args "$@" || return 1
+  gce_has_instance $grpc_project $host || return 1;
+
+  local cmd="sudo docker ps | grep grpc_"
+  local ssh_cmd="bash -l -c \"$cmd\""
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  [[ $dry_run == 1 ]] && continue  # don't run the command on a dry run
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+}
+
 _grpc_launch_servers_args() {
   [[ -n $1 ]] && {  # host
     host=$1
@@ -619,11 +658,11 @@ grpc_launch_servers() {
   # declare vars local so that they don't pollute the shell environment
   # where they this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
-  # set by grpc_launch_servers_args
-  local servers
+  # set by _grpc_launch_servers_args
+  local host servers
 
   # set the project zone and check that all necessary args are provided
-  _grpc_set_project_and_zone -f _grpc_launch_server_args "$@" || return 1
+  _grpc_set_project_and_zone -f _grpc_launch_servers_args "$@" || return 1
   gce_has_instance $grpc_project $host || return 1;
 
   # launch each of the servers in turn
