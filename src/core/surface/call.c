@@ -76,7 +76,7 @@ typedef struct {
   /* Completion function to call at the end of the operation */
   grpc_ioreq_completion_func on_complete;
   void *user_data;
-  /* a bit mask of which request ops are needed (1 << opid) */
+  /* a bit mask of which request ops are needed (1u << opid) */
   gpr_uint32 need_mask;
   /* a bit mask of which request ops are now completed */
   gpr_uint32 complete_mask;
@@ -323,7 +323,7 @@ static int is_op_live(grpc_call *call, grpc_ioreq_op op) {
   reqinfo_master *master;
   if (set >= GRPC_IOREQ_OP_COUNT) return 0;
   master = &call->masters[set];
-  return (master->complete_mask & (1 << op)) == 0;
+  return (master->complete_mask & (1u << op)) == 0;
 }
 
 static void lock(grpc_call *call) { gpr_mu_lock(&call->mu); }
@@ -411,7 +411,7 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   size_t i;
   /* ioreq is live: we need to do something */
   master = &call->masters[master_set];
-  master->complete_mask |= 1 << op;
+  master->complete_mask |= 1u << op;
   if (status != GRPC_OP_OK) {
     master->status = status;
     master->complete_mask = master->need_mask;
@@ -614,7 +614,7 @@ static grpc_call_error start_ioreq_error(grpc_call *call,
                                          grpc_call_error ret) {
   size_t i;
   for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
-    if (mutated_ops & (1 << i)) {
+    if (mutated_ops & (1u << i)) {
       call->request_set[i] = REQSET_EMPTY;
     }
   }
@@ -700,7 +700,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     } else if (call->request_set[op] == REQSET_DONE) {
       return start_ioreq_error(call, have_ops, GRPC_CALL_ERROR_ALREADY_INVOKED);
     }
-    have_ops |= 1 << op;
+    have_ops |= 1u << op;
     data = reqs[i].data;
 
     call->request_data[op] = data;
@@ -714,7 +714,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
   master->on_complete = completion;
   master->user_data = user_data;
 
-  if (have_ops & (1 << GRPC_IOREQ_RECV_MESSAGE)) {
+  if (have_ops & (1u << GRPC_IOREQ_RECV_MESSAGE)) {
     call->need_more_data = 1;
   }
 
