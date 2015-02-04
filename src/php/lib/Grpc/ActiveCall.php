@@ -66,12 +66,7 @@ class ActiveCall {
    * @param ByteBuffer $data The data to write
    */
   public function write($data) {
-    if($this->call->start_write($data,
-                                WRITE_ACCEPTED,
-                                $this->flags) != OP_OK) {
-      // TODO(mlumish): more useful error
-      throw new \Exception("Cannot call write after writesDone");
-    }
+    $this->call->start_write($data, WRITE_ACCEPTED, $this->flags);
     $this->completion_queue->pluck(WRITE_ACCEPTED, Timeval::inf_future());
   }
 

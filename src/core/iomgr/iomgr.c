@@ -51,6 +51,7 @@ typedef struct delayed_callback {
 
 static gpr_mu g_mu;
 static gpr_cv g_cv;
+static gpr_cv g_rcv;
 static delayed_callback *g_cbs_head = NULL;
 static delayed_callback *g_cbs_tail = NULL;
 static int g_shutdown;
@@ -86,6 +87,7 @@ void grpc_iomgr_init(void) {
   gpr_thd_id id;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
+  gpr_cv_init(&g_rcv);
   grpc_alarm_list_init(gpr_now());
   g_refs = 0;
   grpc_iomgr_platform_init();
@@ -115,7 +117,7 @@ void grpc_iomgr_shutdown(void) {
       gpr_mu_lock(&g_mu);
     }
     if (g_refs) {
-      if (gpr_cv_wait(&g_cv, &g_mu, shutdown_deadline) && g_cbs_head == NULL) {
+      if (gpr_cv_wait(&g_rcv, &g_mu, shutdown_deadline) && g_cbs_head == NULL) {
         gpr_log(GPR_DEBUG,
                 "Failed to free %d iomgr objects before shutdown deadline: "
                 "memory leaks are likely",
@@ -126,12 +128,14 @@ void grpc_iomgr_shutdown(void) {
   }
   gpr_mu_unlock(&g_mu);
 
+  grpc_kick_poller();
   gpr_event_wait(&g_background_callback_executor_done, gpr_inf_future);
 
   grpc_iomgr_platform_shutdown();
   grpc_alarm_list_shutdown();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_cv);
+  gpr_cv_destroy(&g_rcv);
 }
 
 void grpc_iomgr_ref(void) {
@@ -143,7 +147,7 @@ void grpc_iomgr_ref(void) {
 void grpc_iomgr_unref(void) {
   gpr_mu_lock(&g_mu);
   if (0 == --g_refs) {
-    gpr_cv_signal(&g_cv);
+    gpr_cv_signal(&g_rcv);
   }
   gpr_mu_unlock(&g_mu);
 }

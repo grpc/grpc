@@ -31,43 +31,38 @@
  *
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif  /* _GNU_SOURCE */
+#ifndef __GRPCPP_EXAMPLES_TIPS_SUBSCRIBER_H_
+#define __GRPCPP_EXAMPLES_TIPS_SUBSCRIBER_H_
 
-#include <grpc/support/port_platform.h>
+#include <grpc++/channel_interface.h>
+#include <grpc++/status.h>
 
-#ifdef GPR_CPU_LINUX
+#include "examples/tips/pubsub.pb.h"
 
-#include "src/core/support/cpu.h"
+namespace grpc {
+namespace examples {
+namespace tips {
 
-#include <sched.h>
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
+class Subscriber {
+ public:
+  Subscriber(std::shared_ptr<ChannelInterface> channel);
+  void Shutdown();
 
-#include <grpc/support/log.h>
+  Status CreateSubscription(const grpc::string& topic,
+                            const grpc::string& name);
 
-unsigned gpr_cpu_num_cores(void) {
-  static int ncpus = 0;
-  /* FIXME: !threadsafe */
-  if (ncpus == 0) {
-    ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-    if (ncpus < 1) {
-      gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
-      ncpus = 1;
-    }
-  }
-  return ncpus;
-}
+  Status GetSubscription(const grpc::string& name, grpc::string* topic);
 
-unsigned gpr_cpu_current_cpu(void) {
-  int cpu = sched_getcpu();
-  if (cpu < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
-    return 0;
-  }
-  return cpu;
-}
+  Status DeleteSubscription(const grpc::string& name);
 
-#endif /* GPR_CPU_LINUX */
+  Status Pull(const grpc::string& name, grpc::string* data);
+
+ private:
+  std::unique_ptr<tech::pubsub::SubscriberService::Stub> stub_;
+};
+
+}  // namespace tips
+}  // namespace examples
+}  // namespace grpc
+
+#endif  // __GRPCPP_EXAMPLES_TIPS_SUBSCRIBER_H_

@@ -5,6 +5,3 @@ To add a new test or fixture:
 - add the code to the relevant directory
 - update gen_build_json.py to reflect the change
 - regenerate projects
-// MOE:begin_strip
-- update net/grpc/c/BUILD to reflect the change
-// MOE:end_strip
