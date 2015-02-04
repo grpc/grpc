@@ -58,16 +58,18 @@ static DWORD WINAPI thread_body(void *v) {
 int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
                 const gpr_thd_options *options) {
   HANDLE handle;
+  DWORD thread_id;
   struct thd_arg *a = gpr_malloc(sizeof(*a));
   a->body = thd_body;
   a->arg = arg;
   *t = 0;
-  handle = CreateThread(NULL, 64 * 1024, thread_body, a, 0, NULL);
+  handle = CreateThread(NULL, 64 * 1024, thread_body, a, 0, &thread_id);
   if (handle == NULL) {
     gpr_free(a);
   } else {
     CloseHandle(handle); /* threads are "detached" */
   }
+  *t = (gpr_thd_id)thread_id;
   return handle != NULL;
 }
 
