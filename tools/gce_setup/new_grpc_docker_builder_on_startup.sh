@@ -3,8 +3,7 @@
 #
 # A grpc-docker GCE machine is based on docker container image.
 #
-# On startup, it copies the grpc dockerfiles to a local directory, and update its address
-# so that the docker containers within it have git-on-borg-access.
+# On startup, it copies the grpc dockerfiles to a local directory, and update its address.
 
 # _load_metadata curls a metadata url
 _load_metadata() {
@@ -53,10 +52,6 @@ main() {
 
     # Install git and emacs
     apt-get update && apt-get install -y git emacs || return 1
-
-    # Enable access to git repos on git-on-borg
-    local git_root='/var/local/git'
-    install_gob_daemon $git_root/gerrit-gcompute-tools || return 1
 
     # Startup the docker registry
     grpc_docker_launch_registry && grpc_docker_pull_known
