@@ -229,7 +229,7 @@ static void on_write(void *tcpp, int success) {
 
   if (!success) {
     tcp_unref(tcp);
-    cb(opaque, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
+    cb(opaque, GRPC_ENDPOINT_CB_SHUTDOWN);
     return;
   }
 
