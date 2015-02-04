@@ -1,16 +1,17 @@
 <?php
 class CallTest extends PHPUnit_Framework_TestCase{
   static $server;
+  static $port;
 
   public static function setUpBeforeClass() {
     $cq = new Grpc\CompletionQueue();
     self::$server = new Grpc\Server($cq, []);
-    self::$server->add_http2_port('localhost:9001');
+    self::$port = self::$server->add_http2_port('0.0.0.0:0');
   }
 
   public function setUp() {
     $this->cq = new Grpc\CompletionQueue();
-    $this->channel = new Grpc\Channel('localhost:9001', []);
+    $this->channel = new Grpc\Channel('localhost:' . self::$port, []);
     $this->call = new Grpc\Call($this->channel,
                                 '/foo',
                                 Grpc\Timeval::inf_future());
