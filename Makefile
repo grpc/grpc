@@ -1272,8 +1272,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_win32.h \
     include/grpc/support/thd.h \
     include/grpc/support/time.h \
-    include/grpc/support/time_posix.h \
-    include/grpc/support/time_win32.h \
     include/grpc/support/useful.h \
 
 LIBGPR_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGPR_SRC))))

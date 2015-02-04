@@ -318,6 +318,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   maybe_set_status_code(c, status);
   if (details) {
     maybe_set_status_details(c, details);
+    grpc_mdstr_unref(details);
   }
   gpr_mu_unlock(&c->read_mu);
   return grpc_call_cancel(c);
