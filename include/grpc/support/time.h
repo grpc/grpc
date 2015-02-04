@@ -103,10 +103,6 @@ int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);
 /* Sleep until at least 'until' - an absolute timeout */
 void gpr_sleep_until(gpr_timespec until);
 
-struct timeval gpr_timeval_from_timespec(gpr_timespec t);
-
-gpr_timespec gpr_timespec_from_timeval(struct timeval t);
-
 double gpr_timespec_to_micros(gpr_timespec t);
 
 #ifdef __cplusplus
