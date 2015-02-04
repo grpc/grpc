@@ -143,7 +143,7 @@ void grpc_iomgr_ref(void) {
 void grpc_iomgr_unref(void) {
   gpr_mu_lock(&g_mu);
   if (0 == --g_refs) {
-    gpr_cv_signal(&g_cv);
+    grpc_kick_poller();
   }
   gpr_mu_unlock(&g_mu);
 }
