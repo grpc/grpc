@@ -38,6 +38,9 @@
 #include <sys/time.h>
 #include <time.h>
 
-typedef struct timespec gpr_timespec;
+typedef struct gpr_timespec {
+    time_t tv_sec;
+    long tv_nsec;
+} gpr_timespec;
 
 #endif /* __GRPC_SUPPORT_TIME_POSIX_H__ */

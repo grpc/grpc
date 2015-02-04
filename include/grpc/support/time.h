@@ -34,8 +34,8 @@
 #ifndef __GRPC_SUPPORT_TIME_H__
 #define __GRPC_SUPPORT_TIME_H__
 /* Time support.
-   We use gpr_timespec, which is typedefed to struct timespec on platforms which
-   have it. On some machines, absolute times may be in local time.  */
+   We use gpr_timespec, which is analogous to struct timespec.  On some
+   machines, absolute times may be in local time.  */
 
 /* Platform specific header declares gpr_timespec.
    gpr_timespec contains:
