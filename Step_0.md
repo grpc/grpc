@@ -37,5 +37,5 @@ The service stanza of the message is an example of protobuf service IDL
 receives a request containing a name and returns a response containing a
 message.
 
-Next, in [Step_1](Step_1.md), we'll use protoc to generate client code from
+Next, in [Step - 1](Step_1.md), we'll use protoc to generate client code from
 this IDL.
