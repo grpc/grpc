@@ -150,7 +150,7 @@ function pingPong($stub) {
 }
 
 function cancelAfterFirstResponse($stub) {
-  $call = $stub->StreamingInputCall();
+  $call = $stub->FullDuplexCall();
   $request = new grpc\testing\StreamingOutputCallRequest();
   $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
   $response_parameters = new grpc\testing\ResponseParameters();
