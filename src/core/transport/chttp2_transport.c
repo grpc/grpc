@@ -328,6 +328,9 @@ static void maybe_start_some_streams(transport *t);
 
 static void become_skip_parser(transport *t);
 
+static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
+                      grpc_endpoint_cb_status error);
+
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -382,8 +385,8 @@ static void ref_transport(transport *t) { gpr_ref(&t->refs); }
 
 static void init_transport(transport *t, grpc_transport_setup_callback setup,
                            void *arg, const grpc_channel_args *channel_args,
-                           grpc_endpoint *ep, grpc_mdctx *mdctx,
-                           int is_client) {
+                           grpc_endpoint *ep, gpr_slice *slices, size_t nslices,
+                           grpc_mdctx *mdctx, int is_client) {
   size_t i;
   int j;
   grpc_transport_setup_result sr;
@@ -422,6 +425,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   gpr_slice_buffer_init(&t->outbuf);
   gpr_slice_buffer_init(&t->qbuf);
   grpc_sopb_init(&t->nuke_later_sopb);
+  grpc_chttp2_hpack_parser_init(&t->hpack_parser, t->metadata_context);
   if (is_client) {
     gpr_slice_buffer_add(&t->qbuf,
                          gpr_slice_from_copied_string(CLIENT_CONNECT_STRING));
@@ -476,12 +480,14 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   ref_transport(t);
   gpr_mu_unlock(&t->mu);
 
+  ref_transport(t);
+  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
+
   sr = setup(arg, &t->base, t->metadata_context);
 
   lock(t);
   t->cb = sr.callbacks;
   t->cb_user_data = sr.user_data;
-  grpc_chttp2_hpack_parser_init(&t->hpack_parser, t->metadata_context);
   t->calling_back = 0;
   gpr_cv_broadcast(&t->cv);
   unlock(t);
@@ -1769,7 +1775,6 @@ void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   size_t nslices, grpc_mdctx *mdctx,
                                   int is_client) {
   transport *t = gpr_malloc(sizeof(transport));
-  init_transport(t, setup, arg, channel_args, ep, mdctx, is_client);
-  ref_transport(t);
-  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
+  init_transport(t, setup, arg, channel_args, ep, slices, nslices, mdctx,
+                 is_client);
 }
