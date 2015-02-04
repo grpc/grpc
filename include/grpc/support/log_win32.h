@@ -42,7 +42,7 @@ extern "C" {
 
 /* Returns a string allocated with gpr_malloc that contains a UTF-8
  * formatted error message, corresponding to the error messageid.
- * Use in cunjunction with GetLastError() et al.
+ * Use in conjunction with GetLastError() et al.
  */
 char *gpr_format_message(DWORD messageid);
 

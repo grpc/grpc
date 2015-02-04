@@ -38,6 +38,7 @@
 #include <grpc/support/log_win32.h>
 #include <grpc/support/log.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -75,8 +76,20 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
 
 /* Simple starter implementation */
 void gpr_default_log(gpr_log_func_args *args) {
-  fprintf(stderr, "%s.%u %s:%d: %s\n",
-          gpr_log_severity_string(args->severity), GetCurrentThreadId(),
+  char time_buffer[64];
+  gpr_timespec now = gpr_now();
+  struct tm tm;
+
+  if (localtime_s(&tm, &now.tv_sec)) {
+    strcpy(time_buffer, "error:localtime");
+  } else if (0 ==
+             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+    strcpy(time_buffer, "error:strftime");
+  }
+
+  fprintf(stderr, "%s%s.%09u %5u %s:%d: %s\n",
+          gpr_log_severity_string(args->severity), time_buffer,
+          (int)(now.tv_nsec), GetCurrentThreadId(),
           args->file, args->line, args->message);
 }
 

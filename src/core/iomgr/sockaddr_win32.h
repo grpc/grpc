@@ -38,4 +38,4 @@
 #include <winsock2.h>
 #include <mswsock.h>
 
-#endif  // __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#endif  /* __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_ */

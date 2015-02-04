@@ -58,8 +58,17 @@ static int set_non_block(SOCKET sock) {
   return status == 0;
 }
 
+static int set_dualstack(SOCKET sock) {
+  int status;
+  unsigned long param = 0;
+  status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &param, sizeof(param));
+  return status == 0;
+}
+
 int grpc_tcp_prepare_socket(SOCKET sock) {
   if (!set_non_block(sock))
+    return 0;
+  if (!set_dualstack(sock))
     return 0;
   return 1;
 }
@@ -110,8 +119,9 @@ static void on_read(void *tcpp, int success) {
   GPR_ASSERT(tcp->outstanding_read);
 
   if (!success) {
-    __debugbreak();
-    abort();
+    tcp_unref(tcp);
+    cb(opaque, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
+    return;
   }
 
   gpr_log(GPR_DEBUG, "on_read");
@@ -163,7 +173,6 @@ static void win_notify_on_read(grpc_endpoint *ep,
   buffer.buf = GPR_SLICE_START_PTR(tcp->read_slice);
 
   gpr_log(GPR_DEBUG, "win_notify_on_read: calling WSARecv without overlap");
-
   status = WSARecv(tcp->socket->socket, &buffer, 1, &bytes_read, &flags,
                    NULL, NULL);
   info->wsa_error = status == 0 ? 0 : WSAGetLastError();
@@ -183,7 +192,7 @@ static void win_notify_on_read(grpc_endpoint *ep,
                    &info->overlapped, NULL);
 
   if (status == 0) {
-    gpr_log(GPR_DEBUG, "got response immediately, but we're goint to sleep");
+    gpr_log(GPR_DEBUG, "got response immediately, but we're going to sleep");
     grpc_handle_notify_on_read(tcp->socket, on_read, tcp);
     return;
   }
@@ -219,8 +228,9 @@ static void on_write(void *tcpp, int success) {
   gpr_log(GPR_DEBUG, "on_write");
 
   if (!success) {
-    __debugbreak();
-    abort();
+    tcp_unref(tcp);
+    cb(opaque, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
+    return;
   }
 
   if (info->wsa_error != 0) {
@@ -286,6 +296,10 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
     if (status == 0) {
       ret = GRPC_ENDPOINT_WRITE_DONE;
       GPR_ASSERT(bytes_sent == tcp->write_slices.length);
+    } else {
+      char *utf8_message = gpr_format_message(info->wsa_error);
+      gpr_log(GPR_ERROR, "WSASend error: %s", utf8_message);
+      gpr_free(utf8_message);
     }
     if (allocated) gpr_free(allocated);
     gpr_slice_buffer_reset_and_unref(&tcp->write_slices);

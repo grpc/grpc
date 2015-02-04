@@ -57,6 +57,8 @@ typedef struct grpc_winsocket_callback_info {
 typedef struct grpc_winsocket {
   SOCKET socket;
 
+  int added_to_iocp;
+
   grpc_winsocket_callback_info write_info;
   grpc_winsocket_callback_info read_info;
 
@@ -70,4 +72,4 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket);
 void grpc_winsocket_shutdown(grpc_winsocket *socket);
 void grpc_winsocket_orphan(grpc_winsocket *socket);
 
-#endif /* __GRPC_INTERNAL_IOMGR_FD_POSIX_H_ */
+#endif /* __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__ */

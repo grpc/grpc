@@ -46,11 +46,13 @@
 struct grpc_fd;
 
 typedef struct grpc_pollset {
+  gpr_mu mu;
+  gpr_cv cv;
   HANDLE iocp;
 } grpc_pollset;
 
-#define GRPC_POLLSET_MU(pollset) (NULL)
-#define GRPC_POLLSET_CV(pollset) (NULL)
+#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
+#define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
 void grpc_pollset_add_handle(grpc_pollset *, grpc_winsocket *);
 

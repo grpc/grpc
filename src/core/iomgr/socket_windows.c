@@ -56,7 +56,7 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
 
 void shutdown_op(grpc_winsocket_callback_info *info) {
   if (!info->cb) return;
-  info->cb(info->opaque, 0);
+  grpc_iomgr_add_delayed_callback(info->cb, info->opaque, 0);
 }
 
 void grpc_winsocket_shutdown(grpc_winsocket *socket) {
@@ -73,4 +73,4 @@ void grpc_winsocket_orphan(grpc_winsocket *socket) {
   gpr_free(socket);
 }
 
-#endif
+#endif  /* GPR_WINSOCK_SOCKET */

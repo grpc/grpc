@@ -48,4 +48,4 @@ void grpc_iomgr_platform_shutdown(void) {
   grpc_fd_global_shutdown();
 }
 
-#endif  /* GRPC_IOMGRP_POSIX */
+#endif  /* GRPC_POSIX_SOCKET */
