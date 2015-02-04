@@ -29,6 +29,8 @@
 
 """State and behavior for operation termination."""
 
+import enum
+
 from _framework.base import interfaces
 from _framework.base.packets import _constants
 from _framework.base.packets import _interfaces
@@ -37,24 +39,30 @@ from _framework.foundation import callable_util
 
 _CALLBACK_EXCEPTION_LOG_MESSAGE = 'Exception calling termination callback!'
 
-# TODO(nathaniel): enum module.
-_EMISSION = 'emission'
-_TRANSMISSION = 'transmission'
-_INGESTION = 'ingestion'
-
-_FRONT_NOT_LISTENING_REQUIREMENTS = (_TRANSMISSION,)
-_BACK_NOT_LISTENING_REQUIREMENTS = (_EMISSION, _INGESTION,)
-_LISTENING_REQUIREMENTS = (_TRANSMISSION, _INGESTION,)
-
 _KINDS_TO_OUTCOMES = {
-    packets.Kind.COMPLETION: interfaces.COMPLETED,
-    packets.Kind.CANCELLATION: interfaces.CANCELLED,
-    packets.Kind.EXPIRATION: interfaces.EXPIRED,
-    packets.Kind.RECEPTION_FAILURE: interfaces.RECEPTION_FAILURE,
-    packets.Kind.TRANSMISSION_FAILURE: interfaces.TRANSMISSION_FAILURE,
-    packets.Kind.SERVICER_FAILURE: interfaces.SERVICER_FAILURE,
-    packets.Kind.SERVICED_FAILURE: interfaces.SERVICED_FAILURE,
+    packets.Kind.COMPLETION: interfaces.Outcome.COMPLETED,
+    packets.Kind.CANCELLATION: interfaces.Outcome.CANCELLED,
+    packets.Kind.EXPIRATION: interfaces.Outcome.EXPIRED,
+    packets.Kind.RECEPTION_FAILURE: interfaces.Outcome.RECEPTION_FAILURE,
+    packets.Kind.TRANSMISSION_FAILURE: interfaces.Outcome.TRANSMISSION_FAILURE,
+    packets.Kind.SERVICER_FAILURE: interfaces.Outcome.SERVICER_FAILURE,
+    packets.Kind.SERVICED_FAILURE: interfaces.Outcome.SERVICED_FAILURE,
     }
+
+
+@enum.unique
+class _Requirement(enum.Enum):
+  """Symbols indicating events required for termination."""
+
+  EMISSION = 'emission'
+  TRANSMISSION = 'transmission'
+  INGESTION = 'ingestion'
+
+_FRONT_NOT_LISTENING_REQUIREMENTS = (_Requirement.TRANSMISSION,)
+_BACK_NOT_LISTENING_REQUIREMENTS = (
+    _Requirement.EMISSION, _Requirement.INGESTION,)
+_LISTENING_REQUIREMENTS = (
+    _Requirement.TRANSMISSION, _Requirement.INGESTION,)
 
 
 class _TerminationManager(_interfaces.TerminationManager):
@@ -68,9 +76,8 @@ class _TerminationManager(_interfaces.TerminationManager):
       work_pool: A thread pool in which customer work will be done.
       utility_pool: A thread pool in which work utility work will be done.
       action: An action to call on operation termination.
-      requirements: A combination of _EMISSION, _TRANSMISSION, and _INGESTION
-        identifying what must finish for the operation to be considered
-        completed.
+      requirements: A combination of _Requirement values identifying what
+        must finish for the operation to be considered completed.
       local_failure: A packets.Kind specifying what constitutes local failure of
         customer work.
     """
@@ -137,21 +144,21 @@ class _TerminationManager(_interfaces.TerminationManager):
   def emission_complete(self):
     """See superclass method for specification."""
     if self._outstanding_requirements is not None:
-      self._outstanding_requirements.discard(_EMISSION)
+      self._outstanding_requirements.discard(_Requirement.EMISSION)
       if not self._outstanding_requirements:
         self._terminate(packets.Kind.COMPLETION)
 
   def transmission_complete(self):
     """See superclass method for specification."""
     if self._outstanding_requirements is not None:
-      self._outstanding_requirements.discard(_TRANSMISSION)
+      self._outstanding_requirements.discard(_Requirement.TRANSMISSION)
       if not self._outstanding_requirements:
         self._terminate(packets.Kind.COMPLETION)
 
   def ingestion_complete(self):
     """See superclass method for specification."""
     if self._outstanding_requirements is not None:
-      self._outstanding_requirements.discard(_INGESTION)
+      self._outstanding_requirements.discard(_Requirement.INGESTION)
       if not self._outstanding_requirements:
         self._terminate(packets.Kind.COMPLETION)
 
@@ -163,39 +170,46 @@ class _TerminationManager(_interfaces.TerminationManager):
       self._terminate(kind)
 
 
-def front_termination_manager(work_pool, utility_pool, action, subscription):
+def front_termination_manager(
+    work_pool, utility_pool, action, subscription_kind):
   """Creates a TerminationManager appropriate for front-side use.
 
   Args:
     work_pool: A thread pool in which customer work will be done.
     utility_pool: A thread pool in which work utility work will be done.
     action: An action to call on operation termination.
-    subscription: One of interfaces.FULL, interfaces.termination_only, or
-      interfaces.NONE.
+    subscription_kind: An interfaces.ServicedSubscription.Kind value.
 
   Returns:
     A TerminationManager appropriate for front-side use.
   """
+  if subscription_kind is interfaces.ServicedSubscription.Kind.NONE:
+    requirements = _FRONT_NOT_LISTENING_REQUIREMENTS
+  else:
+    requirements = _LISTENING_REQUIREMENTS
+
   return _TerminationManager(
-      work_pool, utility_pool, action,
-      _FRONT_NOT_LISTENING_REQUIREMENTS if subscription == interfaces.NONE else
-      _LISTENING_REQUIREMENTS, packets.Kind.SERVICED_FAILURE)
+      work_pool, utility_pool, action, requirements,
+      packets.Kind.SERVICED_FAILURE)
 
 
-def back_termination_manager(work_pool, utility_pool, action, subscription):
+def back_termination_manager(work_pool, utility_pool, action, subscription_kind):
   """Creates a TerminationManager appropriate for back-side use.
 
   Args:
     work_pool: A thread pool in which customer work will be done.
     utility_pool: A thread pool in which work utility work will be done.
     action: An action to call on operation termination.
-    subscription: One of interfaces.FULL, interfaces.termination_only, or
-      interfaces.NONE.
+    subscription_kind: An interfaces.ServicedSubscription.Kind value.
 
   Returns:
     A TerminationManager appropriate for back-side use.
   """
+  if subscription_kind is interfaces.ServicedSubscription.Kind.NONE:
+    requirements = _BACK_NOT_LISTENING_REQUIREMENTS
+  else:
+    requirements = _LISTENING_REQUIREMENTS
+
   return _TerminationManager(
-      work_pool, utility_pool, action,
-      _BACK_NOT_LISTENING_REQUIREMENTS if subscription == interfaces.NONE else
-      _LISTENING_REQUIREMENTS, packets.Kind.SERVICER_FAILURE)
+      work_pool, utility_pool, action, requirements,
+      packets.Kind.SERVICER_FAILURE)

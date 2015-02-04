@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
   chan = grpc_lame_client_channel_create();
   GPR_ASSERT(chan);
-  call = grpc_channel_create_call(
+  call = grpc_channel_create_call_old(
       chan, "/Foo", "anywhere",
       gpr_time_add(gpr_now(), gpr_time_from_seconds(100)));
   GPR_ASSERT(call);
@@ -59,10 +59,10 @@ int main(int argc, char **argv) {
   cqv = cq_verifier_create(cq);
 
   /* we should be able to add metadata */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata(call, &md, 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata_old(call, &md, 0));
 
   /* and invoke the call */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(call, cq, tag(2), tag(3), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke_old(call, cq, tag(2), tag(3), 0));
 
   /* the call should immediately fail */
   cq_expect_client_metadata_read(cqv, tag(2), NULL);

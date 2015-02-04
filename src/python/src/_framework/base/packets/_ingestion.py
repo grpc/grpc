@@ -111,7 +111,7 @@ class _FrontConsumerCreator(_ConsumerCreator):
 
   def create_consumer(self, requirement):
     """See _ConsumerCreator.create_consumer for specification."""
-    if self._subscription.category == interfaces.FULL:
+    if self._subscription.kind is interfaces.ServicedSubscription.Kind.FULL:
       try:
         return _ConsumerCreation(
             self._subscription.ingestor.consumer(self._operation_context),

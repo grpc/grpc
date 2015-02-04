@@ -27,9 +27,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+spec_dir = File.expand_path(File.dirname(__FILE__))
+root_dir = File.expand_path(File.join(spec_dir, '..'))
+lib_dir = File.expand_path(File.join(root_dir, 'lib'))
+
+$LOAD_PATH.unshift(spec_dir)
+$LOAD_PATH.unshift(lib_dir)
+$LOAD_PATH.uniq!
+
+require 'faraday'
 require 'rspec'
 require 'logging'
 require 'rspec/logging_helper'
+
+# Allow Faraday to support test stubs
+Faraday::Adapter.load_middleware(:test)
 
 # Configure RSpec to capture log messages for each test. The output from the
 # logs will be stored in the @log_output variable. It is a StringIO instance.

@@ -31,44 +31,17 @@
  *
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif  /* _GNU_SOURCE */
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_CPU_LINUX
 
 #include "src/core/support/cpu.h"
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#define GRPC_GNU_SOURCE
-#endif
-
-#ifndef __USE_GNU
-#define __USE_GNU
-#define GRPC_USE_GNU
-#endif
-
-#ifndef __USE_MISC
-#define __USE_MISC
-#define GRPC_USE_MISC
-#endif
-
 #include <sched.h>
-
-#ifdef GRPC_GNU_SOURCE
-#undef _GNU_SOURCE
-#undef GRPC_GNU_SOURCE
-#endif
-
-#ifdef GRPC_USE_GNU
-#undef __USE_GNU
-#undef GRPC_USE_GNU
-#endif
-
-#ifdef GRPC_USE_MISC
-#undef __USE_MISC
-#undef GRPC_USE_MISC
-#endif
-
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>

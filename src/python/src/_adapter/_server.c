@@ -88,7 +88,7 @@ static const PyObject *pygrpc_server_service(Server *self, PyObject *args) {
     return NULL;
   }
 
-  call_error = grpc_server_request_call(self->c_server, (void *)tag);
+  call_error = grpc_server_request_call_old(self->c_server, (void *)tag);
 
   result = pygrpc_translate_call_error(call_error);
   if (result != NULL) {
