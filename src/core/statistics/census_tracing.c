@@ -32,35 +32,19 @@
  */
 
 #include "src/core/statistics/census_interface.h"
+#include "src/core/statistics/census_tracing.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/statistics/census_rpc_stats.h"
 #include "src/core/statistics/hash_table.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
-/* Struct for a trace annotation. */
-typedef struct annotation {
-  gpr_timespec ts;                            /* timestamp of the annotation */
-  char txt[CENSUS_MAX_ANNOTATION_LENGTH + 1]; /* actual txt annotation */
-  struct annotation* next;
-} annotation;
-
-typedef struct trace_obj {
-  census_op_id id;
-  gpr_timespec ts;
-  census_rpc_stats rpc_stats;
-  char* method;
-  annotation* annotations;
-} trace_obj;
-
-static void trace_obj_destroy(trace_obj* obj) {
+void trace_obj_destroy(trace_obj* obj) {
   annotation* p = obj->annotations;
   while (p != NULL) {
     annotation* next = p->next;
@@ -206,4 +190,46 @@ trace_obj* census_get_trace_obj_locked(census_op_id op_id) {
 
 const char* census_get_trace_method_name(const trace_obj* trace) {
   return (const char*)trace->method;
+}
+
+static annotation* dup_annotation_chain(annotation* from) {
+  annotation* to = NULL;
+  if (from != NULL) {
+    to = gpr_malloc(sizeof(annotation));
+    memcpy(to, from, sizeof(annotation));
+    to->next = dup_annotation_chain(from->next);
+  }
+  return to;
+}
+
+static trace_obj* trace_obj_dup(trace_obj* from) {
+  trace_obj* to = NULL;
+  GPR_ASSERT(from != NULL);
+  to = gpr_malloc(sizeof(trace_obj));
+  to->id = from->id;
+  to->ts = from->ts;
+  to->rpc_stats = from->rpc_stats;
+  to->method = gpr_strdup(from->method);
+  to->annotations = dup_annotation_chain(from->annotations);
+  return to;
+}
+
+trace_obj** census_get_active_ops(int* num_active_ops) {
+  trace_obj** ret = NULL;
+  gpr_mu_lock(&g_mu);
+  if (g_trace_store != NULL) {
+    size_t n = 0;
+    census_ht_kv* all_kvs = census_ht_get_all_elements(g_trace_store, &n);
+    *num_active_ops = n;
+    if (n != 0 ) {
+      size_t i = 0;
+      ret = gpr_malloc(sizeof(trace_obj *) * n);
+      for (i = 0; i < n; i++) {
+        ret[i] = trace_obj_dup((trace_obj*)all_kvs[i].v);
+      }
+    }
+    gpr_free(all_kvs);
+  }
+  gpr_mu_unlock(&g_mu);
+  return ret;
 }
