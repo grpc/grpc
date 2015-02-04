@@ -31,7 +31,9 @@
  *
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#undef  /* _GNU_SOURCE */
 
 #include <grpc/support/port_platform.h>
 
