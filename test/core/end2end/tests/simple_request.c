@@ -178,7 +178,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "test.google.com"));
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(was_cancelled == 1);
   GPR_ASSERT(initial_metadata_recv.count == 0);
   GPR_ASSERT(trailing_metadata_recv.count == 0);
   GPR_ASSERT(request_metadata_recv.count == 0);

@@ -72,12 +72,15 @@ struct channel_data {
 };
 
 typedef void (*new_call_cb)(grpc_server *server, grpc_completion_queue *cq,
+                            grpc_call **call, grpc_call_details *details,
                             grpc_metadata_array *initial_metadata,
                             call_data *calld, void *user_data);
 
 typedef struct {
   void *user_data;
   grpc_completion_queue *cq;
+  grpc_call **call;
+  grpc_call_details *details;
   grpc_metadata_array *initial_metadata;
   new_call_cb cb;
 } requested_call;
@@ -134,6 +137,7 @@ struct call_data {
   grpc_mdstr *host;
 
   legacy_data *legacy;
+  grpc_call_details *details;
 
   gpr_uint8 included[CALL_LIST_COUNT];
   call_link links[CALL_LIST_COUNT];
@@ -242,7 +246,8 @@ static void start_new_rpc(grpc_call_element *elem) {
     requested_call rc = server->requested_calls[--server->requested_call_count];
     calld->state = ACTIVATED;
     gpr_mu_unlock(&server->mu);
-    rc.cb(server, rc.cq, rc.initial_metadata, calld, rc.user_data);
+    rc.cb(server, rc.cq, rc.call, rc.details, rc.initial_metadata, calld,
+          rc.user_data);
   } else {
     calld->state = PENDING;
     call_list_join(server, calld, PENDING_START);
@@ -619,6 +624,7 @@ void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
   /* terminate all the requested calls */
   for (i = 0; i < requested_call_count; i++) {
     requested_calls[i].cb(server, requested_calls[i].cq,
+                          requested_calls[i].call, requested_calls[i].details,
                           requested_calls[i].initial_metadata, NULL,
                           requested_calls[i].user_data);
   }
@@ -669,6 +675,8 @@ void grpc_server_add_listener(grpc_server *server, void *arg,
 
 static grpc_call_error queue_call_request(grpc_server *server,
                                           grpc_completion_queue *cq,
+                                          grpc_call **call,
+                                          grpc_call_details *details,
                                           grpc_metadata_array *initial_metadata,
                                           new_call_cb cb, void *user_data) {
   call_data *calld;
@@ -676,7 +684,7 @@ static grpc_call_error queue_call_request(grpc_server *server,
   gpr_mu_lock(&server->mu);
   if (server->shutdown) {
     gpr_mu_unlock(&server->mu);
-    cb(server, cq, initial_metadata, NULL, user_data);
+    cb(server, cq, call, details, initial_metadata, NULL, user_data);
     return GRPC_CALL_OK;
   }
   calld = call_list_remove_head(server, PENDING_START);
@@ -684,7 +692,7 @@ static grpc_call_error queue_call_request(grpc_server *server,
     GPR_ASSERT(calld->state == PENDING);
     calld->state = ACTIVATED;
     gpr_mu_unlock(&server->mu);
-    cb(server, cq, initial_metadata, calld, user_data);
+    cb(server, cq, call, details, initial_metadata, calld, user_data);
     return GRPC_CALL_OK;
   } else {
     if (server->requested_call_count == server->requested_call_capacity) {
@@ -698,6 +706,8 @@ static grpc_call_error queue_call_request(grpc_server *server,
     rc = &server->requested_calls[server->requested_call_count++];
     rc->cb = cb;
     rc->cq = cq;
+    rc->call = call;
+    rc->details = details;
     rc->user_data = user_data;
     rc->initial_metadata = initial_metadata;
     gpr_mu_unlock(&server->mu);
@@ -705,10 +715,55 @@ static grpc_call_error queue_call_request(grpc_server *server,
   }
 }
 
+static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
+  gpr_slice slice = value->slice;
+  size_t len = GPR_SLICE_LENGTH(slice);
+
+  if (len + 1 > *capacity) {
+    *capacity = GPR_MAX(len + 1, *capacity * 2);
+    *dest = gpr_realloc(*dest, *capacity);
+  }
+  memcpy(*dest, grpc_mdstr_as_c_string(value), len + 1);
+}
+
+static void publish_request(grpc_call *call, grpc_op_error status, void *tag) {
+  grpc_call_element *elem =
+      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
+  grpc_server *server = chand->server;
+
+  if (status == GRPC_OP_OK) {
+    cpstr(&calld->details->host, &calld->details->host_capacity, calld->host);
+    cpstr(&calld->details->method, &calld->details->method_capacity,
+          calld->path);
+    calld->details->deadline = calld->deadline;
+    grpc_cq_end_op_complete(server->cq, tag, call, do_nothing, NULL,
+                            GRPC_OP_OK);
+  } else {
+    abort();
+  }
+}
+
 static void begin_request(grpc_server *server, grpc_completion_queue *cq,
+                          grpc_call **call, grpc_call_details *details,
                           grpc_metadata_array *initial_metadata,
-                          call_data *call_data, void *tag) {
-  abort();
+                          call_data *calld, void *tag) {
+  grpc_ioreq req;
+  if (!calld) {
+    *call = NULL;
+    initial_metadata->count = 0;
+    grpc_cq_end_op_complete(cq, tag, NULL, do_nothing, NULL, GRPC_OP_ERROR);
+    return;
+  }
+  calld->details = details;
+  grpc_call_set_completion_queue(calld->call, cq);
+  *call = calld->call;
+  req.op = GRPC_IOREQ_RECV_INITIAL_METADATA;
+  req.data.recv_metadata = initial_metadata;
+  grpc_call_internal_ref(calld->call);
+  grpc_call_start_ioreq_and_call_back(calld->call, &req, 1, publish_request,
+                                      tag);
 }
 
 grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
@@ -716,7 +771,8 @@ grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
                                          grpc_metadata_array *initial_metadata,
                                          grpc_completion_queue *cq, void *tag) {
   grpc_cq_begin_op(cq, NULL, GRPC_OP_COMPLETE);
-  return queue_call_request(server, cq, initial_metadata, begin_request, tag);
+  return queue_call_request(server, cq, call, details, initial_metadata,
+                            begin_request, tag);
 }
 
 static void publish_legacy_request(grpc_call *call, grpc_op_error status,
@@ -739,9 +795,12 @@ static void publish_legacy_request(grpc_call *call, grpc_op_error status,
 }
 
 static void begin_legacy_request(grpc_server *server, grpc_completion_queue *cq,
+                                 grpc_call **call, grpc_call_details *details,
                                  grpc_metadata_array *initial_metadata,
                                  call_data *calld, void *tag) {
   grpc_ioreq req;
+  GPR_ASSERT(call == NULL);
+  GPR_ASSERT(details == NULL);
   if (!calld) {
     gpr_free(initial_metadata);
     grpc_cq_end_new_rpc(cq, tag, NULL, do_nothing, NULL, NULL, NULL,
@@ -764,7 +823,7 @@ grpc_call_error grpc_server_request_call_old(grpc_server *server,
       gpr_malloc(sizeof(grpc_metadata_array));
   memset(client_metadata, 0, sizeof(*client_metadata));
   grpc_cq_begin_op(server->cq, NULL, GRPC_SERVER_RPC_NEW);
-  return queue_call_request(server, server->cq, client_metadata,
+  return queue_call_request(server, server->cq, NULL, NULL, client_metadata,
                             begin_legacy_request, tag_new);
 }
 
