@@ -590,7 +590,7 @@ grpc_sync_images() {
   done
 }
 
-grpc_launch_server_args() {
+_grpc_launch_servers_args() {
   [[ -n $1 ]] && {  # host
     host=$1
     shift
@@ -598,9 +598,39 @@ grpc_launch_server_args() {
     echo "$FUNCNAME: missing arg: host" 1>&2
     return 1
   }
+  [[ -n $1 ]] && {
+    servers="$@"
+  } || {
+    servers="cxx java go node ruby"
+    echo "$FUNCNAME: no servers specified, will launch defaults '$servers'"
+  }
+}
 
-  [[ -n $1 ]] && {  # server_type
-    case $1 in
+# Launches servers on a docker instance.
+#
+# call-seq;
+#   grpc_launch_servers <server_name> [server1 server2 ...]
+#   E.g
+#   grpc_launch_server grpc-docker-server ruby node
+#
+# Restarts all the specified servers on the GCE instance <server_name>
+# If no servers are specified, it launches all known servers
+grpc_launch_servers() {
+  # declare vars local so that they don't pollute the shell environment
+  # where they this func is used.
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  # set by grpc_launch_servers_args
+  local servers
+
+  # set the project zone and check that all necessary args are provided
+  _grpc_set_project_and_zone -f _grpc_launch_server_args "$@" || return 1
+  gce_has_instance $grpc_project $host || return 1;
+
+  # launch each of the servers in turn
+  for server in $servers
+  do
+    local grpc_port
+    case $server in
       cxx)    grpc_port=8010 ;;
       go)     grpc_port=8020 ;;
       java)   grpc_port=8030 ;;
@@ -609,44 +639,22 @@ grpc_launch_server_args() {
       ruby)   grpc_port=8060 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
     esac
-    docker_label="grpc/$1"
-    docker_name="grpc_interop_$1"
-    shift
-  } || {
-    echo "$FUNCNAME: missing arg: server_type" 1>&2
-    return 1
-  }
-}
+    local docker_label="grpc/$server"
+    local docker_name="grpc_interop_$server"
 
-# Launches a server on a docker instance.
-#
-# call-seq;
-#   grpc_launch_server <server_name> <server_type>
-#
-# Runs the server_type on a GCE instance running docker with server_name
-grpc_launch_server() {
-  # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
-  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
-  # set by grpc_launch_server_args
-  local docker_label docker_name host grpc_port
-
-  # set the project zone and check that all necessary args are provided
-  _grpc_set_project_and_zone -f grpc_launch_server_args "$@" || return 1
-  gce_has_instance $grpc_project $host || return 1;
-
-  cmd="sudo docker kill $docker_name > /dev/null 2>&1; "
-  cmd+="sudo docker rm $docker_name > /dev/null 2>&1; "
-  cmd+="sudo docker run -d --name $docker_name"
-  cmd+=" -p $grpc_port:$grpc_port $docker_label"
-  local project_opt="--project $grpc_project"
-  local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+    cmd="sudo docker kill $docker_name > /dev/null 2>&1; "
+    cmd+="sudo docker rm $docker_name > /dev/null 2>&1; "
+    cmd+="sudo docker run -d --name $docker_name"
+    cmd+=" -p $grpc_port:$grpc_port $docker_label"
+    local project_opt="--project $grpc_project"
+    local zone_opt="--zone $grpc_zone"
+    local ssh_cmd="bash -l -c \"$cmd\""
+    echo "will run:"
+    echo "  $ssh_cmd"
+    echo "on $host"
+    [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
+    gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  done
 }
 
 # Runs a test command on a docker instance.
