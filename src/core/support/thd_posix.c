@@ -62,17 +62,19 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
                 const gpr_thd_options *options) {
   int thread_started;
   pthread_attr_t attr;
+  pthread_t p;
   struct thd_arg *a = gpr_malloc(sizeof(*a));
   a->body = thd_body;
   a->arg = arg;
 
   GPR_ASSERT(pthread_attr_init(&attr) == 0);
   GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
-  thread_started = (pthread_create(t, &attr, &thread_body, a) == 0);
+  thread_started = (pthread_create(&p, &attr, &thread_body, a) == 0);
   GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
   if (!thread_started) {
     gpr_free(a);
   }
+  *t = (gpr_thd_id)p;
   return thread_started;
 }
 
@@ -80,6 +82,10 @@ gpr_thd_options gpr_thd_options_default(void) {
   gpr_thd_options options;
   memset(&options, 0, sizeof(options));
   return options;
+}
+
+gpr_thd_id gpr_thd_currentid(void) {
+  return (gpr_thd_id)pthread_self();
 }
 
 #endif /* GPR_POSIX_SYNC */
