@@ -551,13 +551,13 @@ endif
 
 static: static_c static_cxx
 
-static_c:  libs/$(CONFIG)/libgpr.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgrpc_unsecure.a
+static_c:  libs/$(CONFIG)/libgpr.a libs/$(CONFIG)/libgrpc.a libs/$(CONFIG)/libgrpc_unsecure.a libs/$(CONFIG)/libgrpc_csharp_ext.a
 
 static_cxx:  libs/$(CONFIG)/libgrpc++.a
 
 shared: shared_c shared_cxx
 
-shared_c:  libs/$(CONFIG)/libgpr.$(SHARED_EXT) libs/$(CONFIG)/libgrpc.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+shared_c:  libs/$(CONFIG)/libgpr.$(SHARED_EXT) libs/$(CONFIG)/libgrpc.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 
 shared_cxx:  libs/$(CONFIG)/libgrpc++.$(SHARED_EXT)
 
@@ -1016,6 +1016,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_unsecure.a
+	$(E) "[STRIP]   Stripping libgrpc_csharp_ext.a"
+	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_csharp_ext.a
 endif
 
 strip-static_cxx: static_cxx
@@ -1032,6 +1034,8 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
 	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping libgrpc_csharp_ext.so"
+	$(Q) $(STRIP) libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 endif
 
 strip-shared_cxx: shared_cxx
@@ -1137,6 +1141,8 @@ install-static_c: static_c strip-static_c
 	$(Q) $(INSTALL) libs/$(CONFIG)/libgrpc.a $(prefix)/lib/libgrpc.a
 	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
 	$(Q) $(INSTALL) libs/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
+	$(E) "[INSTALL] Installing libgrpc_csharp_ext.a"
+	$(Q) $(INSTALL) libs/$(CONFIG)/libgrpc_csharp_ext.a $(prefix)/lib/libgrpc_csharp_ext.a
 
 install-static_cxx: static_cxx strip-static_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
@@ -1174,6 +1180,17 @@ else
 	$(Q) $(INSTALL) libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing grpc_csharp_ext.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/grpc_csharp_ext.$(SHARED_EXT)
+	$(Q) $(INSTALL) libs/$(CONFIG)/libgrpc_csharp_ext-imp.a $(prefix)/lib/libgrpc_csharp_ext-imp.a
+else
+	$(E) "[INSTALL] Installing libgrpc_csharp_ext.$(SHARED_EXT)"
+	$(Q) $(INSTALL) libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2294,6 +2311,71 @@ endif
 
 objs/$(CONFIG)/examples/tips/publisher.o:     gens/examples/tips/label.pb.cc    gens/examples/tips/empty.pb.cc    gens/examples/tips/pubsub.pb.cc
 objs/$(CONFIG)/examples/tips/subscriber.o:     gens/examples/tips/label.pb.cc    gens/examples/tips/empty.pb.cc    gens/examples/tips/pubsub.pb.cc
+
+
+LIBGRPC_CSHARP_EXT_SRC = \
+    src/csharp/ext/grpc_csharp_ext.c \
+
+
+LIBGRPC_CSHARP_EXT_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CSHARP_EXT_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
+libs/$(CONFIG)/libgrpc_csharp_ext.a: openssl_dep_error
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT): openssl_dep_error
+else
+libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT): openssl_dep_error
+endif
+
+else
+
+ifneq ($(OPENSSL_DEP),)
+src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
+endif
+
+libs/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_CSHARP_EXT_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f libs/$(CONFIG)/libgrpc_csharp_ext.a
+	$(Q) $(AR) rcs libs/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib libs/$(CONFIG)/libgrpc_csharp_ext.a 
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+libs/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP)libs/$(CONFIG)/gpr.$(SHARED_EXT)libs/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/grpc_csharp_ext.def -Wl,--out-implib=libs/$(CONFIG)/libgrpc_csharp_ext-imp.a -o libs/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr-imp -lgrpc-imp
+else
+libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) libs/$(CONFIG)/libgpr.$(SHARED_EXT) libs/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
+else
+	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.0 -o libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
+	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_csharp_ext.so.0
+	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_csharp_ext.so
+endif
+endif
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC_CSHARP_EXT_OBJS:.o=.dep)
+endif
+endif
+
+objs/$(CONFIG)/src/csharp/ext/grpc_csharp_ext.o: 
 
 
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
