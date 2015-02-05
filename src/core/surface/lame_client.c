@@ -76,6 +76,9 @@ static void channel_op(grpc_channel_element *elem,
     case GRPC_CHANNEL_GOAWAY:
       gpr_slice_unref(op->data.goaway.message);
       break;
+    case GRPC_CHANNEL_DISCONNECT:
+      grpc_client_channel_closed(elem);
+      break;
     default:
       break;
   }
