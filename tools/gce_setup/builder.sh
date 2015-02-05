@@ -16,16 +16,12 @@ main() {
 
   # restart client and server vm and wait for images to sync to them
   cd tools/gce_setup
-  ./new_grpc_docker_builder.sh -igrpc-docker-testclients-donna -anone
-  ./new_grpc_docker_builder.sh -igrpc-docker-server-donna -anone
+  ./new_grpc_docker_builder.sh -igrpc-docker-testclients -anone
+  ./new_grpc_docker_builder.sh -igrpc-docker-server -anone
   sleep 3600
 
-  # launch images for all languages on both client and server
-  for lan in "${languages[@]}"
-  do
-    grpc_launch_servers grpc-docker-testclients-donna $lan
-    grpc_launch_servers grpc-docker-server-donna $lan
-  done
+  # launch images for all languages on  server
+  grpc_launch_servers grpc-docker-server
   
 }
 
