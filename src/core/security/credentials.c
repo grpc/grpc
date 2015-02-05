@@ -216,14 +216,10 @@ static void ssl_copy_key_material(const char *input, unsigned char **output,
 static void ssl_build_config(const char *pem_root_certs,
                              grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
                              grpc_ssl_config *config) {
-  if (pem_root_certs == NULL) {
-    /* TODO(jboeuf): Get them from the environment. */
-    gpr_log(GPR_ERROR, "Default SSL roots not yet implemented.");
-  } else {
+  if (pem_root_certs != NULL) {
     ssl_copy_key_material(pem_root_certs, &config->pem_root_certs,
                           &config->pem_root_certs_size);
   }
-
   if (pem_key_cert_pair != NULL) {
     GPR_ASSERT(pem_key_cert_pair->private_key != NULL);
     GPR_ASSERT(pem_key_cert_pair->cert_chain != NULL);

@@ -49,6 +49,22 @@ echo Running test gpr_log_test
 test_bin\gpr_log_test.exe || echo TEST FAILED: gpr_log_test && exit /b
 echo(
 
+echo Building test gpr_file_test
+cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\file_test.c 
+link.exe /OUT:"test_bin\gpr_file_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\file_test.obj 
+echo(
+echo Running test gpr_file_test
+test_bin\gpr_file_test.exe || echo TEST FAILED: gpr_file_test && exit /b
+echo(
+
+echo Building test gpr_env_test
+cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\env_test.c 
+link.exe /OUT:"test_bin\gpr_env_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\env_test.obj 
+echo(
+echo Running test gpr_env_test
+test_bin\gpr_env_test.exe || echo TEST FAILED: gpr_env_test && exit /b
+echo(
+
 echo Building test gpr_slice_buffer_test
 cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:test_bin\ ..\..\test\core\support\slice_buffer_test.c 
 link.exe /OUT:"test_bin\gpr_slice_buffer_test.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\gpr_test_util.lib Debug\gpr.lib test_bin\slice_buffer_test.obj 

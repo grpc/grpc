@@ -39,6 +39,8 @@
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_endpoint.h"
+#include "src/core/support/env.h"
+#include "src/core/support/file.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/lame_client.h"
 #include "src/core/transport/chttp2/alpn.h"
@@ -319,6 +321,28 @@ static grpc_security_context_vtable ssl_channel_vtable = {
 static grpc_security_context_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_create_handshaker, ssl_server_check_peer};
 
+static gpr_slice default_pem_root_certs;
+
+static void init_default_pem_root_certs(void) {
+  char *default_root_certs_path =
+      gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
+  if (default_root_certs_path == NULL) {
+    default_pem_root_certs = gpr_empty_slice();
+  } else {
+    default_pem_root_certs = gpr_load_file(default_root_certs_path, NULL);
+    gpr_free(default_root_certs_path);
+  }
+}
+
+static size_t get_default_pem_roots(const unsigned char **pem_root_certs) {
+  /* TODO(jboeuf@google.com): Maybe revisit the approach which consists in
+     loading all the roots once for the lifetime of the process. */
+  static gpr_once once = GPR_ONCE_INIT;
+  gpr_once_init(&once, init_default_pem_root_certs);
+  *pem_root_certs = GPR_SLICE_START_PTR(default_pem_root_certs);
+  return GPR_SLICE_LENGTH(default_pem_root_certs);
+}
+
 grpc_security_status grpc_ssl_channel_security_context_create(
     grpc_credentials *request_metadata_creds, const grpc_ssl_config *config,
     const char *secure_peer_name, grpc_channel_security_context **ctx) {
@@ -330,6 +354,8 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   tsi_result result = TSI_OK;
   grpc_ssl_channel_security_context *c;
   size_t i;
+  const unsigned char *pem_root_certs;
+  size_t pem_root_certs_size;
 
   for (i = 0; i < num_alpn_protocols; i++) {
     alpn_protocol_strings[i] =
@@ -338,9 +364,8 @@ grpc_security_status grpc_ssl_channel_security_context_create(
         strlen(grpc_chttp2_get_alpn_version_index(i));
   }
 
-  if (config == NULL || secure_peer_name == NULL ||
-      config->pem_root_certs == NULL) {
-    gpr_log(GPR_ERROR, "An ssl channel needs a secure name and root certs.");
+  if (config == NULL || secure_peer_name == NULL) {
+    gpr_log(GPR_ERROR, "An ssl channel needs a config and a secure name.");
     goto error;
   }
   if (!check_request_metadata_creds(request_metadata_creds)) {
@@ -357,11 +382,20 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   if (secure_peer_name != NULL) {
     c->secure_peer_name = gpr_strdup(secure_peer_name);
   }
+  if (config->pem_root_certs == NULL) {
+    pem_root_certs_size = get_default_pem_roots(&pem_root_certs);
+    if (pem_root_certs == NULL || pem_root_certs_size == 0) {
+      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      goto error;
+    }
+  } else {
+    pem_root_certs = config->pem_root_certs;
+    pem_root_certs_size = config->pem_root_certs_size;
+  }
   result = tsi_create_ssl_client_handshaker_factory(
       config->pem_private_key, config->pem_private_key_size,
-      config->pem_cert_chain, config->pem_cert_chain_size,
-      config->pem_root_certs, config->pem_root_certs_size,
-      GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
+      config->pem_cert_chain, config->pem_cert_chain_size, pem_root_certs,
+      pem_root_certs_size, GRPC_SSL_CIPHER_SUITES, alpn_protocol_strings,
       alpn_protocol_string_lengths, num_alpn_protocols, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",

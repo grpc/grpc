@@ -16,6 +16,24 @@
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_linux.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\histogram.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -144,6 +162,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\support\cpu.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\support\env.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\support\file.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\support\murmur_hash.h">
