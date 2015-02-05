@@ -75,7 +75,7 @@ that they are built, you can run the server with:
 $ ./run_greetings_server.sh
 ```
 
-and in another termainal window and confirm that it receives a message.
+and in another termainal window confirm that it receives a message.
 
 ```
 $ ./run_greetings_client.sh
