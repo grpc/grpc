@@ -31,11 +31,16 @@
  *
  */
 
-#ifndef _POSIX_C_SOURCE
+#if !defined _POSIX_C_SOURCE || _POSIX_C_SOURCE < 200112L
+#undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #endif
 
+/* FIXME: "posix" files probably shouldn't depend on _GNU_SOURCE */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
+
 #include <grpc/support/port_platform.h>
 
 #if defined(GPR_POSIX_LOG)
