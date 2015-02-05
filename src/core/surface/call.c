@@ -499,23 +499,30 @@ static send_action choose_send_action(grpc_call *call) {
     case WRITE_STATE_INITIAL:
       if (call->request_set[GRPC_IOREQ_SEND_INITIAL_METADATA] != REQSET_EMPTY) {
         call->write_state = WRITE_STATE_STARTED;
-        return is_op_live(call, GRPC_IOREQ_SEND_MESSAGE) ||
-                       is_op_live(call, GRPC_IOREQ_SEND_CLOSE)
-                   ? SEND_BUFFERED_INITIAL_METADATA
-                   : SEND_INITIAL_METADATA;
+        if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE) || is_op_live(call, GRPC_IOREQ_SEND_CLOSE)) {
+          return SEND_BUFFERED_INITIAL_METADATA;
+        } else {
+          return SEND_INITIAL_METADATA;
+        }
       }
       return SEND_NOTHING;
     case WRITE_STATE_STARTED:
       if (call->request_set[GRPC_IOREQ_SEND_MESSAGE] != REQSET_EMPTY) {
-        return is_op_live(call, GRPC_IOREQ_SEND_CLOSE) ? SEND_BUFFERED_MESSAGE
-                                                       : SEND_MESSAGE;
+        if (is_op_live(call, GRPC_IOREQ_SEND_CLOSE)) {
+          return SEND_BUFFERED_MESSAGE;
+        } else {
+          return SEND_MESSAGE;
+        }
       }
       if (call->request_set[GRPC_IOREQ_SEND_CLOSE] != REQSET_EMPTY) {
         call->write_state = WRITE_STATE_WRITE_CLOSED;
         finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, GRPC_OP_OK);
         finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, GRPC_OP_OK);
-        return call->is_client ? SEND_FINISH
-                               : SEND_TRAILING_METADATA_AND_FINISH;
+        if (call->is_client) {
+          return SEND_FINISH;
+        } else {
+          return SEND_TRAILING_METADATA_AND_FINISH;
+        }
       }
       return SEND_NOTHING;
     case WRITE_STATE_WRITE_CLOSED:
