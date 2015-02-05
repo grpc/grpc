@@ -184,7 +184,6 @@ struct transport {
   gpr_uint8 is_client;
 
   gpr_mu mu;
-  gpr_cv cv;
 
   /* basic state management - what are we doing at the moment? */
   gpr_uint8 reading;
@@ -398,7 +397,6 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   /* one ref is for destroy, the other for when ep becomes NULL */
   gpr_ref_init(&t->refs, 2);
   gpr_mu_init(&t->mu);
-  gpr_cv_init(&t->cv);
   t->metadata_context = mdctx;
   t->str_grpc_timeout =
       grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
@@ -489,7 +487,6 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->cb = sr.callbacks;
   t->cb_user_data = sr.user_data;
   t->calling_back = 0;
-  gpr_cv_broadcast(&t->cv);
   unlock(t);
   unref_transport(t);
 }
@@ -498,9 +495,6 @@ static void destroy_transport(grpc_transport *gt) {
   transport *t = (transport *)gt;
 
   gpr_mu_lock(&t->mu);
-  while (t->calling_back) {
-    gpr_cv_wait(&t->cv, &t->mu, gpr_inf_future);
-  }
   t->cb = NULL;
   gpr_mu_unlock(&t->mu);
 
@@ -579,13 +573,6 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
 
   gpr_mu_lock(&t->mu);
 
-  /* await pending callbacks
-     TODO(ctiller): this could be optimized to check if this stream is getting
-     callbacks */
-  while (t->calling_back) {
-    gpr_cv_wait(&t->cv, &t->mu, gpr_inf_future);
-  }
-
   /* stop parsing if we're currently parsing this stream */
   if (t->deframe_state == DTS_FRAME && t->incoming_stream_id == s->id &&
       s->id != 0) {
@@ -597,7 +584,6 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   }
   remove_from_stream_map(t, s);
 
-  gpr_cv_broadcast(&t->cv);
   gpr_mu_unlock(&t->mu);
 
   grpc_sopb_destroy(&s->outgoing_sopb);
@@ -767,7 +753,6 @@ static void unlock(transport *t) {
   if (perform_callbacks || call_closed || num_goaways) {
     lock(t);
     t->calling_back = 0;
-    gpr_cv_broadcast(&t->cv);
     unlock(t);
     unref_transport(t);
   }
@@ -898,7 +883,6 @@ static void finish_write_common(transport *t, int success) {
   if (!t->reading) {
     grpc_endpoint_destroy(t->ep);
     t->ep = NULL;
-    gpr_cv_broadcast(&t->cv);
     unref_transport(t); /* safe because we'll still have the ref for write */
   }
   unlock(t);
@@ -1679,7 +1663,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
       if (!t->writing && t->ep) {
         grpc_endpoint_destroy(t->ep);
         t->ep = NULL;
-        gpr_cv_broadcast(&t->cv);
         unref_transport(t); /* safe as we still have a ref for read */
       }
       unlock(t);

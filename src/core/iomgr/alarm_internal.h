@@ -39,6 +39,15 @@
 
 /* iomgr internal api for dealing with alarms */
 
+/* Check for alarms to be run, and run them. 
+   Return non zero if alarm callbacks were executed.
+   Drops drop_mu if it is non-null before executing callbacks.
+   If next is non-null, TRY to update *next with the next running alarm
+   IF that alarm occurs before *next current value.
+   *next is never guaranteed to be updated on any given execution; however,
+   with high probability at least one thread in the system will see an update
+   at any time slice. */
+
 int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next);
 
 void grpc_alarm_list_init(gpr_timespec now);
