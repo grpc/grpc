@@ -193,20 +193,14 @@ const char* census_get_trace_method_name(const trace_obj* trace) {
 }
 
 static trace_annotation* dup_annotation_chain(trace_annotation* from) {
-  trace_annotation *to = NULL, *prev = NULL;
+  trace_annotation *ret = NULL;
+  trace_annotation **to = &ret;
   for (; from != NULL; from = from->next) {
-    trace_annotation* tmp = gpr_malloc(sizeof(trace_annotation));
-    memcpy(tmp, from, sizeof(trace_annotation));
-    tmp->next = NULL;
-    if (to == NULL) {
-      to = tmp;
-      prev = to;
-    } else {
-      prev->next = tmp;
-      prev = tmp;
-    }
+    *to = gpr_malloc(sizeof(trace_annotation));
+    memcpy(*to, from, sizeof(trace_annotation));
+    to = &(*to)->next;
   }
-  return to;
+  return ret;
 }
 
 static trace_obj* trace_obj_dup(trace_obj* from) {
