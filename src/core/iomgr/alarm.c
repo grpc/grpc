@@ -335,9 +335,6 @@ static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
 
     gpr_mu_unlock(&g_mu);
     gpr_mu_unlock(&g_checker_mu);
-  } else if (next && gpr_mu_trylock(&g_mu)) {
-    *next = gpr_time_min(*next, g_shard_queue[0]->min_deadline);
-    gpr_mu_unlock(&g_mu);
   }
 
   if (n && drop_mu) {
