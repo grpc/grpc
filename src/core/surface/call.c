@@ -966,6 +966,7 @@ static void destroy_legacy_state(legacy_state *ls) {
   }
   gpr_free(ls->initial_md_in.metadata);
   gpr_free(ls->trailing_md_in.metadata);
+  gpr_free(ls->details);
   gpr_free(ls);
 }
 
