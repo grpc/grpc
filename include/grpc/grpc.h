@@ -183,17 +183,16 @@ typedef struct grpc_metadata {
 } grpc_metadata;
 
 typedef enum grpc_completion_type {
-  GRPC_QUEUE_SHUTDOWN,  /* Shutting down */
-  GRPC_READ,            /* A read has completed */
-  GRPC_INVOKE_ACCEPTED, /* An invoke call has been accepted by flow
-                           control */
-  GRPC_WRITE_ACCEPTED, /* A write has been accepted by
-                          flow control */
+  GRPC_QUEUE_SHUTDOWN,       /* Shutting down */
+  GRPC_IOREQ,                /* grpc_call_ioreq completion */
+  GRPC_READ,                 /* A read has completed */
+  GRPC_WRITE_ACCEPTED,       /* A write has been accepted by
+                                flow control */
   GRPC_FINISH_ACCEPTED,      /* writes_done or write_status has been accepted */
   GRPC_CLIENT_METADATA_READ, /* The metadata array sent by server received at
                                 client */
-  GRPC_FINISHED, /* An RPC has finished. The event contains status.
-                    On the server this will be OK or Cancelled. */
+  GRPC_FINISHED,             /* An RPC has finished. The event contains status.
+                                On the server this will be OK or Cancelled. */
   GRPC_SERVER_RPC_NEW,       /* A new RPC has arrived at the server */
   GRPC_SERVER_SHUTDOWN,      /* The server has finished shutting down */
   GRPC_COMPLETION_DO_NOT_USE /* must be last, forces users to include
@@ -213,6 +212,7 @@ typedef struct grpc_event {
     grpc_op_error write_accepted;
     grpc_op_error finish_accepted;
     grpc_op_error invoke_accepted;
+    grpc_op_error ioreq;
     struct {
       size_t count;
       grpc_metadata *elements;
@@ -232,6 +232,57 @@ typedef struct grpc_event {
     } server_rpc_new;
   } data;
 } grpc_event;
+
+typedef struct {
+  size_t count;
+  size_t capacity;
+  grpc_metadata *metadata;
+} grpc_metadata_array;
+
+typedef struct {
+  const char *method;
+  const char *host;
+  gpr_timespec deadline;
+} grpc_call_details;
+
+typedef enum {
+  GRPC_OP_SEND_INITIAL_METADATA = 0,
+  GRPC_OP_SEND_MESSAGE,
+  GRPC_OP_SEND_CLOSE_FROM_CLIENT,
+  GRPC_OP_SEND_STATUS_FROM_SERVER,
+  GRPC_OP_RECV_INITIAL_METADATA,
+  GRPC_OP_RECV_MESSAGES,
+  GRPC_OP_RECV_STATUS_ON_CLIENT,
+  GRPC_OP_RECV_CLOSE_ON_SERVER
+} grpc_op_type;
+
+typedef struct grpc_op {
+  grpc_op_type op;
+  union {
+    struct {
+      size_t count;
+      const grpc_metadata *metadata;
+    } send_initial_metadata;
+    grpc_byte_buffer *send_message;
+    struct {
+      size_t trailing_metadata_count;
+      grpc_metadata *trailing_metadata;
+      grpc_status_code status;
+      const char *status_details;
+    } send_status_from_server;
+    grpc_metadata_array *recv_initial_metadata;
+    grpc_byte_buffer **recv_message;
+    struct {
+      grpc_metadata_array *trailing_metadata;
+      grpc_status_code *status;
+      char **status_details;
+      size_t *status_details_capacity;
+    } recv_status_on_client;
+    struct {
+      int *cancelled;
+    } recv_close_on_server;
+  } data;
+} grpc_op;
 
 /* Initialize the grpc library */
 void grpc_init(void);
@@ -278,6 +329,9 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
                                         const char *method, const char *host,
                                         gpr_timespec deadline);
+
+grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
+                                      size_t nops, void *tag);
 
 /* Create a client channel */
 grpc_channel *grpc_channel_create(const char *target,

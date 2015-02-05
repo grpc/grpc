@@ -31,24 +31,48 @@
  *
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-#include <grpc/support/port_platform.h>
+#include "src/core/surface/byte_buffer_queue.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/useful.h>
 
-#ifdef GPR_LINUX
+static void bba_destroy(grpc_bbq_array *array) { gpr_free(array->data); }
 
-#include "src/core/iomgr/socket_utils_posix.h"
-
-#include <sys/types.h>
-#include <sys/socket.h>
-
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
-                 int nonblock, int cloexec) {
-  int flags = 0;
-  flags |= nonblock ? SOCK_NONBLOCK : 0;
-  flags |= cloexec ? SOCK_CLOEXEC : 0;
-  return accept4(sockfd, addr, addrlen, flags);
+/* Append an operation to an array, expanding as needed */
+static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
+  if (a->count == a->capacity) {
+    a->capacity = GPR_MAX(a->capacity * 2, 8);
+    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
+  }
+  a->data[a->count++] = buffer;
 }
 
-#endif
+void grpc_bbq_destroy(grpc_byte_buffer_queue *q) {
+  bba_destroy(&q->filling);
+  bba_destroy(&q->draining);
+}
+
+int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
+  return (q->drain_pos == q->draining.count && q->filling.count == 0);
+}
+
+void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
+  bba_push(&q->filling, buffer);
+}
+
+grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
+  grpc_bbq_array temp_array;
+
+  if (q->drain_pos == q->draining.count) {
+    if (q->filling.count == 0) {
+      return NULL;
+    }
+    q->draining.count = 0;
+    q->drain_pos = 0;
+    /* swap arrays */
+    temp_array = q->filling;
+    q->filling = q->draining;
+    q->draining = temp_array;
+  }
+
+  return q->draining.data[q->drain_pos++];
+}
