@@ -234,22 +234,6 @@ int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold) {
   }
 }
 
-struct timeval gpr_timeval_from_timespec(gpr_timespec t) {
-  /* TODO(klempner): Consider whether this should round up, since it is likely
-     to be used for delays */
-  struct timeval tv;
-  tv.tv_sec = t.tv_sec;
-  tv.tv_usec = t.tv_nsec / 1000;
-  return tv;
-}
-
-gpr_timespec gpr_timespec_from_timeval(struct timeval t) {
-  gpr_timespec ts;
-  ts.tv_sec = t.tv_sec;
-  ts.tv_nsec = t.tv_usec * 1000;
-  return ts;
-}
-
 gpr_int32 gpr_time_to_millis(gpr_timespec t) {
   if (t.tv_sec >= 2147483) {
     if (t.tv_sec == 2147483 && t.tv_nsec < 648 * GPR_NS_PER_MS) {
