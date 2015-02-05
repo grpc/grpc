@@ -80,11 +80,11 @@ trace_obj* census_get_trace_obj_locked(census_op_id op_id);
 void census_internal_lock_trace_store(void);
 void census_internal_unlock_trace_store(void);
 
-/* Gets method tag name associated with the input trace object. */
+/* Gets method name associated with the input trace object. */
 const char* census_get_trace_method_name(const trace_obj* trace);
 
 /* Returns an array of pointers to trace objects of currently active operations
-   and fills in number of active operations. Returns NULL if there's no active
+   and fills in number of active operations. Returns NULL if there are no active
    operations.
    Caller owns the returned objects. */
 trace_obj** census_get_active_ops(int* num_active_ops);
