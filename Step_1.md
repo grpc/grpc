@@ -29,5 +29,5 @@ $ protoc -I . helloworld.proto --plugin=protoc-gen-grpc=external/grpc_java/bins/
                                --java_out=src/main/java
 ```
 
-Next, in [Step-2](Step-2.md), we'll use the generated Stub implementation to
+Next, in [Step - 2](Step_2.md), we'll use the generated Stub implementation to
 write a client that uses the generated code to make a call to a service.
