@@ -97,6 +97,10 @@ void grpc_cq_end_new_rpc(grpc_completion_queue *cc, void *tag, grpc_call *call,
                          gpr_timespec deadline, size_t metadata_count,
                          grpc_metadata *metadata_elements);
 
+void grpc_cq_end_ioreq(grpc_completion_queue *cc, void *tag, grpc_call *call,
+                       grpc_event_finish_func on_finish, void *user_data,
+                       grpc_op_error error);
+
 void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag);
 
 /* disable polling for some tests */

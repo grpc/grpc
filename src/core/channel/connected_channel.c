@@ -298,10 +298,6 @@ static void recv_error(channel_data *chand, call_data *calld, int line,
 
 static void do_nothing(void *calldata, grpc_op_error error) {}
 
-static void done_message(void *user_data, grpc_op_error error) {
-  grpc_byte_buffer_destroy(user_data);
-}
-
 static void finish_message(channel_data *chand, call_data *calld) {
   grpc_call_element *elem = calld->elem;
   grpc_call_op call_op;
@@ -309,9 +305,9 @@ static void finish_message(channel_data *chand, call_data *calld) {
   call_op.flags = 0;
   /* if we got all the bytes for this message, call up the stack */
   call_op.type = GRPC_RECV_MESSAGE;
-  call_op.done_cb = done_message;
+  call_op.done_cb = do_nothing;
   /* TODO(ctiller): this could be a lot faster if coded directly */
-  call_op.user_data = call_op.data.message = grpc_byte_buffer_create(
+  call_op.data.message = grpc_byte_buffer_create(
       calld->incoming_message.slices, calld->incoming_message.count);
   gpr_slice_buffer_reset_and_unref(&calld->incoming_message);
 
