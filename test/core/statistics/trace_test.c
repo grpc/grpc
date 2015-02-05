@@ -204,7 +204,7 @@ static void test_get_active_ops(void) {
   gpr_free(active_ops);
   active_ops = NULL;
 
-  /* Start the second and the third ops */
+  /* Start the second and third ops */
   id_2 = census_tracing_start_op();
   census_add_method_tag(id_2, "foo_2");
   id_3 = census_tracing_start_op();
