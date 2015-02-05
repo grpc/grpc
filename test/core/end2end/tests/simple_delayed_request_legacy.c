@@ -103,7 +103,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
 
   config.init_client(f, client_args);
 
-  c = grpc_channel_create_call_old(f->client, "/foo", "test.google.com",
+  c = grpc_channel_create_call_old(f->client, "/foo", "foo.test.google.com",
                                    deadline);
   GPR_ASSERT(c);
 
@@ -119,7 +119,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f->server, tag(100)));
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
+  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.com",
                            deadline, NULL);
   cq_verify(v_server);
 
