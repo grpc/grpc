@@ -123,6 +123,10 @@ static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
   return 0;
 }
 
+int contains_metadata(grpc_metadata_array *array, const char *key, const char *value) {
+  return has_metadata(array->metadata, array->count, key, value);
+}
+
 static void verify_and_destroy_metadata(metadata *md, grpc_metadata *elems,
                                         size_t count) {
   size_t i;

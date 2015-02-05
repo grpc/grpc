@@ -73,5 +73,6 @@ void cq_expect_finished(cq_verifier *v, void *tag, ...);
 void cq_expect_server_shutdown(cq_verifier *v, void *tag);
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
+int contains_metadata(grpc_metadata_array *array, const char *key, const char *value);
 
 #endif /* __GRPC_TEST_END2END_CQ_VERIFIER_H__ */
