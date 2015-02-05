@@ -35,7 +35,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>
 
-static void bba_destroy(grpc_bbq_array *array) { gpr_free(array->data); }
+static void bba_destroy(grpc_bbq_array *array) {
+  size_t i;
+  for (i = 0; i < array->count; i++) {
+    grpc_byte_buffer_destroy(array->data[i]);
+  }
+  gpr_free(array->data);
+}
 
 /* Append an operation to an array, expanding as needed */
 static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
