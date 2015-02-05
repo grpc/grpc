@@ -355,11 +355,19 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_fake_security_request_response_with_metadata_and_payload_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_fake_security_request_response_with_payload_test"
   }, 
   {
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_trailing_metadata_and_payload_test"
+    "name": "chttp2_fake_security_request_with_large_metadata_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_fake_security_request_with_payload_test"
   }, 
   {
     "language": "c", 
@@ -451,6 +459,14 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_fake_security_request_with_large_metadata_legacy_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_fake_security_request_with_payload_legacy_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_fake_security_simple_delayed_request_legacy_test"
   }, 
   {
@@ -531,11 +547,19 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_fullstack_request_response_with_metadata_and_payload_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_fullstack_request_response_with_payload_test"
   }, 
   {
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_trailing_metadata_and_payload_test"
+    "name": "chttp2_fullstack_request_with_large_metadata_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_fullstack_request_with_payload_test"
   }, 
   {
     "language": "c", 
@@ -627,6 +651,14 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_fullstack_request_with_large_metadata_legacy_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_fullstack_request_with_payload_legacy_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_fullstack_simple_delayed_request_legacy_test"
   }, 
   {
@@ -707,11 +739,19 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_test"
   }, 
   {
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_test"
+    "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_with_payload_test"
   }, 
   {
     "language": "c", 
@@ -803,6 +843,14 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_with_payload_legacy_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test"
   }, 
   {
@@ -883,11 +931,19 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test"
   }, 
   {
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test"
   }, 
   {
     "language": "c", 
@@ -979,6 +1035,14 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test"
   }, 
   {
@@ -1059,11 +1123,19 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_socket_pair_request_response_with_metadata_and_payload_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_socket_pair_request_response_with_payload_test"
   }, 
   {
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_test"
+    "name": "chttp2_socket_pair_request_with_large_metadata_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_socket_pair_request_with_payload_test"
   }, 
   {
     "language": "c", 
@@ -1155,6 +1227,14 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_socket_pair_request_with_large_metadata_legacy_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_socket_pair_request_with_payload_legacy_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_socket_pair_simple_delayed_request_legacy_test"
   }, 
   {
@@ -1235,11 +1315,19 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test"
   }, 
   {
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test"
   }, 
   {
     "language": "c", 
@@ -1328,6 +1416,14 @@
   {
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test"
   }, 
   {
     "language": "c", 

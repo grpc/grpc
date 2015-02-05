@@ -117,8 +117,8 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
 
   meta.key = "key";
   meta.value = gpr_malloc(large_size + 1);
-  memset(meta.value, 'a', large_size);
-  meta.value[large_size] = 0;
+  memset((char *)meta.value, 'a', large_size);
+  ((char*)meta.value)[large_size] = 0;
   meta.value_length = large_size;
 
   c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
@@ -135,7 +135,9 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
                            deadline, "key", meta.value, NULL);
   cq_verify(v_server);
 
-  grpc_call_accept(s, f.server_cq, tag(102), 0);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_server_accept_old(s, f.server_cq, tag(102)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata_old(s, 0));
 
   /* fetch metadata.. */
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
@@ -162,7 +164,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   cq_verifier_destroy(v_client);
   cq_verifier_destroy(v_server);
 
-  gpr_free(meta.value);
+  gpr_free((char *)meta.value);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
