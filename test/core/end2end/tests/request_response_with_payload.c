@@ -124,7 +124,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   grpc_call_details call_details;
   grpc_status_code status;
   char *details = NULL;
-  size_t details_capacity = NULL;
+  size_t details_capacity = 0;
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo", "test.google.com",
@@ -199,6 +199,12 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   GPR_ASSERT(was_cancelled == 1);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
+
+  gpr_free(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
 
   grpc_call_destroy(c);
   grpc_call_destroy(s);

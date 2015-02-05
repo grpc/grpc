@@ -177,8 +177,8 @@ void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader *reader);
 
 /* A single metadata element */
 typedef struct grpc_metadata {
-  char *key;
-  char *value;
+  const char *key;
+  const char *value;
   size_t value_length;
 } grpc_metadata;
 
@@ -292,9 +292,13 @@ typedef struct grpc_op {
       grpc_status_code status;
       const char *status_details;
     } send_status_from_server;
+    /* ownership of the array is with the caller, but ownership of the elements
+       stays with the call object */
     grpc_metadata_array *recv_initial_metadata;
     grpc_byte_buffer **recv_message;
     struct {
+      /* ownership of the array is with the caller, but ownership of the elements
+         stays with the call object */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
       char **status_details;

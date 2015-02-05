@@ -908,8 +908,8 @@ void grpc_call_recv_metadata(grpc_call_element *elem, grpc_mdelem *md) {
           gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
     }
     mdusr = &dest->metadata[dest->count++];
-    mdusr->key = (char *)grpc_mdstr_as_c_string(md->key);
-    mdusr->value = (char *)grpc_mdstr_as_c_string(md->value);
+    mdusr->key = grpc_mdstr_as_c_string(md->key);
+    mdusr->value = grpc_mdstr_as_c_string(md->value);
     mdusr->value_length = GPR_SLICE_LENGTH(md->value->slice);
     if (call->owned_metadata_count == call->owned_metadata_capacity) {
       call->owned_metadata_capacity = GPR_MAX(
@@ -1089,8 +1089,8 @@ static void destroy_legacy_state(legacy_state *ls) {
   size_t i, j;
   for (i = 0; i < 2; i++) {
     for (j = 0; j < ls->md_out_count[i]; j++) {
-      gpr_free(ls->md_out[i][j].key);
-      gpr_free(ls->md_out[i][j].value);
+      gpr_free((char *)ls->md_out[i][j].key);
+      gpr_free((char *)ls->md_out[i][j].value);
     }
     gpr_free(ls->md_out[i]);
   }
@@ -1123,7 +1123,7 @@ grpc_call_error grpc_call_add_metadata_old(grpc_call *call,
   mdout->key = gpr_strdup(metadata->key);
   mdout->value = gpr_malloc(metadata->value_length);
   mdout->value_length = metadata->value_length;
-  memcpy(mdout->value, metadata->value, metadata->value_length);
+  memcpy((char *)mdout->value, metadata->value, metadata->value_length);
 
   unlock(call);
 
