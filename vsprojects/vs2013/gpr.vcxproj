@@ -117,6 +117,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_linux.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\env_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\env_win32.c">

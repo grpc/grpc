@@ -31,11 +31,6 @@
  *
  */
 
-/* for secure_getenv. */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_ENV
@@ -49,7 +44,7 @@
 #include "src/core/support/string.h"
 
 char *gpr_getenv(const char *name) {
-  char *result = secure_getenv(name);
+  char *result = getenv(name);
   return result == NULL ? result : gpr_strdup(result);
 }
 
