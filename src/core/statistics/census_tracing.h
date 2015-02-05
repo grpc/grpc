@@ -47,18 +47,18 @@ extern "C" {
 #endif
 
 /* Struct for a trace annotation. */
-typedef struct annotation {
+typedef struct trace_annotation {
   gpr_timespec ts;                            /* timestamp of the annotation */
   char txt[CENSUS_MAX_ANNOTATION_LENGTH + 1]; /* actual txt annotation */
-  struct annotation* next;
-} annotation;
+  struct trace_annotation* next;
+} trace_annotation;
 
 typedef struct trace_obj {
   census_op_id id;
   gpr_timespec ts;
   census_rpc_stats rpc_stats;
   char* method;
-  annotation* annotations;
+  trace_annotation* annotations;
 } trace_obj;
 
 /* Deletes trace object. */

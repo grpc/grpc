@@ -45,9 +45,9 @@
 #include <grpc/support/sync.h>
 
 void trace_obj_destroy(trace_obj* obj) {
-  annotation* p = obj->annotations;
+  trace_annotation* p = obj->annotations;
   while (p != NULL) {
-    annotation* next = p->next;
+    trace_annotation* next = p->next;
     gpr_free(p);
     p = next;
   }
@@ -119,7 +119,7 @@ void census_tracing_print(census_op_id op_id, const char* anno_txt) {
   gpr_mu_lock(&g_mu);
   trace = census_ht_find(g_trace_store, op_id_as_key(&op_id));
   if (trace != NULL) {
-    annotation* anno = gpr_malloc(sizeof(annotation));
+    trace_annotation* anno = gpr_malloc(sizeof(trace_annotation));
     anno->ts = gpr_now();
     {
       char* d = anno->txt;
@@ -189,15 +189,22 @@ trace_obj* census_get_trace_obj_locked(census_op_id op_id) {
 }
 
 const char* census_get_trace_method_name(const trace_obj* trace) {
-  return (const char*)trace->method;
+  return trace->method;
 }
 
-static annotation* dup_annotation_chain(annotation* from) {
-  annotation* to = NULL;
-  if (from != NULL) {
-    to = gpr_malloc(sizeof(annotation));
-    memcpy(to, from, sizeof(annotation));
-    to->next = dup_annotation_chain(from->next);
+static trace_annotation* dup_annotation_chain(trace_annotation* from) {
+  trace_annotation *to = NULL, *prev = NULL;
+  for (; from != NULL; from = from->next) {
+    trace_annotation* tmp = gpr_malloc(sizeof(trace_annotation));
+    memcpy(tmp, from, sizeof(trace_annotation));
+    tmp->next = NULL;
+    if (to == NULL) {
+      to = tmp;
+      prev = to;
+    } else {
+      prev->next = tmp;
+      prev = tmp;
+    }
   }
   return to;
 }
@@ -220,7 +227,7 @@ trace_obj** census_get_active_ops(int* num_active_ops) {
   if (g_trace_store != NULL) {
     size_t n = 0;
     census_ht_kv* all_kvs = census_ht_get_all_elements(g_trace_store, &n);
-    *num_active_ops = n;
+    *num_active_ops = (int)n;
     if (n != 0 ) {
       size_t i = 0;
       ret = gpr_malloc(sizeof(trace_obj *) * n);
