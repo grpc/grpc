@@ -1,10 +1,10 @@
 # Step-0: define a service
 
 This section presents an example of a simple service definition that receives
-a message from a remote client. The message contains the users's name and
+a message from a remote client. The message contains the user's name and
 sends back a greeting to that person.
 
-It's shown below in full; it's actually contained in separate file
+It's shown below in full; it's actually contained in separate file.
 [helloworld.proto](src/main/proto/helloworld.proto).
 
 ```
@@ -33,7 +33,7 @@ service Greeting {
 ```
 
 The service stanza of the message is an example of protobuf service IDL
-(Interface Defintion Language).  Here, it defines a simple service that
+(Interface Defintion Language). Here, it defines a simple service that
 receives a request containing a name and returns a response containing a
 message.
 
