@@ -146,10 +146,10 @@ struct grpc_call {
   /* Active ioreqs.
      request_set and request_data contain one element per active ioreq
      operation.
-     
+
      request_set[op] is an integer specifying a set of operations to which
      the request belongs:
-       - if it is < GRPC_IOREQ_OP_COUNT, then this operation is pending 
+       - if it is < GRPC_IOREQ_OP_COUNT, then this operation is pending
          completion, and the integer represents to which group of operations
          the ioreq belongs. Each group is represented by one master, and the
          integer in request_set is an index into masters to find the master
@@ -158,7 +158,7 @@ struct grpc_call {
          started
        - finally, if request_set[op] is REQSET_DONE, then the operation is
          complete and unavailable to be started again
-     
+
      request_data[op] is the request data as supplied by the initiator of
      a request, and is valid iff request_set[op] <= GRPC_IOREQ_OP_COUNT.
      The set fields are as per the request type specified by op.
@@ -200,12 +200,12 @@ struct grpc_call {
   /* Call refcount - to keep the call alive during asynchronous operations */
   gpr_refcount internal_refcount;
 
-  /* Data that the legacy api needs to track. To be deleted at some point 
+  /* Data that the legacy api needs to track. To be deleted at some point
      soon */
   legacy_state *legacy_state;
 };
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
+#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call)+1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -273,6 +273,7 @@ static void destroy_call(void *call, int ignored_success) {
   if (c->legacy_state) {
     destroy_legacy_state(c->legacy_state);
   }
+  grpc_bbq_destroy(&c->incoming_queue);
   gpr_free(c);
 }
 
@@ -334,7 +335,9 @@ static void unlock(grpc_call *call) {
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   int num_completed_requests = call->num_completed_requests;
   int need_more_data =
-      call->need_more_data && !is_op_live(call, GRPC_IOREQ_SEND_INITIAL_METADATA);
+      call->need_more_data &&
+      !call->sending &&
+      call->write_state >= WRITE_STATE_STARTED;
   int i;
 
   if (need_more_data) {
@@ -853,7 +856,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
@@ -941,6 +944,8 @@ struct legacy_state {
   char *details;
   grpc_status_code status;
 
+  char *send_details;
+
   size_t msg_in_read_idx;
   grpc_byte_buffer *msg_in;
 
@@ -966,6 +971,8 @@ static void destroy_legacy_state(legacy_state *ls) {
   }
   gpr_free(ls->initial_md_in.metadata);
   gpr_free(ls->trailing_md_in.metadata);
+  gpr_free(ls->details);
+  gpr_free(ls->send_details);
   gpr_free(ls);
 }
 
@@ -1214,8 +1221,7 @@ grpc_call_error grpc_call_start_write_status_old(grpc_call *call,
   reqs[0].data.send_metadata.metadata = ls->md_out[ls->md_out_buffer];
   reqs[1].op = GRPC_IOREQ_SEND_STATUS;
   reqs[1].data.send_status.code = status;
-  /* MEMLEAK */
-  reqs[1].data.send_status.details = gpr_strdup(details);
+  reqs[1].data.send_status.details = ls->send_details = gpr_strdup(details);
   reqs[2].op = GRPC_IOREQ_SEND_CLOSE;
   err = start_ioreq(call, reqs, 3, finish_finish, tag);
   unlock(call);
