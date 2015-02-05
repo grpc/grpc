@@ -149,6 +149,7 @@
         "src/core/iomgr/tcp_client_windows.c",
         "src/core/iomgr/tcp_posix.c",
         "src/core/iomgr/tcp_server_posix.c",
+        "src/core/iomgr/tcp_server_windows.c",
         "src/core/iomgr/tcp_windows.c",
         "src/core/iomgr/time_averaged_stats.c",
         "src/core/iomgr/wakeup_fd_eventfd.c",

@@ -1437,6 +1437,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/tcp_client_windows.c \
     src/core/iomgr/tcp_posix.c \
     src/core/iomgr/tcp_server_posix.c \
+    src/core/iomgr/tcp_server_windows.c \
     src/core/iomgr/tcp_windows.c \
     src/core/iomgr/time_averaged_stats.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
@@ -1567,6 +1568,7 @@ src/core/iomgr/tcp_client_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/tcp_client_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/tcp_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/tcp_server_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/tcp_server_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/tcp_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/time_averaged_stats.c: $(OPENSSL_DEP)
 src/core/iomgr/wakeup_fd_eventfd.c: $(OPENSSL_DEP)
@@ -1719,6 +1721,7 @@ objs/$(CONFIG)/src/core/iomgr/tcp_client_posix.o:
 objs/$(CONFIG)/src/core/iomgr/tcp_client_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_server_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_server_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/time_averaged_stats.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_eventfd.o: 
@@ -1890,6 +1893,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/tcp_client_windows.c \
     src/core/iomgr/tcp_posix.c \
     src/core/iomgr/tcp_server_posix.c \
+    src/core/iomgr/tcp_server_windows.c \
     src/core/iomgr/tcp_windows.c \
     src/core/iomgr/time_averaged_stats.c \
     src/core/iomgr/wakeup_fd_eventfd.c \
@@ -2025,6 +2029,7 @@ objs/$(CONFIG)/src/core/iomgr/tcp_client_posix.o:
 objs/$(CONFIG)/src/core/iomgr/tcp_client_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_server_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/tcp_server_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/tcp_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/time_averaged_stats.o: 
 objs/$(CONFIG)/src/core/iomgr/wakeup_fd_eventfd.o: 

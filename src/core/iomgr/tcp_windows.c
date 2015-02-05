@@ -61,7 +61,8 @@ static int set_non_block(SOCKET sock) {
 static int set_dualstack(SOCKET sock) {
   int status;
   unsigned long param = 0;
-  status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &param, sizeof(param));
+  status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                      (const char *) &param, sizeof(param));
   return status == 0;
 }
 
@@ -120,7 +121,7 @@ static void on_read(void *tcpp, int success) {
 
   if (!success) {
     tcp_unref(tcp);
-    cb(opaque, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
+    cb(opaque, GRPC_ENDPOINT_CB_SHUTDOWN);
     return;
   }
 

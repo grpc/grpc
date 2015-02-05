@@ -163,6 +163,9 @@
     <ClCompile Include="..\..\src\core\iomgr\tcp_server_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_server_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>

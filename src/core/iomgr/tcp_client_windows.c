@@ -106,9 +106,7 @@ static void on_connect(void *acp, int success) {
       goto finish;
     }
   } else {
-    __debugbreak();
-    abort();
-    gpr_log(GPR_ERROR, "on_writable failed during connect");
+    gpr_log(GPR_ERROR, "on_connect is shutting down");
     goto finish;
   }
 
@@ -167,9 +165,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
     goto failure;
   }
 
-  memset(&local_address, 0, sizeof(local_address));
-  memcpy(&local_address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-  local_address.sin6_family = AF_INET6;
+  grpc_sockaddr_make_wildcard6(0, &local_address);
 
   status = bind(sock, (struct sockaddr *) &local_address,
                 sizeof(local_address));
