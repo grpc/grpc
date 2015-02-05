@@ -265,7 +265,6 @@ static void stream_closed(grpc_call_element *elem) {
   gpr_mu_lock(&chand->server->mu);
   switch (calld->state) {
     case ACTIVATED:
-      grpc_call_stream_closed(elem);
       break;
     case PENDING:
       call_list_remove(chand->server, calld, PENDING_START);
@@ -278,6 +277,7 @@ static void stream_closed(grpc_call_element *elem) {
       break;
   }
   gpr_mu_unlock(&chand->server->mu);
+  grpc_call_stream_closed(elem);
 }
 
 static void read_closed(grpc_call_element *elem) {

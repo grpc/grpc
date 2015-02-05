@@ -298,6 +298,7 @@ static void channel_op(grpc_channel_element *elem,
                        grpc_channel_element *from_elem, grpc_channel_op *op) {
   channel_data *chand = elem->channel_data;
   grpc_child_channel *child_channel;
+  grpc_channel_op rop;
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
 
   switch (op->type) {
@@ -323,6 +324,10 @@ static void channel_op(grpc_channel_element *elem,
       if (child_channel) {
         grpc_child_channel_destroy(child_channel, 1);
       }
+      /* fake a transport closed to satisfy the refcounting in client */
+      rop.type = GRPC_TRANSPORT_CLOSED;
+      rop.dir = GRPC_CALL_UP;
+      grpc_channel_next_op(elem, &rop);
       break;
     case GRPC_TRANSPORT_GOAWAY:
       /* receiving goaway: if it's from our active child, drop the active child;

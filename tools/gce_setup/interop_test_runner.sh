@@ -1,33 +1,8 @@
 #!/bin/bash
 thisfile=$(readlink -ne "${BASH_SOURCE[0]}")
-
-run_test() {
-  local test_case=$1
-  shift
-  local client=$1
-  shift 
-  local server=$1
-  if grpc_interop_test $test_case grpc-docker-testclients $client grpc-docker-server $server
-  then
-    echo "$test_case $client $server passed" >> /tmp/interop_result.txt
-  else
-    echo "$test_case $client $server failed" >> /tmp/interop_result.txt
-  fi
-}
-
-time_out() {
-  local test_case=$1
-  shift
-  local client=$1
-  shift
-  local server=$1
-  if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if ! timeout 20s bash -l -c "source $thisfile && run_test $test_case $client $server"
-    then
-      echo "$test_case $client $server timed out" >> /tmp/interop_result.txt
-    fi
-  fi
-}
+current_time=$(date "+%Y-%m-%d-%H-%M-%S")
+result_file_name=interop_result.$current_time.html
+echo $result_file_name
 
 main() {
   source grpc_docker.sh
@@ -40,13 +15,22 @@ main() {
     do
       for server in "${servers[@]}"
       do
-        time_out $test_case $client $server
+        if grpc_interop_test $test_case grpc-docker-testclients $client grpc-docker-server $server
+        then
+          echo "          ['$test_case', '$client', '$server', true]," >> /tmp/interop_result.txt
+        else
+          echo "          ['$test_case', '$client', '$server', false]," >> /tmp/interop_result.txt
+        fi
       done
     done
   done
   if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    cat pre.html /tmp/interop_result.txt post.html > /tmp/interop_result.html
     gsutil cp /tmp/interop_result.txt gs://stoked-keyword-656-output/interop_result.txt
+    gsutil cp /tmp/interop_result.html gs://stoked-keyword-656-output/interop_result.html
+    gsutil cp /tmp/interop_result.html gs://stoked-keyword-656-output/result_history/$result_file_name
     rm /tmp/interop_result.txt
+    rm /tmp/interop_result.html
   fi
 }
 
