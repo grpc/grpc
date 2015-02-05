@@ -1,7 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Google.GRPC.Core.Internal;
 
 namespace Google.GRPC.Core
@@ -15,9 +17,14 @@ namespace Google.GRPC.Core
         // TODO: make sure the delegate doesn't get garbage collected while 
         // native callbacks are in the completion queue.
         readonly EventCallbackDelegate newRpcHandler;
+        readonly EventCallbackDelegate serverShutdownHandler;
 
         readonly BlockingCollection<NewRpcInfo> newRpcQueue = new BlockingCollection<NewRpcInfo>();
         readonly ServerSafeHandle handle;
+
+        readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
+
+        readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         static Server() {
             GrpcEnvironment.EnsureInitialized();
@@ -28,8 +35,14 @@ namespace Google.GRPC.Core
             // TODO: what is the tag for server shutdown?
             this.handle = ServerSafeHandle.NewServer(GetCompletionQueue(), IntPtr.Zero);
             this.newRpcHandler = HandleNewRpc;
+            this.serverShutdownHandler = HandleServerShutdown;
         }
 
+        // only call before Start(), this will be in server builder in the future.
+        internal void AddCallHandler(string methodName, IServerCallHandler handler) {
+            callHandlers.Add(methodName, handler);
+        }
+        // only call before Start()
         public int AddPort(string addr) {
             return handle.AddPort(addr);
         }
@@ -37,49 +50,57 @@ namespace Google.GRPC.Core
         public void Start()
         {
             handle.Start();
+
+            // TODO: this basically means the server is single threaded....
+            StartHandlingRpcs();
         }
 
-        public void RunRpc()
+        /// <summary>
+        /// Requests and handles single RPC call.
+        /// </summary>
+        internal void RunRpc()
         {
             AllowOneRpc();
          
-            try {
-            var rpcInfo = newRpcQueue.Take();
+            try
+            {
+                var rpcInfo = newRpcQueue.Take();
 
-            Console.WriteLine("Server received RPC " + rpcInfo.Method);
+                Console.WriteLine("Server received RPC " + rpcInfo.Method);
 
-            AsyncCall<byte[], byte[]> asyncCall = new AsyncCall<byte[], byte[]>(
-                (payload) => payload, (payload) => payload);
-
-            asyncCall.InitializeServer(rpcInfo.Call);
-
-            asyncCall.Accept(GetCompletionQueue());
-
-            while(true) {
-                byte[] payload = asyncCall.ReadAsync().Result;
-                if (payload == null)
+                IServerCallHandler callHandler;
+                if (!callHandlers.TryGetValue(rpcInfo.Method, out callHandler))
                 {
-                    break;
-                }
+                    callHandler = new NoSuchMethodCallHandler();
+                } 
+                callHandler.StartCall(rpcInfo.Method, rpcInfo.Call, GetCompletionQueue());
             }
-
-            asyncCall.WriteAsync(new byte[] { }).Wait();
-
-            // TODO: what should be the details?
-            asyncCall.WriteStatusAsync(new Status(StatusCode.GRPC_STATUS_OK, "")).Wait();
-
-            asyncCall.Finished.Wait();
-            } catch(Exception e) {
+            catch(Exception e)
+            {
                 Console.WriteLine("Exception while handling RPC: " + e);
             }
         }
 
-        // TODO: implement disposal properly...
-        public void Shutdown() {
-            handle.Shutdown();
+        /// <summary>
+        /// Requests server shutdown and when there are no more calls being serviced,
+        /// cleans up used resources.
+        /// </summary>
+        /// <returns>The async.</returns>
+        public async Task ShutdownAsync() {
+            handle.ShutdownAndNotify(serverShutdownHandler);
+            await shutdownTcs.Task;
+            handle.Dispose();
+        }
 
+        public void Kill() {
+            handle.Dispose();
+        }
 
-            //handle.Dispose();
+        private async Task StartHandlingRpcs() {
+            while (true)
+            {
+                await Task.Factory.StartNew(RunRpc);
+            }
         }
 
         private void AllowOneRpc()
@@ -93,6 +114,18 @@ namespace Google.GRPC.Core
             {
                 var ev = new EventSafeHandleNotOwned(eventPtr);
                 newRpcQueue.Add(new NewRpcInfo(ev.GetCall(), ev.GetServerRpcNewMethod()));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Caught exception in a native handler: " + e);
+            }
+        }
+
+        private void HandleServerShutdown(IntPtr eventPtr)
+        {
+            try
+            {
+                shutdownTcs.SetResult(null);
             }
             catch (Exception e)
             {
