@@ -44,17 +44,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#if defined(GPR_POSIX_SYNC)
-#include <grpc/support/thd_posix.h>
-#elif defined(GPR_WIN32)
-#include <grpc/support/thd_win32.h>
-#else
-#error could not determine platform for thd
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef gpr_uint64 gpr_thd_id;
 
 /* Thread creation options. */
 typedef struct {
@@ -71,6 +65,9 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
 
 /* Return a gpr_thd_options struct with all fields set to defaults. */
 gpr_thd_options gpr_thd_options_default(void);
+
+/* Returns the identifier of the current thread. */
+gpr_thd_id gpr_thd_currentid(void);
 
 #ifdef __cplusplus
 }

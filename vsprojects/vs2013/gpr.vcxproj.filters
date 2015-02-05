@@ -135,19 +135,7 @@
     <ClInclude Include="..\..\include\grpc\support\thd.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\thd_posix.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\thd_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\time.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\time_posix.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\time_win32.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\useful.h">

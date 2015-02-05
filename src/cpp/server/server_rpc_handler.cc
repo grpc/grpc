@@ -77,7 +77,7 @@ void ServerRpcHandler::StartRpc() {
 
     if (status.IsOk()) {
       // Send the response if we get an ok status.
-      async_server_context_->StartWrite(*response, 0);
+      async_server_context_->StartWrite(*response, GRPC_WRITE_BUFFER_HINT);
       type = WaitForNextEvent();
       if (type != CompletionQueue::SERVER_WRITE_OK) {
         status = Status(StatusCode::INTERNAL, "Error writing response.");
