@@ -5,7 +5,7 @@ a message from a remote client. The message contains the users's name and
 sends back a greeting to that person.
 
 It's shown below in full; it's actually contained in separate file
-[helloworld.proto](helloworld.proto).
+[helloworld.proto](src/main/proto/helloworld.proto).
 
 ```
 syntax = "proto3";
