@@ -254,16 +254,30 @@ void grpc_call_details_init(grpc_call_details *details);
 void grpc_call_details_destroy(grpc_call_details *details);
 
 typedef enum {
+  /* Send initial metadata: one and only one instance MUST be sent for each call,
+     unless the call was cancelled - in which case this can be skipped */
   GRPC_OP_SEND_INITIAL_METADATA = 0,
+  /* Send a message: 0 or more of these operations can occur for each call */
   GRPC_OP_SEND_MESSAGE,
+  /* Send a close from the server: one and only one instance MUST be sent from the client,
+     unless the call was cancelled - in which case this can be skipped */
   GRPC_OP_SEND_CLOSE_FROM_CLIENT,
+  /* Send status from the server: one and only one instance MUST be sent from the server
+     unless the call was cancelled - in which case this can be skipped */
   GRPC_OP_SEND_STATUS_FROM_SERVER,
+  /* Receive initial metadata: one and only one MUST be made on the client, must
+     not be made on the server */
   GRPC_OP_RECV_INITIAL_METADATA,
+  /* Receive a message: 0 or more of these operations can occur for each call */
   GRPC_OP_RECV_MESSAGE,
+  /* Receive status on the client: one and only one must be made on the client */
   GRPC_OP_RECV_STATUS_ON_CLIENT,
+  /* Receive status on the server: one and only one must be made on the server */
   GRPC_OP_RECV_CLOSE_ON_SERVER
 } grpc_op_type;
 
+/* Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has
+   no arguments) */
 typedef struct grpc_op {
   grpc_op_type op;
   union {
@@ -347,7 +361,10 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     gpr_timespec deadline);
 
 /* Start a batch of operations defined in the array ops; when complete, post a
- * completion of type 'tag' to the completion queue bound to the call. */
+   completion of type 'tag' to the completion queue bound to the call. 
+   The order of ops specified in the batch has no significance.
+   Only one operation of each type can be active at once in any given
+   batch. */
 grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
                                       size_t nops, void *tag);
 
