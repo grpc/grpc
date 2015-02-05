@@ -273,6 +273,7 @@ static void destroy_call(void *call, int ignored_success) {
   if (c->legacy_state) {
     destroy_legacy_state(c->legacy_state);
   }
+  grpc_bbq_destroy(&c->incoming_queue);
   gpr_free(c);
 }
 
@@ -941,6 +942,8 @@ struct legacy_state {
   char *details;
   grpc_status_code status;
 
+  char *send_details;
+
   size_t msg_in_read_idx;
   grpc_byte_buffer *msg_in;
 
@@ -967,6 +970,7 @@ static void destroy_legacy_state(legacy_state *ls) {
   gpr_free(ls->initial_md_in.metadata);
   gpr_free(ls->trailing_md_in.metadata);
   gpr_free(ls->details);
+  gpr_free(ls->send_details);
   gpr_free(ls);
 }
 
@@ -1215,8 +1219,7 @@ grpc_call_error grpc_call_start_write_status_old(grpc_call *call,
   reqs[0].data.send_metadata.metadata = ls->md_out[ls->md_out_buffer];
   reqs[1].op = GRPC_IOREQ_SEND_STATUS;
   reqs[1].data.send_status.code = status;
-  /* MEMLEAK */
-  reqs[1].data.send_status.details = gpr_strdup(details);
+  reqs[1].data.send_status.details = ls->send_details = gpr_strdup(details);
   reqs[2].op = GRPC_IOREQ_SEND_CLOSE;
   err = start_ioreq(call, reqs, 3, finish_finish, tag);
   unlock(call);
