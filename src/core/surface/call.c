@@ -497,7 +497,7 @@ static void finish_start_step(void *pc, grpc_op_error error) {
 static send_action choose_send_action(grpc_call *call) {
   switch (call->write_state) {
     case WRITE_STATE_INITIAL:
-      if (call->request_set[GRPC_IOREQ_SEND_INITIAL_METADATA] != REQSET_EMPTY) {
+      if (is_op_live(call, GRPC_IOREQ_SEND_INITIAL_METADATA)) {
         call->write_state = WRITE_STATE_STARTED;
         if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE) || is_op_live(call, GRPC_IOREQ_SEND_CLOSE)) {
           return SEND_BUFFERED_INITIAL_METADATA;
@@ -507,14 +507,13 @@ static send_action choose_send_action(grpc_call *call) {
       }
       return SEND_NOTHING;
     case WRITE_STATE_STARTED:
-      if (call->request_set[GRPC_IOREQ_SEND_MESSAGE] != REQSET_EMPTY) {
+      if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE)) {
         if (is_op_live(call, GRPC_IOREQ_SEND_CLOSE)) {
           return SEND_BUFFERED_MESSAGE;
         } else {
           return SEND_MESSAGE;
         }
-      }
-      if (call->request_set[GRPC_IOREQ_SEND_CLOSE] != REQSET_EMPTY) {
+      } else if (is_op_live(call, GRPC_IOREQ_SEND_CLOSE)) {
         call->write_state = WRITE_STATE_WRITE_CLOSED;
         finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, GRPC_OP_OK);
         finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, GRPC_OP_OK);

@@ -372,7 +372,9 @@ grpc_dockerfile_install() {
 
   [[ -d $dockerfile_dir ]] || { echo "$FUNCNAME: not a valid dir: $dockerfile_dir"; return 1; }
 
-  # For specific base images, sync the ssh key into the .ssh dir in the dockerfile context
+  # For specific base images, sync private files.
+  #
+  # - the ssh key, ssh certs and/or service account info.
   [[ $image_label == "grpc/base" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'base_ssh_key' || return 1;
   }
@@ -384,6 +386,7 @@ grpc_dockerfile_install() {
   }
   [[ $image_label == "grpc/ruby" ]] && {
     grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
   [[ $image_label == "grpc/cxx" ]] && {
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
