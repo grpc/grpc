@@ -31,7 +31,10 @@
  *
  */
 
+#ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE
+#endif
+
 #include <unistd.h>
 #include <assert.h>
 #include <stdio.h>
