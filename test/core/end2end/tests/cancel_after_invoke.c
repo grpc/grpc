@@ -183,7 +183,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 void grpc_end2end_tests(grpc_end2end_test_config config) {
   unsigned i, j;
 
-  for (j = 1; j < 6; j++) {
+  for (j = 2; j < 6; j++) {
     for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
       test_cancel_after_invoke(config, cancellation_modes[i], j);
     }

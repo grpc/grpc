@@ -105,8 +105,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel after accept, no payload */
 static void test_cancel_after_accept(grpc_end2end_test_config config,
-                                     cancellation_mode mode, int client_ops,
-                                     int server_ops) {
+                                     cancellation_mode mode) {
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
@@ -162,7 +161,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &response_payload_recv;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, client_ops, tag(1)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
@@ -172,6 +171,9 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   cq_verify(v_server);
 
   op = ops;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &request_payload_recv;
+  op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
@@ -181,10 +183,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = response_payload;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &request_payload_recv;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, server_ops, tag(3)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(3)));
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
 
@@ -204,24 +203,24 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   grpc_call_details_destroy(&call_details);
 
   grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(response_payload);
+  grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
   gpr_free(details);
 
   grpc_call_destroy(c);
+  grpc_call_destroy(s);
 
   cq_verifier_destroy(v_client);
+  cq_verifier_destroy(v_server);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  unsigned i, j, k;
+  unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
-    for (j = 2; j <= 6; j++) {
-      for (k = 1; k <= 4; k++) {
-        test_cancel_after_accept(config, cancellation_modes[i], j, k);
-      }
-    }
+    test_cancel_after_accept(config, cancellation_modes[i]);
   }
 }

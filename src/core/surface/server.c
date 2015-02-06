@@ -346,6 +346,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elemn,
 static void channel_op(grpc_channel_element *elem,
                        grpc_channel_element *from_elem, grpc_channel_op *op) {
   channel_data *chand = elem->channel_data;
+  grpc_server *server = chand->server;
 
   switch (op->type) {
     case GRPC_ACCEPT_CALL:
@@ -356,11 +357,11 @@ static void channel_op(grpc_channel_element *elem,
     case GRPC_TRANSPORT_CLOSED:
       /* if the transport is closed for a server channel, we destroy the
          channel */
-      gpr_mu_lock(&chand->server->mu);
-      server_ref(chand->server);
+      gpr_mu_lock(&server->mu);
+      server_ref(server);
       destroy_channel(chand);
-      gpr_mu_unlock(&chand->server->mu);
-      server_unref(chand->server);
+      gpr_mu_unlock(&server->mu);
+      server_unref(server);
       break;
     case GRPC_TRANSPORT_GOAWAY:
       gpr_slice_unref(op->data.goaway.message);
