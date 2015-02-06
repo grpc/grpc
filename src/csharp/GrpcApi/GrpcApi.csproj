@@ -51,6 +51,9 @@
     <Compile Include="Math.cs" />
     <Compile Include="MathGrpc.cs" />
     <Compile Include="MathServiceImpl.cs" />
+    <Compile Include="Empty.cs" />
+    <Compile Include="Messages.cs" />
+    <Compile Include="TestServiceGrpc.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -58,5 +61,14 @@
       <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
       <Name>GrpcCore</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="proto\math.proto" />
+    <None Include="proto\empty.proto" />
+    <None Include="proto\messages.proto" />
+    <None Include="proto\test.proto" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="proto\" />
   </ItemGroup>
 </Project>
