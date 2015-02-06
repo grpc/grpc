@@ -47,13 +47,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Examples.cs" />
     <Compile Include="Math.cs" />
     <Compile Include="MathGrpc.cs" />
     <Compile Include="MathServiceImpl.cs" />
     <Compile Include="Empty.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="TestServiceGrpc.cs" />
+    <Compile Include="MathExamples.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
