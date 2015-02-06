@@ -45,6 +45,8 @@ namespace grpc {
 // override_hostname is provided.
 // When ssl is not enabled, override_hostname is ignored.
 // Set use_prod_root to true to use the SSL root for connecting to google.
+// In this case, The path to the root file must be set via environment variable
+// GRPC_DEFAULT_SSL_ROOTS_FILE_PATH.
 // Otherwise, root for test SSL cert will be used.
 // creds will be used to create a channel when enable_ssl is true.
 // Use examples:
@@ -60,7 +62,7 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
   ChannelArguments channel_args;
   if (enable_ssl) {
     const char* roots_certs =
-        use_prod_roots ? prod_roots_certs : test_root_cert;
+        use_prod_roots ? "" : test_root_cert;
     SslCredentialsOptions ssl_opts = {roots_certs, "", ""};
 
     std::unique_ptr<Credentials> channel_creds =
