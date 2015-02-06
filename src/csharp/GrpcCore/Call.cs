@@ -8,10 +8,8 @@ namespace Google.GRPC.Core
         readonly string methodName;
         readonly Func<TRequest, byte[]> requestSerializer;
         readonly Func<byte[], TResponse> responseDeserializer;
-        readonly TimeSpan timeout;
         readonly Channel channel;
 
-        // TODO: channel param should be removed in the future.
         public Call(string methodName, 
                     Func<TRequest, byte[]> requestSerializer,
                     Func<byte[], TResponse> responseDeserializer,
@@ -20,24 +18,22 @@ namespace Google.GRPC.Core
             this.methodName = methodName;
             this.requestSerializer = requestSerializer;
             this.responseDeserializer = responseDeserializer;
-            this.timeout = timeout;
             this.channel = channel;
         }
 
+        public Call(Method<TRequest, TResponse> method, Channel channel)
+        {
+            this.methodName = method.Name;
+            this.requestSerializer = method.RequestMarshaller.Serialize;
+            this.responseDeserializer = method.ResponseMarshaller.Deserialize;
+            this.channel = channel;
+        }
 
         public Channel Channel
         {
             get
             {
                 return this.channel;
-            }
-        }
-
-        public TimeSpan Timeout
-        {
-            get
-            {
-                return this.timeout;
             }
         }
 

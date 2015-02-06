@@ -30,8 +30,8 @@ namespace Google.GRPC.Core.Internal
         [DllImport("libgrpc.so")]
         static extern void grpc_server_shutdown(ServerSafeHandle server);
 
-        [DllImport("libgrpc.so")]
-        static extern void grpc_server_shutdown_and_notify(ServerSafeHandle server, IntPtr tag);
+        [DllImport("libgrpc.so", EntryPoint = "grpc_server_shutdown_and_notify")]
+        static extern void grpc_server_shutdown_and_notify_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
 
         [DllImport("libgrpc.so")]
         static extern void grpc_server_destroy(IntPtr server);
@@ -60,6 +60,11 @@ namespace Google.GRPC.Core.Internal
         public void Shutdown()
         {
             grpc_server_shutdown(this);
+        }
+
+        public void ShutdownAndNotify(EventCallbackDelegate callback)
+        {
+            grpc_server_shutdown_and_notify_CALLBACK(this, callback);
         }
 
         public GRPCCallError RequestCall(EventCallbackDelegate callback)
