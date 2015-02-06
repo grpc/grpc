@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>GrpcCore</RootNamespace>
+    <AssemblyName>GrpcCore</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RpcException.cs" />
+    <Compile Include="Calls.cs" />
+    <Compile Include="Call.cs" />
+    <Compile Include="ClientStreamingAsyncResult.cs" />
+    <Compile Include="GrpcEnvironment.cs" />
+    <Compile Include="Status.cs" />
+    <Compile Include="StatusCode.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="Channel.cs" />
+    <Compile Include="Internal\CallSafeHandle.cs" />
+    <Compile Include="Internal\ChannelSafeHandle.cs" />
+    <Compile Include="Internal\CompletionQueueSafeHandle.cs" />
+    <Compile Include="Internal\Enums.cs" />
+    <Compile Include="Internal\Event.cs" />
+    <Compile Include="Internal\SafeHandleZeroIsInvalid.cs" />
+    <Compile Include="Internal\Timespec.cs" />
+    <Compile Include="Internal\GrpcThreadPool.cs" />
+    <Compile Include="Internal\AsyncCall.cs" />
+    <Compile Include="Internal\ServerSafeHandle.cs" />
+    <Compile Include="Internal\StreamingInputObserver.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Internal\" />
+  </ItemGroup>
+</Project>

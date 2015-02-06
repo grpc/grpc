@@ -138,7 +138,6 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
-  cq_verify(v_server);
   cq_expect_finished(v_server, tag(102), NULL);
   cq_verify(v_server);
 
@@ -207,7 +206,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* The /alpha or /beta calls started above could be invoked (but NOT both);
    * check this here */
   /* We'll get tag 303 or 403, we want 300, 400 */
-  live_call = ((int)(gpr_intptr)ev->tag) - 3;
+  live_call = ((int)(gpr_intptr) ev->tag) - 3;
   grpc_event_finish(ev);
 
   cq_expect_server_rpc_new(v_server, &s1, tag(100),
