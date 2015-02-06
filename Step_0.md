@@ -33,7 +33,7 @@ service Greeting {
 ```
 
 The service stanza of the message is an example of protobuf service IDL
-(Interface Defintion Language). Here, it defines a simple service that
+(Interface Definition Language). Here, it defines a simple service that
 receives a request containing a name and returns a response containing a
 message.
 
