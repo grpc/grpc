@@ -3,6 +3,10 @@ using Google.GRPC.Core.Internal;
 
 namespace Google.GRPC.Core.Internal
 {
+    /// <summary>
+    /// Observer that writes all arriving messages to a call abstraction (in blocking fashion)
+    /// and then halfcloses the call. Used for server-side call handling.
+    /// </summary>
     internal class ServerWritingObserver<TWrite, TRead> : IObserver<TWrite>
 	{
         readonly AsyncCall<TWrite, TRead> call;
