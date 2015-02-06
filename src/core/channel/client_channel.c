@@ -244,6 +244,7 @@ static void cancel_rpc(grpc_call_element *elem, grpc_call_op *op) {
       return; /* early out */
     case CALL_WAITING:
       remove_waiting_child(chand, calld);
+      calld->state = CALL_CANCELLED;
       gpr_mu_unlock(&chand->mu);
       send_up_cancelled_ops(elem);
       calld->s.waiting.on_complete(calld->s.waiting.on_complete_user_data,
