@@ -32,10 +32,12 @@
  */
 
 #include <string.h>
+#include <stdio.h>
 
 #include "src/core/statistics/census_interface.h"
 #include "src/core/statistics/census_tracing.h"
 #include "src/core/statistics/census_tracing.h"
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -172,6 +174,74 @@ static void test_trace_print(void) {
   census_tracing_shutdown();
 }
 
+/* Returns 1 if two ids are equal, otherwise returns 0. */
+static int ids_equal(census_op_id id1, census_op_id id2) {
+  return (id1.upper == id2.upper) && (id1.lower == id2.lower);
+}
+
+static void test_get_active_ops(void) {
+  census_op_id id_1, id_2, id_3;
+  census_trace_obj** active_ops;
+  const char* annotation_txt[] = {"annotation 1", "a2"};
+  int i = 0;
+  int n = 0;
+
+  gpr_log(GPR_INFO, "test_get_active_ops");
+  census_tracing_init();
+  /* No active ops before calling start_op(). */
+  active_ops = census_get_active_ops(&n);
+  GPR_ASSERT(active_ops == NULL);
+  GPR_ASSERT(n == 0);
+
+  /* Starts one op */
+  id_1 = census_tracing_start_op();
+  census_add_method_tag(id_1, "foo_1");
+  active_ops = census_get_active_ops(&n);
+  GPR_ASSERT(active_ops != NULL);
+  GPR_ASSERT(n == 1);
+  GPR_ASSERT(ids_equal(active_ops[0]->id, id_1));
+  census_trace_obj_destroy(active_ops[0]);
+  gpr_free(active_ops);
+  active_ops = NULL;
+
+  /* Start the second and the third ops */
+  id_2 = census_tracing_start_op();
+  census_add_method_tag(id_2, "foo_2");
+  id_3 = census_tracing_start_op();
+  census_add_method_tag(id_3, "foo_3");
+
+  active_ops = census_get_active_ops(&n);
+  GPR_ASSERT(n == 3);
+  for (i = 0; i < 3; i++) {
+    census_trace_obj_destroy(active_ops[i]);
+  }
+  gpr_free(active_ops);
+  active_ops = NULL;
+
+  /* End the second op  and add annotations to the third ops*/
+  census_tracing_end_op(id_2);
+  census_tracing_print(id_3, annotation_txt[0]);
+  census_tracing_print(id_3, annotation_txt[1]);
+
+  active_ops = census_get_active_ops(&n);
+  GPR_ASSERT(active_ops != NULL);
+  GPR_ASSERT(n == 2);
+  for (i = 0; i < 2; i++) {
+    census_trace_obj_destroy(active_ops[i]);
+  }
+  gpr_free(active_ops);
+  active_ops = NULL;
+
+  /* End all ops. */
+  census_tracing_end_op(id_1);
+  census_tracing_end_op(id_3);
+  active_ops = census_get_active_ops(&n);
+  GPR_ASSERT(active_ops == NULL);
+  GPR_ASSERT(n == 0);
+
+  census_tracing_shutdown();
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_init_shutdown();
@@ -180,5 +250,6 @@ int main(int argc, char** argv) {
   test_concurrency();
   test_add_method_tag_to_unknown_op_id();
   test_trace_print();
+  test_get_active_ops();
   return 0;
 }
