@@ -2,14 +2,12 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Google.GRPC.Core.Tests
+namespace Google.GRPC.Core.Utils
 {
-    /// <summary>
-    /// Testing utils.
-    /// </summary>
-    public class Utils
+    public class PortPicker
     {
         static Random random = new Random();
+
         // TODO: cleanup this code a bit
         public static int PickUnusedPort()
         {
@@ -21,6 +19,7 @@ namespace Google.GRPC.Core.Tests
             } while(!IsPortAvailable(port));
             return port;
         }
+
         // TODO: cleanup this code a bit
         public static bool IsPortAvailable(int port)
         {
