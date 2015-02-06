@@ -35,12 +35,12 @@ package examples;
 message StockRequest {
   optional string symbol = 1;
   optional int32 num_trades_to_watch = 2;
-};
+}
 
 message StockReply {
   optional float price = 1;
   optional string symbol = 2;
-};
+}
 
 // Interface exported by the server
 service Stock {
@@ -48,24 +48,24 @@ service Stock {
   //
   // Obtains the last traded price for the given Stock.
   rpc GetLastTradePrice(StockRequest) returns (StockReply) {
-  };
+  }
 
   // A Unidirectional server-to-client streaming RPC.
   //
   // Streams future prices for a given symbol.
   rpc WatchFutureTrades(StockRequest) returns (stream StockReply) {
-  };
+  }
 
   // A Unidirectional client-to-server streaming RPC.
   //
   // Gets the highest traded price for a series of symbols
   rpc GetHighestTradePrice(stream StockRequest) returns (StockReply) {
-  };
+  }
 
   // Bidirectional streaming RPC.
   //
   // Gets the most recent traded price of series of trades.
   rpc GetLastTradePriceMultiple(stream StockRequest) returns
     (stream StockReply) {
-  };
-};
+  }
+}
