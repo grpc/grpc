@@ -138,12 +138,6 @@
     <ClInclude Include="..\..\include\grpc\support\time.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\time_posix.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc\support\time_win32.h">
-      <Filter>include\grpc\support</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\useful.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>

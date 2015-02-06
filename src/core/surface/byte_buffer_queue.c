@@ -31,16 +31,48 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_TIME_WIN32_H__
-#define __GRPC_SUPPORT_TIME_WIN32_H__
-/* Win32 variant of gpr_time_platform.h */
+#include "src/core/surface/byte_buffer_queue.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/useful.h>
 
-#include <Winsock.h>
-#include <time.h>
+static void bba_destroy(grpc_bbq_array *array) { gpr_free(array->data); }
 
-typedef struct gpr_timespec {
-  time_t tv_sec;
-  long tv_nsec;
-} gpr_timespec;
+/* Append an operation to an array, expanding as needed */
+static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
+  if (a->count == a->capacity) {
+    a->capacity = GPR_MAX(a->capacity * 2, 8);
+    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
+  }
+  a->data[a->count++] = buffer;
+}
 
-#endif /* __GRPC_SUPPORT_TIME_WIN32_H__ */
+void grpc_bbq_destroy(grpc_byte_buffer_queue *q) {
+  bba_destroy(&q->filling);
+  bba_destroy(&q->draining);
+}
+
+int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
+  return (q->drain_pos == q->draining.count && q->filling.count == 0);
+}
+
+void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
+  bba_push(&q->filling, buffer);
+}
+
+grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
+  grpc_bbq_array temp_array;
+
+  if (q->drain_pos == q->draining.count) {
+    if (q->filling.count == 0) {
+      return NULL;
+    }
+    q->draining.count = 0;
+    q->drain_pos = 0;
+    /* swap arrays */
+    temp_array = q->filling;
+    q->filling = q->draining;
+    q->draining = temp_array;
+  }
+
+  return q->draining.data[q->drain_pos++];
+}

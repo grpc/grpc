@@ -139,7 +139,6 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(v_client);
 
   cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
-  cq_verify(v_server);
   cq_expect_finished(v_server, tag(102), NULL);
   cq_verify(v_server);
 
@@ -180,16 +179,14 @@ static void simple_request_body2(grpc_end2end_test_fixture f) {
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_write_status_old(
                                  s, GRPC_STATUS_UNIMPLEMENTED, "xyz", tag(5)));
-  cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
   cq_verify(v_server);
 
   cq_expect_client_metadata_read(v_client, tag(2), NULL);
-  cq_verify(v_client);
-
   cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
                                  "xyz", NULL);
   cq_verify(v_client);
 
+  cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
   cq_expect_finished(v_server, tag(102), NULL);
   cq_verify(v_server);
 

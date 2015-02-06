@@ -31,7 +31,9 @@
  *
  */
 
+#ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE
+#endif
 
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/resolve_address.h"
