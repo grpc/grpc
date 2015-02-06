@@ -65,6 +65,13 @@ void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
   bba_push(&q->filling, buffer);
 }
 
+void grpc_bbq_flush(grpc_byte_buffer_queue *q) {
+  grpc_byte_buffer *bb;
+  while ((bb = grpc_bbq_pop(q))) {
+    grpc_byte_buffer_destroy(bb);
+  }
+}
+
 grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
   grpc_bbq_array temp_array;
 

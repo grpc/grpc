@@ -77,9 +77,10 @@ grpc_channel *grpc_channel_create_from_filters(
 
 static void do_nothing(void *ignored, grpc_op_error error) {}
 
-grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
-                                        const char *method, const char *host,
-                                        gpr_timespec absolute_deadline) {
+grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                    grpc_completion_queue *cq,
+                                    const char *method, const char *host,
+                                    gpr_timespec absolute_deadline) {
   grpc_call *call;
   grpc_mdelem *path_mdelem;
   grpc_mdelem *authority_mdelem;
@@ -90,7 +91,7 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
     return NULL;
   }
 
-  call = grpc_call_create(channel, NULL);
+  call = grpc_call_create(channel, cq, NULL);
 
   /* Add :path and :authority headers. */
   /* TODO(klempner): Consider optimizing this by stashing mdelems for common
@@ -124,6 +125,13 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
   }
 
   return call;
+}
+
+grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
+                                        const char *method, const char *host,
+                                        gpr_timespec absolute_deadline) {
+  return grpc_channel_create_call(channel, NULL, method, host,
+                                  absolute_deadline);
 }
 
 void grpc_channel_internal_ref(grpc_channel *channel) {

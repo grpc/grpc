@@ -176,6 +176,9 @@
     <ClInclude Include="..\..\src\core\support\string.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\support\string_win32.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\support\thd_internal.h">
       <Filter>src\core\support</Filter>
     </ClInclude>

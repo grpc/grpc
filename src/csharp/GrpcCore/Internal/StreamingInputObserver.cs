@@ -1,7 +1,7 @@
 using System;
 using Google.GRPC.Core.Internal;
 
-namespace Google.GRPC.Core
+namespace Google.GRPC.Core.Internal
 {
     internal class StreamingInputObserver<TWrite, TRead> : IObserver<TWrite>
 	{

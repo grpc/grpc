@@ -163,6 +163,7 @@
         "src/core/surface/byte_buffer_queue.c",
         "src/core/surface/byte_buffer_reader.c",
         "src/core/surface/call.c",
+        "src/core/surface/call_details.c",
         "src/core/surface/channel.c",
         "src/core/surface/channel_create.c",
         "src/core/surface/client.c",
@@ -170,6 +171,7 @@
         "src/core/surface/event_string.c",
         "src/core/surface/init.c",
         "src/core/surface/lame_client.c",
+        "src/core/surface/metadata_array.c",
         "src/core/surface/secure_channel_create.c",
         "src/core/surface/secure_server_create.c",
         "src/core/surface/server.c",
@@ -231,6 +233,7 @@
         "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
         "src/core/support/string.h",
+        "src/core/support/string_win32.h",
         "src/core/support/thd_internal.h"
       ],
       "src": [

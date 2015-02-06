@@ -86,6 +86,14 @@ namespace Google.GRPC.Core.Internal
             return StartRead().Task;
         }
 
+        public Task Halfclosed
+        {
+            get
+            {
+                return halfcloseTcs.Task;
+            }
+        }
+
         public Task<Status> Finished
         {
             get
