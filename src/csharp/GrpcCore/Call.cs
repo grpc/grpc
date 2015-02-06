@@ -10,7 +10,6 @@ namespace Google.GRPC.Core
         readonly Func<byte[], TResponse> responseDeserializer;
         readonly Channel channel;
 
-        // TODO: channel param should be removed in the future.
         public Call(string methodName, 
                     Func<TRequest, byte[]> requestSerializer,
                     Func<byte[], TResponse> responseDeserializer,
@@ -22,7 +21,6 @@ namespace Google.GRPC.Core
             this.channel = channel;
         }
 
-        // TODO: channel param should be removed in the future.
         public Call(Method<TRequest, TResponse> method, Channel channel)
         {
             this.methodName = method.Name;
