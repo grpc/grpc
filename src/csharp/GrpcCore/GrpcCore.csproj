@@ -55,13 +55,17 @@
     <Compile Include="Internal\ServerSafeHandle.cs" />
     <Compile Include="Internal\StreamingInputObserver.cs" />
     <Compile Include="Method.cs" />
-    <Compile Include="IMarshaller.cs" />
     <Compile Include="ServerCalls.cs" />
     <Compile Include="ServerCallHandler.cs" />
     <Compile Include="Internal\ServerWritingObserver.cs" />
+    <Compile Include="Marshaller.cs" />
+    <Compile Include="ServerServiceDefinition.cs" />
+    <Compile Include="Utils\RecordingObserver.cs" />
+    <Compile Include="Utils\PortPicker.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Internal\" />
+    <Folder Include="Utils\" />
   </ItemGroup>
 </Project>
