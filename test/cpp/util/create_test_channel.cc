@@ -45,7 +45,7 @@ namespace grpc {
 // override_hostname is provided.
 // When ssl is not enabled, override_hostname is ignored.
 // Set use_prod_root to true to use the SSL root for connecting to google.
-// In this case, The path to the root file must be set via environment variable
+// In this case, path to the roots pem file must be set via environment variable
 // GRPC_DEFAULT_SSL_ROOTS_FILE_PATH.
 // Otherwise, root for test SSL cert will be used.
 // creds will be used to create a channel when enable_ssl is true.
