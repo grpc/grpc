@@ -231,6 +231,7 @@
         "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
         "src/core/support/string.h",
+        "src/core/support/string_win32.h",
         "src/core/support/thd_internal.h"
       ],
       "src": [
