@@ -293,14 +293,39 @@ typedef struct grpc_op {
       const char *status_details;
     } send_status_from_server;
     /* ownership of the array is with the caller, but ownership of the elements
-       stays with the call object */
+       stays with the call object (ie key, value members are owned by the call
+       object, recv_initial_metadata->array is owned by the caller).
+       After the operation completes, call grpc_metadata_array_destroy on this
+       value, or reuse it in a future op. */
     grpc_metadata_array *recv_initial_metadata;
     grpc_byte_buffer **recv_message;
     struct {
       /* ownership of the array is with the caller, but ownership of the elements
-         stays with the call object */
+         stays with the call object (ie key, value members are owned by the call
+         object, trailing_metadata->array is owned by the caller).
+         After the operation completes, call grpc_metadata_array_destroy on this
+         value, or reuse it in a future op. */
       grpc_metadata_array *trailing_metadata;
       grpc_status_code *status;
+      /* status_details is a buffer owned by the application before the op completes
+         and after the op has completed. During the operation status_details may be
+         reallocated to a size larger than *status_details_capacity, in which case
+         *status_details_capacity will be updated with the new array capacity.
+
+         Pre-allocating space:
+         size_t my_capacity = 8;
+         char *my_details = gpr_malloc(my_capacity);
+         x.status_details = &my_details;
+         x.status_details_capacity = &my_capacity; 
+
+         Not pre-allocating space:
+         size_t my_capacity = 0;
+         char *my_details = NULL;
+         x.status_details = &my_details;
+         x.status_details_capacity = &my_capacity; 
+
+         After the call:
+         gpr_free(my_details); */
       char **status_details;
       size_t *status_details_capacity;
     } recv_status_on_client;
