@@ -181,7 +181,7 @@ static int ids_equal(census_op_id id1, census_op_id id2) {
 
 static void test_get_active_ops(void) {
   census_op_id id_1, id_2, id_3;
-  trace_obj** active_ops;
+  census_trace_obj** active_ops;
   const char* annotation_txt[] = {"annotation 1", "a2"};
   int i = 0;
   int n = 0;
@@ -200,11 +200,11 @@ static void test_get_active_ops(void) {
   GPR_ASSERT(active_ops != NULL);
   GPR_ASSERT(n == 1);
   GPR_ASSERT(ids_equal(active_ops[0]->id, id_1));
-  trace_obj_destroy(active_ops[0]);
+  census_trace_obj_destroy(active_ops[0]);
   gpr_free(active_ops);
   active_ops = NULL;
 
-  /* Start the second and third ops */
+  /* Start the second and the third ops */
   id_2 = census_tracing_start_op();
   census_add_method_tag(id_2, "foo_2");
   id_3 = census_tracing_start_op();
@@ -213,7 +213,7 @@ static void test_get_active_ops(void) {
   active_ops = census_get_active_ops(&n);
   GPR_ASSERT(n == 3);
   for (i = 0; i < 3; i++) {
-    trace_obj_destroy(active_ops[i]);
+    census_trace_obj_destroy(active_ops[i]);
   }
   gpr_free(active_ops);
   active_ops = NULL;
@@ -227,7 +227,7 @@ static void test_get_active_ops(void) {
   GPR_ASSERT(active_ops != NULL);
   GPR_ASSERT(n == 2);
   for (i = 0; i < 2; i++) {
-    trace_obj_destroy(active_ops[i]);
+    census_trace_obj_destroy(active_ops[i]);
   }
   gpr_free(active_ops);
   active_ops = NULL;
