@@ -31,54 +31,59 @@
  *
  */
 
-#include "src/core/surface/byte_buffer_queue.h"
+#include "src/core/support/file.h"
+
+#include <errno.h>
+#include <string.h>
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+#include <grpc/support/log.h>
 
-static void bba_destroy(grpc_bbq_array *array, size_t start_pos) {
-  size_t i;
-  for (i = start_pos; i < array->count; i++) {
-    grpc_byte_buffer_destroy(array->data[i]);
+#include "src/core/support/string.h"
+
+gpr_slice gpr_load_file(const char *filename, int *success) {
+  unsigned char *contents = NULL;
+  size_t contents_size = 0;
+  unsigned char buf[4096];
+  char *error_msg = NULL;
+  gpr_slice result = gpr_empty_slice();
+  FILE *file = fopen(filename, "rb");
+
+  if (file == NULL) {
+    gpr_asprintf(&error_msg, "Could not open file %s (error = %s).", filename,
+                 strerror(errno));
+    GPR_ASSERT(error_msg != NULL);
+    goto end;
   }
-  gpr_free(array->data);
-}
 
-/* Append an operation to an array, expanding as needed */
-static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
-  if (a->count == a->capacity) {
-    a->capacity = GPR_MAX(a->capacity * 2, 8);
-    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
-  }
-  a->data[a->count++] = buffer;
-}
-
-void grpc_bbq_destroy(grpc_byte_buffer_queue *q) {
-  bba_destroy(&q->filling, 0);
-  bba_destroy(&q->draining, q->drain_pos);
-}
-
-int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
-  return (q->drain_pos == q->draining.count && q->filling.count == 0);
-}
-
-void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
-  bba_push(&q->filling, buffer);
-}
-
-grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
-  grpc_bbq_array temp_array;
-
-  if (q->drain_pos == q->draining.count) {
-    if (q->filling.count == 0) {
-      return NULL;
+  while (1) {
+    size_t bytes_read = fread(buf, 1, sizeof(buf), file);
+    if (bytes_read > 0) {
+      contents = gpr_realloc(contents, contents_size + bytes_read);
+      memcpy(contents + contents_size, buf, bytes_read);
+      contents_size += bytes_read;
     }
-    q->draining.count = 0;
-    q->drain_pos = 0;
-    /* swap arrays */
-    temp_array = q->filling;
-    q->filling = q->draining;
-    q->draining = temp_array;
+    if (bytes_read < sizeof(buf)) {
+      if (ferror(file)) {
+        gpr_asprintf(&error_msg, "Error %s occured while reading file %s.",
+                     strerror(errno), filename);
+        GPR_ASSERT(error_msg != NULL);
+        goto end;
+      } else {
+        GPR_ASSERT(feof(file));
+        break;
+      }
+    }
   }
+  if (success != NULL) *success = 1;
+  result = gpr_slice_new(contents, contents_size, gpr_free);
 
-  return q->draining.data[q->drain_pos++];
+end:
+  if (error_msg != NULL) {
+    gpr_log(GPR_ERROR, "%s", error_msg);
+    gpr_free(error_msg);
+    if (success != NULL) *success = 0;
+  }
+  if (file != NULL) fclose(file);
+  return result;
 }

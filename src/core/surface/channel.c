@@ -52,6 +52,9 @@ struct grpc_channel {
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c)+1))
+#define CHANNEL_FROM_CHANNEL_STACK(channel_stack) (((grpc_channel *)(channel_stack)) - 1)
+#define CHANNEL_FROM_TOP_ELEM(top_elem) \
+  CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
 grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t num_filters,
@@ -60,8 +63,8 @@ grpc_channel *grpc_channel_create_from_filters(
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
   grpc_channel *channel = gpr_malloc(size);
   channel->is_client = is_client;
-  /* decremented by grpc_channel_destroy */
-  gpr_ref_init(&channel->refs, 1);
+  /* decremented by grpc_channel_destroy, and grpc_client_channel_closed if is_client */
+  gpr_ref_init(&channel->refs, 1 + is_client);
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message");
@@ -156,6 +159,10 @@ void grpc_channel_destroy(grpc_channel *channel) {
   elem->filter->channel_op(elem, NULL, &op);
 
   grpc_channel_internal_unref(channel);
+}
+
+void grpc_client_channel_closed(grpc_channel_element *elem) {
+  grpc_channel_internal_unref(CHANNEL_FROM_TOP_ELEM(elem));
 }
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {

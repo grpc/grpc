@@ -31,54 +31,67 @@
  *
  */
 
-#include "src/core/surface/byte_buffer_queue.h"
+/* Posix code for gpr fdopen and mkstemp support. */
+
+#if !defined _POSIX_C_SOURCE || _POSIX_C_SOURCE < 200112L
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112L
+#endif
+
+/* Don't know why I have to do this for mkstemp, looks like _POSIX_C_SOURCE
+   should be enough... */
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_FILE
+
+#include "src/core/support/file.h"
+
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+#include <grpc/support/log.h>
 
-static void bba_destroy(grpc_bbq_array *array, size_t start_pos) {
-  size_t i;
-  for (i = start_pos; i < array->count; i++) {
-    grpc_byte_buffer_destroy(array->data[i]);
+#include "src/core/support/string.h"
+
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
+  FILE *result = NULL;
+  char *template;
+  int fd;
+
+  if (tmp_filename != NULL) *tmp_filename = NULL;
+
+  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
+  GPR_ASSERT(template != NULL);
+
+  fd = mkstemp(template);
+  if (fd == -1) {
+    gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
+            template, strerror(errno));
+    goto end;
   }
-  gpr_free(array->data);
-}
-
-/* Append an operation to an array, expanding as needed */
-static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
-  if (a->count == a->capacity) {
-    a->capacity = GPR_MAX(a->capacity * 2, 8);
-    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
-  }
-  a->data[a->count++] = buffer;
-}
-
-void grpc_bbq_destroy(grpc_byte_buffer_queue *q) {
-  bba_destroy(&q->filling, 0);
-  bba_destroy(&q->draining, q->drain_pos);
-}
-
-int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
-  return (q->drain_pos == q->draining.count && q->filling.count == 0);
-}
-
-void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
-  bba_push(&q->filling, buffer);
-}
-
-grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
-  grpc_bbq_array temp_array;
-
-  if (q->drain_pos == q->draining.count) {
-    if (q->filling.count == 0) {
-      return NULL;
-    }
-    q->draining.count = 0;
-    q->drain_pos = 0;
-    /* swap arrays */
-    temp_array = q->filling;
-    q->filling = q->draining;
-    q->draining = temp_array;
+  result = fdopen(fd, "w+");
+  if (result == NULL) {
+    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
+            template, fd, strerror(errno));
+    unlink(template);
+    close(fd);
+    goto end;
   }
 
-  return q->draining.data[q->drain_pos++];
+end:
+  if (result != NULL && tmp_filename != NULL) {
+    *tmp_filename = template;
+  } else {
+    gpr_free(template);
+  }
+  return result;
 }
+
+#endif /* GPR_POSIX_FILE */

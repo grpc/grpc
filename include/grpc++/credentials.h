@@ -66,14 +66,13 @@ class Credentials final {
 
 // Options used to build SslCredentials
 // pem_roots_cert is the buffer containing the PEM encoding of the server root
-// certificates. This parameter cannot be empty.
+// certificates. If this parameter is empty, the default roots will be used.
 // pem_private_key is the buffer containing the PEM encoding of the client's
 // private key. This parameter can be empty if the client does not have a
 // private key.
 // pem_cert_chain is the buffer containing the PEM encoding of the client's
 // certificate chain. This parameter can be empty if the client does not have
 // a certificate chain.
-// TODO(jboeuf) Change it to point to a file.
 struct SslCredentialsOptions {
   grpc::string pem_root_certs;
   grpc::string pem_private_key;

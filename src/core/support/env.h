@@ -31,54 +31,30 @@
  *
  */
 
-#include "src/core/surface/byte_buffer_queue.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+#ifndef __GRPC_SUPPORT_ENV_H__
+#define __GRPC_SUPPORT_ENV_H__
 
-static void bba_destroy(grpc_bbq_array *array, size_t start_pos) {
-  size_t i;
-  for (i = start_pos; i < array->count; i++) {
-    grpc_byte_buffer_destroy(array->data[i]);
-  }
-  gpr_free(array->data);
+#include <stdio.h>
+
+#include <grpc/support/slice.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Env utility functions */
+
+/* Gets the environment variable value with the specified name.
+   Returns a newly allocated string. It is the responsability of the caller to
+   gpr_free the return value if not NULL (which means that the environment
+   variable exists). */
+char *gpr_getenv(const char *name);
+
+/* Sets the the environment with the specified name to the specified value. */
+void gpr_setenv(const char *name, const char *value);
+
+#ifdef __cplusplus
 }
+#endif
 
-/* Append an operation to an array, expanding as needed */
-static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
-  if (a->count == a->capacity) {
-    a->capacity = GPR_MAX(a->capacity * 2, 8);
-    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
-  }
-  a->data[a->count++] = buffer;
-}
-
-void grpc_bbq_destroy(grpc_byte_buffer_queue *q) {
-  bba_destroy(&q->filling, 0);
-  bba_destroy(&q->draining, q->drain_pos);
-}
-
-int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
-  return (q->drain_pos == q->draining.count && q->filling.count == 0);
-}
-
-void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
-  bba_push(&q->filling, buffer);
-}
-
-grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
-  grpc_bbq_array temp_array;
-
-  if (q->drain_pos == q->draining.count) {
-    if (q->filling.count == 0) {
-      return NULL;
-    }
-    q->draining.count = 0;
-    q->drain_pos = 0;
-    /* swap arrays */
-    temp_array = q->filling;
-    q->filling = q->draining;
-    q->draining = temp_array;
-  }
-
-  return q->draining.data[q->drain_pos++];
-}
+#endif /* __GRPC_SUPPORT_ENV_H__ */

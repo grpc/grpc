@@ -31,54 +31,31 @@
  *
  */
 
-#include "src/core/surface/byte_buffer_queue.h"
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_WIN32
+
+#include "src/core/support/env.h"
+
+#include <stdlib.h>
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+#include <grpc/support/log.h>
 
-static void bba_destroy(grpc_bbq_array *array, size_t start_pos) {
-  size_t i;
-  for (i = start_pos; i < array->count; i++) {
-    grpc_byte_buffer_destroy(array->data[i]);
-  }
-  gpr_free(array->data);
+char *gpr_getenv(const char *name) {
+  size_t required_size;
+  char *result = NULL;
+
+  getenv_s(&required_size, NULL, 0, name);
+  if (required_size == 0) return NULL;
+  result = gpr_malloc(required_size);
+  getenv_s(&required_size, result, required_size, name);
+  return result;
 }
 
-/* Append an operation to an array, expanding as needed */
-static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
-  if (a->count == a->capacity) {
-    a->capacity = GPR_MAX(a->capacity * 2, 8);
-    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
-  }
-  a->data[a->count++] = buffer;
+void gpr_setenv(const char *name, const char *value) {
+  errno_t res = _putenv_s(name, value);
+  GPR_ASSERT(res == 0);
 }
 
-void grpc_bbq_destroy(grpc_byte_buffer_queue *q) {
-  bba_destroy(&q->filling, 0);
-  bba_destroy(&q->draining, q->drain_pos);
-}
-
-int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
-  return (q->drain_pos == q->draining.count && q->filling.count == 0);
-}
-
-void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
-  bba_push(&q->filling, buffer);
-}
-
-grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
-  grpc_bbq_array temp_array;
-
-  if (q->drain_pos == q->draining.count) {
-    if (q->filling.count == 0) {
-      return NULL;
-    }
-    q->draining.count = 0;
-    q->drain_pos = 0;
-    /* swap arrays */
-    temp_array = q->filling;
-    q->filling = q->draining;
-    q->draining = temp_array;
-  }
-
-  return q->draining.data[q->drain_pos++];
-}
+#endif /* GPR_WIN32 */

@@ -31,80 +31,53 @@
  *
  */
 
-/* Posix code for gpr snprintf support. */
-
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WIN32
 
-#include <windows.h>
+#include <io.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
+#include <tchar.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-int gpr_asprintf(char **strp, const char *format, ...) {
-  va_list args;
-  int ret;
-  size_t strp_buflen;
+#include "src/core/support/file.h"
+#include "src/core/support/string_win32.h"
 
-  /* Determine the length. */
-  va_start(args, format);
-  ret = _vscprintf(format, args);
-  va_end(args);
-  if (!(0 <= ret && ret < ~(size_t)0)) {
-    *strp = NULL;
-    return -1;
+FILE *gpr_tmpfile(const char *prefix, char **tmp_filename_out) {
+  FILE *result = NULL;
+  LPTSTR template_string = NULL;
+  TCHAR tmp_path[MAX_PATH];
+  TCHAR tmp_filename[MAX_PATH];
+  DWORD status;
+  UINT success;
+
+  if (tmp_filename_out != NULL) *tmp_filename_out = NULL;
+
+  /* Convert our prefix to TCHAR. */
+  template_string = gpr_char_to_tchar(prefix);
+  GPR_ASSERT(template_string);
+
+  /* Get the path to the best temporary folder available. */
+  status = GetTempPath(MAX_PATH, tmp_path);
+  if (status == 0 || status > MAX_PATH) goto end;
+
+  /* Generate a unique filename with our template + temporary path. */
+  success = GetTempFileName(tmp_path, template_string, 0, tmp_filename);
+  if (!success) goto end;
+
+  /* Open a file there. */
+  if (_tfopen_s(&result, tmp_filename, TEXT("wb+")) != 0) goto end;
+
+end:
+  if (result && tmp_filename) {
+    *tmp_filename_out = gpr_tchar_to_char(tmp_filename);
   }
 
-  /* Allocate a new buffer, with space for the NUL terminator. */
-  strp_buflen = (size_t)ret + 1;
-  if ((*strp = gpr_malloc(strp_buflen)) == NULL) {
-    /* This shouldn't happen, because gpr_malloc() calls abort(). */
-    return -1;
-  }
-
-  /* Print to the buffer. */
-  va_start(args, format);
-  ret = vsnprintf_s(*strp, strp_buflen, _TRUNCATE, format, args);
-  va_end(args);
-  if (ret == strp_buflen - 1) {
-    return ret;
-  }
-
-  /* This should never happen. */
-  gpr_free(*strp);
-  *strp = NULL;
-  return -1;
+  gpr_free(tmp_filename);
+  return result;
 }
-
-#if defined UNICODE || defined _UNICODE
-LPTSTR gpr_char_to_tchar(LPCSTR input) {
-  LPTSTR ret;
-  int needed = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
-  if (needed == 0) return NULL;
-  ret = gpr_malloc(needed * sizeof(TCHAR));
-  MultiByteToWideChar(CP_UTF8, 0, input, -1, ret, needed);
-  return ret;
-}
-
-LPSTR gpr_tchar_to_char(LPCTSTR input) {
-  LPSTR ret;
-  int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
-  if (needed == 0) return NULL;
-  ret = gpr_malloc(needed);
-  WideCharToMultiByte(CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
-  return ret;
-}
-#else
-char *gpr_tchar_to_char(LPTSTR input) {
-  return gpr_strdup(input);
-}
-
-char *gpr_char_to_tchar(LPTSTR input) {
-  return gpr_strdup(input);
-}
-#endif
 
 #endif /* GPR_WIN32 */

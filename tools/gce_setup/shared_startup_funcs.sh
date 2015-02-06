@@ -389,6 +389,7 @@ grpc_dockerfile_install() {
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
   [[ $image_label == "grpc/cxx" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
 

@@ -54,6 +54,11 @@
     <Compile Include="Internal\AsyncCall.cs" />
     <Compile Include="Internal\ServerSafeHandle.cs" />
     <Compile Include="Internal\StreamingInputObserver.cs" />
+    <Compile Include="Method.cs" />
+    <Compile Include="IMarshaller.cs" />
+    <Compile Include="ServerCalls.cs" />
+    <Compile Include="ServerCallHandler.cs" />
+    <Compile Include="Internal\ServerWritingObserver.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -31,54 +31,31 @@
  *
  */
 
-#include "src/core/surface/byte_buffer_queue.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+/* for secure_getenv. */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
-static void bba_destroy(grpc_bbq_array *array, size_t start_pos) {
-  size_t i;
-  for (i = start_pos; i < array->count; i++) {
-    grpc_byte_buffer_destroy(array->data[i]);
-  }
-  gpr_free(array->data);
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_LINUX_ENV
+
+#include "src/core/support/env.h"
+
+#include <stdlib.h>
+
+#include <grpc/support/log.h>
+
+#include "src/core/support/string.h"
+
+char *gpr_getenv(const char *name) {
+  char *result = secure_getenv(name);
+  return result == NULL ? result : gpr_strdup(result);
 }
 
-/* Append an operation to an array, expanding as needed */
-static void bba_push(grpc_bbq_array *a, grpc_byte_buffer *buffer) {
-  if (a->count == a->capacity) {
-    a->capacity = GPR_MAX(a->capacity * 2, 8);
-    a->data = gpr_realloc(a->data, sizeof(grpc_byte_buffer *) * a->capacity);
-  }
-  a->data[a->count++] = buffer;
+void gpr_setenv(const char *name, const char *value) {
+  int res = setenv(name, value, 1);
+  GPR_ASSERT(res == 0);
 }
 
-void grpc_bbq_destroy(grpc_byte_buffer_queue *q) {
-  bba_destroy(&q->filling, 0);
-  bba_destroy(&q->draining, q->drain_pos);
-}
-
-int grpc_bbq_empty(grpc_byte_buffer_queue *q) {
-  return (q->drain_pos == q->draining.count && q->filling.count == 0);
-}
-
-void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *buffer) {
-  bba_push(&q->filling, buffer);
-}
-
-grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q) {
-  grpc_bbq_array temp_array;
-
-  if (q->drain_pos == q->draining.count) {
-    if (q->filling.count == 0) {
-      return NULL;
-    }
-    q->draining.count = 0;
-    q->drain_pos = 0;
-    /* swap arrays */
-    temp_array = q->filling;
-    q->filling = q->draining;
-    q->draining = temp_array;
-  }
-
-  return q->draining.data[q->drain_pos++];
-}
+#endif /* GPR_LINUX_ENV */

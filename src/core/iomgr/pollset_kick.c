@@ -48,49 +48,49 @@
 /* This implementation is based on a freelist of wakeup fds, with extra logic to
  * handle kicks while there is no attached fd. */
 
+/* TODO(klempner): Autosize this, and consider providing a way to disable the
+ * cap entirely on systems with large fd limits */
 #define GRPC_MAX_CACHED_WFDS 50
-#define GRPC_WFD_LOW_WATERMARK 25
 
 static grpc_kick_fd_info *fd_freelist = NULL;
 static int fd_freelist_count = 0;
 static gpr_mu fd_freelist_mu;
 
 static grpc_kick_fd_info *allocate_wfd(void) {
-  grpc_kick_fd_info *info;
+  grpc_kick_fd_info *info = NULL;
   gpr_mu_lock(&fd_freelist_mu);
   if (fd_freelist != NULL) {
     info = fd_freelist;
     fd_freelist = fd_freelist->next;
     --fd_freelist_count;
-  } else {
+  }
+  gpr_mu_unlock(&fd_freelist_mu);
+  if (info == NULL) {
     info = gpr_malloc(sizeof(*info));
     grpc_wakeup_fd_create(&info->wakeup_fd);
     info->next = NULL;
   }
-  gpr_mu_unlock(&fd_freelist_mu);
   return info;
 }
 
-static void destroy_wfd(void) {
-  /* assumes fd_freelist_mu is held */
-  grpc_kick_fd_info *current = fd_freelist;
-  fd_freelist = fd_freelist->next;
-  fd_freelist_count--;
-  grpc_wakeup_fd_destroy(&current->wakeup_fd);
-  gpr_free(current);
+static void destroy_wfd(grpc_kick_fd_info* wfd) {
+  grpc_wakeup_fd_destroy(&wfd->wakeup_fd);
+  gpr_free(wfd);
 }
 
 static void free_wfd(grpc_kick_fd_info *fd_info) {
   gpr_mu_lock(&fd_freelist_mu);
-  fd_info->next = fd_freelist;
-  fd_freelist = fd_info;
-  fd_freelist_count++;
-  if (fd_freelist_count > GRPC_MAX_CACHED_WFDS) {
-    while (fd_freelist_count > GRPC_WFD_LOW_WATERMARK) {
-      destroy_wfd();
-    }
+  if (fd_freelist_count < GRPC_MAX_CACHED_WFDS) {
+    fd_info->next = fd_freelist;
+    fd_freelist = fd_info;
+    fd_freelist_count++;
+    fd_info = NULL;
   }
   gpr_mu_unlock(&fd_freelist_mu);
+
+  if (fd_info) {
+    destroy_wfd(fd_info);
+  }
 }
 
 void grpc_pollset_kick_init(grpc_pollset_kick_state *kick_state) {
@@ -148,6 +148,11 @@ void grpc_pollset_kick_global_init(void) {
 }
 
 void grpc_pollset_kick_global_destroy(void) {
+  while (fd_freelist != NULL) {
+    grpc_kick_fd_info *current = fd_freelist;
+    fd_freelist = fd_freelist->next;
+    destroy_wfd(current);
+  }
   grpc_wakeup_fd_global_destroy();
   gpr_mu_destroy(&fd_freelist_mu);
 }

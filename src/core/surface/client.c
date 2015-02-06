@@ -34,6 +34,7 @@
 #include "src/core/surface/client.h"
 
 #include "src/core/surface/call.h"
+#include "src/core/surface/channel.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -87,7 +88,7 @@ static void channel_op(grpc_channel_element *elem,
       gpr_log(GPR_ERROR, "Client cannot accept new calls");
       break;
     case GRPC_TRANSPORT_CLOSED:
-      gpr_log(GPR_ERROR, "Transport closed");
+      grpc_client_channel_closed(elem);
       break;
     case GRPC_TRANSPORT_GOAWAY:
       gpr_slice_unref(op->data.goaway.message);
