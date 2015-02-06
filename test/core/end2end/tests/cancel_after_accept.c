@@ -184,7 +184,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(3)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, server_ops, tag(3)));
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
 

@@ -297,6 +297,10 @@ static void set_status_code(grpc_call *call, status_source source,
                             gpr_uint32 status) {
   call->status[source].is_set = 1;
   call->status[source].code = status;
+
+  if (status != GRPC_OP_OK) {
+    grpc_bbq_flush(&call->incoming_queue);
+  }
 }
 
 static void set_status_details(grpc_call *call, status_source source,
