@@ -15,18 +15,17 @@ The gRPC Java Stub classes are created using a gRPC Java plugin, but first the
 plugin must be built and installed.
 
 To build the plugin:
-```
+```sh
 $ pushd external/grpc_java
 $ make java_plugin
 $ popd
 ```
 
 To use it to generate the code:
-```
-$ mkdir -p src/main/java
+```sh
 $ protoc -I . helloworld.proto --plugin=protoc-gen-grpc=external/grpc_java/bins/opt/java_plugin \
-                               --grpc_out=src/main/java \
-                               --java_out=src/main/java
+                               --grpc_out=java/src/main/java \
+                               --java_out=java/src/main/java
 ```
 
 Next, in [Step - 2](Step_2.md), we'll use the generated Stub implementation to
