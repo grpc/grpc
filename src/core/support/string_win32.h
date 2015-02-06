@@ -31,31 +31,19 @@
  *
  */
 
+#ifndef __GRPC_SUPPORT_STRING_WIN32_H__
+#define __GRPC_SUPPORT_STRING_WIN32_H__
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WIN32
 
-#include "src/core/support/env.h"
+#include <windows.h>
 
-#include <stdlib.h>
+/* These allocate new strings using gpr_malloc to convert from and to utf-8. */
+LPTSTR gpr_char_to_tchar(LPCSTR input);
+LPSTR gpr_tchar_to_char(LPCTSTR input);
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#endif  /* GPR_WIN32 */
 
-char *gpr_getenv(const char *name) {
-  size_t required_size;
-  char *result = NULL;
-
-  getenv_s(&required_size, NULL, 0, name);
-  if (required_size == 0) return NULL;
-  result = gpr_malloc(required_size);
-  getenv_s(&required_size, result, required_size, name);
-  return result;
-}
-
-void gpr_setenv(const char *name, const char *value) {
-  errno_t res = _putenv_s(name, value);
-  GPR_ASSERT(res == 0);
-}
-
-#endif /* GPR_WIN32 */
+#endif /* __GRPC_SUPPORT_STRING_WIN32_H__ */
