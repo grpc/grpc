@@ -67,7 +67,7 @@ FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
 
   if (tmp_filename != NULL) *tmp_filename = NULL;
 
-  gpr_asprintf(&template, "%s_XXXXXX", prefix);
+  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
   GPR_ASSERT(template != NULL);
 
   fd = mkstemp(template);
