@@ -31,6 +31,8 @@
  *
  */
 
+#include <vector>
+
 #include <node.h>
 
 #include "grpc/support/log.h"
@@ -67,6 +69,50 @@ using v8::Value;
 
 Persistent<Function> Call::constructor;
 Persistent<FunctionTemplate> Call::fun_tpl;
+
+bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array
+                         vector<NanUtf8String*> *string_handles,
+                         vector<Persistent<Value>*> *handles) {
+  NanScope();
+  Handle<Array> keys(metadata->GetOwnPropertyNames());
+  for (unsigned int i = 0; i < keys->Length(); i++) {
+    Handle<String> current_key(keys->Get(i)->ToString());
+    if (!metadata->Get(current_key)->IsArray()) {
+      return false;
+    }
+    array->capacity += Local<Array>::Cast(metadata->Get(current_key))->Length();
+  }
+  array->metadata = calloc(array->capacity, sizeof(grpc_metadata));
+  for (unsigned int i = 0; i < keys->Length(); i++) {
+    Handle<String> current_key(keys->Get(i)->ToString());
+    NanUtf8String *utf8_key = new NanUtf8String(current_key);
+    string_handles->push_back(utf8_key);
+    Handle<Array> values = Local<Array>::Cast(metadata->Get(current_key));
+    for (unsigned int j = 0; j < values->Length(); j++) {
+      Handle<Value> value = values->Get(j);
+      grpc_metadata *current = &array[array->count];
+      grpc_call_error error;
+      current->key = **utf8_key;
+      if (Buffer::HasInstance(value)) {
+        current->value = Buffer::Data(value);
+        current->value_length = Buffer::Length(value);
+        Persistent<Value> *handle = new Persistent<Value>();
+        NanAssignPersistent(handle, object);
+        handles->push_back(handle);
+      } else if (value->IsString()) {
+        Handle<String> string_value = value->ToString();
+        NanUtf8String *utf8_value = new NanUtf8String(string_value);
+        string_handles->push_back(utf8_value);
+        current->value = **utf8_value;
+        current->value_length = string_value->Length();
+      } else {
+        return false;
+      }
+      array->count += 1;
+    }
+  }
+  return true;
+}
 
 Call::Call(grpc_call *call) : wrapped_call(call) {}
 
@@ -152,9 +198,9 @@ NAN_METHOD(Call::New) {
       NanUtf8String method(args[1]);
       double deadline = args[2]->NumberValue();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
-      grpc_call *wrapped_call = grpc_channel_create_call_old(
-          wrapped_channel, *method, channel->GetHost(),
-          MillisecondsToTimespec(deadline));
+      grpc_call *wrapped_call = grpc_channel_create_call(
+          wrapped_channel, CompletionQueueAsyncWorker::GetQueue(), *method,
+          channel->GetHost(), MillisecondsToTimespec(deadline));
       call = new Call(wrapped_call);
       args.This()->SetHiddenValue(String::NewSymbol("channel_"),
                                   channel_object);
@@ -165,6 +211,109 @@ NAN_METHOD(Call::New) {
     const int argc = 4;
     Local<Value> argv[argc] = {args[0], args[1], args[2], args[3]};
     NanReturnValue(constructor->NewInstance(argc, argv));
+  }
+}
+
+NAN_METHOD(Call::StartBatch) {
+  NanScope();
+  if (!HasInstance(args.This())) {
+    return NanThrowTypeError("startBatch can only be called on Call objects");
+  }
+  if (!args[0]->IsObject()) {
+    return NanThrowError("startBatch's first argument must be an object");
+  }
+  if (!args[1]->IsFunction()) {
+    return NanThrowError("startBatch's second argument must be a callback");
+  }
+  vector<Persistent<Value> *> *handles = new vector<Persistent<Value>>();
+  vector<NanUtf8String *> *strings = new vector<NanUtf8String *>();
+  Persistent<Value> *handle;
+  Handle<Array> keys = args[0]->GetOwnPropertyNames();
+  size_t nops = keys->Length();
+  grpc_op *ops = calloc(nops, sizeof(grpc_op));
+  grpc_metadata_array array;
+  Handle<Object> server_status;
+  NanUtf8String *str;
+  for (unsigned int i = 0; i < nops; i++) {
+    if (!keys->Get(i)->IsUInt32()) {
+      return NanThrowError(
+          "startBatch's first argument's keys must be integers");
+    }
+    uint32_t type = keys->Get(i)->UInt32Value();
+    ops[i].op = type;
+    switch (type) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        if (!args[0]->Get(type)->IsObject()) {
+          return NanThrowError("metadata must be an object");
+        }
+        if (!CreateMetadataArray(args[0]->Get(type)->ToObject(), &array,
+                                 strings, handles)) {
+          return NanThrowError("failed to parse metadata");
+        }
+        ops[i].data.send_initial_metadata.count = array.count;
+        ops[i].data.send_initial_metadata.metadata = array.metadata;
+        break
+      case GRPC_OP_SEND_MESSAGE:
+        if (!Buffer::HasInstance(args[0]->Get(type))) {
+          return NanThrowError("message must be a Buffer");
+        }
+        ops[i].data.send_message = BufferToByteBuffer(args[0]->Get(type));
+        handle = new Persistent<Value>();
+        NanAssignPersistent(*handle, args[0]->Get(type));
+        handles->push_back(handle);
+        break;
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        if (!args[0]->Get(type)->IsObject()) {
+          return NanThrowError("server status must be an object");
+        }
+        server_status = args[0]->Get(type)->ToObject();
+        if (!server_status->Get("metadata")->IsObject()) {
+          return NanThrowError("status metadata must be an object");
+        }
+        if (!server_status->Get("code")->IsUInt32()) {
+          return NanThrowError("status code must be a positive integer");
+        }
+        if (!server_status->Get("details")->IsString()) {
+          return NanThrowError("status details must be a string");
+        }
+        if (!CreateMetadataArray(server_status->Get("metadata")->ToObject(),
+                                 &array, strings, handles)) {
+          return NanThrowError("Failed to parse status metadata");
+        }
+        ops[i].data.send_status_from_server.trailing_metadata_count =
+            array.count;
+        ops[i].data.send_status_from_server.trailing_metadata = array.metadata;
+        ops[i].data.send_status_from_server.status =
+            server_status->Get("code")->UInt32Value();
+        str = new NanUtf8String(server_status->Get("details"));
+        strings->push_back(str);
+        ops[i].data.send_status_from_server.status_details = **str;
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        ops[i].data.recv_initial_metadata = malloc(sizeof(grpc_metadata_array));
+        grpc_metadata_array_init(ops[i].data.recv_initial_metadata);
+        break;
+      case GRPC_OP_RECV_MESSAGE:
+        ops[i].data.recv_message = malloc(sizeof(grpc_byte_buffer*));
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        ops[i].data.recv_status_on_client.trailing_metadata =
+            malloc(sizeof(grpc_metadata_array));
+        grpc_metadata_array_init(ops[i].data.recv_status_on_client);
+        ops[i].data.recv_status_on_client.status =
+            malloc(sizeof(grpc_status_code));
+        ops[i].data.recv_status_on_client.status_details =
+            malloc(sizeof(char *));
+        ops[i].data.recv_status_on_client.status_details_capacity =
+            malloc(sizeof(size_t));
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        ops[i].data.recv_close_on_server = malloc(sizeof(int));
+        break;
+
+    }
   }
 }
 

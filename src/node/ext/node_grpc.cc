@@ -161,6 +161,36 @@ void InitCompletionTypeConstants(Handle<Object> exports) {
   completion_type->Set(NanNew("SERVER_RPC_NEW"), SERVER_RPC_NEW);
 }
 
+void InitOpTypeConstants(Handle<Object> exports) {
+  NanScope();
+  Handle<Object> op_type = Object::New();
+  exports->Set(NanNew("opType"), op_type);
+  Handle<Value> SEND_INITIAL_METADATA(
+      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_INITIAL_METADATA));
+  op_type->Set(NanNew("SEND_INITIAL_METADATA"), SEND_INITIAL_METADATA);
+  Handle<Value> SEND_MESSAGE(
+      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_MESSAGE));
+  op_type->Set(NanNew("SEND_MESSAGE"), SEND_MESSAGE);
+  Handle<Value> SEND_CLOSE_FROM_CLIENT(
+      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
+  op_type->Set(NanNew("SEND_CLOSE_FROM_CLIENT"), SEND_CLOSE_FROM_CLIENT);
+  Handle<Value> SEND_STATUS_FROM_SERVER(
+      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_STATUS_FROM_SERVER));
+  op_type->Set(NanNew("SEND_STATUS_FROM_SERVER"), SEND_STATUS_FROM_SERVER);
+  Handle<Value> RECV_INITIAL_METADATA(
+      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_INITIAL_METADATA));
+  op_type->Set(NanNew("RECV_INITIAL_METADATA"), RECV_INITIAL_METADATA);
+  Handle<Value> RECV_MESSAGE(
+      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_MESSAGE));
+  op_type->Set(NanNew("RECV_MESSAGE"), RECV_MESSAGE);
+  Handle<Value> RECV_STATUS_ON_CLIENT(
+      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_STATUS_ON_CLIENT));
+  op_type->Set(NanNew("RECV_STATUS_ON_CLIENT"), RECV_STATUS_ON_CLIENT);
+  Handle<Value> RECV_CLOSE_ON_SERVER(
+      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_CLOSE_ON_SERVER));
+  op_type->Set(NanNew("RECV_CLOSE_ON_SERVER"), RECV_CLOSE_ON_SERVER);
+}
+
 void init(Handle<Object> exports) {
   NanScope();
   grpc_init();
@@ -168,6 +198,7 @@ void init(Handle<Object> exports) {
   InitCallErrorConstants(exports);
   InitOpErrorConstants(exports);
   InitCompletionTypeConstants(exports);
+  InitOpTypeConstants(exports);
 
   grpc::node::Call::Init(exports);
   grpc::node::Channel::Init(exports);
