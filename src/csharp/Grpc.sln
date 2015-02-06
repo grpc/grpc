@@ -45,6 +45,6 @@ Global
 		{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = GrpcApi\GrpcApi.csproj
+		StartupItem = InteropClient\InteropClient.csproj
 	EndGlobalSection
 EndGlobal
