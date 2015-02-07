@@ -36,7 +36,7 @@ RUN echo 'Host github.com\nStrictHostKeyChecking no' > /root/.ssh/config
 
 # Trigger download of as many Maven and Gradle artifacts as possible. We don't build grpc-java
 # because we don't want to install netty
-RUN git clone --recursive --depth 1 git@github.com:google/grpc-java.git && \
+RUN git clone --recursive --depth 1 git@github.com:grpc/grpc-java.git && \
   cd grpc-java/lib/netty && \
   mvn -pl codec-http2 -am -DskipTests verify && \
   cd ../.. && \
