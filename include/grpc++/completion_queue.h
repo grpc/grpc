@@ -34,6 +34,8 @@
 #ifndef __GRPCPP_COMPLETION_QUEUE_H__
 #define __GRPCPP_COMPLETION_QUEUE_H__
 
+#include <functional>
+
 struct grpc_completion_queue;
 
 namespace grpc {
@@ -44,41 +46,37 @@ class CompletionQueue {
   CompletionQueue();
   ~CompletionQueue();
 
-  enum CompletionType {
-    QUEUE_CLOSED = 0,       // Shutting down.
-    RPC_END = 1,            // An RPC finished. Either at client or server.
-    CLIENT_READ_OK = 2,     // A client-side read has finished successfully.
-    CLIENT_READ_ERROR = 3,  // A client-side read has finished with error.
-    CLIENT_WRITE_OK = 4,
-    CLIENT_WRITE_ERROR = 5,
-    SERVER_RPC_NEW = 6,     // A new RPC just arrived at the server.
-    SERVER_READ_OK = 7,     // A server-side read has finished successfully.
-    SERVER_READ_ERROR = 8,  // A server-side read has finished with error.
-    SERVER_WRITE_OK = 9,
-    SERVER_WRITE_ERROR = 10,
-    // Client or server has sent half close successfully.
-    HALFCLOSE_OK = 11,
-    // New CompletionTypes may be added in the future, so user code should
-    // always
-    // handle the default case of a CompletionType that appears after such code
-    // was
-    // written.
-    DO_NOT_USE = 20,
-  };
-
   // Blocking read from queue.
-  // For QUEUE_CLOSED, *tag is not changed.
-  // For SERVER_RPC_NEW, *tag will be a newly allocated AsyncServerContext.
-  // For others, *tag will be the AsyncServerContext of this rpc.
-  CompletionType Next(void** tag);
+  // Returns true if an event was received, false if the queue is ready
+  // for destruction.
+  bool Next(void** tag);
+
+  // Prepare a tag for the C api
+  // Given a tag we'd like to receive from Next, what tag should we pass
+  // down to the C api?
+  // Usage example:
+  //   grpc_call_start_batch(..., cq.PrepareTagForC(tag));
+  // Allows attaching some work to be executed before the original tag
+  // is returned.
+  // MUST be used for all events that could be surfaced through this
+  // wrapping API
+  template <class F>
+  void *PrepareTagForC(void *user_tag, F on_ready) {
+    return new std::function<void*()>([user_tag, on_ready]() {
+      on_ready();
+      return user_tag;
+    });
+  }
 
   // Shutdown has to be called, and the CompletionQueue can only be
-  // destructed when the QUEUE_CLOSED message has been read with Next().
+  // destructed when false is returned from Next().
   void Shutdown();
 
   grpc_completion_queue* cq() { return cq_; }
 
  private:
+  typedef std::function<void*()> FinishFunc;
+
   grpc_completion_queue* cq_;  // owned
 };
 
