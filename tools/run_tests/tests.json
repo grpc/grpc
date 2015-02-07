@@ -99,6 +99,14 @@
   }, 
   {
     "language": "c", 
+    "name": "gpr_env_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "gpr_file_test"
+  }, 
+  {
+    "language": "c", 
     "name": "gpr_histogram_test"
   }, 
   {
@@ -108,14 +116,6 @@
   {
     "language": "c", 
     "name": "gpr_log_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "gpr_file_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "gpr_env_test"
   }, 
   {
     "language": "c", 
@@ -279,14 +279,6 @@
   }, 
   {
     "language": "c++", 
-    "name": "tips_publisher_test"
-  }, 
-  {
-    "language": "c++", 
-    "name": "tips_subscriber_test"
-  }, 
-  {
-    "language": "c++", 
     "name": "status_test"
   }, 
   {
@@ -296,6 +288,14 @@
   {
     "language": "c++", 
     "name": "thread_pool_test"
+  }, 
+  {
+    "language": "c++", 
+    "name": "tips_publisher_test"
+  }, 
+  {
+    "language": "c++", 
+    "name": "tips_subscriber_test"
   }, 
   {
     "language": "c", 

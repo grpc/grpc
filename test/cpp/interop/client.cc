@@ -191,10 +191,10 @@ void DoComputeEngineCreds() {
   gpr_log(GPR_INFO, "Got username %s", response.username().c_str());
   gpr_log(GPR_INFO, "Got oauth_scope %s", response.oauth_scope().c_str());
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(response.username() == FLAGS_default_service_account);
+  GPR_ASSERT(response.username().c_str() == FLAGS_default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(
-      FLAGS_oauth_scope.find(response.oauth_scope()) != grpc::string::npos);
+  const char *oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with compute engine creds done.");
 }
 
@@ -212,8 +212,8 @@ void DoServiceAccountCreds() {
   GPR_ASSERT(!response.oauth_scope().empty());
   grpc::string json_key = GetServiceAccountJsonKey();
   GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
-  GPR_ASSERT(FLAGS_oauth_scope.find(response.oauth_scope()) !=
-             grpc::string::npos);
+  const char *oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with service account creds done.");
 }
 
