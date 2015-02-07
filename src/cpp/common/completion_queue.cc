@@ -31,7 +31,6 @@
  *
  */
 
-// TODO(yangg) maybe move to internal/common
 #include <grpc++/completion_queue.h>
 
 #include <grpc/grpc.h>
