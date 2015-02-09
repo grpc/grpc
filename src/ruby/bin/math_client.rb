@@ -83,7 +83,7 @@ def do_div_many(stub)
   logger.info('-------------')
   reqs = []
   reqs << Math::DivArgs.new(dividend: 7, divisor: 3)
-  reqs << Math::Di5AvArgs.new(dividend: 5, divisor: 2)
+  reqs << Math::DivArgs.new(dividend: 5, divisor: 2)
   reqs << Math::DivArgs.new(dividend: 7, divisor: 2)
   logger.info("div(7/3), div(5/2), div(7/2): reqs=#{reqs.inspect}")
   resp = stub.div_many(reqs, 10)
