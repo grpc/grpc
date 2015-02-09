@@ -49,7 +49,9 @@ class CompletionQueue {
   // Blocking read from queue.
   // Returns true if an event was received, false if the queue is ready
   // for destruction.
-  bool Next(void** tag);
+  bool Next(void **tag, bool *ok);
+
+  bool Pluck(void *tag);
 
   // Prepare a tag for the C api
   // Given a tag we'd like to receive from Next, what tag should we pass

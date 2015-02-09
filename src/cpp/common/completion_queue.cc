@@ -55,19 +55,16 @@ class EventDeleter {
   void operator()(grpc_event *ev) { if (ev) grpc_event_finish(ev); }
 };
 
-bool CompletionQueue::Next(void **tag) {
+bool CompletionQueue::Next(void **tag, bool *ok) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
   ev.reset(grpc_completion_queue_next(cq_, gpr_inf_future));
-  if (!ev) {
-    gpr_log(GPR_ERROR, "no next event in queue");
-    abort();
-  }
   if (ev->type == GRPC_QUEUE_SHUTDOWN) {
     return false;
   }
   std::unique_ptr<FinishFunc> func(static_cast<FinishFunc*>(ev->tag));
   *tag = (*func)();
+  *ok = (ev->data.op_complete == GRPC_OP_OK);
   return true;
 }
 

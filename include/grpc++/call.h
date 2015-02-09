@@ -31,19 +31,11 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_H__
-#define __GRPCPP_SERVER_H__
+#ifndef __GRPCPP_CALL_H__
+#define __GRPCPP_CALL_H__
 
-#include <condition_variable>
-#include <map>
-#include <memory>
-#include <mutex>
-
-#include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
 #include <grpc++/status.h>
-
-struct grpc_server;
+#include <grpc/grpc.h>
 
 namespace google {
 namespace protobuf {
@@ -51,64 +43,38 @@ class Message;
 }  // namespace protobuf
 }  // namespace google
 
+struct grpc_call;
+
 namespace grpc {
-class AsyncServerContext;
-class RpcService;
-class RpcServiceMethod;
-class ServerCredentials;
-class ThreadPoolInterface;
 
-// Currently it only supports handling rpcs in a single thread.
-class Server {
+class ChannelInterface;
+
+class CallOpBuffer final {
  public:
-  ~Server();
+  void AddSendMessage(const google::protobuf::Message &message);
+  void AddRecvMessage(google::protobuf::Message *message);
+  void AddClientSendClose();
+  void AddClientRecvStatus(Status *status);
 
-  // Shutdown the server, block until all rpc processing finishes.
-  void Shutdown();
+  void FinalizeResult();
 
  private:
-  friend class ServerBuilder;
+  static const size_t MAX_OPS = 6;
+  grpc_op ops_[MAX_OPS];
+  int num_ops_ = 0;
+};
 
-  // ServerBuilder use only
-  Server(ThreadPoolInterface* thread_pool, ServerCredentials* creds);
-  Server();
-  // Register a service. This call does not take ownership of the service.
-  // The service must exist for the lifetime of the Server instance.
-  void RegisterService(RpcService* service);
-  // Add a listening port. Can be called multiple times.
-  void AddPort(const grpc::string& addr);
-  // Start the server.
-  void Start();
+// Straightforward wrapping of the C call object
+class Call final {
+ public:
+  Call(grpc_call *call, ChannelInterface *channel);
 
-  void AllowOneRpc();
-  void HandleQueueClosed();
-  void RunRpc();
-  void ScheduleCallback();
+  void PerformOps(const CallOpBuffer &buffer, void *tag);
 
-  // Completion queue.
-  CompletionQueue cq_;
-
-  // Sever status
-  std::mutex mu_;
-  bool started_;
-  bool shutdown_;
-  // The number of threads which are running callbacks.
-  int num_running_cb_;
-  std::condition_variable callback_cv_;
-
-  // Pointer to the c grpc server.
-  grpc_server* server_;
-
-  // A map for all method information.
-  std::map<grpc::string, RpcServiceMethod*> method_map_;
-
-  ThreadPoolInterface* thread_pool_;
-  // Whether the thread pool is created and owned by the server.
-  bool thread_pool_owned_;
-  // Whether the server is created with credentials.
-  bool secure_;
+ private:
+  ChannelInterface *const channel_;
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_H__
+#endif  // __GRPCPP_CALL_INTERFACE_H__

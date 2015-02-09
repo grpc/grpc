@@ -31,48 +31,12 @@
  *
  */
 
-#ifndef __GRPCPP_CHANNEL_INTERFACE_H__
-#define __GRPCPP_CHANNEL_INTERFACE_H__
-
-#include <grpc++/status.h>
-
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
-struct grpc_call;
+#include <include/grpc++/call.h>
 
 namespace grpc {
 
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-class StreamContextInterface;
-class CallInterface;
-
-class ChannelInterface {
- public:
-  virtual ~ChannelInterface() {}
-
-  virtual grpc_call *CreateCall(const RpcMethod &method, ClientContext *context,
-                                CompletionQueue *cq);
-};
-
-// Wrapper that begins an asynchronous unary call
-void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                    ClientContext *context,
-                    const google::protobuf::Message &request,
-                    google::protobuf::Message *result, Status *status,
-                    CompletionQueue *cq, void *tag);
-
-// Wrapper that performs a blocking unary call
-Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                         ClientContext *context,
-                         const google::protobuf::Message &request,
-                         google::protobuf::Message *result);
+void Call::PerformOps(const CallOpBuffer& buffer, void* tag) {
+  channel_->PerformOpsOnCall(buffer, tag, call_);
+}
 
 }  // namespace grpc
-
-#endif  // __GRPCPP_CHANNEL_INTERFACE_H__
