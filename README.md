@@ -1,18 +1,18 @@
-# gRPC Helloworld Tutorial
+# gRPC Hello World Tutorial
 
 ## TODO: move this to the tutorial sub-folder
 
 A great way to get introduced to gRPC is to work through this tutorial, which
-walks you through the construction of simple client and server that introduces
+walks you through the construction of a simple client and server and introduces
 various features of gRPC.
 
 When you finish the tutorial, you will be able to
 
-- Create an protobuf schema that defines a simple RPC service
-- Create a Java server that implements the schema interface
-- Create a Java client that accesses the server
-- Create a Go client that accesses the Java server
-- Update the service with advanced features like RPC streaming
+- Create a protobuf schema that defines a simple RPC service.
+- Create a Java server that implements the schema interface.
+- Create a Java client that accesses the server.
+- Create a Go client that accesses the Java server.
+- Update the service with advanced features like RPC streaming.
 
 # Get Started
 
@@ -22,7 +22,7 @@ If you just want to read the tutorial, you can go straight to the next step: [St
 # Working with the code
 
 You can follow along with this tutorial and hack on the code in the comfort of
-your own computer. In this way you can get hands-on practice of really writing
+your own computer. This way you can get hands-on practice of really writing
 gRPC code.
 
 The tutorial relies on the use of the Git versioning system for source code
@@ -61,7 +61,7 @@ for instructions.
 
 # Install Maven
 
-To simplify building and the managing of gRPC's dependencies, the java client
+To simplify building and the managing of gRPC's dependencies, the Java client
 are server are structured as a standard [Maven](http://maven.apache.org/guides/getting-started/)
 project. See [Install Maven](http://maven.apache.org/users/index.html) for instructions.
 
@@ -76,6 +76,6 @@ Go gRPC requires Go 1.4, the latest version of Go.  See
 gRPC uses the latest version of the protocol buffer compiler, protoc.
 
 For following this tutorial, the protoc is not strictly necessary, as all the
-generated code is checked into the Git repository.  If you want to experiment
+generated code is checked into the Git repository. If you want to experiment
 with generating the code yourself, download and install protoc from its
 [Git repo](https://github.com/google/protobuf)

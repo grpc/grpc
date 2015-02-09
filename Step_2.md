@@ -1,15 +1,15 @@
 # Step-2: Write a service client.
 
 This step uses the generated code to write a simple client to access the hello
-service.  The full client is in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
+service. The full client is in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
 
 
 ## Configuring the service to connect to.
 
-The client contains uses a Stub to contact the service.  The internet address
-is configured in the client constructor.  gRPC Channel is the abstraction over
+The client contains uses a Stub to contact the service. The internet address
+is configured in the client constructor. gRPC Channel is the abstraction over
 transport handling; its constructor accepts the host name and port of the
-service.  The channel in turn is used to construct the Stub.
+service. The channel in turn is used to construct the Stub.
 
 
 ```
@@ -72,12 +72,12 @@ $ mvn package
 ```
 
 It can also be run, but doing so now would end up a with a failure as there is
-no server available yet.  The [next step](Step-3.md), describes how to
+no server available yet.  The [next step](Step_3.md), describes how to
 implement, build and run a server that supports the service description.
 
 ## Notes
 
-- the client uses a blocking stub. This means that the RPC call waits for the
+- The client uses a blocking stub. This means that the RPC call waits for the
   server to respond, and will either return a response or raise an exception.
 
 - gRPC Java has other kinds of stubs that make non-blocking calls to the

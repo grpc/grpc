@@ -1,6 +1,6 @@
 # Step-1: Generate a service client.
 
-In this step, we use protoc to generate the java Stub classes.  A Stub is the
+In this step, we use protoc to generate the Java Stub classes.  A Stub is the
 name gRPC uses for the code that initiates contact with a gRPC service running
 remotely via the internet.
 
@@ -11,7 +11,7 @@ First, you'll need to build the protobuf plugin that generates the rpc
 classes.  `protoc` uses other tools called plugins to add additional features
 to generated code.
 
-The grpc Java Stub classes are created using a grpc java plugin, but first the
+The gRPC Java Stub classes are created using a gRPC Java plugin, but first the
 plugin must be built and installed.
 
 To build the plugin:
@@ -29,5 +29,5 @@ $ protoc -I . helloworld.proto --plugin=protoc-gen-grpc=external/grpc_java/bins/
                                --java_out=src/main/java
 ```
 
-Next, in [Step-2](Step-2.md), we'll use the generated Stub implementation to
+Next, in [Step - 2](Step_2.md), we'll use the generated Stub implementation to
 write a client that uses the generated code to make a call to a service.

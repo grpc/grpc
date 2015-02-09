@@ -1,16 +1,16 @@
 # Step-3: Implement a server.
 
 This step extends the generated server skeleton code to write a simple server
-that provides the hello service.  This in introduces two new classes
+that provides the hello service. This introduces two new classes:
 
 - a service implementation [GreetingsImpl.java](src/main/java/ex/grpc/GreetingsImpl.java).
 
-- a server that hosts the service implementation and allows to accessed over the network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
+- a server that hosts the service implementation and allows access over the network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
 
 ## Service implementation
 
-[GreetingsSImpl.java](src/main/java/ex/grpc/GreetingsImpl.java)
-implements the behaviour we require of our GreetingService.  There are a
+[GreetingsImpl.java](src/main/java/ex/grpc/GreetingsImpl.java)
+implements the behaviour we require of our GreetingService. There are a
 number of important features of gRPC being used here:
 
 ```
@@ -39,7 +39,7 @@ number of important features of gRPC being used here:
 ## Server implementation
 
 [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java) shows the
-other main feature to required to provde gRPC service; how to allow a service
+other main feature required to provde the gRPC service; how to allow a service
 implementation to be accessed from the network.
 
 ```
@@ -68,14 +68,14 @@ $ mvn package
 
 ## Try them out
 
-We've added simple shell scripts to simplifying running the examples.  Now
-that they are built, you can run the server with.
+We've added simple shell scripts to simplifying running the examples. Now
+that they are built, you can run the server with:
 
 ```
 $ ./run_greetings_server.sh
 ```
 
-In another termainal window and confirm that it receives a message.
+and in another terminal window confirm that it receives a message.
 
 ```
 $ ./run_greetings_client.sh
