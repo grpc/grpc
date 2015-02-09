@@ -38,6 +38,7 @@
 #include <grpc++/completion_queue.h>
 
 #include <memory>
+#include <vector>
 
 namespace google {
 namespace protobuf {
