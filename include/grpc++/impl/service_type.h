@@ -31,48 +31,24 @@
  *
  */
 
-#include <grpc++/server_builder.h>
-
-#include <grpc/support/log.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/server.h>
+#ifndef __GRPCPP_IMPL_SERVICE_TYPE_H__
+#define __GRPCPP_IMPL_SERVICE_TYPE_H__
 
 namespace grpc {
 
-ServerBuilder::ServerBuilder() : thread_pool_(nullptr) {}
+class RpcService;
 
-void ServerBuilder::RegisterService(SynchronousService *service) {
-  services_.push_back(service->service());
-}
+class SynchronousService {
+ public:
+  virtual ~SynchronousService() {}
+  virtual RpcService *service() = 0;
+};
 
-void ServerBuilder::RegisterAsyncService(AsynchronousService *service) {
-  async_services_.push_back(service);
-}
-
-void ServerBuilder::AddPort(const grpc::string &addr) {
-  ports_.push_back(addr);
-}
-
-void ServerBuilder::SetCredentials(
-    const std::shared_ptr<ServerCredentials> &creds) {
-  GPR_ASSERT(!creds_);
-  creds_ = creds;
-}
-
-void ServerBuilder::SetThreadPool(ThreadPoolInterface *thread_pool) {
-  thread_pool_ = thread_pool;
-}
-
-std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  std::unique_ptr<Server> server(new Server(thread_pool_, creds_.get()));
-  for (auto *service : services_) {
-    server->RegisterService(service);
-  }
-  for (auto &port : ports_) {
-    server->AddPort(port);
-  }
-  server->Start();
-  return server;
-}
+class AsynchronousService {
+ public:
+  virtual ~AsynchronousService() {}
+};
 
 }  // namespace grpc
+
+#endif // __GRPCPP_IMPL_SERVICE_TYPE_H__

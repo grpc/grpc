@@ -41,9 +41,11 @@
 
 namespace grpc {
 
+class AsynchronousService;
 class RpcService;
 class Server;
 class ServerCredentials;
+class SynchronousService;
 class ThreadPoolInterface;
 
 class ServerBuilder {
@@ -53,7 +55,9 @@ class ServerBuilder {
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance returned by
   // BuildAndStart().
-  void RegisterService(RpcService* service);
+  void RegisterService(SynchronousService* service);
+
+  void ReigsterAsyncService(AsynchronousService *service);
 
   // Add a listening port. Can be called multiple times.
   void AddPort(const grpc::string& addr);
@@ -71,6 +75,7 @@ class ServerBuilder {
 
  private:
   std::vector<RpcService*> services_;
+  std::vector<AsynchronousService*> async_services_;
   std::vector<grpc::string> ports_;
   std::shared_ptr<ServerCredentials> creds_;
   ThreadPoolInterface* thread_pool_;

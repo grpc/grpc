@@ -203,7 +203,7 @@ class RpcService {
  public:
   // Takes ownership.
   void AddMethod(RpcServiceMethod* method) {
-    methods_.push_back(std::unique_ptr<RpcServiceMethod>(method));
+    methods_.emplace_back(method);
   }
 
   RpcServiceMethod* GetMethod(int i) { return methods_[i].get(); }

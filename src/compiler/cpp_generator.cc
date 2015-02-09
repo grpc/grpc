@@ -108,8 +108,9 @@ bool HasBidiStreaming(const google::protobuf::FileDescriptor *file) {
 
 std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
   std::string temp =
-      "#include \"grpc++/impl/internal_stub.h\"\n"
-      "#include \"grpc++/status.h\"\n"
+      "#include <grpc++/impl/internal_stub.h>\n"
+      "#include <grpc++/impl/service_type.h>\n"
+      "#include <grpc++/status.h>\n"
       "\n"
       "namespace grpc {\n"
       "class ChannelInterface;\n"
@@ -147,6 +148,7 @@ std::string GetSourceIncludes() {
   return "#include <grpc++/channel_interface.h>\n"
          "#include <grpc++/impl/rpc_method.h>\n"
          "#include <grpc++/impl/rpc_service_method.h>\n"
+         "#include <grpc++/impl/service_type.h>\n"
          "#include <grpc++/stream.h>\n";
 }
 
@@ -165,8 +167,8 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "void $Method$(::grpc::ClientContext* context, "
                    "const $Request$& request, $Response$* response, "
-                   "Status *status, "
-                   "CompletionQueue *cq, void *tag);\n");
+                   "::grpc::Status *status, "
+                   "::grpc::CompletionQueue *cq, void *tag);\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
                    "::grpc::ClientWriter< $Request$>* $Method$("
@@ -174,8 +176,8 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "::grpc::ClientWriter< $Request$>* $Method$("
                    "::grpc::ClientContext* context, $Response$* response, "
-                   "Status *status, "
-                   "CompletionQueue *cq, void *tag);\n");
+                   "::grpc::Status *status, "
+                   "::grpc::CompletionQueue *cq, void *tag);\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -184,7 +186,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "::grpc::ClientReader< $Response$>* $Method$("
                    "::grpc::ClientContext* context, const $Request$* request, "
-                   "CompletionQueue *cq, void *tag);\n");
+                   "::grpc::CompletionQueue *cq, void *tag);\n");
   } else if (BidiStreaming(method)) {
     printer->Print(*vars,
                    "::grpc::ClientReaderWriter< $Request$, $Response$>* "
@@ -192,7 +194,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "::grpc::ClientReaderWriter< $Request$, $Response$>* "
                    "$Method$(::grpc::ClientContext* context, "
-                   "CompletionQueue *cq, void *tag);\n");
+                   "::grpc::CompletionQueue *cq, void *tag);\n");
   }
 }
 
@@ -297,7 +299,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
 
   // Server side - Synchronous
   printer->Print(
-      "class Service {\n"
+      "class Service : public ::grpc::SynchronousService {\n"
       " public:\n");
   printer->Indent();
   printer->Print("Service() : service_(nullptr) {}\n");
@@ -314,7 +316,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
 
   // Server side - Asynchronous
   printer->Print(
-      "class AsyncService final {\n"
+      "class AsyncService final : public ::grpc::AsynchronousService {\n"
       " public:\n");
   printer->Indent();
   printer->Print("AsyncService() : service_(nullptr) {}\n");
