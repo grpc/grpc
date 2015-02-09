@@ -96,7 +96,7 @@ class ClientReader final : public ClientStreamingInterface,
     cq_.Pluck((void *)1);
   }
 
-  virtual bool Read(R *msg) {
+  virtual bool Read(R *msg) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
     call_.PerformOps(&buf, (void *)2);
@@ -122,13 +122,13 @@ class ClientWriter final : public ClientStreamingInterface,
                            public WriterInterface<W> {
  public:
   // Blocking create a stream.
-  explicit ClientWriter(ChannelInterface *channel, const RpcMethod &method,
-                        ClientContext *context,
-                        google::protobuf::Message *response)
+  ClientWriter(ChannelInterface *channel, const RpcMethod &method,
+               ClientContext *context,
+               google::protobuf::Message *response)
       : response_(response),
         call_(channel->CreateCall(method, context, &cq_)) {}
 
-  virtual bool Write(const W& msg) {
+  virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
     call_.PerformOps(&buf, (void *)2);
@@ -165,18 +165,18 @@ class ClientReaderWriter final : public ClientStreamingInterface,
                                  public ReaderInterface<R> {
  public:
   // Blocking create a stream.
-  explicit ClientReaderWriter(ChannelInterface *channel,
-                              const RpcMethod &method, ClientContext *context)
+  ClientReaderWriter(ChannelInterface *channel,
+                     const RpcMethod &method, ClientContext *context)
       : call_(channel->CreateCall(method, context, &cq_)) {}
 
-  virtual bool Read(R *msg) {
+  virtual bool Read(R *msg) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
     call_.PerformOps(&buf, (void *)2);
     return cq_.Pluck((void *)2);
   }
 
-  virtual bool Write(const W& msg) {
+  virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
     call_.PerformOps(&buf, (void *)3);
@@ -205,17 +205,20 @@ class ClientReaderWriter final : public ClientStreamingInterface,
 };
 
 template <class R>
-class ServerReader : public ReaderInterface<R> {
+class ServerReader final : public ReaderInterface<R> {
  public:
-  explicit ServerReader(StreamContextInterface* context) : context_(context) {
-    GPR_ASSERT(context_);
-    context_->Start(true);
+  ServerReader(CompletionQueue* cq, Call* call) : cq_(cq), call_(call) {}
+
+  virtual bool Read(R* msg) override {
+    CallOpBuffer buf;
+    buf.AddRecvMessage(msg);
+    call_->PerformOps(&buf, (void *)2);
+    return cq_->Pluck((void *)2);
   }
 
-  virtual bool Read(R* msg) { return context_->Read(msg); }
-
  private:
-  StreamContextInterface* const context_;  // not owned
+  CompletionQueue* cq_;
+  Call* call_;
 };
 
 template <class W>
