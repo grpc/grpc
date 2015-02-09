@@ -57,7 +57,7 @@ class ServerBuilder {
   // BuildAndStart().
   void RegisterService(SynchronousService* service);
 
-  void ReigsterAsyncService(AsynchronousService *service);
+  void RegisterAsyncService(AsynchronousService *service);
 
   // Add a listening port. Can be called multiple times.
   void AddPort(const grpc::string& addr);
@@ -78,7 +78,7 @@ class ServerBuilder {
   std::vector<AsynchronousService*> async_services_;
   std::vector<grpc::string> ports_;
   std::shared_ptr<ServerCredentials> creds_;
-  ThreadPoolInterface* thread_pool_;
+  ThreadPoolInterface* thread_pool_ = nullptr;
 };
 
 }  // namespace grpc

@@ -38,24 +38,20 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 #include "src/cpp/server/server_rpc_handler.h"
-#include "src/cpp/server/thread_pool.h"
 #include <grpc++/async_server_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/server_credentials.h>
+#include <grpc++/thread_pool_interface.h>
 
 namespace grpc {
 
-// TODO(rocking): consider a better default value like num of cores.
-static const int kNumThreads = 4;
-
-Server::Server(ThreadPoolInterface *thread_pool, ServerCredentials *creds)
+Server::Server(ThreadPoolInterface *thread_pool, bool thread_pool_owned, ServerCredentials *creds)
     : started_(false),
       shutdown_(false),
       num_running_cb_(0),
-      thread_pool_(thread_pool == nullptr ? new ThreadPool(kNumThreads)
-                                          : thread_pool),
-      thread_pool_owned_(thread_pool == nullptr),
+      thread_pool_(thread_pool),
+      thread_pool_owned_(thread_pool_owned),
       secure_(creds != nullptr) {
   if (creds) {
     server_ =
@@ -82,31 +78,35 @@ Server::~Server() {
   }
 }
 
-void Server::RegisterService(RpcService *service) {
+bool Server::RegisterService(RpcService *service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
     RpcServiceMethod *method = service->GetMethod(i);
+    if (method_map_.find(method->name()) != method_map_.end()) {
+      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times", method->name());
+      return false;
+    }
     method_map_.insert(std::make_pair(method->name(), method));
   }
 }
 
-void Server::AddPort(const grpc::string &addr) {
+int Server::AddPort(const grpc::string &addr) {
   GPR_ASSERT(!started_);
-  int success;
   if (secure_) {
-    success = grpc_server_add_secure_http2_port(server_, addr.c_str());
+    return grpc_server_add_secure_http2_port(server_, addr.c_str());
   } else {
-    success = grpc_server_add_http2_port(server_, addr.c_str());
+    return grpc_server_add_http2_port(server_, addr.c_str());
   }
-  GPR_ASSERT(success);
 }
 
-void Server::Start() {
+bool Server::Start() {
   GPR_ASSERT(!started_);
   started_ = true;
   grpc_server_start(server_);
 
   // Start processing rpcs.
   ScheduleCallback();
+
+  return true;
 }
 
 void Server::AllowOneRpc() {
@@ -141,8 +141,7 @@ void Server::ScheduleCallback() {
     std::unique_lock<std::mutex> lock(mu_);
     num_running_cb_++;
   }
-  std::function<void()> callback = std::bind(&Server::RunRpc, this);
-  thread_pool_->ScheduleCallback(callback);
+  thread_pool_->ScheduleCallback(std::bind(&Server::RunRpc, this));
 }
 
 void Server::RunRpc() {
