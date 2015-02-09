@@ -42,7 +42,13 @@ class CompletionQueue;
 
 class CompletionQueueTag {
  public:
-  virtual void FinalizeResult() = 0;
+  enum FinalizeResultOutput {
+    SUCCEED,
+    FAIL,
+    SWALLOW,
+  };
+
+  virtual FinalizeResultOutput FinalizeResult(bool status) = 0;
 
  private:
   friend class CompletionQueue;

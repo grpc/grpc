@@ -71,6 +71,8 @@ Server::~Server() {
   if (started_ && !shutdown_) {
     lock.unlock();
     Shutdown();
+  } else {
+    lock.unlock();
   }
   grpc_server_destroy(server_);
   if (thread_pool_owned_) {
