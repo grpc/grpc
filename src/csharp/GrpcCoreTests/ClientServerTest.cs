@@ -1,35 +1,37 @@
 using System;
 using NUnit.Framework;
+using Google.GRPC.Core;
 using Google.GRPC.Core.Internal;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.GRPC.Core.Utils;
 
 namespace Google.GRPC.Core.Tests
 {
     public class ClientServerTest
     {
-        string serverAddr = "localhost:" + Utils.PickUnusedPort();
+        string serverAddr = "localhost:" + PortPicker.PickUnusedPort();
 
-        private Method<string, string> unaryEchoStringMethod = new Method<string, string>(
+        Method<string, string> unaryEchoStringMethod = new Method<string, string>(
             MethodType.Unary,
             "/tests.Test/UnaryEchoString",
-            new StringMarshaller(),
-            new StringMarshaller());
+            Marshallers.StringMarshaller,
+            Marshallers.StringMarshaller);
 
         [Test]
         public void EmptyCall()
         {
             Server server = new Server();
-
-            server.AddCallHandler(unaryEchoStringMethod.Name, 
-                                  ServerCalls.UnaryRequestCall(unaryEchoStringMethod, HandleUnaryEchoString));
+            server.AddServiceDefinition(
+                ServerServiceDefinition.CreateBuilder("someService")
+                    .AddMethod(unaryEchoStringMethod, HandleUnaryEchoString).Build());
 
             server.AddPort(serverAddr);
             server.Start();
 
             using (Channel channel = new Channel(serverAddr))
             {
-                var call = CreateUnaryEchoStringCall(channel);
+                var call = new Call<string, string>(unaryEchoStringMethod, channel);
 
                 Assert.AreEqual("ABC", Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)));
                 Assert.AreEqual("abcdef", Calls.BlockingUnaryCall(call, "abcdef", default(CancellationToken)));
@@ -38,11 +40,6 @@ namespace Google.GRPC.Core.Tests
             server.ShutdownAsync().Wait();
 
             GrpcEnvironment.Shutdown();
-        }
-
-        private Call<string, string> CreateUnaryEchoStringCall(Channel channel)
-        {
-            return new Call<string, string>(unaryEchoStringMethod, channel);
         }
 
         private void HandleUnaryEchoString(string request, IObserver<string> responseObserver) {

@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace math
+namespace Google.GRPC.Core.Utils
 {
     public class RecordingObserver<T> : IObserver<T>
     {

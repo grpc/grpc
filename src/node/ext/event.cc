@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,11 +58,11 @@ using v8::Value;
 
 Handle<Value> ParseMetadata(grpc_metadata *metadata_elements, size_t length) {
   NanEscapableScope();
-  std::map<char*, size_t> size_map;
-  std::map<char*, size_t> index_map;
+  std::map<const char*, size_t> size_map;
+  std::map<const char*, size_t> index_map;
 
   for (unsigned int i = 0; i < length; i++) {
-    char *key = metadata_elements[i].key;
+    const char *key = metadata_elements[i].key;
     if (size_map.count(key)) {
       size_map[key] += 1;
     }
@@ -97,8 +97,6 @@ Handle<Value> GetEventData(grpc_event *event) {
   switch (event->type) {
     case GRPC_READ:
       return NanEscapeScope(ByteBufferToBuffer(event->data.read));
-    case GRPC_INVOKE_ACCEPTED:
-      return NanEscapeScope(NanNew<Number>(event->data.invoke_accepted));
     case GRPC_WRITE_ACCEPTED:
       return NanEscapeScope(NanNew<Number>(event->data.write_accepted));
     case GRPC_FINISH_ACCEPTED:
@@ -124,12 +122,12 @@ Handle<Value> GetEventData(grpc_event *event) {
         return NanEscapeScope(NanNull());
       }
       rpc_new->Set(
-          NanNew<String, const char *>("method"),
-          NanNew<String, const char *>(event->data.server_rpc_new.method));
+          NanNew("method"),
+          NanNew(event->data.server_rpc_new.method));
       rpc_new->Set(
-          NanNew<String, const char *>("host"),
-          NanNew<String, const char *>(event->data.server_rpc_new.host));
-      rpc_new->Set(NanNew<String, const char *>("absolute_deadline"),
+          NanNew("host"),
+          NanNew(event->data.server_rpc_new.host));
+      rpc_new->Set(NanNew("absolute_deadline"),
                    NanNew<Date>(TimespecToMilliseconds(
                        event->data.server_rpc_new.deadline)));
       count = event->data.server_rpc_new.metadata_count;
@@ -137,12 +135,11 @@ Handle<Value> GetEventData(grpc_event *event) {
       metadata = NanNew<Array>(static_cast<int>(count));
       for (unsigned int i = 0; i < count; i++) {
         Handle<Object> item_obj = Object::New();
-        item_obj->Set(NanNew<String, const char *>("key"),
-                      NanNew<String, char *>(items[i].key));
+        item_obj->Set(NanNew("key"),
+                      NanNew(items[i].key));
         item_obj->Set(
-            NanNew<String, const char *>("value"),
-            NanNew<String, char *>(items[i].value,
-                                   static_cast<int>(items[i].value_length)));
+            NanNew("value"),
+            NanNew(items[i].value, static_cast<int>(items[i].value_length)));
         metadata->Set(i, item_obj);
       }
       rpc_new->Set(NanNew("metadata"), ParseMetadata(items, count));
