@@ -5,6 +5,11 @@ using System.Collections.Concurrent;
 
 namespace Google.GRPC.Core.Utils
 {
+    /// <summary>
+    /// Observer that allows us to await incoming messages one-by-one.
+    /// The implementation is not ideal and class will be probably replaced 
+    /// by something more versatile in the future.
+    /// </summary>
     public class RecordingQueue<T> : IObserver<T>
     {
         readonly BlockingCollection<T> queue = new BlockingCollection<T>();

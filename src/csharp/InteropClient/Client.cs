@@ -7,9 +7,9 @@ using Google.GRPC.Core.Utils;
 using Google.ProtocolBuffers;
 using grpc.testing;
 
-namespace InteropClient
+namespace Google.GRPC.Interop
 {
-    class InteropClient
+    class Client
     {
         private class ClientOptions
         {
@@ -24,7 +24,8 @@ namespace InteropClient
 
         ClientOptions options;
 
-        private InteropClient(ClientOptions options) {
+        private Client(ClientOptions options)
+        {
             this.options = options;
         }
 
@@ -53,7 +54,7 @@ namespace InteropClient
                 Environment.Exit(1);
             }
 
-            var interopClient = new InteropClient(options);
+            var interopClient = new Client(options);
             interopClient.Run();
         }
 

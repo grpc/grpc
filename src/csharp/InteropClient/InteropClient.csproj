@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>InteropClient</RootNamespace>
     <AssemblyName>InteropClient</AssemblyName>
-    <StartupObject>InteropClient.InteropClient</StartupObject>
+    <StartupObject>Google.GRPC.Interop.Client</StartupObject>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -43,7 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="InteropClient.cs" />
+    <Compile Include="Client.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
