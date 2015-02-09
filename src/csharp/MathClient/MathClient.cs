@@ -2,25 +2,23 @@ using System;
 using System.Runtime.InteropServices;
 using Google.GRPC.Core;
 using System.Threading;
-using math;
 
-namespace Google.GRPC.Demo
+namespace math
 {
-	class MainClass
+	class MathClient
     {
 		public static void Main (string[] args)
 		{
 			using (Channel channel = new Channel("127.0.0.1:23456"))
 			{
-
 				MathGrpc.IMathServiceClient stub = new MathGrpc.MathServiceClientStub(channel);
-				Examples.DivExample(stub);
+				MathExamples.DivExample(stub);
 
-                Examples.FibExample(stub);
+                MathExamples.FibExample(stub);
 
-				Examples.SumExample(stub);
+				MathExamples.SumExample(stub);
 
-				Examples.DivManyExample(stub);
+				MathExamples.DivManyExample(stub);
 			}
            
             GrpcEnvironment.Shutdown();
