@@ -35,6 +35,7 @@
 #define NET_GRPC_NODE_CALL_H_
 
 #include <memory>
+#include <vector>
 
 #include <node.h>
 #include <nan.h>
@@ -47,9 +48,12 @@ namespace node {
 
 using std::unique_ptr;
 
+v8::Handle<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
+
 class PersistentHolder {
  public:
-  explicit PersistentHolder(v8::Persistent<v8::Value> persist) : persist(persist) {
+  explicit PersistentHolder(v8::Persistent<v8::Value> persist) :
+      persist(persist) {
   }
 
   ~PersistentHolder() {
@@ -69,7 +73,7 @@ class Op {
   v8::Handle<v8::Value> GetOpType() const;
 
  protected:
-  virtual std::string GetTypeString() const;
+  virtual std::string GetTypeString() const = 0;
 };
 
 struct tag {
@@ -82,6 +86,12 @@ struct tag {
   std::vector<unique_ptr<PersistentHolder> > *handles;
   std::vector<unique_ptr<NanUtf8String> > *strings;
 };
+
+v8::Handle<v8::Value> GetTagNodeValue(void *tag);
+
+NanCallback GetTagCallback(void *tag);
+
+void DestroyTag(void *tag);
 
 /* Wrapper class for grpc_call structs. */
 class Call : public ::node::ObjectWrap {

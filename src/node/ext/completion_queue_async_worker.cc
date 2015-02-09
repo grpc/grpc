@@ -37,7 +37,7 @@
 #include "grpc/grpc.h"
 #include "grpc/support/time.h"
 #include "completion_queue_async_worker.h"
-#include "tag.h"
+#include "call.h"
 
 namespace grpc {
 namespace node {
@@ -78,7 +78,7 @@ void CompletionQueueAsyncWorker::Init(Handle<Object> exports) {
 void CompletionQueueAsyncWorker::HandleOKCallback() {
   NanScope();
   NanCallback callback = GetTagCallback(result->tag);
-  Handle<Value> argv[] = {NanNull(), GetNodeValue(result->tag)};
+  Handle<Value> argv[] = {NanNull(), GetTagNodeValue(result->tag)};
 
   DestroyTag(result->tag);
   grpc_event_finish(result);

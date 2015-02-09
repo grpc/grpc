@@ -34,11 +34,9 @@
         "ext/channel.cc",
         "ext/completion_queue_async_worker.cc",
         "ext/credentials.cc",
-        "ext/event.cc",
         "ext/node_grpc.cc",
         "ext/server.cc",
         "ext/server_credentials.cc",
-        "ext/tag.cc",
         "ext/timeval.cc"
       ],
       'conditions' : [

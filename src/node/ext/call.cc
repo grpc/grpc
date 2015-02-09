@@ -55,6 +55,7 @@ namespace node {
 using ::node::Buffer;
 using v8::Arguments;
 using v8::Array;
+using v8::Boolean;
 using v8::Exception;
 using v8::External;
 using v8::Function;
@@ -80,6 +81,7 @@ bool CreateMetadataArray(
     std::vector<unique_ptr<NanUtf8String> > *string_handles,
     std::vector<unique_ptr<PersistentHolder> > *handles) {
   NanScope();
+  grpc_metadata_array_init(array);
   Handle<Array> keys(metadata->GetOwnPropertyNames());
   for (unsigned int i = 0; i < keys->Length(); i++) {
     Handle<String> current_key(keys->Get(i)->ToString());
@@ -156,12 +158,12 @@ Handle<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
 
 Handle<Value> Op::GetOpType() const {
   NanEscapableScope();
-  return NanEscapeScope(NanNew(GetTypeString()));
+  return NanEscapeScope(NanNew<String>(GetTypeString()));
 }
 
 class SendMetadataOp : public Op {
  public:
-  Handle<Value> GetNodeValue() {
+  Handle<Value> GetNodeValue() const {
     NanEscapableScope();
     return NanEscapeScope(NanTrue());
   }
@@ -180,14 +182,14 @@ class SendMetadataOp : public Op {
     return true;
   }
  protected:
-  std::string GetTypeString() {
+  std::string GetTypeString() const {
     return "send metadata";
   }
 };
 
 class SendMessageOp : public Op {
  public:
-  Handle<Value> GetNodeValue() {
+  Handle<Value> GetNodeValue() const {
     NanEscapableScope();
     return NanEscapeScope(NanTrue());
   }
@@ -197,20 +199,22 @@ class SendMessageOp : public Op {
     if (!Buffer::HasInstance(value)) {
       return false;
     }
-    out->data.send_message = BufferToByteBuffer(obj->Get(type));
+    out->data.send_message = BufferToByteBuffer(value);
+    Persistent<Value> handle;
     NanAssignPersistent(handle, value);
     handles->push_back(unique_ptr<PersistentHolder>(
         new PersistentHolder(handle)));
+    return true;
   }
  protected:
-  std::string GetTypeString() {
+  std::string GetTypeString() const {
     return "send message";
   }
 };
 
 class SendClientCloseOp : public Op {
  public:
-  Handle<Value> GetNodeValue() {
+  Handle<Value> GetNodeValue() const {
     NanEscapableScope();
     return NanEscapeScope(NanTrue());
   }
@@ -220,14 +224,14 @@ class SendClientCloseOp : public Op {
     return true;
   }
  protected:
-  std::string GetTypeString() {
+  std::string GetTypeString() const {
     return "client close";
   }
 };
 
 class SendServerStatusOp : public Op {
  public:
-  Handle<Value> GetNodeValue() {
+  Handle<Value> GetNodeValue() const {
     NanEscapableScope();
     return NanEscapeScope(NanTrue());
   }
@@ -265,10 +269,10 @@ class SendServerStatusOp : public Op {
     return true;
   }
  protected:
-  std::string GetTypeString() {
+  std::string GetTypeString() const {
     return "send status";
   }
-}
+};
 
 class GetMetadataOp : public Op {
  public:
@@ -289,10 +293,11 @@ class GetMetadataOp : public Op {
                std::vector<unique_ptr<NanUtf8String> > *strings,
                std::vector<unique_ptr<PersistentHolder> > *handles) {
     out->data.recv_initial_metadata = &recv_metadata;
+    return true;
   }
 
  protected:
-  std::string GetTypeString() {
+  std::string GetTypeString() const {
     return "metadata";
   }
 
@@ -323,7 +328,7 @@ class ReadMessageOp : public Op {
   }
 
  protected:
-  std::string GetTypeString() {
+  std::string GetTypeString() const {
     return "read";
   }
 
@@ -334,12 +339,13 @@ class ReadMessageOp : public Op {
 class ClientStatusOp : public Op {
  public:
   ClientStatusOp() {
-    grpc_metadata_array_init(&metadata);
+    grpc_metadata_array_init(&metadata_array);
     status_details = NULL;
+    details_capacity = 0;
   }
 
   ~ClientStatusOp() {
-    gprc_metadata_array_destroy(&metadata_array);
+    grpc_metadata_array_destroy(&metadata_array);
     gpr_free(status_details);
   }
 
@@ -357,7 +363,7 @@ class ClientStatusOp : public Op {
     NanEscapableScope();
     Handle<Object> status_obj = NanNew<Object>();
     status_obj->Set(NanNew("code"), NanNew<Number>(status));
-    if (event->data.finished.details != NULL) {
+    if (status_details != NULL) {
       status_obj->Set(NanNew("details"), String::New(status_details));
     }
     status_obj->Set(NanNew("metadata"), ParseMetadata(&metadata_array));
@@ -378,7 +384,7 @@ class ServerCloseResponseOp : public Op {
  public:
   Handle<Value> GetNodeValue() const {
     NanEscapableScope();
-    NanEscapeScope(NanNew<Boolean>(cancelled));
+    return NanEscapeScope(NanNew<Boolean>(cancelled));
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
@@ -397,27 +403,43 @@ class ServerCloseResponseOp : public Op {
   int cancelled;
 };
 
-struct tag {
-  tag(NanCallback *callback, std::vector<unique_ptr<Op> > *ops,
-      std::vector<unique_ptr<PersistentHolder> > *handles,
-      std::vector<unique_ptr<NanUtf8String> > *strings) :
-      callback(callback), ops(ops), handles(handles), strings(strings){
+tag::tag(NanCallback *callback, std::vector<unique_ptr<Op> > *ops,
+         std::vector<unique_ptr<PersistentHolder> > *handles,
+         std::vector<unique_ptr<NanUtf8String> > *strings) :
+    callback(callback), ops(ops), handles(handles), strings(strings){
+}
+tag::~tag() {
+  delete callback;
+  delete ops;
+  if (handles != NULL) {
+    delete handles;
   }
-  ~tag() {
-    if (strings != null) {
-      for (std::vector<NanUtf8String *>::iterator it = strings.begin();
-           it != strings.end(); ++it) {
-        delete *it;
-      }
-      delete strings;
-    }
-    delete callback;
-    delete ops;
-    if (handles != null) {
-      delete handles;
-    }
+  if (strings != NULL) {
+    delete strings;
   }
-};
+}
+
+Handle<Value> GetTagNodeValue(void *tag) {
+  NanEscapableScope();
+  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
+  Handle<Object> tag_obj = NanNew<Object>();
+  for (std::vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
+       it != tag_struct->ops->end(); ++it) {
+    Op *op_ptr = it->get();
+    tag_obj->Set(op_ptr->GetOpType(), op_ptr->GetNodeValue());
+  }
+  return NanEscapeScope(tag_obj);
+}
+
+NanCallback GetTagCallback(void *tag) {
+  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
+  return *tag_struct->callback;
+}
+
+void DestroyTag(void *tag) {
+  struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
+  delete tag_struct;
+}
 
 Call::Call(grpc_call *call) : wrapped_call(call) {}
 
@@ -559,13 +581,16 @@ NAN_METHOD(Call::StartBatch) {
       default:
         return NanThrowError("Argument object had an unrecognized key");
     }
-    op.ParseOp(obj.get(type), &ops[i], strings, handles);
-    op_vector.push_back(unique_ptr<Op>(op));
+    if (!op->ParseOp(obj->Get(type), &ops[i], strings, handles)) {
+      return NanThrowTypeError("Incorrectly typed arguments to startBatch");
+    }
+    op_vector->push_back(unique_ptr<Op>(op));
   }
   grpc_call_error error = grpc_call_start_batch(
-      call->wrapped_call, ops, nops, new struct tag(args[1].As<Function>(),
-                                                    op_vector, nops, handles,
-                                                    strings));
+      call->wrapped_call, ops, nops, new struct tag(
+          new NanCallback(args[1].As<Function>()),
+          op_vector, handles,
+          strings));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("startBatch failed", error);
   }

@@ -130,37 +130,6 @@ void InitCallErrorConstants(Handle<Object> exports) {
   call_error->Set(NanNew("INVALID_FLAGS"), INVALID_FLAGS);
 }
 
-void InitOpErrorConstants(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> op_error = Object::New();
-  exports->Set(NanNew("opError"), op_error);
-  Handle<Value> OK(NanNew<Uint32, uint32_t>(GRPC_OP_OK));
-  op_error->Set(NanNew("OK"), OK);
-  Handle<Value> ERROR(NanNew<Uint32, uint32_t>(GRPC_OP_ERROR));
-  op_error->Set(NanNew("ERROR"), ERROR);
-}
-
-void InitCompletionTypeConstants(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> completion_type = Object::New();
-  exports->Set(NanNew("completionType"), completion_type);
-  Handle<Value> QUEUE_SHUTDOWN(NanNew<Uint32, uint32_t>(GRPC_QUEUE_SHUTDOWN));
-  completion_type->Set(NanNew("QUEUE_SHUTDOWN"), QUEUE_SHUTDOWN);
-  Handle<Value> READ(NanNew<Uint32, uint32_t>(GRPC_READ));
-  completion_type->Set(NanNew("READ"), READ);
-  Handle<Value> WRITE_ACCEPTED(NanNew<Uint32, uint32_t>(GRPC_WRITE_ACCEPTED));
-  completion_type->Set(NanNew("WRITE_ACCEPTED"), WRITE_ACCEPTED);
-  Handle<Value> FINISH_ACCEPTED(NanNew<Uint32, uint32_t>(GRPC_FINISH_ACCEPTED));
-  completion_type->Set(NanNew("FINISH_ACCEPTED"), FINISH_ACCEPTED);
-  Handle<Value> CLIENT_METADATA_READ(
-      NanNew<Uint32, uint32_t>(GRPC_CLIENT_METADATA_READ));
-  completion_type->Set(NanNew("CLIENT_METADATA_READ"), CLIENT_METADATA_READ);
-  Handle<Value> FINISHED(NanNew<Uint32, uint32_t>(GRPC_FINISHED));
-  completion_type->Set(NanNew("FINISHED"), FINISHED);
-  Handle<Value> SERVER_RPC_NEW(NanNew<Uint32, uint32_t>(GRPC_SERVER_RPC_NEW));
-  completion_type->Set(NanNew("SERVER_RPC_NEW"), SERVER_RPC_NEW);
-}
-
 void InitOpTypeConstants(Handle<Object> exports) {
   NanScope();
   Handle<Object> op_type = Object::New();
@@ -196,8 +165,6 @@ void init(Handle<Object> exports) {
   grpc_init();
   InitStatusConstants(exports);
   InitCallErrorConstants(exports);
-  InitOpErrorConstants(exports);
-  InitCompletionTypeConstants(exports);
   InitOpTypeConstants(exports);
 
   grpc::node::Call::Init(exports);

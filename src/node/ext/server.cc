@@ -45,8 +45,8 @@
 #include "grpc/grpc_security.h"
 #include "call.h"
 #include "completion_queue_async_worker.h"
-#include "tag.h"
 #include "server_credentials.h"
+#include "timeval.h"
 
 namespace grpc {
 namespace node {
@@ -55,6 +55,7 @@ using std::unique_ptr;
 using v8::Arguments;
 using v8::Array;
 using v8::Boolean;
+using v8::Date;
 using v8::Exception;
 using v8::Function;
 using v8::FunctionTemplate;
@@ -80,12 +81,12 @@ class NewCallOp : public Op {
 
   ~NewCallOp() {
     grpc_call_details_destroy(&details);
-    grpc_metadata_array_destroy(&details);
+    grpc_metadata_array_destroy(&request_metadata);
   }
 
   Handle<Value> GetNodeValue() const {
     NanEscapableScope();
-    if (*call == NULL) {
+    if (call == NULL) {
       return NanEscapeScope(NanNull());
     }
     Handle<Object> obj = NanNew<Object>();
@@ -99,15 +100,20 @@ class NewCallOp : public Op {
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > strings,
-               std::vector<unique_ptr<PersistentHolder> > handles) {
+               std::vector<unique_ptr<NanUtf8String> > *strings,
+               std::vector<unique_ptr<PersistentHolder> > *handles) {
     return true;
   }
 
   grpc_call *call;
   grpc_call_details details;
   grpc_metadata_array request_metadata;
-}
+
+ protected:
+  std::string GetTypeString() const {
+    return "new call";
+  }
+};
 
 Server::Server(grpc_server *server) : wrapped_server(server) {}
 
@@ -217,12 +223,13 @@ NAN_METHOD(Server::RequestCall) {
     return NanThrowTypeError("requestCall can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
-  Op *op = new NewCallOp();
-  std::vector<unique_ptr<Op> > *ops = { unique_ptr<Op>(op) };
+  NewCallOp *op = new NewCallOp();
+  std::vector<unique_ptr<Op> > *ops = new std::vector<unique_ptr<Op> >();
+  ops->push_back(unique_ptr<Op>(op));
   grpc_call_error error = grpc_server_request_call(
-      server->wrapped_server, &op->call, &op->details, &op->metadata,
+      server->wrapped_server, &op->call, &op->details, &op->request_metadata,
       CompletionQueueAsyncWorker::GetQueue(),
-      new struct tag(args[0].As<Function>(), ops, NULL, NULL));
+      new struct tag(new NanCallback(args[0].As<Function>()), ops, NULL, NULL));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("requestCall failed", error);
   }

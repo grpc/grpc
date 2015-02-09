@@ -110,52 +110,61 @@ describe('end-to-end', function() {
       assert.strictEqual(event.data, grpc.opError.OK);
     });
   });
-  it('should successfully send and receive metadata', function(complete) {
-    var done = multiDone(complete, 2);
+  it.only('should successfully send and receive metadata', function(done) {
+    debugger;
     var deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 3);
     var status_text = 'xyz';
     var call = new grpc.Call(channel,
                              'dummy_method',
                              deadline);
-    call.addMetadata({'client_key': ['client_value']});
-    call.invoke(function(event) {
-      assert.strictEqual(event.type,
-                         grpc.completionType.CLIENT_METADATA_READ);
-      assert.strictEqual(event.data.server_key[0].toString(), 'server_value');
-    },function(event) {
-      assert.strictEqual(event.type, grpc.completionType.FINISHED);
-      var status = event.data;
-      assert.strictEqual(status.code, grpc.status.OK);
-      assert.strictEqual(status.details, status_text);
+    var client_batch = {};
+    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {
+      'client_key': ['client_value']
+    };
+    client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+    client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+    client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+    call.startBatch(client_batch, function(err, response) {
+      assert.ifError(err);
+      assert.deepEqual(response, {
+        'send metadata': true,
+        'client close': true,
+        'metadata': {'server_key': [new Buffer('server_value')]},
+        'status': {
+          'code': grpc.status.OK,
+          'details': status_text
+        }
+      });
       done();
-    }, 0);
-
-    server.requestCall(function(event) {
-      assert.strictEqual(event.type, grpc.completionType.SERVER_RPC_NEW);
-      assert.strictEqual(event.data.metadata.client_key[0].toString(),
-                         'client_value');
-      var server_call = event.call;
-      assert.notEqual(server_call, null);
-      server_call.serverAccept(function(event) {
-        assert.strictEqual(event.type, grpc.completionType.FINISHED);
-      }, 0);
-      server_call.addMetadata({'server_key': ['server_value']});
-      server_call.serverEndInitialMetadata(0);
-      server_call.startWriteStatus(
-          grpc.status.OK,
-          status_text,
-          function(event) {
-            assert.strictEqual(event.type,
-                               grpc.completionType.FINISH_ACCEPTED);
-            assert.strictEqual(event.data, grpc.opError.OK);
-            done();
-          });
     });
-    call.writesDone(function(event) {
-      assert.strictEqual(event.type,
-                         grpc.completionType.FINISH_ACCEPTED);
-      assert.strictEqual(event.data, grpc.opError.OK);
+
+    server.requestCall(function(err, call_details) {
+      var new_call = call_details['new call'];
+      assert.notEqual(new_call, null);
+      assert.strictEqual(new_call.metadata.client_key[0].toString(),
+                         'client_value');
+      var server_call = new_call.call;
+      assert.notEqual(server_call, null);
+      var server_batch = {};
+      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {
+        'server_key': ['server_value']
+      };
+      server_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+        'metadata': {},
+        'code': grpc.status.OK,
+        'details': status_text
+      };
+      server_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
+      console.log(server_batch);
+      server_call.startBatch(server_batch, function(err, response) {
+        assert.ifError(err);
+        assert.deepEqual(response, {
+          'send metadata': true,
+          'send status': true,
+          'cancelled': false
+        });
+      });
     });
   });
   it('should send and receive data without error', function(complete) {
