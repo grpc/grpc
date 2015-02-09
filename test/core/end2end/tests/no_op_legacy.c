@@ -46,8 +46,6 @@
 
 enum { TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
-
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
                                             grpc_channel_args *client_args,
@@ -102,84 +100,10 @@ static void end_test(grpc_end2end_test_fixture *f) {
   grpc_completion_queue_destroy(f->client_cq);
 }
 
-/* Cancel before invoke */
-static void test_cancel_before_invoke(grpc_end2end_test_config config, int test_ops) {
-  grpc_op ops[6];
-  grpc_op *op;
-  grpc_call *c;
+static void test_no_op(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
-  gpr_timespec deadline = five_seconds_time();
-  cq_verifier *v_client = cq_verifier_create(f.client_cq);
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  char *details = NULL;
-  size_t details_capacity = 0;
-  grpc_byte_buffer *response_payload_recv = NULL;
-  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
-  grpc_byte_buffer *request_payload =
-      grpc_byte_buffer_create(&request_payload_slice, 1);
-
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo", "test.google.com",
-                                   deadline);
-  GPR_ASSERT(c);
-
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_cancel(c));
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
-  op++;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message = request_payload;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata = &initial_metadata_recv;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message = &response_payload_recv;
-  op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, test_ops, tag(1)));
-
-  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
-  cq_verify(v_client);
-
-  GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
-
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload_recv);
-  gpr_free(details);
-
-  grpc_call_destroy(c);
-
-  cq_verifier_destroy(v_client);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
-  int i;
-  for (i = 1; i <= 6; i++) {
-    test_cancel_before_invoke(config, i);
-  }
-}
+void grpc_end2end_tests(grpc_end2end_test_config config) { test_no_op(config); }
