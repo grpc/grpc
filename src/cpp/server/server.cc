@@ -87,6 +87,7 @@ bool Server::RegisterService(RpcService *service) {
     }
     method_map_.insert(std::make_pair(method->name(), method));
   }
+  return true;
 }
 
 int Server::AddPort(const grpc::string &addr) {
@@ -104,7 +105,9 @@ bool Server::Start() {
   grpc_server_start(server_);
 
   // Start processing rpcs.
-  ScheduleCallback();
+  if (thread_pool_) {
+    ScheduleCallback();
+  }
 
   return true;
 }
@@ -132,8 +135,8 @@ void Server::Shutdown() {
   // Shutdown the completion queue.
   cq_.Shutdown();
   void *tag = nullptr;
-  CompletionQueue::CompletionType t = cq_.Next(&tag);
-  GPR_ASSERT(t == CompletionQueue::QUEUE_CLOSED);
+  bool ok = false;
+  GPR_ASSERT(false == cq_.Next(&tag, &ok));
 }
 
 void Server::ScheduleCallback() {
@@ -148,22 +151,23 @@ void Server::RunRpc() {
   // Wait for one more incoming rpc.
   void *tag = nullptr;
   AllowOneRpc();
-  CompletionQueue::CompletionType t = cq_.Next(&tag);
-  GPR_ASSERT(t == CompletionQueue::SERVER_RPC_NEW);
+  bool ok = false;
+  GPR_ASSERT(cq_.Next(&tag, &ok));
+  if (ok) {
+    AsyncServerContext *server_context = static_cast<AsyncServerContext *>(tag);
+    // server_context could be nullptr during server shutdown.
+    if (server_context != nullptr) {
+      // Schedule a new callback to handle more rpcs.
+      ScheduleCallback();
 
-  AsyncServerContext *server_context = static_cast<AsyncServerContext *>(tag);
-  // server_context could be nullptr during server shutdown.
-  if (server_context != nullptr) {
-    // Schedule a new callback to handle more rpcs.
-    ScheduleCallback();
-
-    RpcServiceMethod *method = nullptr;
-    auto iter = method_map_.find(server_context->method());
-    if (iter != method_map_.end()) {
-      method = iter->second;
+      RpcServiceMethod *method = nullptr;
+      auto iter = method_map_.find(server_context->method());
+      if (iter != method_map_.end()) {
+        method = iter->second;
+      }
+      ServerRpcHandler rpc_handler(server_context, method);
+      rpc_handler.StartRpc();
     }
-    ServerRpcHandler rpc_handler(server_context, method);
-    rpc_handler.StartRpc();
   }
 
   {
