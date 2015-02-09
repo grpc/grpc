@@ -49,27 +49,27 @@ using std::unique_ptr;
 
 class PersistentHolder {
  public:
-  explicit PersistentHolder(v8::Persistent<Value> persist) : persist(persist) {
+  explicit PersistentHolder(v8::Persistent<v8::Value> persist) : persist(persist) {
   }
 
   ~PersistentHolder() {
     persist.Dispose();
-  }
+}
 
  private:
-  v8::Persistent<Value> persist;
+  v8::Persistent<v8::Value> persist;
 };
 
 class Op {
  public:
-  virtual Handle<Value> GetNodeValue() const = 0;
+  virtual v8::Handle<v8::Value> GetNodeValue() const = 0;
   virtual bool ParseOp(v8::Handle<v8::Value> value, grpc_op *out,
                        std::vector<unique_ptr<NanUtf8String> > *strings,
                        std::vector<unique_ptr<PersistentHolder> > *handles) = 0;
-  Handle<Value> GetOpType();
+  v8::Handle<v8::Value> GetOpType() const;
 
  protected:
-  virtual char *GetTypeString();
+  virtual char *GetTypeString() const;
 };
 
 struct tag {

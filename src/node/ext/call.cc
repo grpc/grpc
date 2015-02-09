@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 
 #include <node.h>
 
@@ -46,11 +47,12 @@
 #include "completion_queue_async_worker.h"
 #include "timeval.h"
 
+using std::unique_ptr;
+
 namespace grpc {
 namespace node {
 
 using ::node::Buffer;
-using std::unique_ptr;
 using v8::Arguments;
 using v8::Array;
 using v8::Exception;
@@ -91,7 +93,7 @@ bool CreateMetadataArray(
   for (unsigned int i = 0; i < keys->Length(); i++) {
     Handle<String> current_key(keys->Get(i)->ToString());
     NanUtf8String *utf8_key = new NanUtf8String(current_key);
-    string_handles->push_back(unique_ptr<NanUtf8String(utf8_key));
+    string_handles->push_back(unique_ptr<NanUtf8String>(utf8_key));
     Handle<Array> values = Local<Array>::Cast(metadata->Get(current_key));
     for (unsigned int j = 0; j < values->Length(); j++) {
       Handle<Value> value = values->Get(j);
@@ -102,7 +104,8 @@ bool CreateMetadataArray(
         current->value_length = Buffer::Length(value);
         Persistent<Value> handle;
         NanAssignPersistent(handle, value);
-        handles->push_back(PersistentHolder(handle));
+        handles->push_back(unique_ptr<PersistentHolder>(
+            new PersistentHolder(handle)));
       } else if (value->IsString()) {
         Handle<String> string_value = value->ToString();
         NanUtf8String *utf8_value = new NanUtf8String(string_value);
@@ -118,15 +121,15 @@ bool CreateMetadataArray(
   return true;
 }
 
-Handle<Value> ParseMetadata(grpc_metadata_array *metadata_array) {
+Handle<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
   NanEscapableScope();
   grpc_metadata *metadata_elements = metadata_array->metadata;
   size_t length = metadata_array->count;
-  std::map<char*, size_t> size_map;
-  std::map<char*, size_t> index_map;
+  std::map<const char*, size_t> size_map;
+  std::map<const char*, size_t> index_map;
 
   for (unsigned int i = 0; i < length; i++) {
-    char *key = metadata_elements[i].key;
+    const char *key = metadata_elements[i].key;
     if (size_map.count(key)) {
       size_map[key] += 1;
     }
@@ -151,13 +154,10 @@ Handle<Value> ParseMetadata(grpc_metadata_array *metadata_array) {
   return NanEscapeScope(metadata_object);
 }
 
-class Op {
- public:
-  Handle<Value> GetOpType() const {
-    NanEscapableScope();
-    return NanEscapeScope(NanNew(GetTypeString()));
-  }
-};
+Handle<Value> Op::GetOpType() const {
+  NanEscapableScope();
+  return NanEscapeScope(NanNew(GetTypeString()));
+}
 
 class SendMetadataOp : public Op {
  public:
@@ -180,7 +180,7 @@ class SendMetadataOp : public Op {
     return true;
   }
  protected:
-  char *GetTypeString() {
+  std::string GetTypeString() {
     return "send metadata";
   }
 };
@@ -197,12 +197,13 @@ class SendMessageOp : public Op {
     if (!Buffer::HasInstance(value)) {
       return false;
     }
-    out->.data.send_message = BufferToByteBuffer(obj->Get(type));
+    out->data.send_message = BufferToByteBuffer(obj->Get(type));
     NanAssignPersistent(handle, value);
-    handles->push_back(PersistentHolder(handle));
+    handles->push_back(unique_ptr<PersistentHolder>(
+        new PersistentHolder(handle)));
   }
  protected:
-  char *GetTypeString() {
+  std::string GetTypeString() {
     return "send message";
   }
 };
@@ -219,7 +220,7 @@ class SendClientCloseOp : public Op {
     return true;
   }
  protected:
-  char *GetTypeString() {
+  std::string GetTypeString() {
     return "client close";
   }
 };
@@ -264,7 +265,7 @@ class SendServerStatusOp : public Op {
     return true;
   }
  protected:
-  char *GetTypeString() {
+  std::string GetTypeString() {
     return "send status";
   }
 }
@@ -291,7 +292,7 @@ class GetMetadataOp : public Op {
   }
 
  protected:
-  char *GetTypeString() {
+  std::string GetTypeString() {
     return "metadata";
   }
 
@@ -311,17 +312,18 @@ class ReadMessageOp : public Op {
   }
   Handle<Value> GetNodeValue() const {
     NanEscapableScope();
-    return NanEscapeScope(ByteBufferToBuffer(*recv_message));
+    return NanEscapeScope(ByteBufferToBuffer(recv_message));
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
                std::vector<unique_ptr<NanUtf8String> > *strings,
                std::vector<unique_ptr<PersistentHolder> > *handles) {
     out->data.recv_message = &recv_message;
+    return true;
   }
 
  protected:
-  char *GetTypeString() {
+  std::string GetTypeString() {
     return "read";
   }
 
@@ -348,6 +350,7 @@ class ClientStatusOp : public Op {
     out->data.recv_status_on_client.status = &status;
     out->data.recv_status_on_client.status_details = &status_details;
     out->data.recv_status_on_client.status_details_capacity = &details_capacity;
+    return true;
   }
 
   Handle<Value> GetNodeValue() const {
@@ -359,6 +362,10 @@ class ClientStatusOp : public Op {
     }
     status_obj->Set(NanNew("metadata"), ParseMetadata(&metadata_array));
     return NanEscapeScope(status_obj);
+  }
+ protected:
+  std::string GetTypeString() const {
+    return "status";
   }
  private:
   grpc_metadata_array metadata_array;
@@ -378,6 +385,12 @@ class ServerCloseResponseOp : public Op {
                std::vector<unique_ptr<NanUtf8String> > *strings,
                std::vector<unique_ptr<PersistentHolder> > *handles) {
     out->data.recv_close_on_server.cancelled = &cancelled;
+    return true;
+  }
+
+ protected:
+  std::string GetTypeString() const {
+    return "cancelled";
   }
 
  private:
