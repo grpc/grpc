@@ -3,17 +3,17 @@
 This step extends the generated server skeleton code to write a simple server
 that provides the hello service. This introduces two new classes:
 
-- a service implementation [GreetingsImpl.java](src/main/java/ex/grpc/GreetingsImpl.java).
+- a service implementation [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java).
 
-- a server that hosts the service implementation and allows access over the network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
+- a server that hosts the service implementation and allows access over the network: [GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java).
 
 ## Service implementation
 
-[GreetingsImpl.java](src/main/java/ex/grpc/GreetingsImpl.java)
+[GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java)
 implements the behaviour we require of our GreetingService. There are a
 number of important features of gRPC being used here:
 
-```
+```java
   public void hello(Helloworld.HelloRequest req,
       StreamObserver<Helloworld.HelloReply> responseObserver) {
     Helloworld.HelloReply reply = Helloworld.HelloReply.newBuilder().setMessage(
@@ -24,7 +24,7 @@ number of important features of gRPC being used here:
 ```
 
 - it provides a class `GreetingsImpl` that implements a generated interface `GreetingsGrpc.Greetings`
-- `GreetingsGrpc.Greetings` declares the method `hello` that was declared in the proto [IDL](src/main/proto/helloworld.proto)
+- `GreetingsGrpc.Greetings` declares the method `hello` that was declared in the proto [IDL](java/src/main/proto/helloworld.proto)
 - `hello's` signature is typesafe:
    hello(Helloworld.HelloRequest req, StreamObserver<Helloworld.HelloReply> responseObserver)
 - `hello` takes two parameters:
@@ -38,11 +38,11 @@ number of important features of gRPC being used here:
 
 ## Server implementation
 
-[GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java) shows the
+[GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java) shows the
 other main feature required to provde the gRPC service; how to allow a service
 implementation to be accessed from the network.
 
-```
+```java
   private void start() throws Exception {
     server = NettyServerBuilder.forPort(port)
              .addService(GreetingsGrpc.bindService(new GreetingsImpl()))
@@ -62,7 +62,8 @@ implementation to be accessed from the network.
 This is the same as before: our client and server are part of the same maven
 package so the same command builds both.
 
-```
+```sh
+$ cd java
 $ mvn package
 ```
 
@@ -71,12 +72,12 @@ $ mvn package
 We've added simple shell scripts to simplifying running the examples. Now
 that they are built, you can run the server with:
 
-```
+```sh
 $ ./run_greetings_server.sh
 ```
 
 and in another terminal window confirm that it receives a message.
 
-```
-$ ./run_greetings_client.sh
+```sh
+$ ./java/run_greetings_client.sh
 ```

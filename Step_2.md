@@ -1,7 +1,7 @@
 # Step-2: Write a service client.
 
 This step uses the generated code to write a simple client to access the hello
-service. The full client is in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
+service. The full client is in [GreetingsClient.java](java/src/main/java/ex/grpc/GreetingsClient.java).
 
 
 ## Configuring the service to connect to.
