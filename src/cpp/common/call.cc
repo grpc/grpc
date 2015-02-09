@@ -31,15 +31,13 @@
  *
  */
 
-#ifndef __GRPCPP_CONFIG_H__
-#define __GRPCPP_CONFIG_H__
-
-#include <string>
+#include <include/grpc++/call.h>
+#include <include/grpc++/channel_interface.h>
 
 namespace grpc {
 
-typedef std::string string;
+void Call::PerformOps(CallOpBuffer* buffer, void* tag) {
+  channel_->PerformOpsOnCall(buffer, tag, this);
+}
 
-} // namespace grpc
-
-#endif  // __GRPCPP_CONFIG_H__
+}  // namespace grpc

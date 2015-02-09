@@ -2614,6 +2614,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/create_channel.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/internal_stub.cc \
+    src/cpp/common/call.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
@@ -2673,6 +2674,7 @@ src/cpp/client/client_context.cc: $(OPENSSL_DEP)
 src/cpp/client/create_channel.cc: $(OPENSSL_DEP)
 src/cpp/client/credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/internal_stub.cc: $(OPENSSL_DEP)
+src/cpp/common/call.cc: $(OPENSSL_DEP)
 src/cpp/common/completion_queue.cc: $(OPENSSL_DEP)
 src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
 src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
@@ -2733,6 +2735,7 @@ objs/$(CONFIG)/src/cpp/client/client_context.o:
 objs/$(CONFIG)/src/cpp/client/create_channel.o: 
 objs/$(CONFIG)/src/cpp/client/credentials.o: 
 objs/$(CONFIG)/src/cpp/client/internal_stub.o: 
+objs/$(CONFIG)/src/cpp/common/call.o: 
 objs/$(CONFIG)/src/cpp/common/completion_queue.o: 
 objs/$(CONFIG)/src/cpp/common/rpc_method.o: 
 objs/$(CONFIG)/src/cpp/proto/proto_utils.o: 

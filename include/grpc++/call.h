@@ -31,15 +31,66 @@
  *
  */
 
-#ifndef __GRPCPP_CONFIG_H__
-#define __GRPCPP_CONFIG_H__
+#ifndef __GRPCPP_CALL_H__
+#define __GRPCPP_CALL_H__
 
-#include <string>
+#include <grpc++/status.h>
+#include <grpc++/completion_queue.h>
+
+#include <memory>
+#include <vector>
+
+namespace google {
+namespace protobuf {
+class Message;
+}  // namespace protobuf
+}  // namespace google
+
+struct grpc_call;
+struct grpc_op;
 
 namespace grpc {
 
-typedef std::string string;
+class ChannelInterface;
 
-} // namespace grpc
+class CallOpBuffer final : public CompletionQueueTag {
+ public:
+  void AddSendInitialMetadata(std::vector<std::pair<grpc::string, grpc::string> > *metadata);
+  void AddSendMessage(const google::protobuf::Message &message);
+  void AddRecvMessage(google::protobuf::Message *message);
+  void AddClientSendClose();
+  void AddClientRecvStatus(Status *status);
 
-#endif  // __GRPCPP_CONFIG_H__
+  // INTERNAL API:
+
+  // Convert to an array of grpc_op elements
+  void FillOps(grpc_op *ops, size_t *nops);
+
+  // Called by completion queue just prior to returning from Next() or Pluck()
+  void FinalizeResult() override;
+};
+
+class CCallDeleter {
+ public:
+  void operator()(grpc_call *c);
+};
+
+// Straightforward wrapping of the C call object
+class Call final {
+ public:
+  Call(grpc_call *call, ChannelInterface *channel, CompletionQueue *cq);
+
+  void PerformOps(CallOpBuffer *buffer, void *tag);
+
+  grpc_call *call() { return call_.get(); }
+  CompletionQueue *cq() { return cq_; }
+
+ private:
+  ChannelInterface *channel_;
+  CompletionQueue *cq_;
+  std::unique_ptr<grpc_call, CCallDeleter> call_;
+};
+
+}  // namespace grpc
+
+#endif  // __GRPCPP_CALL_INTERFACE_H__
