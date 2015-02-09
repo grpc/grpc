@@ -85,9 +85,9 @@ class ClientReader final : public ClientStreamingInterface,
                            public ReaderInterface<R> {
  public:
   // Blocking create a stream and write the first request out.
-  explicit ClientReader(ChannelInterface *channel, const RpcMethod &method,
-                        ClientContext *context,
-                        const google::protobuf::Message &request)
+  ClientReader(ChannelInterface *channel, const RpcMethod &method,
+               ClientContext *context,
+               const google::protobuf::Message &request)
       : call_(channel->CreateCall(method, context, &cq_)) {
     CallOpBuffer buf;
     buf.AddSendMessage(request);
