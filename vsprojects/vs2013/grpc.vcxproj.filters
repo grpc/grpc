@@ -211,6 +211,9 @@
     <ClCompile Include="..\..\src\core\surface\call.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call_details.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -230,6 +233,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\lame_client.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\metadata_array.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
