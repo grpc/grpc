@@ -61,6 +61,17 @@ bool BidiStreaming(const google::protobuf::MethodDescriptor *method) {
   return method->client_streaming() && method->server_streaming();
 }
 
+bool HasUnaryCalls(const google::protobuf::FileDescriptor *file) {
+  for (int i = 0; i < file->service_count(); i++) {
+    for (int j = 0; j < file->service(i)->method_count(); j++) {
+      if (NoStreaming(file->service(i)->method(j))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 bool HasClientOnlyStreaming(const google::protobuf::FileDescriptor *file) {
   for (int i = 0; i < file->service_count(); i++) {
     for (int j = 0; j < file->service(i)->method_count(); j++) {
@@ -104,13 +115,20 @@ std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
       "class ChannelInterface;\n"
       "class RpcService;\n"
       "class ServerContext;\n";
+  if (HasUnaryCalls(file)) {
+    temp.append("template <class OutMessage> class ServerAsyncResponseWriter;\n");
+  }
   if (HasClientOnlyStreaming(file)) {
     temp.append("template <class OutMessage> class ClientWriter;\n");
     temp.append("template <class InMessage> class ServerReader;\n");
+    temp.append("template <class OutMessage> class ClientAsyncWriter;\n");
+    temp.append("template <class InMessage> class ServerAsyncReader;\n");
   }
   if (HasServerOnlyStreaming(file)) {
     temp.append("template <class InMessage> class ClientReader;\n");
     temp.append("template <class OutMessage> class ServerWriter;\n");
+    temp.append("template <class OutMessage> class ClientAsyncReader;\n");
+    temp.append("template <class InMessage> class ServerAsyncWriter;\n");
   }
   if (HasBidiStreaming(file)) {
     temp.append(
@@ -125,10 +143,10 @@ std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
 }
 
 std::string GetSourceIncludes() {
-  return "#include \"grpc++/channel_interface.h\"\n"
-         "#include \"grpc++/impl/rpc_method.h\"\n"
-         "#include \"grpc++/impl/rpc_service_method.h\"\n"
-         "#include \"grpc++/stream.h\"\n";
+  return "#include <grpc++/channel_interface.h>\n"
+         "#include <grpc++/impl/rpc_method.h>\n"
+         "#include <grpc++/impl/rpc_service_method.h>\n"
+         "#include <grpc++/stream.h>\n";
 }
 
 void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
@@ -160,7 +178,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
   }
 }
 
-void PrintHeaderServerMethod(google::protobuf::io::Printer *printer,
+void PrintHeaderServerMethodSync(google::protobuf::io::Printer *printer,
                              const google::protobuf::MethodDescriptor *method,
                              std::map<std::string, std::string> *vars) {
   (*vars)["Method"] = method->name();
@@ -194,19 +212,56 @@ void PrintHeaderServerMethod(google::protobuf::io::Printer *printer,
   }
 }
 
+void PrintHeaderServerMethodAsync(google::protobuf::io::Printer *printer,
+                             const google::protobuf::MethodDescriptor *method,
+                             std::map<std::string, std::string> *vars) {
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] =
+      grpc_cpp_generator::ClassName(method->input_type(), true);
+  (*vars)["Response"] =
+      grpc_cpp_generator::ClassName(method->output_type(), true);
+  if (NoStreaming(method)) {
+    printer->Print(*vars,
+                   "void $Method$("
+                   "::grpc::ServerContext* context, $Request$* request, "
+                   "::grpc::ServerAsyncResponseWriter< $Response$>* response, "
+                   "::grpc::CompletionQueue* cq, void *tag);\n");
+  } else if (ClientOnlyStreaming(method)) {
+    printer->Print(*vars,
+                   "void $Method$("
+                   "::grpc::ServerContext* context, "
+                   "::grpc::ServerAsyncReader< $Request$>* reader, "
+                   "$Response$* response, "
+                   "::grpc::CompletionQueue* cq, void *tag);\n");
+  } else if (ServerOnlyStreaming(method)) {
+    printer->Print(*vars,
+                   "void $Method$("
+                   "::grpc::ServerContext* context, $Request$* request, "
+                   "::grpc::ServerAsyncWriter< $Response$>* writer, "
+                   "::grpc::CompletionQueue* cq, void *tag);\n");
+  } else if (BidiStreaming(method)) {
+    printer->Print(
+        *vars,
+        "void $Method$("
+        "::grpc::ServerContext* context, "
+        "::grpc::ServerReaderWriter< $Response$, $Request$>* stream, "
+                   "::grpc::CompletionQueue* cq, void *tag);\n");
+  }
+}
+
 void PrintHeaderService(google::protobuf::io::Printer *printer,
                         const google::protobuf::ServiceDescriptor *service,
                         std::map<std::string, std::string> *vars) {
   (*vars)["Service"] = service->name();
 
   printer->Print(*vars,
-                 "class $Service$ {\n"
+                 "class $Service$ final {\n"
                  " public:\n");
   printer->Indent();
 
   // Client side
   printer->Print(
-      "class Stub : public ::grpc::InternalStub {\n"
+      "class Stub final : public ::grpc::InternalStub {\n"
       " public:\n");
   printer->Indent();
   for (int i = 0; i < service->method_count(); ++i) {
@@ -220,7 +275,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
 
   printer->Print("\n");
 
-  // Server side
+  // Server side - Synchronous
   printer->Print(
       "class Service {\n"
       " public:\n");
@@ -228,7 +283,24 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   printer->Print("Service() : service_(nullptr) {}\n");
   printer->Print("virtual ~Service();\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderServerMethod(printer, service->method(i), vars);
+    PrintHeaderServerMethodSync(printer, service->method(i), vars);
+  }
+  printer->Print("::grpc::RpcService* service();\n");
+  printer->Outdent();
+  printer->Print(
+      " private:\n"
+      "  ::grpc::RpcService* service_;\n");
+  printer->Print("};\n");
+
+  // Server side - Asynchronous
+  printer->Print(
+      "class AsyncService final {\n"
+      " public:\n");
+  printer->Indent();
+  printer->Print("AsyncService() : service_(nullptr) {}\n");
+  printer->Print("~AsyncService();\n");
+  for (int i = 0; i < service->method_count(); ++i) {
+    PrintHeaderServerMethodAsync(printer, service->method(i), vars);
   }
   printer->Print("::grpc::RpcService* service();\n");
   printer->Outdent();

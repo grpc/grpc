@@ -256,6 +256,75 @@ class ServerReaderWriter : public WriterInterface<W>,
   StreamContextInterface* const context_;  // not owned
 };
 
+template <class W>
+class ServerAsyncResponseWriter {
+ public:
+  explicit ServerAsyncResponseWriter(StreamContextInterface* context) : context_(context) {
+    GPR_ASSERT(context_);
+    context_->Start(true);
+    context_->Read(context_->request());
+  }
+
+  virtual bool Write(const W& msg) {
+    return context_->Write(const_cast<W*>(&msg), false);
+  }
+
+ private:
+  StreamContextInterface* const context_;  // not owned
+};
+
+template <class R>
+class ServerAsyncReader : public ReaderInterface<R> {
+ public:
+  explicit ServerAsyncReader(StreamContextInterface* context) : context_(context) {
+    GPR_ASSERT(context_);
+    context_->Start(true);
+  }
+
+  virtual bool Read(R* msg) { return context_->Read(msg); }
+
+ private:
+  StreamContextInterface* const context_;  // not owned
+};
+
+template <class W>
+class ServerAsyncWriter : public WriterInterface<W> {
+ public:
+  explicit ServerAsyncWriter(StreamContextInterface* context) : context_(context) {
+    GPR_ASSERT(context_);
+    context_->Start(true);
+    context_->Read(context_->request());
+  }
+
+  virtual bool Write(const W& msg) {
+    return context_->Write(const_cast<W*>(&msg), false);
+  }
+
+ private:
+  StreamContextInterface* const context_;  // not owned
+};
+
+// Server-side interface for bi-directional streaming.
+template <class W, class R>
+class ServerAsyncReaderWriter : public WriterInterface<W>,
+                           public ReaderInterface<R> {
+ public:
+  explicit ServerAsyncReaderWriter(StreamContextInterface* context)
+      : context_(context) {
+    GPR_ASSERT(context_);
+    context_->Start(true);
+  }
+
+  virtual bool Read(R* msg) { return context_->Read(msg); }
+
+  virtual bool Write(const W& msg) {
+    return context_->Write(const_cast<W*>(&msg), false);
+  }
+
+ private:
+  StreamContextInterface* const context_;  // not owned
+};
+
 }  // namespace grpc
 
 #endif  // __GRPCPP_STREAM_H__
