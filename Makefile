@@ -2624,7 +2624,6 @@ LIBGRPC++_SRC = \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/server_rpc_handler.cc \
     src/cpp/server/thread_pool.cc \
-    src/cpp/stream/stream_context.cc \
     src/cpp/util/status.cc \
     src/cpp/util/time.cc \
 
@@ -2680,7 +2679,6 @@ src/cpp/server/server_context_impl.cc: $(OPENSSL_DEP)
 src/cpp/server/server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/server/server_rpc_handler.cc: $(OPENSSL_DEP)
 src/cpp/server/thread_pool.cc: $(OPENSSL_DEP)
-src/cpp/stream/stream_context.cc: $(OPENSSL_DEP)
 src/cpp/util/status.cc: $(OPENSSL_DEP)
 src/cpp/util/time.cc: $(OPENSSL_DEP)
 endif
@@ -2739,7 +2737,6 @@ objs/$(CONFIG)/src/cpp/server/server_context_impl.o:
 objs/$(CONFIG)/src/cpp/server/server_credentials.o: 
 objs/$(CONFIG)/src/cpp/server/server_rpc_handler.o: 
 objs/$(CONFIG)/src/cpp/server/thread_pool.o: 
-objs/$(CONFIG)/src/cpp/stream/stream_context.o: 
 objs/$(CONFIG)/src/cpp/util/status.o: 
 objs/$(CONFIG)/src/cpp/util/time.o: 
 

@@ -401,7 +401,6 @@
         "src/cpp/proto/proto_utils.h",
         "src/cpp/server/server_rpc_handler.h",
         "src/cpp/server/thread_pool.h",
-        "src/cpp/stream/stream_context.h",
         "src/cpp/util/time.h"
       ],
       "src": [
@@ -421,7 +420,6 @@
         "src/cpp/server/server_credentials.cc",
         "src/cpp/server/server_rpc_handler.cc",
         "src/cpp/server/thread_pool.cc",
-        "src/cpp/stream/stream_context.cc",
         "src/cpp/util/status.cc",
         "src/cpp/util/time.cc"
       ],

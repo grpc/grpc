@@ -47,6 +47,7 @@ class SynchronousService {
 class AsynchronousService {
  public:
   virtual ~AsynchronousService() {}
+  virtual RpcService *service() = 0;
 };
 
 }  // namespace grpc

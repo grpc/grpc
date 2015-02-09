@@ -307,7 +307,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodSync(printer, service->method(i), vars);
   }
-  printer->Print("::grpc::RpcService* service();\n");
+  printer->Print("::grpc::RpcService* service() override final;\n");
   printer->Outdent();
   printer->Print(
       " private:\n"
@@ -324,7 +324,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodAsync(printer, service->method(i), vars);
   }
-  printer->Print("::grpc::RpcService* service();\n");
+  printer->Print("::grpc::RpcService* service() override;\n");
   printer->Outdent();
   printer->Print(
       " private:\n"

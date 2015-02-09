@@ -67,6 +67,10 @@ void ServerBuilder::SetThreadPool(ThreadPoolInterface *thread_pool) {
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   bool thread_pool_owned = false;
+  if (!async_services_.empty() && !services_.empty()) {
+    gpr_log(GPR_ERROR, "Mixing async and sync services is unsupported for now");
+    return nullptr;
+  }
   if (!thread_pool_ && services_.size()) {
     int cores = gpr_cpu_num_cores();
     if (!cores) cores = 4;
