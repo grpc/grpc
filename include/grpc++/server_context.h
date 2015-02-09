@@ -44,6 +44,9 @@ class ServerContext {
   virtual ~ServerContext() {}
 
   virtual std::chrono::system_clock::time_point absolute_deadline() const = 0;
+
+ private:
+  std::vector<std::pair<grpc::string, grpc::string> > metadata_;
 };
 
 }  // namespace grpc

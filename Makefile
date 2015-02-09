@@ -2618,8 +2618,6 @@ LIBGRPC++_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
-    src/cpp/server/async_server.cc \
-    src/cpp/server/async_server_context.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_context_impl.cc \
@@ -2631,8 +2629,6 @@ LIBGRPC++_SRC = \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
-    include/grpc++/async_server.h \
-    include/grpc++/async_server_context.h \
     include/grpc++/channel_arguments.h \
     include/grpc++/channel_interface.h \
     include/grpc++/client_context.h \
@@ -2678,8 +2674,6 @@ src/cpp/common/call.cc: $(OPENSSL_DEP)
 src/cpp/common/completion_queue.cc: $(OPENSSL_DEP)
 src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
 src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
-src/cpp/server/async_server.cc: $(OPENSSL_DEP)
-src/cpp/server/async_server_context.cc: $(OPENSSL_DEP)
 src/cpp/server/server.cc: $(OPENSSL_DEP)
 src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
 src/cpp/server/server_context_impl.cc: $(OPENSSL_DEP)
@@ -2739,8 +2733,6 @@ objs/$(CONFIG)/src/cpp/common/call.o:
 objs/$(CONFIG)/src/cpp/common/completion_queue.o: 
 objs/$(CONFIG)/src/cpp/common/rpc_method.o: 
 objs/$(CONFIG)/src/cpp/proto/proto_utils.o: 
-objs/$(CONFIG)/src/cpp/server/async_server.o: 
-objs/$(CONFIG)/src/cpp/server/async_server_context.o: 
 objs/$(CONFIG)/src/cpp/server/server.o: 
 objs/$(CONFIG)/src/cpp/server/server_builder.o: 
 objs/$(CONFIG)/src/cpp/server/server_context_impl.o: 
@@ -2756,7 +2748,6 @@ LIBGRPC++_TEST_UTIL_SRC = \
     gens/test/cpp/util/messages.pb.cc \
     gens/test/cpp/util/echo.pb.cc \
     gens/test/cpp/util/echo_duplicate.pb.cc \
-    test/cpp/end2end/async_test_server.cc \
     test/cpp/util/create_test_channel.cc \
 
 
@@ -2775,7 +2766,6 @@ ifneq ($(OPENSSL_DEP),)
 test/cpp/util/messages.proto: $(OPENSSL_DEP)
 test/cpp/util/echo.proto: $(OPENSSL_DEP)
 test/cpp/util/echo_duplicate.proto: $(OPENSSL_DEP)
-test/cpp/end2end/async_test_server.cc: $(OPENSSL_DEP)
 test/cpp/util/create_test_channel.cc: $(OPENSSL_DEP)
 endif
 
@@ -2803,7 +2793,6 @@ endif
 
 
 
-objs/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
 objs/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
 
 

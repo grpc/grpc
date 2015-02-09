@@ -114,12 +114,6 @@ bool Server::Start() {
   return true;
 }
 
-void Server::AllowOneRpc() {
-  GPR_ASSERT(started_);
-  grpc_call_error err = grpc_server_request_call_old(server_, nullptr);
-  GPR_ASSERT(err == GRPC_CALL_OK);
-}
-
 void Server::Shutdown() {
   {
     std::unique_lock<std::mutex> lock(mu_);
@@ -152,25 +146,31 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   void *tag = nullptr;
-  AllowOneRpc();
+  GPR_ASSERT(started_);
+  grpc_call *c_call = NULL;
+  grpc_call_details details;
+  grpc_call_details_init(&details);
+  grpc_metadata_array initial_metadata;
+  grpc_metadata_array_init(&initial_metadata);
+  CompletionQueue cq;
+  grpc_call_error err = grpc_server_request_call(server_, &call, &details, &initial_metadata, cq.cq(), nullptr);
+  GPR_ASSERT(err == GRPC_CALL_OK);
   bool ok = false;
   GPR_ASSERT(cq_.Next(&tag, &ok));
   if (ok) {
-    AsyncServerContext *server_context = static_cast<AsyncServerContext *>(tag);
-    // server_context could be nullptr during server shutdown.
-    if (server_context != nullptr) {
-      // Schedule a new callback to handle more rpcs.
-      ScheduleCallback();
-
-      RpcServiceMethod *method = nullptr;
-      auto iter = method_map_.find(server_context->method());
-      if (iter != method_map_.end()) {
-        method = iter->second;
-      }
-      ServerRpcHandler rpc_handler(server_context, method);
-      rpc_handler.StartRpc();
+    ServerContext context;
+    Call call(c_call, nullptr, &cq);
+    ScheduleCallback();
+    RpcServiceMethod *method = nullptr;
+    auto iter = method_map_.find(call_details.method);
+    if (iter != method_map_.end()) {
+      method = iter->second;
     }
+    ServerRpcHandler rpc_handler(&call, context, method);
+    rpc_handler.StartRpc();
   }
+  grpc_call_details_destroy(&details);
+  grpc_metadata_array_destroy(&initial_metadata);
 
   {
     std::unique_lock<std::mutex> lock(mu_);

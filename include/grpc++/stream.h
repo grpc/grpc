@@ -37,11 +37,42 @@
 #include <grpc++/call.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/stream_context_interface.h>
 #include <grpc++/status.h>
 #include <grpc/support/log.h>
 
 namespace grpc {
+
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+// DELETE DELETE DELETE
+  class StreamContextInterface {
+    public:
+      template <class T> bool Write(T, bool);
+      template <class T> void Start(T);
+      template <class T> bool Read(T);
+      google::protobuf::Message *request();
+  };
 
 // Common interface for all client side streaming.
 class ClientStreamingInterface {
@@ -207,17 +238,16 @@ class ClientReaderWriter final : public ClientStreamingInterface,
 template <class R>
 class ServerReader final : public ReaderInterface<R> {
  public:
-  ServerReader(CompletionQueue* cq, Call* call) : cq_(cq), call_(call) {}
+  explicit ServerReader(Call* call) : call_(call) {}
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
     call_->PerformOps(&buf, (void *)2);
-    return cq_->Pluck((void *)2);
+    return call_->cq()->Pluck((void *)2);
   }
 
  private:
-  CompletionQueue* cq_;
   Call* call_;
 };
 

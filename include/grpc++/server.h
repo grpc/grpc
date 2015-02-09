@@ -80,7 +80,6 @@ class Server {
   // Start the server.
   bool Start();
 
-  void AllowOneRpc();
   void HandleQueueClosed();
   void RunRpc();
   void ScheduleCallback();

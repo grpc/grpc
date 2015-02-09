@@ -50,7 +50,6 @@ class CallOpBuffer;
 class ClientContext;
 class CompletionQueue;
 class RpcMethod;
-class StreamContextInterface;
 class CallInterface;
 
 class ChannelInterface {

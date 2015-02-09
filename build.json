@@ -378,8 +378,6 @@
       "build": "all",
       "language": "c++",
       "public_headers": [
-        "include/grpc++/async_server.h",
-        "include/grpc++/async_server_context.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
@@ -417,8 +415,6 @@
         "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
-        "src/cpp/server/async_server.cc",
-        "src/cpp/server/async_server_context.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_context_impl.cc",
@@ -443,7 +439,6 @@
         "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
-        "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
     },
