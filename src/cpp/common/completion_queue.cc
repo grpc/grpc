@@ -62,9 +62,10 @@ bool CompletionQueue::Next(void **tag, bool *ok) {
   if (ev->type == GRPC_QUEUE_SHUTDOWN) {
     return false;
   }
-  std::unique_ptr<FinishFunc> func(static_cast<FinishFunc*>(ev->tag));
-  *tag = (*func)();
-  *ok = (ev->data.op_complete == GRPC_OP_OK);
+  auto cq_tag = static_cast<CompletionQueueTag *>(ev->tag);
+  cq_tag->FinalizeResult();
+  *tag = cq_tag->user_tag_;
+  *ok = ev->status.op_complete == GRPC_OP_OK;
   return true;
 }
 

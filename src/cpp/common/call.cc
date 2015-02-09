@@ -32,10 +32,11 @@
  */
 
 #include <include/grpc++/call.h>
+#include <include/grpc++/channel_interface.h>
 
 namespace grpc {
 
-void Call::PerformOps(const CallOpBuffer& buffer, void* tag) {
+void Call::PerformOps(CallOpBuffer* buffer, void* tag) {
   channel_->PerformOpsOnCall(buffer, tag, call_);
 }
 

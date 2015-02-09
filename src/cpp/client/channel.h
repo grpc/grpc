@@ -42,6 +42,8 @@
 struct grpc_channel;
 
 namespace grpc {
+class Call;
+class CallOpBuffer;
 class ChannelArguments;
 class CompletionQueue;
 class Credentials;
@@ -55,8 +57,10 @@ class Channel final : public ChannelInterface {
 
   ~Channel() override;
 
-  virtual grpc_call *CreateCall(const RpcMethod &method, ClientContext *context,
-                                CompletionQueue *cq);
+  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
+                          CompletionQueue *cq) override;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, void *tag,
+                                Call *call) override;
 
  private:
   const grpc::string target_;

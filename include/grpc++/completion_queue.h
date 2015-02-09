@@ -34,11 +34,20 @@
 #ifndef __GRPCPP_COMPLETION_QUEUE_H__
 #define __GRPCPP_COMPLETION_QUEUE_H__
 
-#include <functional>
-
 struct grpc_completion_queue;
 
 namespace grpc {
+
+class CompletionQueue;
+
+class CompletionQueueTag {
+ public:
+  virtual void FinalizeResult() = 0;
+
+ private:
+  friend class CompletionQueue;
+  void *user_tag_;
+};
 
 // grpc_completion_queue wrapper class
 class CompletionQueue {
@@ -62,12 +71,9 @@ class CompletionQueue {
   // is returned.
   // MUST be used for all events that could be surfaced through this
   // wrapping API
-  template <class F>
-  void *PrepareTagForC(void *user_tag, F on_ready) {
-    return new std::function<void*()>([user_tag, on_ready]() {
-      on_ready();
-      return user_tag;
-    });
+  void *PrepareTagForC(CompletionQueueTag *cq_tag, void *user_tag) {
+    cq_tag->user_tag_ = user_tag;
+    return cq_tag;
   }
 
   // Shutdown has to be called, and the CompletionQueue can only be
@@ -77,8 +83,6 @@ class CompletionQueue {
   grpc_completion_queue* cq() { return cq_; }
 
  private:
-  typedef std::function<void*()> FinishFunc;
-
   grpc_completion_queue* cq_;  // owned
 };
 

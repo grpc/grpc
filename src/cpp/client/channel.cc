@@ -43,8 +43,10 @@
 
 #include "src/cpp/proto/proto_utils.h"
 #include "src/cpp/stream/stream_context.h"
+#include <grpc++/call.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
+#include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
 #include <grpc++/credentials.h>
 #include <grpc++/impl/rpc_method.h>
@@ -77,13 +79,23 @@ Channel::Channel(const grpc::string &target,
 
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
-grpc_call *Channel::CreateCall(const RpcMethod &method, ClientContext *context,
-                               CompletionQueue *cq) {
+Call Channel::CreateCall(const RpcMethod &method, ClientContext *context,
+                         CompletionQueue *cq) {
   auto c_call =
       grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
                                target_.c_str(), context->RawDeadline());
   context->set_call(c_call);
-  return c_call;
+  return Call(c_call, this, cq);
+}
+
+void Channel::PerformOpsOnCall(CallOpBuffer *buf, void *tag, Call *call) {
+  static const size_t MAX_OPS = 8;
+  size_t nops = MAX_OPS;
+  grpc_op ops[MAX_OPS];
+  buf->FillOps(ops, &nops);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call->call(), ops, nops,
+                                   call->cq()->PrepareTagForC(buf, tag)));
 }
 
 }  // namespace grpc

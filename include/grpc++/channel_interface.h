@@ -45,7 +45,8 @@ class Message;
 struct grpc_call;
 
 namespace grpc {
-
+class Call;
+class CallOpBuffer;
 class ClientContext;
 class CompletionQueue;
 class RpcMethod;
@@ -56,8 +57,9 @@ class ChannelInterface {
  public:
   virtual ~ChannelInterface() {}
 
-  virtual grpc_call *CreateCall(const RpcMethod &method, ClientContext *context,
-                                CompletionQueue *cq);
+  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
+                          CompletionQueue *cq) = 0;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, void *tag, Call *call) = 0;
 };
 
 // Wrapper that begins an asynchronous unary call
