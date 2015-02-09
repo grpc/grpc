@@ -42,8 +42,7 @@ languages are coming soon.
 
 The rest of this page explains how to set up your local machine to work with
 the example code.
-If you just want to read the example, you can go straight to the next step:
-[Step - 0](Step_0.md)
+If you just want to read the example, you can go straight to the next step.
 
 #### Install Git
 
@@ -188,11 +187,18 @@ $ protoc -I . helloworld.proto
 
 This generates the following Java classes
 
+### Writing a server
+
+Now let's write some code! First we'll create the `Greetings` server.
+
+Note that we're not going to go into a lot of detail about how to create a server in this section  More detailed information will be in the tutorial for your chosen language (coming soon).
+
+
 ### Writing a client
 
-Now let's write some code! Client-side gRPC is pretty simple, so we'll start there - we'll look at how to implement a gRPC server later. In this step, we'll use the generated code to write a simple client that can access the `Greetings` service. You can see the complete client code in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
+Client-side gRPC is pretty simple. In this step, we'll use the generated code to write a simple client that can access the `Greetings` server we created in the previous section. You can see the complete client code in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
 
-Note that we're not going to go into much detail about how to implement a client - we'll leave that for the tutorial.
+Again, we're not going to go into much detail about how to implement a client - we'll leave that for the tutorial.
 
 #### Connecting to the service
 
