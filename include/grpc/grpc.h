@@ -542,6 +542,14 @@ grpc_call_error grpc_server_request_call(
     grpc_metadata_array *request_metadata,
     grpc_completion_queue *completion_queue, void *tag_new);
 
+void *grpc_server_register_call(grpc_server *server, const char *method, const char *host);
+
+grpc_call_error grpc_server_request_specific_call(
+    grpc_server *server, grpc_call **call, 
+    void *registered_call_tag, 
+    grpc_metadata_array *request_metadata,
+    grpc_completion_queue *completion_queue, void *tag_new);
+
 /* Create a server */
 grpc_server *grpc_server_create(grpc_completion_queue *cq,
                                 const grpc_channel_args *args);
