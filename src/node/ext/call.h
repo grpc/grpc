@@ -34,6 +34,8 @@
 #ifndef NET_GRPC_NODE_CALL_H_
 #define NET_GRPC_NODE_CALL_H_
 
+#include <memory>
+
 #include <node.h>
 #include <nan.h>
 #include "grpc/grpc.h"
@@ -42,6 +44,44 @@
 
 namespace grpc {
 namespace node {
+
+using std::unique_ptr;
+
+class PersistentHolder {
+ public:
+  explicit PersistentHolder(v8::Persistent<Value> persist) : persist(persist) {
+  }
+
+  ~PersistentHolder() {
+    persist.Dispose();
+  }
+
+ private:
+  v8::Persistent<Value> persist;
+};
+
+class Op {
+ public:
+  virtual Handle<Value> GetNodeValue() const = 0;
+  virtual bool ParseOp(v8::Handle<v8::Value> value, grpc_op *out,
+                       std::vector<unique_ptr<NanUtf8String> > *strings,
+                       std::vector<unique_ptr<PersistentHolder> > *handles) = 0;
+  Handle<Value> GetOpType();
+
+ protected:
+  virtual char *GetTypeString();
+};
+
+struct tag {
+  tag(NanCallback *callback, std::vector<unique_ptr<Op> > *ops,
+      std::vector<unique_ptr<PersistentHolder> > *handles,
+      std::vector<unique_ptr<NanUtf8String> > *strings);
+  ~tag();
+  NanCallback *callback;
+  std::vector<unique_ptr<Op> > *ops;
+  std::vector<unique_ptr<PersistentHolder> > *handles;
+  std::vector<unique_ptr<NanUtf8String> > *strings;
+};
 
 /* Wrapper class for grpc_call structs. */
 class Call : public ::node::ObjectWrap {
@@ -60,15 +100,8 @@ class Call : public ::node::ObjectWrap {
   Call &operator=(const Call &);
 
   static NAN_METHOD(New);
-  static NAN_METHOD(AddMetadata);
-  static NAN_METHOD(Invoke);
-  static NAN_METHOD(ServerAccept);
-  static NAN_METHOD(ServerEndInitialMetadata);
+  static NAN_METHOD(StartBatch);
   static NAN_METHOD(Cancel);
-  static NAN_METHOD(StartWrite);
-  static NAN_METHOD(StartWriteStatus);
-  static NAN_METHOD(WritesDone);
-  static NAN_METHOD(StartRead);
   static v8::Persistent<v8::Function> constructor;
   // Used for typechecking instances of this javascript class
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;

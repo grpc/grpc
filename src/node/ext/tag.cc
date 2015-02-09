@@ -89,6 +89,7 @@ class OpResponse {
   explicit OpResponse(char *name): name(name) {
   }
   virtual Handle<Value> GetNodeValue() const = 0;
+  virtual bool ParseOp() = 0;
   Handle<Value> GetOpType() const {
     NanEscapableScope();
     return NanEscapeScope(NanNew(name));
@@ -136,16 +137,23 @@ class MessageResponse : public OpResponse {
   }
 
  private:
-  grpc_byte_buffer **recv_message
+  grpc_byte_buffer **recv_message;
 };
+
+switch () {
+case GRPC_RECV_CLIENT_STATUS:
+  op = new ClientStatusResponse;
+  break;
+}
+
 
 class ClientStatusResponse : public OpResponse {
  public:
-  explicit ClientStatusResponse(grpc_metadata_array *metadata_array,
-                                grpc_status_code *status,
-                                char **status_details):
-      metadata_array(metadata_array), status(status),
-      status_details(status_details), OpResponse("status") {
+  explicit ClientStatusResponse():
+      OpResponse("status") {
+  }
+
+  bool ParseOp(Handle<Value> obj, grpc_op *out) {
   }
 
   Handle<Value> GetNodeValue() const {
@@ -159,9 +167,9 @@ class ClientStatusResponse : public OpResponse {
     return NanEscapeScope(status_obj);
   }
  private:
-  grpc_metadata_array *metadata_array;
-  grpc_status_code *status;
-  char **status_details;
+  grpc_metadata_array metadata_array;
+  grpc_status_code status;
+  char *status_details;
 };
 
 class ServerCloseResponse : public OpResponse {
@@ -208,22 +216,35 @@ class NewCallResponse : public OpResponse {
 }
 
 struct tag {
-  tag(NanCallback *callback, std::vector<OpResponse*> *responses) :
-      callback(callback), repsonses(responses) {
+  tag(NanCallback *callback, std::vector<OpResponse*> *responses,
+      std::vector<Persistent<Value>> *handles,
+      std::vector<NanUtf8String *> *strings) :
+      callback(callback), repsonses(responses), handles(handles),
+      strings(strings){
   }
   ~tag() {
     for (std::vector<OpResponse *>::iterator it = responses->begin();
        it != responses->end(); ++it) {
       delete *it;
     }
+    for (std::vector<NanUtf8String *>::iterator it = responses->begin();
+       it != responses->end(); ++it) {
+      delete *it;
+    }
     delete callback;
     delete responses;
+    delete handles;
+    delete strings;
   }
   NanCallback *callback;
   std::vector<OpResponse*> *responses;
+  std::vector<Persistent<Value>> *handles;
+  std::vector<NanUtf8String *> *strings;
 };
 
-void *CreateTag(Handle<Function> callback, grpc_op *ops, size_t nops) {
+void *CreateTag(Handle<Function> callback, grpc_op *ops, size_t nops,
+                std::vector<Persistent<Value>> *handles,
+                std::vector<NanUtf8String *> *strings) {
   NanScope();
   NanCallback *cb = new NanCallback(callback);
   vector<OpResponse*> *responses = new vector<OpResponse*>();
@@ -264,7 +285,7 @@ void *CreateTag(Handle<Function> callback, grpc_op *ops, size_t nops) {
     }
     responses->push_back(resp);
   }
-  struct tag *tag_struct = new struct tag(cb, responses);
+  struct tag *tag_struct = new struct tag(cb, responses, handles, strings);
   return reinterpret_cast<void *>(tag_struct);
 }
 
@@ -280,7 +301,7 @@ void *CreateTag(Handle<Function> callback, grpc_call **call,
   return reinterpret_cast<void *>(tag_struct);
 }
 
-NanCallback GetCallback(void *tag) {
+NanCallback GetTagCallback(void *tag) {
   NanEscapableScope();
   struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
   return NanEscapeScope(*tag_struct->callback);

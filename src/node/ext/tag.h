@@ -34,6 +34,9 @@
 #ifndef NET_GRPC_NODE_TAG_H_
 #define NET_GRPC_NODE_TAG_H_
 
+#include <vector>
+
+
 #include <grpc/grpc.h>
 #include <node.h>
 #include <nan.h>
@@ -41,9 +44,11 @@
 namespace grpc {
 namespace node {
 
-/* Create a void* tag that can be passed to grpc_call_start_batch from a callback
-   function and an ops array */
-void *CreateTag(v8::Handle<v8::Function> callback, grpc_op *ops, size_t nops);
+/* Create a void* tag that can be passed to grpc_call_start_batch from a
+   callback function and an ops array */
+void *CreateTag(v8::Handle<v8::Function> callback, grpc_op *ops, size_t nops,
+                std::vector<v8::Persistent<v8::Value> > *handles,
+                std::vector<NanUtf8String *> *strings);
 
 /* Create a void* tag that can be passed to grpc_server_request_call from a
    callback and the various out parameters to that function */
@@ -55,7 +60,7 @@ void *CreateTag(v8::Handle<v8::Function> callback, grpc_call **call,
 NanCallback GetCallback(void *tag);
 
 /* Get the combined output value from the tag */
-v8::Handle<v8::Value> GetNodevalue(void *tag);
+v8::Handle<v8::Value> GetNodeValue(void *tag);
 
 /* Destroy the tag and all resources it is holding. It is illegal to call any
    of these other functions on a tag after it has been destroyed. */
