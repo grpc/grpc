@@ -64,13 +64,13 @@ static void request_call(void) {
   call_state *tag = gpr_malloc(sizeof(*tag));
   gpr_ref_init(&tag->pending_ops, 2);
   tag->bytes_read = 0;
-  grpc_server_request_call(server, tag);
+  grpc_server_request_call_old(server, tag);
 }
 
 static void assert_read_ok(call_state *s, grpc_byte_buffer *b) {
   grpc_byte_buffer_reader *bb_reader = NULL;
   gpr_slice read_slice;
-  int i;
+  unsigned i;
 
   bb_reader = grpc_byte_buffer_reader_create(b);
   while (grpc_byte_buffer_reader_next(bb_reader, &read_slice)) {
@@ -173,10 +173,10 @@ int main(int argc, char **argv) {
       case GRPC_SERVER_RPC_NEW:
         if (ev->call != NULL) {
           /* initial ops are already started in request_call */
-          grpc_call_server_accept(ev->call, cq, s);
-          grpc_call_server_end_initial_metadata(ev->call,
-                                                GRPC_WRITE_BUFFER_HINT);
-          GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
+          grpc_call_server_accept_old(ev->call, cq, s);
+          grpc_call_server_end_initial_metadata_old(ev->call,
+                                                    GRPC_WRITE_BUFFER_HINT);
+          GPR_ASSERT(grpc_call_start_read_old(ev->call, s) == GRPC_CALL_OK);
           request_call();
         } else {
           GPR_ASSERT(shutdown_started);
@@ -185,17 +185,17 @@ int main(int argc, char **argv) {
         break;
       case GRPC_WRITE_ACCEPTED:
         GPR_ASSERT(ev->data.write_accepted == GRPC_OP_OK);
-        GPR_ASSERT(grpc_call_start_read(ev->call, s) == GRPC_CALL_OK);
+        GPR_ASSERT(grpc_call_start_read_old(ev->call, s) == GRPC_CALL_OK);
         break;
       case GRPC_READ:
         if (ev->data.read) {
           assert_read_ok(ev->tag, ev->data.read);
-          GPR_ASSERT(grpc_call_start_write(ev->call, ev->data.read, s,
-                                           GRPC_WRITE_BUFFER_HINT) ==
+          GPR_ASSERT(grpc_call_start_write_old(ev->call, ev->data.read, s,
+                                               GRPC_WRITE_BUFFER_HINT) ==
                      GRPC_CALL_OK);
         } else {
-          GPR_ASSERT(grpc_call_start_write_status(ev->call, GRPC_STATUS_OK,
-                                                  NULL, s) == GRPC_CALL_OK);
+          GPR_ASSERT(grpc_call_start_write_status_old(ev->call, GRPC_STATUS_OK,
+                                                      NULL, s) == GRPC_CALL_OK);
         }
         break;
       case GRPC_FINISH_ACCEPTED:

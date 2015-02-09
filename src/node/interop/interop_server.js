@@ -183,7 +183,7 @@ function getServer(port, tls) {
       fullDuplexCall: handleFullDuplex,
       halfDuplexCall: handleHalfDuplex
     }
-  }, options);
+  }, null, options);
   var port_num = server.bind('0.0.0.0:' + port, tls);
   return {server: server, port: port_num};
 }

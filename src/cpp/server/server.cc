@@ -111,7 +111,7 @@ void Server::Start() {
 
 void Server::AllowOneRpc() {
   GPR_ASSERT(started_);
-  grpc_call_error err = grpc_server_request_call(server_, nullptr);
+  grpc_call_error err = grpc_server_request_call_old(server_, nullptr);
   GPR_ASSERT(err == GRPC_CALL_OK);
 }
 

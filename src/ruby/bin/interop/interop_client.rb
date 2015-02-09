@@ -56,6 +56,8 @@ require 'test/cpp/interop/empty'
 
 require 'signet/ssl_config'
 
+include Google::RPC::Auth
+
 # loads the certificates used to access the test server securely.
 def load_test_certs
   this_dir = File.expand_path(File.dirname(__FILE__))
@@ -67,40 +69,54 @@ end
 # loads the certificates used to access the test server securely.
 def load_prod_cert
   fail 'could not find a production cert' if ENV['SSL_CERT_FILE'].nil?
-  p "loading prod certs from #{ENV['SSL_CERT_FILE']}"
+  logger.info("loading prod certs from #{ENV['SSL_CERT_FILE']}")
   File.open(ENV['SSL_CERT_FILE']).read
 end
 
-# creates a Credentials from the test certificates.
+# creates SSL Credentials from the test certificates.
 def test_creds
   certs = load_test_certs
   GRPC::Core::Credentials.new(certs[0])
 end
 
-RX_CERT = /-----BEGIN CERTIFICATE-----\n.*?-----END CERTIFICATE-----\n/m
-
-
-# creates a Credentials from the production certificates.
+# creates SSL Credentials from the production certificates.
 def prod_creds
   cert_text = load_prod_cert
   GRPC::Core::Credentials.new(cert_text)
 end
 
+# creates the SSL Credentials.
+def ssl_creds(use_test_ca)
+  return test_creds if use_test_ca
+  prod_creds
+end
+
 # creates a test stub that accesses host:port securely.
-def create_stub(host, port, is_secure, host_override, use_test_ca)
-  address = "#{host}:#{port}"
-  if is_secure
-    creds = nil
-    if use_test_ca
-      creds = test_creds
-    else
-      creds = prod_creds
+def create_stub(opts)
+  address = "#{opts.host}:#{opts.port}"
+  if opts.secure
+    stub_opts = {
+      :creds => ssl_creds(opts.use_test_ca),
+      GRPC::Core::Channel::SSL_TARGET => opts.host_override
+    }
+
+    # Add service account creds if specified
+    if %w(all service_account_creds).include?(opts.test_case)
+      unless opts.oauth_scope.nil?
+        fd = StringIO.new(File.read(opts.oauth_key_file))
+        logger.info("loading oauth certs from #{opts.oauth_key_file}")
+        auth_creds = ServiceAccountCredentials.new(opts.oauth_scope, fd)
+        stub_opts[:update_metadata] = auth_creds.updater_proc
+      end
     end
 
-    stub_opts = {
-      :creds => creds,
-      GRPC::Core::Channel::SSL_TARGET => host_override
-    }
+    # Add compute engine creds if specified
+    if %w(all compute_engine_creds).include?(opts.test_case)
+      unless opts.oauth_scope.nil?
+        stub_opts[:update_metadata] = GCECredentials.new.update_proc
+      end
+    end
+
     logger.info("... connecting securely to #{address}")
     Grpc::Testing::TestService::Stub.new(address, **stub_opts)
   else
@@ -158,9 +174,10 @@ class NamedTests
   include Grpc::Testing::PayloadType
   attr_accessor :assertions # required by Minitest::Assertions
 
-  def initialize(stub)
+  def initialize(stub, args)
     @assertions = 0  # required by Minitest::Assertions
     @stub = stub
+    @args = args
   end
 
   def empty_unary
@@ -170,19 +187,35 @@ class NamedTests
   end
 
   def large_unary
-    req_size, wanted_response_size = 271_828, 314_159
-    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
-    req = SimpleRequest.new(response_type: :COMPRESSABLE,
-                            response_size: wanted_response_size,
-                            payload: payload)
-    resp = @stub.unary_call(req)
-    assert_equal(:COMPRESSABLE, resp.payload.type,
-                 'large_unary: payload had the wrong type')
-    assert_equal(wanted_response_size, resp.payload.body.length,
-                 'large_unary: payload had the wrong length')
-    assert_equal(nulls(wanted_response_size), resp.payload.body,
-                 'large_unary: payload content is invalid')
+    perform_large_unary
     p 'OK: large_unary'
+  end
+
+  def service_account_creds
+    # ignore this test if the oauth options are not set
+    if @args.oauth_scope.nil? || @args.oauth_key_file.nil?
+      p 'NOT RUN: service_account_creds; no service_account settings'
+      return
+    end
+    json_key = File.read(@args.oauth_key_file)
+    wanted_email = MultiJson.load(json_key)['client_email']
+    resp = perform_large_unary(fill_username: true,
+                               fill_oauth_scope: true)
+    assert_equal(wanted_email, resp.username,
+                 'service_account_creds: incorrect username')
+    assert(@args.oauth_scope.include?(resp.oauth_scope),
+           'service_account_creds: incorrect oauth_scope')
+    p 'OK: service_account_creds'
+  end
+
+  def compute_engine_creds
+    resp = perform_large_unary(fill_username: true,
+                               fill_oauth_scope: true)
+    assert(@args.oauth_scope.include?(resp.oauth_scope),
+           'service_account_creds: incorrect oauth_scope')
+    assert_equal(@args.default_service_account, resp.username,
+                 'service_account_creds: incorrect username')
+    p 'OK: compute_engine_creds'
   end
 
   def client_streaming
@@ -230,64 +263,89 @@ class NamedTests
       method(m).call
     end
   end
+
+  private
+
+  def perform_large_unary(fill_username: false, fill_oauth_scope: false)
+    req_size, wanted_response_size = 271_828, 314_159
+    payload = Payload.new(type: :COMPRESSABLE, body: nulls(req_size))
+    req = SimpleRequest.new(response_type: :COMPRESSABLE,
+                            response_size: wanted_response_size,
+                            payload: payload)
+    req.fill_username = fill_username
+    req.fill_oauth_scope = fill_oauth_scope
+    resp = @stub.unary_call(req)
+    assert_equal(:COMPRESSABLE, resp.payload.type,
+                 'large_unary: payload had the wrong type')
+    assert_equal(wanted_response_size, resp.payload.body.length,
+                 'large_unary: payload had the wrong length')
+    assert_equal(nulls(wanted_response_size), resp.payload.body,
+                 'large_unary: payload content is invalid')
+    resp
+  end
 end
 
+# Args is used to hold the command line info.
+Args = Struct.new(:default_service_account, :host, :host_override,
+                  :oauth_scope, :oauth_key_file, :port, :secure, :test_case,
+                  :use_test_ca)
+
 # validates the the command line options, returning them as a Hash.
-def parse_options
-  options = {
-    'secure' => false,
-    'server_host' => nil,
-    'server_host_override' => nil,
-    'server_port' => nil,
-    'test_case' => nil
-  }
+def parse_args
+  args = Args.new
+  args.host_override = 'foo.test.google.com'
   OptionParser.new do |opts|
-    opts.banner = 'Usage: --server_host <server_host> --server_port server_port'
+    opts.on('--oauth_scope scope',
+            'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }
     opts.on('--server_host SERVER_HOST', 'server hostname') do |v|
-      options['server_host'] = v
+      args['host'] = v
+    end
+    opts.on('--default_service_account email_address',
+            'email address of the default service account') do |v|
+      args['default_service_account'] = v
+    end
+    opts.on('--service_account_key_file PATH',
+            'Path to the service account json key file') do |v|
+      args['oauth_key_file'] = v
     end
     opts.on('--server_host_override HOST_OVERRIDE',
             'override host via a HTTP header') do |v|
-      options['server_host_override'] = v
+      args['host_override'] = v
     end
-    opts.on('--server_port SERVER_PORT', 'server port') do |v|
-      options['server_port'] = v
-    end
+    opts.on('--server_port SERVER_PORT', 'server port') { |v| args['port'] = v }
     # instance_methods(false) gives only the methods defined in that class
     test_cases = NamedTests.instance_methods(false).map(&:to_s)
     test_case_list = test_cases.join(',')
     opts.on('--test_case CODE', test_cases, {}, 'select a test_case',
-            "  (#{test_case_list})") do |v|
-      options['test_case'] = v
-    end
+            "  (#{test_case_list})") { |v| args['test_case'] = v }
     opts.on('-s', '--use_tls', 'require a secure connection?') do |v|
-      options['secure'] = v
+      args['secure'] = v
     end
     opts.on('-t', '--use_test_ca',
             'if secure, use the test certificate?') do |v|
-      options['use_test_ca'] = v
+      args['use_test_ca'] = v
     end
   end.parse!
-  _check_options(options)
+  _check_args(args)
 end
 
-def _check_options(opts)
-  %w(server_host server_port test_case).each do |arg|
-    if opts[arg].nil?
+def _check_args(args)
+  %w(host port test_case).each do |a|
+    if args[a].nil?
       fail(OptionParser::MissingArgument, "please specify --#{arg}")
     end
   end
-  if opts['server_host_override'].nil?
-    opts['server_host_override'] = opts['server_host']
+  if args['oauth_key_file'].nil? ^ args['oauth_scope'].nil?
+    fail(OptionParser::MissingArgument,
+         'please specify both of --service_account_key_file and --oauth_scope')
   end
-  opts
+  args
 end
 
 def main
-  opts = parse_options
-  stub = create_stub(opts['server_host'], opts['server_port'], opts['secure'],
-                     opts['server_host_override'], opts['use_test_ca'])
-  NamedTests.new(stub).method(opts['test_case']).call
+  opts = parse_args
+  stub = create_stub(opts)
+  NamedTests.new(stub, opts).method(opts['test_case']).call
 end
 
 main

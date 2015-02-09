@@ -99,9 +99,10 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
                                  const google::protobuf::Message &request,
                                  google::protobuf::Message *result) {
   Status status;
-  grpc_call *call = grpc_channel_create_call(
+  grpc_call *call = grpc_channel_create_call_old(
       c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
+
   grpc_event *ev;
   void *finished_tag = reinterpret_cast<char *>(call);
   void *metadata_read_tag = reinterpret_cast<char *>(call) + 2;
@@ -114,8 +115,8 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
   // add_metadata from context
   //
   // invoke
-  GPR_ASSERT(grpc_call_invoke(call, cq, metadata_read_tag, finished_tag,
-                              GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_invoke_old(call, cq, metadata_read_tag, finished_tag,
+                                  GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   // write request
   grpc_byte_buffer *write_buffer = nullptr;
   bool success = SerializeProto(request, &write_buffer);
@@ -126,8 +127,8 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
     GetFinalStatus(cq, finished_tag, nullptr);
     return status;
   }
-  GPR_ASSERT(grpc_call_start_write(call, write_buffer, write_tag,
-                                   GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_start_write_old(call, write_buffer, write_tag,
+                                       GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
   grpc_byte_buffer_destroy(write_buffer);
   ev = grpc_completion_queue_pluck(cq, write_tag, gpr_inf_future);
 
@@ -138,7 +139,7 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
     return status;
   }
   // writes done
-  GPR_ASSERT(grpc_call_writes_done(call, halfclose_tag) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_writes_done_old(call, halfclose_tag) == GRPC_CALL_OK);
   ev = grpc_completion_queue_pluck(cq, halfclose_tag, gpr_inf_future);
   grpc_event_finish(ev);
   // start read metadata
@@ -146,7 +147,7 @@ Status Channel::StartBlockingRpc(const RpcMethod &method,
   ev = grpc_completion_queue_pluck(cq, metadata_read_tag, gpr_inf_future);
   grpc_event_finish(ev);
   // start read
-  GPR_ASSERT(grpc_call_start_read(call, read_tag) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_start_read_old(call, read_tag) == GRPC_CALL_OK);
   ev = grpc_completion_queue_pluck(cq, read_tag, gpr_inf_future);
   if (ev->data.read) {
     if (!DeserializeProto(ev->data.read, result)) {
@@ -167,7 +168,7 @@ StreamContextInterface *Channel::CreateStream(
     const RpcMethod &method, ClientContext *context,
     const google::protobuf::Message *request,
     google::protobuf::Message *result) {
-  grpc_call *call = grpc_channel_create_call(
+  grpc_call *call = grpc_channel_create_call_old(
       c_channel_, method.name(), target_.c_str(), context->RawDeadline());
   context->set_call(call);
   grpc_completion_queue *cq = grpc_completion_queue_create();

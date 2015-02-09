@@ -13,9 +13,11 @@ end
 SPEC_SUITES = [
   { id: :wrapper, title: 'wrapper layer', files: %w(spec/*.rb) },
   { id: :idiomatic, title: 'idiomatic layer', dir: %w(spec/generic),
-    tag: '~bidi' },
+    tags: ['~bidi', '~server'] },
   { id: :bidi, title: 'bidi tests', dir: %w(spec/generic),
-    tag: 'bidi' }
+    tag: 'bidi' },
+  { id: :server, title: 'rpc server thread tests', dir: %w(spec/generic),
+    tag: 'server' }
 ]
 
 desc 'Run all RSpec tests'
@@ -33,12 +35,20 @@ namespace :spec do
 
         t.pattern = spec_files
         t.rspec_opts = "--tag #{suite[:tag]}" if suite[:tag]
+        if suite[:tags]
+          t.rspec_opts = suite[:tags].map { |x| "--tag #{x}" }.join(' ')
+        end
       end
     end
   end
 end
 
-task default: 'spec:suite:idiomatic'  # this should be spec:suite:bidi
-task 'spec:suite:wrapper' => :compile
+desc 'Compiles the extension then runs all the tests'
+task :all
+
+task default: :all
+task 'spec:suite:wrapper' => [:compile, :rubocop]
 task 'spec:suite:idiomatic' => 'spec:suite:wrapper'
-task 'spec:suite:bidi' => 'spec:suite:idiomatic'
+task 'spec:suite:bidi' => 'spec:suite:wrapper'
+task 'spec:suite:server' => 'spec:suite:wrapper'
+task all: ['spec:suite:idiomatic', 'spec:suite:bidi', 'spec:suite:server']

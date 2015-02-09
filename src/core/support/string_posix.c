@@ -33,7 +33,8 @@
 
 /* Posix code for gpr snprintf support. */
 
-#ifndef _POSIX_C_SOURCE
+#if !defined _POSIX_C_SOURCE || _POSIX_C_SOURCE < 200112L
+#undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #endif
 
@@ -57,7 +58,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   va_start(args, format);
   ret = vsnprintf(buf, sizeof(buf), format, args);
   va_end(args);
-  if (!(0 <= ret && ret < ~(size_t)0)) {
+  if (!(0 <= ret)) {
     *strp = NULL;
     return -1;
   }
@@ -79,7 +80,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   va_start(args, format);
   ret = vsnprintf(*strp, strp_buflen, format, args);
   va_end(args);
-  if (ret == strp_buflen - 1) {
+  if ((size_t)ret == strp_buflen - 1) {
     return ret;
   }
 

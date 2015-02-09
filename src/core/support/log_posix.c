@@ -31,11 +31,16 @@
  *
  */
 
-#ifndef _POSIX_C_SOURCE
+#if !defined _POSIX_C_SOURCE || _POSIX_C_SOURCE < 200112L
+#undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #endif
 
+/* FIXME: "posix" files probably shouldn't depend on _GNU_SOURCE */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
+
 #include <grpc/support/port_platform.h>
 
 #if defined(GPR_POSIX_LOG)
@@ -64,7 +69,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   va_end(args);
   if (ret < 0) {
     message = NULL;
-  } else if (ret <= sizeof(buf) - 1) {
+  } else if ((size_t)ret <= sizeof(buf) - 1) {
     message = buf;
   } else {
     message = allocated = gpr_malloc(ret + 1);
