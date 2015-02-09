@@ -85,4 +85,4 @@ if (require.main === module) {
   stockServer.listen();
 }
 
-exports.module = stockServer;
+module.exports = stockServer;
