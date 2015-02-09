@@ -69,7 +69,7 @@ class Op {
   v8::Handle<v8::Value> GetOpType() const;
 
  protected:
-  virtual char *GetTypeString() const;
+  virtual std::string GetTypeString() const;
 };
 
 struct tag {
