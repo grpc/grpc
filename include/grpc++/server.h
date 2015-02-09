@@ -48,8 +48,8 @@ struct grpc_server;
 namespace google {
 namespace protobuf {
 class Message;
-}
-}
+}  // namespace protobuf
+}  // namespace google
 
 namespace grpc {
 class AsyncServerContext;

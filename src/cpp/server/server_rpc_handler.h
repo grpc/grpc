@@ -53,7 +53,6 @@ class ServerRpcHandler {
   void StartRpc();
 
  private:
-  CompletionQueue::CompletionType WaitForNextEvent();
   void FinishRpc(const Status &status);
 
   std::unique_ptr<AsyncServerContext> async_server_context_;

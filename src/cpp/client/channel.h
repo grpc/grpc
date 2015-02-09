@@ -42,11 +42,14 @@
 struct grpc_channel;
 
 namespace grpc {
+class Call;
+class CallOpBuffer;
 class ChannelArguments;
+class CompletionQueue;
 class Credentials;
 class StreamContextInterface;
 
-class Channel : public ChannelInterface {
+class Channel final : public ChannelInterface {
  public:
   Channel(const grpc::string &target, const ChannelArguments &args);
   Channel(const grpc::string &target, const std::unique_ptr<Credentials> &creds,
@@ -54,14 +57,10 @@ class Channel : public ChannelInterface {
 
   ~Channel() override;
 
-  Status StartBlockingRpc(const RpcMethod &method, ClientContext *context,
-                          const google::protobuf::Message &request,
-                          google::protobuf::Message *result) override;
-
-  StreamContextInterface *CreateStream(
-      const RpcMethod &method, ClientContext *context,
-      const google::protobuf::Message *request,
-      google::protobuf::Message *result) override;
+  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
+                          CompletionQueue *cq) override;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, void *tag,
+                                Call *call) override;
 
  private:
   const grpc::string target_;
