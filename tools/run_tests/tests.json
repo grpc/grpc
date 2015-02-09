@@ -363,10 +363,6 @@
   }, 
   {
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_metadata_and_payload_test"
-  }, 
-  {
-    "language": "c", 
     "name": "chttp2_fake_security_request_response_with_payload_test"
   }, 
   {
@@ -548,10 +544,6 @@
   {
     "language": "c", 
     "name": "chttp2_fullstack_request_response_with_binary_metadata_and_payload_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_metadata_and_payload_test"
   }, 
   {
     "language": "c", 
@@ -747,10 +739,6 @@
   }, 
   {
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test"
-  }, 
-  {
-    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_test"
   }, 
   {
@@ -932,10 +920,6 @@
   {
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test"
   }, 
   {
     "language": "c", 
@@ -1131,10 +1115,6 @@
   }, 
   {
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_metadata_and_payload_test"
-  }, 
-  {
-    "language": "c", 
     "name": "chttp2_socket_pair_request_response_with_payload_test"
   }, 
   {
@@ -1316,10 +1296,6 @@
   {
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test"
   }, 
   {
     "language": "c", 

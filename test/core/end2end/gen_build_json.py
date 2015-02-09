@@ -32,7 +32,6 @@ END2END_TESTS = [
     'ping_pong_streaming',
     'request_response_with_binary_metadata_and_payload',
     'request_response_with_metadata_and_payload',
-    'request_response_with_metadata_and_payload',
     'request_response_with_payload',
     'request_with_large_metadata',
     'request_with_payload',
