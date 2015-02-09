@@ -65,7 +65,7 @@ bool CompletionQueue::Next(void **tag, bool *ok) {
   auto cq_tag = static_cast<CompletionQueueTag *>(ev->tag);
   cq_tag->FinalizeResult();
   *tag = cq_tag->user_tag_;
-  *ok = ev->status.op_complete == GRPC_OP_OK;
+  *ok = ev->data.op_complete == GRPC_OP_OK;
   return true;
 }
 
