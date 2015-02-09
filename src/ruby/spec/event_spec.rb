@@ -33,8 +33,8 @@ describe GRPC::Core::CompletionType do
   before(:each) do
     @known_types = {
       QUEUE_SHUTDOWN: 0,
-      READ: 1,
-      INVOKE_ACCEPTED: 2,
+      OP_COMPLETE: 1,
+      READ: 2,
       WRITE_ACCEPTED: 3,
       FINISH_ACCEPTED: 4,
       CLIENT_METADATA_READ: 5,

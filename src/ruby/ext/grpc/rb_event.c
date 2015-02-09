@@ -256,14 +256,6 @@ static VALUE grpc_rb_event_result(VALUE self) {
                event->data.finish_accepted);
       break;
 
-    case GRPC_INVOKE_ACCEPTED:
-      if (event->data.invoke_accepted == GRPC_OP_OK) {
-        return Qnil;
-      }
-      rb_raise(rb_eEventError, "invoke failed, not sure why (code=%d)",
-               event->data.invoke_accepted);
-      break;
-
     case GRPC_WRITE_ACCEPTED:
       if (event->data.write_accepted == GRPC_OP_OK) {
         return Qnil;
@@ -343,9 +335,8 @@ void Init_google_rpc_event() {
       rb_define_module_under(rb_mGoogleRpcCore, "CompletionType");
   rb_define_const(rb_mCompletionType, "QUEUE_SHUTDOWN",
                   INT2NUM(GRPC_QUEUE_SHUTDOWN));
+  rb_define_const(rb_mCompletionType, "OP_COMPLETE", INT2NUM(GRPC_OP_COMPLETE));
   rb_define_const(rb_mCompletionType, "READ", INT2NUM(GRPC_READ));
-  rb_define_const(rb_mCompletionType, "INVOKE_ACCEPTED",
-                  INT2NUM(GRPC_INVOKE_ACCEPTED));
   rb_define_const(rb_mCompletionType, "WRITE_ACCEPTED",
                   INT2NUM(GRPC_WRITE_ACCEPTED));
   rb_define_const(rb_mCompletionType, "FINISH_ACCEPTED",
