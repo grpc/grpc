@@ -54,6 +54,7 @@ class ChannelInterface;
 
 class CallOpBuffer final : public CompletionQueueTag {
  public:
+  void AddSendInitialMetadata(std::vector<std::pair<grpc::string, grpc::string> > *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
   void AddRecvMessage(google::protobuf::Message *message);
   void AddClientSendClose();
