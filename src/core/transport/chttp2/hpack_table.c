@@ -166,11 +166,11 @@ static int add_error_too_long(grpc_chttp2_hptbl *tbl, grpc_mdelem *md,
       gpr_hexdump((const char *)GPR_SLICE_START_PTR(md->key->slice),
                   GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT);
   char *value =
-      gpr_hexdump((const char *)GPR_SLICE_START_PTR(md->key->slice),
-                  GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT);
+      gpr_hexdump((const char *)GPR_SLICE_START_PTR(md->value->slice),
+                  GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT);
   gpr_log(GPR_ERROR,
-          "Trying to add a header of hpack-size %ld to a table of size %d;"
-          "key=%s, value=%s",
+          "Trying to add a header of hpack-size %ld to a table of size %d\n"
+          "key=%s\nvalue=%s",
           elem_bytes, tbl->max_bytes, key, value);
   gpr_free(value);
   gpr_free(key);
