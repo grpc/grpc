@@ -3,8 +3,7 @@
 ## TODO: move this to the tutorial sub-folder
 
 Welcome to the developer documentation for gRPC, a language-neutral,
-platform-neutral remote procedure call (RPC) system developed at Google that
-helps you build connected systems.
+platform-neutral remote procedure call (RPC) system developed at Google.
 
 This document introduces you to gRPC with a quick overview and a simple
 Hello World example. More documentation is coming soon!
@@ -13,6 +12,7 @@ Hello World example. More documentation is coming soon!
 
 ## TODO: basic conceptual intro (anything more in-depth will go in gRPC Concepts doc)
 
+<a name="hello"></a>
 ## Hello gRPC!
 
 Now that you know a bit more about gRPC, the easiest way to see how it
@@ -38,11 +38,12 @@ don't worry if you're not a Go or
 Java developer - complete tutorials and reference documentation for all gRPC
 languages are coming soon.
 
+<a name="setup"></a>
 ### Setup
 
 The rest of this page explains how to set up your local machine to work with
 the example code.
-If you just want to read the example, you can go straight to the next step.
+If you just want to read the example, you can go straight to the [next step](#servicedef).
 
 #### Install Git
 
@@ -54,19 +55,19 @@ commands that you will need to use are:
 - git checkout ... : check out a particular branch or a tagged version of
 the code to hack on
 
-#### Download grpc-helloworld
+#### Get the source code
 
-Clone the grpc-helloword repository located at GitHub by running the
+The example code for this and our other examples lives in the `grpc-common` GitHub repository. Clone this repository to your local machine by running the
 following command:
 
 ```
-git clone https://github.com/google/grpc-helloworld.git
+git clone https://github.com/google/grpc-common.git
 ```
 
-Change your current directory to grpc-helloworld
+Change your current directory to grpc-common/java
 
 ```
-cd grpc-helloworld
+cd grpc-common/java
 ```
 
 #### Install Java 8
@@ -104,6 +105,7 @@ to experiment
 with generating the code yourself, download and install protoc from its
 [Git repo](https://github.com/google/protobuf)
 
+<a name="servicedef"></a>
 ### Defining a service
 
 The first step in creating our example is to define a *service*: an RPC
@@ -116,13 +118,15 @@ familiar with protocol buffers, you can find out more in the [Protocol Buffers
 Developer Guide](https://developers.google.com/protocol-buffers/docs/overview).
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](src/main/proto/helloworld.proto). The `Greeting` service
+[helloworld.proto](java/src/main/proto/helloworld.proto) _should we link to the version in the Java subdirectory or the one in the common protos directory?_. The `Greeting` service
 has one method, `hello`, that lets the server receive a single `HelloRequest`
 message from the remote client containing the user's name, then send back
 a greeting in a `HelloReply`.
 
 ```
 syntax = "proto3";
+
+option java_package = "ex.grpc";
 
 package helloworld;
 
@@ -146,6 +150,7 @@ service Greeting {
 
 ```
 
+<a name="generating"></a>
 ### Generating gRPC code
 
 Once we've defined our service, we use the protocol buffer compiler
@@ -185,15 +190,103 @@ $ protoc -I . helloworld.proto
                                --java_out=src/main/java
 ```
 
-This generates the following Java classes
+This generates the following classes, which contain all the generated code we need to create our example: 
 
+- [`Helloworld.java`](java/src/main/java/ex/grpc/Helloworld.java), which has all the protocol buffer code to populate, serialize, and retrieve our `HelloRequest` and `HelloReply` message types
+- [`GreetingsGrpc.java`](java/src/main/java/ex/grpc/GreetingsGrpc.java), which contains (along with some other useful code):
+   - an interface for `Greetings` servers to implement
+
+```
+  public static interface Greetings {
+
+    public void hello(ex.grpc.Helloworld.HelloRequest request,
+        com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply> responseObserver);
+  }
+```
+
+   - _stub_ classes that clients can use to talk to a `Greetings` server.
+
+```
+public static class GreetingsStub extends
+      com.google.net.stubby.stub.AbstractStub<GreetingsStub, GreetingsServiceDescriptor>
+      implements Greetings {
+   ...
+  }
+```
+
+_Does gRPC output multiple Java classes per proto by default?_
+
+<a name="server"></a>
 ### Writing a server
 
-Now let's write some code! First we'll create the `Greetings` server.
+Now let's write some code! First we'll create a server application to implement our service. Note that we're not going to go into a lot of detail about how to create a server in this section  More detailed information will be in the tutorial for your chosen language (coming soon).
 
-Note that we're not going to go into a lot of detail about how to create a server in this section  More detailed information will be in the tutorial for your chosen language (coming soon).
+Our server application has two classes:
+
+- a simple service implementation [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java).
+
+- a server that hosts the service implementation and allows access over the network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
+
+## Service implementation
+
+[GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java)
+implements the behaviour we require of our GreetingService. There are a
+number of important features of gRPC being used here:
+
+```
+  public void hello(Helloworld.HelloRequest req,
+      StreamObserver<Helloworld.HelloReply> responseObserver) {
+    Helloworld.HelloReply reply = Helloworld.HelloReply.newBuilder().setMessage(
+        "Hello " + req.getName()).build();
+    responseObserver.onValue(reply);
+    responseObserver.onCompleted();
+  }
+```
+
+- it provides a class `GreetingsImpl` that implements a generated interface `GreetingsGrpc.Greetings`
+- `GreetingsGrpc.Greetings` declares the method `hello` that was declared in the proto [IDL](src/main/proto/helloworld.proto)
+- `hello's` signature is typesafe:
+   hello(Helloworld.HelloRequest req, StreamObserver<Helloworld.HelloReply> responseObserver)
+- `hello` takes two parameters:
+  `Helloworld.HelloRequest`: the request
+  `StreamObserver<Helloworld.HelloReply>`: a response observer, an interface to be called with the response value
+- to complete the call
+  - the return value is constructed
+  - the responseObserver.onValue() is called with the response
+  - responseObserver.onCompleted() is called to indicate that no more work will done on the RPC.
 
 
+## Server implementation
+
+[GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java) shows the
+other main feature required to provde the gRPC service; how to allow a service
+implementation to be accessed from the network.
+
+```
+  private void start() throws Exception {
+    server = NettyServerBuilder.forPort(port)
+             .addService(GreetingsGrpc.bindService(new GreetingsImpl()))
+             .build();
+    server.startAsync();
+    server.awaitRunning(5, TimeUnit.SECONDS);
+  }
+
+```
+
+- it provides a class `GreetingsServer` that holds a `ServerImpl` that will run the server
+- in the `start` method, `GreetingServer` binds the `GreetingsService` implementation to a port and begins running it
+- there is also a `stop` method that takes care of shutting down the service and cleaning up when the program exits
+
+## Build it
+
+This is the same as before: our client and server are part of the same maven
+package so the same command builds both.
+
+```
+$ mvn package
+```
+
+<a name="client"></a>
 ### Writing a client
 
 Client-side gRPC is pretty simple. In this step, we'll use the generated code to write a simple client that can access the `Greetings` server we created in the previous section. You can see the complete client code in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
@@ -267,10 +360,6 @@ It can be built as follows.
 $ mvn package
 ```
 
-It can also be run, but doing so now would end up a with a failure as there is
-no server available yet.  The [next step](Step_3.md), describes how to
-implement, build and run a server that supports the service description.
-
 #### Notes
 
 - The client uses a blocking stub. This means that the RPC call waits for the
@@ -280,7 +369,23 @@ implement, build and run a server that supports the service description.
   server, where the response is returned asynchronously.  Usage of these stubs
   is a more advanced topic and will be described in later steps.
 
+<a name="run"></a>
+### Try it out!
 
-We haven't looked at implementing a server yet, but 
+We've added simple shell scripts to simplifying running the examples. Now
+that they are built, you can run the server with:
+
+```
+$ ./run_greetings_server.sh
+```
+
+and in another terminal window confirm that it receives a message.
+
+```
+$ ./run_greetings_client.sh
+```
+
+
+
 
 
