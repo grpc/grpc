@@ -38,21 +38,27 @@ struct grpc_completion_queue;
 
 namespace grpc {
 
+template <class R>
+class ClientReader;
+template <class W>
+class ClientWriter;
+template <class R, class W>
+class ClientReaderWriter;
+template <class R>
+class ServerReader;
+template <class W>
+class ServerWriter;
+template <class R, class W>
+class ServerReaderWriter;
+
 class CompletionQueue;
 
 class CompletionQueueTag {
  public:
-  enum FinalizeResultOutput {
-    SUCCEED,
-    FAIL,
-    SWALLOW,
-  };
-
-  virtual FinalizeResultOutput FinalizeResult(bool status) = 0;
-
- private:
-  friend class CompletionQueue;
-  void *user_tag_;
+  // Called prior to returning from Next(), return value
+  // is the status of the operation (return status is the default thing
+  // to do)
+  virtual void FinalizeResult(void *tag, bool *status) = 0;
 };
 
 // grpc_completion_queue wrapper class
@@ -66,22 +72,6 @@ class CompletionQueue {
   // for destruction.
   bool Next(void **tag, bool *ok);
 
-  bool Pluck(void *tag);
-
-  // Prepare a tag for the C api
-  // Given a tag we'd like to receive from Next, what tag should we pass
-  // down to the C api?
-  // Usage example:
-  //   grpc_call_start_batch(..., cq.PrepareTagForC(tag));
-  // Allows attaching some work to be executed before the original tag
-  // is returned.
-  // MUST be used for all events that could be surfaced through this
-  // wrapping API
-  void *PrepareTagForC(CompletionQueueTag *cq_tag, void *user_tag) {
-    cq_tag->user_tag_ = user_tag;
-    return cq_tag;
-  }
-
   // Shutdown has to be called, and the CompletionQueue can only be
   // destructed when false is returned from Next().
   void Shutdown();
@@ -89,6 +79,15 @@ class CompletionQueue {
   grpc_completion_queue* cq() { return cq_; }
 
  private:
+  template <class R> friend class ::grpc::ClientReader;
+  template <class W> friend class ::grpc::ClientWriter;
+  template <class R, class W> friend class ::grpc::ClientReaderWriter;
+  template <class R> friend class ::grpc::ServerReader;
+  template <class W> friend class ::grpc::ServerWriter;
+  template <class R, class W> friend class ::grpc::ServerReaderWriter;
+
+  bool Pluck(CompletionQueueTag *tag);
+
   grpc_completion_queue* cq_;  // owned
 };
 

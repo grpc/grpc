@@ -55,6 +55,8 @@ class ChannelInterface;
 
 class CallOpBuffer final : public CompletionQueueTag {
  public:
+  CallOpBuffer() : return_tag_(this) {}
+
   void AddSendInitialMetadata(std::vector<std::pair<grpc::string, grpc::string> > *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
   void AddRecvMessage(google::protobuf::Message *message);
@@ -67,7 +69,10 @@ class CallOpBuffer final : public CompletionQueueTag {
   void FillOps(grpc_op *ops, size_t *nops);
 
   // Called by completion queue just prior to returning from Next() or Pluck()
-  FinalizeResultOutput FinalizeResult(bool status) override;
+  void FinalizeResult(void *tag, bool *status) override;
+
+ private:
+  void *return_tag_;
 };
 
 class CCallDeleter {
@@ -80,7 +85,7 @@ class Call final {
  public:
   Call(grpc_call *call, ChannelInterface *channel, CompletionQueue *cq);
 
-  void PerformOps(CallOpBuffer *buffer, void *tag);
+  void PerformOps(CallOpBuffer *buffer);
 
   grpc_call *call() { return call_.get(); }
   CompletionQueue *cq() { return cq_; }

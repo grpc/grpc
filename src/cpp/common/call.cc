@@ -36,8 +36,8 @@
 
 namespace grpc {
 
-void Call::PerformOps(CallOpBuffer* buffer, void* tag) {
-  channel_->PerformOpsOnCall(buffer, tag, this);
+void Call::PerformOps(CallOpBuffer* buffer) {
+  channel_->PerformOpsOnCall(buffer, this);
 }
 
 }  // namespace grpc

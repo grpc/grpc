@@ -58,7 +58,7 @@ class ChannelInterface {
 
   virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
                           CompletionQueue *cq) = 0;
-  virtual void PerformOpsOnCall(CallOpBuffer *ops, void *tag, Call *call) = 0;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) = 0;
 };
 
 // Wrapper that begins an asynchronous unary call

@@ -123,23 +123,23 @@ class ClientReader final : public ClientStreamingInterface,
     CallOpBuffer buf;
     buf.AddSendMessage(request);
     buf.AddClientSendClose();
-    call_.PerformOps(&buf, (void *)1);
-    cq_.Pluck((void *)1);
+    call_.PerformOps(&buf);
+    cq_.Pluck(&buf);
   }
 
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
-    call_.PerformOps(&buf, (void *)2);
-    return cq_.Pluck((void *)2);
+    call_.PerformOps(&buf);
+    return cq_.Pluck(&buf);
   }
 
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
     buf.AddClientRecvStatus(&status);
-    call_.PerformOps(&buf, (void *)3);
-    GPR_ASSERT(cq_.Pluck((void *)3));
+    call_.PerformOps(&buf);
+    GPR_ASSERT(cq_.Pluck(&buf));
     return status;
   }
 
@@ -162,15 +162,15 @@ class ClientWriter final : public ClientStreamingInterface,
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
-    call_.PerformOps(&buf, (void *)2);
-    return cq_.Pluck((void *)2);
+    call_.PerformOps(&buf);
+    return cq_.Pluck(&buf);
   }
 
   virtual bool WritesDone() {
     CallOpBuffer buf;
     buf.AddClientSendClose();
-    call_.PerformOps(&buf, (void *)3);
-    return cq_.Pluck((void *)3);
+    call_.PerformOps(&buf);
+    return cq_.Pluck(&buf);
   }
 
   // Read the final response and wait for the final status.
@@ -179,8 +179,8 @@ class ClientWriter final : public ClientStreamingInterface,
     Status status;
     buf.AddRecvMessage(response_);
     buf.AddClientRecvStatus(&status);
-    call_.PerformOps(&buf, (void *)4);
-    GPR_ASSERT(cq_.Pluck((void *)4));
+    call_.PerformOps(&buf);
+    GPR_ASSERT(cq_.Pluck(&buf));
     return status;
   }
 
@@ -204,30 +204,30 @@ class ClientReaderWriter final : public ClientStreamingInterface,
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
-    call_.PerformOps(&buf, (void *)2);
-    return cq_.Pluck((void *)2);
+    call_.PerformOps(&buf);
+    return cq_.Pluck(&buf);
   }
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
-    call_.PerformOps(&buf, (void *)3);
-    return cq_.Pluck((void *)3);
+    call_.PerformOps(&buf);
+    return cq_.Pluck(&buf);
   }
 
   virtual bool WritesDone() {
     CallOpBuffer buf;
     buf.AddClientSendClose();
-    call_.PerformOps(&buf, (void *)4);
-    return cq_.Pluck((void *)4);
+    call_.PerformOps(&buf);
+    return cq_.Pluck(&buf);
   }
 
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
     buf.AddClientRecvStatus(&status);
-    call_.PerformOps(&buf, (void *)5);
-    GPR_ASSERT(cq_.Pluck((void *)5));
+    call_.PerformOps(&buf);
+    GPR_ASSERT(cq_.Pluck(&buf));
     return status;
   }
 
@@ -244,8 +244,8 @@ class ServerReader final : public ReaderInterface<R> {
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
-    call_->PerformOps(&buf, (void *)2);
-    return call_->cq()->Pluck((void *)2);
+    call_->PerformOps(&buf);
+    return call_->cq()->Pluck(&buf);
   }
 
  private:
@@ -260,8 +260,8 @@ class ServerWriter final : public WriterInterface<W> {
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
-    call_->PerformOps(&buf, (void *)2);
-    return call_->cq()->Pluck((void *)2);
+    call_->PerformOps(&buf);
+    return call_->cq()->Pluck(&buf);
   }
 
  private:
@@ -278,15 +278,15 @@ class ServerReaderWriter final : public WriterInterface<W>,
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
-    call_->PerformOps(&buf, (void *)2);
-    return call_->cq()->Pluck((void *)2);
+    call_->PerformOps(&buf);
+    return call_->cq()->Pluck(&buf);
   }
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
-    call_->PerformOps(&buf, (void *)3);
-    return call_->cq()->Pluck((void *)3);
+    call_->PerformOps(&buf);
+    return call_->cq()->Pluck(&buf);
   }
 
  private:
@@ -333,19 +333,19 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
     CallOpBuffer buf;
     buf.AddSendMessage(request);
     buf.AddClientSendClose();
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
   virtual void Read(R *msg, void* tag) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
   virtual void Finish(Status* status, void* tag) override {
     CallOpBuffer buf;
     buf.AddClientRecvStatus(status);
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
  private:
@@ -367,20 +367,20 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
   virtual void Write(const W& msg, void* tag) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
   virtual void WritesDone(void* tag) {
     CallOpBuffer buf;
     buf.AddClientSendClose();
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
   virtual void Finish(Status* status, void* tag) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(response_);
     buf.AddClientRecvStatus(status);
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
  private:
@@ -402,25 +402,25 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
   virtual void Read(R *msg, void* tag) override {
     CallOpBuffer buf;
     buf.AddRecvMessage(msg);
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
   virtual void Write(const W& msg, void* tag) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
   virtual void WritesDone(void* tag) {
     CallOpBuffer buf;
     buf.AddClientSendClose();
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
   virtual void Finish(Status* status, void* tag) override {
     CallOpBuffer buf;
     buf.AddClientRecvStatus(status);
-    call_.PerformOps(&buf, tag);
+    call_.PerformOps(&buf);
   }
 
  private:
@@ -437,7 +437,7 @@ class ServerAsyncResponseWriter final {
   virtual void Write(const W& msg, void* tag) override {
     CallOpBuffer buf;
     buf.AddSendMessage(msg);
-    call_->PerformOps(&buf, tag);
+    call_->PerformOps(&buf);
   }
 
  private:

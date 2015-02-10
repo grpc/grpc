@@ -87,14 +87,14 @@ Call Channel::CreateCall(const RpcMethod &method, ClientContext *context,
   return Call(c_call, this, cq);
 }
 
-void Channel::PerformOpsOnCall(CallOpBuffer *buf, void *tag, Call *call) {
+void Channel::PerformOpsOnCall(CallOpBuffer *buf, Call *call) {
   static const size_t MAX_OPS = 8;
   size_t nops = MAX_OPS;
   grpc_op ops[MAX_OPS];
   buf->FillOps(ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call->call(), ops, nops,
-                                   call->cq()->PrepareTagForC(buf, tag)));
+                                   buf));
 }
 
 }  // namespace grpc

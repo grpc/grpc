@@ -56,19 +56,26 @@ class EventDeleter {
 bool CompletionQueue::Next(void **tag, bool *ok) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
-  while (true) {
-    ev.reset(grpc_completion_queue_next(cq_, gpr_inf_future));
-    if (ev->type == GRPC_QUEUE_SHUTDOWN) {
-      return false;
-    }
-    auto cq_tag = static_cast<CompletionQueueTag *>(ev->tag);
-    switch (cq_tag->FinalizeResult(ev->data.op_complete == GRPC_OP_OK)) {
-      case CompletionQueueTag::SUCCEED: *ok = true; break;
-      case CompletionQueueTag::FAIL: *ok = false; break;
-      case CompletionQueueTag::SWALLOW: continue;
-    }
-    return true;
+  ev.reset(grpc_completion_queue_next(cq_, gpr_inf_future));
+  if (ev->type == GRPC_QUEUE_SHUTDOWN) {
+    return false;
   }
+  auto cq_tag = static_cast<CompletionQueueTag *>(ev->tag);
+  *ok = ev->data.op_complete == GRPC_OP_OK;
+  *tag = cq_tag;
+  cq_tag->FinalizeResult(tag, ok);
+  return true;
+}
+
+bool CompletionQueue::Pluck(CompletionQueueTag *tag) {
+  std::unique_ptr<grpc_event, EventDeleter> ev;
+
+  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_future));
+  bool ok = ev->data.op_complete == GRPC_OP_OK;
+  void *ignored = tag;
+  tag->FinalizeResult(&ignored, &ok);
+  GPR_ASSERT(ignored == tag);
+  return ok;
 }
 
 }  // namespace grpc
