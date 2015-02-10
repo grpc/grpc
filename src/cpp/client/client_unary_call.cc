@@ -32,7 +32,7 @@
  */
 
 #include <grpc++/impl/client_unary_call.h>
-#include <grpc++/call.h>
+#include <grpc++/impl/call.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/status.h>

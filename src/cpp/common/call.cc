@@ -31,7 +31,7 @@
  *
  */
 
-#include <include/grpc++/call.h>
+#include <include/grpc++/impl/call.h>
 #include <include/grpc++/channel_interface.h>
 
 namespace grpc {

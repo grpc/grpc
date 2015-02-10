@@ -42,12 +42,12 @@
 #include <grpc/support/slice.h>
 
 #include "src/cpp/proto/proto_utils.h"
-#include <grpc++/call.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
 #include <grpc++/credentials.h>
+#include <grpc++/impl/call.h>
 #include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <google/protobuf/message.h>

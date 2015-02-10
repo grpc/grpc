@@ -34,9 +34,9 @@
 #ifndef __GRPCPP_STREAM_H__
 #define __GRPCPP_STREAM_H__
 
-#include <grpc++/call.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/impl/call.h>
 #include <grpc++/status.h>
 #include <grpc/support/log.h>
 
