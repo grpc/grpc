@@ -238,7 +238,7 @@ class SendServerStatusOp : public Op {
   bool ParseOp(Handle<Value> value, grpc_op *out,
                std::vector<unique_ptr<NanUtf8String> > *strings,
                std::vector<unique_ptr<PersistentHolder> > *handles) {
-    if (value->IsObject()) {
+    if (!value->IsObject()) {
       return false;
     }
     Handle<Object> server_status = value->ToObject();
