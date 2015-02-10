@@ -1420,6 +1420,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/fd_posix.c \
+    src/core/iomgr/iocp_windows.c \
     src/core/iomgr/iomgr.c \
     src/core/iomgr/iomgr_posix.c \
     src/core/iomgr/iomgr_windows.c \
@@ -1551,6 +1552,7 @@ src/core/iomgr/alarm_heap.c: $(OPENSSL_DEP)
 src/core/iomgr/endpoint.c: $(OPENSSL_DEP)
 src/core/iomgr/endpoint_pair_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/fd_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/iocp_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/iomgr.c: $(OPENSSL_DEP)
 src/core/iomgr/iomgr_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/iomgr_windows.c: $(OPENSSL_DEP)
@@ -1704,6 +1706,7 @@ objs/$(CONFIG)/src/core/iomgr/alarm_heap.o:
 objs/$(CONFIG)/src/core/iomgr/endpoint.o: 
 objs/$(CONFIG)/src/core/iomgr/endpoint_pair_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/fd_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/iocp_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/iomgr.o: 
 objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/iomgr_windows.o: 
@@ -1876,6 +1879,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/fd_posix.c \
+    src/core/iomgr/iocp_windows.c \
     src/core/iomgr/iomgr.c \
     src/core/iomgr/iomgr_posix.c \
     src/core/iomgr/iomgr_windows.c \
@@ -2012,6 +2016,7 @@ objs/$(CONFIG)/src/core/iomgr/alarm_heap.o:
 objs/$(CONFIG)/src/core/iomgr/endpoint.o: 
 objs/$(CONFIG)/src/core/iomgr/endpoint_pair_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/fd_posix.o: 
+objs/$(CONFIG)/src/core/iomgr/iocp_windows.o: 
 objs/$(CONFIG)/src/core/iomgr/iomgr.o: 
 objs/$(CONFIG)/src/core/iomgr/iomgr_posix.o: 
 objs/$(CONFIG)/src/core/iomgr/iomgr_windows.o: 

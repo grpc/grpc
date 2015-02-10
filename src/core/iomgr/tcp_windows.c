@@ -43,11 +43,12 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/tcp_client.h"
-#include "src/core/iomgr/socket_windows.h"
 #include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/socket_windows.h"
+#include "src/core/iomgr/tcp_client.h"
 
 static int set_non_block(SOCKET sock) {
   int status;
@@ -121,7 +122,7 @@ static void on_read(void *tcpp, int success) {
 
   if (!success) {
     tcp_unref(tcp);
-    cb(opaque, GRPC_ENDPOINT_CB_SHUTDOWN);
+    cb(opaque, NULL, 0, GRPC_ENDPOINT_CB_SHUTDOWN);
     return;
   }
 
@@ -194,7 +195,7 @@ static void win_notify_on_read(grpc_endpoint *ep,
 
   if (status == 0) {
     gpr_log(GPR_DEBUG, "got response immediately, but we're going to sleep");
-    grpc_handle_notify_on_read(tcp->socket, on_read, tcp);
+    grpc_socket_notify_on_read(tcp->socket, on_read, tcp);
     return;
   }
 
@@ -213,7 +214,7 @@ static void win_notify_on_read(grpc_endpoint *ep,
   }
 
   gpr_log(GPR_DEBUG, "waiting on the IO completion port now");
-  grpc_handle_notify_on_read(tcp->socket, on_read, tcp);
+  grpc_socket_notify_on_read(tcp->socket, on_read, tcp);
 }
 
 static void on_write(void *tcpp, int success) {
@@ -333,14 +334,14 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
     gpr_log(GPR_DEBUG, "wrote data immediately - but we're going to sleep");
   }
 
-  grpc_handle_notify_on_write(socket, on_write, tcp);
+  grpc_socket_notify_on_write(socket, on_write, tcp);
   return GRPC_ENDPOINT_WRITE_PENDING;
 }
 
 static void win_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
   grpc_tcp *tcp = (grpc_tcp *) ep;
   gpr_log(GPR_DEBUG, "win_add_to_pollset");
-  grpc_pollset_add_handle(pollset, tcp->socket);
+  grpc_iocp_add_socket(tcp->socket);
 }
 
 static void win_shutdown(grpc_endpoint *ep) {

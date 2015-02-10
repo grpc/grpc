@@ -31,12 +31,22 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_IOMGR_WINDOWS_H_
+#ifndef __GRPC_INTERNAL_IOMGR_IOCP_WINDOWS_H_
+#define __GRPC_INTERNAL_IOMGR_IOCP_WINDOWS_H_
+
+#include <windows.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/iomgr/socket_windows.h"
 
-void grpc_pollset_global_init(void);
-void grpc_pollset_global_shutdown(void);
+void grpc_iocp_init(void);
+void grpc_iocp_shutdown(void);
+void grpc_iocp_add_socket(grpc_winsocket *);
 
-#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_WINDOWS_H_ */
+void grpc_socket_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
+                                 void *opaque);
+
+void grpc_socket_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
+                                void *opaque);
+
+#endif /* __GRPC_INTERNAL_IOMGR_IOCP_WINDOWS_H_ */

@@ -48,20 +48,9 @@ struct grpc_fd;
 typedef struct grpc_pollset {
   gpr_mu mu;
   gpr_cv cv;
-  HANDLE iocp;
 } grpc_pollset;
 
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 #define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
-
-void grpc_pollset_add_handle(grpc_pollset *, grpc_winsocket *);
-
-grpc_pollset *grpc_global_pollset(void);
-
-void grpc_handle_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
-                                 void *opaque);
-
-void grpc_handle_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
-                                void *opaque);
 
 #endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */

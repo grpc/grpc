@@ -112,6 +112,9 @@
     <ClCompile Include="..\..\src\core\iomgr\fd_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iocp_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -443,6 +446,9 @@
     <ClInclude Include="..\..\src\core\iomgr\fd_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\iocp_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\iomgr.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -450,9 +456,6 @@
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\iomgr\iomgr_windows.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\pollset.h">

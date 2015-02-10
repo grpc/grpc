@@ -201,7 +201,7 @@ static void start_accept(server_port *port) {
   }
 
   port->new_socket = sock;
-  grpc_handle_notify_on_read(port->socket, on_accept, port);
+  grpc_socket_notify_on_read(port->socket, on_accept, port);
   return;
 
 failure:

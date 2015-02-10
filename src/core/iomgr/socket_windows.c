@@ -37,6 +37,7 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
+#include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_windows.h"
@@ -50,7 +51,7 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
   grpc_iomgr_ref();
-  grpc_pollset_add_handle(grpc_global_pollset(), r);
+  grpc_iocp_add_socket(r);
   return r;
 }
 

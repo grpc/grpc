@@ -40,8 +40,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/iomgr/socket_windows.h"
+#include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/iomgr_windows.h"
 
 static void winsock_init(void) {
   WSADATA wsaData;
@@ -56,11 +56,11 @@ static void winsock_shutdown(void) {
 
 void grpc_iomgr_platform_init(void) {
   winsock_init();
-  grpc_pollset_global_init();
+  grpc_iocp_init();
 }
 
 void grpc_iomgr_platform_shutdown(void) {
-  grpc_pollset_global_shutdown();
+  grpc_iocp_shutdown();
   winsock_shutdown();
 }
 

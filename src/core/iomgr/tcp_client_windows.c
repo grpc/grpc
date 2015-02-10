@@ -197,7 +197,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
   ac->refs = 2;
 
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
-  grpc_handle_notify_on_write(socket, on_connect, ac);
+  grpc_socket_notify_on_write(socket, on_connect, ac);
   return;
 
 failure:
