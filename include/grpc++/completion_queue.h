@@ -34,6 +34,8 @@
 #ifndef __GRPCPP_COMPLETION_QUEUE_H__
 #define __GRPCPP_COMPLETION_QUEUE_H__
 
+#include <grpc++/impl/client_unary_call.h>
+
 struct grpc_completion_queue;
 
 namespace grpc {
@@ -85,6 +87,10 @@ class CompletionQueue {
   template <class R> friend class ::grpc::ServerReader;
   template <class W> friend class ::grpc::ServerWriter;
   template <class R, class W> friend class ::grpc::ServerReaderWriter;
+  friend Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
+      ClientContext *context,
+      const google::protobuf::Message &request,
+      google::protobuf::Message *result);
 
   bool Pluck(CompletionQueueTag *tag);
 

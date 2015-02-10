@@ -2608,6 +2608,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/channel.cc \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
+    src/cpp/client/client_unary_call.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/internal_stub.cc \
@@ -2631,6 +2632,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
+    include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
@@ -2662,6 +2664,7 @@ ifneq ($(OPENSSL_DEP),)
 src/cpp/client/channel.cc: $(OPENSSL_DEP)
 src/cpp/client/channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/client/client_context.cc: $(OPENSSL_DEP)
+src/cpp/client/client_unary_call.cc: $(OPENSSL_DEP)
 src/cpp/client/create_channel.cc: $(OPENSSL_DEP)
 src/cpp/client/credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/internal_stub.cc: $(OPENSSL_DEP)
@@ -2719,6 +2722,7 @@ endif
 objs/$(CONFIG)/src/cpp/client/channel.o: 
 objs/$(CONFIG)/src/cpp/client/channel_arguments.o: 
 objs/$(CONFIG)/src/cpp/client/client_context.o: 
+objs/$(CONFIG)/src/cpp/client/client_unary_call.o: 
 objs/$(CONFIG)/src/cpp/client/create_channel.o: 
 objs/$(CONFIG)/src/cpp/client/credentials.o: 
 objs/$(CONFIG)/src/cpp/client/internal_stub.o: 

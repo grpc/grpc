@@ -146,6 +146,7 @@ std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
 
 std::string GetSourceIncludes() {
   return "#include <grpc++/channel_interface.h>\n"
+         "#include <grpc++/impl/client_unary_call.h>\n"
          "#include <grpc++/impl/rpc_method.h>\n"
          "#include <grpc++/impl/rpc_service_method.h>\n"
          "#include <grpc++/impl/service_type.h>\n"

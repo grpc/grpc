@@ -31,36 +31,30 @@
  *
  */
 
-#ifndef __GRPCPP_CHANNEL_INTERFACE_H__
-#define __GRPCPP_CHANNEL_INTERFACE_H__
-
+#include <grpc++/impl/client_unary_call.h>
+#include <grpc++/call.h>
+#include <grpc++/channel_interface.h>
+#include <grpc++/completion_queue.h>
 #include <grpc++/status.h>
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
-struct grpc_call;
-
 namespace grpc {
-class Call;
-class CallOpBuffer;
-class ClientContext;
-class CompletionQueue;
-class RpcMethod;
-class CallInterface;
 
-class ChannelInterface {
- public:
-  virtual ~ChannelInterface() {}
-
-  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
-                          CompletionQueue *cq) = 0;
-  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) = 0;
-};
+// Wrapper that performs a blocking unary call
+Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
+                         ClientContext *context,
+                         const google::protobuf::Message &request,
+                         google::protobuf::Message *result) {
+  CompletionQueue cq;
+  Call call(channel->CreateCall(method, context, &cq));
+  CallOpBuffer buf;
+  Status status;
+  buf.AddSendMessage(request);
+  buf.AddRecvMessage(result);
+  buf.AddClientSendClose();
+  buf.AddClientRecvStatus(&status);
+  call.PerformOps(&buf);
+  cq.Pluck(&buf);
+  return status;
+}
 
 }  // namespace grpc
-
-#endif  // __GRPCPP_CHANNEL_INTERFACE_H__
