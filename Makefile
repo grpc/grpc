@@ -1433,10 +1433,6 @@ test_cxx: buildtests_cxx
 	$(Q) ./bins/$(CONFIG)/credentials_test || ( echo test credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing end2end_test"
 	$(Q) ./bins/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing qps_client"
-	$(Q) ./bins/$(CONFIG)/qps_client || ( echo test qps_client failed ; exit 1 )
-	$(E) "[RUN]     Testing qps_server"
-	$(Q) ./bins/$(CONFIG)/qps_server || ( echo test qps_server failed ; exit 1 )
 	$(E) "[RUN]     Testing status_test"
 	$(Q) ./bins/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sync_client_async_server_test"
