@@ -107,7 +107,7 @@ of OpenSSL that has ALPN support, and this explains our dependency on it.
 
 Note that the Makefile supports compiling only the unsecure elements of grpc,
 and if you do not have OpenSSL and do not want it, you can still proceed
-with installing only the elements you require. However, we strongly recoomend
+with installing only the elements you require. However, we strongly recommend
 the use of encryption for all network traffic, and discourage the use of grpc
 without TLS.
 
