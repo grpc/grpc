@@ -44,6 +44,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
+#include "src/cpp/server/thread_pool.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/qpstest.pb.h"
 
@@ -52,10 +53,12 @@
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(server_threads, 4, "Number of server threads.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
+using grpc::ThreadPool;
 using grpc::testing::Payload;
 using grpc::testing::PayloadType;
 using grpc::testing::ServerStats;
@@ -126,6 +129,10 @@ static void RunServer() {
   ServerBuilder builder;
   builder.AddPort(server_address);
   builder.RegisterService(service.service());
+
+  ThreadPool *pool = new ThreadPool(FLAGS_server_threads);
+  builder.SetThreadPool(pool);
+
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
 
@@ -137,6 +144,7 @@ static void RunServer() {
 
   grpc_profiler_stop();
 
+  delete pool;
   gpr_free(server_address);
 }
 
