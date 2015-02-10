@@ -38,7 +38,7 @@
 #include <grpc++/completion_queue.h>
 
 #include <memory>
-#include <vector>
+#include <map>
 
 namespace google {
 namespace protobuf {
@@ -59,7 +59,9 @@ class CallOpBuffer final : public CompletionQueueTag {
 
   void Reset(void *next_return_tag);
 
-  void AddSendInitialMetadata(std::vector<std::pair<grpc::string, grpc::string> > *metadata);
+  // Does not take ownership.
+  void AddSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
   void AddRecvMessage(google::protobuf::Message *message);
   void AddClientSendClose();
@@ -74,7 +76,12 @@ class CallOpBuffer final : public CompletionQueueTag {
   void FinalizeResult(void *tag, bool *status) override;
 
  private:
-  void *return_tag_;
+  void *return_tag_ = nullptr;
+  std::multimap<grpc::string, grpc::string>* metadata_ = nullptr;
+  const google::protobuf::Message* send_message_ = nullptr;
+  google::protobuf::Message* recv_message_ = nullptr;
+  bool client_send_close_ = false;
+  Status* status_ = nullptr;
 };
 
 class CCallDeleter {

@@ -36,6 +36,52 @@
 
 namespace grpc {
 
+void CallOpBuffer::Reset(void* next_return_tag) {
+  return_tag_ = next_return_tag;
+  metadata_ = nullptr;
+  send_message_ = nullptr;
+  recv_message_ = nullptr;
+  client_send_close_ = false;
+  status_ = false;
+}
+
+void CallOpBuffer::AddSendInitialMetadata(
+    std::multimap<igrpc::string, grpc::string>* metadata) {
+  metadata_ = metadata;
+}
+
+void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
+  send_message_ = &message;
+}
+
+void CallOpBuffer::AddRecvMessage(google::protobuf::Message *message) {
+  recv_message_ = message;
+}
+
+void CallOpBuffer::AddClientSendClose() {
+  client_sent_close_ = true;
+}
+
+void CallOpBuffer::AddClientRecvStatus(Status *status) {
+  status_ = status;
+}
+
+void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
+
+
+}
+
+void CallOpBuffer::FinalizeResult(void *tag, bool *status) {
+
+}
+
+void CCallDeleter::operator()(grpc_call* c) {
+  grpc_call_destroy(c);
+}
+
+Call::Call(grpc_call* call, ChannelInterface* channel, CompletionQueue* cq)
+    : channel_(channel), cq_(cq), call_(call) {}
+
 void Call::PerformOps(CallOpBuffer* buffer) {
   channel_->PerformOpsOnCall(buffer, this);
 }
