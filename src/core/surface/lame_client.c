@@ -50,26 +50,16 @@ typedef struct {
   grpc_mdelem *message;
 } channel_data;
 
-static void do_nothing(void *data, grpc_op_error error) {}
-
 static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                     grpc_call_op *op) {
   channel_data *channeld = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
   switch (op->type) {
-    case GRPC_SEND_START: {
-      grpc_call_op set_status_op;
-      grpc_mdelem_ref(channeld->message);
-      memset(&set_status_op, 0, sizeof(grpc_call_op));
-      set_status_op.dir = GRPC_CALL_UP;
-      set_status_op.type = GRPC_RECV_METADATA;
-      set_status_op.done_cb = do_nothing;
-      set_status_op.data.metadata = channeld->message;
-      grpc_call_recv_metadata(elem, &set_status_op);
-      grpc_call_recv_finish(elem, 1);
+    case GRPC_SEND_START:
+      grpc_call_recv_metadata(elem, grpc_mdelem_ref(channeld->message));
+      grpc_call_stream_closed(elem);
       break;
-    }
     case GRPC_SEND_METADATA:
       grpc_mdelem_unref(op->data.metadata);
       break;
@@ -85,6 +75,9 @@ static void channel_op(grpc_channel_element *elem,
   switch (op->type) {
     case GRPC_CHANNEL_GOAWAY:
       gpr_slice_unref(op->data.goaway.message);
+      break;
+    case GRPC_CHANNEL_DISCONNECT:
+      grpc_client_channel_closed(elem);
       break;
     default:
       break;

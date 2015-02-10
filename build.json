@@ -76,6 +76,7 @@
         "src/core/statistics/census_tracing.h",
         "src/core/statistics/hash_table.h",
         "src/core/statistics/window_stats.h",
+        "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
         "src/core/surface/client.h",
@@ -168,8 +169,10 @@
         "src/core/statistics/hash_table.c",
         "src/core/statistics/window_stats.c",
         "src/core/surface/byte_buffer.c",
+        "src/core/surface/byte_buffer_queue.c",
         "src/core/surface/byte_buffer_reader.c",
         "src/core/surface/call.c",
+        "src/core/surface/call_details.c",
         "src/core/surface/channel.c",
         "src/core/surface/channel_create.c",
         "src/core/surface/client.c",
@@ -177,6 +180,7 @@
         "src/core/surface/event_string.c",
         "src/core/surface/init.c",
         "src/core/surface/lame_client.c",
+        "src/core/surface/metadata_array.c",
         "src/core/surface/secure_channel_create.c",
         "src/core/surface/secure_server_create.c",
         "src/core/surface/server.c",
@@ -235,8 +239,11 @@
       ],
       "headers": [
         "src/core/support/cpu.h",
+        "src/core/support/env.h",
+        "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
         "src/core/support/string.h",
+        "src/core/support/string_win32.h",
         "src/core/support/thd_internal.h"
       ],
       "src": [
@@ -245,6 +252,12 @@
         "src/core/support/cmdline.c",
         "src/core/support/cpu_linux.c",
         "src/core/support/cpu_posix.c",
+        "src/core/support/env_linux.c",
+        "src/core/support/env_posix.c",
+        "src/core/support/env_win32.c",
+        "src/core/support/file.c",
+        "src/core/support/file_posix.c",
+        "src/core/support/file_win32.c",
         "src/core/support/histogram.c",
         "src/core/support/host_port.c",
         "src/core/support/log.c",
@@ -325,6 +338,18 @@
       "vs_project_guid": "{29D16885-7228-4C31-81ED-5F9187C7F2A9}"
     },
     {
+      "name": "grpc_csharp_ext",
+      "build": "all",
+      "language": "c",
+      "src": [
+        "src/csharp/ext/grpc_csharp_ext.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ]
+    },
+    {
       "name": "grpc_test_util",
       "build": "private",
       "language": "c",
@@ -398,11 +423,11 @@
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
         "src/cpp/client/internal_stub.cc",
+        "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
         "src/cpp/server/async_server.cc",
         "src/cpp/server/async_server_context.cc",
-        "src/cpp/server/completion_queue.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_context_impl.cc",
@@ -446,18 +471,6 @@
         "grpc++",
         "grpc",
         "gpr"
-      ]
-    },
-    {
-      "name": "grpc_csharp_ext",
-      "build": "all",
-      "language": "c",
-      "deps": [
-        "gpr",
-        "grpc"
-      ],
-      "src": [
-        "src/csharp/ext/grpc_csharp_ext.c"
       ]
     }
   ],
@@ -889,6 +902,30 @@
       "language": "c",
       "src": [
         "test/core/support/cmdline_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_env_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/env_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_file_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/file_test.c"
       ],
       "deps": [
         "gpr_test_util",
@@ -1587,58 +1624,6 @@
       "run": false
     },
     {
-      "name": "tips_client",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/main.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ],
-      "run": false
-    },
-    {
-      "name": "tips_publisher_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/publisher_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_subscriber_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/subscriber_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "qps_client",
       "build": "test",
       "language": "c++",
@@ -1728,6 +1713,58 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "tips_client",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/tips/main.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "run": false
+    },
+    {
+      "name": "tips_publisher_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/tips/publisher_test.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "tips_subscriber_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/tips/subscriber_test.cc"
+      ],
+      "deps": [
+        "tips_client_lib",
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

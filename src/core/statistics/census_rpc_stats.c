@@ -141,7 +141,7 @@ static void record_stats(census_ht* store, census_op_id op_id,
                          const census_rpc_stats* stats) {
   gpr_mu_lock(&g_mu);
   if (store != NULL) {
-    trace_obj* trace = NULL;
+    census_trace_obj* trace = NULL;
     census_internal_lock_trace_store();
     trace = census_get_trace_obj_locked(op_id);
     if (trace != NULL) {

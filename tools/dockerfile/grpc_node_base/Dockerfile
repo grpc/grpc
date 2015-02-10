@@ -15,5 +15,8 @@ RUN cd /var/local/git/grpc && \
   git pull --recurse-submodules && \
   git submodule update --init --recursive
 
+# Build the C core
+RUN make static_c shared_c -j12 -C /var/local/git/grpc
+
 # Define the default command.
 CMD ["bash"]

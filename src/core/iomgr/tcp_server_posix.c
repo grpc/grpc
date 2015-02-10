@@ -31,11 +31,15 @@
  *
  */
 
+/* FIXME: "posix" files shouldn't be depending on _GNU_SOURCE */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SOCKET
 
-#define _GNU_SOURCE
 #include "src/core/iomgr/tcp_server.h"
 
 #include <limits.h>

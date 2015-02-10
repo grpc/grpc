@@ -97,8 +97,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\support\cpu.h" />
+    <ClInclude Include="..\..\src\core\support\env.h" />
+    <ClInclude Include="..\..\src\core\support\file.h" />
     <ClInclude Include="..\..\src\core\support\murmur_hash.h" />
     <ClInclude Include="..\..\src\core\support\string.h" />
+    <ClInclude Include="..\..\src\core\support\string_win32.h" />
     <ClInclude Include="..\..\src\core\support\thd_internal.h" />
   </ItemGroup>
   <ItemGroup>
@@ -111,6 +114,18 @@
     <ClCompile Include="..\..\src\core\support\cpu_linux.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_linux.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file_win32.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\histogram.c">
     </ClCompile>

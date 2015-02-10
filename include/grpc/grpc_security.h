@@ -54,6 +54,12 @@ void grpc_credentials_release(grpc_credentials *creds);
 /* Creates default credentials. */
 grpc_credentials *grpc_default_credentials_create(void);
 
+/* Environment variable that points to the default SSL roots file. This file
+   must be a PEM encoded file with all the roots such as the one that can be
+   downloaded from https://pki.google.com/roots.pem.  */
+#define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR \
+  "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
+
 /* Object that holds a private key / certificate chain pair in PEM format. */
 typedef struct {
   /* private_key is the NULL-terminated string containing the PEM encoding of

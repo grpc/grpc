@@ -39,6 +39,9 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/security_context.h"
+#include "src/core/support/env.h"
+#include "src/core/support/file.h"
+#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
@@ -99,7 +102,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 static void chttp2_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   grpc_credentials *ssl_creds =
-      grpc_ssl_credentials_create(test_root_cert, NULL);
+      grpc_ssl_credentials_create(NULL, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.com"}};
@@ -129,7 +132,19 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char **argv) {
   size_t i;
+  FILE *roots_file;
+  size_t roots_size = strlen(test_root_cert);
+  char *roots_filename;
+
   grpc_test_init(argc, argv);
+
+  /* Set the SSL roots env var. */
+  roots_file = gpr_tmpfile("chttp2_simple_ssl_fullstack_test", &roots_filename);
+  GPR_ASSERT(roots_filename != NULL);
+  GPR_ASSERT(roots_file != NULL);
+  GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
+  fclose(roots_file);
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_filename);
 
   grpc_init();
 
@@ -138,6 +153,10 @@ int main(int argc, char **argv) {
   }
 
   grpc_shutdown();
+
+  /* Cleanup. */
+  remove(roots_filename);
+  gpr_free(roots_filename);
 
   return 0;
 }
