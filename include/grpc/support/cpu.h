@@ -34,6 +34,10 @@
 #ifndef __GRPC_INTERNAL_SUPPORT_CPU_H__
 #define __GRPC_INTERNAL_SUPPORT_CPU_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Interface providing CPU information for currently running system */
 
 /* Return the number of CPU cores on the current system. Will return 0 if
@@ -45,5 +49,9 @@ unsigned gpr_cpu_num_cores(void);
    to a different CPU at any time. Returns a value in range
    [0, gpr_cpu_num_cores() - 1] */
 unsigned gpr_cpu_current_cpu(void);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif /* __GRPC_INTERNAL_SUPPORT_CPU_H__ */
