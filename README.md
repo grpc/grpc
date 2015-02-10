@@ -227,7 +227,7 @@ Our server application has two classes:
 
 - a server that hosts the service implementation and allows access over the network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
 
-## Service implementation
+#### Service implementation
 
 [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java)
 implements the behaviour we require of our GreetingService. There are a
@@ -256,7 +256,7 @@ number of important features of gRPC being used here:
   - responseObserver.onCompleted() is called to indicate that no more work will done on the RPC.
 
 
-## Server implementation
+#### Server implementation
 
 [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java) shows the
 other main feature required to provde the gRPC service; how to allow a service
@@ -277,14 +277,15 @@ implementation to be accessed from the network.
 - in the `start` method, `GreetingServer` binds the `GreetingsService` implementation to a port and begins running it
 - there is also a `stop` method that takes care of shutting down the service and cleaning up when the program exits
 
-## Build it
+#### Build it
 
-This is the same as before: our client and server are part of the same maven
-package so the same command builds both.
+Once we've implemented everything, we use Maven to build the server:
 
 ```
 $ mvn package
 ```
+
+We'll look at using a client to access the server in the next section.
 
 <a name="client"></a>
 ### Writing a client
@@ -354,7 +355,10 @@ line.
 
 ```
 
-It can be built as follows.
+#### Build the client
+
+This is the same as before: our client and server are part of the same maven
+package so the same command builds both.
 
 ```
 $ mvn package
