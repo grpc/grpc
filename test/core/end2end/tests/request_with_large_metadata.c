@@ -197,7 +197,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "test.google.com"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(contains_metadata(&request_metadata_recv, "key", meta.value));
 
