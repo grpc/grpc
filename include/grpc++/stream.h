@@ -42,38 +42,6 @@
 
 namespace grpc {
 
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-// DELETE DELETE DELETE
-  class StreamContextInterface {
-    public:
-      template <class T> bool Write(T, bool);
-      template <class T> void Start(T);
-      template <class T> bool Read(T);
-      google::protobuf::Message *request();
-  };
-
 // Common interface for all client side streaming.
 class ClientStreamingInterface {
  public:
