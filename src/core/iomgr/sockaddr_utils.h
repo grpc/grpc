@@ -57,6 +57,12 @@ int grpc_sockaddr_is_wildcard(const struct sockaddr *addr, int *port_out);
 void grpc_sockaddr_make_wildcards(int port, struct sockaddr_in *wild4_out,
                                   struct sockaddr_in6 *wild6_out);
 
+/* Writes 0.0.0.0:port. */
+void grpc_sockaddr_make_wildcard4(int port, struct sockaddr_in *wild_out);
+
+/* Writes [::]:port. */
+void grpc_sockaddr_make_wildcard6(int port, struct sockaddr_in6 *wild_out);
+
 /* Return the IP port number of a sockaddr */
 int grpc_sockaddr_get_port(const struct sockaddr *addr);
 

@@ -31,11 +31,12 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
-#define __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_WINDOWS_H_
+#define __GRPC_INTERNAL_IOMGR_IOMGR_WINDOWS_H_
 
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <mswsock.h>
+#include "src/core/iomgr/socket_windows.h"
 
-#endif  /* __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_ */
+void grpc_pollset_global_init(void);
+void grpc_pollset_global_shutdown(void);
+
+#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_WINDOWS_H_ */
