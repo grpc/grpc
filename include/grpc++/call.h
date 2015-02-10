@@ -57,6 +57,8 @@ class CallOpBuffer final : public CompletionQueueTag {
  public:
   CallOpBuffer() : return_tag_(this) {}
 
+  void Reset(void *next_return_tag);
+
   void AddSendInitialMetadata(std::vector<std::pair<grpc::string, grpc::string> > *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
   void AddRecvMessage(google::protobuf::Message *message);
