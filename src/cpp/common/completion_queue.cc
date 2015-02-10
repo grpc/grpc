@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/cpp/util/time.h"
-#include <grpc++/async_server_context.h>
 
 namespace grpc {
 

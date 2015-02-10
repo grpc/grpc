@@ -42,7 +42,6 @@
 #include <grpc/support/slice.h>
 
 #include "src/cpp/proto/proto_utils.h"
-#include "src/cpp/stream/stream_context.h"
 #include <grpc++/call.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>

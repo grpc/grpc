@@ -37,10 +37,9 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include "src/cpp/server/server_rpc_handler.h"
-#include <grpc++/async_server_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
 #include <grpc++/thread_pool_interface.h>
 
@@ -148,12 +147,12 @@ void Server::RunRpc() {
   void *tag = nullptr;
   GPR_ASSERT(started_);
   grpc_call *c_call = NULL;
-  grpc_call_details details;
-  grpc_call_details_init(&details);
+  grpc_call_details call_details;
+  grpc_call_details_init(&call_details);
   grpc_metadata_array initial_metadata;
   grpc_metadata_array_init(&initial_metadata);
   CompletionQueue cq;
-  grpc_call_error err = grpc_server_request_call(server_, &call, &details, &initial_metadata, cq.cq(), nullptr);
+  grpc_call_error err = grpc_server_request_call(server_, &c_call, &call_details, &initial_metadata, cq.cq(), nullptr);
   GPR_ASSERT(err == GRPC_CALL_OK);
   bool ok = false;
   GPR_ASSERT(cq_.Next(&tag, &ok));
@@ -166,10 +165,13 @@ void Server::RunRpc() {
     if (iter != method_map_.end()) {
       method = iter->second;
     }
-    ServerRpcHandler rpc_handler(&call, context, method);
-    rpc_handler.StartRpc();
+    // TODO(ctiller): allocate only if necessary
+    std::unique_ptr<google::protobuf::Message> request(method->AllocateRequestProto());
+    std::unique_ptr<google::protobuf::Message> response(method->AllocateResponseProto());
+    method->handler()->RunHandler(MethodHandler::HandlerParameter(
+      &call, &context, request.get(), response.get()));
   }
-  grpc_call_details_destroy(&details);
+  grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&initial_metadata);
 
   {

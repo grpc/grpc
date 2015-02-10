@@ -399,7 +399,6 @@
       "headers": [
         "src/cpp/client/channel.h",
         "src/cpp/proto/proto_utils.h",
-        "src/cpp/server/server_rpc_handler.h",
         "src/cpp/server/thread_pool.h",
         "src/cpp/util/time.h"
       ],
@@ -418,7 +417,6 @@
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_context_impl.cc",
         "src/cpp/server/server_credentials.cc",
-        "src/cpp/server/server_rpc_handler.cc",
         "src/cpp/server/thread_pool.cc",
         "src/cpp/util/status.cc",
         "src/cpp/util/time.cc"
