@@ -404,7 +404,11 @@ static void get_final_status(grpc_call *call, grpc_ioreq_data out) {
       return;
     }
   }
-  out.recv_status.set_value(GRPC_STATUS_UNKNOWN, out.recv_status.user_data);
+  if (call->is_client) {
+    out.recv_status.set_value(GRPC_STATUS_UNKNOWN, out.recv_status.user_data);
+  } else {
+    out.recv_status.set_value(GRPC_STATUS_OK, out.recv_status.user_data);
+  }
 }
 
 static void get_final_details(grpc_call *call, grpc_ioreq_data out) {

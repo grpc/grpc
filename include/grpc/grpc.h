@@ -330,6 +330,8 @@ typedef struct grpc_op {
       size_t *status_details_capacity;
     } recv_status_on_client;
     struct {
+      /* out argument, set to 1 if the call failed in any way (seen as a cancellation
+         on the server), or 0 if the call succeeded */
       int *cancelled;
     } recv_close_on_server;
   } data;

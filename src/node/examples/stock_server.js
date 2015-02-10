@@ -35,10 +35,10 @@ var _ = require('underscore');
 var grpc = require('..');
 var examples = grpc.load(__dirname + '/stock.proto').examples;
 
-var StockServer = grpc.makeServerConstructor([examples.Stock.service]);
+var StockServer = grpc.buildServer([examples.Stock.service]);
 
 function getLastTradePrice(call, callback) {
-  callback(null, {price: 88});
+  callback(null, {symbol: call.request.symbol, price: 88});
 }
 
 function watchFutureTrades(call) {
@@ -80,4 +80,9 @@ var stockServer = new StockServer({
   }
 });
 
-exports.module = stockServer;
+if (require.main === module) {
+  stockServer.bind('0.0.0.0:8080');
+  stockServer.listen();
+}
+
+module.exports = stockServer;
