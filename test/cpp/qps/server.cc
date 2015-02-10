@@ -130,8 +130,8 @@ static void RunServer() {
   builder.AddPort(server_address);
   builder.RegisterService(service.service());
 
-  ThreadPool *pool = new ThreadPool(FLAGS_server_threads);
-  builder.SetThreadPool(pool);
+  std::unique_ptr<ThreadPool> pool(new ThreadPool(FLAGS_server_threads));
+  builder.SetThreadPool(pool.get());
 
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
@@ -144,7 +144,6 @@ static void RunServer() {
 
   grpc_profiler_stop();
 
-  delete pool;
   gpr_free(server_address);
 }
 
