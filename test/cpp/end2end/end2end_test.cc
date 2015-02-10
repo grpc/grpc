@@ -147,8 +147,8 @@ class End2endTest : public ::testing::Test {
     // Setup server
     ServerBuilder builder;
     builder.AddPort(server_address_.str());
-    builder.RegisterService(service_.service());
-    builder.RegisterService(dup_pkg_service_.service());
+    builder.RegisterService(&service_);
+    builder.RegisterService(&dup_pkg_service_);
     server_ = builder.BuildAndStart();
   }
 
@@ -290,7 +290,7 @@ TEST_F(End2endTest, RequestStreamOneRequest) {
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   stream->WritesDone();
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.IsOk());
 
@@ -308,7 +308,7 @@ TEST_F(End2endTest, RequestStreamTwoRequests) {
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->Write(request));
   stream->WritesDone();
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_EQ(response.message(), "hellohello");
   EXPECT_TRUE(s.IsOk());
 

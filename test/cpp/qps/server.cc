@@ -125,7 +125,7 @@ static void RunServer() {
 
   ServerBuilder builder;
   builder.AddPort(server_address);
-  builder.RegisterService(service.service());
+  builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
 
