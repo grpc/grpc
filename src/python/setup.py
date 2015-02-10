@@ -38,6 +38,7 @@ _EXTENSION_SOURCES = (
     'src/_adapter/_completion_queue.c',
     'src/_adapter/_error.c',
     'src/_adapter/_server.c',
+    'src/_adapter/_server_credentials.c',
 )
 
 _EXTENSION_INCLUDE_DIRECTORIES = (
