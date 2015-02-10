@@ -84,7 +84,7 @@ void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl);
 grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
                                       gpr_uint32 index);
 /* add a table entry to the index */
-void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
+int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
 typedef struct {

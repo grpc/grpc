@@ -36,8 +36,10 @@
 #include <assert.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/support/murmur_hash.h"
+#include "src/core/support/string.h"
 
 static struct {
   const char *key;
@@ -104,7 +106,8 @@ static struct {
       /* 58: */ {"user-agent", ""},
       /* 59: */ {"vary", ""},
       /* 60: */ {"via", ""},
-      /* 61: */ {"www-authenticate", ""}, };
+      /* 61: */ {"www-authenticate", ""},
+};
 
 void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
   size_t i;
@@ -157,14 +160,33 @@ static void evict1(grpc_chttp2_hptbl *tbl) {
   grpc_mdelem_unref(first_ent);
 }
 
-void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
+static int add_error_too_long(grpc_chttp2_hptbl *tbl, grpc_mdelem *md,
+                              long elem_bytes) {
+  char *key =
+      gpr_hexdump((const char *)GPR_SLICE_START_PTR(md->key->slice),
+                  GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT);
+  char *value =
+      gpr_hexdump((const char *)GPR_SLICE_START_PTR(md->value->slice),
+                  GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT);
+  gpr_log(GPR_ERROR,
+          "Trying to add a header of hpack-size %ld to a table of size %d\n"
+          "key=%s\nvalue=%s",
+          elem_bytes, tbl->max_bytes, key, value);
+  gpr_free(value);
+  gpr_free(key);
+  return 0;
+}
+
+int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   /* determine how many bytes of buffer this entry represents */
-  gpr_uint16 elem_bytes = GPR_SLICE_LENGTH(md->key->slice) +
-                          GPR_SLICE_LENGTH(md->value->slice) +
-                          GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
+  long elem_bytes = GPR_SLICE_LENGTH(md->key->slice) +
+                    GPR_SLICE_LENGTH(md->value->slice) +
+                    GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   /* we can't add elements bigger than the max table size */
-  assert(elem_bytes <= tbl->max_bytes);
+  if (elem_bytes > tbl->max_bytes) {
+    return add_error_too_long(tbl, md, elem_bytes);
+  }
 
   /* evict entries to ensure no overflow */
   while (elem_bytes > tbl->max_bytes - tbl->mem_used) {
@@ -178,6 +200,8 @@ void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   tbl->last_ent = (tbl->last_ent + 1) % GRPC_CHTTP2_MAX_TABLE_COUNT;
   tbl->num_ents++;
   tbl->mem_used += elem_bytes;
+
+  return 1;
 }
 
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
