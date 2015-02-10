@@ -316,7 +316,7 @@ class AsyncReaderInterface {
 template <class W>
 class AsyncWriterInterface {
  public:
-  virtual ~Async WriterInterface() {}
+  virtual ~AsyncWriterInterface() {}
 
   virtual void Write(const W& msg, void* tag) = 0;
 };
@@ -354,7 +354,7 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
 };
 
 template <class W>
-class ClientWriter final : public ClientAsyncStreamingInterface,
+class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
                            public WriterInterface<W> {
  public:
   // Blocking create a stream.
@@ -411,7 +411,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
     call_.PerformOps(&buf, tag);
   }
 
-  virtual bool WritesDone(void* tag) {
+  virtual void WritesDone(void* tag) {
     CallOpBuffer buf;
     buf.AddClientSendClose();
     call_.PerformOps(&buf, tag);
@@ -419,7 +419,6 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
 
   virtual void Finish(Status* status, void* tag) override {
     CallOpBuffer buf;
-    Status status;
     buf.AddClientRecvStatus(status);
     call_.PerformOps(&buf, tag);
   }
