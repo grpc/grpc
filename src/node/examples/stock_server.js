@@ -38,7 +38,7 @@ var examples = grpc.load(__dirname + '/stock.proto').examples;
 var StockServer = grpc.buildServer([examples.Stock.service]);
 
 function getLastTradePrice(call, callback) {
-  callback(null, {price: 88});
+  callback(null, {symbol: call.request.symbol, price: 88});
 }
 
 function watchFutureTrades(call) {
@@ -85,4 +85,4 @@ if (require.main === module) {
   stockServer.listen();
 }
 
-exports.module = stockServer;
+module.exports = stockServer;
