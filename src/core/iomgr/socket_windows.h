@@ -40,11 +40,11 @@
 #include <grpc/support/atm.h>
 
 typedef struct grpc_winsocket_callback_info {
-  /* I hate Microsoft so much. This is supposed to be a WSAOVERLAPPED,
-   * but in order to get that definition, we need to include ws2tcpip.h,
-   * which needs to be included from the top, otherwise it'll clash with
-   * a previous inclusion of windows.h that in turns includes winsock.h.
-   * If anyone knows a way to do it properly, feel free to send a patch.
+  /* This is supposed to be a WSAOVERLAPPED, but in order to get that
+   * definition, we need to include ws2tcpip.h, which needs to be included
+   * from the top, otherwise it'll clash with a previous inclusion of
+   * windows.h that in turns includes winsock.h. If anyone knows a way
+   * to do it properly, feel free to send a patch.
    */
   OVERLAPPED overlapped;
   void(*cb)(void *opaque, int success);
