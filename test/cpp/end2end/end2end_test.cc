@@ -332,7 +332,7 @@ TEST_F(End2endTest, ResponseStream) {
   EXPECT_EQ(response.message(), request.message() + "2");
   EXPECT_FALSE(stream->Read(&response));
 
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_TRUE(s.IsOk());
 
   delete stream;
@@ -366,7 +366,7 @@ TEST_F(End2endTest, BidiStream) {
   stream->WritesDone();
   EXPECT_FALSE(stream->Read(&response));
 
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_TRUE(s.IsOk());
 
   delete stream;
@@ -422,7 +422,7 @@ TEST_F(End2endTest, BadCredentials) {
   ClientContext context2;
   ClientReaderWriter<EchoRequest, EchoResponse>* stream =
       stub->BidiStream(&context2);
-  s = stream->Wait();
+  s = stream->Finish();
   EXPECT_FALSE(s.IsOk());
   EXPECT_EQ(StatusCode::UNKNOWN, s.code());
   EXPECT_EQ("Rpc sent on a lame channel.", s.details());

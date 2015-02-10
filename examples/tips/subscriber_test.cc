@@ -106,7 +106,7 @@ class SubscriberTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     ServerBuilder builder;
     builder.AddPort(server_address_.str());
-    builder.RegisterService(service_.service());
+    builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
     channel_ = CreateChannel(server_address_.str(), ChannelArguments());
