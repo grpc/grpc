@@ -1672,22 +1672,6 @@
       ]
     },
     {
-      "name": "sync_client_async_server_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "test/cpp/end2end/sync_client_async_server_test.cc"
-      ],
-      "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "thread_pool_test",
       "build": "test",
       "language": "c++",
