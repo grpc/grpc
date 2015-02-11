@@ -52,7 +52,7 @@ struct grpc_op;
 
 namespace grpc {
 
-class ChannelInterface;
+class Call;
 
 class CallOpBuffer final : public CompletionQueueTag {
  public:
@@ -63,6 +63,7 @@ class CallOpBuffer final : public CompletionQueueTag {
   // Does not take ownership.
   void AddSendInitialMetadata(
       std::multimap<grpc::string, grpc::string> *metadata);
+  void AddSendInitialMetadata(ClientContext *ctx);
   void AddRecvInitialMetadata(
       std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
@@ -102,12 +103,12 @@ class CallOpBuffer final : public CompletionQueueTag {
   Status* recv_status_ = nullptr;
   grpc_metadata_array recv_trailing_metadata_arr_ = {0, 0, nullptr};
   grpc_status_code status_code_ = GRPC_STATUS_OK;
-  char* status_details_ = nullptr;
+  char *status_details_ = nullptr;
   size_t status_details_capacity_ = 0;
   // Server send status
   Status* send_status_ = nullptr;
   size_t trailing_metadata_count_ = 0;
-  grpc_metadata* trailing_metadata_ = nullptr;
+  grpc_metadata *trailing_metadata_ = nullptr;
 };
 
 class CCallDeleter {
@@ -115,10 +116,17 @@ class CCallDeleter {
   void operator()(grpc_call *c);
 };
 
+// Channel and Server implement this to allow them to hook performing ops
+class CallHook {
+ public:
+  virtual ~CallHook() {}
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) = 0;
+};
+
 // Straightforward wrapping of the C call object
 class Call final {
  public:
-  Call(grpc_call *call, ChannelInterface *channel, CompletionQueue *cq);
+  Call(grpc_call *call, CallHook *call_hook_, CompletionQueue *cq);
 
   void PerformOps(CallOpBuffer *buffer);
 
@@ -126,7 +134,7 @@ class Call final {
   CompletionQueue *cq() { return cq_; }
 
  private:
-  ChannelInterface *channel_;
+  CallHook *call_hook_;
   CompletionQueue *cq_;
   std::unique_ptr<grpc_call, CCallDeleter> call_;
 };

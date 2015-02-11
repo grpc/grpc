@@ -31,9 +31,10 @@
  *
  */
 
-#include <include/grpc/support/alloc.h>
-#include <include/grpc++/impl/call.h>
-#include <include/grpc++/channel_interface.h>
+#include <grpc/support/alloc.h>
+#include <grpc++/impl/call.h>
+#include <grpc++/client_context.h>
+#include <grpc++/channel_interface.h>
 
 #include "src/cpp/proto/proto_utils.h"
 
@@ -111,13 +112,13 @@ void FillMetadataMap(grpc_metadata_array* arr,
 
 void CallOpBuffer::AddSendInitialMetadata(
     std::multimap<grpc::string, grpc::string>* metadata) {
+  send_initial_metadata_ = true;
   initial_metadata_count_ = metadata->size();
   initial_metadata_ = FillMetadata(metadata);
 }
 
-void CallOpBuffer::AddRecvInitialMetadata(
-    std::multimap<grpc::string, grpc::string>* metadata) {
-  recv_initial_metadata_ = metadata;
+void CallOpBuffer::AddSendInitialMetadata(ClientContext *ctx) {
+  AddSendInitialMetadata(&ctx->metadata_);
 }
 
 void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
@@ -147,7 +148,7 @@ void CallOpBuffer::AddServerSendStatus(
 
 void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   *nops = 0;
-  if (initial_metadata_count_) {
+  if (send_initial_metadata_) {
     ops[*nops].op = GRPC_OP_SEND_INITIAL_METADATA;
     ops[*nops].data.send_initial_metadata.count = initial_metadata_count_;
     ops[*nops].data.send_initial_metadata.metadata = initial_metadata_;
@@ -240,11 +241,11 @@ void CCallDeleter::operator()(grpc_call* c) {
   grpc_call_destroy(c);
 }
 
-Call::Call(grpc_call* call, ChannelInterface* channel, CompletionQueue* cq)
-    : channel_(channel), cq_(cq), call_(call) {}
+Call::Call(grpc_call* call, CallHook *call_hook, CompletionQueue* cq)
+    : call_hook_(call_hook), cq_(cq), call_(call) {}
 
 void Call::PerformOps(CallOpBuffer* buffer) {
-  channel_->PerformOpsOnCall(buffer, this);
+  call_hook_->PerformOpsOnCall(buffer, this);
 }
 
 }  // namespace grpc
