@@ -337,7 +337,8 @@
       "deps": [
         "gpr",
         "grpc"
-      ]
+      ],
+      "vs_project_guid": "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
     },
     {
       "name": "grpc_test_util",
