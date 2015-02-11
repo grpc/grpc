@@ -144,15 +144,12 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   }
 }
 
-void CallOpBuffer::ReleaseSendBuffer() {
+void CallOpBuffer::FinalizeResult(void *tag, bool *status) {
+  // Release send buffers
   if (write_buffer_) {
     grpc_byte_buffer_destroy(write_buffer_);
     write_buffer_ = nullptr;
   }
-}
-
-void CallOpBuffer::FinalizeResult(void *tag, bool *status) {
-
 }
 
 void CCallDeleter::operator()(grpc_call* c) {
@@ -164,7 +161,6 @@ Call::Call(grpc_call* call, ChannelInterface* channel, CompletionQueue* cq)
 
 void Call::PerformOps(CallOpBuffer* buffer) {
   channel_->PerformOpsOnCall(buffer, this);
-  buffer->ReleaseSendBuffer();
 }
 
 }  // namespace grpc
