@@ -176,13 +176,7 @@ void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
     abort();
   }
   for (i = 0; i < nfds; i++) {
-    if (grpc_fd_is_orphaned(fds[i])) {
-      /* This should not happen, remove before merging upstream because this is
-       * better fixed in unary poller */
-      grpc_fd_unref(fds[i]);
-    } else {
-      multipoll_with_epoll_pollset_add_fd(pollset, fds[i]);
-    }
+    multipoll_with_epoll_pollset_add_fd(pollset, fds[i]);
   }
 
   grpc_wakeup_fd_create(&h->wakeup_fd);
