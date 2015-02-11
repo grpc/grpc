@@ -40,13 +40,15 @@
 #include <grpc/support/log.h>
 
 unsigned gpr_cpu_num_cores(void) {
-  /* TODO: implement */
+  /* TODO(jtattermusch): implement */
+  gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
   return 1;
 }
 
 unsigned gpr_cpu_current_cpu(void) {
-  /* TODO: implement */
-  return 1;
+  /* TODO(jtattermusch): implement */
+  gpr_log(GPR_ERROR, "Cannot determine current CPU");
+  return 0;
 }
 
 #endif /* GPR_WIN32 */
