@@ -26,7 +26,7 @@ Hello World method.
 - Create a Go client that accesses the same Java server.
 - Update the service with more advanced features like RPC streaming.
 
-The complete code for the example is available in [wherever we put it]. You can
+The complete code for the example is available in the `grpc-common` GitHub repository. You can
 work along with the example and hack on the code in the comfort of your own
 computer, giving you hands-on practice of really writing
 gRPC code. We use the Git versioning system for source code management:
@@ -174,7 +174,7 @@ to generated code. As we're creating Java code, we use the gRPC Java plugin.
 
 To build the plugin:
 
-```
+```sh
 $ pushd external/grpc_java
 $ make java_plugin
 $ popd
@@ -182,7 +182,7 @@ $ popd
 
 To use it to generate the code:
 
-```
+```sh
 $ mkdir -p src/main/java
 $ protoc -I . helloworld.proto
 --plugin=protoc-gen-grpc=external/grpc_java/bins/opt/java_plugin \
@@ -194,27 +194,25 @@ This generates the following classes, which contain all the generated code we ne
 
 - [`Helloworld.java`](java/src/main/java/ex/grpc/Helloworld.java), which has all the protocol buffer code to populate, serialize, and retrieve our `HelloRequest` and `HelloReply` message types
 - [`GreetingsGrpc.java`](java/src/main/java/ex/grpc/GreetingsGrpc.java), which contains (along with some other useful code):
-   - an interface for `Greetings` servers to implement
+    - an interface for `Greetings` servers to implement
 
-```
+    ```java
   public static interface Greetings {
 
     public void hello(ex.grpc.Helloworld.HelloRequest request,
         com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply> responseObserver);
   }
-```
+    ```
 
-   - _stub_ classes that clients can use to talk to a `Greetings` server.
+    - _stub_ classes that clients can use to talk to a `Greetings` server.
 
-```
+    ```java
 public static class GreetingsStub extends
       com.google.net.stubby.stub.AbstractStub<GreetingsStub, GreetingsServiceDescriptor>
       implements Greetings {
    ...
   }
-```
-
-_Does gRPC output multiple Java classes per proto by default?_
+    ```
 
 <a name="server"></a>
 ### Writing a server
@@ -233,7 +231,7 @@ Our server application has two classes:
 implements the behaviour we require of our GreetingService. There are a
 number of important features of gRPC being used here:
 
-```
+```java
   public void hello(Helloworld.HelloRequest req,
       StreamObserver<Helloworld.HelloReply> responseObserver) {
     Helloworld.HelloReply reply = Helloworld.HelloReply.newBuilder().setMessage(
@@ -262,7 +260,7 @@ number of important features of gRPC being used here:
 other main feature required to provde the gRPC service; how to allow a service
 implementation to be accessed from the network.
 
-```
+```java
   private void start() throws Exception {
     server = NettyServerBuilder.forPort(port)
              .addService(GreetingsGrpc.bindService(new GreetingsImpl()))
@@ -302,7 +300,7 @@ transport handling; its constructor accepts the host name and port of the
 service. The channel in turn is used to construct the Stub.
 
 
-```
+```java
   private final ChannelImpl channel;
   private final GreetingGrpc.GreetingBlockingStub blockingStub;
 
@@ -324,7 +322,7 @@ It:
 - prints out the greeting
 
 
-```
+```java
   public void greet(String name) {
     logger.debug("Will try to greet " + name + " ...");
     try {
@@ -344,7 +342,7 @@ It:
 The main method puts together the example so that it can be run from a command
 line.
 
-```
+```java
     /* Access a service running on the local machine on port 50051 */
     HelloClient client = new HelloClient("localhost", 50051);
     String user = "world";
@@ -379,13 +377,13 @@ $ mvn package
 We've added simple shell scripts to simplifying running the examples. Now
 that they are built, you can run the server with:
 
-```
+```sh
 $ ./run_greetings_server.sh
 ```
 
 and in another terminal window confirm that it receives a message.
 
-```
+```sh
 $ ./run_greetings_client.sh
 ```
 
