@@ -82,7 +82,7 @@ class CallOpBuffer final : public CompletionQueueTag {
   size_t initial_metadata_count_ = 0;
   grpc_metadata* initial_metadata_ = nullptr;
   const google::protobuf::Message* send_message_ = nullptr;
-  grpc_byte_buffer* write_buffer_ = nullptr;
+  grpc_byte_buffer* send_message_buf_ = nullptr;
   google::protobuf::Message* recv_message_ = nullptr;
   grpc_byte_buffer* recv_message_buf_ = nullptr;
   bool client_send_close_ = false;
@@ -90,6 +90,9 @@ class CallOpBuffer final : public CompletionQueueTag {
   grpc_status_code status_code_ = GRPC_STATUS_OK;
   char* status_details_ = nullptr;
   size_t status_details_capacity_ = 0;
+  Status* send_status_ = nullptr;
+  size_t trailing_metadata_count_ = 0;
+  grpc_metadata* trailing_metadata_ = nullptr;
 };
 
 class CCallDeleter {

@@ -46,9 +46,9 @@ void CallOpBuffer::Reset(void* next_return_tag) {
     gpr_free(initial_metadata_);
   }
   send_message_ = nullptr;
-  if (write_buffer_) {
-    grpc_byte_buffer_destroy(write_buffer_);
-    write_buffer_ = nullptr;
+  if (send_message_buf_) {
+    grpc_byte_buffer_destroy(send_message_buf_);
+    send_message_buf_ = nullptr;
   }
   recv_message_ = nullptr;
   if (recv_message_buf_) {
@@ -107,6 +107,10 @@ void CallOpBuffer::AddClientRecvStatus(Status *status) {
   recv_status_ = status;
 }
 
+void CallOpBuffer::AddServerSendStatus(std::multimap<grpc::string, grpc::string>* metadata,
+                                       const Status& status) {
+
+}
 
 void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   *nops = 0;
@@ -117,12 +121,12 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
     (*nops)++;
   }
   if (send_message_) {
-    bool success = SerializeProto(*send_message_, &write_buffer_);
+    bool success = SerializeProto(*send_message_, &send_message_buf_);
     if (!success) {
       // TODO handle parse failure
     }
     ops[*nops].op = GRPC_OP_SEND_MESSAGE;
-    ops[*nops].data.send_message = write_buffer_;
+    ops[*nops].data.send_message = send_message_buf_;
     (*nops)++;
   }
   if (recv_message_) {
@@ -136,7 +140,7 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   }
   if (recv_status_) {
     ops[*nops].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    // ops[*nops].data.recv_status_on_client.trailing_metadata =
+    // TODO ops[*nops].data.recv_status_on_client.trailing_metadata =
     ops[*nops].data.recv_status_on_client.status = &status_code_;
     ops[*nops].data.recv_status_on_client.status_details = &status_details_;
     ops[*nops].data.recv_status_on_client.status_details_capacity = &status_details_capacity_;
@@ -145,10 +149,29 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
 }
 
 void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
-  // Release send buffers
-  if (write_buffer_) {
-    grpc_byte_buffer_destroy(write_buffer_);
-    write_buffer_ = nullptr;
+  // Release send buffers.
+  if (send_message_buf_) {
+    grpc_byte_buffer_destroy(send_message_buf_);
+    send_message_buf_ = nullptr;
+  }
+  if (initial_metadata_) {
+    gpr_free(initial_metadata_);
+    initial_metadata_ = nullptr;
+  }
+  // Set user-facing tag.
+  *tag = return_tag_;
+  // Parse received message if any.
+  if (recv_message_ && recv_message_buf_) {
+    *status = DeserializeProto(recv_message_buf_, recv_message_);
+    grpc_byte_buffer_destroy(recv_message_buf_);
+    recv_message_buf_ = nullptr;
+  }
+  // Parse received status.
+  if (recv_status_) {
+    *recv_status_ = Status(
+        static_cast<StatusCode>(status_code_),
+        status_details_ ?  grpc::string(status_details_, status_details_capacity_)
+                        :  grpc::string());
   }
 }
 
