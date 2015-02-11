@@ -168,12 +168,10 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
   }
   // Parse received status.
   if (recv_status_) {
-    if (status_details_) {
-      *recv_status_ = Status(static_cast<StatusCode>(status_code_),
-                             grpc::string(status_details_, status_details_capacity_));
-    } else {
-      *recv_status_ = Status(static_cast<StatusCode>(status_code_));
-    }
+    *recv_status_ = Status(
+        static_cast<StatusCode>(status_code_),
+        status_details_ ?  grpc::string(status_details_, status_details_capacity_)
+                        :  grpc::string());
   }
 }
 
