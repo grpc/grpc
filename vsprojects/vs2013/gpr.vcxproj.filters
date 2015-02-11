@@ -129,6 +129,9 @@
     <ClInclude Include="..\..\include\grpc\support\log.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\log_win32.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\port_platform.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>

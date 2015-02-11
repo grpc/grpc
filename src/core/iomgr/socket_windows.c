@@ -31,11 +31,47 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
-#define __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#include <grpc/support/port_platform.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <mswsock.h>
+#ifdef GPR_WINSOCK_SOCKET
 
-#endif  /* __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_ */
+#include "src/core/iomgr/iocp_windows.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/socket_windows.h"
+#include "src/core/iomgr/pollset.h"
+#include "src/core/iomgr/pollset_windows.h"
+
+grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
+  grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
+  gpr_log(GPR_DEBUG, "grpc_winsocket_create");
+  memset(r, 0, sizeof(grpc_winsocket));
+  r->socket = socket;
+  gpr_mu_init(&r->state_mu);
+  grpc_iomgr_ref();
+  grpc_iocp_add_socket(r);
+  return r;
+}
+
+void shutdown_op(grpc_winsocket_callback_info *info) {
+  if (!info->cb) return;
+  grpc_iomgr_add_delayed_callback(info->cb, info->opaque, 0);
+}
+
+void grpc_winsocket_shutdown(grpc_winsocket *socket) {
+  gpr_log(GPR_DEBUG, "grpc_winsocket_shutdown");
+  shutdown_op(&socket->read_info);
+  shutdown_op(&socket->write_info);
+}
+
+void grpc_winsocket_orphan(grpc_winsocket *socket) {
+  gpr_log(GPR_DEBUG, "grpc_winsocket_orphan");
+  grpc_iomgr_unref();
+  closesocket(socket->socket);
+  gpr_mu_destroy(&socket->state_mu);
+  gpr_free(socket);
+}
+
+#endif  /* GPR_WINSOCK_SOCKET */
