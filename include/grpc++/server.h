@@ -87,8 +87,7 @@ class Server {
   void ScheduleCallback();
 
   // Completion queue.
-  std::unique_ptr<CompletionQueue> cq_sync_;
-  std::unique_ptr<CompletionQueue> cq_async_;
+  CompletionQueue cq_;
 
   // Sever status
   std::mutex mu_;

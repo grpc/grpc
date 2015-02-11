@@ -56,9 +56,9 @@ Server::Server(ThreadPoolInterface *thread_pool, bool thread_pool_owned,
       thread_pool_owned_(thread_pool_owned),
       secure_(creds != nullptr) {
   if (creds) {
-    server_ = grpc_secure_server_create(creds->GetRawCreds(), nullptr, nullptr);
+    server_ = grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
   } else {
-    server_ = grpc_server_create(nullptr, nullptr);
+    server_ = grpc_server_create(cq_.cq(), nullptr);
   }
 }
 
@@ -82,9 +82,6 @@ Server::~Server() {
 }
 
 bool Server::RegisterService(RpcService *service) {
-  if (!cq_sync_) {
-    cq_sync_.reset(new CompletionQueue);
-  }
   for (int i = 0; i < service->GetMethodCount(); ++i) {
     RpcServiceMethod *method = service->GetMethod(i);
     void *tag = grpc_server_register_method(server_, method->name(), nullptr);
@@ -131,14 +128,14 @@ class Server::MethodRequestData final : public CompletionQueueTag {
     return mrd;
   }
 
-  void Request(grpc_server *server, CompletionQueue *cq) {
+  void Request(grpc_server *server) {
     GPR_ASSERT(!in_flight_);
     in_flight_ = true;
     cq_ = grpc_completion_queue_create();
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_registered_call(
                    server, tag_, &call_, &deadline_, &request_metadata_,
-                   has_request_payload_ ? &request_payload_ : nullptr, cq->cq(),
+                   has_request_payload_ ? &request_payload_ : nullptr, 
                    cq_, this));
   }
 
@@ -212,9 +209,9 @@ bool Server::Start() {
   grpc_server_start(server_);
 
   // Start processing rpcs.
-  if (cq_sync_) {
+  if (!methods_.empty()) {
     for (auto &m : methods_) {
-      m.Request(server_, cq_sync_.get());
+      m.Request(server_);
     }
 
     ScheduleCallback();
@@ -249,12 +246,12 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
-  auto *mrd = MethodRequestData::Wait(cq_sync_.get(), &ok);
+  auto *mrd = MethodRequestData::Wait(&cq_, &ok);
   if (mrd) {
     MethodRequestData::CallData cd(mrd);
 
     if (ok) {
-      mrd->Request(server_, cq_sync_.get());
+      mrd->Request(server_);
       ScheduleCallback();
 
       cd.Run();
