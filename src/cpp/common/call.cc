@@ -161,7 +161,5 @@ Call::Call(grpc_call* call, ChannelInterface* channel, CompletionQueue* cq)
 
 void Call::PerformOps(CallOpBuffer* buffer) {
   channel_->PerformOpsOnCall(buffer, this);
-  buffer->ReleaseSendBuffer();
-}
 
 }  // namespace grpc
