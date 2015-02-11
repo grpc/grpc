@@ -74,13 +74,15 @@ typedef struct {
   void *tag;
   union {
     struct {
-      grpc_completion_queue *cq;
+      grpc_completion_queue *cq_new;
+      grpc_completion_queue *cq_bind;
       grpc_call **call;
       grpc_call_details *details;
       grpc_metadata_array *initial_metadata;
     } batch;
     struct {
-      grpc_completion_queue *cq;
+      grpc_completion_queue *cq_new;
+      grpc_completion_queue *cq_bind;
       grpc_call **call;
       registered_method *registered_method;
       gpr_timespec *deadline;
@@ -172,6 +174,8 @@ struct call_data {
 
   call_data **root[CALL_LIST_COUNT];
   call_link links[CALL_LIST_COUNT];
+  
+  grpc_completion_queue *cq_new;
 };
 
 #define SERVER_FROM_CALL_ELEM(elem) \
@@ -847,12 +851,14 @@ static grpc_call_error queue_call_request(grpc_server *server,
 grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
                                          grpc_call_details *details,
                                          grpc_metadata_array *initial_metadata,
-                                         grpc_completion_queue *cq, void *tag) {
+                                         grpc_completion_queue *cq_new,
+                                         grpc_completion_queue *cq_bind, void *tag) {
   requested_call rc;
-  grpc_cq_begin_op(cq, NULL, GRPC_OP_COMPLETE);
+  grpc_cq_begin_op(cq_new, NULL, GRPC_OP_COMPLETE);
   rc.type = BATCH_CALL;
   rc.tag = tag;
-  rc.data.batch.cq = cq;
+  rc.data.batch.cq_new = cq_new;
+  rc.data.batch.cq_bind = cq_bind;
   rc.data.batch.call = call;
   rc.data.batch.details = details;
   rc.data.batch.initial_metadata = initial_metadata;
@@ -862,12 +868,14 @@ grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
 grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
     gpr_timespec *deadline, grpc_metadata_array *initial_metadata,
-    grpc_byte_buffer **optional_payload, grpc_completion_queue *cq, void *tag) {
+    grpc_byte_buffer **optional_payload, grpc_completion_queue *cq_new, grpc_completion_queue *cq_bind,
+    void *tag) {
   requested_call rc;
-  grpc_cq_begin_op(cq, NULL, GRPC_OP_COMPLETE);
+  grpc_cq_begin_op(cq_new, NULL, GRPC_OP_COMPLETE);
   rc.type = REGISTERED_CALL;
   rc.tag = tag;
-  rc.data.registered.cq = cq;
+  rc.data.registered.cq_new = cq_new;
+  rc.data.registered.cq_bind = cq_bind;
   rc.data.registered.call = call;
   rc.data.registered.registered_method = registered_method;
   rc.data.registered.deadline = deadline;
@@ -926,16 +934,17 @@ static void begin_call(grpc_server *server, call_data *calld,
             &rc->data.batch.details->host_capacity, calld->host);
       cpstr(&rc->data.batch.details->method,
             &rc->data.batch.details->method_capacity, calld->path);
-      grpc_call_set_completion_queue(calld->call, rc->data.batch.cq);
+      grpc_call_set_completion_queue(calld->call, rc->data.batch.cq_bind);
       *rc->data.batch.call = calld->call;
       r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
       r->data.recv_metadata = rc->data.batch.initial_metadata;
       r++;
+      calld->cq_new = rc->data.batch.cq_new;
       publish = publish_registered_or_batch;
       break;
     case REGISTERED_CALL:
       *rc->data.registered.deadline = calld->deadline;
-      grpc_call_set_completion_queue(calld->call, rc->data.registered.cq);
+      grpc_call_set_completion_queue(calld->call, rc->data.registered.cq_bind);
       *rc->data.registered.call = calld->call;
       r->op = GRPC_IOREQ_RECV_INITIAL_METADATA;
       r->data.recv_metadata = rc->data.registered.initial_metadata;
@@ -945,6 +954,7 @@ static void begin_call(grpc_server *server, call_data *calld,
         r->data.recv_message = rc->data.registered.optional_payload;
         r++;
       }
+      calld->cq_new = rc->data.registered.cq_new;
       publish = publish_registered_or_batch;
       break;
   }
@@ -963,13 +973,13 @@ static void fail_call(grpc_server *server, requested_call *rc) {
     case BATCH_CALL:
       *rc->data.batch.call = NULL;
       rc->data.batch.initial_metadata->count = 0;
-      grpc_cq_end_op_complete(rc->data.batch.cq, rc->tag, NULL, do_nothing,
+      grpc_cq_end_op_complete(rc->data.batch.cq_new, rc->tag, NULL, do_nothing,
                               NULL, GRPC_OP_ERROR);
       break;
     case REGISTERED_CALL:
       *rc->data.registered.call = NULL;
       rc->data.registered.initial_metadata->count = 0;
-      grpc_cq_end_op_complete(rc->data.registered.cq, rc->tag, NULL, do_nothing,
+      grpc_cq_end_op_complete(rc->data.registered.cq_new, rc->tag, NULL, do_nothing,
                               NULL, GRPC_OP_ERROR);
       break;
   }
@@ -996,7 +1006,10 @@ static void publish_legacy(grpc_call *call, grpc_op_error status, void *tag) {
 
 static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
                                         void *tag) {
-  grpc_cq_end_op_complete(grpc_call_get_completion_queue(call), tag, call,
+  grpc_call_element *elem =
+      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
+  call_data *calld = elem->call_data;
+  grpc_cq_end_op_complete(calld->cq_new, tag, call,
                           do_nothing, NULL, status);
 }
 
