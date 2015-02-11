@@ -771,7 +771,7 @@ grpc_call_error grpc_server_request_call(grpc_server *server, grpc_call **call,
                                          grpc_metadata_array *initial_metadata,
                                          grpc_completion_queue *cq, void *tag) {
   requested_call rc;
-  grpc_cq_begin_op(cq, NULL, GRPC_OP_COMPLETE);
+  grpc_cq_begin_op(server->cq, NULL, GRPC_OP_COMPLETE);
   rc.type = BATCH_CALL;
   rc.tag = tag;
   rc.data.batch.cq = cq;
@@ -786,7 +786,7 @@ grpc_call_error grpc_server_request_registered_call(
     gpr_timespec *deadline, grpc_metadata_array *initial_metadata,
     grpc_byte_buffer **optional_payload, grpc_completion_queue *cq, void *tag) {
   requested_call rc;
-  grpc_cq_begin_op(cq, NULL, GRPC_OP_COMPLETE);
+  grpc_cq_begin_op(server->cq, NULL, GRPC_OP_COMPLETE);
   rc.type = REGISTERED_CALL;
   rc.tag = tag;
   rc.data.registered.cq = cq;
@@ -918,8 +918,11 @@ static void publish_legacy(grpc_call *call, grpc_op_error status, void *tag) {
 
 static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
                                         void *tag) {
-  grpc_cq_end_op_complete(grpc_call_get_completion_queue(call), tag, call,
-                          do_nothing, NULL, status);
+  grpc_call_element *elem =
+      grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
+  channel_data *chand = elem->channel_data;
+  grpc_server *server = chand->server;
+  grpc_cq_end_op_complete(server->cq, tag, call, do_nothing, NULL, status);
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {
