@@ -172,10 +172,13 @@ class Server::MethodRequestData final : public CompletionQueueTag {
       auto status = method_->handler()->RunHandler(
           MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
       CallOpBuffer buf;
-      buf.AddServerSendStatus(nullptr, status);
+      if (!ctx_.sent_initial_metadata_) {
+        buf.AddSendInitialMetadata(&ctx_.initial_metadata_);
+      }
       if (has_response_payload_) {
         buf.AddSendMessage(*res);
       }
+      buf.AddServerSendStatus(&ctx_.trailing_metadata_, status);
       call_.PerformOps(&buf);
       GPR_ASSERT(cq_.Pluck(&buf));
     }
