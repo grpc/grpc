@@ -43,6 +43,7 @@ namespace grpc {
 void CallOpBuffer::Reset(void* next_return_tag) {
   return_tag_ = next_return_tag;
 
+  send_initial_metadata_ = false;
   initial_metadata_count_ = 0;
   gpr_free(initial_metadata_);
 
@@ -106,7 +107,7 @@ void FillMetadataMap(grpc_metadata_array* arr,
         arr->metadata[i].key, {arr->metadata[i].value, arr->metadata[i].value_length}));
   }
   grpc_metadata_array_destroy(arr);
-  grpc_metadata_array_init(&recv_trailing_metadata_arr_);
+  grpc_metadata_array_init(arr);
 }
 }  // namespace
 
@@ -114,7 +115,7 @@ void CallOpBuffer::AddSendInitialMetadata(
     std::multimap<grpc::string, grpc::string>* metadata) {
   send_initial_metadata_ = true;
   initial_metadata_count_ = metadata->size();
-  initial_metadata_ = FillMetadata(metadata);
+  initial_metadata_ = FillMetadataArray(metadata);
 }
 
 void CallOpBuffer::AddSendInitialMetadata(ClientContext *ctx) {
@@ -142,7 +143,7 @@ void CallOpBuffer::AddClientRecvStatus(
 void CallOpBuffer::AddServerSendStatus(
     std::multimap<grpc::string, grpc::string>* metadata, const Status& status) {
   trailing_metadata_count_ = metadata->size();
-  trailing_metadata_ = FillMetadata(metadata);
+  trailing_metadata_ = FillMetadataArray(metadata);
   send_status_ = &status;
 }
 
@@ -219,7 +220,7 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
   *tag = return_tag_;
   // Process received initial metadata
   if (recv_initial_metadata_) {
-    FillMetadataMap(&recv_initial_metadata_, recv_initial_metadata_);
+    FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
   }
   // Parse received message if any.
   if (recv_message_ && recv_message_buf_) {

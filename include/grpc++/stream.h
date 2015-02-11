@@ -105,7 +105,7 @@ class ClientReader final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    buf.AddClientRecvStatus(&status);
+    buf.AddClientRecvStatus(nullptr, &status); // TODO metadata
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
@@ -146,7 +146,7 @@ class ClientWriter final : public ClientStreamingInterface,
     CallOpBuffer buf;
     Status status;
     buf.AddRecvMessage(response_);
-    buf.AddClientRecvStatus(&status);
+    buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
@@ -193,7 +193,7 @@ class ClientReaderWriter final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    buf.AddClientRecvStatus(&status);
+    buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
@@ -312,7 +312,7 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
 
   virtual void Finish(Status* status, void* tag) override {
     finish_buf_.Reset(tag);
-    finish_buf_.AddClientRecvStatus(status);
+    finish_buf_.AddClientRecvStatus(nullptr, status);  // TODO metadata
     call_.PerformOps(&finish_buf_);
   }
 
@@ -350,7 +350,7 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
   virtual void Finish(Status* status, void* tag) override {
     finish_buf_.Reset(tag);
     finish_buf_.AddRecvMessage(response_);
-    finish_buf_.AddClientRecvStatus(status);
+    finish_buf_.AddClientRecvStatus(nullptr, status);  // TODO metadata
     call_.PerformOps(&finish_buf_);
   }
 
@@ -393,7 +393,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
 
   virtual void Finish(Status* status, void* tag) override {
     finish_buf_.Reset(tag);
-    finish_buf_.AddClientRecvStatus(status);
+    finish_buf_.AddClientRecvStatus(nullptr, status);  // TODO metadata
     call_.PerformOps(&finish_buf_);
   }
 

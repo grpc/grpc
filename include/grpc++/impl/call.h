@@ -85,6 +85,7 @@ class CallOpBuffer final : public CompletionQueueTag {
  private:
   void *return_tag_ = nullptr;
   // Send initial metadata
+  bool send_initial_metadata_ = false;
   size_t initial_metadata_count_ = 0;
   grpc_metadata* initial_metadata_ = nullptr;
   // Recv initial metadta
@@ -106,7 +107,7 @@ class CallOpBuffer final : public CompletionQueueTag {
   char *status_details_ = nullptr;
   size_t status_details_capacity_ = 0;
   // Server send status
-  Status* send_status_ = nullptr;
+  const Status* send_status_ = nullptr;
   size_t trailing_metadata_count_ = 0;
   grpc_metadata *trailing_metadata_ = nullptr;
 };
