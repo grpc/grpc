@@ -52,7 +52,7 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   buf.AddSendMessage(request);
   buf.AddRecvMessage(result);
   buf.AddClientSendClose();
-  buf.AddClientRecvStatus(&status);
+  buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
   call.PerformOps(&buf);
   cq.Pluck(&buf);
   return status;

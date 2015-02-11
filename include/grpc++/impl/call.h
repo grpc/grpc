@@ -64,12 +64,15 @@ class CallOpBuffer final : public CompletionQueueTag {
   void AddSendInitialMetadata(
       std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendInitialMetadata(ClientContext *ctx);
+  void AddRecvInitialMetadata(
+      std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
   void AddRecvMessage(google::protobuf::Message *message);
   void AddClientSendClose();
-  void AddClientRecvStatus(Status *status);
+  void AddClientRecvStatus(std::multimap<grpc::string, grpc::string> *metadata,
+                           Status *status);
   void AddServerSendStatus(std::multimap<grpc::string, grpc::string> *metadata,
-                           const Status &status);
+                           const Status& status);
 
   // INTERNAL API:
 
@@ -81,19 +84,30 @@ class CallOpBuffer final : public CompletionQueueTag {
 
  private:
   void *return_tag_ = nullptr;
+  // Send initial metadata
   bool send_initial_metadata_ = false;
   size_t initial_metadata_count_ = 0;
-  grpc_metadata *initial_metadata_ = nullptr;
-  const google::protobuf::Message *send_message_ = nullptr;
-  grpc_byte_buffer *send_message_buf_ = nullptr;
-  google::protobuf::Message *recv_message_ = nullptr;
-  grpc_byte_buffer *recv_message_buf_ = nullptr;
+  grpc_metadata* initial_metadata_ = nullptr;
+  // Recv initial metadta
+  std::multimap<grpc::string, grpc::string>* recv_initial_metadata_ = nullptr;
+  grpc_metadata_array recv_initial_metadata_arr_ = {0, 0, nullptr};
+  // Send message
+  const google::protobuf::Message* send_message_ = nullptr;
+  grpc_byte_buffer* send_message_buf_ = nullptr;
+  // Recv message
+  google::protobuf::Message* recv_message_ = nullptr;
+  grpc_byte_buffer* recv_message_buf_ = nullptr;
+  // Client send close
   bool client_send_close_ = false;
-  Status *recv_status_ = nullptr;
+  // Client recv status
+  std::multimap<grpc::string, grpc::string>* recv_trailing_metadata_ = nullptr;
+  Status* recv_status_ = nullptr;
+  grpc_metadata_array recv_trailing_metadata_arr_ = {0, 0, nullptr};
   grpc_status_code status_code_ = GRPC_STATUS_OK;
   char *status_details_ = nullptr;
   size_t status_details_capacity_ = 0;
-  Status *send_status_ = nullptr;
+  // Server send status
+  const Status* send_status_ = nullptr;
   size_t trailing_metadata_count_ = 0;
   grpc_metadata *trailing_metadata_ = nullptr;
 };
@@ -107,7 +121,7 @@ class CCallDeleter {
 class CallHook {
  public:
   virtual ~CallHook() {}
-  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) = 0;  
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) = 0;
 };
 
 // Straightforward wrapping of the C call object
