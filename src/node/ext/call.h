@@ -57,8 +57,8 @@ class PersistentHolder {
   }
 
   ~PersistentHolder() {
-    persist.Dispose();
-}
+    NanDisposePersistent(persist);
+  }
 
  private:
   v8::Persistent<v8::Value> persist;

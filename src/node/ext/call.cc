@@ -201,6 +201,8 @@ class SendMessageOp : public Op {
     }
     out->data.send_message = BufferToByteBuffer(value);
     Persistent<Value> handle;
+    Handle<Value> temp = NanNew<Object>();
+    NanAssignPersistent(handle, temp);
     NanAssignPersistent(handle, value);
     handles->push_back(unique_ptr<PersistentHolder>(
         new PersistentHolder(handle)));
@@ -441,9 +443,14 @@ void DestroyTag(void *tag) {
   delete tag_struct;
 }
 
-Call::Call(grpc_call *call) : wrapped_call(call) {}
+Call::Call(grpc_call *call) : wrapped_call(call) {
+  gpr_log(GPR_DEBUG, "Constructing call, this: %p, pointer: %p", this, call);
+}
 
-Call::~Call() { grpc_call_destroy(wrapped_call); }
+Call::~Call() {
+  gpr_log(GPR_DEBUG, "Destructing call, this: %p, pointer: %p", this, wrapped_call);
+  grpc_call_destroy(wrapped_call);
+}
 
 void Call::Init(Handle<Object> exports) {
   NanScope();
@@ -473,6 +480,7 @@ Handle<Value> Call::WrapStruct(grpc_call *call) {
   if (call == NULL) {
     return NanEscapeScope(NanNull());
   }
+  gpr_log(GPR_DEBUG, "Wrapping call: %p", call);
   const int argc = 1;
   Handle<Value> argv[argc] = {External::New(reinterpret_cast<void *>(call))};
   return NanEscapeScope(constructor->NewInstance(argc, argv));
@@ -534,12 +542,13 @@ NAN_METHOD(Call::StartBatch) {
   if (!args[1]->IsFunction()) {
     return NanThrowError("startBatch's second argument must be a callback");
   }
+  Handle<Function> callback_func = args[1].As<Function>();
+  NanCallback *callback = new NanCallback(callback_func);
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   std::vector<unique_ptr<PersistentHolder> > *handles =
       new std::vector<unique_ptr<PersistentHolder> >();
   std::vector<unique_ptr<NanUtf8String> > *strings =
       new std::vector<unique_ptr<NanUtf8String> >();
-  Persistent<Value> handle;
   Handle<Object> obj = args[0]->ToObject();
   Handle<Array> keys = obj->GetOwnPropertyNames();
   size_t nops = keys->Length();
@@ -588,9 +597,7 @@ NAN_METHOD(Call::StartBatch) {
   }
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, ops, nops, new struct tag(
-          new NanCallback(args[1].As<Function>()),
-          op_vector, handles,
-          strings));
+          callback, op_vector, handles, strings));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("startBatch failed", error);
   }

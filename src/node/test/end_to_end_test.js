@@ -67,14 +67,14 @@ describe('end-to-end', function() {
   after(function() {
     server.shutdown();
   });
-  it('should start and end a request without error', function(complete) {
+  it.skip('should start and end a request without error', function(complete) {
     var done = multiDone(complete, 2);
     var deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 3);
     var status_text = 'xyz';
     var call = new grpc.Call(channel,
                              'dummy_method',
-                             deadline);
+                             Infinity);
     var client_batch = {};
     client_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
     client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
@@ -85,6 +85,7 @@ describe('end-to-end', function() {
       assert.deepEqual(response, {
         'send metadata': true,
         'client close': true,
+        'metadata': {},
         'status': {
           'code': grpc.status.OK,
           'details': status_text,
@@ -125,7 +126,7 @@ describe('end-to-end', function() {
     var status_text = 'xyz';
     var call = new grpc.Call(channel,
                              'dummy_method',
-                             deadline);
+                             Infinity);
     var client_batch = {};
     client_batch[grpc.opType.SEND_INITIAL_METADATA] = {
       'client_key': ['client_value']
@@ -138,7 +139,7 @@ describe('end-to-end', function() {
       assert(response['send metadata']);
       assert(response['client close']);
       assert(response.hasOwnProperty('metadata'));
-      assert.strictEqual(response.metadata.server_key.toString(),
+      assert.strictEqual(response.metadata.server_key[0].toString(),
                          'server_value');
       assert.deepEqual(response.status, {'code': grpc.status.OK,
                                          'details': status_text,
@@ -147,6 +148,7 @@ describe('end-to-end', function() {
     });
 
     server.requestCall(function(err, call_details) {
+      console.log("Server received new call");
       var new_call = call_details['new call'];
       assert.notEqual(new_call, null);
       assert.strictEqual(new_call.metadata.client_key[0].toString(),
@@ -174,7 +176,7 @@ describe('end-to-end', function() {
       });
     });
   });
-  it.only('should send and receive data without error', function(complete) {
+  it('should send and receive data without error', function(complete) {
     var req_text = 'client_request';
     var reply_text = 'server_response';
     var done = multiDone(complete, 2);
@@ -183,7 +185,7 @@ describe('end-to-end', function() {
     var status_text = 'success';
     var call = new grpc.Call(channel,
                              'dummy_method',
-                             deadline);
+                             Infinity);
     var client_batch = {};
     client_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
     client_batch[grpc.opType.SEND_MESSAGE] = new Buffer(req_text);
@@ -201,7 +203,6 @@ describe('end-to-end', function() {
       assert.deepEqual(response.status, {'code': grpc.status.OK,
                                          'details': status_text,
                                          'metadata': {}});
-      console.log("OK status");
       done();
     });
 
@@ -227,7 +228,7 @@ describe('end-to-end', function() {
         response_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
         server_call.startBatch(response_batch, function(err, response) {
           assert(response['send status']);
-          //assert(!response['cancelled']);
+          assert(!response['cancelled']);
           done();
         });
       });

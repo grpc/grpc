@@ -43,6 +43,7 @@
 #include <vector>
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
+#include "grpc/support/log.h"
 #include "call.h"
 #include "completion_queue_async_worker.h"
 #include "server_credentials.h"
@@ -90,6 +91,7 @@ class NewCallOp : public Op {
       return NanEscapeScope(NanNull());
     }
     Handle<Object> obj = NanNew<Object>();
+    gpr_log(GPR_DEBUG, "Wrapping server call: %p", call);
     obj->Set(NanNew("call"), Call::WrapStruct(call));
     obj->Set(NanNew("method"), NanNew(details.method));
     obj->Set(NanNew("host"), NanNew(details.host));
