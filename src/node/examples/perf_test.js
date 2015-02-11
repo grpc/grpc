@@ -83,6 +83,16 @@ function runTest(iterations, callback) {
   warmUp(100);
 }
 
+function percentile(arr, percentile) {
+  if (percentile > 99) {
+    percentile = 99;
+  }
+  if (percentile < 0) {
+    percentile = 0;
+  }
+  return arr[(arr.length * percentile / 100)|0];
+}
+
 if (require.main === module) {
   var count;
   if (process.argv.length >= 3) {
@@ -91,13 +101,14 @@ if (require.main === module) {
     count = 100;
   }
   runTest(count, function(results) {
+    var sorted_intervals = _.sortBy(results.intervals, _.identity);
     console.log('count:', count);
     console.log('total time:', results.total, 'us');
-    console.log('min latency:', _.min(results.intervals), 'us');
-    console.log('max latency:', _.max(results.intervals), 'us');
-    console.log('average latency:', _.reduce(results.intervals, function(a, b){
-      return a+b;
-    }) / count, 'us');
+    console.log('median:', percentile(sorted_intervals, 50), 'us');
+    console.log('90th percentile:', percentile(sorted_intervals, 90), 'us');
+    console.log('95th percentile:', percentile(sorted_intervals, 95), 'us');
+    console.log('99th percentile:', percentile(sorted_intervals, 99), 'us');
+    console.log('QPS:', (count / results.total) * 1000000);
   });
 }
 
