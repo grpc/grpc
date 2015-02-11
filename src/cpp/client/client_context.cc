@@ -72,7 +72,7 @@ system_clock::time_point ClientContext::absolute_deadline() {
 
 void ClientContext::AddMetadata(const grpc::string &meta_key,
                                 const grpc::string &meta_value) {
-  return;
+  metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
 void ClientContext::StartCancel() {}

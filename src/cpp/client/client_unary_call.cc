@@ -48,6 +48,7 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   Call call(channel->CreateCall(method, context, &cq));
   CallOpBuffer buf;
   Status status;
+  buf.AddSendInitialMetadata(context);
   buf.AddSendMessage(request);
   buf.AddRecvMessage(result);
   buf.AddClientSendClose();

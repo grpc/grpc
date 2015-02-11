@@ -31,9 +31,10 @@
  *
  */
 
-#include <include/grpc/support/alloc.h>
-#include <include/grpc++/impl/call.h>
-#include <include/grpc++/channel_interface.h>
+#include <grpc/support/alloc.h>
+#include <grpc++/impl/call.h>
+#include <grpc++/client_context.h>
+#include <grpc++/channel_interface.h>
 
 #include "src/cpp/proto/proto_utils.h"
 
@@ -41,10 +42,9 @@ namespace grpc {
 
 void CallOpBuffer::Reset(void* next_return_tag) {
   return_tag_ = next_return_tag;
+  send_initial_metadata_ = false;
   initial_metadata_count_ = 0;
-  if (initial_metadata_) {
-    gpr_free(initial_metadata_);
-  }
+  gpr_free(initial_metadata_);
   send_message_ = nullptr;
   if (send_message_buf_) {
     grpc_byte_buffer_destroy(send_message_buf_);
@@ -87,8 +87,13 @@ grpc_metadata* FillMetadata(
 
 void CallOpBuffer::AddSendInitialMetadata(
     std::multimap<grpc::string, grpc::string>* metadata) {
+  send_initial_metadata_ = true;
   initial_metadata_count_ = metadata->size();
   initial_metadata_ = FillMetadata(metadata);
+}
+
+void CallOpBuffer::AddSendInitialMetadata(ClientContext *ctx) {
+  AddSendInitialMetadata(&ctx->metadata_);
 }
 
 void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
@@ -114,7 +119,7 @@ void CallOpBuffer::AddServerSendStatus(std::multimap<grpc::string, grpc::string>
 
 void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   *nops = 0;
-  if (initial_metadata_count_) {
+  if (send_initial_metadata_) {
     ops[*nops].op = GRPC_OP_SEND_INITIAL_METADATA;
     ops[*nops].data.send_initial_metadata.count = initial_metadata_count_;
     ops[*nops].data.send_initial_metadata.metadata = initial_metadata_;
