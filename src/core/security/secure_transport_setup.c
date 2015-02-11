@@ -113,8 +113,7 @@ static void check_peer(grpc_secure_transport_setup *s) {
     return;
   }
   peer_status =
-      grpc_security_context_check_peer(s->ctx, &peer, on_peer_checked, s);
-  tsi_peer_destruct(&peer);
+      grpc_security_context_check_peer(s->ctx, peer, on_peer_checked, s);
   if (peer_status == GRPC_SECURITY_ERROR) {
     gpr_log(GPR_ERROR, "Peer check failed.");
     secure_transport_setup_done(s, 0);
