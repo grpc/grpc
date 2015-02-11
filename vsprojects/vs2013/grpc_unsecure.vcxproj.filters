@@ -85,6 +85,9 @@
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>

@@ -200,6 +200,10 @@ static int multipoll_with_poll_pollset_maybe_work(
   return 1;
 }
 
+static void multipoll_with_poll_pollset_kick(grpc_pollset *p) {
+  grpc_pollset_kick_kick(&p->kick_state);
+}
+
 static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
   size_t i;
   pollset_hdr *h = pollset->data.ptr;
@@ -219,7 +223,7 @@ static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
 
 static const grpc_pollset_vtable multipoll_with_poll_pollset = {
     multipoll_with_poll_pollset_add_fd, multipoll_with_poll_pollset_del_fd,
-    multipoll_with_poll_pollset_maybe_work,
+    multipoll_with_poll_pollset_maybe_work, multipoll_with_poll_pollset_kick,
     multipoll_with_poll_pollset_destroy};
 
 void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
