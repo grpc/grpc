@@ -1,6 +1,6 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
-<%def name="gen_project(name, libs, targets, configuration_type = 'StaticLibrary', project_guid = None, additional_props = [])">\
+<%def name="gen_project(name, libs, targets, configuration_type = 'StaticLibrary', project_guid = None, additional_props = [], depends_on_zlib = False)">\
 % for project in vsprojects:
   % if project.name == name:
 <?xml version="1.0" encoding="utf-8"?>
@@ -112,6 +112,11 @@
       <Project>${vsproject_dict[dep].vs_project_guid}</Project>
     </ProjectReference>
     % endfor
+    % if depends_on_zlib:
+    <ProjectReference Include="third_party\zlibvc.vcxproj">
+      <Project>{8fd826f8-3739-44e6-8cc8-997122e53b8d}</Project>
+    </ProjectReference>
+    % endif
   </ItemGroup>
   % endif
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
