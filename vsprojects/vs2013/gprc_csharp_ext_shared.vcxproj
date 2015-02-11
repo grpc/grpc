@@ -1,8 +1,3 @@
-<%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
-<%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
-<%def name="gen_project(name, libs, targets, configuration_type = 'StaticLibrary', project_guid = None, additional_props = [])">\
-% for project in vsprojects:
-  % if project.name == name:
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
@@ -16,18 +11,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
+    <ProjectGuid>{C26D04A8-37C6-44C7-B458-906C9FCE928C}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>${configuration_type}</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -40,16 +35,10 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
-    % for prop in additional_props:
-    <Import Project="${prop}.props" />
-    % endfor
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
-    % for prop in additional_props:
-    <Import Project="${prop}.props" />
-    % endfor
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
@@ -62,7 +51,7 @@
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -77,47 +66,26 @@
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
-      <SubSystem>${get_subsystem(project.is_library)}</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  % if project.get('public_headers',[]):
   <ItemGroup>
-    % for public_header in project.public_headers:
-    <ClInclude Include="..\..\${to_windows_path(public_header)}" />
-    % endfor
-  </ItemGroup>
-  % endif
-  % if project.get('headers',[]):
-  <ItemGroup>
-    % for header in project.headers:
-    <ClInclude Include="..\..\${to_windows_path(header)}" />
-    % endfor
-  </ItemGroup>
-  % endif
-  % if project.get('src',[]):
-  <ItemGroup>
-    % for src_name in project.src:
-    <ClCompile Include="..\..\${to_windows_path(src_name)}">
+    <ClCompile Include="..\..\src\csharp\ext\grpc_csharp_ext.c">
     </ClCompile>
-    % endfor
   </ItemGroup>
-  % endif
-  % if project.get('deps',[]):
   <ItemGroup>
-    % for dep in project.deps:
-    <ProjectReference Include="${dep}.vcxproj">
-      <Project>${vsproject_dict[dep].vs_project_guid}</Project>
+    <ProjectReference Include="gpr.vcxproj">
+      <Project>{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}</Project>
     </ProjectReference>
-    % endfor
+    <ProjectReference Include="grpc.vcxproj">
+      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
+    </ProjectReference>
   </ItemGroup>
-  % endif
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
-  % endif
-% endfor
-</%def>\
+
