@@ -61,7 +61,7 @@ class CompletionQueueTag {
   // Called prior to returning from Next(), return value
   // is the status of the operation (return status is the default thing
   // to do)
-  virtual void FinalizeResult(void *tag, bool *status) = 0;
+  virtual void FinalizeResult(void **tag, bool *status) = 0;
 };
 
 // grpc_completion_queue wrapper class
