@@ -38,6 +38,7 @@
 #include "test/cpp/util/echo_duplicate.pb.h"
 #include "test/cpp/util/echo.pb.h"
 #include "src/cpp/util/time.h"
+#include "src/cpp/server/thread_pool.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -76,6 +77,7 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
     response->mutable_param()->set_request_deadline(deadline.tv_sec);
   }
 }
+
 }  // namespace
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
@@ -141,6 +143,8 @@ class TestServiceImplDupPkg
 
 class End2endTest : public ::testing::Test {
  protected:
+  End2endTest() : thread_pool_(2) {}
+
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
@@ -149,6 +153,7 @@ class End2endTest : public ::testing::Test {
     builder.AddPort(server_address_.str());
     builder.RegisterService(&service_);
     builder.RegisterService(&dup_pkg_service_);
+    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
   }
 
@@ -165,6 +170,7 @@ class End2endTest : public ::testing::Test {
   std::ostringstream server_address_;
   TestServiceImpl service_;
   TestServiceImplDupPkg dup_pkg_service_;
+  ThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
