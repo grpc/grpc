@@ -80,7 +80,9 @@ void grpc_pollset_kick(grpc_pollset *p) {
   }
 }
 
-void grpc_pollset_force_kick(grpc_pollset *p) { grpc_pollset_kick_kick(&p->kick_state); }
+void grpc_pollset_force_kick(grpc_pollset *p) {
+  grpc_pollset_kick_kick(&p->kick_state);
+}
 
 /* global state management */
 
@@ -200,8 +202,15 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   if (fd == pollset->data.ptr) return;
   fds[0] = pollset->data.ptr;
   fds[1] = fd;
-  grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
-  grpc_fd_unref(fds[0]);
+  if (!grpc_fd_is_orphaned(fds[0])) {
+    grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
+    grpc_fd_unref(fds[0]);
+  } else {
+    /* old fd is orphaned and we haven't cleaned it up until now, so remain a
+     * unary poller */
+    grpc_fd_unref(fds[0]);
+    pollset->data.ptr = fd;
+  }
 }
 
 static void unary_poll_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
@@ -217,6 +226,7 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
                                          int allow_synchronous_callback) {
   struct pollfd pfd[2];
   grpc_fd *fd;
+  grpc_fd_watcher fd_watcher;
   int timeout;
   int r;
 
@@ -249,7 +259,7 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   pollset->counter = 1;
   gpr_mu_unlock(&pollset->mu);
 
-  pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT);
+  pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
 
   r = poll(pfd, GPR_ARRAY_SIZE(pfd), timeout);
   if (r < 0) {
@@ -271,7 +281,7 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   }
 
   grpc_pollset_kick_post_poll(&pollset->kick_state);
-  grpc_fd_end_poll(fd, pollset);
+  grpc_fd_end_poll(&fd_watcher);
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter = 0;

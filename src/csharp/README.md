@@ -15,8 +15,15 @@ EXPERIMENTAL ONLY
   completely rewritten.
 
 
-INSTALLATION AND USAGE
-----------------------
+INSTALLATION AND USAGE: WINDOWS
+-------------------------------
+
+- Open Grpc.sln using Visual Studio 2013. NuGet dependencies will be restored
+  upon build.
+
+
+INSTALLATION AND USAGE: LINUX & MONO
+------------------------------------
 
 - Compile and install the gRPC C Core library
 ```
@@ -29,6 +36,18 @@ sudo make install
 sudo apt-get install mono-devel
 sudo apt-get install monodevelop monodevelop-nunit
 sudo apt-get install nunit nunit-console
+```
+
+- NuGet is used to manage project's dependencies. Prior opening Grpc.sln,
+  download dependencies using NuGet restore command:
+
+```
+# Import needed certicates into Mono certificate store:
+mozroots --import --sync
+
+# Download NuGet.exe http://nuget.codeplex.com/releases/
+# Restore the nuget packages with Grpc C# dependencies
+mono ~/Downloads/NuGet.exe restore Grpc.sln
 ```
 
 - Use MonoDevelop to open the solution Grpc.sln (you can also run unit tests

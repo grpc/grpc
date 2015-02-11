@@ -1611,6 +1611,7 @@
     {
       "name": "qps_client",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1628,6 +1629,7 @@
     {
       "name": "qps_server",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
