@@ -100,16 +100,16 @@ Then, you can build and install protobuf 3.0.0:
 A word on OpenSSL
 -----------------
 
-Secure HTTP2 requires to have the TLS extension ALPN (see rfc 7301 and
+Secure HTTP2 requires the TLS extension ALPN (see rfc 7301 and
 http://http2.github.io/http2-spec/ section 3.3). Our HTTP2 implementation
 relies on OpenSSL's implementation. OpenSSL 1.0.2 is the first released version
 of OpenSSL that has ALPN support, and this explains our dependency on it.
 
 Note that the Makefile supports compiling only the unsecure elements of grpc,
 and if you do not have OpenSSL and do not want it, you can still proceed
-with installing only the elements you require. However, it is recommended
-to encrypt your network traffic, therefore we urge you to not use the unsecure
-version of grpc if possible.
+with installing only the elements you require. However, we strongly recommend
+the use of encryption for all network traffic, and discourage the use of grpc
+without TLS.
 
 
 Compiling

@@ -35,7 +35,7 @@
 #define __GRPCPP_SERVER_H__
 
 #include <condition_variable>
-#include <map>
+#include <list>
 #include <memory>
 #include <mutex>
 
@@ -69,6 +69,25 @@ class Server {
  private:
   friend class ServerBuilder;
 
+  class MethodRequestData {
+   public:
+    MethodRequestData(RpcServiceMethod* method, void* tag) : method_(method), tag_(tag) {}
+    static MethodRequestData *Wait(CompletionQueue *cq);
+
+    void Request(CompletionQueue* cq);
+
+    class CallData {
+     public:
+      explicit CallData(MethodRequestData *mrd);
+
+      void Run();
+    };
+
+   private:
+    RpcServiceMethod *const method_;
+    void *const tag_;
+  };
+
   // ServerBuilder use only
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned, ServerCredentials* creds);
   Server();
@@ -85,7 +104,8 @@ class Server {
   void ScheduleCallback();
 
   // Completion queue.
-  CompletionQueue cq_;
+  std::unique_ptr<CompletionQueue> cq_sync_;
+  std::unique_ptr<CompletionQueue> cq_async_;
 
   // Sever status
   std::mutex mu_;
@@ -95,11 +115,10 @@ class Server {
   int num_running_cb_;
   std::condition_variable callback_cv_;
 
+  std::list<MethodRequestData> methods_;
+
   // Pointer to the c grpc server.
   grpc_server* server_;
-
-  // A map for all method information.
-  std::map<grpc::string, RpcServiceMethod*> method_map_;
 
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.

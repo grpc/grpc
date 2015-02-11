@@ -34,11 +34,12 @@
 #ifndef __GRPCPP_CALL_H__
 #define __GRPCPP_CALL_H__
 
+#include <grpc/grpc.h>
 #include <grpc++/status.h>
 #include <grpc++/completion_queue.h>
 
 #include <memory>
-#include <vector>
+#include <map>
 
 namespace google {
 namespace protobuf {
@@ -59,7 +60,9 @@ class CallOpBuffer final : public CompletionQueueTag {
 
   void Reset(void *next_return_tag);
 
-  void AddSendInitialMetadata(std::vector<std::pair<grpc::string, grpc::string> > *metadata);
+  // Does not take ownership.
+  void AddSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
   void AddRecvMessage(google::protobuf::Message *message);
   void AddClientSendClose();
@@ -70,11 +73,25 @@ class CallOpBuffer final : public CompletionQueueTag {
   // Convert to an array of grpc_op elements
   void FillOps(grpc_op *ops, size_t *nops);
 
+  // Release send buffers.
+  void ReleaseSendBuffer();
+
   // Called by completion queue just prior to returning from Next() or Pluck()
   void FinalizeResult(void *tag, bool *status) override;
 
  private:
-  void *return_tag_;
+  void *return_tag_ = nullptr;
+  size_t initial_metadata_count_ = 0;
+  grpc_metadata* initial_metadata_ = nullptr;
+  const google::protobuf::Message* send_message_ = nullptr;
+  grpc_byte_buffer* write_buffer_ = nullptr;
+  google::protobuf::Message* recv_message_ = nullptr;
+  grpc_byte_buffer* recv_message_buf_ = nullptr;
+  bool client_send_close_ = false;
+  Status* recv_status_ = nullptr;
+  grpc_status_code status_code_ = GRPC_STATUS_OK;
+  char* status_details_ = nullptr;
+  size_t status_details_capacity_ = 0;
 };
 
 class CCallDeleter {

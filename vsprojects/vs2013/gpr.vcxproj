@@ -83,6 +83,7 @@
     <ClInclude Include="..\..\include\grpc\support\histogram.h" />
     <ClInclude Include="..\..\include\grpc\support\host_port.h" />
     <ClInclude Include="..\..\include\grpc\support\log.h" />
+    <ClInclude Include="..\..\include\grpc\support\log_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\port_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\slice.h" />
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />

@@ -553,7 +553,9 @@ grpc_call_error grpc_server_request_call_old(grpc_server *server,
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
-    grpc_completion_queue *completion_queue, void *tag_new);
+    grpc_completion_queue *cq_when_rpc_available,
+    grpc_completion_queue *cq_bound_to_call, 
+    void *tag_new);
 
 void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host);
@@ -562,7 +564,8 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_server *server, void *registered_method, grpc_call **call,
     gpr_timespec *deadline, grpc_metadata_array *request_metadata,
     grpc_byte_buffer **optional_payload,
-    grpc_completion_queue *completion_queue, void *tag_new);
+    grpc_completion_queue *cq_when_rpc_available,
+    grpc_completion_queue *cq_bound_to_call, void *tag_new);
 
 /* Create a server */
 grpc_server *grpc_server_create(grpc_completion_queue *cq,
