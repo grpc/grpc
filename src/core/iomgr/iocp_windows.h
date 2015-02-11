@@ -31,11 +31,22 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
-#define __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#ifndef __GRPC_INTERNAL_IOMGR_IOCP_WINDOWS_H_
+#define __GRPC_INTERNAL_IOMGR_IOCP_WINDOWS_H_
 
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <mswsock.h>
+#include <windows.h>
+#include <grpc/support/sync.h>
 
-#endif  /* __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_ */
+#include "src/core/iomgr/socket_windows.h"
+
+void grpc_iocp_init(void);
+void grpc_iocp_shutdown(void);
+void grpc_iocp_add_socket(grpc_winsocket *);
+
+void grpc_socket_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success),
+                                 void *opaque);
+
+void grpc_socket_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success),
+                                void *opaque);
+
+#endif /* __GRPC_INTERNAL_IOMGR_IOCP_WINDOWS_H_ */

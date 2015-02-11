@@ -206,8 +206,15 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   if (fd == pollset->data.ptr) return;
   fds[0] = pollset->data.ptr;
   fds[1] = fd;
-  grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
-  grpc_fd_unref(fds[0]);
+  if (!grpc_fd_is_orphaned(fds[0])) {
+    grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
+    grpc_fd_unref(fds[0]);
+  } else {
+    /* old fd is orphaned and we haven't cleaned it up until now, so remain a
+     * unary poller */
+    grpc_fd_unref(fds[0]);
+    pollset->data.ptr = fd;
+  }
 }
 
 static void unary_poll_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd) {
