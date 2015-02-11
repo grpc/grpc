@@ -73,9 +73,6 @@ class CallOpBuffer final : public CompletionQueueTag {
   // Convert to an array of grpc_op elements
   void FillOps(grpc_op *ops, size_t *nops);
 
-  // Release send buffers.
-  void ReleaseSendBuffer();
-
   // Called by completion queue just prior to returning from Next() or Pluck()
   void FinalizeResult(void *tag, bool *status) override;
 
