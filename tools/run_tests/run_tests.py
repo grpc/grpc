@@ -228,8 +228,11 @@ def _build_and_run(check_cancelled, newline_on_success, cache):
   return 0
 
 
-test_cache = TestCache()
-test_cache.maybe_load()
+if runs_per_test == 1:
+  test_cache = TestCache()
+  test_cache.maybe_load()
+else:
+  test_cache = None
 
 if forever:
   success = True
@@ -246,7 +249,8 @@ if forever:
                      'All tests are now passing properly',
                      do_newline=True)
     jobset.message('IDLE', 'No change detected')
-    test_cache.save()
+    if test_cache != None:
+      test_cache.save()
     while not have_files_changed():
       time.sleep(1)
 else:
