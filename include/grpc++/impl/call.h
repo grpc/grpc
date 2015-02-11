@@ -52,7 +52,7 @@ struct grpc_op;
 
 namespace grpc {
 
-class ChannelInterface;
+class Call;
 
 class CallOpBuffer final : public CompletionQueueTag {
  public:
@@ -103,10 +103,17 @@ class CCallDeleter {
   void operator()(grpc_call *c);
 };
 
+// Channel and Server implement this to allow them to hook performing ops
+class CallHook {
+ public:
+  virtual ~CallHook() {}
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) = 0;  
+};
+
 // Straightforward wrapping of the C call object
 class Call final {
  public:
-  Call(grpc_call *call, ChannelInterface *channel, CompletionQueue *cq);
+  Call(grpc_call *call, CallHook *call_hook_, CompletionQueue *cq);
 
   void PerformOps(CallOpBuffer *buffer);
 
@@ -114,7 +121,7 @@ class Call final {
   CompletionQueue *cq() { return cq_; }
 
  private:
-  ChannelInterface *channel_;
+  CallHook *call_hook_;
   CompletionQueue *cq_;
   std::unique_ptr<grpc_call, CCallDeleter> call_;
 };

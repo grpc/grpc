@@ -184,11 +184,11 @@ void CCallDeleter::operator()(grpc_call* c) {
   grpc_call_destroy(c);
 }
 
-Call::Call(grpc_call* call, ChannelInterface* channel, CompletionQueue* cq)
-    : channel_(channel), cq_(cq), call_(call) {}
+Call::Call(grpc_call* call, CallHook *call_hook, CompletionQueue* cq)
+    : call_hook_(call_hook), cq_(cq), call_(call) {}
 
 void Call::PerformOps(CallOpBuffer* buffer) {
-  channel_->PerformOpsOnCall(buffer, this);
+  call_hook_->PerformOpsOnCall(buffer, this);
 }
 
 }  // namespace grpc

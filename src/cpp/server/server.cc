@@ -143,9 +143,9 @@ class Server::MethodRequestData final : public CompletionQueueTag {
 
   class CallData {
    public:
-    explicit CallData(MethodRequestData *mrd)
+    explicit CallData(Server *server, MethodRequestData *mrd)
         : cq_(mrd->cq_),
-          call_(mrd->call_, nullptr, &cq_),
+          call_(mrd->call_, server, &cq_),
           ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
                mrd->request_metadata_.count),
           has_request_payload_(mrd->has_request_payload_),
@@ -235,6 +235,16 @@ void Server::Shutdown() {
   }
 }
 
+void Server::PerformOpsOnCall(CallOpBuffer *buf, Call *call) {
+  static const size_t MAX_OPS = 8;
+  size_t nops = MAX_OPS;
+  grpc_op ops[MAX_OPS];
+  buf->FillOps(ops, &nops);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call->call(), ops, nops,
+                                   buf));
+}
+
 void Server::ScheduleCallback() {
   {
     std::unique_lock<std::mutex> lock(mu_);
@@ -248,7 +258,7 @@ void Server::RunRpc() {
   bool ok;
   auto *mrd = MethodRequestData::Wait(&cq_, &ok);
   if (mrd) {
-    MethodRequestData::CallData cd(mrd);
+    MethodRequestData::CallData cd(this, mrd);
 
     if (ok) {
       mrd->Request(server_);

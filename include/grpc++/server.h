@@ -41,6 +41,7 @@
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
+#include <grpc++/impl/call.h>
 #include <grpc++/status.h>
 
 struct grpc_server;
@@ -59,7 +60,7 @@ class ServerCredentials;
 class ThreadPoolInterface;
 
 // Currently it only supports handling rpcs in a single thread.
-class Server {
+class Server final : private CallHook {
  public:
   ~Server();
 
@@ -72,7 +73,8 @@ class Server {
   class MethodRequestData;
 
   // ServerBuilder use only
-  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned, ServerCredentials* creds);
+  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
+         ServerCredentials* creds);
   Server();
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
@@ -85,6 +87,8 @@ class Server {
   void HandleQueueClosed();
   void RunRpc();
   void ScheduleCallback();
+
+  void PerformOpsOnCall(CallOpBuffer* ops, Call* call) override;
 
   // Completion queue.
   CompletionQueue cq_;
