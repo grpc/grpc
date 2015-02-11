@@ -33,11 +33,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_MULTIPOLL_WITH_EPOLL
+#ifdef GPR_LINUX_MULTIPOLL_WITH_EPOLL
 
 #include <errno.h>
 #include <string.h>
 #include <sys/epoll.h>
+#include <unistd.h>
 
 #include "src/core/iomgr/fd_posix.h"
 #include <grpc/support/alloc.h>
@@ -139,14 +140,16 @@ static int multipoll_with_epoll_pollset_maybe_work(
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter -= 1;
-  /* TODO(klempner): This should be a signal and not a broadcast, althoughit
-   * probably doesn't matter because  */
+  /* TODO(klempner): This should signal once per event rather than broadcast,
+   * although it probably doesn't matter because threads will generally be
+   * blocked in epoll_wait rather than being blocked on the cv. */
   gpr_cv_broadcast(&pollset->cv);
   return 1;
 }
 
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
+  close(h->epoll_fd);
   gpr_free(h);
 }
 
@@ -190,4 +193,4 @@ void grpc_platform_become_multipoller(grpc_pollset *pollset, grpc_fd **fds,
   }
 }
 
-#endif  /* GPR_POSIX_MULTIPOLL_WITH_EPOLL */
+#endif  /* GPR_LINUX_MULTIPOLL_WITH_EPOLL */
