@@ -19,12 +19,12 @@ mkdir ${test_bin_dir}
 
 % for target in test_targets:
 echo Building test ${target.name}
-cl.exe /c /I..\.. /I..\..\include /nologo /ZI /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:${test_bin_dir}\ \
+cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:${test_bin_dir}\ \
 %for source in target.src:
 ..\..\${to_windows_path(source)} \
 %endfor
 
-link.exe /OUT:"${test_bin_dir}\${target.name}.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 \
+link.exe /DEBUG /OUT:"${test_bin_dir}\${target.name}.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 \
 %for dep in target.deps:
 Debug\${dep}.lib \
 %endfor
