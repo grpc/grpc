@@ -43,6 +43,8 @@ namespace grpc {
 
 CompletionQueue::CompletionQueue() { cq_ = grpc_completion_queue_create(); }
 
+CompletionQueue::CompletionQueue(grpc_completion_queue *take) : cq_(take) {}
+
 CompletionQueue::~CompletionQueue() { grpc_completion_queue_destroy(cq_); }
 
 void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }

@@ -32,5 +32,17 @@
  */
 
 #include <grpc++/server_context.h>
+#include <grpc/grpc.h>
+#include "src/cpp/util/time.h"
 
-namespace grpc {}  // namespace grpc
+namespace grpc {
+
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count)
+	: deadline_(Timespec2Timepoint(deadline)) {
+  for (size_t i = 0; i < metadata_count; i++) {
+  	metadata_.insert(std::make_pair(grpc::string(metadata[i].key),
+  		grpc::string(metadata[i].value, metadata[i].value + metadata[i].value_length)));
+  }
+}
+
+}  // namespace grpc

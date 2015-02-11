@@ -35,7 +35,7 @@
 #define __GRPCPP_SERVER_CONTEXT_H_
 
 #include <chrono>
-#include <vector>
+#include <map>
 
 #include "config.h"
 
@@ -44,16 +44,21 @@ struct gpr_timespec;
 
 namespace grpc {
 
+class Server;
+
 // Interface of server side rpc context.
 class ServerContext {
  public:
-  ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count);
   virtual ~ServerContext() {}
 
-  std::chrono::system_clock::time_point absolute_deadline();
+  std::chrono::system_clock::time_point absolute_deadline() { return deadline_; }
 
  private:
-  std::vector<std::pair<grpc::string, grpc::string> > metadata_;
+  friend class ::grpc::Server;
+  ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count);
+
+  const std::chrono::system_clock::time_point deadline_;
+  std::multimap<grpc::string, grpc::string> metadata_;
 };
 
 }  // namespace grpc
