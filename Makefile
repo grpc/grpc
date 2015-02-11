@@ -2645,7 +2645,7 @@ LIBGRPC++_SRC = \
     src/cpp/proto/proto_utils.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
-    src/cpp/server/server_context_impl.cc \
+    src/cpp/server/server_context.cc \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/thread_pool.cc \
     src/cpp/util/status.cc \
@@ -2702,7 +2702,7 @@ src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
 src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
 src/cpp/server/server.cc: $(OPENSSL_DEP)
 src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
-src/cpp/server/server_context_impl.cc: $(OPENSSL_DEP)
+src/cpp/server/server_context.cc: $(OPENSSL_DEP)
 src/cpp/server/server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/server/thread_pool.cc: $(OPENSSL_DEP)
 src/cpp/util/status.cc: $(OPENSSL_DEP)
@@ -2760,7 +2760,7 @@ objs/$(CONFIG)/src/cpp/common/rpc_method.o:
 objs/$(CONFIG)/src/cpp/proto/proto_utils.o: 
 objs/$(CONFIG)/src/cpp/server/server.o: 
 objs/$(CONFIG)/src/cpp/server/server_builder.o: 
-objs/$(CONFIG)/src/cpp/server/server_context_impl.o: 
+objs/$(CONFIG)/src/cpp/server/server_context.o: 
 objs/$(CONFIG)/src/cpp/server/server_credentials.o: 
 objs/$(CONFIG)/src/cpp/server/thread_pool.o: 
 objs/$(CONFIG)/src/cpp/util/status.o: 

@@ -39,11 +39,15 @@
 
 #include "config.h"
 
+struct grpc_metadata;
+struct gpr_timespec;
+
 namespace grpc {
 
 // Interface of server side rpc context.
 class ServerContext {
  public:
+  ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count);
   virtual ~ServerContext() {}
 
   std::chrono::system_clock::time_point absolute_deadline();

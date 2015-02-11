@@ -67,6 +67,7 @@ class CallOpBuffer final : public CompletionQueueTag {
   void AddRecvMessage(google::protobuf::Message *message);
   void AddClientSendClose();
   void AddClientRecvStatus(Status *status);
+  void AddServerSendStatus(std::multimap<grpc::string, grpc::string> *metadata, const Status& status);
 
   // INTERNAL API:
 

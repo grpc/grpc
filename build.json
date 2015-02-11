@@ -428,7 +428,7 @@
         "src/cpp/proto/proto_utils.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
-        "src/cpp/server/server_context_impl.cc",
+        "src/cpp/server/server_context.cc",
         "src/cpp/server/server_credentials.cc",
         "src/cpp/server/thread_pool.cc",
         "src/cpp/util/status.cc",
@@ -1621,7 +1621,6 @@
     {
       "name": "qps_client",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1634,12 +1633,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ]
+      ],
+      "run": false
     },
     {
       "name": "qps_server",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1652,7 +1651,8 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ]
+      ],
+      "run": false
     },
     {
       "name": "ruby_plugin",

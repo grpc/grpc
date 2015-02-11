@@ -54,6 +54,7 @@ template <class R, class W>
 class ServerReaderWriter;
 
 class CompletionQueue;
+class Server;
 
 class CompletionQueueTag {
  public:
@@ -67,6 +68,7 @@ class CompletionQueueTag {
 class CompletionQueue {
  public:
   CompletionQueue();
+  explicit CompletionQueue(grpc_completion_queue *take);
   ~CompletionQueue();
 
   // Blocking read from queue.
@@ -87,6 +89,7 @@ class CompletionQueue {
   template <class R> friend class ::grpc::ServerReader;
   template <class W> friend class ::grpc::ServerWriter;
   template <class R, class W> friend class ::grpc::ServerReaderWriter;
+  friend class ::grpc::Server;
   friend Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
       ClientContext *context,
       const google::protobuf::Message &request,

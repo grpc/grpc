@@ -69,24 +69,7 @@ class Server {
  private:
   friend class ServerBuilder;
 
-  class MethodRequestData {
-   public:
-    MethodRequestData(RpcServiceMethod* method, void* tag) : method_(method), tag_(tag) {}
-    static MethodRequestData *Wait(CompletionQueue *cq);
-
-    void Request(CompletionQueue* cq);
-
-    class CallData {
-     public:
-      explicit CallData(MethodRequestData *mrd);
-
-      void Run();
-    };
-
-   private:
-    RpcServiceMethod *const method_;
-    void *const tag_;
-  };
+  class MethodRequestData;
 
   // ServerBuilder use only
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned, ServerCredentials* creds);
