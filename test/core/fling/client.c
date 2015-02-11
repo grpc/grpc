@@ -50,6 +50,8 @@ static grpc_channel *channel;
 static grpc_completion_queue *cq;
 static grpc_call *call;
 static grpc_op ops[6];
+static grpc_op stream_init_op;
+static grpc_op stream_step_ops[2];
 static grpc_metadata_array initial_metadata_recv;
 static grpc_metadata_array trailing_metadata_recv;
 static grpc_byte_buffer *response_payload_recv = NULL;
@@ -58,7 +60,26 @@ static grpc_status_code status;
 static char *details = NULL;
 static size_t details_capacity = 0;
 
-static void init_ping_pong_request(void) {}
+static void init_ping_pong_request(void) {
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
+  ops[0].data.send_initial_metadata.count = 0;
+  ops[1].op = GRPC_OP_SEND_MESSAGE;
+  ops[1].data.send_message = the_buffer;
+  ops[2].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  ops[3].op = GRPC_OP_RECV_INITIAL_METADATA;
+  ops[3].data.recv_initial_metadata = &initial_metadata_recv;
+  ops[4].op = GRPC_OP_RECV_MESSAGE;
+  ops[4].data.recv_message = &response_payload_recv;
+  ops[5].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  ops[5].data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  ops[5].data.recv_status_on_client.status = &status;
+  ops[5].data.recv_status_on_client.status_details = &details;
+  ops[5].data.recv_status_on_client.status_details_capacity = &details_capacity;
+}
 
 static void step_ping_pong_request(void) {
   call = grpc_channel_create_call(channel, cq, "/Reflector/reflectUnary",
@@ -70,18 +91,25 @@ static void step_ping_pong_request(void) {
 }
 
 static void init_ping_pong_stream(void) {
-  call = grpc_channel_create_call_old(channel, "/Reflector/reflectStream",
-                                      "localhost", gpr_inf_future);
-  GPR_ASSERT(grpc_call_invoke_old(call, cq, (void *)1, (void *)1, 0) ==
-             GRPC_CALL_OK);
+  call = grpc_channel_create_call(channel, cq, "/Reflector/reflectStream",
+				  "localhost", gpr_inf_future);
+  stream_init_op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  stream_init_op.data.send_initial_metadata.count = 0;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &stream_init_op, 1,
+						   (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+
+  stream_step_ops[0].op = GRPC_OP_SEND_MESSAGE;
+  stream_step_ops[0].data.send_message = the_buffer;
+  stream_step_ops[1].op = GRPC_OP_RECV_MESSAGE;
+  stream_step_ops[1].data.recv_message = &response_payload_recv;
 }
 
 static void step_ping_pong_stream(void) {
-  GPR_ASSERT(grpc_call_start_write_old(call, the_buffer, (void *)1, 0) ==
-             GRPC_CALL_OK);
-  GPR_ASSERT(grpc_call_start_read_old(call, (void *)1) == GRPC_CALL_OK);
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, stream_step_ops, 2,
+						   (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
 }
 
@@ -148,24 +176,6 @@ int main(int argc, char **argv) {
   the_buffer = grpc_byte_buffer_create(&slice, payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
-  ops[0].data.send_initial_metadata.count = 0;
-  ops[1].op = GRPC_OP_SEND_MESSAGE;
-  ops[1].data.send_message = the_buffer;
-  ops[2].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  ops[3].op = GRPC_OP_RECV_INITIAL_METADATA;
-  ops[3].data.recv_initial_metadata = &initial_metadata_recv;
-  ops[4].op = GRPC_OP_RECV_MESSAGE;
-  ops[4].data.recv_message = &response_payload_recv;
-  ops[5].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  ops[5].data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  ops[5].data.recv_status_on_client.status = &status;
-  ops[5].data.recv_status_on_client.status_details = &details;
-  ops[5].data.recv_status_on_client.status_details_capacity = &details_capacity;
 
   sc.init();
 
