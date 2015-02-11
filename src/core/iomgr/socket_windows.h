@@ -31,11 +31,45 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
-#define __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#ifndef __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__
+#define __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__
 
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <mswsock.h>
+#include <windows.h>
 
-#endif  /* __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_ */
+#include <grpc/support/sync.h>
+#include <grpc/support/atm.h>
+
+typedef struct grpc_winsocket_callback_info {
+  /* This is supposed to be a WSAOVERLAPPED, but in order to get that
+   * definition, we need to include ws2tcpip.h, which needs to be included
+   * from the top, otherwise it'll clash with a previous inclusion of
+   * windows.h that in turns includes winsock.h. If anyone knows a way
+   * to do it properly, feel free to send a patch.
+   */
+  OVERLAPPED overlapped;
+  void(*cb)(void *opaque, int success);
+  void *opaque;
+  int has_pending_iocp;
+  DWORD bytes_transfered;
+  int wsa_error;
+} grpc_winsocket_callback_info;
+
+typedef struct grpc_winsocket {
+  SOCKET socket;
+
+  int added_to_iocp;
+
+  grpc_winsocket_callback_info write_info;
+  grpc_winsocket_callback_info read_info;
+
+  gpr_mu state_mu;
+} grpc_winsocket;
+
+/* Create a wrapped windows handle.
+This takes ownership of closing it. */
+grpc_winsocket *grpc_winsocket_create(SOCKET socket);
+
+void grpc_winsocket_shutdown(grpc_winsocket *socket);
+void grpc_winsocket_orphan(grpc_winsocket *socket);
+
+#endif /* __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__ */

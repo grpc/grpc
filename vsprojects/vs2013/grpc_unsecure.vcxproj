@@ -115,6 +115,7 @@
     <ClInclude Include="..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint_pair.h" />
     <ClInclude Include="..\..\src\core\iomgr\fd_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\iocp_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
@@ -130,9 +131,11 @@
     <ClInclude Include="..\..\src\core\iomgr\sockaddr_utils.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr_win32.h" />
     <ClInclude Include="..\..\src\core\iomgr\socket_utils_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\socket_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_client.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_server.h" />
+    <ClInclude Include="..\..\src\core\iomgr\tcp_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h" />
@@ -253,9 +256,13 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iocp_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
     </ClCompile>
@@ -275,11 +282,19 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\socket_utils_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_client_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_client_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_server_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_server_windows.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
     </ClCompile>
