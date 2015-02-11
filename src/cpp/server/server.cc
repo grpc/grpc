@@ -142,7 +142,7 @@ class Server::MethodRequestData final : public CompletionQueueTag {
                    cq_, this));
   }
 
-  void FinalizeResult(void *tag, bool *status) override {}
+  void FinalizeResult(void **tag, bool *status) override {}
 
   class CallData {
    public:

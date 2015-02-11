@@ -75,7 +75,7 @@ class CallOpBuffer final : public CompletionQueueTag {
   void FillOps(grpc_op *ops, size_t *nops);
 
   // Called by completion queue just prior to returning from Next() or Pluck()
-  void FinalizeResult(void *tag, bool *status) override;
+  void FinalizeResult(void **tag, bool *status) override;
 
  private:
   void *return_tag_ = nullptr;

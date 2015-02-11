@@ -144,7 +144,7 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   }
 }
 
-void CallOpBuffer::FinalizeResult(void *tag, bool *status) {
+void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
   // Release send buffers
   if (write_buffer_) {
     grpc_byte_buffer_destroy(write_buffer_);
