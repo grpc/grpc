@@ -40,7 +40,7 @@ class ValgrindConfig(object):
     self.allow_hashing = False
 
   def job_spec(self, binary, hash_targets):
-    return JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool, binary],
+    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool, binary],
                    hash_targets=None)
 
 
