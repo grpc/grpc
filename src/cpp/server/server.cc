@@ -167,7 +167,7 @@ class Server::MethodRequestData final : public CompletionQueueTag {
         }
       }
       if (has_response_payload_) {
-        req.reset(method_->AllocateResponseProto());
+        res.reset(method_->AllocateResponseProto());
       }
       auto status = method_->handler()->RunHandler(
           MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
