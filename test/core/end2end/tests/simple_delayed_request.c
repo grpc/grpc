@@ -172,7 +172,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
   GPR_ASSERT(0 == strcmp(call_details.host, "test.google.com"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   gpr_free(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

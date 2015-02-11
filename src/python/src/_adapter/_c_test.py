@@ -136,6 +136,32 @@ class _CTest(unittest.TestCase):
 
     _c.shut_down()
 
+  def test_server_credentials(self):
+    root_certificates = b'Trust starts here. Really.'
+    first_private_key = b'This is a really bad private key, yo.'
+    first_certificate_chain = b'Trust me! Do I not look trustworty?'
+    second_private_key = b'This is another bad private key, yo.'
+    second_certificate_chain = b'Look into my eyes; you can totes trust me.'
+
+    _c.init()
+
+    server_credentials = _c.ServerCredentials(
+        None, ((first_private_key, first_certificate_chain),))
+    del server_credentials
+    server_credentials = _c.ServerCredentials(
+        root_certificates, ((first_private_key, first_certificate_chain),))
+    del server_credentials
+    server_credentials = _c.ServerCredentials(
+        root_certificates,
+        ((first_private_key, first_certificate_chain),
+         (second_private_key, second_certificate_chain),))
+    del server_credentials
+    with self.assertRaises(TypeError):
+      _c.ServerCredentials(
+          root_certificates, first_private_key, second_certificate_chain)
+
+    _c.shut_down()
+
 
 if __name__ == '__main__':
   unittest.main()

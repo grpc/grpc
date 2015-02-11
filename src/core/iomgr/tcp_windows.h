@@ -31,11 +31,27 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
-#define __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#ifndef __GRPC_INTERNAL_IOMGR_TCP_WINDOWS_H__
+#define __GRPC_INTERNAL_IOMGR_TCP_WINDOWS_H__
+/*
+   Low level TCP "bottom half" implementation, for use by transports built on
+   top of a TCP connection.
 
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <mswsock.h>
+   Note that this file does not (yet) include APIs for creating the socket in
+   the first place.
 
-#endif  /* __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_ */
+   All calls passing slice transfer ownership of a slice refcount unless
+   otherwise specified.
+*/
+
+#include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/socket_windows.h"
+
+/* Create a tcp endpoint given a winsock handle.
+ * Takes ownership of the handle.
+ */
+grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket);
+
+int grpc_tcp_prepare_socket(SOCKET sock);
+
+#endif /* __GRPC_INTERNAL_IOMGR_TCP_WINDOWS_H__ */

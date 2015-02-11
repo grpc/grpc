@@ -31,11 +31,37 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
-#define __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_
+#include <grpc/support/port_platform.h>
 
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <mswsock.h>
+#ifdef GPR_WINSOCK_SOCKET
 
-#endif  /* __GRPC_INTERNAL_IOMGR_SOCKADDR_WIN32_H_ */
+#include "src/core/iomgr/sockaddr_win32.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/iomgr/socket_windows.h"
+#include "src/core/iomgr/iocp_windows.h"
+#include "src/core/iomgr/iomgr.h"
+
+static void winsock_init(void) {
+  WSADATA wsaData;
+  int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
+  GPR_ASSERT(status == 0);
+}
+
+static void winsock_shutdown(void) {
+  int status = WSACleanup();
+  GPR_ASSERT(status == 0);
+}
+
+void grpc_iomgr_platform_init(void) {
+  winsock_init();
+  grpc_iocp_init();
+}
+
+void grpc_iomgr_platform_shutdown(void) {
+  grpc_iocp_shutdown();
+  winsock_shutdown();
+}
+
+#endif  /* GRPC_WINSOCK_SOCKET */

@@ -38,6 +38,7 @@
 #include "_adapter/_channel.h"
 #include "_adapter/_call.h"
 #include "_adapter/_server.h"
+#include "_adapter/_server_credentials.h"
 
 static PyObject *init(PyObject *self, PyObject *args) {
   grpc_init();
@@ -72,6 +73,9 @@ PyMODINIT_FUNC init_c(void) {
     return;
   }
   if (pygrpc_add_server(module) == -1) {
+    return;
+  }
+  if (pygrpc_add_server_credentials(module) == -1) {
     return;
   }
 }
