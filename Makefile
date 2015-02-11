@@ -1684,6 +1684,7 @@ LIBGPR_SRC = \
     src/core/support/cmdline.c \
     src/core/support/cpu_linux.c \
     src/core/support/cpu_posix.c \
+    src/core/support/cpu_windows.c \
     src/core/support/env_linux.c \
     src/core/support/env_posix.c \
     src/core/support/env_win32.c \
@@ -1776,6 +1777,7 @@ objs/$(CONFIG)/src/core/support/cancellable.o:
 objs/$(CONFIG)/src/core/support/cmdline.o: 
 objs/$(CONFIG)/src/core/support/cpu_linux.o: 
 objs/$(CONFIG)/src/core/support/cpu_posix.o: 
+objs/$(CONFIG)/src/core/support/cpu_windows.o: 
 objs/$(CONFIG)/src/core/support/env_linux.o: 
 objs/$(CONFIG)/src/core/support/env_posix.o: 
 objs/$(CONFIG)/src/core/support/env_win32.o: 
