@@ -152,7 +152,7 @@ void Server::RunRpc() {
   grpc_metadata_array initial_metadata;
   grpc_metadata_array_init(&initial_metadata);
   CompletionQueue cq;
-  grpc_call_error err = grpc_server_request_call(server_, &c_call, &call_details, &initial_metadata, cq.cq(), nullptr);
+  grpc_call_error err = grpc_server_request_call(server_, &c_call, &call_details, &initial_metadata, cq.cq(), cq.cq(), nullptr);
   GPR_ASSERT(err == GRPC_CALL_OK);
   bool ok = false;
   GPR_ASSERT(cq_.Next(&tag, &ok));
