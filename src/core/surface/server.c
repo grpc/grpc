@@ -819,7 +819,7 @@ void grpc_server_add_listener(grpc_server *server, void *arg,
 
 static grpc_call_error queue_call_request(grpc_server *server,
                                           requested_call *rc) {
-  call_data *calld;
+  call_data *calld = NULL;
   gpr_mu_lock(&server->mu);
   if (server->shutdown) {
     gpr_mu_unlock(&server->mu);
@@ -896,6 +896,9 @@ grpc_call_error grpc_server_request_call_old(grpc_server *server,
 static void publish_legacy(grpc_call *call, grpc_op_error status, void *tag);
 static void publish_registered_or_batch(grpc_call *call, grpc_op_error status,
                                         void *tag);
+static void publish_was_not_set(grpc_call *call, grpc_op_error status, void *tag) {
+  abort();
+}
 
 static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
   gpr_slice slice = value->slice;
@@ -910,7 +913,7 @@ static void cpstr(char **dest, size_t *capacity, grpc_mdstr *value) {
 
 static void begin_call(grpc_server *server, call_data *calld,
                        requested_call *rc) {
-  grpc_ioreq_completion_func publish;
+  grpc_ioreq_completion_func publish = publish_was_not_set;
   grpc_ioreq req[2];
   grpc_ioreq *r = req;
 
