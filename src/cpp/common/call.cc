@@ -142,8 +142,12 @@ void CallOpBuffer::AddClientRecvStatus(
 
 void CallOpBuffer::AddServerSendStatus(
     std::multimap<grpc::string, grpc::string>* metadata, const Status& status) {
-  trailing_metadata_count_ = metadata->size();
-  trailing_metadata_ = FillMetadataArray(metadata);
+  if (metadata != NULL) {
+    trailing_metadata_count_ = metadata->size();
+    trailing_metadata_ = FillMetadataArray(metadata);
+  } else {
+    trailing_metadata_count_ = 0;
+  }
   send_status_ = &status;
 }
 
@@ -163,6 +167,7 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   if (send_message_) {
     bool success = SerializeProto(*send_message_, &send_message_buf_);
     if (!success) {
+      abort();
       // TODO handle parse failure
     }
     ops[*nops].op = GRPC_OP_SEND_MESSAGE;
