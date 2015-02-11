@@ -180,13 +180,16 @@ forever = args.forever
 class TestCache(object):
   """Cache for running tests."""
 
-  def __init__(self):
+  def __init__(self, use_cache_results):
     self._last_successful_run = {}
+    self._use_cache_results = use_cache_results
 
   def should_run(self, cmdline, bin_hash):
     if cmdline not in self._last_successful_run:
       return True
     if self._last_successful_run[cmdline] != bin_hash:
+      return True
+    if not self._use_cache_results:
       return True
     return False
 
@@ -228,11 +231,8 @@ def _build_and_run(check_cancelled, newline_on_success, cache):
   return 0
 
 
-if runs_per_test == 1:
-  test_cache = TestCache()
-  test_cache.maybe_load()
-else:
-  test_cache = None
+test_cache = TestCache(runs_per_test == 1)
+test_cache.maybe_load()
 
 if forever:
   success = True
@@ -249,8 +249,7 @@ if forever:
                      'All tests are now passing properly',
                      do_newline=True)
     jobset.message('IDLE', 'No change detected')
-    if test_cache != None:
-      test_cache.save()
+    test_cache.save()
     while not have_files_changed():
       time.sleep(1)
 else:
