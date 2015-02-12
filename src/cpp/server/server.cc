@@ -39,6 +39,7 @@
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
 #include <grpc++/thread_pool_interface.h>
@@ -47,8 +48,8 @@
 
 namespace grpc {
 
-Server::Server(ThreadPoolInterface *thread_pool, bool thread_pool_owned,
-               ServerCredentials *creds)
+Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
+               ServerCredentials* creds)
     : started_(false),
       shutdown_(false),
       num_running_cb_(0),
@@ -56,7 +57,8 @@ Server::Server(ThreadPoolInterface *thread_pool, bool thread_pool_owned,
       thread_pool_owned_(thread_pool_owned),
       secure_(creds != nullptr) {
   if (creds) {
-    server_ = grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
+    server_ =
+        grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
   } else {
     server_ = grpc_server_create(cq_.cq(), nullptr);
   }
@@ -81,10 +83,11 @@ Server::~Server() {
   }
 }
 
-bool Server::RegisterService(RpcService *service) {
+bool Server::RegisterService(RpcService* service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
-    RpcServiceMethod *method = service->GetMethod(i);
-    void *tag = grpc_server_register_method(server_, method->name(), nullptr, cq_.cq());
+    RpcServiceMethod* method = service->GetMethod(i);
+    void* tag =
+        grpc_server_register_method(server_, method->name(), nullptr, cq_.cq());
     if (!tag) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
@@ -95,7 +98,24 @@ bool Server::RegisterService(RpcService *service) {
   return true;
 }
 
-int Server::AddPort(const grpc::string &addr) {
+bool Server::RegisterAsyncService(AsynchronousService* service) {
+  GPR_ASSERT(service->server_ == nullptr && "Can only register an asynchronous service against one server.");
+  service->server_ = this;
+  service->request_args_.reserve(service->method_count_);
+  for (size_t i = 0; i < service->method_count_; ++i) {
+    void* tag = grpc_server_register_method(server_, service->method_names_[i], nullptr,
+                                            service->completion_queue()->cq());
+    if (!tag) {
+      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
+              service->method_names_[i]);
+      return false;
+    }
+    service->request_args_.push_back(tag);
+  }
+  return true;
+}
+
+int Server::AddPort(const grpc::string& addr) {
   GPR_ASSERT(!started_);
   if (secure_) {
     return grpc_server_add_secure_http2_port(server_, addr.c_str());
@@ -106,7 +126,7 @@ int Server::AddPort(const grpc::string &addr) {
 
 class Server::MethodRequestData final : public CompletionQueueTag {
  public:
-  MethodRequestData(RpcServiceMethod *method, void *tag)
+  MethodRequestData(RpcServiceMethod* method, void* tag)
       : method_(method),
         tag_(tag),
         has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
@@ -118,33 +138,33 @@ class Server::MethodRequestData final : public CompletionQueueTag {
     grpc_metadata_array_init(&request_metadata_);
   }
 
-  static MethodRequestData *Wait(CompletionQueue *cq, bool *ok) {
-    void *tag = nullptr;
+  static MethodRequestData* Wait(CompletionQueue* cq, bool* ok) {
+    void* tag = nullptr;
     *ok = false;
     if (!cq->Next(&tag, ok)) {
       return nullptr;
     }
-    auto *mrd = static_cast<MethodRequestData *>(tag);
+    auto* mrd = static_cast<MethodRequestData*>(tag);
     GPR_ASSERT(mrd->in_flight_);
     return mrd;
   }
 
-  void Request(grpc_server *server) {
+  void Request(grpc_server* server) {
     GPR_ASSERT(!in_flight_);
     in_flight_ = true;
     cq_ = grpc_completion_queue_create();
     GPR_ASSERT(GRPC_CALL_OK ==
                grpc_server_request_registered_call(
                    server, tag_, &call_, &deadline_, &request_metadata_,
-                   has_request_payload_ ? &request_payload_ : nullptr, 
-                   cq_, this));
+                   has_request_payload_ ? &request_payload_ : nullptr, cq_,
+                   this));
   }
 
-  void FinalizeResult(void **tag, bool *status) override {}
+  void FinalizeResult(void** tag, bool* status) override {}
 
   class CallData {
    public:
-    explicit CallData(Server *server, MethodRequestData *mrd)
+    explicit CallData(Server* server, MethodRequestData* mrd)
         : cq_(mrd->cq_),
           call_(mrd->call_, server, &cq_),
           ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
@@ -177,6 +197,9 @@ class Server::MethodRequestData final : public CompletionQueueTag {
       auto status = method_->handler()->RunHandler(
           MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
       CallOpBuffer buf;
+      if (!ctx_.sent_initial_metadata_) {
+        buf.AddSendInitialMetadata(&ctx_.initial_metadata_);
+      }
       if (has_response_payload_) {
         buf.AddSendMessage(*res);
       }
@@ -193,21 +216,21 @@ class Server::MethodRequestData final : public CompletionQueueTag {
     ServerContext ctx_;
     const bool has_request_payload_;
     const bool has_response_payload_;
-    grpc_byte_buffer *request_payload_;
-    RpcServiceMethod *const method_;
+    grpc_byte_buffer* request_payload_;
+    RpcServiceMethod* const method_;
   };
 
  private:
-  RpcServiceMethod *const method_;
-  void *const tag_;
+  RpcServiceMethod* const method_;
+  void* const tag_;
   bool in_flight_ = false;
   const bool has_request_payload_;
   const bool has_response_payload_;
-  grpc_call *call_;
+  grpc_call* call_;
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
-  grpc_byte_buffer *request_payload_;
-  grpc_completion_queue *cq_;
+  grpc_byte_buffer* request_payload_;
+  grpc_completion_queue* cq_;
 };
 
 bool Server::Start() {
@@ -217,7 +240,7 @@ bool Server::Start() {
 
   // Start processing rpcs.
   if (!methods_.empty()) {
-    for (auto &m : methods_) {
+    for (auto& m : methods_) {
       m.Request(server_);
     }
 
@@ -243,14 +266,13 @@ void Server::Shutdown() {
   }
 }
 
-void Server::PerformOpsOnCall(CallOpBuffer *buf, Call *call) {
+void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = MAX_OPS;
   grpc_op ops[MAX_OPS];
   buf->FillOps(ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), ops, nops,
-                                   buf));
+             grpc_call_start_batch(call->call(), ops, nops, buf));
 }
 
 void Server::ScheduleCallback() {
@@ -264,7 +286,7 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
-  auto *mrd = MethodRequestData::Wait(&cq_, &ok);
+  auto* mrd = MethodRequestData::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
     if (ok) {

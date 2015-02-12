@@ -42,6 +42,7 @@
 namespace grpc {
 
 class AsynchronousService;
+class CompletionQueue;
 class RpcService;
 class Server;
 class ServerCredentials;
@@ -57,7 +58,11 @@ class ServerBuilder {
   // BuildAndStart().
   void RegisterService(SynchronousService* service);
 
-  void RegisterAsyncService(AsynchronousService *service);
+  // Register an asynchronous service. New calls will be delevered to cq.
+  // This call does not take ownership of the service or completion queue.
+  // The service and completion queuemust exist for the lifetime of the Server
+  // instance returned by BuildAndStart().
+  void RegisterAsyncService(AsynchronousService* service);
 
   // Add a listening port. Can be called multiple times.
   void AddPort(const grpc::string& addr);

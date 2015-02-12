@@ -53,7 +53,7 @@ class Message;
 }  // namespace google
 
 namespace grpc {
-class AsyncServerContext;
+class AsynchronousService;
 class RpcService;
 class RpcServiceMethod;
 class ServerCredentials;
@@ -79,6 +79,7 @@ class Server final : private CallHook {
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(RpcService* service);
+  bool RegisterAsyncService(AsynchronousService* service);
   // Add a listening port. Can be called multiple times.
   int AddPort(const grpc::string& addr);
   // Start the server.
