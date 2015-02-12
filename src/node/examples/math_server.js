@@ -69,7 +69,6 @@ function mathDiv(call, cb) {
  * @param {stream} stream The stream for sending responses.
  */
 function mathFib(stream) {
-  console.log(stream);
   // Here, call is a standard writable Node object Stream
   var previous = 0, current = 1;
   for (var i = 0; i < stream.request.limit; i++) {

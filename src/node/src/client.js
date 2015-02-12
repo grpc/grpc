@@ -56,7 +56,6 @@ function ClientWritableStream(call, serialize) {
   this.call = call;
   this.serialize = common.wrapIgnoreNull(serialize);
   this.on('finish', function() {
-    console.log('Send close from client');
     var batch = {};
     batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
     call.startBatch(batch, function() {});
@@ -73,7 +72,6 @@ function ClientWritableStream(call, serialize) {
 function _write(chunk, encoding, callback) {
   var batch = {};
   batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
-  console.log(batch);
   this.call.startBatch(batch, function(err, event) {
     if (err) {
       throw err;
@@ -153,7 +151,6 @@ function ClientDuplexStream(call, serialize, deserialize) {
   var reading = false;
   this.call = call;
   this.on('finish', function() {
-    console.log('Send close from client');
     var batch = {};
     batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
     call.startBatch(batch, function() {});
@@ -279,7 +276,6 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
         callback(err);
         return;
       }
-      console.log(response);
       if (response.status.code != grpc.status.OK) {
         callback(response.status);
         return;
@@ -323,7 +319,6 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
     }
     var stream = new ClientReadableStream(call, deserialize);
     var start_batch = {};
-    console.log('Starting server streaming request on', method);
     start_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
     start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
     start_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
@@ -332,7 +327,6 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
       if (err) {
         throw err;
       }
-      console.log(response);
       stream.emit('metadata', response.metadata);
     });
     var status_batch = {};

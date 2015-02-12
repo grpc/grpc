@@ -148,7 +148,6 @@ describe('end-to-end', function() {
     });
 
     server.requestCall(function(err, call_details) {
-      console.log("Server received new call");
       var new_call = call_details['new call'];
       assert.notEqual(new_call, null);
       assert.strictEqual(new_call.metadata.client_key[0].toString(),

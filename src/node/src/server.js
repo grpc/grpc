@@ -95,7 +95,6 @@ function setUpWritable(stream, serialize) {
   };
   stream.serialize = common.wrapIgnoreNull(serialize);
   function sendStatus() {
-    console.log('Server sending status');
     var batch = {};
     batch[grpc.opType.SEND_STATUS_FROM_SERVER] = stream.status;
     stream.call.startBatch(batch, function(){});
@@ -169,7 +168,6 @@ function ServerWritableStream(call, serialize) {
 function _write(chunk, encoding, callback) {
   var batch = {};
   batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
-  console.log('Server writing', batch);
   this.call.startBatch(batch, function(err, value) {
     if (err) {
       this.emit('error', err);
@@ -207,14 +205,11 @@ function _read(size) {
       return;
     }
     if (self.finished) {
-      console.log('Pushing null');
       self.push(null);
       return;
     }
     var data = event.read;
-    console.log(data);
     if (self.push(self.deserialize(data)) && data != null) {
-      console.log('Reading again');
       var read_batch = {};
       read_batch[grpc.opType.RECV_MESSAGE] = true;
       self.call.startBatch(read_batch, readCallback);
@@ -276,7 +271,6 @@ function handleUnary(call, handler, metadata) {
 }
 
 function handleServerStreaming(call, handler, metadata) {
-  console.log('Handling server streaming call');
   var stream = new ServerWritableStream(call, handler.serialize);
   waitForCancel(call, stream);
   var batch = {};
@@ -360,7 +354,6 @@ function Server(getMetadata, options) {
      * @param {grpc.Event} event The event to handle with tag SERVER_RPC_NEW
      */
     function handleNewCall(err, event) {
-      console.log('Handling new call');
       if (err) {
         return;
       }
@@ -376,9 +369,7 @@ function Server(getMetadata, options) {
       var deadline = details.deadline;
       if (handlers.hasOwnProperty(method)) {
         handler = handlers[method];
-        console.log(handler);
       } else {
-        console.log(handlers);
         var batch = {};
         batch[grpc.opType.SEND_INITIAL_METADATA] = {};
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
