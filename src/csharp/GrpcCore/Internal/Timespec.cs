@@ -13,8 +13,14 @@ namespace Google.GRPC.Core.Internal
         const int nanosPerSecond = 1000 * 1000 * 1000;
         const int nanosPerTick = 100;
 
-        [DllImport("gpr.dll")]
-        static extern Timespec gpr_now();
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern Timespec gprsharp_now();
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern Timespec gprsharp_inf_future();
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern int gprsharp_sizeof_timespec();
 
 		// TODO: this only works on 64bit linux, can we autoselect the right size of ints?
 		// perhaps using IntPtr would work.
@@ -28,8 +34,7 @@ namespace Google.GRPC.Core.Internal
 		{
 			get
 			{
-				// TODO: set correct value based on the length of the struct
-				return new Timespec { tv_sec = Int32.MaxValue, tv_nsec = 0 };
+                return gprsharp_inf_future();
 			}
 		}
 
@@ -37,7 +42,7 @@ namespace Google.GRPC.Core.Internal
         {
             get
             {
-                return gpr_now();
+                return gprsharp_now();
             }
         }
 
