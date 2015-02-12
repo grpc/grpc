@@ -35,6 +35,7 @@
 #define __GRPCPP_STREAM_H__
 
 #include <grpc++/channel_interface.h>
+#include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/status.h>
@@ -87,7 +88,7 @@ class ClientReader final : public ClientStreamingInterface,
   ClientReader(ChannelInterface *channel, const RpcMethod &method,
                ClientContext *context,
                const google::protobuf::Message &request)
-      : call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpBuffer buf;
     buf.AddSendMessage(request);
     buf.AddClientSendClose();
@@ -105,13 +106,14 @@ class ClientReader final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    buf.AddClientRecvStatus(nullptr, &status); // TODO metadata
+    buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
   }
 
  private:
+  ClientContext* context_;
   CompletionQueue cq_;
   Call call_;
 };
@@ -124,7 +126,7 @@ class ClientWriter final : public ClientStreamingInterface,
   ClientWriter(ChannelInterface *channel, const RpcMethod &method,
                ClientContext *context,
                google::protobuf::Message *response)
-      : response_(response),
+      : context_(context), response_(response),
         call_(channel->CreateCall(method, context, &cq_)) {}
 
   virtual bool Write(const W& msg) override {
@@ -146,13 +148,14 @@ class ClientWriter final : public ClientStreamingInterface,
     CallOpBuffer buf;
     Status status;
     buf.AddRecvMessage(response_);
-    buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
+    buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
   }
 
  private:
+  ClientContext* context_;
   google::protobuf::Message *const response_;
   CompletionQueue cq_;
   Call call_;
@@ -167,7 +170,7 @@ class ClientReaderWriter final : public ClientStreamingInterface,
   // Blocking create a stream.
   ClientReaderWriter(ChannelInterface *channel,
                      const RpcMethod &method, ClientContext *context)
-      : call_(channel->CreateCall(method, context, &cq_)) {}
+      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {}
 
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
@@ -193,13 +196,14 @@ class ClientReaderWriter final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
+    buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
   }
 
  private:
+  ClientContext* context_;
   CompletionQueue cq_;
   Call call_;
 };
