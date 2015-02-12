@@ -331,6 +331,10 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_fake_security_empty_batch_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_fake_security_graceful_server_shutdown_test"
   }, 
   {
@@ -516,6 +520,10 @@
   {
     "language": "c", 
     "name": "chttp2_fullstack_early_server_shutdown_finishes_tags_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_fullstack_empty_batch_test"
   }, 
   {
     "language": "c", 
@@ -707,6 +715,10 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_empty_batch_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_graceful_server_shutdown_test"
   }, 
   {
@@ -892,6 +904,10 @@
   {
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test"
   }, 
   {
     "language": "c", 
@@ -1083,6 +1099,10 @@
   }, 
   {
     "language": "c", 
+    "name": "chttp2_socket_pair_empty_batch_test"
+  }, 
+  {
+    "language": "c", 
     "name": "chttp2_socket_pair_graceful_server_shutdown_test"
   }, 
   {
@@ -1268,6 +1288,10 @@
   {
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test"
+  }, 
+  {
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_empty_batch_test"
   }, 
   {
     "language": "c", 

@@ -995,6 +995,12 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   const grpc_op *op;
   grpc_ioreq *req;
 
+  if (nops == 0) {
+    grpc_cq_begin_op(call->cq, call, GRPC_OP_COMPLETE);
+    grpc_cq_end_op_complete(call->cq, tag, call, do_nothing, NULL, GRPC_OP_OK);
+    return GRPC_CALL_OK;
+  }
+
   /* rewrite batch ops into ioreq ops */
   for (in = 0, out = 0; in < nops; in++) {
     op = &ops[in];

@@ -9,23 +9,23 @@ namespace Google.GRPC.Core.Internal
     /// </summary>
 	internal class CompletionQueueSafeHandle : SafeHandleZeroIsInvalid
 	{
-        [DllImport("grpc.dll")]
-        static extern CompletionQueueSafeHandle grpc_completion_queue_create();
-
-        [DllImport("grpc.dll")]
-        static extern EventSafeHandle grpc_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag, Timespec deadline);
-
-        [DllImport("grpc.dll")]
-        static extern EventSafeHandle grpc_completion_queue_next(CompletionQueueSafeHandle cq, Timespec deadline);
-
-        [DllImport("grpc.dll")]
-        static extern void grpc_completion_queue_shutdown(CompletionQueueSafeHandle cq);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create();
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCompletionType grpc_completion_queue_next_with_callback(CompletionQueueSafeHandle cq);
+        static extern EventSafeHandle grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag, Timespec deadline);
 
-        [DllImport("grpc.dll")]
-        static extern void grpc_completion_queue_destroy(IntPtr cq);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern EventSafeHandle grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq, Timespec deadline);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCompletionType grpcsharp_completion_queue_next_with_callback(CompletionQueueSafeHandle cq);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
 
         private CompletionQueueSafeHandle()
         {
@@ -33,32 +33,32 @@ namespace Google.GRPC.Core.Internal
 
         public static CompletionQueueSafeHandle Create()
         {
-            return grpc_completion_queue_create();
+            return grpcsharp_completion_queue_create();
         }
 
         public EventSafeHandle Next(Timespec deadline)
         {
-            return grpc_completion_queue_next(this, deadline);
+            return grpcsharp_completion_queue_next(this, deadline);
         }
 
         public GRPCCompletionType NextWithCallback()
         {
-            return grpc_completion_queue_next_with_callback(this);
+            return grpcsharp_completion_queue_next_with_callback(this);
         }
 
         public EventSafeHandle Pluck(IntPtr tag, Timespec deadline)
         {
-            return grpc_completion_queue_pluck(this, tag, deadline);
+            return grpcsharp_completion_queue_pluck(this, tag, deadline);
         }
 
         public void Shutdown()
         {
-            grpc_completion_queue_shutdown(this);
+            grpcsharp_completion_queue_shutdown(this);
         }
 
 		protected override bool ReleaseHandle()
         {
-            grpc_completion_queue_destroy(handle);
+            grpcsharp_completion_queue_destroy(handle);
 			return true;
 		}
 	}
