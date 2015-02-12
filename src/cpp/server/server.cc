@@ -45,6 +45,7 @@
 #include <grpc++/thread_pool_interface.h>
 
 #include "src/cpp/proto/proto_utils.h"
+#include "src/cpp/util/time.h"
 
 namespace grpc {
 
@@ -175,13 +176,10 @@ class Server::SyncRequest final : public CompletionQueueTag {
           has_response_payload_(mrd->has_response_payload_),
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
+      ctx_.call_ = mrd->call_;
       GPR_ASSERT(mrd->in_flight_);
       mrd->in_flight_ = false;
       mrd->request_metadata_.count = 0;
-    }
-
-    ~CallData() {
-      if (call_.call()) grpc_call_destroy(call_.call());
     }
 
     void Run() {
@@ -283,20 +281,57 @@ class Server::AsyncRequest final : public CompletionQueueTag {
                ::google::protobuf::Message* request,
                ServerAsyncStreamingInterface* stream, CompletionQueue* cq,
                void* tag)
-      : tag_(tag), request_(request), stream_(stream), ctx_(ctx) {
+      : tag_(tag),
+        request_(request),
+        stream_(stream),
+        cq_(cq),
+        ctx_(ctx),
+        server_(server) {
     memset(&array_, 0, sizeof(array_));
     grpc_server_request_registered_call(
         server->server_, registered_method, &call_, &deadline_, &array_,
         request ? &payload_ : nullptr, cq->cq(), this);
   }
 
-  void FinalizeResult(void** tag, bool* status) override {}
+  ~AsyncRequest() {
+    if (payload_) {
+      grpc_byte_buffer_destroy(payload_);
+    }
+    grpc_metadata_array_destroy(&array_);
+  }
+
+  void FinalizeResult(void** tag, bool* status) override {
+    *tag = tag_;
+    if (*status && request_) {
+      if (payload_) {
+        *status = DeserializeProto(payload_, request_);
+      } else {
+        *status = false;
+      }
+    }
+    if (*status) {
+      ctx_->deadline_ = Timespec2Timepoint(deadline_);
+      for (size_t i = 0; i < array_.count; i++) {
+        ctx_->client_metadata_.insert(std::make_pair(
+            grpc::string(array_.metadata[i].key),
+            grpc::string(
+                array_.metadata[i].value,
+                array_.metadata[i].value + array_.metadata[i].value_length)));
+      }
+    }
+    ctx_->call_ = call_;
+    Call call(call_, server_, cq_);
+    stream_->BindCall(&call);
+    delete this;
+  }
 
  private:
   void* const tag_;
   ::google::protobuf::Message* const request_;
   ServerAsyncStreamingInterface* const stream_;
+  CompletionQueue* const cq_;
   ServerContext* const ctx_;
+  Server* const server_;
   grpc_call* call_ = nullptr;
   gpr_timespec deadline_;
   grpc_metadata_array array_;

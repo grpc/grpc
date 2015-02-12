@@ -42,6 +42,7 @@ class Message;
 
 namespace grpc {
 
+class Call;
 class RpcService;
 class Server;
 class ServerContext;
@@ -59,6 +60,10 @@ class ServerAsyncStreamingInterface {
 
   virtual void SendInitialMetadata(void* tag) = 0;
   virtual void Finish(const Status& status, void* tag) = 0;
+
+ private:
+  friend class Server;
+  virtual void BindCall(Call* call) = 0;
 };
 
 class AsynchronousService {

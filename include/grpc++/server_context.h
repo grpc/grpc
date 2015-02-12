@@ -39,43 +39,61 @@
 
 #include "config.h"
 
-struct grpc_metadata;
 struct gpr_timespec;
+struct grpc_metadata;
+struct grpc_call;
 
 namespace grpc {
 
-template <class R> class ServerAsyncReader;
-template <class W> class ServerAsyncWriter;
-template <class R, class W> class ServerAsyncReaderWriter;
-template <class R> class ServerReader;
-template <class W> class ServerWriter;
-template <class R, class W> class ServerReaderWriter;
+template <class R>
+class ServerAsyncReader;
+template <class W>
+class ServerAsyncWriter;
+template <class R, class W>
+class ServerAsyncReaderWriter;
+template <class R>
+class ServerReader;
+template <class W>
+class ServerWriter;
+template <class R, class W>
+class ServerReaderWriter;
 
 class CallOpBuffer;
 class Server;
 
 // Interface of server side rpc context.
-class ServerContext {
+class ServerContext final {
  public:
-  virtual ~ServerContext() {}
+  ServerContext();  // for async calls
+  ~ServerContext();
 
-  std::chrono::system_clock::time_point absolute_deadline() { return deadline_; }
+  std::chrono::system_clock::time_point absolute_deadline() {
+    return deadline_;
+  }
 
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
  private:
   friend class ::grpc::Server;
-  template <class R> friend class ::grpc::ServerAsyncReader;
-  template <class W> friend class ::grpc::ServerAsyncWriter;
-  template <class R, class W> friend class ::grpc::ServerAsyncReaderWriter;
-  template <class R> friend class ::grpc::ServerReader;
-  template <class W> friend class ::grpc::ServerWriter;
-  template <class R, class W> friend class ::grpc::ServerReaderWriter;
+  template <class R>
+  friend class ::grpc::ServerAsyncReader;
+  template <class W>
+  friend class ::grpc::ServerAsyncWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerAsyncReaderWriter;
+  template <class R>
+  friend class ::grpc::ServerReader;
+  template <class W>
+  friend class ::grpc::ServerWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerReaderWriter;
 
-  ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count);
+  ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
+                size_t metadata_count);
 
-  const std::chrono::system_clock::time_point deadline_;
+  std::chrono::system_clock::time_point deadline_;
+  grpc_call* call_ = nullptr;
   bool sent_initial_metadata_ = false;
   std::multimap<grpc::string, grpc::string> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
