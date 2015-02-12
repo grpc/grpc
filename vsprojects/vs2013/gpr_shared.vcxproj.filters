@@ -16,6 +16,9 @@
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\cpu_windows.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\env_linux.c">
       <Filter>src\core\support</Filter>
     </ClCompile>

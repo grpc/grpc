@@ -761,6 +761,7 @@
     {
       "name": "echo_client",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/echo/client.c"
@@ -770,12 +771,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "echo_server",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/echo/server.c"
@@ -785,8 +786,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "echo_test",
@@ -819,6 +819,7 @@
     {
       "name": "fling_client",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/fling/client.c"
@@ -828,12 +829,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "fling_server",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/fling/server.c"
@@ -843,8 +844,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "fling_stream_test",
@@ -1254,6 +1254,7 @@
     {
       "name": "json_rewrite",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/json/json_rewrite.c"
@@ -1261,12 +1262,12 @@
       "deps": [
         "grpc",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "json_rewrite_test",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/json/json_rewrite_test.c"
@@ -1276,8 +1277,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "json_test",
@@ -1589,6 +1589,7 @@
     {
       "name": "interop_client",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/interop/empty.proto",
@@ -1603,12 +1604,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "interop_server",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/interop/empty.proto",
@@ -1623,8 +1624,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "qps_client",
@@ -1728,6 +1728,7 @@
     {
       "name": "tips_client",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "examples/tips/main.cc"
@@ -1740,8 +1741,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "tips_publisher_test",
