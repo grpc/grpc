@@ -9,34 +9,34 @@ namespace Google.GRPC.Core.Internal
     /// </summary>
     internal class EventSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern void grpc_event_finish(IntPtr ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCompletionType grpc_event_type(EventSafeHandle ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern CallSafeHandle grpc_event_call(EventSafeHandle ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCOpError grpc_event_write_accepted(EventSafeHandle ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCOpError grpc_event_finish_accepted(EventSafeHandle ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern StatusCode grpc_event_finished_status(EventSafeHandle ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpc_event_finished_details(EventSafeHandle ev);  // returns const char*
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpc_event_read_length(EventSafeHandle ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpc_event_read_copy_to_buffer(EventSafeHandle ev, byte[] buffer, UIntPtr bufferLen);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpc_event_server_rpc_new_method(EventSafeHandle ev); // returns const char*
 
         public GRPCCompletionType GetCompletionType()
@@ -98,34 +98,34 @@ namespace Google.GRPC.Core.Internal
     /// </summary>
     internal class EventSafeHandleNotOwned : SafeHandleZeroIsInvalid
     {
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern void grpc_event_finish(IntPtr ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCompletionType grpc_event_type(EventSafeHandleNotOwned ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern CallSafeHandle grpc_event_call(EventSafeHandleNotOwned ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCOpError grpc_event_write_accepted(EventSafeHandleNotOwned ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCOpError grpc_event_finish_accepted(EventSafeHandleNotOwned ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern StatusCode grpc_event_finished_status(EventSafeHandleNotOwned ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpc_event_finished_details(EventSafeHandleNotOwned ev);  // returns const char*
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpc_event_read_length(EventSafeHandleNotOwned ev);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpc_event_read_copy_to_buffer(EventSafeHandleNotOwned ev, byte[] buffer, UIntPtr bufferLen);
 
-        [DllImport("libgrpc_csharp_ext.so")]
+        [DllImport("grpc_csharp_ext.dll")]
         static extern IntPtr grpc_event_server_rpc_new_method(EventSafeHandleNotOwned ev); // returns const char*
 
         public EventSafeHandleNotOwned() : base(false)
