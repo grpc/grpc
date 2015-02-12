@@ -118,10 +118,11 @@ familiar with protocol buffers, you can find out more in the [Protocol Buffers
 Developer Guide](https://developers.google.com/protocol-buffers/docs/overview).
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](java/src/main/proto/helloworld.proto) _should we link to the version in the Java subdirectory or the one in the common protos directory?_. The `Greeting` service
+[helloworld.proto](java/src/main/proto/helloworld.proto). The `Greeting` service
 has one method, `hello`, that lets the server receive a single `HelloRequest`
 message from the remote client containing the user's name, then send back
-a greeting in a `HelloReply`.
+a greeting in a single `HelloReply`. This is the simplest type of RPC you
+can specify in gRPC - we'll look at some other types later in this document.
 
 ```
 syntax = "proto3";
@@ -167,7 +168,8 @@ this up in "what is gRPC"?]
 the example, you can skip this step and move
 onto the next one where we examine the generated code.)
 
-As this is our first time using gRPC, we need to build the protobuf plugin that generates our RPC
+As this is our first time using gRPC, we need to build the protobuf plugin
+that generates our RPC
 classes. By default `protoc` just generates code for reading and writing
 protocol buffers, so you need to use plugins to add additional features
 to generated code. As we're creating Java code, we use the gRPC Java plugin.
@@ -190,17 +192,22 @@ $ protoc -I . helloworld.proto
                                --java_out=src/main/java
 ```
 
-This generates the following classes, which contain all the generated code we need to create our example: 
+This generates the following classes, which contain all the generated code
+we need to create our example:
 
-- [`Helloworld.java`](java/src/main/java/ex/grpc/Helloworld.java), which has all the protocol buffer code to populate, serialize, and retrieve our `HelloRequest` and `HelloReply` message types
-- [`GreetingsGrpc.java`](java/src/main/java/ex/grpc/GreetingsGrpc.java), which contains (along with some other useful code):
+- [`Helloworld.java`](java/src/main/java/ex/grpc/Helloworld.java), which
+has all the protocol buffer code to populate, serialize, and retrieve our
+`HelloRequest` and `HelloReply` message types
+- [`GreetingsGrpc.java`](java/src/main/java/ex/grpc/GreetingsGrpc.java),
+which contains (along with some other useful code):
     - an interface for `Greetings` servers to implement
 
     ```java
   public static interface Greetings {
 
     public void hello(ex.grpc.Helloworld.HelloRequest request,
-        com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply> responseObserver);
+        com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply>
+        responseObserver);
   }
     ```
 
@@ -208,7 +215,8 @@ This generates the following classes, which contain all the generated code we ne
 
     ```java
 public static class GreetingsStub extends
-      com.google.net.stubby.stub.AbstractStub<GreetingsStub, GreetingsServiceDescriptor>
+      com.google.net.stubby.stub.AbstractStub<GreetingsStub,
+      GreetingsServiceDescriptor>
       implements Greetings {
    ...
   }
@@ -217,48 +225,58 @@ public static class GreetingsStub extends
 <a name="server"></a>
 ### Writing a server
 
-Now let's write some code! First we'll create a server application to implement our service. Note that we're not going to go into a lot of detail about how to create a server in this section  More detailed information will be in the tutorial for your chosen language (coming soon).
+Now let's write some code! First we'll create a server application to implement
+our service. Note that we're not going to go into a lot of detail about how
+to create a server in this section More detailed information will be in the
+tutorial for your chosen language (coming soon).
 
 Our server application has two classes:
 
-- a simple service implementation [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java).
+- a simple service implementation
+[GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java).
 
-- a server that hosts the service implementation and allows access over the network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
+- a server that hosts the service implementation and allows access over the
+network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
 
 #### Service implementation
 
 [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java)
-implements the behaviour we require of our GreetingService. There are a
-number of important features of gRPC being used here:
+actually implements our GreetingService's required behaviour.
+
+As you can see, the class `GreetingsImpl` implements the interface
+`GreetingsGrpc.Greetings` that we [generated](#generating) from our proto
+[IDL](src/main/proto/helloworld.proto) by implementing the method `hello`:
 
 ```java
   public void hello(Helloworld.HelloRequest req,
       StreamObserver<Helloworld.HelloReply> responseObserver) {
-    Helloworld.HelloReply reply = Helloworld.HelloReply.newBuilder().setMessage(
+    Helloworld.HelloReply reply =
+    Helloworld.HelloReply.newBuilder().setMessage(
         "Hello " + req.getName()).build();
     responseObserver.onValue(reply);
     responseObserver.onCompleted();
   }
 ```
-
-- it provides a class `GreetingsImpl` that implements a generated interface `GreetingsGrpc.Greetings`
-- `GreetingsGrpc.Greetings` declares the method `hello` that was declared in the proto [IDL](src/main/proto/helloworld.proto)
 - `hello's` signature is typesafe:
-   hello(Helloworld.HelloRequest req, StreamObserver<Helloworld.HelloReply> responseObserver)
+   `hello(Helloworld.HelloRequest req, StreamObserver<Helloworld.HelloReply>
+   responseObserver)`
 - `hello` takes two parameters:
-  `Helloworld.HelloRequest`: the request
-  `StreamObserver<Helloworld.HelloReply>`: a response observer, an interface to be called with the response value
-- to complete the call
-  - the return value is constructed
-  - the responseObserver.onValue() is called with the response
-  - responseObserver.onCompleted() is called to indicate that no more work will done on the RPC.
+    -`Helloworld.HelloRequest`: the request
+    -`StreamObserver<Helloworld.HelloReply>`: a response observer, which is
+    a special interface for the server to call with its response
+To return our response to the client and complete the call:
+1. We construct and populate a `HelloReply` response object with our exciting
+message, as specified in our interface definition.
+2. We call `responseObserver.onValue()` with the `HelloReply` that we want to send back to the client.
+3. Finally, we call `responseObserver.onCompleted()` to indicate that we're
+finished dealing with this RPC.
 
 
 #### Server implementation
 
 [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java) shows the
-other main feature required to provde the gRPC service; how to allow a service
-implementation to be accessed from the network.
+other main feature required to provde the gRPC service; making the service
+implementation available from the network.
 
 ```java
   private void start() throws Exception {
