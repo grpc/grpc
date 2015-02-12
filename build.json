@@ -1628,7 +1628,6 @@
     {
       "name": "qps_client",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1641,12 +1640,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ]
+      ],
+      "run": false
     },
     {
       "name": "qps_server",
       "build": "test",
-      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1659,7 +1658,8 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ]
+      ],
+      "run": false
     },
     {
       "name": "ruby_plugin",
