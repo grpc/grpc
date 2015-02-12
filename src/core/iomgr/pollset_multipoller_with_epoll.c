@@ -149,14 +149,13 @@ static int multipoll_with_epoll_pollset_maybe_work(
 
 static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
-
+  grpc_wakeup_fd_destroy(&h->wakeup_fd);
   close(h->epoll_fd);
   gpr_free(h);
 }
 
 static void epoll_kick(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
-  grpc_wakeup_fd_destroy(&h->wakeup_fd);
   grpc_wakeup_fd_wakeup(&h->wakeup_fd);
 }
 
