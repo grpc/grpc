@@ -22,11 +22,13 @@ ENV PATH $PATH:$JAVA_HOME/bin:$M2_HOME/bin
 ENV LD_LIBRARY_PATH /usr/local/lib
 
 # Get the protobuf source from GitHub and install it
-RUN wget -O - https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.bz2 | \
-  tar xj && \
-  cd protobuf-2.6.1 && \
+RUN wget -O - https://github.com/google/protobuf/archive/master.tar.gz | \
+  tar xz && \
+  cd protobuf-master && \
+  ./autogen.sh && \
   ./configure --prefix=/usr && \
   make -j12 && make check && make install && \
+  cd java && mvn install && cd .. && \
   rm -r "$(pwd)"
 
 # Install a GitHub SSH service credential that gives access to the GitHub repo while it's private

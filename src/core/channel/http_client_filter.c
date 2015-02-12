@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2014, Google Inc.
  * All rights reserved.
  *
@@ -44,6 +43,7 @@ typedef struct channel_data {
   grpc_mdelem *method;
   grpc_mdelem *scheme;
   grpc_mdelem *content_type;
+  grpc_mdelem *status;
 } channel_data;
 
 /* used to silence 'variable not used' warnings */
@@ -85,6 +85,18 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->te_trailers));
       grpc_call_element_send_metadata(elem, grpc_mdelem_ref(channeld->content_type));
       grpc_call_next_op(elem, op);
+      break;
+    case GRPC_RECV_METADATA:
+      if (op->data.metadata == channeld->status) {
+        grpc_mdelem_unref(op->data.metadata);
+        op->done_cb(op->user_data, GRPC_OP_OK);
+      } else if (op->data.metadata->key == channeld->status->key) {
+        grpc_mdelem_unref(op->data.metadata);
+        op->done_cb(op->user_data, GRPC_OP_OK);
+        grpc_call_element_send_cancel(elem);
+      } else {
+        grpc_call_next_op(elem, op);
+      }
       break;
     default:
       /* pass control up or down the stack depending on op->dir */
@@ -166,6 +178,7 @@ static void init_channel_elem(grpc_channel_element *elem,
       grpc_mdelem_from_strings(mdctx, ":scheme", scheme_from_args(args));
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
+  channeld->status = grpc_mdelem_from_strings(mdctx, ":status", "200");
 }
 
 /* Destructor for channel data */
@@ -177,6 +190,7 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   grpc_mdelem_unref(channeld->method);
   grpc_mdelem_unref(channeld->scheme);
   grpc_mdelem_unref(channeld->content_type);
+  grpc_mdelem_unref(channeld->status);
 }
 
 const grpc_channel_filter grpc_http_client_filter = {

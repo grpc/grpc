@@ -13,6 +13,7 @@ _VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
     'name', 
     'build', 
+    'run',
     'language', 
     'public_headers', 
     'headers', 

@@ -41,7 +41,12 @@
     <Import Project="global.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -83,6 +88,7 @@
     <ClInclude Include="..\..\include\grpc\support\histogram.h" />
     <ClInclude Include="..\..\include\grpc\support\host_port.h" />
     <ClInclude Include="..\..\include\grpc\support\log.h" />
+    <ClInclude Include="..\..\include\grpc\support\log_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\port_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\slice.h" />
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />
@@ -113,6 +119,8 @@
     <ClCompile Include="..\..\src\core\support\cpu_linux.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\cpu_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\env_linux.c">
     </ClCompile>

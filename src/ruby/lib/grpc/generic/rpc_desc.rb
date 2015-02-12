@@ -81,7 +81,6 @@ module Google
           active_call.run_server_bidi(mth)
         end
         send_status(active_call, OK, 'OK')
-        active_call.finished
       rescue BadStatus => e
         # this is raised by handlers that want GRPC to send an application
         # error code and detail message.

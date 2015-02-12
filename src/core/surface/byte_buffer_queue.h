@@ -53,6 +53,7 @@ typedef struct {
 
 void grpc_bbq_destroy(grpc_byte_buffer_queue *q);
 grpc_byte_buffer *grpc_bbq_pop(grpc_byte_buffer_queue *q);
+void grpc_bbq_flush(grpc_byte_buffer_queue *q);
 int grpc_bbq_empty(grpc_byte_buffer_queue *q);
 void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *bb);
 

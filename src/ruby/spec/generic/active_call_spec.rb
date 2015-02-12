@@ -166,7 +166,7 @@ describe GRPC::ActiveCall do
       expect(client_call.remote_read).to eq('server_response')
     end
 
-    it 'saves metadata { status=200 } when the server adds no metadata' do
+    it 'saves no metadata when the server adds no metadata' do
       call = make_test_call
       done_tag, meta_tag = ActiveCall.client_invoke(call, @client_queue,
                                                     deadline)
@@ -180,7 +180,7 @@ describe GRPC::ActiveCall do
       server_call.remote_send('ignore me')
       expect(client_call.metadata).to be_nil
       client_call.remote_read
-      expect(client_call.metadata).to eq(':status' => '200')
+      expect(client_call.metadata).to eq({})
     end
 
     it 'saves metadata add by the server' do
@@ -197,7 +197,7 @@ describe GRPC::ActiveCall do
       server_call.remote_send('ignore me')
       expect(client_call.metadata).to be_nil
       client_call.remote_read
-      expected = { ':status' => '200', 'k1' => 'v1', 'k2' => 'v2' }
+      expected = { 'k1' => 'v1', 'k2' => 'v2' }
       expect(client_call.metadata).to eq(expected)
     end
 
@@ -307,7 +307,6 @@ describe GRPC::ActiveCall do
       server_call.remote_send('server_response')
       expect(client_call.remote_read).to eq('server_response')
       server_call.send_status(OK, 'status code is OK')
-      expect { server_call.finished }.to_not raise_error
       expect { client_call.finished }.to_not raise_error
     end
 
@@ -326,7 +325,6 @@ describe GRPC::ActiveCall do
       server_call.send_status(OK, 'status code is OK')
       expect(client_call.remote_read).to eq('server_response')
       expect { client_call.writes_done(false) }.to_not raise_error
-      expect { server_call.finished }.to_not raise_error
       expect { client_call.finished }.to_not raise_error
     end
 
@@ -345,7 +343,6 @@ describe GRPC::ActiveCall do
       server_call.send_status(OK, 'status code is OK')
       expect(client_call.remote_read).to eq('server_response')
       expect { client_call.writes_done(true) }.to_not raise_error
-      expect { server_call.finished }.to_not raise_error
     end
   end
 

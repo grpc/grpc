@@ -66,6 +66,7 @@ struct grpc_pollset_vtable {
   void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
   int (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
                     gpr_timespec now, int allow_synchronous_callback);
+  void (*kick)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
 

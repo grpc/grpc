@@ -78,6 +78,10 @@ void grpc_cq_end_finish_accepted(grpc_completion_queue *cc, void *tag,
                                  grpc_call *call,
                                  grpc_event_finish_func on_finish,
                                  void *user_data, grpc_op_error error);
+/* Queue a GRPC_OP_COMPLETED operation */
+void grpc_cq_end_op_complete(grpc_completion_queue *cc, void *tag,
+                             grpc_call *call, grpc_event_finish_func on_finish,
+                             void *user_data, grpc_op_error error);
 /* Queue a GRPC_CLIENT_METADATA_READ operation */
 void grpc_cq_end_client_metadata_read(grpc_completion_queue *cc, void *tag,
                                       grpc_call *call,
@@ -97,9 +101,9 @@ void grpc_cq_end_new_rpc(grpc_completion_queue *cc, void *tag, grpc_call *call,
                          gpr_timespec deadline, size_t metadata_count,
                          grpc_metadata *metadata_elements);
 
-void grpc_cq_end_ioreq(grpc_completion_queue *cc, void *tag, grpc_call *call,
-                       grpc_event_finish_func on_finish, void *user_data,
-                       grpc_op_error error);
+void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
+                    grpc_event_finish_func on_finish, void *user_data,
+                    grpc_op_error error);
 
 void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag);
 
