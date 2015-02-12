@@ -565,7 +565,8 @@ grpc_call_error grpc_server_request_call(
    Must be called before grpc_server_start.
    Returns NULL on failure. */
 void *grpc_server_register_method(grpc_server *server, const char *method,
-                                  const char *host);
+                                  const char *host, 
+                                  grpc_completion_queue *new_call_cq);
 
 /* Request notification of a new pre-registered call */
 grpc_call_error grpc_server_request_registered_call(
