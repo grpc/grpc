@@ -171,6 +171,7 @@ void test_times_out(void) {
 int main(void) {
   grpc_iomgr_init();
   test_succeeds();
+  gpr_log(GPR_ERROR, "End of first test");
   test_fails();
   test_times_out();
   grpc_iomgr_shutdown();
