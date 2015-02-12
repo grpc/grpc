@@ -296,7 +296,7 @@ static void finish_start_new_rpc_and_unlock(grpc_server *server,
     call_list_join(pending_root, calld, PENDING_START);
     gpr_mu_unlock(&server->mu);
   } else {
-    rc = server->requested_calls.calls[--server->requested_calls.count];
+    rc = array->calls[--array->count];
     calld->state = ACTIVATED;
     gpr_mu_unlock(&server->mu);
     begin_call(server, calld, &rc);
@@ -328,7 +328,7 @@ static void start_new_rpc(grpc_call_element *elem) {
     }
     /* check for a wildcard method definition (no host set) */
     hash = GRPC_MDSTR_KV_HASH(0, calld->path->hash);
-    for (i = 0; i < chand->registered_method_max_probes; i++) {
+    for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
       if (!rm) break;
@@ -828,6 +828,7 @@ void grpc_server_add_listener(grpc_server *server, void *arg,
 static grpc_call_error queue_call_request(grpc_server *server,
                                           requested_call *rc) {
   call_data *calld = NULL;
+  requested_call_array *requested_calls = NULL;
   gpr_mu_lock(&server->mu);
   if (server->shutdown) {
     gpr_mu_unlock(&server->mu);
@@ -839,10 +840,12 @@ static grpc_call_error queue_call_request(grpc_server *server,
     case BATCH_CALL:
       calld =
           call_list_remove_head(&server->lists[PENDING_START], PENDING_START);
+      requested_calls = &server->requested_calls;
       break;
     case REGISTERED_CALL:
       calld = call_list_remove_head(
           &rc->data.registered.registered_method->pending, PENDING_START);
+      requested_calls = &rc->data.registered.registered_method->requested;
       break;
   }
   if (calld) {
@@ -852,7 +855,7 @@ static grpc_call_error queue_call_request(grpc_server *server,
     begin_call(server, calld, rc);
     return GRPC_CALL_OK;
   } else {
-    *requested_call_array_add(&server->requested_calls) = *rc;
+    *requested_call_array_add(requested_calls) = *rc;
     gpr_mu_unlock(&server->mu);
     return GRPC_CALL_OK;
   }
