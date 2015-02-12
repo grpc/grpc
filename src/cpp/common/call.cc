@@ -121,6 +121,12 @@ void CallOpBuffer::AddSendInitialMetadata(
   initial_metadata_ = FillMetadataArray(metadata);
 }
 
+void CallOpBuffer::AddRecvInitialMetadata(
+    std::multimap<grpc::string, grpc::string>* metadata) {
+  recv_initial_metadata_ = metadata;
+}
+
+
 void CallOpBuffer::AddSendInitialMetadata(ClientContext *ctx) {
   AddSendInitialMetadata(&ctx->send_initial_metadata_);
 }

@@ -134,7 +134,16 @@ class Call final {
   grpc_call *call() { return call_; }
   CompletionQueue *cq() { return cq_; }
 
+  // TODO(yangg) change it to a general state query function.
+  bool initial_metadata_received() {
+    return initial_metadata_received_;
+  }
+  void set_initial_metadata_received() {
+    initial_metadata_received_ = true;
+  }
+
  private:
+  bool initial_metadata_received_ = false;
   CallHook *call_hook_;
   CompletionQueue *cq_;
   grpc_call* call_;

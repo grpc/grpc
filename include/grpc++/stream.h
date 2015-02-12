@@ -98,7 +98,22 @@ class ClientReader final : public ClientStreamingInterface,
     cq_.Pluck(&buf);
   }
 
+  // Blocking wait for initial metadata from server. The received metadata
+  // can only be accessed after this call returns. Calling this method is
+  // optional as it will be called internally before the first Read.
+  void WaitForInitialMetadata() {
+    if (!call_.initial_metadata_received()) {
+      CallOpBuffer buf;
+      buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+      call_.PerformOps(&buf);
+      GPR_ASSERT(cq_.Pluck(&buf));
+      call_.set_initial_metadata_received();
+    }
+  }
+
+
   virtual bool Read(R *msg) override {
+    WaitForInitialMetadata();
     CallOpBuffer buf;
     bool got_message;
     buf.AddRecvMessage(msg, &got_message);
@@ -186,7 +201,21 @@ class ClientReaderWriter final : public ClientStreamingInterface,
     GPR_ASSERT(cq_.Pluck(&buf));
   }
 
+  // Blocking wait for initial metadata from server. The received metadata
+  // can only be accessed after this call returns. Calling this method is
+  // optional as it will be called internally before the first Read.
+  void WaitForInitialMetadata() {
+    if (!call_.initial_metadata_received()) {
+      CallOpBuffer buf;
+      buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+      call_.PerformOps(&buf);
+      GPR_ASSERT(cq_.Pluck(&buf));
+      call_.set_initial_metadata_received();
+    }
+  }
+
   virtual bool Read(R *msg) override {
+    WaitForInitialMetadata();
     CallOpBuffer buf;
     bool got_message;
     buf.AddRecvMessage(msg, &got_message);
