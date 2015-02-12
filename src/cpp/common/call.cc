@@ -119,7 +119,7 @@ void CallOpBuffer::AddSendInitialMetadata(
 }
 
 void CallOpBuffer::AddSendInitialMetadata(ClientContext *ctx) {
-  AddSendInitialMetadata(&ctx->metadata_);
+  AddSendInitialMetadata(&ctx->send_initial_metadata_);
 }
 
 void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
