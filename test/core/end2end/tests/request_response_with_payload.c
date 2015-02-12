@@ -127,8 +127,8 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, f.client_cq, "/foo", "test.google.com",
-                               deadline);
+  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+                               "foo.test.google.com", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -196,7 +196,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "test.google.com"));
+  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.com"));
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));

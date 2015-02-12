@@ -139,6 +139,7 @@
         "src/core/iomgr/iomgr_windows.c",
         "src/core/iomgr/pollset_kick.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
+        "src/core/iomgr/pollset_multipoller_with_epoll.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
         "src/core/iomgr/resolve_address.c",
@@ -252,6 +253,7 @@
         "src/core/support/cmdline.c",
         "src/core/support/cpu_linux.c",
         "src/core/support/cpu_posix.c",
+        "src/core/support/cpu_windows.c",
         "src/core/support/env_linux.c",
         "src/core/support/env_posix.c",
         "src/core/support/env_win32.c",
@@ -347,7 +349,8 @@
       "deps": [
         "gpr",
         "grpc"
-      ]
+      ],
+      "vs_project_guid": "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
     },
     {
       "name": "grpc_test_util",

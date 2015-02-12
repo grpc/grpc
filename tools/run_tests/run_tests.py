@@ -40,7 +40,7 @@ class ValgrindConfig(object):
     self.allow_hashing = False
 
   def job_spec(self, binary, hash_targets):
-    return JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool, binary],
+    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool, binary],
                    hash_targets=None)
 
 
@@ -180,13 +180,16 @@ forever = args.forever
 class TestCache(object):
   """Cache for running tests."""
 
-  def __init__(self):
+  def __init__(self, use_cache_results):
     self._last_successful_run = {}
+    self._use_cache_results = use_cache_results
 
   def should_run(self, cmdline, bin_hash):
     if cmdline not in self._last_successful_run:
       return True
     if self._last_successful_run[cmdline] != bin_hash:
+      return True
+    if not self._use_cache_results:
       return True
     return False
 
@@ -228,7 +231,7 @@ def _build_and_run(check_cancelled, newline_on_success, cache):
   return 0
 
 
-test_cache = TestCache()
+test_cache = TestCache(runs_per_test == 1)
 test_cache.maybe_load()
 
 if forever:

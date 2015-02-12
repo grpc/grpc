@@ -1,7 +1,6 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
-<%def name="get_configuration_type(is_library)">${'StaticLibrary' if is_library else 'Application'}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
-<%def name="gen_project(name, libs, targets)">\
+<%def name="gen_project(name, libs, targets, configuration_type = 'StaticLibrary', project_guid = None, additional_props = [], depends_on_zlib = False)">\
 % for project in vsprojects:
   % if project.name == name:
 <?xml version="1.0" encoding="utf-8"?>
@@ -17,18 +16,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>${project.vs_project_guid}</ProjectGuid>
+    <ProjectGuid>${project_guid if project_guid else project.vs_project_guid}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>${get_configuration_type(project.is_library)}</ConfigurationType>
+    <ConfigurationType>${configuration_type}</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>${get_configuration_type(project.is_library)}</ConfigurationType>
+    <ConfigurationType>${configuration_type}</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -41,13 +40,24 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
+    % for prop in additional_props:
+    <Import Project="${prop}.props" />
+    % endfor
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="global.props" />
+    % for prop in additional_props:
+    <Import Project="${prop}.props" />
+    % endfor
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>${name}</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>${name}</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -107,6 +117,11 @@
       <Project>${vsproject_dict[dep].vs_project_guid}</Project>
     </ProjectReference>
     % endfor
+    % if depends_on_zlib:
+    <ProjectReference Include="third_party\zlibvc.vcxproj">
+      <Project>{8fd826f8-3739-44e6-8cc8-997122e53b8d}</Project>
+    </ProjectReference>
+    % endif
   </ItemGroup>
   % endif
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

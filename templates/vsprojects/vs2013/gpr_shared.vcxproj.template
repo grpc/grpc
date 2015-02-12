@@ -1,0 +1,2 @@
+<%namespace file="vcxproj_defs.include" import="gen_project"/>\
+${gen_project('gpr', libs, targets, configuration_type = 'DynamicLibrary', project_guid = '{3D304D6B-AAF8-428B-AC7D-A698DDDE93C0}')}
