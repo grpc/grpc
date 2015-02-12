@@ -238,7 +238,7 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
     FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
     *recv_status_ = Status(
         static_cast<StatusCode>(status_code_),
-        status_details_ ?  grpc::string(status_details_, status_details_capacity_)
+        status_details_ ?  grpc::string(status_details_)
                         :  grpc::string());
   }
 }
