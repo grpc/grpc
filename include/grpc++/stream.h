@@ -98,8 +98,26 @@ class ClientReader final : public ClientStreamingInterface,
     cq_.Pluck(&buf);
   }
 
+  // Blocking wait for initial metadata from server. The received metadata
+  // can only be accessed after this call returns. Should only be called before
+  // the first read. Calling this method is optional, and if it is not called
+  // the metadata will be available in ClientContext after the first read.
+  void WaitForInitialMetadata() {
+    GPR_ASSERT(!context_->initial_metadata_received_);
+
+    CallOpBuffer buf;
+    buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    call_.PerformOps(&buf);
+    GPR_ASSERT(cq_.Pluck(&buf));
+    context_->initial_metadata_received_ = true;
+  }
+
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
+    if (!context_->initial_metadata_received_) {
+      buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+      context_->initial_metadata_received_ = true;
+    }
     bool got_message;
     buf.AddRecvMessage(msg, &got_message);
     call_.PerformOps(&buf);
@@ -186,8 +204,26 @@ class ClientReaderWriter final : public ClientStreamingInterface,
     GPR_ASSERT(cq_.Pluck(&buf));
   }
 
+  // Blocking wait for initial metadata from server. The received metadata
+  // can only be accessed after this call returns. Should only be called before
+  // the first read. Calling this method is optional, and if it is not called
+  // the metadata will be available in ClientContext after the first read.
+  void WaitForInitialMetadata() {
+    GPR_ASSERT(!context_->initial_metadata_received_);
+
+    CallOpBuffer buf;
+    buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    call_.PerformOps(&buf);
+    GPR_ASSERT(cq_.Pluck(&buf));
+    context_->initial_metadata_received_ = true;
+  }
+
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
+    if (!context_->initial_metadata_received_) {
+      buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+      context_->initial_metadata_received_ = true;
+    }
     bool got_message;
     buf.AddRecvMessage(msg, &got_message);
     call_.PerformOps(&buf);
@@ -226,7 +262,17 @@ class ClientReaderWriter final : public ClientStreamingInterface,
 template <class R>
 class ServerReader final : public ReaderInterface<R> {
  public:
-  explicit ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+
+  void SendInitialMetadata() {
+    GPR_ASSERT(!ctx_->sent_initial_metadata_);
+
+    CallOpBuffer buf;
+    buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+    ctx_->sent_initial_metadata_ = true;
+    call_->PerformOps(&buf);
+    call_->cq()->Pluck(&buf);
+  }
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
@@ -244,11 +290,24 @@ class ServerReader final : public ReaderInterface<R> {
 template <class W>
 class ServerWriter final : public WriterInterface<W> {
  public:
-  explicit ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+
+  void SendInitialMetadata() {
+    GPR_ASSERT(!ctx_->sent_initial_metadata_);
+
+    CallOpBuffer buf;
+    buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+    ctx_->sent_initial_metadata_ = true;
+    call_->PerformOps(&buf);
+    call_->cq()->Pluck(&buf);
+  }
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
-    ctx_->SendInitialMetadataIfNeeded(&buf);
+    if (!ctx_->sent_initial_metadata_) {
+      buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      ctx_->sent_initial_metadata_ = true;
+    }
     buf.AddSendMessage(msg);
     call_->PerformOps(&buf);
     return call_->cq()->Pluck(&buf);
@@ -264,7 +323,17 @@ template <class W, class R>
 class ServerReaderWriter final : public WriterInterface<W>,
                            public ReaderInterface<R> {
  public:
-  explicit ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+
+  void SendInitialMetadata() {
+    GPR_ASSERT(!ctx_->sent_initial_metadata_);
+
+    CallOpBuffer buf;
+    buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+    ctx_->sent_initial_metadata_ = true;
+    call_->PerformOps(&buf);
+    call_->cq()->Pluck(&buf);
+  }
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
@@ -276,7 +345,10 @@ class ServerReaderWriter final : public WriterInterface<W>,
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
-    ctx_->SendInitialMetadataIfNeeded(&buf);
+    if (!ctx_->sent_initial_metadata_) {
+      buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      ctx_->sent_initial_metadata_ = true;
+    }
     buf.AddSendMessage(msg);
     call_->PerformOps(&buf);
     return call_->cq()->Pluck(&buf);

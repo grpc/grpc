@@ -49,11 +49,4 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata *metadata,
   }
 }
 
-void ServerContext::SendInitialMetadataIfNeeded(CallOpBuffer* buf) {
-  if (!sent_initial_metadata_) {
-    buf->AddSendInitialMetadata(&initial_metadata_);
-    sent_initial_metadata_ = true;
-  }
-}
-
 }  // namespace grpc

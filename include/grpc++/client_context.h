@@ -95,6 +95,7 @@ class ClientContext {
 
   gpr_timespec RawDeadline() { return absolute_deadline_; }
 
+  bool initial_metadata_received_ = false;
   grpc_call *call_;
   grpc_completion_queue *cq_;
   gpr_timespec absolute_deadline_;
