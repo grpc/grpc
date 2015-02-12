@@ -158,7 +158,7 @@ class Server::MethodRequestData final : public CompletionQueueTag {
     }
 
     ~CallData() {
-      grpc_call_destroy(call_.call());
+      if (call_.call()) grpc_call_destroy(call_.call());
     }
 
     void Run() {
@@ -233,6 +233,7 @@ void Server::Shutdown() {
     if (started_ && !shutdown_) {
       shutdown_ = true;
       grpc_server_shutdown(server_);
+      cq_.Shutdown();
 
       // Wait for running callbacks to finish.
       while (num_running_cb_ != 0) {
@@ -264,12 +265,12 @@ void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
   auto *mrd = MethodRequestData::Wait(&cq_, &ok);
+  gpr_log(GPR_DEBUG, "Wait: %p %d", mrd, ok);
   if (mrd) {
-    MethodRequestData::CallData cd(this, mrd);
-
+    ScheduleCallback();
     if (ok) {
+      MethodRequestData::CallData cd(this, mrd);
       mrd->Request(server_);
-      ScheduleCallback();
 
       cd.Run();
     }

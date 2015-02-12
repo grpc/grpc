@@ -715,7 +715,7 @@ grpc_transport_setup_result grpc_server_setup_transport(
       grpc_channel_get_channel_stack(channel), transport);
 }
 
-void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
+static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
                        void *shutdown_tag) {
   listener *l;
   requested_call_array requested_calls;
@@ -725,6 +725,7 @@ void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
   size_t i;
   grpc_channel_op op;
   grpc_channel_element *elem;
+  registered_method *rm;
 
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu);
@@ -747,8 +748,18 @@ void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
     i++;
   }
 
+  /* collect all unregistered then registered calls */
   requested_calls = server->requested_calls;
   memset(&server->requested_calls, 0, sizeof(server->requested_calls));
+  for (rm = server->registered_methods; rm; rm = rm->next) {
+    if (requested_calls.count + rm->requested.count > requested_calls.capacity) {
+      requested_calls.capacity = GPR_MAX(requested_calls.count + rm->requested.count, 2 * requested_calls.capacity);
+      requested_calls.calls = gpr_realloc(requested_calls.calls, sizeof(*requested_calls.calls) * requested_calls.capacity);
+    }
+    memcpy(requested_calls.calls + requested_calls.count, rm->requested.calls, sizeof(*requested_calls.calls) * rm->requested.count);
+    requested_calls.count += rm->requested.count;
+    memset(&rm->requested, 0, sizeof(rm->requested));
+  }
 
   server->shutdown = 1;
   server->have_shutdown_tag = have_shutdown_tag;
