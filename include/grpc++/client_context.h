@@ -53,9 +53,9 @@ class CallOpBuffer;
 template <class R> class ClientReader;
 template <class W> class ClientWriter;
 template <class R, class W> class ClientReaderWriter;
-template <class R> class ServerReader;
-template <class W> class ServerWriter;
-template <class R, class W> class ServerReaderWriter;
+template <class R> class ClientAsyncReader;
+template <class W> class ClientAsyncWriter;
+template <class R, class W> class ClientAsyncReaderWriter;
 
 class ClientContext {
  public:
@@ -80,9 +80,9 @@ class ClientContext {
   template <class R> friend class ::grpc::ClientReader;
   template <class W> friend class ::grpc::ClientWriter;
   template <class R, class W> friend class ::grpc::ClientReaderWriter;
-  template <class R> friend class ::grpc::ServerReader;
-  template <class W> friend class ::grpc::ServerWriter;
-  template <class R, class W> friend class ::grpc::ServerReaderWriter;
+  template <class R> friend class ::grpc::ClientAsyncReader;
+  template <class W> friend class ::grpc::ClientAsyncWriter;
+  template <class R, class W> friend class ::grpc::ClientAsyncReaderWriter;
 
   grpc_call *call() { return call_; }
   void set_call(grpc_call *call) {

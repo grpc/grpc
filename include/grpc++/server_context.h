@@ -44,6 +44,14 @@ struct gpr_timespec;
 
 namespace grpc {
 
+template <class R> class ServerAsyncReader;
+template <class W> class ServerAsyncWriter;
+template <class R, class W> class ServerAsyncReaderWriter;
+template <class R> class ServerReader;
+template <class W> class ServerWriter;
+template <class R, class W> class ServerReaderWriter;
+
+class CallOpBuffer;
 class Server;
 
 // Interface of server side rpc context.
@@ -58,7 +66,16 @@ class ServerContext {
 
  private:
   friend class ::grpc::Server;
+  template <class R> friend class ::grpc::ServerAsyncReader;
+  template <class W> friend class ::grpc::ServerAsyncWriter;
+  template <class R, class W> friend class ::grpc::ServerAsyncReaderWriter;
+  template <class R> friend class ::grpc::ServerReader;
+  template <class W> friend class ::grpc::ServerWriter;
+  template <class R, class W> friend class ::grpc::ServerReaderWriter;
+  
   ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count);
+
+  void SendInitialMetadataIfNeeded(CallOpBuffer *buf);
 
   const std::chrono::system_clock::time_point deadline_;
   bool sent_initial_metadata_ = false;

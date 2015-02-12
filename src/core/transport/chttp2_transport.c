@@ -1015,6 +1015,8 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
   int had_outgoing;
   char buffer[GPR_LTOA_MIN_BUFSIZE];
 
+  gpr_log(GPR_DEBUG, "cancel %d", id);
+
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */
     had_outgoing = s->outgoing_sopb.nops != 0;
@@ -1184,6 +1186,8 @@ static void free_timeout(void *p) { gpr_free(p); }
 static void on_header(void *tp, grpc_mdelem *md) {
   transport *t = tp;
   stream *s = t->incoming_stream;
+
+  gpr_log(GPR_DEBUG, "on_header: %d %s %s", s->id, grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
 
   GPR_ASSERT(s);
   stream_list_join(t, s, PENDING_CALLBACKS);

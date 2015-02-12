@@ -37,6 +37,7 @@
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/server_context.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/status.h>
 #include <grpc/support/log.h>
@@ -98,9 +99,10 @@ class ClientReader final : public ClientStreamingInterface,
 
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
-    buf.AddRecvMessage(msg);
+    bool got_message;
+    buf.AddRecvMessage(msg, &got_message);
     call_.PerformOps(&buf);
-    return cq_.Pluck(&buf);
+    return cq_.Pluck(&buf) && got_message;
   }
 
   virtual Status Finish() override {
@@ -127,7 +129,12 @@ class ClientWriter final : public ClientStreamingInterface,
                ClientContext *context,
                google::protobuf::Message *response)
       : context_(context), response_(response),
-        call_(channel->CreateCall(method, context, &cq_)) {}
+        call_(channel->CreateCall(method, context, &cq_)) {
+    CallOpBuffer buf;
+    buf.AddSendInitialMetadata(&context->send_initial_metadata_);
+    call_.PerformOps(&buf);
+    cq_.Pluck(&buf);
+  }
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
@@ -147,10 +154,11 @@ class ClientWriter final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    buf.AddRecvMessage(response_);
+    bool got_message;
+    buf.AddRecvMessage(response_, &got_message);
     buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
     call_.PerformOps(&buf);
-    GPR_ASSERT(cq_.Pluck(&buf));
+    GPR_ASSERT(cq_.Pluck(&buf) && got_message);
     return status;
   }
 
@@ -174,9 +182,10 @@ class ClientReaderWriter final : public ClientStreamingInterface,
 
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
-    buf.AddRecvMessage(msg);
+    bool got_message;
+    buf.AddRecvMessage(msg, &got_message);
     call_.PerformOps(&buf);
-    return cq_.Pluck(&buf);
+    return cq_.Pluck(&buf) && got_message;
   }
 
   virtual bool Write(const W& msg) override {
@@ -211,33 +220,37 @@ class ClientReaderWriter final : public ClientStreamingInterface,
 template <class R>
 class ServerReader final : public ReaderInterface<R> {
  public:
-  explicit ServerReader(Call* call) : call_(call) {}
+  explicit ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
-    buf.AddRecvMessage(msg);
+    bool got_message;
+    buf.AddRecvMessage(msg, &got_message);
     call_->PerformOps(&buf);
-    return call_->cq()->Pluck(&buf);
+    return call_->cq()->Pluck(&buf) && got_message;
   }
 
  private:
-  Call* call_;
+  Call* const call_;
+  ServerContext* const ctx_;
 };
 
 template <class W>
 class ServerWriter final : public WriterInterface<W> {
  public:
-  explicit ServerWriter(Call* call) : call_(call) {}
+  explicit ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
+    ctx_->SendInitialMetadataIfNeeded(&buf);
     buf.AddSendMessage(msg);
     call_->PerformOps(&buf);
     return call_->cq()->Pluck(&buf);
   }
 
  private:
-  Call* call_;
+  Call* const call_;
+  ServerContext* const ctx_;
 };
 
 // Server-side interface for bi-directional streaming.
@@ -245,25 +258,27 @@ template <class W, class R>
 class ServerReaderWriter final : public WriterInterface<W>,
                            public ReaderInterface<R> {
  public:
-  explicit ServerReaderWriter(Call* call) : call_(call) {}
+  explicit ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
-    buf.AddRecvMessage(msg);
+    bool got_message;
+    buf.AddRecvMessage(msg, &got_message);
     call_->PerformOps(&buf);
-    return call_->cq()->Pluck(&buf);
+    return call_->cq()->Pluck(&buf) && got_message;
   }
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
+    ctx_->SendInitialMetadataIfNeeded(&buf);
     buf.AddSendMessage(msg);
     call_->PerformOps(&buf);
     return call_->cq()->Pluck(&buf);
   }
 
  private:
-  CompletionQueue* cq_;
-  Call* call_;
+  Call* const call_;
+  ServerContext* const ctx_;
 };
 
 // Async interfaces
@@ -353,13 +368,14 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
 
   virtual void Finish(Status* status, void* tag) override {
     finish_buf_.Reset(tag);
-    finish_buf_.AddRecvMessage(response_);
+    finish_buf_.AddRecvMessage(response_, &got_message_);
     finish_buf_.AddClientRecvStatus(nullptr, status);  // TODO metadata
     call_.PerformOps(&finish_buf_);
   }
 
  private:
   google::protobuf::Message *const response_;
+  bool got_message_;
   CompletionQueue cq_;
   Call call_;
   CallOpBuffer write_buf_;

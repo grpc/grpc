@@ -107,7 +107,7 @@ class ClientStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   Status RunHandler(const HandlerParameter& param) final {
-    ServerReader<RequestType> reader(param.call);
+    ServerReader<RequestType> reader(param.call, param.server_context);
     return func_(service_, param.server_context, &reader,
                  dynamic_cast<ResponseType*>(param.response));
   }
@@ -129,7 +129,7 @@ class ServerStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   Status RunHandler(const HandlerParameter& param) final {
-    ServerWriter<ResponseType> writer(param.call);
+    ServerWriter<ResponseType> writer(param.call, param.server_context);
     return func_(service_, param.server_context,
                  dynamic_cast<const RequestType*>(param.request), &writer);
   }
@@ -152,7 +152,7 @@ class BidiStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   Status RunHandler(const HandlerParameter& param) final {
-    ServerReaderWriter<ResponseType, RequestType> stream(param.call);
+    ServerReaderWriter<ResponseType, RequestType> stream(param.call, param.server_context);
     return func_(service_, param.server_context, &stream);
   }
 

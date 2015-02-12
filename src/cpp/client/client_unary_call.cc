@@ -51,11 +51,12 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   Status status;
   buf.AddSendInitialMetadata(context);
   buf.AddSendMessage(request);
-  buf.AddRecvMessage(result);
+  bool got_message;
+  buf.AddRecvMessage(result, &got_message);
   buf.AddClientSendClose();
   buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
   call.PerformOps(&buf);
-  GPR_ASSERT(cq.Pluck(&buf));
+  GPR_ASSERT(cq.Pluck(&buf) && (got_message || !status.IsOk()));
   return status;
 }
 

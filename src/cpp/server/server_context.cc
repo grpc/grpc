@@ -32,6 +32,7 @@
  */
 
 #include <grpc++/server_context.h>
+#include <grpc++/impl/call.h>
 #include <grpc/grpc.h>
 #include "src/cpp/util/time.h"
 
@@ -45,6 +46,13 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata *metadata,
         grpc::string(metadata[i].key),
         grpc::string(metadata[i].value,
                      metadata[i].value + metadata[i].value_length)));
+  }
+}
+
+void ServerContext::SendInitialMetadataIfNeeded(CallOpBuffer* buf) {
+  if (!sent_initial_metadata_) {
+    buf->AddSendInitialMetadata(&initial_metadata_);
+    sent_initial_metadata_ = true;
   }
 }
 

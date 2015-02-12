@@ -58,6 +58,7 @@ void CallOpBuffer::Reset(void* next_return_tag) {
   }
 
   recv_message_ = nullptr;
+  got_message_ = nullptr;
   if (recv_message_buf_) {
     grpc_byte_buffer_destroy(recv_message_buf_);
     recv_message_buf_ = nullptr;
@@ -128,8 +129,9 @@ void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
   send_message_ = &message;
 }
 
-void CallOpBuffer::AddRecvMessage(google::protobuf::Message *message) {
+void CallOpBuffer::AddRecvMessage(google::protobuf::Message *message, bool* got_message) {
   recv_message_ = message;
+  got_message_ = got_message;
 }
 
 void CallOpBuffer::AddClientSendClose() {
@@ -239,10 +241,15 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
     FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
   }
   // Parse received message if any.
-  if (recv_message_ && recv_message_buf_) {
-    *status = DeserializeProto(recv_message_buf_, recv_message_);
-    grpc_byte_buffer_destroy(recv_message_buf_);
-    recv_message_buf_ = nullptr;
+  if (recv_message_) {
+    if (recv_message_buf_) {
+      *got_message_ = true;
+      *status = DeserializeProto(recv_message_buf_, recv_message_);
+      grpc_byte_buffer_destroy(recv_message_buf_);
+      recv_message_buf_ = nullptr;
+    } else {
+      *got_message_ = false;
+    }
   }
   // Parse received status.
   if (recv_status_) {

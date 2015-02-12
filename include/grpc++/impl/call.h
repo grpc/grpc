@@ -67,7 +67,7 @@ class CallOpBuffer final : public CompletionQueueTag {
   void AddRecvInitialMetadata(
       std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendMessage(const google::protobuf::Message &message);
-  void AddRecvMessage(google::protobuf::Message *message);
+  void AddRecvMessage(google::protobuf::Message *message, bool* got_message);
   void AddClientSendClose();
   void AddClientRecvStatus(std::multimap<grpc::string, grpc::string> *metadata,
                            Status *status);
@@ -97,6 +97,7 @@ class CallOpBuffer final : public CompletionQueueTag {
   grpc_byte_buffer* send_message_buf_ = nullptr;
   // Recv message
   google::protobuf::Message* recv_message_ = nullptr;
+  bool* got_message_ = nullptr;
   grpc_byte_buffer* recv_message_buf_ = nullptr;
   // Client send close
   bool client_send_close_ = false;
