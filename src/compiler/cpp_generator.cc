@@ -190,7 +190,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
                    "::grpc::ClientWriter< $Request$>* $Method$("
                    "::grpc::ClientContext* context, $Response$* response);\n");
     printer->Print(*vars,
-                   "::grpc::ClientWriter< $Request$>* $Method$("
+                   "::grpc::ClientAsyncWriter< $Request$>* $Method$("
                    "::grpc::ClientContext* context, $Response$* response, "
                    "::grpc::Status *status, "
                    "::grpc::CompletionQueue *cq, void *tag);\n");
@@ -200,7 +200,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
         "::grpc::ClientReader< $Response$>* $Method$("
         "::grpc::ClientContext* context, const $Request$* request);\n");
     printer->Print(*vars,
-                   "::grpc::ClientReader< $Response$>* $Method$("
+                   "::grpc::ClientAsyncReader< $Response$>* $Method$("
                    "::grpc::ClientContext* context, const $Request$* request, "
                    "::grpc::CompletionQueue *cq, void *tag);\n");
   } else if (BidiStreaming(method)) {
