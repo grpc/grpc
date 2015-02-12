@@ -34,10 +34,18 @@
 #ifndef __GRPCPP_IMPL_SERVICE_TYPE_H__
 #define __GRPCPP_IMPL_SERVICE_TYPE_H__
 
+namespace google {
+namespace protobuf {
+class Message;
+}  // namespace protobuf
+}  // namespace google
+
 namespace grpc {
 
 class RpcService;
 class Server;
+class ServerContext;
+class Status;
 
 class SynchronousService {
  public:
@@ -45,19 +53,69 @@ class SynchronousService {
   virtual RpcService* service() = 0;
 };
 
+class ServerAsyncStreamingInterface {
+ public:
+  virtual ~ServerAsyncStreamingInterface() {}
+
+  virtual void SendInitialMetadata(void* tag) = 0;
+  virtual void Finish(const Status& status, void* tag) = 0;
+};
+
 class AsynchronousService {
  public:
-  AsynchronousService(CompletionQueue* cq, const char** method_names, size_t method_count) : cq_(cq), method_names_(method_names), method_count_(method_count) {}
+  // this is Server, but in disguise to avoid a link dependency
+  class DispatchImpl {
+   public:
+    virtual void RequestAsyncCall(void* registered_method,
+                                  ServerContext* context,
+                                  ::google::protobuf::Message* request,
+                                  ServerAsyncStreamingInterface* stream,
+                                  CompletionQueue* cq, void* tag) = 0;
+  };
+
+  AsynchronousService(CompletionQueue* cq, const char** method_names,
+                      size_t method_count)
+      : cq_(cq), method_names_(method_names), method_count_(method_count) {}
+
+  ~AsynchronousService();
 
   CompletionQueue* completion_queue() const { return cq_; }
+
+ protected:
+  void RequestAsyncUnary(int index, ServerContext* context,
+                         ::google::protobuf::Message* request,
+                         ServerAsyncStreamingInterface* stream,
+                         CompletionQueue* cq, void* tag) {
+    dispatch_impl_->RequestAsyncCall(request_args_[index], context, request,
+                                     stream, cq, tag);
+  }
+  void RequestClientStreaming(int index, ServerContext* context,
+                              ServerAsyncStreamingInterface* stream,
+                              CompletionQueue* cq, void* tag) {
+    dispatch_impl_->RequestAsyncCall(request_args_[index], context, nullptr,
+                                     stream, cq, tag);
+  }
+  void RequestServerStreaming(int index, ServerContext* context,
+                              ::google::protobuf::Message* request,
+                              ServerAsyncStreamingInterface* stream,
+                              CompletionQueue* cq, void* tag) {
+    dispatch_impl_->RequestAsyncCall(request_args_[index], context, request,
+                                     stream, cq, tag);
+  }
+  void RequestBidiStreaming(int index, ServerContext* context,
+                            ServerAsyncStreamingInterface* stream,
+                            CompletionQueue* cq, void* tag) {
+    dispatch_impl_->RequestAsyncCall(request_args_[index], context, nullptr,
+                                     stream, cq, tag);
+  }
 
  private:
   friend class Server;
   CompletionQueue* const cq_;
-  Server* server_ = nullptr;
-  const char**const method_names_;
+  DispatchImpl* dispatch_impl_ = nullptr;
+  const char** const method_names_;
   size_t method_count_;
-  std::vector<void*> request_args_;
+  void** request_args_ = nullptr;
 };
 
 }  // namespace grpc

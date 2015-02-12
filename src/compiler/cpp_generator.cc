@@ -374,7 +374,7 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
                    "::grpc::ClientContext* context, "
                    "const $Request$& request, $Response$* response) {\n");
     printer->Print(*vars,
-                   "return ::grpc::BlockingUnaryCall(channel(),"
+                   "  return ::grpc::BlockingUnaryCall(channel(),"
                    "::grpc::RpcMethod($Service$_method_names[$Idx$]), "
                    "context, request, response);\n"
                    "}\n\n");
@@ -484,6 +484,9 @@ void PrintSourceServerAsyncMethod(
                    "$Request$* request, "
                    "::grpc::ServerAsyncResponseWriter< $Response$>* response, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
+    printer->Print(
+        *vars,
+        "  AsynchronousService::RequestAsyncUnary($Idx$, context, request, response, cq, tag);\n");
     printer->Print("}\n\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
@@ -491,6 +494,9 @@ void PrintSourceServerAsyncMethod(
                    "::grpc::ServerContext* context, "
                    "::grpc::ServerAsyncReader< $Request$>* reader, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
+    printer->Print(
+        *vars,
+        "  AsynchronousService::RequestClientStreaming($Idx$, context, reader, cq, tag);\n");
     printer->Print("}\n\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
@@ -499,6 +505,9 @@ void PrintSourceServerAsyncMethod(
                    "$Request$* request, "
                    "::grpc::ServerAsyncWriter< $Response$>* writer, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
+    printer->Print(
+        *vars,
+        "  AsynchronousService::RequestServerStreaming($Idx$, context, request, writer, cq, tag);\n");
     printer->Print("}\n\n");
   } else if (BidiStreaming(method)) {
     printer->Print(
@@ -507,6 +516,9 @@ void PrintSourceServerAsyncMethod(
         "::grpc::ServerContext* context, "
         "::grpc::ServerAsyncReaderWriter< $Response$, $Request$>* stream, "
         "::grpc::CompletionQueue* cq, void *tag) {\n");
+    printer->Print(
+        *vars,
+        "  AsynchronousService::RequestBidiStreaming($Idx$, context, stream, cq, tag);\n");
     printer->Print("}\n\n");
   }
 }
@@ -548,6 +560,7 @@ void PrintSourceService(google::protobuf::io::Printer *printer,
                  "  delete service_;\n"
                  "}\n\n");
   for (int i = 0; i < service->method_count(); ++i) {
+    (*vars)["Idx"] = as_string(i);
     PrintSourceServerMethod(printer, service->method(i), vars);
     PrintSourceServerAsyncMethod(printer, service->method(i), vars);
   }

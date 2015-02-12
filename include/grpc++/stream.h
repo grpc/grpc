@@ -39,6 +39,7 @@
 #include <grpc++/completion_queue.h>
 #include <grpc++/server_context.h>
 #include <grpc++/impl/call.h>
+#include <grpc++/impl/service_type.h>
 #include <grpc++/status.h>
 #include <grpc/support/log.h>
 
@@ -370,15 +371,6 @@ class ClientAsyncStreamingInterface {
   virtual void Finish(Status* status, void* tag) = 0;
 };
 
-class ServerAsyncStreamingInterface {
- public:
-  virtual ~ServerAsyncStreamingInterface() {}
-
-  virtual void SendInitialMetadata(void* tag) = 0;
-
-  virtual void Finish(const Status& status, void* tag) = 0;
-};
-
 // An interface that yields a sequence of R messages.
 template <class R>
 class AsyncReaderInterface {
@@ -580,11 +572,11 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
 
 // TODO(yangg) Move out of stream.h
 template <class W>
-class ServerAsyncResponseWriter final {
+class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(Call* call) : call_(call) {}
 
-  virtual void Write(const W& msg, void* tag) override {
+  virtual void Write(const W& msg, void* tag) {
     CallOpBuffer buf;
     buf.Reset(tag);
     buf.AddSendMessage(msg);

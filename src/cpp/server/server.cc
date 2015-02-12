@@ -93,24 +93,26 @@ bool Server::RegisterService(RpcService* service) {
               method->name());
       return false;
     }
-    methods_.emplace_back(method, tag);
+    sync_methods_.emplace_back(method, tag);
   }
   return true;
 }
 
 bool Server::RegisterAsyncService(AsynchronousService* service) {
-  GPR_ASSERT(service->server_ == nullptr && "Can only register an asynchronous service against one server.");
-  service->server_ = this;
-  service->request_args_.reserve(service->method_count_);
+  GPR_ASSERT(service->dispatch_impl_ == nullptr &&
+             "Can only register an asynchronous service against one server.");
+  service->dispatch_impl_ = this;
+  service->request_args_ = new void* [service->method_count_];
   for (size_t i = 0; i < service->method_count_; ++i) {
-    void* tag = grpc_server_register_method(server_, service->method_names_[i], nullptr,
-                                            service->completion_queue()->cq());
+    void* tag =
+        grpc_server_register_method(server_, service->method_names_[i], nullptr,
+                                    service->completion_queue()->cq());
     if (!tag) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               service->method_names_[i]);
       return false;
     }
-    service->request_args_.push_back(tag);
+    service->request_args_[i] = tag;
   }
   return true;
 }
@@ -124,9 +126,9 @@ int Server::AddPort(const grpc::string& addr) {
   }
 }
 
-class Server::MethodRequestData final : public CompletionQueueTag {
+class Server::SyncRequest final : public CompletionQueueTag {
  public:
-  MethodRequestData(RpcServiceMethod* method, void* tag)
+  SyncRequest(RpcServiceMethod* method, void* tag)
       : method_(method),
         tag_(tag),
         has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
@@ -138,13 +140,13 @@ class Server::MethodRequestData final : public CompletionQueueTag {
     grpc_metadata_array_init(&request_metadata_);
   }
 
-  static MethodRequestData* Wait(CompletionQueue* cq, bool* ok) {
+  static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
     void* tag = nullptr;
     *ok = false;
     if (!cq->Next(&tag, ok)) {
       return nullptr;
     }
-    auto* mrd = static_cast<MethodRequestData*>(tag);
+    auto* mrd = static_cast<SyncRequest*>(tag);
     GPR_ASSERT(mrd->in_flight_);
     return mrd;
   }
@@ -162,9 +164,9 @@ class Server::MethodRequestData final : public CompletionQueueTag {
 
   void FinalizeResult(void** tag, bool* status) override {}
 
-  class CallData {
+  class CallData final {
    public:
-    explicit CallData(Server* server, MethodRequestData* mrd)
+    explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
           call_(mrd->call_, server, &cq_),
           ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
@@ -239,8 +241,8 @@ bool Server::Start() {
   grpc_server_start(server_);
 
   // Start processing rpcs.
-  if (!methods_.empty()) {
-    for (auto& m : methods_) {
+  if (!sync_methods_.empty()) {
+    for (auto& m : sync_methods_) {
       m.Request(server_);
     }
 
@@ -275,6 +277,39 @@ void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
              grpc_call_start_batch(call->call(), ops, nops, buf));
 }
 
+class Server::AsyncRequest final : public CompletionQueueTag {
+ public:
+  AsyncRequest(Server* server, void* registered_method, ServerContext* ctx,
+               ::google::protobuf::Message* request,
+               ServerAsyncStreamingInterface* stream, CompletionQueue* cq,
+               void* tag)
+      : tag_(tag), request_(request), stream_(stream), ctx_(ctx) {
+    memset(&array_, 0, sizeof(array_));
+    grpc_server_request_registered_call(
+        server->server_, registered_method, &call_, &deadline_, &array_,
+        request ? &payload_ : nullptr, cq->cq(), this);
+  }
+
+  void FinalizeResult(void** tag, bool* status) override {}
+
+ private:
+  void* const tag_;
+  ::google::protobuf::Message* const request_;
+  ServerAsyncStreamingInterface* const stream_;
+  ServerContext* const ctx_;
+  grpc_call* call_ = nullptr;
+  gpr_timespec deadline_;
+  grpc_metadata_array array_;
+  grpc_byte_buffer* payload_ = nullptr;
+};
+
+void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
+                              ::google::protobuf::Message* request,
+                              ServerAsyncStreamingInterface* stream,
+                              CompletionQueue* cq, void* tag) {
+  new AsyncRequest(this, registered_method, context, request, stream, cq, tag);
+}
+
 void Server::ScheduleCallback() {
   {
     std::unique_lock<std::mutex> lock(mu_);
@@ -286,11 +321,11 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
-  auto* mrd = MethodRequestData::Wait(&cq_, &ok);
+  auto* mrd = SyncRequest::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
     if (ok) {
-      MethodRequestData::CallData cd(this, mrd);
+      SyncRequest::CallData cd(this, mrd);
       mrd->Request(server_);
 
       cd.Run();

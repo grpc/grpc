@@ -42,6 +42,7 @@
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
 #include <grpc++/impl/call.h>
+#include <grpc++/impl/service_type.h>
 #include <grpc++/status.h>
 
 struct grpc_server;
@@ -60,7 +61,8 @@ class ServerCredentials;
 class ThreadPoolInterface;
 
 // Currently it only supports handling rpcs in a single thread.
-class Server final : private CallHook {
+class Server final : private CallHook,
+                     private AsynchronousService::DispatchImpl {
  public:
   ~Server();
 
@@ -70,7 +72,8 @@ class Server final : private CallHook {
  private:
   friend class ServerBuilder;
 
-  class MethodRequestData;
+  class SyncRequest;
+  class AsyncRequest;
 
   // ServerBuilder use only
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
@@ -91,6 +94,12 @@ class Server final : private CallHook {
 
   void PerformOpsOnCall(CallOpBuffer* ops, Call* call) override;
 
+  // DispatchImpl
+  void RequestAsyncCall(void* registered_method, ServerContext* context,
+                         ::google::protobuf::Message* request,
+                         ServerAsyncStreamingInterface* stream,
+                         CompletionQueue* cq, void* tag);
+
   // Completion queue.
   CompletionQueue cq_;
 
@@ -102,7 +111,7 @@ class Server final : private CallHook {
   int num_running_cb_;
   std::condition_variable callback_cv_;
 
-  std::list<MethodRequestData> methods_;
+  std::list<SyncRequest> sync_methods_;
 
   // Pointer to the c grpc server.
   grpc_server* server_;
