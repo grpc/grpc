@@ -13,11 +13,11 @@ namespace Google.GRPC.Core
     {
         const int THREAD_POOL_SIZE = 1;
 
-        [DllImport("grpc.dll")]
-        static extern void grpc_init();
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_init();
 
-        [DllImport("grpc.dll")]
-        static extern void grpc_shutdown();
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_shutdown();
 
         static object staticLock = new object();
         static bool initCalled = false;
@@ -61,7 +61,7 @@ namespace Google.GRPC.Core
         /// </summary>
         private static void GrpcInit()
         {
-            grpc_init();
+            grpcsharp_init();
             threadPool.Start();
             // TODO: use proper logging here
             Console.WriteLine("GRPC initialized.");
@@ -73,7 +73,7 @@ namespace Google.GRPC.Core
         private static void GrpcShutdown()
         {
             threadPool.Stop();
-            grpc_shutdown();
+            grpcsharp_shutdown();
 
             // TODO: use proper logging here
             Console.WriteLine("GRPC shutdown.");
