@@ -46,6 +46,14 @@ namespace Google.GRPC.Core.Internal
             }
         }
 
+        internal static int NativeSize
+        {
+            get
+            {
+                return gprsharp_sizeof_timespec();
+            }
+        }
+
         /// <summary>
         /// Creates a GPR deadline from current instant and given timeout.
         /// </summary>

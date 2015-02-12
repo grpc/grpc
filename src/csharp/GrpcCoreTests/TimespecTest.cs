@@ -1,5 +1,6 @@
 using System;
 using NUnit.Framework;
+using System.Runtime.InteropServices;
 using Google.GRPC.Core.Internal;
 
 namespace Google.GRPC.Core.Internal.Tests
@@ -10,6 +11,18 @@ namespace Google.GRPC.Core.Internal.Tests
         public void Now()
         {
             var timespec = Timespec.Now;
+        }
+
+        [Test]
+        public void InfFuture()
+        {
+            var timespec = Timespec.InfFuture;
+        }
+
+        [Test]
+        public void TimespecSizeIsNativeSize()
+        {
+            Assert.AreEqual(Timespec.NativeSize, Marshal.SizeOf(typeof(Timespec)));
         }
 
         [Test]
