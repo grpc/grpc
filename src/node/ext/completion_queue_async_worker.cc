@@ -58,7 +58,6 @@ CompletionQueueAsyncWorker::~CompletionQueueAsyncWorker() {}
 
 void CompletionQueueAsyncWorker::Execute() {
   result = grpc_completion_queue_next(queue, gpr_inf_future);
-  gpr_log(GPR_DEBUG, "Handling response on call %p", result->call);
   if (result->data.op_complete != GRPC_OP_OK) {
     SetErrorMessage("The batch encountered an error");
   }
@@ -79,7 +78,6 @@ void CompletionQueueAsyncWorker::Init(Handle<Object> exports) {
 
 void CompletionQueueAsyncWorker::HandleOKCallback() {
   NanScope();
-  gpr_log(GPR_DEBUG, "Handling response on call %p", result->call);
   NanCallback *callback = GetTagCallback(result->tag);
   Handle<Value> argv[] = {NanNull(), GetTagNodeValue(result->tag)};
 

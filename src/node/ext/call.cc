@@ -98,9 +98,6 @@ bool CreateMetadataArray(
     string_handles->push_back(unique_ptr<NanUtf8String>(utf8_key));
     Handle<Array> values = Local<Array>::Cast(metadata->Get(current_key));
     for (unsigned int j = 0; j < values->Length(); j++) {
-      if (array->count >= array->capacity) {
-        gpr_log(GPR_ERROR, "Metadata array grew past capacity");
-      }
       Handle<Value> value = values->Get(j);
       grpc_metadata *current = &array->metadata[array->count];
       current->key = **utf8_key;
@@ -447,11 +444,9 @@ void DestroyTag(void *tag) {
 }
 
 Call::Call(grpc_call *call) : wrapped_call(call) {
-  gpr_log(GPR_DEBUG, "Constructing call, this: %p, pointer: %p", this, call);
 }
 
 Call::~Call() {
-  gpr_log(GPR_DEBUG, "Destructing call, this: %p, pointer: %p", this, wrapped_call);
   grpc_call_destroy(wrapped_call);
 }
 
@@ -483,7 +478,6 @@ Handle<Value> Call::WrapStruct(grpc_call *call) {
   if (call == NULL) {
     return NanEscapeScope(NanNull());
   }
-  gpr_log(GPR_DEBUG, "Wrapping call: %p", call);
   const int argc = 1;
   Handle<Value> argv[argc] = {External::New(reinterpret_cast<void *>(call))};
   return NanEscapeScope(constructor->NewInstance(argc, argv));
