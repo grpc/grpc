@@ -264,11 +264,12 @@ As you can see, the class `GreetingsImpl` implements the interface
     -`Helloworld.HelloRequest`: the request
     -`StreamObserver<Helloworld.HelloReply>`: a response observer, which is
     a special interface for the server to call with its response
+
 To return our response to the client and complete the call:
-1. We construct and populate a `HelloReply` response object with our exciting
+    1. We construct and populate a `HelloReply` response object with our exciting
 message, as specified in our interface definition.
-2. We call `responseObserver.onValue()` with the `HelloReply` that we want to send back to the client.
-3. Finally, we call `responseObserver.onCompleted()` to indicate that we're
+    2. We call `responseObserver.onValue()` with the `HelloReply` that we want to send back to the client.
+    3. Finally, we call `responseObserver.onCompleted()` to indicate that we're
 finished dealing with this RPC.
 
 
