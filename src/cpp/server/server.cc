@@ -177,6 +177,9 @@ class Server::MethodRequestData final : public CompletionQueueTag {
       auto status = method_->handler()->RunHandler(
           MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
       CallOpBuffer buf;
+      if (!ctx_.sent_initial_metadata_) {
+        buf.AddSendInitialMetadata(&ctx_.initial_metadata_);
+      }
       if (has_response_payload_) {
         buf.AddSendMessage(*res);
       }
