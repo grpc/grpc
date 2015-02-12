@@ -91,6 +91,7 @@ class ClientReader final : public ClientStreamingInterface,
                const google::protobuf::Message &request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpBuffer buf;
+    buf.AddSendInitialMetadata(&context->send_initial_metadata_);
     buf.AddSendMessage(request);
     buf.AddClientSendClose();
     call_.PerformOps(&buf);
@@ -178,7 +179,12 @@ class ClientReaderWriter final : public ClientStreamingInterface,
   // Blocking create a stream.
   ClientReaderWriter(ChannelInterface *channel,
                      const RpcMethod &method, ClientContext *context)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {}
+      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+    CallOpBuffer buf;
+    buf.AddSendInitialMetadata(&context->send_initial_metadata_);
+    call_.PerformOps(&buf);
+    GPR_ASSERT(cq_.Pluck(&buf));
+  }
 
   virtual bool Read(R *msg) override {
     CallOpBuffer buf;
