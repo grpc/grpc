@@ -478,9 +478,6 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   ref_transport(t);
   gpr_mu_unlock(&t->mu);
 
-  ref_transport(t);
-  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
-
   sr = setup(arg, &t->base, t->metadata_context);
 
   lock(t);
@@ -488,6 +485,10 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->cb_user_data = sr.user_data;
   t->calling_back = 0;
   unlock(t);
+
+  ref_transport(t);
+  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
+
   unref_transport(t);
 }
 
