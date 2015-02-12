@@ -111,7 +111,7 @@ describe('call', function() {
         call.startBatch(null, function(){});
       });
     });
-    it.skip('should succeed with an empty object', function(done) {
+    it('should succeed with an empty object', function(done) {
       var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.doesNotThrow(function() {
         call.startBatch({}, function(err) {
