@@ -111,7 +111,6 @@ class ClientReader final : public ClientStreamingInterface,
     }
   }
 
-
   virtual bool Read(R *msg) override {
     WaitForInitialMetadata();
     CallOpBuffer buf;
@@ -255,7 +254,14 @@ class ClientReaderWriter final : public ClientStreamingInterface,
 template <class R>
 class ServerReader final : public ReaderInterface<R> {
  public:
-  explicit ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+
+  void SendInitialMetadata() {
+    CallOpBuffer buf;
+    ctx_->SendInitialMetadataIfNeeded(&buf);
+    call_->PerformOps(&buf);
+    return call_->cq()->Pluck(&buf);
+  }
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
@@ -273,7 +279,14 @@ class ServerReader final : public ReaderInterface<R> {
 template <class W>
 class ServerWriter final : public WriterInterface<W> {
  public:
-  explicit ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+
+  void SendInitialMetadata() {
+    CallOpBuffer buf;
+    ctx_->SendInitialMetadataIfNeeded(&buf);
+    call_->PerformOps(&buf);
+    return call_->cq()->Pluck(&buf);
+  }
 
   virtual bool Write(const W& msg) override {
     CallOpBuffer buf;
@@ -293,7 +306,14 @@ template <class W, class R>
 class ServerReaderWriter final : public WriterInterface<W>,
                            public ReaderInterface<R> {
  public:
-  explicit ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+  ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
+
+  void SendInitialMetadata() {
+    CallOpBuffer buf;
+    ctx_->SendInitialMetadataIfNeeded(&buf);
+    call_->PerformOps(&buf);
+    return call_->cq()->Pluck(&buf);
+  }
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
