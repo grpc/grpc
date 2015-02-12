@@ -22,10 +22,11 @@ namespace Google.GRPC.Core.Internal
         [DllImport("grpc_csharp_ext.dll")]
         static extern int gprsharp_sizeof_timespec();
 
-		// TODO: this only works on 64bit linux, can we autoselect the right size of ints?
-		// perhaps using IntPtr would work.
-		public System.Int64 tv_sec;
-		public System.Int64 tv_nsec;
+        // TODO: revisit this.
+		// NOTE: on linux 64bit  sizeof(gpr_timespec) = 16, on windows 32bit sizeof(gpr_timespec) = 8
+        // so IntPtr seems to have the right size to work on both.
+		public System.IntPtr tv_sec;
+		public System.IntPtr tv_nsec;
 
 		/// <summary>
 		/// Timespec a long time in the future.
@@ -67,12 +68,12 @@ namespace Google.GRPC.Core.Internal
         }
 
         public Timespec Add(TimeSpan timeSpan) {
-            long nanos = tv_nsec + (timeSpan.Ticks % TimeSpan.TicksPerSecond) * nanosPerTick;
+            long nanos = tv_nsec.ToInt64() + (timeSpan.Ticks % TimeSpan.TicksPerSecond) * nanosPerTick;
             long overflow_sec = (nanos > nanosPerSecond) ? 1 : 0;
 
             Timespec result;
-            result.tv_nsec = nanos % nanosPerSecond;
-            result.tv_sec = tv_sec + (timeSpan.Ticks / TimeSpan.TicksPerSecond) + overflow_sec; 
+            result.tv_nsec = new IntPtr(nanos % nanosPerSecond);
+            result.tv_sec = new IntPtr(tv_sec.ToInt64() + (timeSpan.Ticks / TimeSpan.TicksPerSecond) + overflow_sec); 
             return result;
         }
 	}
