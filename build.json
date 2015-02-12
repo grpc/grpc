@@ -138,8 +138,8 @@
         "src/core/iomgr/iomgr_posix.c",
         "src/core/iomgr/iomgr_windows.c",
         "src/core/iomgr/pollset_kick.c",
-        "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_multipoller_with_epoll.c",
+        "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
         "src/core/iomgr/resolve_address.c",
@@ -1624,6 +1624,7 @@
     {
       "name": "qps_client",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1636,12 +1637,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "qps_server",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1654,8 +1655,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "ruby_plugin",
