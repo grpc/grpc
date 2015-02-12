@@ -72,7 +72,7 @@ class ServerContext {
   template <class R> friend class ::grpc::ServerReader;
   template <class W> friend class ::grpc::ServerWriter;
   template <class R, class W> friend class ::grpc::ServerReaderWriter;
-  
+
   ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count);
 
   const std::chrono::system_clock::time_point deadline_;
