@@ -243,10 +243,6 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
   }
 }
 
-void CCallDeleter::operator()(grpc_call* c) {
-  grpc_call_destroy(c);
-}
-
 Call::Call(grpc_call* call, CallHook *call_hook, CompletionQueue* cq)
     : call_hook_(call_hook), cq_(cq), call_(call) {}
 

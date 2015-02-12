@@ -112,11 +112,6 @@ class CallOpBuffer final : public CompletionQueueTag {
   grpc_metadata *trailing_metadata_ = nullptr;
 };
 
-class CCallDeleter {
- public:
-  void operator()(grpc_call *c);
-};
-
 // Channel and Server implement this to allow them to hook performing ops
 class CallHook {
  public:
@@ -127,17 +122,18 @@ class CallHook {
 // Straightforward wrapping of the C call object
 class Call final {
  public:
+  /* call is owned by the caller */
   Call(grpc_call *call, CallHook *call_hook_, CompletionQueue *cq);
 
   void PerformOps(CallOpBuffer *buffer);
 
-  grpc_call *call() { return call_.get(); }
+  grpc_call *call() { return call_; }
   CompletionQueue *cq() { return cq_; }
 
  private:
   CallHook *call_hook_;
   CompletionQueue *cq_;
-  std::unique_ptr<grpc_call, CCallDeleter> call_;
+  grpc_call* call_;
 };
 
 }  // namespace grpc

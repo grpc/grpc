@@ -157,6 +157,10 @@ class Server::MethodRequestData final : public CompletionQueueTag {
       mrd->request_metadata_.count = 0;
     }
 
+    ~CallData() {
+      grpc_call_destroy(call_.call());
+    }
+
     void Run() {
       std::unique_ptr<google::protobuf::Message> req;
       std::unique_ptr<google::protobuf::Message> res;
