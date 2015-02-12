@@ -66,7 +66,7 @@ describe('Math client', function() {
       done();
     });
   });
-  it.only('should handle a server streaming request', function(done) {
+  it('should handle a server streaming request', function(done) {
     var call = math_client.fib({limit: 7});
     var expected_results = [1, 1, 2, 3, 5, 8, 13];
     var next_expected = 0;

@@ -56,6 +56,7 @@ function ClientWritableStream(call, serialize) {
   this.call = call;
   this.serialize = common.wrapIgnoreNull(serialize);
   this.on('finish', function() {
+    console.log('Send close from client');
     var batch = {};
     batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
     call.startBatch(batch, function() {});
@@ -90,7 +91,7 @@ function ClientReadableStream(call, deserialize) {
   this.call = call;
   this.finished = false;
   this.reading = false;
-  this.serialize = common.wrapIgnoreNull(deserialize);
+  this.deserialize = common.wrapIgnoreNull(deserialize);
 }
 
 function _read(size) {
@@ -100,12 +101,15 @@ function _read(size) {
    * the read queue and starts reading again if applicable
    * @param {grpc.Event} event READ event object
    */
-  function readCallback(event) {
+  function readCallback(err, event) {
+    if (err) {
+      throw err;
+    }
     if (self.finished) {
       self.push(null);
       return;
     }
-    var data = event.data;
+    var data = event.read;
     if (self.push(self.deserialize(data)) && data != null) {
       var read_batch = {};
       read_batch[grpc.opType.RECV_MESSAGE] = true;
@@ -142,12 +146,18 @@ util.inherits(ClientDuplexStream, Duplex);
 function ClientDuplexStream(call, serialize, deserialize) {
   Duplex.call(this, {objectMode: true});
   this.serialize = common.wrapIgnoreNull(serialize);
-  this.serialize = common.wrapIgnoreNull(deserialize);
+  this.deserialize = common.wrapIgnoreNull(deserialize);
   var self = this;
   var finished = false;
   // Indicates that a read is currently pending
   var reading = false;
   this.call = call;
+  this.on('finish', function() {
+    console.log('Send close from client');
+    var batch = {};
+    batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+    call.startBatch(batch, function() {});
+  });
 }
 
 ClientDuplexStream.prototype._read = _read;
@@ -208,6 +218,10 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         callback(err);
         return;
       }
+      if (response.status.code != grpc.status.OK) {
+        callback(response.status);
+        return;
+      }
       emitter.emit('status', response.status);
       emitter.emit('metadata', response.metadata);
       callback(null, deserialize(response.read));
@@ -263,6 +277,11 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
     call.startBatch(client_batch, function(err, response) {
       if (err) {
         callback(err);
+        return;
+      }
+      console.log(response);
+      if (response.status.code != grpc.status.OK) {
+        callback(response.status);
         return;
       }
       stream.emit('status', response.status);

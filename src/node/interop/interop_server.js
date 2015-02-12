@@ -106,6 +106,7 @@ function handleStreamingOutput(call) {
       testProto.PayloadType.COMPRESSABLE,
       testProto.PayloadType.UNCOMPRESSABLE][Math.random() < 0.5 ? 0 : 1];
   }
+  console.log('req:', req);
   _.each(req.response_parameters, function(resp_param) {
     call.write({
       payload: {

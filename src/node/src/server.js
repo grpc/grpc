@@ -89,11 +89,13 @@ function sendUnaryResponse(call, value, serialize) {
 function setUpWritable(stream, serialize) {
   stream.finished = false;
   stream.status = {
-    'code' : grpc.status.OK,
-    'details' : 'OK'
+    code : grpc.status.OK,
+    details : 'OK',
+    metadata : {}
   };
   stream.serialize = common.wrapIgnoreNull(serialize);
   function sendStatus() {
+    console.log('Server sending status');
     var batch = {};
     batch[grpc.opType.SEND_STATUS_FROM_SERVER] = stream.status;
     stream.call.startBatch(batch, function(){});
@@ -115,7 +117,7 @@ function setUpWritable(stream, serialize) {
         details = err.details;
       }
     }
-    stream.status = {'code': code, 'details': details};
+    stream.status = {code: code, details: details, metadata: {}};
   }
   /**
    * Terminate the call. This includes indicating that reads are done, draining
@@ -167,6 +169,7 @@ function ServerWritableStream(call, serialize) {
 function _write(chunk, encoding, callback) {
   var batch = {};
   batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
+  console.log('Server writing', batch);
   this.call.startBatch(batch, function(err, value) {
     if (err) {
       this.emit('error', err);
@@ -204,11 +207,14 @@ function _read(size) {
       return;
     }
     if (self.finished) {
+      console.log('Pushing null');
       self.push(null);
       return;
     }
     var data = event.read;
+    console.log(data);
     if (self.push(self.deserialize(data)) && data != null) {
+      console.log('Reading again');
       var read_batch = {};
       read_batch[grpc.opType.RECV_MESSAGE] = true;
       self.call.startBatch(read_batch, readCallback);
@@ -234,6 +240,7 @@ util.inherits(ServerDuplexStream, Duplex);
 
 function ServerDuplexStream(call, serialize, deserialize) {
   Duplex.call(this, {objectMode: true});
+  this.call = call;
   setUpWritable(this, serialize);
   setUpReadable(this, deserialize);
 }
@@ -280,7 +287,7 @@ function handleServerStreaming(call, handler, metadata) {
       stream.emit('error', err);
       return;
     }
-    stream.request = result.read;
+    stream.request = handler.deserialize(result.read);
     handler.func(stream);
   });
 }
