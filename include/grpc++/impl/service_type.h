@@ -37,19 +37,29 @@
 namespace grpc {
 
 class RpcService;
+class Server;
 
 class SynchronousService {
  public:
   virtual ~SynchronousService() {}
-  virtual RpcService *service() = 0;
+  virtual RpcService* service() = 0;
 };
 
 class AsynchronousService {
  public:
-  virtual ~AsynchronousService() {}
-  virtual RpcService *service() = 0;
+  AsynchronousService(CompletionQueue* cq, const char** method_names, size_t method_count) : cq_(cq), method_names_(method_names), method_count_(method_count) {}
+
+  CompletionQueue* completion_queue() const { return cq_; }
+
+ private:
+  friend class Server;
+  CompletionQueue* const cq_;
+  Server* server_ = nullptr;
+  const char**const method_names_;
+  size_t method_count_;
+  std::vector<void*> request_args_;
 };
 
 }  // namespace grpc
 
-#endif // __GRPCPP_IMPL_SERVICE_TYPE_H__
+#endif  // __GRPCPP_IMPL_SERVICE_TYPE_H__

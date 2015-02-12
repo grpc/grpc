@@ -43,25 +43,25 @@ namespace grpc {
 
 ServerBuilder::ServerBuilder() {}
 
-void ServerBuilder::RegisterService(SynchronousService *service) {
+void ServerBuilder::RegisterService(SynchronousService* service) {
   services_.push_back(service->service());
 }
 
-void ServerBuilder::RegisterAsyncService(AsynchronousService *service) {
+void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
   async_services_.push_back(service);
 }
 
-void ServerBuilder::AddPort(const grpc::string &addr) {
+void ServerBuilder::AddPort(const grpc::string& addr) {
   ports_.push_back(addr);
 }
 
 void ServerBuilder::SetCredentials(
-    const std::shared_ptr<ServerCredentials> &creds) {
+    const std::shared_ptr<ServerCredentials>& creds) {
   GPR_ASSERT(!creds_);
   creds_ = creds;
 }
 
-void ServerBuilder::SetThreadPool(ThreadPoolInterface *thread_pool) {
+void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
   thread_pool_ = thread_pool;
 }
 
@@ -77,13 +77,19 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_ = new ThreadPool(cores);
     thread_pool_owned = true;
   }
-  std::unique_ptr<Server> server(new Server(thread_pool_, thread_pool_owned, creds_.get()));
-  for (auto *service : services_) {
+  std::unique_ptr<Server> server(
+      new Server(thread_pool_, thread_pool_owned, creds_.get()));
+  for (auto* service : services_) {
     if (!server->RegisterService(service)) {
       return nullptr;
     }
   }
-  for (auto &port : ports_) {
+  for (auto* service : async_services_) {
+    if (!server->RegisterAsyncService(service)) {
+      return nullptr;
+    }
+  }
+  for (auto& port : ports_) {
     if (!server->AddPort(port)) {
       return nullptr;
     }
