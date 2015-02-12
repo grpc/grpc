@@ -78,6 +78,8 @@ void CallOpBuffer::Reset(void* next_return_tag) {
   send_status_ = nullptr;
   trailing_metadata_count_ = 0;
   trailing_metadata_ = nullptr;
+
+  recv_closed_ = nullptr;
 }
 
 namespace {
@@ -132,6 +134,10 @@ void CallOpBuffer::AddRecvMessage(google::protobuf::Message *message) {
 
 void CallOpBuffer::AddClientSendClose() {
   client_send_close_ = true;
+}
+
+void CallOpBuffer::AddServerRecvClose(bool* cancelled) {
+  recv_closed_ = cancelled;
 }
 
 void CallOpBuffer::AddClientRecvStatus(
@@ -205,6 +211,11 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
         send_status_->details().c_str();
     (*nops)++;
   }
+  if (recv_closed_) {
+    ops[*nops].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+    ops[*nops].data.recv_close_on_server.cancelled = &cancelled_buf_;
+    (*nops)++;
+  }
 }
 
 void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
@@ -240,6 +251,9 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
         static_cast<StatusCode>(status_code_),
         status_details_ ?  grpc::string(status_details_)
                         :  grpc::string());
+  }
+  if (recv_closed_) {
+    *recv_closed_ = cancelled_buf_ != 0;
   }
 }
 

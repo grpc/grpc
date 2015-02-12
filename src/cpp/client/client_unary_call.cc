@@ -36,6 +36,7 @@
 #include <grpc++/channel_interface.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/status.h>
+#include <grpc/support/log.h>
 
 namespace grpc {
 
@@ -54,7 +55,7 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   buf.AddClientSendClose();
   buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
   call.PerformOps(&buf);
-  cq.Pluck(&buf);
+  GPR_ASSERT(cq.Pluck(&buf));
   return status;
 }
 

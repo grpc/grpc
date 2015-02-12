@@ -119,7 +119,8 @@ class Server::MethodRequestData final : public CompletionQueueTag {
   }
 
   static MethodRequestData *Wait(CompletionQueue *cq, bool *ok) {
-    void *tag;
+    void *tag = nullptr;
+    *ok = false;
     if (!cq->Next(&tag, ok)) {
       return nullptr;
     }
@@ -183,6 +184,8 @@ class Server::MethodRequestData final : public CompletionQueueTag {
         buf.AddSendMessage(*res);
       }
       buf.AddServerSendStatus(&ctx_.trailing_metadata_, status);
+      bool cancelled;
+      buf.AddServerRecvClose(&cancelled);
       call_.PerformOps(&buf);
       GPR_ASSERT(cq_.Pluck(&buf));
     }
@@ -265,7 +268,6 @@ void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
   auto *mrd = MethodRequestData::Wait(&cq_, &ok);
-  gpr_log(GPR_DEBUG, "Wait: %p %d", mrd, ok);
   if (mrd) {
     ScheduleCallback();
     if (ok) {

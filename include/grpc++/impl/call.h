@@ -73,6 +73,7 @@ class CallOpBuffer final : public CompletionQueueTag {
                            Status *status);
   void AddServerSendStatus(std::multimap<grpc::string, grpc::string> *metadata,
                            const Status& status);
+  void AddServerRecvClose(bool* cancelled);
 
   // INTERNAL API:
 
@@ -110,6 +111,8 @@ class CallOpBuffer final : public CompletionQueueTag {
   const Status* send_status_ = nullptr;
   size_t trailing_metadata_count_ = 0;
   grpc_metadata *trailing_metadata_ = nullptr;
+  int cancelled_buf_;
+  bool *recv_closed_ = nullptr;
 };
 
 // Channel and Server implement this to allow them to hook performing ops
