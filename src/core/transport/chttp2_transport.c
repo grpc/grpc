@@ -1187,8 +1187,6 @@ static void on_header(void *tp, grpc_mdelem *md) {
   transport *t = tp;
   stream *s = t->incoming_stream;
 
-  gpr_log(GPR_DEBUG, "on_header: %d %s %s", s->id, grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
-
   GPR_ASSERT(s);
   stream_list_join(t, s, PENDING_CALLBACKS);
   if (md->key == t->str_grpc_timeout) {
