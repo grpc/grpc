@@ -257,10 +257,13 @@ class ServerReader final : public ReaderInterface<R> {
   ServerReader(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
   void SendInitialMetadata() {
-    CallOpBuffer buf;
-    ctx_->SendInitialMetadataIfNeeded(&buf);
-    call_->PerformOps(&buf);
-    return call_->cq()->Pluck(&buf);
+    if (!ctx_->sent_initial_metadata_) {
+      CallOpBuffer buf;
+      buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      ctx_->sent_initial_metadata_ = true;
+      call_->PerformOps(&buf);
+      call_->cq()->Pluck(&buf);
+    }
   }
 
   virtual bool Read(R* msg) override {
@@ -282,15 +285,18 @@ class ServerWriter final : public WriterInterface<W> {
   ServerWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
   void SendInitialMetadata() {
-    CallOpBuffer buf;
-    ctx_->SendInitialMetadataIfNeeded(&buf);
-    call_->PerformOps(&buf);
-    return call_->cq()->Pluck(&buf);
+    if (!ctx_->sent_initial_metadata_) {
+      CallOpBuffer buf;
+      buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      ctx_->sent_initial_metadata_ = true;
+      call_->PerformOps(&buf);
+      call_->cq()->Pluck(&buf);
+    }
   }
 
   virtual bool Write(const W& msg) override {
+    SendInitialMetadata();
     CallOpBuffer buf;
-    ctx_->SendInitialMetadataIfNeeded(&buf);
     buf.AddSendMessage(msg);
     call_->PerformOps(&buf);
     return call_->cq()->Pluck(&buf);
@@ -309,10 +315,13 @@ class ServerReaderWriter final : public WriterInterface<W>,
   ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
   void SendInitialMetadata() {
-    CallOpBuffer buf;
-    ctx_->SendInitialMetadataIfNeeded(&buf);
-    call_->PerformOps(&buf);
-    return call_->cq()->Pluck(&buf);
+    if (!ctx_->sent_initial_metadata_) {
+      CallOpBuffer buf;
+      buf.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      ctx_->sent_initial_metadata_ = true;
+      call_->PerformOps(&buf);
+      call_->cq()->Pluck(&buf);
+    }
   }
 
   virtual bool Read(R* msg) override {
@@ -324,8 +333,8 @@ class ServerReaderWriter final : public WriterInterface<W>,
   }
 
   virtual bool Write(const W& msg) override {
+    SendInitialMetadata();
     CallOpBuffer buf;
-    ctx_->SendInitialMetadataIfNeeded(&buf);
     buf.AddSendMessage(msg);
     call_->PerformOps(&buf);
     return call_->cq()->Pluck(&buf);

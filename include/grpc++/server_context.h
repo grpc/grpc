@@ -75,8 +75,6 @@ class ServerContext {
   
   ServerContext(gpr_timespec deadline, grpc_metadata *metadata, size_t metadata_count);
 
-  void SendInitialMetadataIfNeeded(CallOpBuffer *buf);
-
   const std::chrono::system_clock::time_point deadline_;
   bool sent_initial_metadata_ = false;
   std::multimap<grpc::string, grpc::string> client_metadata_;
