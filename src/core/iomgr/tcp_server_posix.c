@@ -353,9 +353,10 @@ int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index) {
   return (index < s->nports) ? s->ports[index].fd : -1;
 }
 
-void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset *pollset,
-                           grpc_tcp_server_cb cb, void *cb_arg) {
-  size_t i;
+void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollsets,
+                           size_t pollset_count, grpc_tcp_server_cb cb,
+                           void *cb_arg) {
+  size_t i, j;
   GPR_ASSERT(cb);
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(!s->cb);
@@ -363,8 +364,8 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset *pollset,
   s->cb = cb;
   s->cb_arg = cb_arg;
   for (i = 0; i < s->nports; i++) {
-    if (pollset) {
-      grpc_pollset_add_fd(pollset, s->ports[i].emfd);
+    for (j = 0; j < pollset_count; j++) {
+      grpc_pollset_add_fd(pollsets[j], s->ports[i].emfd);
     }
     grpc_fd_notify_on_read(s->ports[i].emfd, on_read, &s->ports[i]);
     s->active_ports++;

@@ -84,7 +84,7 @@ Server::~Server() {
 bool Server::RegisterService(RpcService *service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
     RpcServiceMethod *method = service->GetMethod(i);
-    void *tag = grpc_server_register_method(server_, method->name(), nullptr);
+    void *tag = grpc_server_register_method(server_, method->name(), nullptr, cq_.cq());
     if (!tag) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
