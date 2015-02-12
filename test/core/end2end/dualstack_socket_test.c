@@ -112,7 +112,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
-  c = grpc_channel_create_call_old(client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(client, "/foo", "foo.test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -124,8 +125,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
     cq_verify(v_client);
 
     GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(server, tag(100)));
-    cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
-                             deadline, NULL);
+    cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo",
+                             "foo.test.google.com", deadline, NULL);
     cq_verify(v_server);
 
     GPR_ASSERT(GRPC_CALL_OK ==

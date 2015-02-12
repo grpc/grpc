@@ -41,7 +41,12 @@
     <Import Project="global.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -114,6 +119,8 @@
     <ClCompile Include="..\..\src\core\support\cpu_linux.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\cpu_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\env_linux.c">
     </ClCompile>

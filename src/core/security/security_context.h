@@ -56,16 +56,15 @@ typedef struct grpc_security_context grpc_security_context;
 
 #define GRPC_SECURITY_CONTEXT_ARG "grpc.security_context"
 
-typedef void (*grpc_security_check_peer_cb)(void *user_data,
-                                            grpc_security_status status);
+typedef void (*grpc_security_check_cb)(void *user_data,
+                                       grpc_security_status status);
 
 typedef struct {
   void (*destroy)(grpc_security_context *ctx);
   grpc_security_status (*create_handshaker)(grpc_security_context *ctx,
                                             tsi_handshaker **handshaker);
-  grpc_security_status (*check_peer)(grpc_security_context *ctx,
-                                     const tsi_peer *peer,
-                                     grpc_security_check_peer_cb,
+  grpc_security_status (*check_peer)(grpc_security_context *ctx, tsi_peer peer,
+                                     grpc_security_check_cb cb,
                                      void *user_data);
 } grpc_security_context_vtable;
 
@@ -87,18 +86,14 @@ grpc_security_status grpc_security_context_create_handshaker(
 
 /* Check the peer.
    Implementations can choose to check the peer either synchronously or
-   asynchronously. In the first case, a successful will return
+   asynchronously. In the first case, a successful call will return
    GRPC_SECURITY_OK. In the asynchronous case, the call will return
    GRPC_SECURITY_PENDING unless an error is detected early on.
-
-   Note:
-   Asynchronous implementations of this interface should make a copy of the
-   fields of the peer they want to check as there is no guarantee on the
-   lifetime of the peer object beyond this call.
+   Ownership of the peer is transfered.
 */
 grpc_security_status grpc_security_context_check_peer(
-    grpc_security_context *ctx, const tsi_peer *peer,
-    grpc_security_check_peer_cb cb, void *user_data);
+    grpc_security_context *ctx, tsi_peer peer,
+    grpc_security_check_cb cb, void *user_data);
 
 /* Util to encapsulate the context in a channel arg. */
 grpc_arg grpc_security_context_to_arg(grpc_security_context *ctx);
@@ -120,14 +115,26 @@ typedef struct grpc_channel_security_context grpc_channel_security_context;
 struct grpc_channel_security_context {
   grpc_security_context base; /* requires is_client_side to be non 0. */
   grpc_credentials *request_metadata_creds;
+  grpc_security_status (*check_call_host)(
+      grpc_channel_security_context *ctx, const char *host,
+      grpc_security_check_cb cb, void *user_data);
 };
+
+/* Checks that the host that will be set for a call is acceptable.
+   Implementations can choose do the check either synchronously or
+   asynchronously. In the first case, a successful call will return
+   GRPC_SECURITY_OK. In the asynchronous case, the call will return
+   GRPC_SECURITY_PENDING unless an error is detected early on. */
+grpc_security_status grpc_channel_security_context_check_call_host(
+    grpc_channel_security_context *ctx, const char *host,
+    grpc_security_check_cb cb, void *user_data);
 
 /* --- Creation security contexts. --- */
 
 /* For TESTING ONLY!
    Creates a fake context that emulates real channel security.  */
 grpc_channel_security_context *grpc_fake_channel_security_context_create(
-    grpc_credentials *request_metadata_creds);
+    grpc_credentials *request_metadata_creds, int call_host_check_is_async);
 
 /* For TESTING ONLY!
    Creates a fake context that emulates real server security.  */
@@ -148,7 +155,8 @@ grpc_security_context *grpc_fake_server_security_context_create(void);
 */
 grpc_security_status grpc_ssl_channel_security_context_create(
     grpc_credentials *request_metadata_creds, const grpc_ssl_config *config,
-    const char *secure_peer_name, grpc_channel_security_context **ctx);
+    const char *target_name, const char *overridden_target_name,
+    grpc_channel_security_context **ctx);
 
 /* Creates an SSL server_security_context.
    - config is the SSL config to be used for the SSL channel establishment.

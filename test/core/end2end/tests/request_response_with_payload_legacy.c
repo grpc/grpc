@@ -121,7 +121,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.com",
                                    deadline);
   GPR_ASSERT(c);
 
@@ -136,7 +136,7 @@ static void request_response_with_payload(grpc_end2end_test_fixture f) {
   cq_expect_write_accepted(v_client, tag(4), GRPC_OP_OK);
   cq_verify(v_client);
 
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
+  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.com",
                            deadline, NULL);
   cq_verify(v_server);
 

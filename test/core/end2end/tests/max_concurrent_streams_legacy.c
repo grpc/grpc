@@ -109,7 +109,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "test.google.com",
+  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.com",
                                    deadline);
   GPR_ASSERT(c);
 
@@ -121,7 +121,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
+  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.com",
                            deadline, NULL);
   cq_verify(v_server);
 
@@ -182,10 +182,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
   deadline = five_seconds_time();
-  c1 = grpc_channel_create_call_old(f.client, "/alpha", "test.google.com",
+  c1 = grpc_channel_create_call_old(f.client, "/alpha", "foo.test.google.com",
                                     deadline);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call_old(f.client, "/beta", "test.google.com",
+  c2 = grpc_channel_create_call_old(f.client, "/beta", "foo.test.google.com",
                                     deadline);
   GPR_ASSERT(c1);
 
@@ -211,7 +211,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   cq_expect_server_rpc_new(v_server, &s1, tag(100),
                            live_call == 300 ? "/alpha" : "/beta",
-                           "test.google.com", deadline, NULL);
+                           "foo.test.google.com", deadline, NULL);
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -237,7 +237,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(200)));
   cq_expect_server_rpc_new(v_server, &s2, tag(200),
                            live_call == 300 ? "/alpha" : "/beta",
-                           "test.google.com", deadline, NULL);
+                           "foo.test.google.com", deadline, NULL);
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK ==

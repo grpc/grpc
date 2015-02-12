@@ -265,7 +265,7 @@ class ForeLink(ticket_interfaces.ForeLink):
     """
     with self._condition:
       self._completion_queue = _low.CompletionQueue()
-      self._server = _low.Server(self._completion_queue)
+      self._server = _low.Server(self._completion_queue, None)
       port = self._server.add_http2_addr(
           '[::]:%d' % (0 if self._port is None else self._port))
       self._server.start()

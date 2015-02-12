@@ -73,20 +73,23 @@ static grpc_security_status httpcli_ssl_create_handshaker(
   return GRPC_SECURITY_OK;
 }
 
-static grpc_security_status httpcli_ssl_check_peer(
-    grpc_security_context *ctx, const tsi_peer *peer,
-    grpc_security_check_peer_cb cb, void *user_data) {
+static grpc_security_status httpcli_ssl_check_peer(grpc_security_context *ctx,
+                                                   tsi_peer peer,
+                                                   grpc_security_check_cb cb,
+                                                   void *user_data) {
   grpc_httpcli_ssl_channel_security_context *c =
       (grpc_httpcli_ssl_channel_security_context *)ctx;
+  grpc_security_status status = GRPC_SECURITY_OK;
 
   /* Check the peer name. */
   if (c->secure_peer_name != NULL &&
-      !tsi_ssl_peer_matches_name(peer, c->secure_peer_name)) {
+      !tsi_ssl_peer_matches_name(&peer, c->secure_peer_name)) {
     gpr_log(GPR_ERROR, "Peer name %s is not in peer certificate",
             c->secure_peer_name);
-    return GRPC_SECURITY_ERROR;
+    status = GRPC_SECURITY_ERROR;
   }
-  return GRPC_SECURITY_OK;
+  tsi_peer_destruct(&peer);
+  return status;
 }
 
 static grpc_security_context_vtable httpcli_ssl_vtable = {

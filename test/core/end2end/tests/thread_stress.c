@@ -109,7 +109,7 @@ static void start_request(void) {
   gpr_slice slice = gpr_slice_malloc(100);
   grpc_byte_buffer *buf;
   grpc_call *call = grpc_channel_create_call_old(
-      g_fixture.client, "/Foo", "test.google.com", g_test_end_time);
+      g_fixture.client, "/Foo", "foo.test.google.com", g_test_end_time);
 
   memset(GPR_SLICE_START_PTR(slice), 1, GPR_SLICE_LENGTH(slice));
   buf = grpc_byte_buffer_create(&slice, 1);

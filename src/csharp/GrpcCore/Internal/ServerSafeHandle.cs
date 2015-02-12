@@ -10,30 +10,30 @@ namespace Google.GRPC.Core.Internal
     /// </summary>
     internal sealed class ServerSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("libgrpc.so", EntryPoint = "grpc_server_request_call_old")]
+        [DllImport("grpc.dll", EntryPoint = "grpc_server_request_call_old")]
         static extern GRPCCallError grpc_server_request_call_old_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
 
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern ServerSafeHandle grpc_server_create(CompletionQueueSafeHandle cq, IntPtr args);
 
         // TODO: check int representation size
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern int grpc_server_add_http2_port(ServerSafeHandle server, string addr);
 
         // TODO: check int representation size
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern int grpc_server_add_secure_http2_port(ServerSafeHandle server, string addr);
 
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern void grpc_server_start(ServerSafeHandle server);
 
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern void grpc_server_shutdown(ServerSafeHandle server);
 
-        [DllImport("libgrpc.so", EntryPoint = "grpc_server_shutdown_and_notify")]
+        [DllImport("grpc.dll", EntryPoint = "grpc_server_shutdown_and_notify")]
         static extern void grpc_server_shutdown_and_notify_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
 
-        [DllImport("libgrpc.so")]
+        [DllImport("grpc.dll")]
         static extern void grpc_server_destroy(IntPtr server);
 
         private ServerSafeHandle()
