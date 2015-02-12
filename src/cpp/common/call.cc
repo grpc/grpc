@@ -48,8 +48,7 @@ void CallOpBuffer::Reset(void* next_return_tag) {
   gpr_free(initial_metadata_);
 
   recv_initial_metadata_ = nullptr;
-  gpr_free(recv_initial_metadata_arr_.metadata);
-  recv_initial_metadata_arr_ = {0, 0, nullptr};
+  recv_initial_metadata_arr_.count = 0;
 
   send_message_ = nullptr;
   if (send_message_buf_) {
@@ -68,19 +67,27 @@ void CallOpBuffer::Reset(void* next_return_tag) {
 
   recv_trailing_metadata_ = nullptr;
   recv_status_ = nullptr;
-  gpr_free(recv_trailing_metadata_arr_.metadata);
-  recv_trailing_metadata_arr_ = {0, 0, nullptr};
+  recv_trailing_metadata_arr_.count = 0;
 
   status_code_ = GRPC_STATUS_OK;
-  gpr_free(status_details_);
-  status_details_ = nullptr;
-  status_details_capacity_ = 0;
 
   send_status_ = nullptr;
   trailing_metadata_count_ = 0;
   trailing_metadata_ = nullptr;
 
   recv_closed_ = nullptr;
+}
+
+CallOpBuffer::~CallOpBuffer() {
+  gpr_free(status_details_);
+  gpr_free(recv_initial_metadata_arr_.metadata);
+  gpr_free(recv_trailing_metadata_arr_.metadata);
+  if (recv_message_buf_) {
+    grpc_byte_buffer_destroy(recv_message_buf_);
+  }
+  if (send_message_buf_) {
+    grpc_byte_buffer_destroy(send_message_buf_);
+  }
 }
 
 namespace {

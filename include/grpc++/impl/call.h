@@ -57,6 +57,7 @@ class Call;
 class CallOpBuffer final : public CompletionQueueTag {
  public:
   CallOpBuffer() : return_tag_(this) {}
+  ~CallOpBuffer();
 
   void Reset(void *next_return_tag);
 

@@ -445,5 +445,6 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
   grpc_shutdown();
+  google::protobuf::ShutdownProtobufLibrary();
   return result;
 }

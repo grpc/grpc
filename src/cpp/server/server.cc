@@ -163,7 +163,11 @@ class Server::SyncRequest final : public CompletionQueueTag {
                    this));
   }
 
-  void FinalizeResult(void** tag, bool* status) override {}
+  void FinalizeResult(void** tag, bool* status) override {
+    if (!*status) {
+      grpc_completion_queue_destroy(cq_);
+    }
+  }
 
   class CallData final {
    public:
@@ -180,6 +184,12 @@ class Server::SyncRequest final : public CompletionQueueTag {
       GPR_ASSERT(mrd->in_flight_);
       mrd->in_flight_ = false;
       mrd->request_metadata_.count = 0;
+    }
+
+    ~CallData() {
+      if (has_request_payload_ && request_payload_) {
+        grpc_byte_buffer_destroy(request_payload_);
+      }
     }
 
     void Run() {
