@@ -394,10 +394,10 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
                            public AsyncReaderInterface<R> {
  public:
   // Create a stream and write the first request out.
-  ClientAsyncReader(ChannelInterface *channel, const RpcMethod &method,
-               ClientContext *context,
+  ClientAsyncReader(ChannelInterface *channel, CompletionQueue* cq,
+                    const RpcMethod &method, ClientContext *context,
                const google::protobuf::Message &request, void* tag)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
     init_buf_.AddSendMessage(request);
@@ -408,10 +408,9 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
   void ReadInitialMetadata(void* tag) override {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
-    CallOpBuffer buf;
-    buf.Reset(tag);
-    buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-    call_.PerformOps(&buf);
+    meta_buf_.Reset(tag);
+    meta_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    call_.PerformOps(&meta_buf_);
     context_->initial_metadata_received_ = true;
   }
 
@@ -421,7 +420,8 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    read_buf_.AddRecvMessage(msg);
+    bool ignore;
+    read_buf_.AddRecvMessage(msg, &ignore);
     call_.PerformOps(&read_buf_);
   }
 
@@ -437,22 +437,22 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
 
  private:
   ClientContext* context_ = nullptr;
-  CompletionQueue cq_;
   Call call_;
   CallOpBuffer init_buf_;
+  CallOpBuffer meta_buf_;
   CallOpBuffer read_buf_;
   CallOpBuffer finish_buf_;
 };
 
 template <class W>
 class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
-                           public WriterInterface<W> {
+                           public AsyncWriterInterface<W> {
  public:
-  ClientAsyncWriter(ChannelInterface *channel, const RpcMethod &method,
-               ClientContext *context,
-               google::protobuf::Message *response, void* tag)
+  ClientAsyncWriter(ChannelInterface *channel, CompletionQueue* cq,
+                    const RpcMethod &method, ClientContext *context,
+                    google::protobuf::Message *response, void* tag)
       : context_(context), response_(response),
-        call_(channel->CreateCall(method, context, &cq_)) {
+        call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
     call_.PerformOps(&init_buf_);
@@ -461,10 +461,9 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
   void ReadInitialMetadata(void* tag) override {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
-    CallOpBuffer buf;
-    buf.Reset(tag);
-    buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-    call_.PerformOps(&buf);
+    meta_buf_.Reset(tag);
+    meta_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    call_.PerformOps(&meta_buf_);
     context_->initial_metadata_received_ = true;
   }
 
@@ -474,7 +473,7 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
     call_.PerformOps(&write_buf_);
   }
 
-  void WritesDone(void* tag) override {
+  void WritesDone(void* tag) {
     writes_done_buf_.Reset(tag);
     writes_done_buf_.AddClientSendClose();
     call_.PerformOps(&writes_done_buf_);
@@ -486,7 +485,8 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
       finish_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    finish_buf_.AddRecvMessage(response_, &got_message_);
+    bool ignore;
+    finish_buf_.AddRecvMessage(response_, &ignore);
     finish_buf_.AddClientRecvStatus(&context_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
@@ -495,9 +495,9 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
   ClientContext* context_ = nullptr;
   google::protobuf::Message *const response_;
   bool got_message_;
-  CompletionQueue cq_;
   Call call_;
   CallOpBuffer init_buf_;
+  CallOpBuffer meta_buf_;
   CallOpBuffer write_buf_;
   CallOpBuffer writes_done_buf_;
   CallOpBuffer finish_buf_;
@@ -509,9 +509,9 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
                                  public AsyncWriterInterface<W>,
                                  public AsyncReaderInterface<R> {
  public:
-  ClientAsyncReaderWriter(ChannelInterface *channel,
+  ClientAsyncReaderWriter(ChannelInterface *channel, CompletionQueue* cq,
                      const RpcMethod &method, ClientContext *context, void* tag)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
     call_.PerformOps(&init_buf_);
@@ -520,10 +520,9 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
   void ReadInitialMetadata(void* tag) override {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
-    CallOpBuffer buf;
-    buf.Reset(tag);
-    buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-    call_.PerformOps(&buf);
+    meta_buf_.Reset(tag);
+    meta_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    call_.PerformOps(&meta_buf_);
     context_->initial_metadata_received_ = true;
   }
 
@@ -533,7 +532,8 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    read_buf_.AddRecvMessage(msg);
+    bool ignore;
+    read_buf_.AddRecvMessage(msg, &ignore);
     call_.PerformOps(&read_buf_);
   }
 
@@ -543,7 +543,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
     call_.PerformOps(&write_buf_);
   }
 
-  void WritesDone(void* tag) override {
+  void WritesDone(void* tag) {
     writes_done_buf_.Reset(tag);
     writes_done_buf_.AddClientSendClose();
     call_.PerformOps(&writes_done_buf_);
@@ -561,9 +561,9 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
 
  private:
   ClientContext* context_ = nullptr;
-  CompletionQueue cq_;
   Call call_;
   CallOpBuffer init_buf_;
+  CallOpBuffer meta_buf_;
   CallOpBuffer read_buf_;
   CallOpBuffer write_buf_;
   CallOpBuffer writes_done_buf_;
