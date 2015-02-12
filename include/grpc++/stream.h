@@ -420,7 +420,8 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    read_buf_.AddRecvMessage(msg);
+    bool ignore;
+    read_buf_.AddRecvMessage(msg, &ignore);
     call_.PerformOps(&read_buf_);
   }
 
@@ -445,7 +446,7 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
 
 template <class W>
 class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
-                           public WriterInterface<W> {
+                           public AsyncWriterInterface<W> {
  public:
   ClientAsyncWriter(ChannelInterface *channel, CompletionQueue* cq,
                     const RpcMethod &method, ClientContext *context,
@@ -472,7 +473,7 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
     call_.PerformOps(&write_buf_);
   }
 
-  void WritesDone(void* tag) override {
+  void WritesDone(void* tag) {
     writes_done_buf_.Reset(tag);
     writes_done_buf_.AddClientSendClose();
     call_.PerformOps(&writes_done_buf_);
@@ -484,7 +485,8 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
       finish_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    finish_buf_.AddRecvMessage(response_, &got_message_);
+    bool ignore;
+    finish_buf_.AddRecvMessage(response_, &ignore);
     finish_buf_.AddClientRecvStatus(&context_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
@@ -509,7 +511,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
  public:
   ClientAsyncReaderWriter(ChannelInterface *channel, CompletionQueue* cq,
                      const RpcMethod &method, ClientContext *context, void* tag)
-      : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
+      : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
     call_.PerformOps(&init_buf_);
@@ -530,7 +532,8 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    read_buf_.AddRecvMessage(msg);
+    bool ignore;
+    read_buf_.AddRecvMessage(msg, &ignore);
     call_.PerformOps(&read_buf_);
   }
 
@@ -540,7 +543,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
     call_.PerformOps(&write_buf_);
   }
 
-  void WritesDone(void* tag) override {
+  void WritesDone(void* tag) {
     writes_done_buf_.Reset(tag);
     writes_done_buf_.AddClientSendClose();
     call_.PerformOps(&writes_done_buf_);
@@ -558,7 +561,6 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
 
  private:
   ClientContext* context_ = nullptr;
-  CompletionQueue cq_;
   Call call_;
   CallOpBuffer init_buf_;
   CallOpBuffer meta_buf_;

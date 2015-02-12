@@ -60,4 +60,11 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   return status;
 }
 
+void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
+                    ClientContext *context,
+                    const google::protobuf::Message &request,
+                    google::protobuf::Message *result, Status *status,
+                    CompletionQueue *cq, void *tag) {
+
+}
 }  // namespace grpc
