@@ -625,7 +625,7 @@ class ServerAsyncResponseWriter final {
 
  private:
   Call* call_;
-  ServerCotnext* ctx_;
+  ServerContext* ctx_;
   CallOpBuffer meta_buf_;
   CallOpBuffer finish_buf_;
 };
