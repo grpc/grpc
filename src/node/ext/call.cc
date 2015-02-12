@@ -98,6 +98,9 @@ bool CreateMetadataArray(
     string_handles->push_back(unique_ptr<NanUtf8String>(utf8_key));
     Handle<Array> values = Local<Array>::Cast(metadata->Get(current_key));
     for (unsigned int j = 0; j < values->Length(); j++) {
+      if (array->count >= array->capacity) {
+        gpr_log(GPR_ERROR, "Metadata array grew past capacity");
+      }
       Handle<Value> value = values->Get(j);
       grpc_metadata *current = &array->metadata[array->count];
       current->key = **utf8_key;
@@ -433,9 +436,9 @@ Handle<Value> GetTagNodeValue(void *tag) {
   return NanEscapeScope(tag_obj);
 }
 
-NanCallback GetTagCallback(void *tag) {
+NanCallback *GetTagCallback(void *tag) {
   struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
-  return *tag_struct->callback;
+  return tag_struct->callback;
 }
 
 void DestroyTag(void *tag) {
@@ -598,6 +601,7 @@ NAN_METHOD(Call::StartBatch) {
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, ops, nops, new struct tag(
           callback, op_vector, handles, strings));
+  delete ops;
   if (error != GRPC_CALL_OK) {
     return NanThrowError("startBatch failed", error);
   }

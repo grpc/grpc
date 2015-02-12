@@ -89,7 +89,7 @@ struct tag {
 
 v8::Handle<v8::Value> GetTagNodeValue(void *tag);
 
-NanCallback GetTagCallback(void *tag);
+NanCallback *GetTagCallback(void *tag);
 
 void DestroyTag(void *tag);
 

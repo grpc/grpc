@@ -80,10 +80,10 @@ void CompletionQueueAsyncWorker::Init(Handle<Object> exports) {
 void CompletionQueueAsyncWorker::HandleOKCallback() {
   NanScope();
   gpr_log(GPR_DEBUG, "Handling response on call %p", result->call);
-  NanCallback callback = GetTagCallback(result->tag);
+  NanCallback *callback = GetTagCallback(result->tag);
   Handle<Value> argv[] = {NanNull(), GetTagNodeValue(result->tag)};
 
-  callback.Call(2, argv);
+  callback->Call(2, argv);
 
   DestroyTag(result->tag);
   grpc_event_finish(result);
@@ -92,10 +92,10 @@ void CompletionQueueAsyncWorker::HandleOKCallback() {
 
 void CompletionQueueAsyncWorker::HandleErrorCallback() {
   NanScope();
-  NanCallback callback = GetTagCallback(result->tag);
+  NanCallback *callback = GetTagCallback(result->tag);
   Handle<Value> argv[] = {NanError(ErrorMessage())};
 
-  callback.Call(1, argv);
+  callback->Call(1, argv);
 
   DestroyTag(result->tag);
   grpc_event_finish(result);

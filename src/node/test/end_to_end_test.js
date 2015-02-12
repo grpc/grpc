@@ -67,7 +67,7 @@ describe('end-to-end', function() {
   after(function() {
     server.shutdown();
   });
-  it.skip('should start and end a request without error', function(complete) {
+  it('should start and end a request without error', function(complete) {
     var done = multiDone(complete, 2);
     var deadline = new Date();
     deadline.setSeconds(deadline.getSeconds() + 3);
