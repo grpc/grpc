@@ -63,7 +63,7 @@ GPR_EXPORT grpc_completion_type GPR_CALLTYPE grpcsharp_completion_queue_next_wit
     grpc_completion_queue *cq) {
   grpc_event *ev;
   grpc_completion_type t;
-  void (*callback)(grpc_event *);
+  void (GPR_CALLTYPE *callback)(grpc_event *);
 
   ev = grpc_completion_queue_next(cq, gpr_inf_future);
   t = ev->type;
@@ -72,7 +72,7 @@ GPR_EXPORT grpc_completion_type GPR_CALLTYPE grpcsharp_completion_queue_next_wit
     /* C forbids to cast object pointers to function pointers, so
      * we cast to intptr first.
      */
-    callback = (void (*)(grpc_event *))(gpr_intptr)ev->tag;
+    callback = (void (GPR_CALLTYPE *)(grpc_event *))(gpr_intptr)ev->tag;
     (*callback)(ev);
   }
   grpc_event_finish(ev);
@@ -258,16 +258,14 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_start_write_from_copied_buffer(
 /* Server */
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_server_request_call_old(grpc_server *server,
-                                             void *tag_new);
-
-GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_server_request_call(
-    grpc_server *server, grpc_call **call, grpc_call_details *details,
-    grpc_metadata_array *request_metadata,
-    grpc_completion_queue *completion_queue, void *tag_new);
-
+	void *tag_new) {
+	return grpc_server_request_call_old(server, tag_new);
+}
 
 GPR_EXPORT grpc_server * GPR_CALLTYPE grpcsharp_server_create(grpc_completion_queue *cq,
-                                const grpc_channel_args *args);
+	const grpc_channel_args *args) {
+	return grpc_server_create(cq, args);
+}
 
 
 GPR_EXPORT int GPR_CALLTYPE grpcsharp_server_add_http2_port(grpc_server *server, const char *addr) {
