@@ -36,6 +36,7 @@ using NUnit.Framework;
 using Google.GRPC.Core;
 using Google.GRPC.Core.Internal;
 using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Google.GRPC.Core.Utils;
 
@@ -52,7 +53,7 @@ namespace Google.GRPC.Core.Tests
             Marshallers.StringMarshaller);
 
         [Test]
-        public void EmptyCall()
+        public void UnaryCall()
         {
             GrpcEnvironment.Initialize();
 
@@ -69,7 +70,70 @@ namespace Google.GRPC.Core.Tests
                 var call = new Call<string, string>(unaryEchoStringMethod, channel);
 
                 Assert.AreEqual("ABC", Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)));
+
                 Assert.AreEqual("abcdef", Calls.BlockingUnaryCall(call, "abcdef", default(CancellationToken)));
+            }
+
+            server.ShutdownAsync().Wait();
+
+            GrpcEnvironment.Shutdown();
+        }
+
+        [Test]
+        public void UnaryCallPerformance()
+        {
+            GrpcEnvironment.Initialize();
+
+            Server server = new Server();
+            server.AddServiceDefinition(
+                ServerServiceDefinition.CreateBuilder("someService")
+                .AddMethod(unaryEchoStringMethod, HandleUnaryEchoString).Build());
+
+            int port = server.AddPort(host + ":0");
+            server.Start();
+
+            using (Channel channel = new Channel(host + ":" + port))
+            {
+                var call = new Call<string, string>(unaryEchoStringMethod, channel);
+
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                for (int i = 0; i < 1000; i++)
+                {
+                    Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
+                }
+                stopwatch.Stop();
+                Console.WriteLine("Elapsed time: " + stopwatch.ElapsedMilliseconds + "ms");
+            }
+
+            server.ShutdownAsync().Wait();
+
+            GrpcEnvironment.Shutdown();
+        }
+
+
+        [Test]
+        public void UnknownMethodHandler()
+        {
+            GrpcEnvironment.Initialize();
+
+            Server server = new Server();
+            server.AddServiceDefinition(
+                ServerServiceDefinition.CreateBuilder("someService").Build());
+
+            int port = server.AddPort(host + ":0");
+            server.Start();
+
+            using (Channel channel = new Channel(host + ":" + port))
+            {
+                var call = new Call<string, string>(unaryEchoStringMethod, channel);
+
+                try {
+                    Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
+                    Assert.Fail();
+                } catch(RpcException e) {
+                    Assert.AreEqual(StatusCode.GRPC_STATUS_UNIMPLEMENTED, e.Status.StatusCode);
+                }
             }
 
             server.ShutdownAsync().Wait();
@@ -81,7 +145,6 @@ namespace Google.GRPC.Core.Tests
             responseObserver.OnNext(request);
             responseObserver.OnCompleted();
         }
-
     }
 }
 

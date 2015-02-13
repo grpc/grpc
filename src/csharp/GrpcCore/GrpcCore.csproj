@@ -47,21 +47,21 @@
     <Compile Include="Internal\ChannelSafeHandle.cs" />
     <Compile Include="Internal\CompletionQueueSafeHandle.cs" />
     <Compile Include="Internal\Enums.cs" />
-    <Compile Include="Internal\Event.cs" />
     <Compile Include="Internal\SafeHandleZeroIsInvalid.cs" />
     <Compile Include="Internal\Timespec.cs" />
     <Compile Include="Internal\GrpcThreadPool.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
     <Compile Include="Internal\ServerSafeHandle.cs" />
-    <Compile Include="Internal\StreamingInputObserver.cs" />
     <Compile Include="Method.cs" />
     <Compile Include="ServerCalls.cs" />
     <Compile Include="ServerCallHandler.cs" />
-    <Compile Include="Internal\ServerWritingObserver.cs" />
     <Compile Include="Marshaller.cs" />
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\RecordingObserver.cs" />
     <Compile Include="Utils\RecordingQueue.cs" />
+    <Compile Include="Internal\BatchContextSafeHandle.cs" />
+    <Compile Include="Internal\ClientStreamingInputObserver.cs" />
+    <Compile Include="Internal\ServerStreamingOutputObserver.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

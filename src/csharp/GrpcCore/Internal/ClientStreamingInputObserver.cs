@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -36,35 +36,31 @@ using Google.GRPC.Core.Internal;
 
 namespace Google.GRPC.Core.Internal
 {
-    /// <summary>
-    /// Observer that writes all arriving messages to a call abstraction (in blocking fashion)
-    /// and then halfcloses the call. Used for server-side call handling.
-    /// </summary>
-    internal class ServerWritingObserver<TWrite, TRead> : IObserver<TWrite>
+    internal class ClientStreamingInputObserver<TWrite, TRead> : IObserver<TWrite>
 	{
         readonly AsyncCall<TWrite, TRead> call;
 
-        public ServerWritingObserver(AsyncCall<TWrite, TRead> call)
+        public ClientStreamingInputObserver(AsyncCall<TWrite, TRead> call)
 		{
             this.call = call;
 		}
 
 		public void OnCompleted()
 		{
+
             // TODO: how bad is the Wait here?
-            call.WriteStatusAsync(new Status(StatusCode.GRPC_STATUS_OK, "")).Wait();
+            call.SendCloseFromClientAsync().Wait();
 		}
 
 		public void OnError(Exception error)
 		{
-            // TODO: handle this...
 			throw new InvalidOperationException("This should never be called.");
 		}
 
 		public void OnNext(TWrite value)
 		{
             // TODO: how bad is the Wait here?
-            call.WriteAsync(value).Wait();
+            call.SendMessageAsync(value).Wait();
 		}
 	}
 }

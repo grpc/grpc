@@ -59,15 +59,16 @@ namespace Google.GRPC.Core
                 method.RequestMarshaller.Deserializer);
 
             asyncCall.InitializeServer(call);
-            asyncCall.Accept(cq);
+           
+            var finishedTask = asyncCall.StartServerSide();
 
-            var request = asyncCall.ReadAsync().Result;
+            var request = asyncCall.ReceiveMessageAsync().Result;
 
-            var responseObserver = new ServerWritingObserver<TResponse, TRequest>(asyncCall);
+            var responseObserver = new ServerStreamingOutputObserver<TResponse, TRequest>(asyncCall);
             handler(request, responseObserver);
 
-            asyncCall.Halfclosed.Wait();
-            asyncCall.Finished.Wait();
+            finishedTask.Wait();
+
         }
     }
 
@@ -89,16 +90,16 @@ namespace Google.GRPC.Core
                 method.RequestMarshaller.Deserializer);
 
             asyncCall.InitializeServer(call);
-            asyncCall.Accept(cq);
 
-            var responseObserver = new ServerWritingObserver<TResponse, TRequest>(asyncCall);
+            var finishedTask = asyncCall.StartServerSide();
+
+            var responseObserver = new ServerStreamingOutputObserver<TResponse, TRequest>(asyncCall);
             var requestObserver = handler(responseObserver);
 
             // feed the requests
             asyncCall.StartReadingToStream(requestObserver);
 
-            asyncCall.Halfclosed.Wait();
-            asyncCall.Finished.Wait();
+            finishedTask.Wait();
         }
     }
 
@@ -110,11 +111,14 @@ namespace Google.GRPC.Core
             AsyncCall<byte[], byte[]> asyncCall = new AsyncCall<byte[], byte[]>(
                 (payload) => payload, (payload) => payload);
 
-            asyncCall.InitializeServer(call);
-            asyncCall.Accept(cq);
-            asyncCall.WriteStatusAsync(new Status(StatusCode.GRPC_STATUS_UNIMPLEMENTED, "No such method.")).Wait();
 
-            asyncCall.Finished.Wait();
+            asyncCall.InitializeServer(call);
+
+            var finishedTask = asyncCall.StartServerSide();
+
+            asyncCall.SendStatusFromServerAsync(new Status(StatusCode.GRPC_STATUS_UNIMPLEMENTED, "No such method.")).Wait();
+
+            finishedTask.Wait();
         }
     }
 }
