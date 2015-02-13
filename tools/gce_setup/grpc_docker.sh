@@ -24,6 +24,10 @@
 # Allows gcloud ssh commands to run on freshly started docker instances.
 _grpc_ensure_gcloud_ssh() {
   local default_key_file="$HOME/.ssh/google_compute_engine"
+  if [ "$HOME" == "/" ]
+  then
+    default_key_file="/root/.ssh/google_compute_engine"
+  fi
   [ -f $default_key_file ] || {
     ssh-keygen -f $default_key_file -N '' > /dev/null || {
       echo "could not precreate $default_key_file" 1>&2
