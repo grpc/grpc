@@ -59,32 +59,42 @@ static grpc_call_details call_details;
 static grpc_status_code status;
 static char *details = NULL;
 static size_t details_capacity = 0;
+static grpc_op *op;
 
 static void init_ping_pong_request(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
-  ops[0].data.send_initial_metadata.count = 0;
-  ops[1].op = GRPC_OP_SEND_MESSAGE;
-  ops[1].data.send_message = the_buffer;
-  ops[2].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  ops[3].op = GRPC_OP_RECV_INITIAL_METADATA;
-  ops[3].data.recv_initial_metadata = &initial_metadata_recv;
-  ops[4].op = GRPC_OP_RECV_MESSAGE;
-  ops[4].data.recv_message = &response_payload_recv;
-  ops[5].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  ops[5].data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  ops[5].data.recv_status_on_client.status = &status;
-  ops[5].data.recv_status_on_client.status_details = &details;
-  ops[5].data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op = ops;
+
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = the_buffer;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &response_payload_recv;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op++;
 }
 
 static void step_ping_pong_request(void) {
   call = grpc_channel_create_call(channel, cq, "/Reflector/reflectUnary",
                                   "localhost", gpr_inf_future);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, 6, (void *)1));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, op - ops, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_call_destroy(call);
   call = NULL;
