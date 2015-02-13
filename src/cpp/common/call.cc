@@ -256,12 +256,16 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
   // Parse received message if any.
   if (recv_message_) {
     if (recv_message_buf_) {
-      *got_message_ = true;
+      if (got_message_) {
+        *got_message_ = true;
+      }
       *status = DeserializeProto(recv_message_buf_, recv_message_);
       grpc_byte_buffer_destroy(recv_message_buf_);
       recv_message_buf_ = nullptr;
     } else {
-      *got_message_ = false;
+      if (got_message_) {
+        *got_message_ = false;
+      }
     }
   }
   // Parse received status.
