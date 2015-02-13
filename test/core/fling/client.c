@@ -83,7 +83,7 @@ static void init_ping_pong_request(void) {
 
 static void step_ping_pong_request(void) {
   call = grpc_channel_create_call(channel, cq, "/Reflector/reflectUnary",
-                                      "localhost", gpr_inf_future);
+                                  "localhost", gpr_inf_future);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, 6, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_call_destroy(call);
@@ -92,11 +92,11 @@ static void step_ping_pong_request(void) {
 
 static void init_ping_pong_stream(void) {
   call = grpc_channel_create_call(channel, cq, "/Reflector/reflectStream",
-				  "localhost", gpr_inf_future);
+                                  "localhost", gpr_inf_future);
   stream_init_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   stream_init_op.data.send_initial_metadata.count = 0;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &stream_init_op, 1,
-						   (void *)1));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, &stream_init_op, 1, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -108,8 +108,8 @@ static void init_ping_pong_stream(void) {
 }
 
 static void step_ping_pong_stream(void) {
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, stream_step_ops, 2,
-						   (void *)1));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, stream_step_ops, 2, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
 }
 
@@ -126,7 +126,8 @@ typedef struct {
 
 static const scenario scenarios[] = {
     {"ping-pong-request", init_ping_pong_request, step_ping_pong_request},
-    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream}, };
+    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
+};
 
 int main(int argc, char **argv) {
   gpr_slice slice = gpr_slice_from_copied_string("x");
@@ -175,7 +176,6 @@ int main(int argc, char **argv) {
   cq = grpc_completion_queue_create();
   the_buffer = grpc_byte_buffer_create(&slice, payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
-
 
   sc.init();
 

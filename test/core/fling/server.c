@@ -60,7 +60,6 @@ static grpc_byte_buffer *payload_buffer = NULL;
 /* Used to drain the terminal read in unary calls. */
 static grpc_byte_buffer *terminal_buffer = NULL;
 
-
 static grpc_op read_op;
 static grpc_op metadata_send_op;
 static grpc_op write_op;
@@ -80,7 +79,7 @@ static void request_call(void) {
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
   grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
-			   cq, tag(101));
+                           cq, tag(101));
 }
 
 static void handle_unary_method(void) {
@@ -101,24 +100,22 @@ static void handle_unary_method(void) {
   unary_ops[4].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   unary_ops[4].data.recv_close_on_server.cancelled = &was_cancelled;
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, unary_ops, 5, 
-						   tag(6)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, unary_ops, 5, tag(6)));
 }
 
 static void send_initial_metadata(void) {
   grpc_metadata_array_init(&initial_metadata_send);
   metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_send_op.data.send_initial_metadata.count = 0;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &metadata_send_op, 1, 
-						 tag(3)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, &metadata_send_op, 1, tag(3)));
 }
 
 static void start_read_op(int t) {
   /* Starting read at server */
   read_op.op = GRPC_OP_RECV_MESSAGE;
   read_op.data.recv_message = &payload_buffer;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &read_op, 1, 
-						   tag(t)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &read_op, 1, tag(t)));
 }
 
 static void start_write_op(void) {
@@ -128,10 +125,8 @@ static void start_write_op(void) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
   }
   write_op.data.send_message = payload_buffer;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &write_op, 1, 
-						   tag(2)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &write_op, 1, tag(2)));
 }
-
 
 static void start_send_status(void) {
   status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -141,8 +136,7 @@ static void start_send_status(void) {
   status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, status_op, 2, 
-						   tag(4)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, status_op, 2, tag(4)));
 }
 
 static void sigint_handler(int x) { got_sigint = 1; }
@@ -214,66 +208,64 @@ int main(int argc, char **argv) {
     s = ev->tag;
     switch (ev->type) {
       case GRPC_OP_COMPLETE:
-	switch ((gpr_intptr) s) {
-	  case 101:
-	    if(call != NULL) {     
-	      if (0 == strcmp(call_details.method,
-			      "/Reflector/reflectStream")) {
-		/* Received streaming call. Send metadata here. */
-	      start_read_op(1);
-	      send_initial_metadata();
-	      } else {
-		/* Received unary call. Can do all ops in one batch. */ 
-	      start_read_op(5);
-	      }
-	    }
-	    else {
-	      GPR_ASSERT(shutdown_started);
-	    }
-	    /*	    request_call();
-	     */
-	    break;
-	  case 1:
-	    if (payload_buffer != NULL) {
-	      /* Received payload from client. */
-	      start_write_op();
-	    }
-	    else {
-	      /* Received end of stream from client. */
-	      start_send_status();
-	    }
-	    break;
-	  case 2:
-	    /* Write completed at server  */
-	    start_read_op(1);
-	    break;
-	  case 3:
-	    /* Metadata send completed at server */
-	    break;
-	  case 4:
-	    /* Send status and close completed at server */
-	    grpc_call_destroy(call);
-	    request_call();
-	    break;
-	  case 5:
-	    /* Finished payload read for unary. Start all reamaining
-	     *  unary ops in a batch. 
-	     */
-	    handle_unary_method();
-	    break;
-	  case 6:
-	    /* Finished unary call. */
-	    grpc_call_destroy(call);
-	    request_call();
-	    break;
-	}
-	break;
+        switch ((gpr_intptr)s) {
+          case 101:
+            if (call != NULL) {
+              if (0 ==
+                  strcmp(call_details.method, "/Reflector/reflectStream")) {
+                /* Received streaming call. Send metadata here. */
+                start_read_op(1);
+                send_initial_metadata();
+              } else {
+                /* Received unary call. Can do all ops in one batch. */
+                start_read_op(5);
+              }
+            } else {
+              GPR_ASSERT(shutdown_started);
+            }
+            /*	    request_call();
+             */
+            break;
+          case 1:
+            if (payload_buffer != NULL) {
+              /* Received payload from client. */
+              start_write_op();
+            } else {
+              /* Received end of stream from client. */
+              start_send_status();
+            }
+            break;
+          case 2:
+            /* Write completed at server  */
+            start_read_op(1);
+            break;
+          case 3:
+            /* Metadata send completed at server */
+            break;
+          case 4:
+            /* Send status and close completed at server */
+            grpc_call_destroy(call);
+            request_call();
+            break;
+          case 5:
+            /* Finished payload read for unary. Start all reamaining
+             *  unary ops in a batch.
+             */
+            handle_unary_method();
+            break;
+          case 6:
+            /* Finished unary call. */
+            grpc_call_destroy(call);
+            request_call();
+            break;
+        }
+        break;
       case GRPC_SERVER_RPC_NEW:
       case GRPC_WRITE_ACCEPTED:
       case GRPC_READ:
       case GRPC_FINISH_ACCEPTED:
       case GRPC_FINISHED:
-	gpr_log(GPR_ERROR, "Unexpected event type.");
+        gpr_log(GPR_ERROR, "Unexpected event type.");
         GPR_ASSERT(0);
         break;
       case GRPC_QUEUE_SHUTDOWN:
