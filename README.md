@@ -213,14 +213,14 @@ which contains (along with some other useful code):
 
     - _stub_ classes that clients can use to talk to a `Greetings` server.
 
-```java
+  ```java
 public static class GreetingsStub extends
       com.google.net.stubby.stub.AbstractStub<GreetingsStub,
       GreetingsServiceDescriptor>
       implements Greetings {
    ...
   }
-```
+  ```
 
 <a name="server"></a>
 ### Writing a server
@@ -267,10 +267,10 @@ As you can see, the class `GreetingsImpl` implements the interface
 
 To return our response to the client and complete the call:
 
-    1. We construct and populate a `HelloReply` response object with our exciting
+1. We construct and populate a `HelloReply` response object with our exciting
 message, as specified in our interface definition.
-    2. We call `responseObserver.onValue()` with the `HelloReply` that we want to send back to the client.
-    3. Finally, we call `responseObserver.onCompleted()` to indicate that we're
+2. We call `responseObserver.onValue()` with the `HelloReply` that we want to send back to the client.
+3. Finally, we call `responseObserver.onCompleted()` to indicate that we're
 finished dealing with this RPC.
 
 
