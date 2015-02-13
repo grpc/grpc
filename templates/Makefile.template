@@ -149,8 +149,6 @@ else
 LIBS = rt m z pthread
 LDFLAGS += -pthread
 endif
-LIBSXX = protobuf
-LIBS_PROTOC = protoc protobuf
 
 ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
 GTEST_LIB = /usr/src/gtest/src/gtest-all.cc -I/usr/src/gtest
@@ -174,7 +172,6 @@ CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
 LDFLAGS += $(ARCH_FLAGS)
 LDLIBS += $(addprefix -l, $(LIBS))
 LDLIBSXX += $(addprefix -l, $(LIBSXX))
-HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 HOST_CPPFLAGS = $(CPPFLAGS)
 HOST_CFLAGS = $(CFLAGS)
@@ -205,6 +202,8 @@ endif
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -lssl -lcrypto -ldl $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/perftools.c -lprofiler $(LDFLAGS)
+PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o /dev/null test/build/protobuf.cc -lprotobuf $(LDFLAGS)
+PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -217,11 +216,15 @@ endif
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_PROTOBUF = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
 else
 # override system libraries if the config requires a custom compiled library
 HAS_SYSTEM_OPENSSL_ALPN = false
 HAS_SYSTEM_ZLIB = false
+HAS_SYSTEM_PROTOBUF = false
 endif
+
+HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
@@ -235,11 +238,20 @@ else
 HAS_EMBEDDED_ZLIB = true
 endif
 
+ifeq ($(wildcard third_party/protobuf/src/google/protobuf/descriptor.pb.h),)
+HAS_EMBEDDED_PROTOBUF = false
+ifneq ($(HAS_VALID_PROTOC),true)
+NO_PROTOC = true
+endif
+else
+HAS_EMBEDDED_PROTOBUF = true
+endif
+
 ifeq ($(HAS_SYSTEM_ZLIB),false)
 ifeq ($(HAS_EMBEDDED_ZLIB),true)
 ZLIB_DEP = libs/$(CONFIG)/zlib/libz.a
 CPPFLAGS += -Ithird_party/zlib
-LDFLAGS += -Lthird_party/zlib
+LDFLAGS += -Llibs/$(CONFIG)/zlib
 else
 DEP_MISSING += zlib
 endif
@@ -260,6 +272,24 @@ LIBS_SECURE = ssl crypto dl
 endif
 
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+
+ifeq ($(HAS_SYSTEM_PROTOBUF),false)
+ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
+PROTOBUF_DEP = libs/$(CONFIG)/protobuf/libprotobuf.a
+CPPFLAGS += -Ithird_party/protobuf/src
+LDFLAGS += -Llibs/$(CONFIG)/protobuf
+PROTOC = bins/$(CONFIG)/protobuf/protoc
+else
+NO_PROTOBUF = true
+endif
+else
+endif
+
+LIBS_PROTOBUF = protobuf
+LIBS_PROTOC = protoc protobuf
+
+LDLIBS_PROTOBUF += $(addprefix -l, $(LIBS_PROTOBUF))
+HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
@@ -316,11 +346,43 @@ endif
 
 openssl_dep_error: openssl_dep_message git_update stop
 
+protobuf_dep_error: protobuf_dep_message git_update stop
+
+protoc_dep_error: protoc_dep_message git_update stop
+
 openssl_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
 	@echo "The target you are trying to run requires OpenSSL with ALPN support."
+	@echo "Your system doesn't have it, and neither does the third_party directory."
+	@echo
+	@echo "Please consult INSTALL to get more information."
+	@echo
+	@echo "If you need information about why these tests failed, run:"
+	@echo
+	@echo "  make run_dep_checks"
+	@echo
+
+protobuf_dep_message:
+	@echo
+	@echo "DEPENDENCY ERROR"
+	@echo
+	@echo "The target you are trying to run requires protobuf 3.0.0+"
+	@echo "Your system doesn't have it, and neither does the third_party directory."
+	@echo
+	@echo "Please consult INSTALL to get more information."
+	@echo
+	@echo "If you need information about why these tests failed, run:"
+	@echo
+	@echo "  make run_dep_checks"
+	@echo
+
+protoc_dep_message:
+	@echo
+	@echo "DEPENDENCY ERROR"
+	@echo
+	@echo "The target you are trying to run requires protobuf-compiler 3.0.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
 	@echo "Please consult INSTALL to get more information."
@@ -340,6 +402,9 @@ ${tgt.name}: bins/$(CONFIG)/${tgt.name}
 run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
 	$(ZLIB_CHECK_CMD) || true
+	$(PERFTOOLS_CHECK_CMD) || true
+	$(PROTOBUF_CHECK_CMD) || true
+	$(PROTOC_CHECK_CMD) || true
 
 libs/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
@@ -360,6 +425,21 @@ endif
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
 	$(Q)mkdir -p libs/$(CONFIG)/openssl
 	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a libs/$(CONFIG)/openssl
+
+third_party/protobuf/configure:
+	$(E) "[AUTOGEN] Preparing protobuf"
+	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
+
+libs/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
+	$(E) "[MAKE]    Building protobuf"
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="$(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+	$(Q)$(MAKE) -C third_party/protobuf clean
+	$(Q)$(MAKE) -C third_party/protobuf
+	$(Q)mkdir -p libs/$(CONFIG)/protobuf
+	$(Q)mkdir -p bins/$(CONFIG)/protobuf
+	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a libs/$(CONFIG)/protobuf
+	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a libs/$(CONFIG)/protobuf
+	$(Q)cp third_party/protobuf/src/protoc bins/$(CONFIG)/protobuf
 
 static: static_c static_cxx
 
@@ -531,10 +611,14 @@ ifeq ($(CONFIG),opt)
 endif
 
 % for p in protos:
-gens/${p}.pb.cc: ${p}.proto $(PROTOC_PLUGINS)
+ifeq ($(NO_PROTOC),true)
+gens/${p}.pb.cc: protoc_dep_error
+else
+gens/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+endif
 
 % endfor
 
@@ -704,17 +788,60 @@ endif
 
 else
 
+% if lib.language == 'c++':
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+libs/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
+
+% if lib.build == "all":
+ifeq ($(SYSTEM),MINGW32)
+libs/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
+else
+libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
+endif
+% endif
+
+else
+% endif
+
 ifneq ($(OPENSSL_DEP),)
+# This is to ensure the embedded OpenSSL is built beforehand, properly
+# installing headers to their final destination on the drive. We need this
+# otherwise parallel compilation will fail if a source is compiled first.
 % for src in lib.src:
 ${src}: $(OPENSSL_DEP)
 % endfor
 endif
 
-libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIB${lib.name.upper()}_OBJS)
+libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
 ## The else here corresponds to the if secure earlier.
 % else:
-libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(LIB${lib.name.upper()}_OBJS)
+% if lib.language == 'c++':
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+libs/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
+
+% if lib.build == "all":
+ifeq ($(SYSTEM),MINGW32)
+libs/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
+else
+libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
+endif
 % endif
+
+else
+
+% endif
+libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
+% endif
+% if lib.language == 'c++':
+ $(PROTOBUF_DEP)\
+% endif
+ $(LIB${lib.name.upper()}_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f libs/$(CONFIG)/lib${lib.name}.a
@@ -780,10 +907,15 @@ else
 endif
 endif
 % endif
-
+% if lib.get('secure', True):
 ## If the lib was secure, we have to close the Makefile's if that tested
 ## the presence of an ALPN-capable OpenSSL.
-% if lib.get('secure', True):
+
+endif
+% endif
+% if lib.language == 'c++':
+## If the lib was C++, we have to close the Makefile's if that tested
+## the presence of protobuf 3.0.0+
 
 endif
 % endif
@@ -840,7 +972,20 @@ else
 ## That simplifies the codegen a bit, but prevents a fully defined Makefile.
 ## I can live with that.
 ##
+% if tgt.build == 'protoc':
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
+
+bins/$(CONFIG)/${tgt.name}: protobuf_dep_error
+
+else
+
+bins/$(CONFIG)/${tgt.name}: $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+% else:
 bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
+% endif
 % for dep in tgt.deps:
  libs/$(CONFIG)/lib${dep}.a\
 % endfor
@@ -870,9 +1015,9 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % endfor
 % if tgt.language == "c++":
 % if tgt.build == 'protoc':
- $(HOST_LDLIBSXX)\
+ $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC)\
 % else:
- $(LDLIBSXX)\
+ $(LDLIBSXX) $(LDLIBS_PROTOBUF)\
 % endif
 % endif
 % if tgt.build == 'protoc':
@@ -886,6 +1031,10 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  $(LDLIBS_SECURE)\
 % endif
  -o bins/$(CONFIG)/${tgt.name}
+% if tgt.build == 'protoc':
+
+endif
+% endif
 % if tgt.get('secure', True):
 
 endif
