@@ -5,9 +5,16 @@ OUT_DIR=test_bin
 
 CC=cl.exe
 LINK=link.exe
-CFLAGS=/c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze-
+
+INCLUDES=/I..\.. /I..\..\include /I..\..\third_party\zlib /I..\third_party /I..\..\third_party\openssl\inc32
+DEFINES=/D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /D _CRT_SECURE_NO_WARNINGS
+CFLAGS=/c $(INCLUDES) /nologo /Z7 /W3 /WX- /sdl $(DEFINES) /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze-
 LFLAGS=/DEBUG /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86
-LIBS=
+
+OPENSSL_LIBS=..\..\third_party\openssl\out32\ssleay32.lib ..\..\third_party\openssl\out32\libeay32.lib
+WINSOCK_LIBS=ws2_32.lib
+ZLIB_LIBS=Debug\zlibwapi.lib
+LIBS=$(OPENSSL_LIBS) $(WINSOCK_LIBS) $(ZLIB_LIBS)
 
 gpr_test_util:
 	MSBuild.exe gpr_test_util.vcxproj /p:Configuration=Debug
