@@ -21,6 +21,8 @@ namespace Google.GRPC.Core.Tests
         [Test]
         public void EmptyCall()
         {
+            GrpcEnvironment.Initialize();
+
             Server server = new Server();
             server.AddServiceDefinition(
                 ServerServiceDefinition.CreateBuilder("someService")

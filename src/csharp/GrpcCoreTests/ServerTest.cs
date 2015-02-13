@@ -9,7 +9,9 @@ namespace Google.GRPC.Core.Tests
     public class ServerTest
     {
         [Test]
-        public void StartAndShutdownServer() {
+        public void StartAndShutdownServer()
+        {
+            GrpcEnvironment.Initialize();
 
             Server server = new Server();
             int port = server.AddPort("localhost:0");

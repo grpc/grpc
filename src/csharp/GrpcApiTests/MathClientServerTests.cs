@@ -21,6 +21,8 @@ namespace math.Tests
         [TestFixtureSetUp]
         public void Init()
         {
+            GrpcEnvironment.Initialize();
+
             server = new Server();
             server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
             int port = server.AddPort(host + ":0");
