@@ -52,7 +52,22 @@
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
+static grpc_call *call;
+static grpc_call_details call_details;
+static grpc_metadata_array request_metadata_recv;
+static grpc_metadata_array initial_metadata_send;
+static grpc_byte_buffer *payload_buffer = NULL;
+
+
+static grpc_op read_op;
+static grpc_op metadata_send_op;
+static grpc_op write_op;
+static grpc_op status_op[2];
+static int was_cancelled = 2;
+
 static int got_sigint = 0;
+
+static void *tag(gpr_intptr t) { return (void *)t; }
 
 typedef struct {
   gpr_refcount pending_ops;
@@ -60,9 +75,54 @@ typedef struct {
 } call_state;
 
 static void request_call(void) {
+  /*
   call_state *s = gpr_malloc(sizeof(call_state));
   gpr_ref_init(&s->pending_ops, 2);
-  grpc_server_request_call_old(server, s);
+  */
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+  grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
+			   cq, tag(101));
+}
+
+static void send_initial_metadata(void) {
+  grpc_metadata_array_init(&initial_metadata_send);
+  metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  metadata_send_op.data.send_initial_metadata.count = 0;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &metadata_send_op, 1, 
+						 tag(3)));
+}
+
+static void start_read_op(void) {
+  /* Starting read at server */
+  read_op.op = GRPC_OP_RECV_MESSAGE;
+  read_op.data.recv_message = &payload_buffer;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &read_op, 1, 
+						   tag(1)));
+}
+
+static void start_write_op(void) {
+  /* Starting write at server */
+  write_op.op = GRPC_OP_SEND_MESSAGE;
+  if (payload_buffer == NULL) {
+    gpr_log(GPR_INFO, "NULL payload buffer !!!");
+  }
+  write_op.data.send_message = payload_buffer;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, &write_op, 1, 
+						   tag(2)));
+}
+
+
+static void start_send_status(void) {
+  status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
+  status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
+  status_op[0].data.send_status_from_server.status_details = "";
+  status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
+
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, status_op, 2, 
+						   tag(4)));
 }
 
 static void sigint_handler(int x) { got_sigint = 1; }
@@ -133,6 +193,49 @@ int main(int argc, char **argv) {
     if (!ev) continue;
     s = ev->tag;
     switch (ev->type) {
+      case GRPC_OP_COMPLETE:
+	switch ((gpr_intptr) s) {
+	  case 101:
+	    if(call != NULL) {     
+	      if (0 == strcmp(call_details.method,
+			      "/Reflector/reflectStream")) {
+		/* Received streaming call. Send metadata here. */
+	      } else {
+		/* Received unary call. Can do all ops in one batch. */ 
+	      }
+	      start_read_op();
+	      send_initial_metadata();
+	    }
+	    else {
+	      GPR_ASSERT(shutdown_started);
+	    }
+	    /*	    request_call();
+	     */
+	    break;
+	  case 1:
+	    if (payload_buffer != NULL) {
+	      /* Received payload from client. */
+	      start_write_op();
+	    }
+	    else {
+	      /* Received end of stream from client. */
+	      start_send_status();
+	    }
+	    break;
+	  case 2:
+	    /* Write completed at server  */
+	    start_read_op();
+	    break;
+	  case 3:
+	    /* Metadata send completed at server */
+	    break;
+	  case 4:
+	    /* Send status and close completed at server */
+	    grpc_call_destroy(call);
+	    request_call();
+	    break;
+	}
+	break;
       case GRPC_SERVER_RPC_NEW:
         if (ev->call != NULL) {
           /* initial ops are already started in request_call */
