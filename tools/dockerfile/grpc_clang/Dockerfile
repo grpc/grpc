@@ -23,7 +23,10 @@ RUN mv libcxx llvm/projects
 RUN mv libcxxabi llvm/projects
 
 RUN mkdir llvm-build
-RUN cd llvm-build && cmake ../llvm
+RUN cd llvm-build && cmake \
+  -DCMAKE_BUILD_TYPE:STRING=Release \
+  -DLLVM_TARGETS_TO_BUILD:STRING=X86 \
+  ../llvm
 RUN make -C llvm-build && make -C llvm-build install && rm -rf llvm-build
 
 CMD ["bash"]
