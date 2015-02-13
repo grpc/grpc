@@ -53,21 +53,18 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   buf.AddSendInitialMetadata(context);
   buf.AddSendMessage(request);
   buf.AddRecvInitialMetadata(&context->recv_initial_metadata_);
-  bool got_message;
-  buf.AddRecvMessage(result, &got_message);
+  buf.AddRecvMessage(result);
   buf.AddClientSendClose();
   buf.AddClientRecvStatus(&context->trailing_metadata_, &status);
   call.PerformOps(&buf);
-  GPR_ASSERT(cq.Pluck(&buf) && (got_message || !status.IsOk()));
+  GPR_ASSERT(cq.Pluck(&buf) && (buf.got_message || !status.IsOk()));
   return status;
 }
 
 class ClientAsyncRequest final : public CallOpBuffer {
  public:
-  bool got_message = false;
   void FinalizeResult(void** tag, bool* status) override {
     CallOpBuffer::FinalizeResult(tag, status);
-    *status &= got_message;
     delete this;
   }
 };
@@ -83,7 +80,7 @@ void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   buf->AddSendInitialMetadata(context);
   buf->AddSendMessage(request);
   buf->AddRecvInitialMetadata(&context->recv_initial_metadata_);
-  buf->AddRecvMessage(result, &buf->got_message);
+  buf->AddRecvMessage(result);
   buf->AddClientSendClose();
   buf->AddClientRecvStatus(&context->trailing_metadata_, status);
   call.PerformOps(buf);

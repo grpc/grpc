@@ -64,9 +64,21 @@ namespace testing {
 
 namespace {
 
+void* tag(int i) {
+  return (void*)(gpr_intptr)i;
+}
+
+void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
+  bool ok;
+  void* got_tag;
+  EXPECT_TRUE(cq->Next(&got_tag, &ok));
+  EXPECT_EQ(expect_ok, ok);
+  EXPECT_EQ(tag(i), got_tag);
+}
+
 class End2endTest : public ::testing::Test {
  protected:
-  End2endTest() : service_(&cq_) {}
+  End2endTest() : service_(&srv_cq_) {}
 
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
@@ -86,20 +98,30 @@ class End2endTest : public ::testing::Test {
     stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
-  CompletionQueue cq_;
+  void server_ok(int i) {
+    verify_ok(&srv_cq_, i, true);
+  }
+  void client_ok(int i) {
+    verify_ok(&cli_cq_, i , true);
+  }
+  void server_fail(int i) {
+    verify_ok(&srv_cq_, i, false);
+  }
+  void client_fail(int i) {
+    verify_ok(&cli_cq_, i, false);
+  }
+
+  CompletionQueue cli_cq_;
+  CompletionQueue srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   grpc::cpp::test::util::TestService::AsyncService service_;
   std::ostringstream server_address_;
 };
 
-void* tag(int i) {
-  return (void*)(gpr_intptr)i;
-}
-
 TEST_F(End2endTest, SimpleRpc) {
   ResetStub();
-  
+
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -110,34 +132,128 @@ TEST_F(End2endTest, SimpleRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message("Hello");
-  stub_->Echo(&cli_ctx, send_request, &recv_response, &recv_status, &cq_, tag(1));
+  stub_->Echo(
+      &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
 
-  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &cq_, tag(2));
+  service_.RequestEcho(
+      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
 
-  void *got_tag;
-  bool ok;
-  EXPECT_TRUE(cq_.Next(&got_tag, &ok));
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(got_tag, tag(2));
-  EXPECT_EQ(recv_request.message(), "Hello");
+  server_ok(2);
+  EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
 
-  EXPECT_TRUE(cq_.Next(&got_tag, &ok));
-  EXPECT_TRUE(ok);
-  if (got_tag == tag(3)) {
-    EXPECT_TRUE(cq_.Next(&got_tag, &ok));
-    EXPECT_TRUE(ok);
-    EXPECT_EQ(got_tag, tag(1));
-  } else {
-    EXPECT_EQ(got_tag, tag(1));
-    EXPECT_TRUE(cq_.Next(&got_tag, &ok));
-    EXPECT_TRUE(ok);
-    EXPECT_EQ(got_tag, tag(3));
-  }
+  server_ok(3);
 
-  EXPECT_EQ(recv_response.message(), "Hello");
+  client_ok(1);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.IsOk());
+}
+
+TEST_F(End2endTest, SimpleClientStreaming) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
+
+  send_request.set_message("Hello");
+  ClientAsyncWriter<EchoRequest>* cli_stream =
+      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1));
+
+  service_.RequestRequestStream(
+      &srv_ctx, &srv_stream, &srv_cq_, tag(2));
+
+  server_ok(2);
+  client_ok(1);
+
+  cli_stream->Write(send_request, tag(3));
+  client_ok(3);
+
+  srv_stream.Read(&recv_request, tag(4));
+  server_ok(4);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  cli_stream->Write(send_request, tag(5));
+  client_ok(5);
+
+  srv_stream.Read(&recv_request, tag(6));
+  server_ok(6);
+
+  EXPECT_EQ(send_request.message(), recv_request.message());
+  cli_stream->WritesDone(tag(7));
+  client_ok(7);
+
+  srv_stream.Read(&recv_request, tag(8));
+  server_fail(8);
+
+  send_response.set_message(recv_request.message());
+  srv_stream.Finish(send_response, Status::OK, tag(9));
+  server_ok(9);
+
+  cli_stream->Finish(&recv_status, tag(10));
+  client_ok(10);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.IsOk());
+}
+
+TEST_F(End2endTest, SimpleBidiStreaming) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
+
+  send_request.set_message("Hello");
+  ClientAsyncReaderWriter<EchoRequest, EchoResponse>* cli_stream =
+      stub_->BidiStream(&cli_ctx, &cli_cq_, tag(1));
+
+  service_.RequestBidiStream(
+      &srv_ctx, &srv_stream, &srv_cq_, tag(2));
+
+  server_ok(2);
+  client_ok(1);
+
+  cli_stream->Write(send_request, tag(3));
+  client_ok(3);
+
+  srv_stream.Read(&recv_request, tag(4));
+  server_ok(4);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  send_response.set_message(recv_request.message());
+  srv_stream.Write(send_response, tag(5));
+  server_ok(5);
+
+  cli_stream->Read(&recv_response, tag(6));
+  client_ok(6);
+  EXPECT_EQ(send_response.message(), recv_response.message());
+
+  cli_stream->WritesDone(tag(7));
+  client_ok(7);
+
+  srv_stream.Read(&recv_request, tag(8));
+  server_fail(8);
+
+  srv_stream.Finish(Status::OK, tag(9));
+  server_ok(9);
+
+  cli_stream->Finish(&recv_status, tag(10));
+  client_ok(10);
+
   EXPECT_TRUE(recv_status.IsOk());
 }
 

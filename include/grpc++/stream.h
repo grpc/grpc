@@ -119,10 +119,9 @@ class ClientReader final : public ClientStreamingInterface,
       buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool got_message;
-    buf.AddRecvMessage(msg, &got_message);
+    buf.AddRecvMessage(msg);
     call_.PerformOps(&buf);
-    return cq_.Pluck(&buf) && got_message;
+    return cq_.Pluck(&buf) && buf.got_message;
   }
 
   virtual Status Finish() override {
@@ -174,11 +173,10 @@ class ClientWriter final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    bool got_message;
-    buf.AddRecvMessage(response_, &got_message);
+    buf.AddRecvMessage(response_);
     buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
     call_.PerformOps(&buf);
-    GPR_ASSERT(cq_.Pluck(&buf) && got_message);
+    GPR_ASSERT(cq_.Pluck(&buf) && buf.got_message);
     return status;
   }
 
@@ -225,10 +223,9 @@ class ClientReaderWriter final : public ClientStreamingInterface,
       buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool got_message;
-    buf.AddRecvMessage(msg, &got_message);
+    buf.AddRecvMessage(msg);
     call_.PerformOps(&buf);
-    return cq_.Pluck(&buf) && got_message;
+    return cq_.Pluck(&buf) && buf.got_message;
   }
 
   virtual bool Write(const W& msg) override {
@@ -277,10 +274,9 @@ class ServerReader final : public ReaderInterface<R> {
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
-    bool got_message;
-    buf.AddRecvMessage(msg, &got_message);
+    buf.AddRecvMessage(msg);
     call_->PerformOps(&buf);
-    return call_->cq()->Pluck(&buf) && got_message;
+    return call_->cq()->Pluck(&buf) && buf.got_message;
   }
 
  private:
@@ -338,10 +334,9 @@ class ServerReaderWriter final : public WriterInterface<W>,
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
-    bool got_message;
-    buf.AddRecvMessage(msg, &got_message);
+    buf.AddRecvMessage(msg);
     call_->PerformOps(&buf);
-    return call_->cq()->Pluck(&buf) && got_message;
+    return call_->cq()->Pluck(&buf) && buf.got_message;
   }
 
   virtual bool Write(const W& msg) override {
@@ -420,8 +415,7 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool ignore;
-    read_buf_.AddRecvMessage(msg, &ignore);
+    read_buf_.AddRecvMessage(msg);
     call_.PerformOps(&read_buf_);
   }
 
@@ -485,8 +479,7 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
       finish_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool ignore;
-    finish_buf_.AddRecvMessage(response_, &ignore);
+    finish_buf_.AddRecvMessage(response_);
     finish_buf_.AddClientRecvStatus(&context_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
@@ -494,7 +487,6 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
  private:
   ClientContext* context_ = nullptr;
   google::protobuf::Message *const response_;
-  bool got_message_;
   Call call_;
   CallOpBuffer init_buf_;
   CallOpBuffer meta_buf_;
@@ -532,8 +524,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool ignore;
-    read_buf_.AddRecvMessage(msg, &ignore);
+    read_buf_.AddRecvMessage(msg);
     call_.PerformOps(&read_buf_);
   }
 
@@ -624,7 +615,7 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   CallOpBuffer finish_buf_;
 };
 
-template <class R>
+template <class W, class R>
 class ServerAsyncReader : public ServerAsyncStreamingInterface,
                           public AsyncReaderInterface<R> {
  public:
@@ -646,7 +637,24 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
     call_.PerformOps(&read_buf_);
   }
 
-  void Finish(const Status& status, void* tag) {
+  void Finish(const W& msg, const Status& status, void* tag) {
+    finish_buf_.Reset(tag);
+    if (!ctx_->sent_initial_metadata_) {
+      finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      ctx_->sent_initial_metadata_ = true;
+    }
+    // The response is dropped if the status is not OK.
+    if (status.IsOk()) {
+      finish_buf_.AddSendMessage(msg);
+    }
+    bool cancelled = false;
+    finish_buf_.AddServerRecvClose(&cancelled);
+    finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
+    call_.PerformOps(&finish_buf_);
+  }
+
+  void FinishWithError(const Status& status, void* tag) {
+    GPR_ASSERT(!status.IsOk());
     finish_buf_.Reset(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
@@ -657,7 +665,6 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
     finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
-
 
  private:
   void BindCall(Call *call) override { call_ = *call; }
