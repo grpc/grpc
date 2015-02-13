@@ -43,6 +43,7 @@
 
 #include "channel.h"
 
+
 namespace grpc {
 namespace node {
 
@@ -81,12 +82,14 @@ class Op {
   virtual std::string GetTypeString() const = 0;
 };
 
+typedef std::vector<unique_ptr<Op>> OpVec;
+
 struct tag {
-  tag(NanCallback *callback, std::vector<unique_ptr<Op> > *ops,
+  tag(NanCallback *callback, OpVec *ops,
       shared_ptr<Resources> resources);
   ~tag();
   NanCallback *callback;
-  std::vector<unique_ptr<Op> > *ops;
+  OpVec *ops;
   shared_ptr<Resources> resources;
 };
 

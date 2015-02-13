@@ -49,6 +49,7 @@
 
 using std::unique_ptr;
 using std::shared_ptr;
+using std::vector;
 
 namespace grpc {
 namespace node {
@@ -396,7 +397,7 @@ class ServerCloseResponseOp : public Op {
   int cancelled;
 };
 
-tag::tag(NanCallback *callback, std::vector<unique_ptr<Op> > *ops,
+tag::tag(NanCallback *callback, OpVec *ops,
          shared_ptr<Resources> resources) :
     callback(callback), ops(ops), resources(resources){
 }
@@ -410,7 +411,7 @@ Handle<Value> GetTagNodeValue(void *tag) {
   NanEscapableScope();
   struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
   Handle<Object> tag_obj = NanNew<Object>();
-  for (std::vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
+  for (vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
        it != tag_struct->ops->end(); ++it) {
     Op *op_ptr = it->get();
     tag_obj->Set(op_ptr->GetOpType(), op_ptr->GetNodeValue());
@@ -530,8 +531,8 @@ NAN_METHOD(Call::StartBatch) {
   Handle<Object> obj = args[0]->ToObject();
   Handle<Array> keys = obj->GetOwnPropertyNames();
   size_t nops = keys->Length();
-  std::vector<grpc_op> ops(nops);
-  std::vector<unique_ptr<Op> > *op_vector = new std::vector<unique_ptr<Op> >();
+  vector<grpc_op> ops(nops);
+  unique_ptr<OpVec> op_vector(new OpVec());
   for (unsigned int i = 0; i < nops; i++) {
     unique_ptr<Op> op;
     if (!keys->Get(i)->IsUint32()) {
@@ -576,7 +577,7 @@ NAN_METHOD(Call::StartBatch) {
   NanCallback *callback = new NanCallback(callback_func);
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, &ops[0], nops, new struct tag(
-          callback, op_vector, resources));
+          callback, op_vector.release(), resources));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("startBatch failed", error);
   }
