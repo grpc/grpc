@@ -101,8 +101,7 @@ class NewCallOp : public Op {
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     return true;
   }
 
@@ -230,7 +229,8 @@ NAN_METHOD(Server::RequestCall) {
   grpc_call_error error = grpc_server_request_call(
       server->wrapped_server, &op->call, &op->details, &op->request_metadata,
       CompletionQueueAsyncWorker::GetQueue(),
-      new struct tag(new NanCallback(args[0].As<Function>()), ops, NULL, NULL));
+      new struct tag(new NanCallback(args[0].As<Function>()), ops,
+                     shared_ptr<Resources>(nullptr)));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("requestCall failed", error);
   }

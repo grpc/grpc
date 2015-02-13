@@ -47,6 +47,7 @@ namespace grpc {
 namespace node {
 
 using std::unique_ptr;
+using std::shared_ptr;
 
 v8::Handle<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
@@ -64,12 +65,16 @@ class PersistentHolder {
   v8::Persistent<v8::Value> persist;
 };
 
+struct Resources {
+  std::vector<unique_ptr<NanUtf8String> > strings;
+  std::vector<unique_ptr<PersistentHolder> > handles;
+};
+
 class Op {
  public:
   virtual v8::Handle<v8::Value> GetNodeValue() const = 0;
   virtual bool ParseOp(v8::Handle<v8::Value> value, grpc_op *out,
-                       std::vector<unique_ptr<NanUtf8String> > *strings,
-                       std::vector<unique_ptr<PersistentHolder> > *handles) = 0;
+                       shared_ptr<Resources> resources) = 0;
   v8::Handle<v8::Value> GetOpType() const;
 
  protected:
@@ -78,13 +83,11 @@ class Op {
 
 struct tag {
   tag(NanCallback *callback, std::vector<unique_ptr<Op> > *ops,
-      std::vector<unique_ptr<PersistentHolder> > *handles,
-      std::vector<unique_ptr<NanUtf8String> > *strings);
+      shared_ptr<Resources> resources);
   ~tag();
   NanCallback *callback;
   std::vector<unique_ptr<Op> > *ops;
-  std::vector<unique_ptr<PersistentHolder> > *handles;
-  std::vector<unique_ptr<NanUtf8String> > *strings;
+  shared_ptr<Resources> resources;
 };
 
 v8::Handle<v8::Value> GetTagNodeValue(void *tag);

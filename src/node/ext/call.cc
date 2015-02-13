@@ -48,6 +48,7 @@
 #include "timeval.h"
 
 using std::unique_ptr;
+using std::shared_ptr;
 
 namespace grpc {
 namespace node {
@@ -76,10 +77,8 @@ Persistent<Function> Call::constructor;
 Persistent<FunctionTemplate> Call::fun_tpl;
 
 
-bool CreateMetadataArray(
-    Handle<Object> metadata, grpc_metadata_array *array,
-    std::vector<unique_ptr<NanUtf8String> > *string_handles,
-    std::vector<unique_ptr<PersistentHolder> > *handles) {
+bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array,
+                         shared_ptr<Resources> resources) {
   NanScope();
   grpc_metadata_array_init(array);
   Handle<Array> keys(metadata->GetOwnPropertyNames());
@@ -95,7 +94,7 @@ bool CreateMetadataArray(
   for (unsigned int i = 0; i < keys->Length(); i++) {
     Handle<String> current_key(keys->Get(i)->ToString());
     NanUtf8String *utf8_key = new NanUtf8String(current_key);
-    string_handles->push_back(unique_ptr<NanUtf8String>(utf8_key));
+    resources->strings.push_back(unique_ptr<NanUtf8String>(utf8_key));
     Handle<Array> values = Local<Array>::Cast(metadata->Get(current_key));
     for (unsigned int j = 0; j < values->Length(); j++) {
       Handle<Value> value = values->Get(j);
@@ -106,12 +105,12 @@ bool CreateMetadataArray(
         current->value_length = Buffer::Length(value);
         Persistent<Value> handle;
         NanAssignPersistent(handle, value);
-        handles->push_back(unique_ptr<PersistentHolder>(
+        resources->handles.push_back(unique_ptr<PersistentHolder>(
             new PersistentHolder(handle)));
       } else if (value->IsString()) {
         Handle<String> string_value = value->ToString();
         NanUtf8String *utf8_value = new NanUtf8String(string_value);
-        string_handles->push_back(unique_ptr<NanUtf8String>(utf8_value));
+        resources->strings.push_back(unique_ptr<NanUtf8String>(utf8_value));
         current->value = **utf8_value;
         current->value_length = string_value->Length();
       } else {
@@ -168,13 +167,12 @@ class SendMetadataOp : public Op {
     return NanEscapeScope(NanTrue());
   }
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     if (!value->IsObject()) {
       return false;
     }
     grpc_metadata_array array;
-    if (!CreateMetadataArray(value->ToObject(), &array, strings, handles)) {
+    if (!CreateMetadataArray(value->ToObject(), &array, resources)) {
       return false;
     }
     out->data.send_initial_metadata.count = array.count;
@@ -194,8 +192,7 @@ class SendMessageOp : public Op {
     return NanEscapeScope(NanTrue());
   }
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     if (!Buffer::HasInstance(value)) {
       return false;
     }
@@ -204,7 +201,7 @@ class SendMessageOp : public Op {
     Handle<Value> temp = NanNew<Object>();
     NanAssignPersistent(handle, temp);
     NanAssignPersistent(handle, value);
-    handles->push_back(unique_ptr<PersistentHolder>(
+    resources->handles.push_back(unique_ptr<PersistentHolder>(
         new PersistentHolder(handle)));
     return true;
   }
@@ -221,8 +218,7 @@ class SendClientCloseOp : public Op {
     return NanEscapeScope(NanTrue());
   }
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     return true;
   }
  protected:
@@ -238,8 +234,7 @@ class SendServerStatusOp : public Op {
     return NanEscapeScope(NanTrue());
   }
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     if (!value->IsObject()) {
       return false;
     }
@@ -256,7 +251,7 @@ class SendServerStatusOp : public Op {
     grpc_metadata_array array;
     if (!CreateMetadataArray(server_status->Get(NanNew("metadata"))->
                              ToObject(),
-                             &array, strings, handles)) {
+                             &array, resources)) {
       return false;
     }
     out->data.send_status_from_server.trailing_metadata_count = array.count;
@@ -266,7 +261,7 @@ class SendServerStatusOp : public Op {
             server_status->Get(NanNew("code"))->Uint32Value());
     NanUtf8String *str = new NanUtf8String(
         server_status->Get(NanNew("details")));
-    strings->push_back(unique_ptr<NanUtf8String>(str));
+    resources->strings.push_back(unique_ptr<NanUtf8String>(str));
     out->data.send_status_from_server.status_details = **str;
     return true;
   }
@@ -292,8 +287,7 @@ class GetMetadataOp : public Op {
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     out->data.recv_initial_metadata = &recv_metadata;
     return true;
   }
@@ -323,8 +317,7 @@ class ReadMessageOp : public Op {
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     out->data.recv_message = &recv_message;
     return true;
   }
@@ -352,8 +345,7 @@ class ClientStatusOp : public Op {
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     out->data.recv_status_on_client.trailing_metadata = &metadata_array;
     out->data.recv_status_on_client.status = &status;
     out->data.recv_status_on_client.status_details = &status_details;
@@ -390,8 +382,7 @@ class ServerCloseResponseOp : public Op {
   }
 
   bool ParseOp(Handle<Value> value, grpc_op *out,
-               std::vector<unique_ptr<NanUtf8String> > *strings,
-               std::vector<unique_ptr<PersistentHolder> > *handles) {
+               shared_ptr<Resources> resources) {
     out->data.recv_close_on_server.cancelled = &cancelled;
     return true;
   }
@@ -406,19 +397,13 @@ class ServerCloseResponseOp : public Op {
 };
 
 tag::tag(NanCallback *callback, std::vector<unique_ptr<Op> > *ops,
-         std::vector<unique_ptr<PersistentHolder> > *handles,
-         std::vector<unique_ptr<NanUtf8String> > *strings) :
-    callback(callback), ops(ops), handles(handles), strings(strings){
+         shared_ptr<Resources> resources) :
+    callback(callback), ops(ops), resources(resources){
 }
+
 tag::~tag() {
   delete callback;
   delete ops;
-  if (handles != NULL) {
-    delete handles;
-  }
-  if (strings != NULL) {
-    delete strings;
-  }
 }
 
 Handle<Value> GetTagNodeValue(void *tag) {
@@ -542,17 +527,14 @@ NAN_METHOD(Call::StartBatch) {
   Handle<Function> callback_func = args[1].As<Function>();
   NanCallback *callback = new NanCallback(callback_func);
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  std::vector<unique_ptr<PersistentHolder> > *handles =
-      new std::vector<unique_ptr<PersistentHolder> >();
-  std::vector<unique_ptr<NanUtf8String> > *strings =
-      new std::vector<unique_ptr<NanUtf8String> >();
+  shared_ptr<Resources> resources(new Resources);
   Handle<Object> obj = args[0]->ToObject();
   Handle<Array> keys = obj->GetOwnPropertyNames();
   size_t nops = keys->Length();
   grpc_op *ops = new grpc_op[nops];
   std::vector<unique_ptr<Op> > *op_vector = new std::vector<unique_ptr<Op> >();
   for (unsigned int i = 0; i < nops; i++) {
-    Op *op;
+    unique_ptr<Op> op;
     if (!keys->Get(i)->IsUint32()) {
       return NanThrowError(
           "startBatch's first argument's keys must be integers");
@@ -561,40 +543,40 @@ NAN_METHOD(Call::StartBatch) {
     ops[i].op = static_cast<grpc_op_type>(type);
     switch (type) {
       case GRPC_OP_SEND_INITIAL_METADATA:
-        op = new SendMetadataOp();
+        op.reset(new SendMetadataOp());
         break;
       case GRPC_OP_SEND_MESSAGE:
-        op = new SendMessageOp();
+        op.reset(new SendMessageOp());
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-        op = new SendClientCloseOp();
+        op.reset(new SendClientCloseOp());
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        op = new SendServerStatusOp();
+        op.reset(new SendServerStatusOp());
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
-        op = new GetMetadataOp();
+        op.reset(new GetMetadataOp());
         break;
       case GRPC_OP_RECV_MESSAGE:
-        op = new ReadMessageOp();
+        op.reset(new ReadMessageOp());
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
-        op = new ClientStatusOp();
+        op.reset(new ClientStatusOp());
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
-        op = new ServerCloseResponseOp();
+        op.reset(new ServerCloseResponseOp());
         break;
       default:
         return NanThrowError("Argument object had an unrecognized key");
     }
-    if (!op->ParseOp(obj->Get(type), &ops[i], strings, handles)) {
+    if (!op->ParseOp(obj->Get(type), &ops[i], resources)) {
       return NanThrowTypeError("Incorrectly typed arguments to startBatch");
     }
-    op_vector->push_back(unique_ptr<Op>(op));
+    op_vector->push_back(std::move(op));
   }
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, ops, nops, new struct tag(
-          callback, op_vector, handles, strings));
+          callback, op_vector, resources));
   delete ops;
   if (error != GRPC_CALL_OK) {
     return NanThrowError("startBatch failed", error);
