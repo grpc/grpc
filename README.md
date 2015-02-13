@@ -10,9 +10,7 @@ Hello World example. More documentation is coming soon!
 
 ## What is gRPC?
 
-gRPC enables communication between clients and servers using any combination of gRPC's supported languages, helping you to build distributed applications and services.
-
-In gRPC, like other RPC systems...
+In gRPC, like other RPC systems, a *client* application can directly call methods on a *server* application on a different machine as if it was a local object, making it easier for you to create distributed applications and services.  gRPC clients and servers can run and talk to each other in a variety of environments - from servers inside Google to your own desktop - and can be written in any of gRPC's supported languages. So, for example, you can easily create a gRPC server in Java with clients in Go, Python, or Ruby.
 
 ### Plays well with Protocol Buffers
 
@@ -68,9 +66,8 @@ languages are coming soon.
 <a name="setup"></a>
 ### Setup
 
-The rest of this page explains how to set up your local machine to work with
-the example code.
-If you just want to read the example, you can go straight to the [next step](#servicedef).
+This section explains how to set up your local machine to work with
+the example code. If you just want to read the example, you can go straight to the [next step](#servicedef).
 
 #### Install Git
 
