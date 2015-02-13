@@ -329,7 +329,7 @@ TEST_F(End2endTest, ResponseStream) {
   request.set_message("hello");
 
   ClientReader<EchoResponse>* stream =
-      stub_->ResponseStream(&context, &request);
+      stub_->ResponseStream(&context, request);
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message() + "0");
   EXPECT_TRUE(stream->Read(&response));
