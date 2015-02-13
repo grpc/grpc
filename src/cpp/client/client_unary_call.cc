@@ -62,11 +62,29 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   return status;
 }
 
+class ClientAsyncRequest final : public CallOpBuffer {
+ public:
+  void FinalizeResult(void** tag, bool* status) override {
+    CallOpBuffer::FinalizeResult(tag, status);
+    delete this;
+  }
+};
+
 void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
                     ClientContext *context,
                     const google::protobuf::Message &request,
                     google::protobuf::Message *result, Status *status,
                     CompletionQueue *cq, void *tag) {
-
+  ClientAsyncRequest* buf = new ClientAsyncRequest;
+  buf->Reset(tag);
+  Call call(channel->CreateCall(method, context, cq));
+  buf->AddSendInitialMetadata(context);
+  buf->AddSendMessage(request);
+  buf->AddRecvInitialMetadata(&context->recv_initial_metadata_);
+  buf->AddRecvMessage(result, nullptr);
+  buf->AddClientSendClose();
+  buf->AddClientRecvStatus(&context->trailing_metadata_, status);
+  call.PerformOps(buf);
 }
+
 }  // namespace grpc

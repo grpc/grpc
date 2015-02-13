@@ -54,7 +54,7 @@ namespace grpc {
 
 class Call;
 
-class CallOpBuffer final : public CompletionQueueTag {
+class CallOpBuffer : public CompletionQueueTag {
  public:
   CallOpBuffer() : return_tag_(this) {}
   ~CallOpBuffer();

@@ -58,6 +58,7 @@ class Server;
 
 class CompletionQueueTag {
  public:
+  virtual ~CompletionQueueTag() {}
   // Called prior to returning from Next(), return value
   // is the status of the operation (return status is the default thing
   // to do)

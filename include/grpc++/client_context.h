@@ -57,6 +57,7 @@ namespace grpc {
 
 class CallOpBuffer;
 class ChannelInterface;
+class CompletionQueue;
 class RpcMethod;
 class Status;
 template <class R> class ClientReader;
@@ -106,6 +107,11 @@ class ClientContext {
                          ClientContext *context,
                          const google::protobuf::Message &request,
                          google::protobuf::Message *result);
+  friend void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
+                             ClientContext *context,
+                             const google::protobuf::Message &request,
+                             google::protobuf::Message *result, Status *status,
+                             CompletionQueue *cq, void *tag);
 
   grpc_call *call() { return call_; }
   void set_call(grpc_call *call) {
