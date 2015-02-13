@@ -4,9 +4,11 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%
   allowed_dependencies = set(['gpr', 'grpc', 'gpr_test_util', 'grpc_test_util'])
-  test_targets = [ target for target in targets if target.name.endswith('_test') and set(target.deps).issubset(allowed_dependencies)]
+  allowed_targets = [ target for target in targets if set(target.deps).issubset(allowed_dependencies) ]
+  test_targets = [ target for target in allowed_targets if target.name.endswith('_test') ]
 %>\
-# NMake file to build grpc tests on Windows.
+# NMake file to build secondary gRPC targets on Windows.
+# Use grpc.sln to solution to build the gRPC libraries.
 
 OUT_DIR=test_bin
 

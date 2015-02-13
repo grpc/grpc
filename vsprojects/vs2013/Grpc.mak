@@ -1,4 +1,5 @@
-# NMake file to build grpc tests on Windows.
+# NMake file to build secondary gRPC targets on Windows.
+# Use grpc.sln to solution to build the gRPC libraries.
 
 OUT_DIR=test_bin
 
