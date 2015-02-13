@@ -615,7 +615,7 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   CallOpBuffer finish_buf_;
 };
 
-template <class R>
+template <class W, class R>
 class ServerAsyncReader : public ServerAsyncStreamingInterface,
                           public AsyncReaderInterface<R> {
  public:
@@ -637,7 +637,24 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
     call_.PerformOps(&read_buf_);
   }
 
-  void Finish(const Status& status, void* tag) {
+  void Finish(const W& msg, const Status& status, void* tag) {
+    finish_buf_.Reset(tag);
+    if (!ctx_->sent_initial_metadata_) {
+      finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
+      ctx_->sent_initial_metadata_ = true;
+    }
+    // The response is dropped if the status is not OK.
+    if (status.IsOk()) {
+      finish_buf_.AddSendMessage(msg);
+    }
+    bool cancelled = false;
+    finish_buf_.AddServerRecvClose(&cancelled);
+    finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
+    call_.PerformOps(&finish_buf_);
+  }
+
+  void FinishWithError(const Status& status, void* tag) {
+    GPR_ASSERT(!status.IsOk());
     finish_buf_.Reset(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
@@ -648,7 +665,6 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
     finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
-
 
  private:
   void BindCall(Call *call) override { call_ = *call; }

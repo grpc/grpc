@@ -45,7 +45,7 @@ struct grpc_call;
 
 namespace grpc {
 
-template <class R>
+template <class W, class R>
 class ServerAsyncReader;
 template <class W>
 class ServerAsyncWriter;

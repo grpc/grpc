@@ -133,7 +133,7 @@ std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
     temp.append("template <class OutMessage> class ClientWriter;\n");
     temp.append("template <class InMessage> class ServerReader;\n");
     temp.append("template <class OutMessage> class ClientAsyncWriter;\n");
-    temp.append("template <class InMessage> class ServerAsyncReader;\n");
+    temp.append("template <class OutMessage, class InMessage> class ServerAsyncReader;\n");
   }
   if (HasServerOnlyStreaming(file)) {
     temp.append("template <class InMessage> class ClientReader;\n");
@@ -267,7 +267,7 @@ void PrintHeaderServerMethodAsync(
     printer->Print(*vars,
                    "void Request$Method$("
                    "::grpc::ServerContext* context, "
-                   "::grpc::ServerAsyncReader< $Request$>* reader, "
+                   "::grpc::ServerAsyncReader< $Response$, $Request$>* reader, "
                    "::grpc::CompletionQueue* cq, void *tag);\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
@@ -538,7 +538,7 @@ void PrintSourceServerAsyncMethod(
     printer->Print(*vars,
                    "void $Service$::AsyncService::Request$Method$("
                    "::grpc::ServerContext* context, "
-                   "::grpc::ServerAsyncReader< $Request$>* reader, "
+                   "::grpc::ServerAsyncReader< $Response$, $Request$>* reader, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(
         *vars,

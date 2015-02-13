@@ -110,6 +110,7 @@ class End2endTest : public ::testing::Test {
   void client_fail(int i) {
     verify_ok(&cli_cq_, i, false);
   }
+
   CompletionQueue cli_cq_;
   CompletionQueue srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
@@ -146,6 +147,59 @@ TEST_F(End2endTest, SimpleRpc) {
   server_ok(3);
 
   client_ok(1);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.IsOk());
+}
+
+TEST_F(End2endTest, SimpleClientStreaming) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
+
+  send_request.set_message("Hello");
+  ClientAsyncWriter<EchoRequest>* cli_stream =
+      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1));
+
+  service_.RequestRequestStream(
+      &srv_ctx, &srv_stream, &srv_cq_, tag(2));
+
+  server_ok(2);
+  client_ok(1);
+
+  cli_stream->Write(send_request, tag(3));
+  client_ok(3);
+
+  srv_stream.Read(&recv_request, tag(4));
+  server_ok(4);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  cli_stream->Write(send_request, tag(5));
+  client_ok(5);
+
+  srv_stream.Read(&recv_request, tag(6));
+  server_ok(6);
+
+  EXPECT_EQ(send_request.message(), recv_request.message());
+  cli_stream->WritesDone(tag(7));
+  client_ok(7);
+
+  srv_stream.Read(&recv_request, tag(8));
+  server_fail(8);
+
+  send_response.set_message(recv_request.message());
+  srv_stream.Finish(send_response, Status::OK, tag(9));
+  server_ok(9);
+
+  cli_stream->Finish(&recv_status, tag(10));
+  client_ok(10);
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.IsOk());
