@@ -31,17 +31,17 @@
  *
  */
 
-#ifndef __GRPCPP_EXAMPLES_TIPS_PUBLISHER_H_
-#define __GRPCPP_EXAMPLES_TIPS_PUBLISHER_H_
+#ifndef __GRPCPP_EXAMPLES_PUBSUB_PUBLISHER_H_
+#define __GRPCPP_EXAMPLES_PUBSUB_PUBLISHER_H_
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/status.h>
 
-#include "examples/tips/pubsub.pb.h"
+#include "examples/pubsub/pubsub.pb.h"
 
 namespace grpc {
 namespace examples {
-namespace tips {
+namespace pubsub {
 
 class Publisher {
  public:
@@ -60,8 +60,8 @@ class Publisher {
   std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
 };
 
-}  // namespace tips
+}  // namespace pubsub
 }  // namespace examples
 }  // namespace grpc
 
-#endif  // __GRPCPP_EXAMPLES_TIPS_PUBLISHER_H_
+#endif  // __GRPCPP_EXAMPLES_PUBSUB_PUBLISHER_H_

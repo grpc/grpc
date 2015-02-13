@@ -4,8 +4,8 @@
 
 syntax = "proto2";
 
-import "examples/tips/empty.proto";
-import "examples/tips/label.proto";
+import "examples/pubsub/empty.proto";
+import "examples/pubsub/label.proto";
 
 package tech.pubsub;
 

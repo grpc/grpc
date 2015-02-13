@@ -43,7 +43,7 @@
 #include <grpc++/status.h>
 #include <gtest/gtest.h>
 
-#include "examples/tips/publisher.h"
+#include "examples/pubsub/publisher.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -112,7 +112,7 @@ class PublisherTest : public ::testing::Test {
 
     channel_ = CreateChannel(server_address_.str(), ChannelArguments());
 
-    publisher_.reset(new grpc::examples::tips::Publisher(channel_));
+    publisher_.reset(new grpc::examples::pubsub::Publisher(channel_));
   }
 
   void TearDown() override {
@@ -126,7 +126,7 @@ class PublisherTest : public ::testing::Test {
 
   std::shared_ptr<ChannelInterface> channel_;
 
-  std::unique_ptr<grpc::examples::tips::Publisher> publisher_;
+  std::unique_ptr<grpc::examples::pubsub::Publisher> publisher_;
 };
 
 TEST_F(PublisherTest, TestPublisher) {
