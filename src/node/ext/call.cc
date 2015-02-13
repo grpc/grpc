@@ -199,8 +199,6 @@ class SendMessageOp : public Op {
     }
     out->data.send_message = BufferToByteBuffer(value);
     Persistent<Value> handle;
-    Handle<Value> temp = NanNew<Object>();
-    NanAssignPersistent(handle, temp);
     NanAssignPersistent(handle, value);
     resources->handles.push_back(unique_ptr<PersistentHolder>(
         new PersistentHolder(handle)));
