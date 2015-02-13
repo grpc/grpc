@@ -43,7 +43,7 @@
 #include <grpc++/status.h>
 #include <gtest/gtest.h>
 
-#include "examples/tips/subscriber.h"
+#include "examples/pubsub/subscriber.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -111,7 +111,7 @@ class SubscriberTest : public ::testing::Test {
 
     channel_ = CreateChannel(server_address_.str(), ChannelArguments());
 
-    subscriber_.reset(new grpc::examples::tips::Subscriber(channel_));
+    subscriber_.reset(new grpc::examples::pubsub::Subscriber(channel_));
   }
 
   void TearDown() override {
@@ -125,7 +125,7 @@ class SubscriberTest : public ::testing::Test {
 
   std::shared_ptr<ChannelInterface> channel_;
 
-  std::unique_ptr<grpc::examples::tips::Subscriber> subscriber_;
+  std::unique_ptr<grpc::examples::pubsub::Subscriber> subscriber_;
 };
 
 TEST_F(SubscriberTest, TestSubscriber) {
