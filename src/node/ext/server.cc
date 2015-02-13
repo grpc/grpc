@@ -224,12 +224,12 @@ NAN_METHOD(Server::RequestCall) {
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
   NewCallOp *op = new NewCallOp();
-  std::vector<unique_ptr<Op> > *ops = new std::vector<unique_ptr<Op> >();
+  unique_ptr<OpVec> ops(new OpVec());
   ops->push_back(unique_ptr<Op>(op));
   grpc_call_error error = grpc_server_request_call(
       server->wrapped_server, &op->call, &op->details, &op->request_metadata,
       CompletionQueueAsyncWorker::GetQueue(),
-      new struct tag(new NanCallback(args[0].As<Function>()), ops,
+      new struct tag(new NanCallback(args[0].As<Function>()), ops.release(),
                      shared_ptr<Resources>(nullptr)));
   if (error != GRPC_CALL_OK) {
     return NanThrowError("requestCall failed", error);
