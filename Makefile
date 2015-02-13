@@ -75,6 +75,18 @@ OPENSSL_CONFIG_msan = no-asm
 LDFLAGS_msan = -fsanitize=memory
 DEFINES_msan = NDEBUG
 
+VALID_CONFIG_ubsan = 1
+REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
+CC_ubsan = clang
+CXX_ubsan = clang++
+LD_ubsan = clang
+LDXX_ubsan = clang++
+CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer
+OPENSSL_CFLAGS_ubsan = -DPURIFY
+OPENSSL_CONFIG_ubsan = no-asm
+LDFLAGS_ubsan = -fsanitize=undefined
+DEFINES_ubsan = NDEBUG
+
 VALID_CONFIG_gcov = 1
 CC_gcov = gcc
 CXX_gcov = g++
@@ -3600,7 +3612,6 @@ libs/$(CONFIG)/libend2end_test_empty_batch.a: $(ZLIB_DEP) $(LIBEND2END_TEST_EMPT
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib libs/$(CONFIG)/libend2end_test_empty_batch.a 
 endif
-
 
 
 
