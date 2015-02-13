@@ -1,0 +1,57 @@
+<%!
+  import re
+%>\
+<%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
+<%
+  allowed_dependencies = set(['gpr', 'grpc', 'gpr_test_util', 'grpc_test_util'])
+  test_targets = [ target for target in targets if target.name.endswith('_test') and set(target.deps).issubset(allowed_dependencies)]
+%>\
+# NMake file to build grpc tests on Windows.
+
+OUT_DIR=test_bin
+
+gpr_test_util:
+	MSBuild.exe gpr_test_util.vcxproj /p:Configuration=Debug
+
+grpc_test_util:
+	MSBuild.exe gprc_test_util.vcxproj /p:Configuration=Debug
+
+$(OUT_DIR):
+	mkdir $(OUT_DIR)
+
+buildtests: \
+% for target in test_targets:
+${target.name}.exe \
+% endfor
+
+	echo All tests built.
+
+test: \
+% for target in test_targets:
+${target.name} \
+% endfor
+
+	echo All tests ran.
+
+% for target in test_targets:
+${target.name}.exe: grpc_test_util
+	echo Building ${target.name}
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ \
+%for source in target.src:
+..\..\${to_windows_path(source)} \
+%endfor
+
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\${target.name}.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 \
+%for dep in target.deps:
+Debug\${dep}.lib \
+%endfor
+%for source in target.src:
+$(OUT_DIR)\${re.search('([^/]+)\.c$', source).group(1)}.obj \
+%endfor
+
+
+${target.name}: ${target.name}.exe
+	echo Running ${target.name}
+	$(OUT_DIR)\${target.name}.exe
+
+% endfor
