@@ -10,9 +10,9 @@ Hello World example. More documentation is coming soon!
 
 ## What is gRPC?
 
-gRPC is  It enables communication between clients and servers using any combination of gRPC's supported languages, helping you to build distributed applications and services.
+gRPC enables communication between clients and servers using any combination of gRPC's supported languages, helping you to build distributed applications and services.
 
-In gRPC, like 
+In gRPC, like other RPC systems...
 
 ### Plays well with Protocol Buffers
 
@@ -46,7 +46,7 @@ Now that you know a bit more about gRPC, the easiest way to see how it
 works is to look at a simple example. Our Hello World walks you through the
 construction of a simple gRPC client-server application, showing you how to:
 
-- Create a protobuf schema that defines a simple RPC service with a single
+- Create a protocol buffers schema that defines a simple RPC service with a single
 Hello World method.
 - Create a Java server that implements the schema interface.
 - Create a Java client that accesses the Java server.
