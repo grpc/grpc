@@ -525,7 +525,6 @@ NAN_METHOD(Call::StartBatch) {
     return NanThrowError("startBatch's second argument must be a callback");
   }
   Handle<Function> callback_func = args[1].As<Function>();
-  NanCallback *callback = new NanCallback(callback_func);
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
   shared_ptr<Resources> resources(new Resources);
   Handle<Object> obj = args[0]->ToObject();
@@ -574,6 +573,7 @@ NAN_METHOD(Call::StartBatch) {
     }
     op_vector->push_back(std::move(op));
   }
+  NanCallback *callback = new NanCallback(callback_func);
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, &ops[0], nops, new struct tag(
           callback, op_vector, resources));
