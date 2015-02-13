@@ -10,6 +10,33 @@ Hello World example. More documentation is coming soon!
 
 ## What is gRPC?
 
+gRPC is  It enables communication between clients and servers using any combination of gRPC's supported languages, helping you to build distributed applications and services.
+
+In gRPC, like 
+
+### Plays well with Protocol Buffers
+
+While gRPC’s architecture allows it to be extended for use with other
+data formats such as JSON, by default it uses protocol buffers, Google’s
+mature open source mechanism for serializing structured data. As you'll
+see in our example below, you define gRPC interfaces using proto files and
+protocol buffer messages, letting you take advantage of protocol buffers’
+efficient serialization, simple IDL, and easy interface updating. You
+can find out lots more about protocol buffers in the [Protocol Buffers
+documentation](https://developers.google.com/protocol-buffers/docs/overview).
+
+Note that our examples use a new flavour of protocol buffers called proto3,
+which has a slightly simplified syntax, some useful new features, and supports
+lots more languages. This is currently available as an alpha release in
+[languages] from [wherever it's going], with more languages in development. In
+general, we recommend that you use proto3 with gRPC as it lets you use the
+full range of gRPC-supported languages, as well as avoiding any compatibility
+issues with proto2 clients talking to proto3 servers and vice versa.
+
+If you need to continue using proto2 for Java, C++, or Python but want
+to try gRPC, you can see an example using a proto2 gRPC client and server
+[wherever we put it].
+
 ## TODO: basic conceptual intro (anything more in-depth will go in gRPC Concepts doc)
 
 <a name="hello"></a>
