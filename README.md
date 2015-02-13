@@ -338,10 +338,10 @@ service. The channel in turn is used to construct the stub instance.
 #### Obtaining a greeting
 
 The `greet()` method uses the stub to contact the service and obtain a greeting.
-In the method we:
-- construct and fill in a `HelloRequest` to send to the stub
-- get a reply from the stub
-- print out the greeting
+To do this:
+
+1. We construct and fill in a `HelloRequest` to send to the stub.
+2. We call the RPC with our request and get a `HelloReply` from the stub, from which we can get our greeting.
 
 
 ```java
