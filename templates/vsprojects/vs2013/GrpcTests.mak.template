@@ -14,7 +14,7 @@ gpr_test_util:
 	MSBuild.exe gpr_test_util.vcxproj /p:Configuration=Debug
 
 grpc_test_util:
-	MSBuild.exe gprc_test_util.vcxproj /p:Configuration=Debug
+	MSBuild.exe grpc_test_util.vcxproj /p:Configuration=Debug
 
 $(OUT_DIR):
 	mkdir $(OUT_DIR)
@@ -28,6 +28,13 @@ ${target.name}.exe \
 
 test: \
 % for target in test_targets:
+${target.name} \
+% endfor
+
+	echo All tests ran.
+
+test_gpr: \
+% for target in [ tgt for tgt in test_targets if tgt.name.startswith('gpr_')]:
 ${target.name} \
 % endfor
 
