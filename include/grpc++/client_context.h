@@ -47,9 +47,18 @@ using std::chrono::system_clock;
 struct grpc_call;
 struct grpc_completion_queue;
 
+namespace google {
+namespace protobuf {
+class Message;
+}  // namespace protobuf
+}  // namespace google
+
 namespace grpc {
 
 class CallOpBuffer;
+class ChannelInterface;
+class RpcMethod;
+class Status;
 template <class R> class ClientReader;
 template <class W> class ClientWriter;
 template <class R, class W> class ClientReaderWriter;
@@ -64,6 +73,16 @@ class ClientContext {
 
   void AddMetadata(const grpc::string &meta_key,
                    const grpc::string &meta_value);
+
+  std::multimap<grpc::string, grpc::string> GetServerInitialMetadata() {
+    GPR_ASSERT(initial_metadata_received_);
+    return recv_initial_metadata_;
+  }
+
+  std::multimap<grpc::string, grpc::string> GetServerTrailingMetadata() {
+    // TODO(yangg) check finished
+    return trailing_metadata_;
+  }
 
   void set_absolute_deadline(const system_clock::time_point &deadline);
   system_clock::time_point absolute_deadline();
@@ -83,6 +102,10 @@ class ClientContext {
   template <class R> friend class ::grpc::ClientAsyncReader;
   template <class W> friend class ::grpc::ClientAsyncWriter;
   template <class R, class W> friend class ::grpc::ClientAsyncReaderWriter;
+  friend Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
+                         ClientContext *context,
+                         const google::protobuf::Message &request,
+                         google::protobuf::Message *result);
 
   grpc_call *call() { return call_; }
   void set_call(grpc_call *call) {

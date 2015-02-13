@@ -34,6 +34,7 @@
 #include <grpc++/impl/client_unary_call.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/channel_interface.h>
+#include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/status.h>
 #include <grpc/support/log.h>
@@ -51,10 +52,11 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   Status status;
   buf.AddSendInitialMetadata(context);
   buf.AddSendMessage(request);
+  buf.AddRecvInitialMetadata(&context->recv_initial_metadata_);
   bool got_message;
   buf.AddRecvMessage(result, &got_message);
   buf.AddClientSendClose();
-  buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
+  buf.AddClientRecvStatus(&context->trailing_metadata_, &status);
   call.PerformOps(&buf);
   GPR_ASSERT(cq.Pluck(&buf) && (got_message || !status.IsOk()));
   return status;
