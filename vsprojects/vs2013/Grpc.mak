@@ -201,6 +201,24 @@ dualstack_socket_test: dualstack_socket_test.exe
 	echo Running dualstack_socket_test
 	$(OUT_DIR)\dualstack_socket_test.exe
 
+echo_client.exe: grpc_test_util
+	echo Building echo_client
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\echo\client.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\echo_client.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(OUT_DIR)\client.obj 
+
+echo_client: echo_client.exe
+	echo Running echo_client
+	$(OUT_DIR)\echo_client.exe
+
+echo_server.exe: grpc_test_util
+	echo Building echo_server
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\echo\server.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\echo_server.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(OUT_DIR)\server.obj 
+
+echo_server: echo_server.exe
+	echo Running echo_server
+	$(OUT_DIR)\echo_server.exe
+
 echo_test.exe: grpc_test_util
 	echo Building echo_test
 	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\echo\echo_test.c 
@@ -219,6 +237,24 @@ fd_posix_test: fd_posix_test.exe
 	echo Running fd_posix_test
 	$(OUT_DIR)\fd_posix_test.exe
 
+fling_client.exe: grpc_test_util
+	echo Building fling_client
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\fling\client.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\fling_client.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(OUT_DIR)\client.obj 
+
+fling_client: fling_client.exe
+	echo Running fling_client
+	$(OUT_DIR)\fling_client.exe
+
+fling_server.exe: grpc_test_util
+	echo Building fling_server
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\fling\server.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\fling_server.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(OUT_DIR)\server.obj 
+
+fling_server: fling_server.exe
+	echo Running fling_server
+	$(OUT_DIR)\fling_server.exe
+
 fling_stream_test.exe: grpc_test_util
 	echo Building fling_stream_test
 	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\fling\fling_stream_test.c 
@@ -236,6 +272,15 @@ fling_test.exe: grpc_test_util
 fling_test: fling_test.exe
 	echo Running fling_test
 	$(OUT_DIR)\fling_test.exe
+
+gen_hpack_tables.exe: grpc_test_util
+	echo Building gen_hpack_tables
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\src\core\transport\chttp2\gen_hpack_tables.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\gen_hpack_tables.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\gpr.lib Debug\grpc.lib $(OUT_DIR)\gen_hpack_tables.obj 
+
+gen_hpack_tables: gen_hpack_tables.exe
+	echo Running gen_hpack_tables
+	$(OUT_DIR)\gen_hpack_tables.exe
 
 gpr_cancellable_test.exe: grpc_test_util
 	echo Building gpr_cancellable_test
@@ -390,6 +435,15 @@ grpc_channel_stack_test: grpc_channel_stack_test.exe
 	echo Running grpc_channel_stack_test
 	$(OUT_DIR)\grpc_channel_stack_test.exe
 
+grpc_completion_queue_benchmark.exe: grpc_test_util
+	echo Building grpc_completion_queue_benchmark
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\surface\completion_queue_benchmark.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\grpc_completion_queue_benchmark.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(OUT_DIR)\completion_queue_benchmark.obj 
+
+grpc_completion_queue_benchmark: grpc_completion_queue_benchmark.exe
+	echo Running grpc_completion_queue_benchmark
+	$(OUT_DIR)\grpc_completion_queue_benchmark.exe
+
 grpc_completion_queue_test.exe: grpc_test_util
 	echo Building grpc_completion_queue_test
 	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\surface\completion_queue_test.c 
@@ -407,6 +461,15 @@ grpc_credentials_test.exe: grpc_test_util
 grpc_credentials_test: grpc_credentials_test.exe
 	echo Running grpc_credentials_test
 	$(OUT_DIR)\grpc_credentials_test.exe
+
+grpc_fetch_oauth2.exe: grpc_test_util
+	echo Building grpc_fetch_oauth2
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\security\fetch_oauth2.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\grpc_fetch_oauth2.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(OUT_DIR)\fetch_oauth2.obj 
+
+grpc_fetch_oauth2: grpc_fetch_oauth2.exe
+	echo Running grpc_fetch_oauth2
+	$(OUT_DIR)\grpc_fetch_oauth2.exe
 
 grpc_json_token_test.exe: grpc_test_util
 	echo Building grpc_json_token_test
@@ -471,6 +534,15 @@ httpcli_test: httpcli_test.exe
 	echo Running httpcli_test
 	$(OUT_DIR)\httpcli_test.exe
 
+json_rewrite.exe: grpc_test_util
+	echo Building json_rewrite
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\json\json_rewrite.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\json_rewrite.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc.lib Debug\gpr.lib $(OUT_DIR)\json_rewrite.obj 
+
+json_rewrite: json_rewrite.exe
+	echo Running json_rewrite
+	$(OUT_DIR)\json_rewrite.exe
+
 json_rewrite_test.exe: grpc_test_util
 	echo Building json_rewrite_test
 	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\json\json_rewrite_test.c 
@@ -497,6 +569,15 @@ lame_client_test.exe: grpc_test_util
 lame_client_test: lame_client_test.exe
 	echo Running lame_client_test
 	$(OUT_DIR)\lame_client_test.exe
+
+low_level_ping_pong_benchmark.exe: grpc_test_util
+	echo Building low_level_ping_pong_benchmark
+	cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:$(OUT_DIR)\ ..\..\test\core\network_benchmarks\low_level_ping_pong.c 
+	link.exe /DEBUG /OUT:"$(OUT_DIR)\low_level_ping_pong_benchmark.exe" /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86 Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(OUT_DIR)\low_level_ping_pong.obj 
+
+low_level_ping_pong_benchmark: low_level_ping_pong_benchmark.exe
+	echo Running low_level_ping_pong_benchmark
+	$(OUT_DIR)\low_level_ping_pong_benchmark.exe
 
 message_compress_test.exe: grpc_test_util
 	echo Building message_compress_test
