@@ -267,6 +267,10 @@
   }, 
   {
     "language": "c++", 
+    "name": "async_end2end_test"
+  }, 
+  {
+    "language": "c++", 
     "name": "channel_arguments_test"
   }, 
   {

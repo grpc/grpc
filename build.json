@@ -1525,6 +1525,22 @@
       ]
     },
     {
+      "name": "async_end2end_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/async_end2end_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",

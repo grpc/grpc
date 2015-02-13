@@ -646,7 +646,7 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
     call_.PerformOps(&read_buf_);
   }
 
-  void Finish(const Status& status, void* tag) override {
+  void Finish(const Status& status, void* tag) {
     finish_buf_.Reset(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
@@ -695,7 +695,7 @@ class ServerAsyncWriter : public ServerAsyncStreamingInterface,
     call_.PerformOps(&write_buf_);
   }
 
-  void Finish(const Status& status, void* tag) override {
+  void Finish(const Status& status, void* tag) {
     finish_buf_.Reset(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
@@ -751,7 +751,7 @@ class ServerAsyncReaderWriter : public ServerAsyncStreamingInterface,
     call_.PerformOps(&write_buf_);
   }
 
-  void Finish(const Status& status, void* tag) override {
+  void Finish(const Status& status, void* tag) {
     finish_buf_.Reset(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);

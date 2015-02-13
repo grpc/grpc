@@ -59,7 +59,6 @@ class ServerAsyncStreamingInterface {
   virtual ~ServerAsyncStreamingInterface() {}
 
   virtual void SendInitialMetadata(void* tag) = 0;
-  virtual void Finish(const Status& status, void* tag) = 0;
 
  private:
   friend class Server;

@@ -335,7 +335,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   printer->Indent();
   (*vars)["MethodCount"] = as_string(service->method_count());
   printer->Print("explicit AsyncService(::grpc::CompletionQueue* cq);\n");
-  printer->Print("~AsyncService();\n");
+  printer->Print("~AsyncService() {};\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodAsync(printer, service->method(i), vars);
   }
