@@ -70,7 +70,9 @@ gpr_timespec gpr_now(void) {
 }
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
-/* TODO(klempner): Add special handling for Apple. */
+
+#include <sys/time.h>
+
 gpr_timespec gpr_now(void) {
   gpr_timespec now;
   struct timeval now_tv;
