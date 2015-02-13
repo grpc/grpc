@@ -708,6 +708,7 @@ grpc_transport_setup_result grpc_server_setup_transport(
   gpr_uint32 slots;
   gpr_uint32 probes;
   gpr_uint32 max_probes = 0;
+  grpc_transport_setup_result result;
 
   for (i = 0; i < s->channel_filter_count; i++) {
     filters[i] = s->channel_filters[i];
@@ -758,6 +759,9 @@ grpc_transport_setup_result grpc_server_setup_transport(
     chand->registered_method_max_probes = max_probes;
   }
 
+  result = grpc_connected_channel_bind_transport(
+      grpc_channel_get_channel_stack(channel), transport);
+  
   gpr_mu_lock(&s->mu);
   chand->next = &s->root_channel_data;
   chand->prev = chand->next->prev;
@@ -766,8 +770,7 @@ grpc_transport_setup_result grpc_server_setup_transport(
 
   gpr_free(filters);
 
-  return grpc_connected_channel_bind_transport(
-      grpc_channel_get_channel_stack(channel), transport);
+  return result;
 }
 
 static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
