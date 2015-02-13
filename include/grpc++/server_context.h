@@ -78,7 +78,7 @@ class ServerContext final {
 
  private:
   friend class ::grpc::Server;
-  template <class R>
+  template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
   template <class W>
   friend class ::grpc::ServerAsyncWriter;
