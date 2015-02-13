@@ -197,10 +197,10 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(
         *vars,
         "::grpc::ClientReader< $Response$>* $Method$("
-        "::grpc::ClientContext* context, const $Request$* request);\n");
+        "::grpc::ClientContext* context, const $Request$& request);\n");
     printer->Print(*vars,
                    "::grpc::ClientAsyncReader< $Response$>* $Method$("
-                   "::grpc::ClientContext* context, const $Request$* request, "
+                   "::grpc::ClientContext* context, const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag);\n");
   } else if (BidiStreaming(method)) {
     printer->Print(*vars,
@@ -415,25 +415,25 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(
         *vars,
         "::grpc::ClientReader< $Response$>* $Service$::Stub::$Method$("
-        "::grpc::ClientContext* context, const $Request$* request) {\n");
+        "::grpc::ClientContext* context, const $Request$& request) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientReader< $Response$>("
                    "channel(),"
                    "::grpc::RpcMethod($Service$_method_names[$Idx$], "
                    "::grpc::RpcMethod::RpcType::SERVER_STREAMING), "
-                   "context, *request);\n"
+                   "context, request);\n"
                    "}\n\n");
     printer->Print(
         *vars,
         "::grpc::ClientAsyncReader< $Response$>* $Service$::Stub::$Method$("
-        "::grpc::ClientContext* context, const $Request$* request, "
+        "::grpc::ClientContext* context, const $Request$& request, "
         "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientAsyncReader< $Response$>("
                    "channel(), cq, "
                    "::grpc::RpcMethod($Service$_method_names[$Idx$], "
                    "::grpc::RpcMethod::RpcType::SERVER_STREAMING), "
-                   "context, *request, tag);\n"
+                   "context, request, tag);\n"
                    "}\n\n");
   } else if (BidiStreaming(method)) {
     printer->Print(
