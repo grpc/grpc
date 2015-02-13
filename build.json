@@ -455,15 +455,15 @@
       ]
     },
     {
-      "name": "tips_client_lib",
+      "name": "pubsub_client_lib",
       "build": "private",
       "language": "c++",
       "src": [
-        "examples/tips/label.proto",
-        "examples/tips/empty.proto",
-        "examples/tips/pubsub.proto",
-        "examples/tips/publisher.cc",
-        "examples/tips/subscriber.cc"
+        "examples/pubsub/label.proto",
+        "examples/pubsub/empty.proto",
+        "examples/pubsub/pubsub.proto",
+        "examples/pubsub/publisher.cc",
+        "examples/pubsub/subscriber.cc"
       ],
       "deps": [
         "grpc++",
@@ -1721,15 +1721,15 @@
       ]
     },
     {
-      "name": "tips_client",
+      "name": "pubsub_client",
       "build": "test",
       "run": false,
       "language": "c++",
       "src": [
-        "examples/tips/main.cc"
+        "examples/pubsub/main.cc"
       ],
       "deps": [
-        "tips_client_lib",
+        "pubsub_client_lib",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1739,14 +1739,14 @@
       ]
     },
     {
-      "name": "tips_publisher_test",
+      "name": "pubsub_publisher_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "examples/tips/publisher_test.cc"
+        "examples/pubsub/publisher_test.cc"
       ],
       "deps": [
-        "tips_client_lib",
+        "pubsub_client_lib",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1756,14 +1756,14 @@
       ]
     },
     {
-      "name": "tips_subscriber_test",
+      "name": "pubsub_subscriber_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "examples/tips/subscriber_test.cc"
+        "examples/pubsub/subscriber_test.cc"
       ],
       "deps": [
-        "tips_client_lib",
+        "pubsub_client_lib",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",

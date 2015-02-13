@@ -291,11 +291,11 @@
   }, 
   {
     "language": "c++", 
-    "name": "tips_publisher_test"
+    "name": "pubsub_publisher_test"
   }, 
   {
     "language": "c++", 
-    "name": "tips_subscriber_test"
+    "name": "pubsub_subscriber_test"
   }, 
   {
     "language": "c", 

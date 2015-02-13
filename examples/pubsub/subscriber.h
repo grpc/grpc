@@ -31,17 +31,17 @@
  *
  */
 
-#ifndef __GRPCPP_EXAMPLES_TIPS_SUBSCRIBER_H_
-#define __GRPCPP_EXAMPLES_TIPS_SUBSCRIBER_H_
+#ifndef __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
+#define __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/status.h>
 
-#include "examples/tips/pubsub.pb.h"
+#include "examples/pubsub/pubsub.pb.h"
 
 namespace grpc {
 namespace examples {
-namespace tips {
+namespace pubsub {
 
 class Subscriber {
  public:
@@ -61,8 +61,8 @@ class Subscriber {
   std::unique_ptr<tech::pubsub::SubscriberService::Stub> stub_;
 };
 
-}  // namespace tips
+}  // namespace pubsub
 }  // namespace examples
 }  // namespace grpc
 
-#endif  // __GRPCPP_EXAMPLES_TIPS_SUBSCRIBER_H_
+#endif  // __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
