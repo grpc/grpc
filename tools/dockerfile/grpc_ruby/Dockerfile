@@ -6,7 +6,7 @@ RUN cd /var/local/git/grpc \
   && git pull --recurse-submodules \
   && git submodule update --init --recursive
 
-# Build the C core.
+# Build the C core
 RUN make install_c -C /var/local/git/grpc
 
 # Build ruby gRPC and run its tests
