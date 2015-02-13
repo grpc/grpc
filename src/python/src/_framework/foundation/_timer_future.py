@@ -29,6 +29,7 @@
 
 """Affords a Future implementation based on Python's threading.Timer."""
 
+import sys
 import threading
 import time
 
@@ -52,7 +53,9 @@ class TimerFuture(future.Future):
     self._computing = False
     self._computed = False
     self._cancelled = False
-    self._outcome = None
+    self._result = None
+    self._exception = None
+    self._traceback = None
     self._waiting = []
 
   def _compute(self):
@@ -70,19 +73,24 @@ class TimerFuture(future.Future):
         self._computing = True
 
     try:
-      returned_value = self._computation()
-      outcome = future.returned(returned_value)
+      return_value = self._computation()
+      exception = None
+      traceback = None
     except Exception as e:  # pylint: disable=broad-except
-      outcome = future.raised(e)
+      return_value = None
+      exception = e
+      traceback = sys.exc_info()[2]
 
     with self._lock:
       self._computing = False
       self._computed = True
-      self._outcome = outcome
+      self._return_value = return_value
+      self._exception = exception
+      self._traceback = traceback
       waiting = self._waiting
 
     for callback in waiting:
-      callback(outcome)
+      callback(self)
 
   def start(self):
     """Starts this Future.
@@ -104,13 +112,11 @@ class TimerFuture(future.Future):
       else:
         self._timer.cancel()
         self._cancelled = True
-        self._outcome = future.aborted()
-        outcome = self._outcome
         waiting = self._waiting
 
     for callback in waiting:
       try:
-        callback(outcome)
+        callback(self)
       except Exception:  # pylint: disable=broad-except
         pass
 
@@ -121,36 +127,102 @@ class TimerFuture(future.Future):
     with self._lock:
       return self._cancelled
 
+  def running(self):
+    """See future.Future.running for specification."""
+    with self._lock:
+      return not self._computed and not self._cancelled
+
   def done(self):
     """See future.Future.done for specification."""
     with self._lock:
-      return self._computed
+      return self._computed or self._cancelled
 
-  def outcome(self):
-    """See future.Future.outcome for specification."""
+  def result(self, timeout=None):
+    """See future.Future.result for specification."""
     with self._lock:
-      if self._computed or self._cancelled:
-        return self._outcome
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        if self._exception is None:
+          return self._return_value
+        else:
+          raise self._exception  # pylint: disable=raising-bad-type
 
       condition = threading.Condition()
-      def notify_condition(unused_outcome):
+      def notify_condition(unused_future):
         with condition:
           condition.notify()
       self._waiting.append(notify_condition)
 
     with condition:
-      condition.wait()
+      condition.wait(timeout=timeout)
 
     with self._lock:
-      return self._outcome
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        if self._exception is None:
+          return self._return_value
+        else:
+          raise self._exception  # pylint: disable=raising-bad-type
+      else:
+        raise future.TimeoutError()
 
-  def add_done_callback(self, callback):
+  def exception(self, timeout=None):
+    """See future.Future.exception for specification."""
+    with self._lock:
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        return self._exception
+
+      condition = threading.Condition()
+      def notify_condition(unused_future):
+        with condition:
+          condition.notify()
+      self._waiting.append(notify_condition)
+
+    with condition:
+      condition.wait(timeout=timeout)
+
+    with self._lock:
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        return self._exception
+      else:
+        raise future.TimeoutError()
+
+  def traceback(self, timeout=None):
+    """See future.Future.traceback for specification."""
+    with self._lock:
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        return self._traceback
+
+      condition = threading.Condition()
+      def notify_condition(unused_future):
+        with condition:
+          condition.notify()
+      self._waiting.append(notify_condition)
+
+    with condition:
+      condition.wait(timeout=timeout)
+
+    with self._lock:
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        return self._traceback
+      else:
+        raise future.TimeoutError()
+
+  def add_done_callback(self, fn):
     """See future.Future.add_done_callback for specification."""
     with self._lock:
       if not self._computed and not self._cancelled:
-        self._waiting.append(callback)
+        self._waiting.append(fn)
         return
-      else:
-        outcome = self._outcome
 
-    callback(outcome)
+    fn(self)
