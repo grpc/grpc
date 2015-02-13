@@ -118,10 +118,11 @@ familiar with protocol buffers, you can find out more in the [Protocol Buffers
 Developer Guide](https://developers.google.com/protocol-buffers/docs/overview).
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](java/src/main/proto/helloworld.proto) _should we link to the version in the Java subdirectory or the one in the common protos directory?_. The `Greeting` service
+[helloworld.proto](java/src/main/proto/helloworld.proto). The `Greeting` service
 has one method, `hello`, that lets the server receive a single `HelloRequest`
 message from the remote client containing the user's name, then send back
-a greeting in a `HelloReply`.
+a greeting in a single `HelloReply`. This is the simplest type of RPC you
+can specify in gRPC - we'll look at some other types later in this document.
 
 ```
 syntax = "proto3";
@@ -167,7 +168,8 @@ this up in "what is gRPC"?]
 the example, you can skip this step and move
 onto the next one where we examine the generated code.)
 
-As this is our first time using gRPC, we need to build the protobuf plugin that generates our RPC
+As this is our first time using gRPC, we need to build the protobuf plugin
+that generates our RPC
 classes. By default `protoc` just generates code for reading and writing
 protocol buffers, so you need to use plugins to add additional features
 to generated code. As we're creating Java code, we use the gRPC Java plugin.
@@ -190,77 +192,97 @@ $ protoc -I . helloworld.proto
                                --java_out=src/main/java
 ```
 
-This generates the following classes, which contain all the generated code we need to create our example: 
+This generates the following classes, which contain all the generated code
+we need to create our example:
 
-- [`Helloworld.java`](java/src/main/java/ex/grpc/Helloworld.java), which has all the protocol buffer code to populate, serialize, and retrieve our `HelloRequest` and `HelloReply` message types
-- [`GreetingsGrpc.java`](java/src/main/java/ex/grpc/GreetingsGrpc.java), which contains (along with some other useful code):
+- [`Helloworld.java`](java/src/main/java/ex/grpc/Helloworld.java), which
+has all the protocol buffer code to populate, serialize, and retrieve our
+`HelloRequest` and `HelloReply` message types
+- [`GreetingsGrpc.java`](java/src/main/java/ex/grpc/GreetingsGrpc.java),
+which contains (along with some other useful code):
     - an interface for `Greetings` servers to implement
 
     ```java
   public static interface Greetings {
 
     public void hello(ex.grpc.Helloworld.HelloRequest request,
-        com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply> responseObserver);
+        com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply>
+        responseObserver);
   }
     ```
 
-    - _stub_ classes that clients can use to talk to a `Greetings` server.
+    - _stub_ classes that clients can use to talk to a `Greetings` server. As you can see, they also implement the `Greetings` interface.
 
-    ```java
+  ```java
 public static class GreetingsStub extends
-      com.google.net.stubby.stub.AbstractStub<GreetingsStub, GreetingsServiceDescriptor>
+      com.google.net.stubby.stub.AbstractStub<GreetingsStub,
+      GreetingsServiceDescriptor>
       implements Greetings {
    ...
   }
-    ```
+  ```
 
 <a name="server"></a>
 ### Writing a server
 
-Now let's write some code! First we'll create a server application to implement our service. Note that we're not going to go into a lot of detail about how to create a server in this section  More detailed information will be in the tutorial for your chosen language (coming soon).
+Now let's write some code! First we'll create a server application to implement
+our service. Note that we're not going to go into a lot of detail about how
+to create a server in this section More detailed information will be in the
+tutorial for your chosen language (coming soon).
 
 Our server application has two classes:
 
-- a simple service implementation [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java).
+- a simple service implementation
+[GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java).
 
-- a server that hosts the service implementation and allows access over the network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
+- a server that hosts the service implementation and allows access over the
+network: [GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java).
 
 #### Service implementation
 
 [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java)
-implements the behaviour we require of our GreetingService. There are a
-number of important features of gRPC being used here:
+actually implements our GreetingService's required behaviour.
+
+As you can see, the class `GreetingsImpl` implements the interface
+`GreetingsGrpc.Greetings` that we [generated](#generating) from our proto
+[IDL](java/src/main/proto/helloworld.proto) by implementing the method `hello`:
 
 ```java
   public void hello(Helloworld.HelloRequest req,
       StreamObserver<Helloworld.HelloReply> responseObserver) {
-    Helloworld.HelloReply reply = Helloworld.HelloReply.newBuilder().setMessage(
+    Helloworld.HelloReply reply =
+    Helloworld.HelloReply.newBuilder().setMessage(
         "Hello " + req.getName()).build();
     responseObserver.onValue(reply);
     responseObserver.onCompleted();
   }
 ```
-
-- it provides a class `GreetingsImpl` that implements a generated interface `GreetingsGrpc.Greetings`
-- `GreetingsGrpc.Greetings` declares the method `hello` that was declared in the proto [IDL](src/main/proto/helloworld.proto)
 - `hello's` signature is typesafe:
-   hello(Helloworld.HelloRequest req, StreamObserver<Helloworld.HelloReply> responseObserver)
+   `hello(Helloworld.HelloRequest req, StreamObserver<Helloworld.HelloReply>
+   responseObserver)`
 - `hello` takes two parameters:
-  `Helloworld.HelloRequest`: the request
-  `StreamObserver<Helloworld.HelloReply>`: a response observer, an interface to be called with the response value
-- to complete the call
-  - the return value is constructed
-  - the responseObserver.onValue() is called with the response
-  - responseObserver.onCompleted() is called to indicate that no more work will done on the RPC.
+    -`Helloworld.HelloRequest`: the request
+    -`StreamObserver<Helloworld.HelloReply>`: a response observer, which is
+    a special interface for the server to call with its response
+
+To return our response to the client and complete the call:
+
+1. We construct and populate a `HelloReply` response object with our exciting
+message, as specified in our interface definition.
+2. We call `responseObserver.onValue()` with the `HelloReply` that we want to send back to the client.
+3. Finally, we call `responseObserver.onCompleted()` to indicate that we're
+finished dealing with this RPC.
 
 
 #### Server implementation
 
-[GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java) shows the
-other main feature required to provde the gRPC service; how to allow a service
-implementation to be accessed from the network.
+[GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java)
+shows the other main feature required to provide a gRPC service; making the service
+implementation available from the network.
 
 ```java
+  private ServerImpl server;
+  ...
   private void start() throws Exception {
     server = NettyServerBuilder.forPort(port)
              .addService(GreetingsGrpc.bindService(new GreetingsImpl()))
@@ -271,9 +293,16 @@ implementation to be accessed from the network.
 
 ```
 
-- it provides a class `GreetingsServer` that holds a `ServerImpl` that will run the server
-- in the `start` method, `GreetingServer` binds the `GreetingsService` implementation to a port and begins running it
-- there is also a `stop` method that takes care of shutting down the service and cleaning up when the program exits
+The `GreetingsServer` class has a `ServerImpl` member that actually runs the
+server. To create an appropriate `ServerImpl`, we use a special `ServerBuilder`
+class (in this case a `NettyServerBuilder`) in the `GreetingsServer`'s `start`
+method, binding the `GreetingsService` implementation that we created to a
+port. Then we start the server running: the server is now ready to receive
+requests from `Greetings` service clients on our specified port. We'll cover
+how all this works in a bit more detail in our language-specific documentation.
+
+`GreetingsServer` also has a `stop` method that takes care of shutting down
+the service and cleaning up when the program exits.
 
 #### Build it
 
@@ -288,16 +317,22 @@ We'll look at using a client to access the server in the next section.
 <a name="client"></a>
 ### Writing a client
 
-Client-side gRPC is pretty simple. In this step, we'll use the generated code to write a simple client that can access the `Greetings` server we created in the previous section. You can see the complete client code in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
+Client-side gRPC is pretty simple. In this step, we'll use the generated code
+to write a simple client that can access the `Greetings` server we created
+in the [previous section](#server). You can see the complete client code in
+[GreetingsClient.java](java/src/main/java/ex/grpc/GreetingsClient.java).
 
-Again, we're not going to go into much detail about how to implement a client - we'll leave that for the tutorial.
+Again, we're not going to go into much detail about how to implement a client
+- we'll leave that for the tutorial.
 
 #### Connecting to the service
 
-. The internet address
-is configured in the client constructor. gRPC Channel is the abstraction over
+First let's look at how we connect to the `Greetings` server. The internet
+address
+is configured in the client constructor. gRPC `Channel` provides the
+abstraction layer over
 transport handling; its constructor accepts the host name and port of the
-service. The channel in turn is used to construct the Stub.
+service. The channel in turn is used to construct the stub instance.
 
 
 ```java
@@ -313,20 +348,28 @@ service. The channel in turn is used to construct the Stub.
 
 ```
 
+In this case, we create a blocking stub. This means that the RPC call waits
+for the server to respond, and will either return a response or raise an
+exception. gRPC Java has other kinds of stubs that make non-blocking calls
+to the server, where the response is returned asynchronously.
+
 #### Obtaining a greeting
 
-The greet method uses the stub to contact the service and obtain a greeting.
-It:
-- constructs a request
-- obtains a reply from the stub
-- prints out the greeting
+The `greet()` method uses the stub to contact the service and obtain
+a greeting.
+To do this:
+
+1. We construct and fill in a `HelloRequest` to send to the stub.
+2. We call the RPC with our request and get a `HelloReply` from the stub,
+from which we can get our greeting.
 
 
 ```java
   public void greet(String name) {
     logger.debug("Will try to greet " + name + " ...");
     try {
-      Helloworld.HelloRequest request = Helloworld.HelloRequest.newBuilder().setName(name).build();
+      Helloworld.HelloRequest request =
+      Helloworld.HelloRequest.newBuilder().setName(name).build();
       Helloworld.HelloReply reply = blockingStub.hello(request);
       logger.info("Greeting: " + reply.getMessage());
     } catch (RuntimeException e) {
@@ -355,21 +398,13 @@ line.
 
 #### Build the client
 
-This is the same as before: our client and server are part of the same maven
+This is the same as building the server: our client and server are part of
+the same maven
 package so the same command builds both.
 
 ```
 $ mvn package
 ```
-
-#### Notes
-
-- The client uses a blocking stub. This means that the RPC call waits for the
-  server to respond, and will either return a response or raise an exception.
-
-- gRPC Java has other kinds of stubs that make non-blocking calls to the
-  server, where the response is returned asynchronously.  Usage of these stubs
-  is a more advanced topic and will be described in later steps.
 
 <a name="run"></a>
 ### Try it out!
@@ -386,6 +421,10 @@ and in another terminal window confirm that it receives a message.
 ```sh
 $ ./run_greetings_client.sh
 ```
+
+### Adding another client
+
+###TODO: Section on Go client for same server
 
 
 
