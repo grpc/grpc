@@ -152,6 +152,7 @@ TEST_F(End2endTest, SimpleRpc) {
   EXPECT_TRUE(recv_status.IsOk());
 }
 
+// Two pings and a final pong.
 TEST_F(End2endTest, SimpleClientStreaming) {
   ResetStub();
 
@@ -205,6 +206,58 @@ TEST_F(End2endTest, SimpleClientStreaming) {
   EXPECT_TRUE(recv_status.IsOk());
 }
 
+// One ping, two pongs.
+TEST_F(End2endTest, SimpleServerStreaming) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
+
+  send_request.set_message("Hello");
+  ClientAsyncReader<EchoResponse>* cli_stream =
+      stub_->ResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1));
+
+  service_.RequestResponseStream(
+      &srv_ctx, &recv_request, &srv_stream, &srv_cq_, tag(2));
+
+  server_ok(2);
+  client_ok(1);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  send_response.set_message(recv_request.message());
+  srv_stream.Write(send_response, tag(3));
+  server_ok(3);
+
+  cli_stream->Read(&recv_response, tag(4));
+  client_ok(4);
+  EXPECT_EQ(send_response.message(), recv_response.message());
+
+  srv_stream.Write(send_response, tag(5));
+  server_ok(5);
+
+  cli_stream->Read(&recv_response, tag(6));
+  client_ok(6);
+  EXPECT_EQ(send_response.message(), recv_response.message());
+
+  srv_stream.Finish(Status::OK, tag(7));
+  server_ok(7);
+
+  cli_stream->Read(&recv_response, tag(8));
+  client_fail(8);
+
+  cli_stream->Finish(&recv_status, tag(9));
+  client_ok(9);
+
+  EXPECT_TRUE(recv_status.IsOk());
+}
+
+// One ping, one pong.
 TEST_F(End2endTest, SimpleBidiStreaming) {
   ResetStub();
 
