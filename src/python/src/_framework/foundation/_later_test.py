@@ -33,7 +33,6 @@ import threading
 import time
 import unittest
 
-from _framework.foundation import future
 from _framework.foundation import later
 
 TICK = 0.1
@@ -44,10 +43,14 @@ class LaterTest(unittest.TestCase):
   def test_simple_delay(self):
     lock = threading.Lock()
     cell = [0]
-    def increment_cell():
+    return_value = object()
+
+    def computation():
       with lock:
         cell[0] += 1
-    computation_future = later.later(TICK * 2, increment_cell)
+      return return_value
+    computation_future = later.later(TICK * 2, computation)
+
     self.assertFalse(computation_future.done())
     self.assertFalse(computation_future.cancelled())
     time.sleep(TICK)
@@ -60,22 +63,21 @@ class LaterTest(unittest.TestCase):
     self.assertFalse(computation_future.cancelled())
     with lock:
       self.assertEqual(1, cell[0])
-    outcome = computation_future.outcome()
-    self.assertEqual(future.RETURNED, outcome.category)
+    self.assertEqual(return_value, computation_future.result())
 
   def test_callback(self):
     lock = threading.Lock()
     cell = [0]
     callback_called = [False]
-    outcome_passed_to_callback = [None]
-    def increment_cell():
+    future_passed_to_callback = [None]
+    def computation():
       with lock:
         cell[0] += 1
-    computation_future = later.later(TICK * 2, increment_cell)
+    computation_future = later.later(TICK * 2, computation)
     def callback(outcome):
       with lock:
         callback_called[0] = True
-        outcome_passed_to_callback[0] = outcome
+        future_passed_to_callback[0] = outcome
     computation_future.add_done_callback(callback)
     time.sleep(TICK)
     with lock:
@@ -83,63 +85,67 @@ class LaterTest(unittest.TestCase):
     time.sleep(TICK * 2)
     with lock:
       self.assertTrue(callback_called[0])
-      self.assertEqual(future.RETURNED, outcome_passed_to_callback[0].category)
+      self.assertTrue(future_passed_to_callback[0].done())
 
       callback_called[0] = False
-      outcome_passed_to_callback[0] = None
+      future_passed_to_callback[0] = None
 
     computation_future.add_done_callback(callback)
     with lock:
       self.assertTrue(callback_called[0])
-      self.assertEqual(future.RETURNED, outcome_passed_to_callback[0].category)
+      self.assertTrue(future_passed_to_callback[0].done())
 
   def test_cancel(self):
     lock = threading.Lock()
     cell = [0]
     callback_called = [False]
-    outcome_passed_to_callback = [None]
-    def increment_cell():
+    future_passed_to_callback = [None]
+    def computation():
       with lock:
         cell[0] += 1
-    computation_future = later.later(TICK * 2, increment_cell)
+    computation_future = later.later(TICK * 2, computation)
     def callback(outcome):
       with lock:
         callback_called[0] = True
-        outcome_passed_to_callback[0] = outcome
+        future_passed_to_callback[0] = outcome
     computation_future.add_done_callback(callback)
     time.sleep(TICK)
     with lock:
       self.assertFalse(callback_called[0])
     computation_future.cancel()
     self.assertTrue(computation_future.cancelled())
-    self.assertFalse(computation_future.done())
-    self.assertEqual(future.ABORTED, computation_future.outcome().category)
+    self.assertFalse(computation_future.running())
+    self.assertTrue(computation_future.done())
     with lock:
       self.assertTrue(callback_called[0])
-      self.assertEqual(future.ABORTED, outcome_passed_to_callback[0].category)
+      self.assertTrue(future_passed_to_callback[0].cancelled())
 
-  def test_outcome(self):
+  def test_result(self):
     lock = threading.Lock()
     cell = [0]
     callback_called = [False]
-    outcome_passed_to_callback = [None]
-    def increment_cell():
+    future_passed_to_callback_cell = [None]
+    return_value = object()
+
+    def computation():
       with lock:
         cell[0] += 1
-    computation_future = later.later(TICK * 2, increment_cell)
-    def callback(outcome):
+      return return_value
+    computation_future = later.later(TICK * 2, computation)
+
+    def callback(future_passed_to_callback):
       with lock:
         callback_called[0] = True
-        outcome_passed_to_callback[0] = outcome
+        future_passed_to_callback_cell[0] = future_passed_to_callback
     computation_future.add_done_callback(callback)
-    returned_outcome = computation_future.outcome()
-    self.assertEqual(future.RETURNED, returned_outcome.category)
+    returned_value = computation_future.result()
+    self.assertEqual(return_value, returned_value)
 
     # The callback may not yet have been called! Sleep a tick.
     time.sleep(TICK)
     with lock:
       self.assertTrue(callback_called[0])
-      self.assertEqual(future.RETURNED, outcome_passed_to_callback[0].category)
+      self.assertEqual(return_value, future_passed_to_callback_cell[0].result())
 
 if __name__ == '__main__':
   unittest.main()
