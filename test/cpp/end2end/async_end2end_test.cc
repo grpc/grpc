@@ -66,7 +66,7 @@ namespace {
 
 class End2endTest : public ::testing::Test {
  protected:
-  End2endTest() : service_(&cq_) {}
+  End2endTest() : service_(&srv_cq_) {}
 
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
@@ -86,7 +86,8 @@ class End2endTest : public ::testing::Test {
     stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
-  CompletionQueue cq_;
+  CompletionQueue cli_cq_;
+  CompletionQueue srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   grpc::cpp::test::util::TestService::AsyncService service_;
@@ -99,7 +100,7 @@ void* tag(int i) {
 
 TEST_F(End2endTest, SimpleRpc) {
   ResetStub();
-  
+
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -110,34 +111,31 @@ TEST_F(End2endTest, SimpleRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message("Hello");
-  stub_->Echo(&cli_ctx, send_request, &recv_response, &recv_status, &cq_, tag(1));
+  stub_->Echo(
+      &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
 
-  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &cq_, tag(2));
+  service_.RequestEcho(
+      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
 
   void *got_tag;
   bool ok;
-  EXPECT_TRUE(cq_.Next(&got_tag, &ok));
+  EXPECT_TRUE(srv_cq_.Next(&got_tag, &ok));
   EXPECT_TRUE(ok);
-  EXPECT_EQ(got_tag, tag(2));
-  EXPECT_EQ(recv_request.message(), "Hello");
+  EXPECT_EQ(tag(2), got_tag);
+  EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
 
-  EXPECT_TRUE(cq_.Next(&got_tag, &ok));
+  EXPECT_TRUE(srv_cq_.Next(&got_tag, &ok));
   EXPECT_TRUE(ok);
-  if (got_tag == tag(3)) {
-    EXPECT_TRUE(cq_.Next(&got_tag, &ok));
-    EXPECT_TRUE(ok);
-    EXPECT_EQ(got_tag, tag(1));
-  } else {
-    EXPECT_EQ(got_tag, tag(1));
-    EXPECT_TRUE(cq_.Next(&got_tag, &ok));
-    EXPECT_TRUE(ok);
-    EXPECT_EQ(got_tag, tag(3));
-  }
+  EXPECT_EQ(tag(3), got_tag);
 
-  EXPECT_EQ(recv_response.message(), "Hello");
+  EXPECT_TRUE(cli_cq_.Next(&got_tag, &ok));
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(tag(1), got_tag);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.IsOk());
 }
 
