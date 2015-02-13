@@ -531,7 +531,7 @@ NAN_METHOD(Call::StartBatch) {
   Handle<Object> obj = args[0]->ToObject();
   Handle<Array> keys = obj->GetOwnPropertyNames();
   size_t nops = keys->Length();
-  grpc_op *ops = new grpc_op[nops];
+  std::vector<grpc_op> ops(nops);
   std::vector<unique_ptr<Op> > *op_vector = new std::vector<unique_ptr<Op> >();
   for (unsigned int i = 0; i < nops; i++) {
     unique_ptr<Op> op;
@@ -575,9 +575,8 @@ NAN_METHOD(Call::StartBatch) {
     op_vector->push_back(std::move(op));
   }
   grpc_call_error error = grpc_call_start_batch(
-      call->wrapped_call, ops, nops, new struct tag(
+      call->wrapped_call, &ops[0], nops, new struct tag(
           callback, op_vector, resources));
-  delete ops;
   if (error != GRPC_CALL_OK) {
     return NanThrowError("startBatch failed", error);
   }
