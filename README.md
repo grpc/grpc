@@ -211,7 +211,7 @@ which contains (along with some other useful code):
   }
     ```
 
-    - _stub_ classes that clients can use to talk to a `Greetings` server.
+    - _stub_ classes that clients can use to talk to a `Greetings` server. As you can see, they also implement the `Greetings` interface.
 
   ```java
 public static class GreetingsStub extends
@@ -236,7 +236,7 @@ Our server application has two classes:
 [GreetingsImpl.java](java/src/main/java/ex/grpc/GreetingsImpl.java).
 
 - a server that hosts the service implementation and allows access over the
-network: [GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java).
+network: [GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java).
 
 #### Service implementation
 
@@ -245,7 +245,7 @@ actually implements our GreetingService's required behaviour.
 
 As you can see, the class `GreetingsImpl` implements the interface
 `GreetingsGrpc.Greetings` that we [generated](#generating) from our proto
-[IDL](src/main/proto/helloworld.proto) by implementing the method `hello`:
+[IDL](java/src/main/proto/helloworld.proto) by implementing the method `hello`:
 
 ```java
   public void hello(Helloworld.HelloRequest req,
@@ -276,11 +276,13 @@ finished dealing with this RPC.
 
 #### Server implementation
 
-[GreetingsServer.java](src/main/java/ex/grpc/GreetingsServer.java) shows the
-other main feature required to provde the gRPC service; making the service
+[GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java) shows the
+other main feature required to provide a gRPC service; making the service
 implementation available from the network.
 
 ```java
+  private ServerImpl server;
+  ...
   private void start() throws Exception {
     server = NettyServerBuilder.forPort(port)
              .addService(GreetingsGrpc.bindService(new GreetingsImpl()))
@@ -291,9 +293,9 @@ implementation available from the network.
 
 ```
 
-- it provides a class `GreetingsServer` that holds a `ServerImpl` that will run the server
-- in the `start` method, `GreetingServer` binds the `GreetingsService` implementation to a port and begins running it
-- there is also a `stop` method that takes care of shutting down the service and cleaning up when the program exits
+The `GreetingsServer` class has a `ServerImpl` member that actually runs the server. To create an appropriate `ServerImpl`, we use a special `ServerBuilder` class (in this case a `NettyServerBuilder`) in the `GreetingsServer`'s `start` method, binding the `GreetingsService` implementation that we created to a port. Then we start the server running: the server is now ready to receive requests from `Greetings` service clients on our specified port. We'll cover how all this works in a bit more detail in our language-specific documentation.
+
+`GreetingsServer` also has a `stop` method that takes care of shutting down the service and cleaning up when the program exits.
 
 #### Build it
 
@@ -308,16 +310,16 @@ We'll look at using a client to access the server in the next section.
 <a name="client"></a>
 ### Writing a client
 
-Client-side gRPC is pretty simple. In this step, we'll use the generated code to write a simple client that can access the `Greetings` server we created in the previous section. You can see the complete client code in [GreetingsClient.java](src/main/java/ex/grpc/GreetingsClient.java).
+Client-side gRPC is pretty simple. In this step, we'll use the generated code to write a simple client that can access the `Greetings` server we created in the [previous section](#server). You can see the complete client code in [GreetingsClient.java](java/src/main/java/ex/grpc/GreetingsClient.java).
 
 Again, we're not going to go into much detail about how to implement a client - we'll leave that for the tutorial.
 
 #### Connecting to the service
 
-. The internet address
-is configured in the client constructor. gRPC Channel is the abstraction over
+First let's look at how we connect to the `Greetings` server. The internet address
+is configured in the client constructor. gRPC `Channel` provides the abstraction layer over
 transport handling; its constructor accepts the host name and port of the
-service. The channel in turn is used to construct the Stub.
+service. The channel in turn is used to construct the stub instance.
 
 
 ```java
@@ -335,11 +337,11 @@ service. The channel in turn is used to construct the Stub.
 
 #### Obtaining a greeting
 
-The greet method uses the stub to contact the service and obtain a greeting.
-It:
-- constructs a request
-- obtains a reply from the stub
-- prints out the greeting
+The `greet()` method uses the stub to contact the service and obtain a greeting.
+In the method we:
+- construct and fill in a `HelloRequest` to send to the stub
+- get a reply from the stub
+- print out the greeting
 
 
 ```java
@@ -375,7 +377,7 @@ line.
 
 #### Build the client
 
-This is the same as before: our client and server are part of the same maven
+This is the same as building the server: our client and server are part of the same maven
 package so the same command builds both.
 
 ```
@@ -406,6 +408,10 @@ and in another terminal window confirm that it receives a message.
 ```sh
 $ ./run_greetings_client.sh
 ```
+
+### Adding another client 
+
+###TODO: Section on Go client for same server
 
 
 
