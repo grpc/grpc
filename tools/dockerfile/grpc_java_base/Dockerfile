@@ -34,6 +34,7 @@ RUN wget -O - https://github.com/google/protobuf/archive/master.tar.gz | \
 # Install a GitHub SSH service credential that gives access to the GitHub repo while it's private
 # TODO: remove this once the repo is public
 COPY .ssh/github.rsa /root/.ssh/id_rsa
+RUN chmod 600 /root/.ssh/id_rsa
 RUN echo 'Host github.com\nStrictHostKeyChecking no' > /root/.ssh/config
 
 # Trigger download of as many Maven and Gradle artifacts as possible. We don't build grpc-java
