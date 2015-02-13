@@ -420,8 +420,7 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool ignore;
-    read_buf_.AddRecvMessage(msg, &ignore);
+    read_buf_.AddRecvMessage(msg, nullptr);
     call_.PerformOps(&read_buf_);
   }
 
@@ -485,8 +484,7 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
       finish_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool ignore;
-    finish_buf_.AddRecvMessage(response_, &ignore);
+    finish_buf_.AddRecvMessage(response_, nullptr);
     finish_buf_.AddClientRecvStatus(&context_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
@@ -494,7 +492,6 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
  private:
   ClientContext* context_ = nullptr;
   google::protobuf::Message *const response_;
-  bool got_message_;
   Call call_;
   CallOpBuffer init_buf_;
   CallOpBuffer meta_buf_;
@@ -532,8 +529,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
       context_->initial_metadata_received_ = true;
     }
-    bool ignore;
-    read_buf_.AddRecvMessage(msg, &ignore);
+    read_buf_.AddRecvMessage(msg, nullptr);
     call_.PerformOps(&read_buf_);
   }
 
