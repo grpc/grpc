@@ -61,7 +61,6 @@
     <Compile Include="Marshaller.cs" />
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\RecordingObserver.cs" />
-    <Compile Include="Utils\PortPicker.cs" />
     <Compile Include="Utils\RecordingQueue.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

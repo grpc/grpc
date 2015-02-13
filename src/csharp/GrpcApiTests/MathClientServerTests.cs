@@ -46,7 +46,7 @@ namespace math.Tests
     /// </summary>
     public class MathClientServerTest
     {
-        string serverAddr = "localhost:" + PortPicker.PickUnusedPort();
+        string host = "localhost";
         Server server;
         Channel channel;
         MathGrpc.IMathServiceClient client;
@@ -54,11 +54,13 @@ namespace math.Tests
         [TestFixtureSetUp]
         public void Init()
         {
+            GrpcEnvironment.Initialize();
+
             server = new Server();
             server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
-            server.AddPort(serverAddr);
+            int port = server.AddPort(host + ":0");
             server.Start();
-            channel = new Channel(serverAddr);
+            channel = new Channel(host + ":" + port);
             client = MathGrpc.NewStub(channel);
         }
 

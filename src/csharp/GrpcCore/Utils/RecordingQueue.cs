@@ -38,6 +38,7 @@ using System.Collections.Concurrent;
 
 namespace Google.GRPC.Core.Utils
 {
+    // TODO: replace this by something that implements IAsyncEnumerator.
     /// <summary>
     /// Observer that allows us to await incoming messages one-by-one.
     /// The implementation is not ideal and class will be probably replaced 

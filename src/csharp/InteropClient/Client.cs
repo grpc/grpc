@@ -93,6 +93,8 @@ namespace Google.GRPC.Interop
 
         private void Run()
         {
+            GrpcEnvironment.Initialize();
+
             string addr = string.Format("{0}:{1}", options.serverHost, options.serverPort);
             using (Channel channel = new Channel(addr))
             {

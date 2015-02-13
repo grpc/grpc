@@ -59,10 +59,6 @@ namespace Google.GRPC.Core
 
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
-        static Server() {
-            GrpcEnvironment.EnsureInitialized();
-        }
-
         public Server()
         {
             // TODO: what is the tag for server shutdown?

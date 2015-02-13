@@ -42,10 +42,12 @@ namespace Google.GRPC.Core.Tests
     public class ServerTest
     {
         [Test]
-        public void StartAndShutdownServer() {
+        public void StartAndShutdownServer()
+        {
+            GrpcEnvironment.Initialize();
 
             Server server = new Server();
-            server.AddPort("localhost:" + PortPicker.PickUnusedPort());
+            int port = server.AddPort("localhost:0");
             server.Start();
             server.ShutdownAsync().Wait();
 
