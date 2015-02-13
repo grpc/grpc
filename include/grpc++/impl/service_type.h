@@ -82,7 +82,7 @@ class AsynchronousService {
                       size_t method_count)
       : cq_(cq), method_names_(method_names), method_count_(method_count) {}
 
-  ~AsynchronousService();
+  ~AsynchronousService() { delete[] request_args_; }
 
   CompletionQueue* completion_queue() const { return cq_; }
 

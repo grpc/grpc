@@ -49,6 +49,8 @@ template <class R>
 class ServerAsyncReader;
 template <class W>
 class ServerAsyncWriter;
+template <class W>
+class ServerAsyncResponseWriter;
 template <class R, class W>
 class ServerAsyncReaderWriter;
 template <class R>
@@ -80,6 +82,8 @@ class ServerContext final {
   friend class ::grpc::ServerAsyncReader;
   template <class W>
   friend class ::grpc::ServerAsyncWriter;
+  template <class W>
+  friend class ::grpc::ServerAsyncResponseWriter;
   template <class R, class W>
   friend class ::grpc::ServerAsyncReaderWriter;
   template <class R>
