@@ -276,8 +276,8 @@ finished dealing with this RPC.
 
 #### Server implementation
 
-[GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java) shows the
-other main feature required to provide a gRPC service; making the service
+[GreetingsServer.java](java/src/main/java/ex/grpc/GreetingsServer.java)
+shows the other main feature required to provide a gRPC service; making the service
 implementation available from the network.
 
 ```java
@@ -293,9 +293,16 @@ implementation available from the network.
 
 ```
 
-The `GreetingsServer` class has a `ServerImpl` member that actually runs the server. To create an appropriate `ServerImpl`, we use a special `ServerBuilder` class (in this case a `NettyServerBuilder`) in the `GreetingsServer`'s `start` method, binding the `GreetingsService` implementation that we created to a port. Then we start the server running: the server is now ready to receive requests from `Greetings` service clients on our specified port. We'll cover how all this works in a bit more detail in our language-specific documentation.
+The `GreetingsServer` class has a `ServerImpl` member that actually runs the
+server. To create an appropriate `ServerImpl`, we use a special `ServerBuilder`
+class (in this case a `NettyServerBuilder`) in the `GreetingsServer`'s `start`
+method, binding the `GreetingsService` implementation that we created to a
+port. Then we start the server running: the server is now ready to receive
+requests from `Greetings` service clients on our specified port. We'll cover
+how all this works in a bit more detail in our language-specific documentation.
 
-`GreetingsServer` also has a `stop` method that takes care of shutting down the service and cleaning up when the program exits.
+`GreetingsServer` also has a `stop` method that takes care of shutting down
+the service and cleaning up when the program exits.
 
 #### Build it
 
@@ -310,14 +317,20 @@ We'll look at using a client to access the server in the next section.
 <a name="client"></a>
 ### Writing a client
 
-Client-side gRPC is pretty simple. In this step, we'll use the generated code to write a simple client that can access the `Greetings` server we created in the [previous section](#server). You can see the complete client code in [GreetingsClient.java](java/src/main/java/ex/grpc/GreetingsClient.java).
+Client-side gRPC is pretty simple. In this step, we'll use the generated code
+to write a simple client that can access the `Greetings` server we created
+in the [previous section](#server). You can see the complete client code in
+[GreetingsClient.java](java/src/main/java/ex/grpc/GreetingsClient.java).
 
-Again, we're not going to go into much detail about how to implement a client - we'll leave that for the tutorial.
+Again, we're not going to go into much detail about how to implement a client
+- we'll leave that for the tutorial.
 
 #### Connecting to the service
 
-First let's look at how we connect to the `Greetings` server. The internet address
-is configured in the client constructor. gRPC `Channel` provides the abstraction layer over
+First let's look at how we connect to the `Greetings` server. The internet
+address
+is configured in the client constructor. gRPC `Channel` provides the
+abstraction layer over
 transport handling; its constructor accepts the host name and port of the
 service. The channel in turn is used to construct the stub instance.
 
@@ -335,20 +348,28 @@ service. The channel in turn is used to construct the stub instance.
 
 ```
 
+In this case, we create a blocking stub. This means that the RPC call waits
+for the server to respond, and will either return a response or raise an
+exception. gRPC Java has other kinds of stubs that make non-blocking calls
+to the server, where the response is returned asynchronously.
+
 #### Obtaining a greeting
 
-The `greet()` method uses the stub to contact the service and obtain a greeting.
+The `greet()` method uses the stub to contact the service and obtain
+a greeting.
 To do this:
 
 1. We construct and fill in a `HelloRequest` to send to the stub.
-2. We call the RPC with our request and get a `HelloReply` from the stub, from which we can get our greeting.
+2. We call the RPC with our request and get a `HelloReply` from the stub,
+from which we can get our greeting.
 
 
 ```java
   public void greet(String name) {
     logger.debug("Will try to greet " + name + " ...");
     try {
-      Helloworld.HelloRequest request = Helloworld.HelloRequest.newBuilder().setName(name).build();
+      Helloworld.HelloRequest request =
+      Helloworld.HelloRequest.newBuilder().setName(name).build();
       Helloworld.HelloReply reply = blockingStub.hello(request);
       logger.info("Greeting: " + reply.getMessage());
     } catch (RuntimeException e) {
@@ -377,21 +398,13 @@ line.
 
 #### Build the client
 
-This is the same as building the server: our client and server are part of the same maven
+This is the same as building the server: our client and server are part of
+the same maven
 package so the same command builds both.
 
 ```
 $ mvn package
 ```
-
-#### Notes
-
-- The client uses a blocking stub. This means that the RPC call waits for the
-  server to respond, and will either return a response or raise an exception.
-
-- gRPC Java has other kinds of stubs that make non-blocking calls to the
-  server, where the response is returned asynchronously.  Usage of these stubs
-  is a more advanced topic and will be described in later steps.
 
 <a name="run"></a>
 ### Try it out!
@@ -409,7 +422,7 @@ and in another terminal window confirm that it receives a message.
 $ ./run_greetings_client.sh
 ```
 
-### Adding another client 
+### Adding another client
 
 ###TODO: Section on Go client for same server
 
