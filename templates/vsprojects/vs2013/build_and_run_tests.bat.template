@@ -3,7 +3,8 @@
 %>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%
-  test_targets = [ target for target in targets if target.name.startswith('gpr_') and target.name.endswith('_test')]
+  allowed_dependencies = set(['gpr', 'grpc', 'gpr_test_util', 'grpc_test_util'])
+  test_targets = [ target for target in targets if target.name.endswith('_test') and set(target.deps).issubset(allowed_dependencies)]
   test_bin_dir = 'test_bin'
 %>\
 @rem Build and runs unit all unit tests
@@ -12,13 +13,12 @@
 @call "%VS120COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
 
 @rem Build the library dependencies first
-MSBuild.exe gpr.vcxproj /p:Configuration=Debug
-MSBuild.exe gpr_test_util.vcxproj /p:Configuration=Debug
+MSBuild.exe gprc_test_util.vcxproj /p:Configuration=Debug
 
 mkdir ${test_bin_dir}
 
 % for target in test_targets:
-echo Building test ${target.name}
+echo Building ${target.name}
 cl.exe /c /I..\.. /I..\..\include /nologo /Z7 /W3 /WX- /sdl /D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze- /Fo:${test_bin_dir}\ \
 %for source in target.src:
 ..\..\${to_windows_path(source)} \
