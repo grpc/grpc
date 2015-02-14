@@ -33,7 +33,7 @@
 
 #include "test/core/util/grpc_profiler.h"
 
-#if 0&&GRPC_HAVE_PERFTOOLS
+#if GRPC_HAVE_PERFTOOLS
 #include <gperftools/profiler.h>
 
 void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
