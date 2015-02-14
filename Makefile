@@ -69,7 +69,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang
 LDXX_msan = clang++
-CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer
+CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer -fsanitize-memory-track-origins
 OPENSSL_CFLAGS_msan = -DPURIFY
 OPENSSL_CONFIG_msan = no-asm
 LDFLAGS_msan = -fsanitize=memory
