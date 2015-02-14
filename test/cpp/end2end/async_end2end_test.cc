@@ -76,9 +76,9 @@ void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   EXPECT_EQ(tag(i), got_tag);
 }
 
-class End2endTest : public ::testing::Test {
+class AsyncEnd2endTest : public ::testing::Test {
  protected:
-  End2endTest() : service_(&srv_cq_) {}
+  AsyncEnd2endTest() : service_(&srv_cq_) {}
 
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
@@ -111,6 +111,40 @@ class End2endTest : public ::testing::Test {
     verify_ok(&cli_cq_, i, false);
   }
 
+  void SendRpc(int num_rpcs) {
+    for (int i = 0; i < num_rpcs; i++) {
+      EchoRequest send_request;
+      EchoRequest recv_request;
+      EchoResponse send_response;
+      EchoResponse recv_response;
+      Status recv_status;
+
+      ClientContext cli_ctx;
+      ServerContext srv_ctx;
+      grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+      send_request.set_message("Hello");
+      stub_->Echo(
+          &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
+
+      service_.RequestEcho(
+          &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+
+      server_ok(2);
+      EXPECT_EQ(send_request.message(), recv_request.message());
+
+      send_response.set_message(recv_request.message());
+      response_writer.Finish(send_response, Status::OK, tag(3));
+
+      server_ok(3);
+
+      client_ok(1);
+
+      EXPECT_EQ(send_response.message(), recv_response.message());
+      EXPECT_TRUE(recv_status.IsOk());
+    }
+  }
+
   CompletionQueue cli_cq_;
   CompletionQueue srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
@@ -119,41 +153,18 @@ class End2endTest : public ::testing::Test {
   std::ostringstream server_address_;
 };
 
-TEST_F(End2endTest, SimpleRpc) {
+TEST_F(AsyncEnd2endTest, SimpleRpc) {
   ResetStub();
+  SendRpc(1);
+}
 
-  EchoRequest send_request;
-  EchoRequest recv_request;
-  EchoResponse send_response;
-  EchoResponse recv_response;
-  Status recv_status;
-  ClientContext cli_ctx;
-  ServerContext srv_ctx;
-  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
-
-  send_request.set_message("Hello");
-  stub_->Echo(
-      &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
-
-  service_.RequestEcho(
-      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
-
-  server_ok(2);
-  EXPECT_EQ(send_request.message(), recv_request.message());
-
-  send_response.set_message(recv_request.message());
-  response_writer.Finish(send_response, Status::OK, tag(3));
-
-  server_ok(3);
-
-  client_ok(1);
-
-  EXPECT_EQ(send_response.message(), recv_response.message());
-  EXPECT_TRUE(recv_status.IsOk());
+TEST_F(AsyncEnd2endTest, SequentialRpcs) {
+  ResetStub();
+  SendRpc(10);
 }
 
 // Two pings and a final pong.
-TEST_F(End2endTest, SimpleClientStreaming) {
+TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -207,7 +218,7 @@ TEST_F(End2endTest, SimpleClientStreaming) {
 }
 
 // One ping, two pongs.
-TEST_F(End2endTest, SimpleServerStreaming) {
+TEST_F(AsyncEnd2endTest, SimpleServerStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -258,7 +269,7 @@ TEST_F(End2endTest, SimpleServerStreaming) {
 }
 
 // One ping, one pong.
-TEST_F(End2endTest, SimpleBidiStreaming) {
+TEST_F(AsyncEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -307,6 +318,49 @@ TEST_F(End2endTest, SimpleBidiStreaming) {
   cli_stream->Finish(&recv_status, tag(10));
   client_ok(10);
 
+  EXPECT_TRUE(recv_status.IsOk());
+}
+
+// Metadata tests
+TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message("Hello");
+  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
+  std::pair<grpc::string, grpc::string> meta2("key2", "val2");
+  cli_ctx.AddMetadata(meta1.first, meta1.second);
+  cli_ctx.AddMetadata(meta2.first, meta2.second);
+
+  stub_->Echo(
+      &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
+
+  service_.RequestEcho(
+      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  server_ok(2);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+  auto client_initial_metadata = srv_ctx.client_metadata();
+  EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
+  EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
+  EXPECT_EQ(2, client_initial_metadata.size());
+
+  send_response.set_message(recv_request.message());
+  response_writer.Finish(send_response, Status::OK, tag(3));
+
+  server_ok(3);
+
+  client_ok(1);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.IsOk());
 }
 

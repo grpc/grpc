@@ -88,7 +88,7 @@ class ClientContext {
   void set_absolute_deadline(const system_clock::time_point &deadline);
   system_clock::time_point absolute_deadline();
 
-  void StartCancel();
+  void TryCancel();
 
  private:
   // Disallow copy and assign.

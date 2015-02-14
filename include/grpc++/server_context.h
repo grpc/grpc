@@ -76,6 +76,10 @@ class ServerContext final {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
+  std::multimap<grpc::string, grpc::string> client_metadata() {
+    return client_metadata_;
+  }
+
  private:
   friend class ::grpc::Server;
   template <class W, class R>
