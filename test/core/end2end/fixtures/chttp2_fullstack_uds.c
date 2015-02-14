@@ -67,7 +67,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
   fullstack_fixture_data *ffd = gpr_malloc(sizeof(fullstack_fixture_data));
   memset(&f, 0, sizeof(f));
 
-  gpr_asprintf(&ffd->localaddr, "unix:/tmp/grpc_fullstack_test.%d.%d", getpid(), unique++);
+  gpr_asprintf(&ffd->localaddr, "unix:/tmp/grpc_fullstack_test.%d.%d", getpid(),
+               unique++);
 
   f.fixture_data = ffd;
   f.client_cq = grpc_completion_queue_create();
@@ -103,7 +104,8 @@ void chttp2_tear_down_fullstack(grpc_end2end_test_fixture *f) {
 static grpc_end2end_test_config configs[] = {
     {"chttp2/fullstack_uds", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
      chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
-     chttp2_init_server_fullstack, chttp2_tear_down_fullstack}, };
+     chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
+};
 
 int main(int argc, char **argv) {
   size_t i;

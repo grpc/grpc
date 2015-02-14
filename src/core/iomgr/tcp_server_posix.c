@@ -178,7 +178,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
   }
 
   if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      (addr->sa_family != AF_UNIX && (!grpc_set_socket_low_latency(fd, 1) || !grpc_set_socket_reuse_addr(fd, 1)))) {
+      (addr->sa_family != AF_UNIX && (!grpc_set_socket_low_latency(fd, 1) ||
+                                      !grpc_set_socket_reuse_addr(fd, 1)))) {
     gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
             strerror(errno));
     goto error;

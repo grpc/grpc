@@ -126,7 +126,8 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   const gpr_timespec start_time = gpr_now();
   struct sockaddr_un *un;
 
-  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' && name[4] == ':' && name[5] != 0) {
+  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
+      name[4] == ':' && name[5] != 0) {
     addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
     addrs->naddrs = 1;
     addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address));

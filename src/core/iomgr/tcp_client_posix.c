@@ -62,7 +62,7 @@ typedef struct {
   int refs;
 } async_connect;
 
-static int prepare_socket(const struct sockaddr* addr, int fd) {
+static int prepare_socket(const struct sockaddr *addr, int fd) {
   if (fd < 0) {
     goto error;
   }
