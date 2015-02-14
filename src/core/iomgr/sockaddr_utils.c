@@ -166,6 +166,8 @@ int grpc_sockaddr_get_port(const struct sockaddr *addr) {
       return ntohs(((struct sockaddr_in *)addr)->sin_port);
     case AF_INET6:
       return ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
+    case AF_UNIX:
+      return 1;
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in %s", addr->sa_family,
               __FUNCTION__);
