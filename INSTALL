@@ -90,6 +90,11 @@ these dependencies this way:
 
   # apt-get install autoconf libtool
 
+If you want to run the tests using one of the sanitized configurations, you
+will need clang and its instrumented libc++:
+
+  # apt-get install clang libc++-dev
+
 
 A word on OpenSSL
 -----------------
