@@ -146,7 +146,7 @@ CXXFLAGS += -std=c++11
 CPPFLAGS += -g -fPIC -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g -fPIC
 
-INCLUDES = . include gens
+INCLUDES = . include $(GENDIR)
 ifeq ($(SYSTEM),Darwin)
 LIBS = m z
 else
@@ -255,7 +255,7 @@ ifeq ($(HAS_SYSTEM_ZLIB),false)
 ifeq ($(HAS_EMBEDDED_ZLIB),true)
 ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
 CPPFLAGS += -Ithird_party/zlib
-LDFLAGS += -Llibs/$(CONFIG)/zlib
+LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 DEP_MISSING += zlib
 endif
@@ -266,7 +266,7 @@ ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
 CPPFLAGS += -Ithird_party/openssl/include
-LDFLAGS += -Llibs/$(CONFIG)/openssl
+LDFLAGS += -L$(LIBDIR)/$(CONFIG)/openssl
 LIBS_SECURE = dl
 else
 NO_SECURE = true
@@ -281,7 +281,7 @@ ifeq ($(HAS_SYSTEM_PROTOBUF),false)
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
 CPPFLAGS += -Ithird_party/protobuf/src
-LDFLAGS += -Llibs/$(CONFIG)/protobuf
+LDFLAGS += -L$(LIBDIR)/$(CONFIG)/protobuf
 PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
@@ -838,730 +838,730 @@ test: test_c test_cxx
 
 test_c: buildtests_c
 	$(E) "[RUN]     Testing alarm_heap_test"
-	$(Q) ./bins/$(CONFIG)/alarm_heap_test || ( echo test alarm_heap_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/alarm_heap_test || ( echo test alarm_heap_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alarm_list_test"
-	$(Q) ./bins/$(CONFIG)/alarm_list_test || ( echo test alarm_list_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/alarm_list_test || ( echo test alarm_list_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alarm_test"
-	$(Q) ./bins/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alpn_test"
-	$(Q) ./bins/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
-	$(Q) ./bins/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_hash_table_test"
-	$(Q) ./bins/$(CONFIG)/census_hash_table_test || ( echo test census_hash_table_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_hash_table_test || ( echo test census_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_statistics_multiple_writers_circular_buffer_test"
-	$(Q) ./bins/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test || ( echo test census_statistics_multiple_writers_circular_buffer_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test || ( echo test census_statistics_multiple_writers_circular_buffer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_statistics_multiple_writers_test"
-	$(Q) ./bins/$(CONFIG)/census_statistics_multiple_writers_test || ( echo test census_statistics_multiple_writers_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_test || ( echo test census_statistics_multiple_writers_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_statistics_performance_test"
-	$(Q) ./bins/$(CONFIG)/census_statistics_performance_test || ( echo test census_statistics_performance_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_performance_test || ( echo test census_statistics_performance_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_statistics_quick_test"
-	$(Q) ./bins/$(CONFIG)/census_statistics_quick_test || ( echo test census_statistics_quick_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_quick_test || ( echo test census_statistics_quick_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_statistics_small_log_test"
-	$(Q) ./bins/$(CONFIG)/census_statistics_small_log_test || ( echo test census_statistics_small_log_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_statistics_small_log_test || ( echo test census_statistics_small_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_stub_test"
-	$(Q) ./bins/$(CONFIG)/census_stub_test || ( echo test census_stub_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_stub_test || ( echo test census_stub_test failed ; exit 1 )
 	$(E) "[RUN]     Testing census_window_stats_test"
-	$(Q) ./bins/$(CONFIG)/census_window_stats_test || ( echo test census_window_stats_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/census_window_stats_test || ( echo test census_window_stats_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_status_conversion_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_status_conversion_test || ( echo test chttp2_status_conversion_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test || ( echo test chttp2_status_conversion_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_stream_encoder_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_stream_encoder_test || ( echo test chttp2_stream_encoder_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_stream_encoder_test || ( echo test chttp2_stream_encoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_stream_map_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_stream_map_test || ( echo test chttp2_stream_map_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_stream_map_test || ( echo test chttp2_stream_map_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_transport_end2end_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_transport_end2end_test || ( echo test chttp2_transport_end2end_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_transport_end2end_test || ( echo test chttp2_transport_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dualstack_socket_test"
-	$(Q) ./bins/$(CONFIG)/dualstack_socket_test || ( echo test dualstack_socket_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/dualstack_socket_test || ( echo test dualstack_socket_test failed ; exit 1 )
 	$(E) "[RUN]     Testing echo_test"
-	$(Q) ./bins/$(CONFIG)/echo_test || ( echo test echo_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/echo_test || ( echo test echo_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_posix_test"
-	$(Q) ./bins/$(CONFIG)/fd_posix_test || ( echo test fd_posix_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/fd_posix_test || ( echo test fd_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fling_stream_test"
-	$(Q) ./bins/$(CONFIG)/fling_stream_test || ( echo test fling_stream_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/fling_stream_test || ( echo test fling_stream_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fling_test"
-	$(Q) ./bins/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_cancellable_test"
-	$(Q) ./bins/$(CONFIG)/gpr_cancellable_test || ( echo test gpr_cancellable_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_cancellable_test || ( echo test gpr_cancellable_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_cmdline_test"
-	$(Q) ./bins/$(CONFIG)/gpr_cmdline_test || ( echo test gpr_cmdline_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_cmdline_test || ( echo test gpr_cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_env_test"
-	$(Q) ./bins/$(CONFIG)/gpr_env_test || ( echo test gpr_env_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_env_test || ( echo test gpr_env_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_file_test"
-	$(Q) ./bins/$(CONFIG)/gpr_file_test || ( echo test gpr_file_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_file_test || ( echo test gpr_file_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_histogram_test"
-	$(Q) ./bins/$(CONFIG)/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_host_port_test"
-	$(Q) ./bins/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
-	$(Q) ./bins/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_slice_buffer_test"
-	$(Q) ./bins/$(CONFIG)/gpr_slice_buffer_test || ( echo test gpr_slice_buffer_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test || ( echo test gpr_slice_buffer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_slice_test"
-	$(Q) ./bins/$(CONFIG)/gpr_slice_test || ( echo test gpr_slice_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_slice_test || ( echo test gpr_slice_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_string_test"
-	$(Q) ./bins/$(CONFIG)/gpr_string_test || ( echo test gpr_string_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_string_test || ( echo test gpr_string_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_sync_test"
-	$(Q) ./bins/$(CONFIG)/gpr_sync_test || ( echo test gpr_sync_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_sync_test || ( echo test gpr_sync_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_thd_test"
-	$(Q) ./bins/$(CONFIG)/gpr_thd_test || ( echo test gpr_thd_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_thd_test || ( echo test gpr_thd_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_time_test"
-	$(Q) ./bins/$(CONFIG)/gpr_time_test || ( echo test gpr_time_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_time_test || ( echo test gpr_time_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_useful_test"
-	$(Q) ./bins/$(CONFIG)/gpr_useful_test || ( echo test gpr_useful_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_useful_test || ( echo test gpr_useful_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_base64_test"
-	$(Q) ./bins/$(CONFIG)/grpc_base64_test || ( echo test grpc_base64_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_base64_test || ( echo test grpc_base64_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_byte_buffer_reader_test"
-	$(Q) ./bins/$(CONFIG)/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_stack_test"
-	$(Q) ./bins/$(CONFIG)/grpc_channel_stack_test || ( echo test grpc_channel_stack_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_test || ( echo test grpc_channel_stack_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_test"
-	$(Q) ./bins/$(CONFIG)/grpc_completion_queue_test || ( echo test grpc_completion_queue_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_completion_queue_test || ( echo test grpc_completion_queue_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_credentials_test"
-	$(Q) ./bins/$(CONFIG)/grpc_credentials_test || ( echo test grpc_credentials_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_credentials_test || ( echo test grpc_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_json_token_test"
-	$(Q) ./bins/$(CONFIG)/grpc_json_token_test || ( echo test grpc_json_token_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_json_token_test || ( echo test grpc_json_token_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_stream_op_test"
-	$(Q) ./bins/$(CONFIG)/grpc_stream_op_test || ( echo test grpc_stream_op_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_stream_op_test || ( echo test grpc_stream_op_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_parser_test"
-	$(Q) ./bins/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_table_test"
-	$(Q) ./bins/$(CONFIG)/hpack_table_test || ( echo test hpack_table_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/hpack_table_test || ( echo test hpack_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_format_request_test"
-	$(Q) ./bins/$(CONFIG)/httpcli_format_request_test || ( echo test httpcli_format_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/httpcli_format_request_test || ( echo test httpcli_format_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_parser_test"
-	$(Q) ./bins/$(CONFIG)/httpcli_parser_test || ( echo test httpcli_parser_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/httpcli_parser_test || ( echo test httpcli_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_test"
-	$(Q) ./bins/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing json_test"
-	$(Q) ./bins/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
-	$(Q) ./bins/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
-	$(Q) ./bins/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing metadata_buffer_test"
-	$(Q) ./bins/$(CONFIG)/metadata_buffer_test || ( echo test metadata_buffer_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/metadata_buffer_test || ( echo test metadata_buffer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing murmur_hash_test"
-	$(Q) ./bins/$(CONFIG)/murmur_hash_test || ( echo test murmur_hash_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/murmur_hash_test || ( echo test murmur_hash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing no_server_test"
-	$(Q) ./bins/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/no_server_test || ( echo test no_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing poll_kick_posix_test"
-	$(Q) ./bins/$(CONFIG)/poll_kick_posix_test || ( echo test poll_kick_posix_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/poll_kick_posix_test || ( echo test poll_kick_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolve_address_test"
-	$(Q) ./bins/$(CONFIG)/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_endpoint_test"
-	$(Q) ./bins/$(CONFIG)/secure_endpoint_test || ( echo test secure_endpoint_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/secure_endpoint_test || ( echo test secure_endpoint_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sockaddr_utils_test"
-	$(Q) ./bins/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_client_posix_test"
-	$(Q) ./bins/$(CONFIG)/tcp_client_posix_test || ( echo test tcp_client_posix_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/tcp_client_posix_test || ( echo test tcp_client_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_posix_test"
-	$(Q) ./bins/$(CONFIG)/tcp_posix_test || ( echo test tcp_posix_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/tcp_posix_test || ( echo test tcp_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_server_posix_test"
-	$(Q) ./bins/$(CONFIG)/tcp_server_posix_test || ( echo test tcp_server_posix_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/tcp_server_posix_test || ( echo test tcp_server_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing time_averaged_stats_test"
-	$(Q) ./bins/$(CONFIG)/time_averaged_stats_test || ( echo test time_averaged_stats_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/time_averaged_stats_test || ( echo test time_averaged_stats_test failed ; exit 1 )
 	$(E) "[RUN]     Testing time_test"
-	$(Q) ./bins/$(CONFIG)/time_test || ( echo test time_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/time_test || ( echo test time_test failed ; exit 1 )
 	$(E) "[RUN]     Testing timeout_encoding_test"
-	$(Q) ./bins/$(CONFIG)/timeout_encoding_test || ( echo test timeout_encoding_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/timeout_encoding_test || ( echo test timeout_encoding_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_metadata_test"
-	$(Q) ./bins/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test || ( echo test chttp2_fake_security_cancel_after_accept_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test || ( echo test chttp2_fake_security_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_and_writes_closed_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_fake_security_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_fake_security_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test || ( echo test chttp2_fake_security_cancel_after_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test || ( echo test chttp2_fake_security_cancel_after_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_before_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test || ( echo test chttp2_fake_security_cancel_before_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test || ( echo test chttp2_fake_security_cancel_before_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_in_a_vacuum_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test || ( echo test chttp2_fake_security_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test || ( echo test chttp2_fake_security_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_census_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_census_simple_request_test || ( echo test chttp2_fake_security_census_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_test || ( echo test chttp2_fake_security_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_disappearing_server_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_disappearing_server_test || ( echo test chttp2_fake_security_disappearing_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_test || ( echo test chttp2_fake_security_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_early_server_shutdown_finishes_tags_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_tags_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_empty_batch_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_empty_batch_test || ( echo test chttp2_fake_security_empty_batch_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_empty_batch_test || ( echo test chttp2_fake_security_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_graceful_server_shutdown_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test || ( echo test chttp2_fake_security_graceful_server_shutdown_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test || ( echo test chttp2_fake_security_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_invoke_large_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_test || ( echo test chttp2_fake_security_invoke_large_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_test || ( echo test chttp2_fake_security_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_max_concurrent_streams_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test || ( echo test chttp2_fake_security_max_concurrent_streams_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test || ( echo test chttp2_fake_security_max_concurrent_streams_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_no_op_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_no_op_test || ( echo test chttp2_fake_security_no_op_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_test || ( echo test chttp2_fake_security_no_op_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_ping_pong_streaming_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test || ( echo test chttp2_fake_security_ping_pong_streaming_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test || ( echo test chttp2_fake_security_ping_pong_streaming_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_binary_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_fake_security_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_fake_security_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test || ( echo test chttp2_fake_security_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test || ( echo test chttp2_fake_security_request_response_with_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test || ( echo test chttp2_fake_security_request_response_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test || ( echo test chttp2_fake_security_request_response_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_with_large_metadata_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_test || ( echo test chttp2_fake_security_request_with_large_metadata_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_test || ( echo test chttp2_fake_security_request_with_large_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_with_payload_test || ( echo test chttp2_fake_security_request_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_test || ( echo test chttp2_fake_security_request_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_simple_delayed_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test || ( echo test chttp2_fake_security_simple_delayed_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test || ( echo test chttp2_fake_security_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_simple_request_test || ( echo test chttp2_fake_security_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_test || ( echo test chttp2_fake_security_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_thread_stress_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_thread_stress_test || ( echo test chttp2_fake_security_thread_stress_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_test || ( echo test chttp2_fake_security_thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_writes_done_hangs_with_pending_read_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test || ( echo test chttp2_fake_security_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test || ( echo test chttp2_fake_security_writes_done_hangs_with_pending_read_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_legacy_test || ( echo test chttp2_fake_security_cancel_after_accept_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_legacy_test || ( echo test chttp2_fake_security_cancel_after_accept_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_legacy_test || ( echo test chttp2_fake_security_cancel_after_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_legacy_test || ( echo test chttp2_fake_security_cancel_after_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_before_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_legacy_test || ( echo test chttp2_fake_security_cancel_before_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_legacy_test || ( echo test chttp2_fake_security_cancel_before_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_in_a_vacuum_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_fake_security_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_fake_security_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_census_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_census_simple_request_legacy_test || ( echo test chttp2_fake_security_census_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_legacy_test || ( echo test chttp2_fake_security_census_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_disappearing_server_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_disappearing_server_legacy_test || ( echo test chttp2_fake_security_disappearing_server_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_legacy_test || ( echo test chttp2_fake_security_disappearing_server_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_graceful_server_shutdown_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_legacy_test || ( echo test chttp2_fake_security_graceful_server_shutdown_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_legacy_test || ( echo test chttp2_fake_security_graceful_server_shutdown_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_invoke_large_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_invoke_large_request_legacy_test || ( echo test chttp2_fake_security_invoke_large_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_legacy_test || ( echo test chttp2_fake_security_invoke_large_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_max_concurrent_streams_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_legacy_test || ( echo test chttp2_fake_security_max_concurrent_streams_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_legacy_test || ( echo test chttp2_fake_security_max_concurrent_streams_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_no_op_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_no_op_legacy_test || ( echo test chttp2_fake_security_no_op_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_legacy_test || ( echo test chttp2_fake_security_no_op_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_ping_pong_streaming_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_legacy_test || ( echo test chttp2_fake_security_ping_pong_streaming_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_legacy_test || ( echo test chttp2_fake_security_ping_pong_streaming_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_response_with_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_with_large_metadata_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_legacy_test || ( echo test chttp2_fake_security_request_with_large_metadata_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_legacy_test || ( echo test chttp2_fake_security_request_with_large_metadata_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_request_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_request_with_payload_legacy_test || ( echo test chttp2_fake_security_request_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_legacy_test || ( echo test chttp2_fake_security_request_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_simple_delayed_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_simple_delayed_request_legacy_test || ( echo test chttp2_fake_security_simple_delayed_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_legacy_test || ( echo test chttp2_fake_security_simple_delayed_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_simple_request_legacy_test || ( echo test chttp2_fake_security_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_legacy_test || ( echo test chttp2_fake_security_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_thread_stress_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_thread_stress_legacy_test || ( echo test chttp2_fake_security_thread_stress_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_legacy_test || ( echo test chttp2_fake_security_thread_stress_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_accept_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test || ( echo test chttp2_fullstack_cancel_after_accept_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test || ( echo test chttp2_fullstack_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_accept_and_writes_closed_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test || ( echo test chttp2_fullstack_cancel_after_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test || ( echo test chttp2_fullstack_cancel_after_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_before_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test || ( echo test chttp2_fullstack_cancel_before_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test || ( echo test chttp2_fullstack_cancel_before_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_in_a_vacuum_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_census_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_census_simple_request_test || ( echo test chttp2_fullstack_census_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_test || ( echo test chttp2_fullstack_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_disappearing_server_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_disappearing_server_test || ( echo test chttp2_fullstack_disappearing_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_test || ( echo test chttp2_fullstack_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_early_server_shutdown_finishes_tags_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_empty_batch_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_empty_batch_test || ( echo test chttp2_fullstack_empty_batch_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_empty_batch_test || ( echo test chttp2_fullstack_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_graceful_server_shutdown_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test || ( echo test chttp2_fullstack_graceful_server_shutdown_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test || ( echo test chttp2_fullstack_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_invoke_large_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_test || ( echo test chttp2_fullstack_invoke_large_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_test || ( echo test chttp2_fullstack_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_max_concurrent_streams_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test || ( echo test chttp2_fullstack_max_concurrent_streams_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test || ( echo test chttp2_fullstack_max_concurrent_streams_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_no_op_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_no_op_test || ( echo test chttp2_fullstack_no_op_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_test || ( echo test chttp2_fullstack_no_op_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_ping_pong_streaming_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test || ( echo test chttp2_fullstack_ping_pong_streaming_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test || ( echo test chttp2_fullstack_ping_pong_streaming_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_binary_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_fullstack_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_fullstack_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test || ( echo test chttp2_fullstack_request_response_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test || ( echo test chttp2_fullstack_request_response_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_with_large_metadata_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_test || ( echo test chttp2_fullstack_request_with_large_metadata_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_test || ( echo test chttp2_fullstack_request_with_large_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_with_payload_test || ( echo test chttp2_fullstack_request_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_test || ( echo test chttp2_fullstack_request_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_simple_delayed_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test || ( echo test chttp2_fullstack_simple_delayed_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test || ( echo test chttp2_fullstack_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_simple_request_test || ( echo test chttp2_fullstack_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_test || ( echo test chttp2_fullstack_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_thread_stress_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_thread_stress_test || ( echo test chttp2_fullstack_thread_stress_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_test || ( echo test chttp2_fullstack_thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_writes_done_hangs_with_pending_read_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_accept_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_legacy_test || ( echo test chttp2_fullstack_cancel_after_accept_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_legacy_test || ( echo test chttp2_fullstack_cancel_after_accept_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_after_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_legacy_test || ( echo test chttp2_fullstack_cancel_after_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_legacy_test || ( echo test chttp2_fullstack_cancel_after_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_before_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_legacy_test || ( echo test chttp2_fullstack_cancel_before_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_legacy_test || ( echo test chttp2_fullstack_cancel_before_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_cancel_in_a_vacuum_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_fullstack_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_fullstack_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_census_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_census_simple_request_legacy_test || ( echo test chttp2_fullstack_census_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_legacy_test || ( echo test chttp2_fullstack_census_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_disappearing_server_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_disappearing_server_legacy_test || ( echo test chttp2_fullstack_disappearing_server_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_legacy_test || ( echo test chttp2_fullstack_disappearing_server_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_graceful_server_shutdown_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_legacy_test || ( echo test chttp2_fullstack_graceful_server_shutdown_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_legacy_test || ( echo test chttp2_fullstack_graceful_server_shutdown_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_invoke_large_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_invoke_large_request_legacy_test || ( echo test chttp2_fullstack_invoke_large_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_legacy_test || ( echo test chttp2_fullstack_invoke_large_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_max_concurrent_streams_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_legacy_test || ( echo test chttp2_fullstack_max_concurrent_streams_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_legacy_test || ( echo test chttp2_fullstack_max_concurrent_streams_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_no_op_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_no_op_legacy_test || ( echo test chttp2_fullstack_no_op_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_legacy_test || ( echo test chttp2_fullstack_no_op_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_ping_pong_streaming_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_legacy_test || ( echo test chttp2_fullstack_ping_pong_streaming_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_legacy_test || ( echo test chttp2_fullstack_ping_pong_streaming_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_response_with_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_with_large_metadata_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_legacy_test || ( echo test chttp2_fullstack_request_with_large_metadata_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_legacy_test || ( echo test chttp2_fullstack_request_with_large_metadata_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_request_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_request_with_payload_legacy_test || ( echo test chttp2_fullstack_request_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_legacy_test || ( echo test chttp2_fullstack_request_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_simple_delayed_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_simple_delayed_request_legacy_test || ( echo test chttp2_fullstack_simple_delayed_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_legacy_test || ( echo test chttp2_fullstack_simple_delayed_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_simple_request_legacy_test || ( echo test chttp2_fullstack_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_legacy_test || ( echo test chttp2_fullstack_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_thread_stress_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test || ( echo test chttp2_fullstack_thread_stress_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test || ( echo test chttp2_fullstack_thread_stress_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_before_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test || ( echo test chttp2_simple_ssl_fullstack_cancel_before_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test || ( echo test chttp2_simple_ssl_fullstack_cancel_before_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_census_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test || ( echo test chttp2_simple_ssl_fullstack_census_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test || ( echo test chttp2_simple_ssl_fullstack_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_disappearing_server_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test || ( echo test chttp2_simple_ssl_fullstack_disappearing_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test || ( echo test chttp2_simple_ssl_fullstack_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_empty_batch_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_empty_batch_test || ( echo test chttp2_simple_ssl_fullstack_empty_batch_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_empty_batch_test || ( echo test chttp2_simple_ssl_fullstack_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_graceful_server_shutdown_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test || ( echo test chttp2_simple_ssl_fullstack_graceful_server_shutdown_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test || ( echo test chttp2_simple_ssl_fullstack_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_invoke_large_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_fullstack_invoke_large_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_fullstack_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_max_concurrent_streams_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test || ( echo test chttp2_simple_ssl_fullstack_max_concurrent_streams_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test || ( echo test chttp2_simple_ssl_fullstack_max_concurrent_streams_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_no_op_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test || ( echo test chttp2_simple_ssl_fullstack_no_op_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test || ( echo test chttp2_simple_ssl_fullstack_no_op_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_ping_pong_streaming_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test || ( echo test chttp2_simple_ssl_fullstack_ping_pong_streaming_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test || ( echo test chttp2_simple_ssl_fullstack_ping_pong_streaming_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_with_large_metadata_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_test || ( echo test chttp2_simple_ssl_fullstack_request_with_large_metadata_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_test || ( echo test chttp2_simple_ssl_fullstack_request_with_large_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_test || ( echo test chttp2_simple_ssl_fullstack_request_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_simple_delayed_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test || ( echo test chttp2_simple_ssl_fullstack_simple_delayed_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test || ( echo test chttp2_simple_ssl_fullstack_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test || ( echo test chttp2_simple_ssl_fullstack_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test || ( echo test chttp2_simple_ssl_fullstack_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_thread_stress_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test || ( echo test chttp2_simple_ssl_fullstack_thread_stress_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test || ( echo test chttp2_simple_ssl_fullstack_thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_census_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_census_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_census_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_disappearing_server_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_legacy_test || ( echo test chttp2_simple_ssl_fullstack_disappearing_server_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_legacy_test || ( echo test chttp2_simple_ssl_fullstack_disappearing_server_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test || ( echo test chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test || ( echo test chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test || ( echo test chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test || ( echo test chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_no_op_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_legacy_test || ( echo test chttp2_simple_ssl_fullstack_no_op_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_legacy_test || ( echo test chttp2_simple_ssl_fullstack_no_op_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test || ( echo test chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test || ( echo test chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_request_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_legacy_test || ( echo test chttp2_simple_ssl_fullstack_request_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_legacy_test || ( echo test chttp2_simple_ssl_fullstack_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_thread_stress_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_legacy_test || ( echo test chttp2_simple_ssl_fullstack_thread_stress_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_legacy_test || ( echo test chttp2_simple_ssl_fullstack_thread_stress_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_no_op_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_no_op_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_no_op_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_accept_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test || ( echo test chttp2_socket_pair_cancel_after_accept_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test || ( echo test chttp2_socket_pair_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_accept_and_writes_closed_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_socket_pair_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_socket_pair_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test || ( echo test chttp2_socket_pair_cancel_after_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test || ( echo test chttp2_socket_pair_cancel_after_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_before_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test || ( echo test chttp2_socket_pair_cancel_before_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test || ( echo test chttp2_socket_pair_cancel_before_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_in_a_vacuum_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test || ( echo test chttp2_socket_pair_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test || ( echo test chttp2_socket_pair_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_census_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_census_simple_request_test || ( echo test chttp2_socket_pair_census_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_test || ( echo test chttp2_socket_pair_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_disappearing_server_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_test || ( echo test chttp2_socket_pair_disappearing_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_test || ( echo test chttp2_socket_pair_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_early_server_shutdown_finishes_tags_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_tags_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_empty_batch_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_empty_batch_test || ( echo test chttp2_socket_pair_empty_batch_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_empty_batch_test || ( echo test chttp2_socket_pair_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_graceful_server_shutdown_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test || ( echo test chttp2_socket_pair_graceful_server_shutdown_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test || ( echo test chttp2_socket_pair_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_invoke_large_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test || ( echo test chttp2_socket_pair_invoke_large_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test || ( echo test chttp2_socket_pair_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_max_concurrent_streams_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test || ( echo test chttp2_socket_pair_max_concurrent_streams_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test || ( echo test chttp2_socket_pair_max_concurrent_streams_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_no_op_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_no_op_test || ( echo test chttp2_socket_pair_no_op_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_test || ( echo test chttp2_socket_pair_no_op_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_ping_pong_streaming_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test || ( echo test chttp2_socket_pair_ping_pong_streaming_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test || ( echo test chttp2_socket_pair_ping_pong_streaming_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test || ( echo test chttp2_socket_pair_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test || ( echo test chttp2_socket_pair_request_response_with_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test || ( echo test chttp2_socket_pair_request_response_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test || ( echo test chttp2_socket_pair_request_response_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_with_large_metadata_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_test || ( echo test chttp2_socket_pair_request_with_large_metadata_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_test || ( echo test chttp2_socket_pair_request_with_large_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_with_payload_test || ( echo test chttp2_socket_pair_request_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_test || ( echo test chttp2_socket_pair_request_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_simple_delayed_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test || ( echo test chttp2_socket_pair_simple_delayed_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test || ( echo test chttp2_socket_pair_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_simple_request_test || ( echo test chttp2_socket_pair_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_test || ( echo test chttp2_socket_pair_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_thread_stress_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_thread_stress_test || ( echo test chttp2_socket_pair_thread_stress_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_test || ( echo test chttp2_socket_pair_thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_writes_done_hangs_with_pending_read_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test || ( echo test chttp2_socket_pair_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test || ( echo test chttp2_socket_pair_writes_done_hangs_with_pending_read_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_accept_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_legacy_test || ( echo test chttp2_socket_pair_cancel_after_accept_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_legacy_test || ( echo test chttp2_socket_pair_cancel_after_accept_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_after_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_legacy_test || ( echo test chttp2_socket_pair_cancel_after_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_legacy_test || ( echo test chttp2_socket_pair_cancel_after_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_before_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_legacy_test || ( echo test chttp2_socket_pair_cancel_before_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_legacy_test || ( echo test chttp2_socket_pair_cancel_before_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_cancel_in_a_vacuum_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_socket_pair_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_socket_pair_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_census_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_census_simple_request_legacy_test || ( echo test chttp2_socket_pair_census_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_legacy_test || ( echo test chttp2_socket_pair_census_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_disappearing_server_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_disappearing_server_legacy_test || ( echo test chttp2_socket_pair_disappearing_server_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_legacy_test || ( echo test chttp2_socket_pair_disappearing_server_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_graceful_server_shutdown_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_legacy_test || ( echo test chttp2_socket_pair_graceful_server_shutdown_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_legacy_test || ( echo test chttp2_socket_pair_graceful_server_shutdown_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_invoke_large_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_invoke_large_request_legacy_test || ( echo test chttp2_socket_pair_invoke_large_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_legacy_test || ( echo test chttp2_socket_pair_invoke_large_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_max_concurrent_streams_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_legacy_test || ( echo test chttp2_socket_pair_max_concurrent_streams_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_legacy_test || ( echo test chttp2_socket_pair_max_concurrent_streams_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_no_op_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_no_op_legacy_test || ( echo test chttp2_socket_pair_no_op_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_legacy_test || ( echo test chttp2_socket_pair_no_op_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_ping_pong_streaming_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_legacy_test || ( echo test chttp2_socket_pair_ping_pong_streaming_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_legacy_test || ( echo test chttp2_socket_pair_ping_pong_streaming_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_with_large_metadata_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_legacy_test || ( echo test chttp2_socket_pair_request_with_large_metadata_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_legacy_test || ( echo test chttp2_socket_pair_request_with_large_metadata_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_request_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_request_with_payload_legacy_test || ( echo test chttp2_socket_pair_request_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_legacy_test || ( echo test chttp2_socket_pair_request_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_simple_delayed_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_legacy_test || ( echo test chttp2_socket_pair_simple_delayed_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_legacy_test || ( echo test chttp2_socket_pair_simple_delayed_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_simple_request_legacy_test || ( echo test chttp2_socket_pair_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_legacy_test || ( echo test chttp2_socket_pair_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_thread_stress_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_thread_stress_legacy_test || ( echo test chttp2_socket_pair_thread_stress_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_legacy_test || ( echo test chttp2_socket_pair_thread_stress_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_empty_batch_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_empty_batch_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_empty_batch_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_empty_batch_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_no_op_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_no_op_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_no_op_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_simple_request_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_request_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_thread_stress_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_thread_stress_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test"
-	$(Q) ./bins/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
 
 
 test_cxx: buildtests_cxx
 	$(E) "[RUN]     Testing channel_arguments_test"
-	$(Q) ./bins/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing credentials_test"
-	$(Q) ./bins/$(CONFIG)/credentials_test || ( echo test credentials_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/credentials_test || ( echo test credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing end2end_test"
-	$(Q) ./bins/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_test"
-	$(Q) ./bins/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sync_client_async_server_test"
-	$(Q) ./bins/$(CONFIG)/sync_client_async_server_test || ( echo test sync_client_async_server_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/sync_client_async_server_test || ( echo test sync_client_async_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_pool_test"
-	$(Q) ./bins/$(CONFIG)/thread_pool_test || ( echo test thread_pool_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/thread_pool_test || ( echo test thread_pool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing pubsub_publisher_test"
-	$(Q) ./bins/$(CONFIG)/pubsub_publisher_test || ( echo test pubsub_publisher_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/pubsub_publisher_test || ( echo test pubsub_publisher_test failed ; exit 1 )
 	$(E) "[RUN]     Testing pubsub_subscriber_test"
-	$(Q) ./bins/$(CONFIG)/pubsub_subscriber_test || ( echo test pubsub_subscriber_test failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/pubsub_subscriber_test || ( echo test pubsub_subscriber_test failed ; exit 1 )
 
 
 tools: privatelibs $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2
@@ -1623,7 +1623,7 @@ else
 $(GENDIR)/examples/pubsub/empty.pb.cc: examples/pubsub/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1632,7 +1632,7 @@ else
 $(GENDIR)/examples/pubsub/label.pb.cc: examples/pubsub/label.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1641,7 +1641,7 @@ else
 $(GENDIR)/examples/pubsub/pubsub.pb.cc: examples/pubsub/pubsub.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1650,7 +1650,7 @@ else
 $(GENDIR)/test/cpp/interop/empty.pb.cc: test/cpp/interop/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1659,7 +1659,7 @@ else
 $(GENDIR)/test/cpp/interop/messages.pb.cc: test/cpp/interop/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1668,7 +1668,7 @@ else
 $(GENDIR)/test/cpp/interop/test.pb.cc: test/cpp/interop/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1677,7 +1677,7 @@ else
 $(GENDIR)/test/cpp/qps/qpstest.pb.cc: test/cpp/qps/qpstest.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1686,7 +1686,7 @@ else
 $(GENDIR)/test/cpp/util/echo.pb.cc: test/cpp/util/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1695,7 +1695,7 @@ else
 $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc: test/cpp/util/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1704,7 +1704,7 @@ else
 $(GENDIR)/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 
@@ -1831,7 +1831,7 @@ endif
 endif
 
 clean:
-	$(Q) $(RM) -rf objs libs bins gens
+	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
 
 
 # The various libraries
@@ -1909,20 +1909,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/gpr.$(SHARED_EXT): $(LIBGPR_OBJS)  $(ZLIB_DEP)
+$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT): $(LIBGPR_OBJS)  $(ZLIB_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/gpr.def -Wl,--out-implib=libs/$(CONFIG)/libgpr-imp.a -o libs/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/gpr.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgpr-imp.a -o $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
 else
-libs/$(CONFIG)/libgpr.$(SHARED_EXT): $(LIBGPR_OBJS)  $(ZLIB_DEP)
+$(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT): $(LIBGPR_OBJS)  $(ZLIB_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgpr.so.0 -o libs/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
-	$(Q) ln -sf libgpr.$(SHARED_EXT) libs/$(CONFIG)/libgpr.so.0
-	$(Q) ln -sf libgpr.$(SHARED_EXT) libs/$(CONFIG)/libgpr.so
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.0 -o $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBGPR_OBJS) $(LDLIBS)
+	$(Q) ln -sf libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgpr.so.0
+	$(Q) ln -sf libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgpr.so
 endif
 endif
 
@@ -2272,7 +2272,7 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)
 	$(Q) rm -rf tmp-merge
 	$(Q) mkdir tmp-merge
-	$(Q) ( cd tmp-merge ; $(AR) x ../libs/$(CONFIG)/libgrpc.a )
+	$(Q) ( cd tmp-merge ; $(AR) x ../$(LIBDIR)/$(CONFIG)/libgrpc.a )
 	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; ar x ../$${l} ) ; done
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge/__.SYMDEF*
 	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge/*
@@ -2284,20 +2284,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/grpc.$(SHARED_EXT): $(LIBGRPC_OBJS)  $(ZLIB_DEP)libs/$(CONFIG)/gpr.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT): $(LIBGRPC_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/grpc.def -Wl,--out-implib=libs/$(CONFIG)/libgrpc-imp.a -o libs/$(CONFIG)/grpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr-imp
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc-imp.a -o $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr-imp
 else
-libs/$(CONFIG)/libgrpc.$(SHARED_EXT): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT): $(LIBGRPC_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
 else
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc.so.0 -o libs/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
-	$(Q) ln -sf libgrpc.$(SHARED_EXT) libs/$(CONFIG)/libgrpc.so.0
-	$(Q) ln -sf libgrpc.$(SHARED_EXT) libs/$(CONFIG)/libgrpc.so
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBGRPC_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr
+	$(Q) ln -sf libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.so.0
+	$(Q) ln -sf libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.so
 endif
 endif
 
@@ -2462,20 +2462,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP)libs/$(CONFIG)/gpr.$(SHARED_EXT)libs/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT)$(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/grpc_csharp_ext.def -Wl,--out-implib=libs/$(CONFIG)/libgrpc_csharp_ext-imp.a -o libs/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr-imp -lgrpc-imp
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr-imp -lgrpc-imp
 else
-libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
 else
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.0 -o libs/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
-	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_csharp_ext.so.0
-	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_csharp_ext.so
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
+	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.so.0
+	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.so
 endif
 endif
 
@@ -2689,20 +2689,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/grpc_unsecure.$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP)libs/$(CONFIG)/gpr.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/grpc_unsecure.def -Wl,--out-implib=libs/$(CONFIG)/libgrpc_unsecure-imp.a -o libs/$(CONFIG)/grpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr-imp
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure-imp.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr-imp
 else
-libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT)
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT): $(LIBGRPC_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
 else
-	$(Q) $(LD) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.0 -o libs/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
-	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_unsecure.so.0
-	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) libs/$(CONFIG)/libgrpc_unsecure.so
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(LIBGRPC_UNSECURE_OBJS) $(LDLIBS) -lgpr
+	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.so.0
+	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.so
 endif
 endif
 
@@ -2921,20 +2921,20 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP)libs/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=libs/$(CONFIG)/grpc++.def -Wl,--out-implib=libs/$(CONFIG)/libgrpc++-imp.a -o libs/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++-imp.a -o $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc-imp
 else
-libs/$(CONFIG)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
 else
-	$(Q) $(LDXX) $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o libs/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
-	$(Q) ln -sf libgrpc++.$(SHARED_EXT) libs/$(CONFIG)/libgrpc++.so.0
-	$(Q) ln -sf libgrpc++.$(SHARED_EXT) libs/$(CONFIG)/libgrpc++.so
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++.so.0
+	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++.so
 endif
 endif
 
@@ -2971,9 +2971,9 @@ $(OBJDIR)/$(CONFIG)/src/cpp/util/time.o:
 
 
 LIBGRPC++_TEST_UTIL_SRC = \
-    gens/test/cpp/util/messages.pb.cc \
-    gens/test/cpp/util/echo.pb.cc \
-    gens/test/cpp/util/echo_duplicate.pb.cc \
+    $(GENDIR)/test/cpp/util/messages.pb.cc \
+    $(GENDIR)/test/cpp/util/echo.pb.cc \
+    $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc \
     test/cpp/end2end/async_test_server.cc \
     test/cpp/util/create_test_channel.cc \
 
@@ -3034,14 +3034,14 @@ endif
 
 
 
-$(OBJDIR)/$(CONFIG)/test/cpp/end2end/async_test_server.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o:     gens/test/cpp/util/messages.pb.cc    gens/test/cpp/util/echo.pb.cc    gens/test/cpp/util/echo_duplicate.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/async_test_server.o:     $(GENDIR)/test/cpp/util/messages.pb.cc    $(GENDIR)/test/cpp/util/echo.pb.cc    $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o:     $(GENDIR)/test/cpp/util/messages.pb.cc    $(GENDIR)/test/cpp/util/echo.pb.cc    $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc
 
 
 LIBPUBSUB_CLIENT_LIB_SRC = \
-    gens/examples/pubsub/label.pb.cc \
-    gens/examples/pubsub/empty.pb.cc \
-    gens/examples/pubsub/pubsub.pb.cc \
+    $(GENDIR)/examples/pubsub/label.pb.cc \
+    $(GENDIR)/examples/pubsub/empty.pb.cc \
+    $(GENDIR)/examples/pubsub/pubsub.pb.cc \
     examples/pubsub/publisher.cc \
     examples/pubsub/subscriber.cc \
 
@@ -3102,8 +3102,8 @@ endif
 
 
 
-$(OBJDIR)/$(CONFIG)/examples/pubsub/publisher.o:     gens/examples/pubsub/label.pb.cc    gens/examples/pubsub/empty.pb.cc    gens/examples/pubsub/pubsub.pb.cc
-$(OBJDIR)/$(CONFIG)/examples/pubsub/subscriber.o:     gens/examples/pubsub/label.pb.cc    gens/examples/pubsub/empty.pb.cc    gens/examples/pubsub/pubsub.pb.cc
+$(OBJDIR)/$(CONFIG)/examples/pubsub/publisher.o:     $(GENDIR)/examples/pubsub/label.pb.cc    $(GENDIR)/examples/pubsub/empty.pb.cc    $(GENDIR)/examples/pubsub/pubsub.pb.cc
+$(OBJDIR)/$(CONFIG)/examples/pubsub/subscriber.o:     $(GENDIR)/examples/pubsub/label.pb.cc    $(GENDIR)/examples/pubsub/empty.pb.cc    $(GENDIR)/examples/pubsub/pubsub.pb.cc
 
 
 LIBEND2END_FIXTURE_CHTTP2_FAKE_SECURITY_SRC = \
@@ -7154,9 +7154,9 @@ endif
 
 
 INTEROP_CLIENT_SRC = \
-    gens/test/cpp/interop/empty.pb.cc \
-    gens/test/cpp/interop/messages.pb.cc \
-    gens/test/cpp/interop/test.pb.cc \
+    $(GENDIR)/test/cpp/interop/empty.pb.cc \
+    $(GENDIR)/test/cpp/interop/messages.pb.cc \
+    $(GENDIR)/test/cpp/interop/test.pb.cc \
     test/cpp/interop/client.cc \
 
 INTEROP_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_CLIENT_SRC))))
@@ -7191,9 +7191,9 @@ endif
 
 
 INTEROP_SERVER_SRC = \
-    gens/test/cpp/interop/empty.pb.cc \
-    gens/test/cpp/interop/messages.pb.cc \
-    gens/test/cpp/interop/test.pb.cc \
+    $(GENDIR)/test/cpp/interop/empty.pb.cc \
+    $(GENDIR)/test/cpp/interop/messages.pb.cc \
+    $(GENDIR)/test/cpp/interop/test.pb.cc \
     test/cpp/interop/server.cc \
 
 INTEROP_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INTEROP_SERVER_SRC))))
@@ -7228,7 +7228,7 @@ endif
 
 
 QPS_CLIENT_SRC = \
-    gens/test/cpp/qps/qpstest.pb.cc \
+    $(GENDIR)/test/cpp/qps/qpstest.pb.cc \
     test/cpp/qps/client.cc \
 
 QPS_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_CLIENT_SRC))))
@@ -7261,7 +7261,7 @@ endif
 
 
 QPS_SERVER_SRC = \
-    gens/test/cpp/qps/qpstest.pb.cc \
+    $(GENDIR)/test/cpp/qps/qpstest.pb.cc \
     test/cpp/qps/server.cc \
 
 QPS_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_SERVER_SRC))))
