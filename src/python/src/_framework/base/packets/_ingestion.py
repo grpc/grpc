@@ -183,7 +183,7 @@ class _WrappedConsumer(object):
       payload: A customer-significant payload object. May be None only if
         complete is True.
       complete: Whether or not the end of the payload sequence has been reached.
-        May be False only if payload is not None.
+        Must be True if payload is None.
 
     Returns:
       True if the wrapped consumer made progress or False if the wrapped
@@ -191,13 +191,12 @@ class _WrappedConsumer(object):
         progress.
     """
     try:
-      if payload:
-        if complete:
-          self._consumer.consume_and_terminate(payload)
-        else:
-          self._consumer.consume(payload)
-      else:
+      if payload is None:
         self._consumer.terminate()
+      elif complete:
+        self._consumer.consume_and_terminate(payload)
+      else:
+        self._consumer.consume(payload)
       return True
     except abandonment.Abandoned:
       return False
