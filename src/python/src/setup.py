@@ -32,19 +32,17 @@
 from distutils import core as _core
 
 _EXTENSION_SOURCES = (
-    'src/_adapter/_c.c',
-    'src/_adapter/_call.c',
-    'src/_adapter/_channel.c',
-    'src/_adapter/_completion_queue.c',
-    'src/_adapter/_error.c',
-    'src/_adapter/_server.c',
-    'src/_adapter/_server_credentials.c',
+    '_adapter/_c.c',
+    '_adapter/_call.c',
+    '_adapter/_channel.c',
+    '_adapter/_completion_queue.c',
+    '_adapter/_error.c',
+    '_adapter/_server.c',
+    '_adapter/_server_credentials.c',
 )
 
 _EXTENSION_INCLUDE_DIRECTORIES = (
-    'src',
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../include',
+    '.',
 )
 
 _EXTENSION_LIBRARIES = (
@@ -52,16 +50,11 @@ _EXTENSION_LIBRARIES = (
     'grpc',
 )
 
-_EXTENSION_LIBRARY_DIRECTORIES = (
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../libs/dbg',
-)
-
 _EXTENSION_MODULE = _core.Extension(
     '_adapter._c', sources=list(_EXTENSION_SOURCES),
     include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
     libraries=_EXTENSION_LIBRARIES,
-    library_dirs=_EXTENSION_LIBRARY_DIRECTORIES)
+    )
 
 _PACKAGES=(
     '_adapter',
@@ -73,12 +66,14 @@ _PACKAGES=(
     '_framework.face.testing',
     '_framework.foundation',
     '_junkdrawer',
+    'grpc_early_adopter',
 )
 
 _PACKAGE_DIRECTORIES = {
-    '_adapter': 'src/_adapter',
-    '_framework': 'src/_framework',
-    '_junkdrawer': 'src/_junkdrawer',
+    '_adapter': '_adapter',
+    '_framework': '_framework',
+    '_junkdrawer': '_junkdrawer',
+    'grpc_early_adopter': 'grpc_early_adopter',
 }
 
 _core.setup(
