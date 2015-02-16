@@ -55,6 +55,7 @@ LICENSE_FMT = {
   '.py': '# %s',
   '.rb': '# %s',
   '.sh': '# %s',
+  '.proto': '// %s',
 }
 
 # pregenerate the actual text that we should have
