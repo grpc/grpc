@@ -52,6 +52,7 @@ LICENSE_FMT = {
   '.cc': ' * %s',
   '.h': ' * %s',
   '.py': '# %s',
+  '.rb': '# %s',
 }
 
 # pregenerate the actual text that we should have
