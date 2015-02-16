@@ -57,6 +57,7 @@ LICENSE_FMT = {
   '.sh': '# %s',
   '.proto': '// %s',
   '.js': ' * %s',
+  '.cs': '// %s',
 }
 
 # pregenerate the actual text that we should have
@@ -71,7 +72,9 @@ OLD_LICENSE_TEXT = dict(
 for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
                                         shell=True).splitlines():
   ext = os.path.splitext(filename)[1]
-  if ext not in LICENSE_TEXT: continue
+  if ext not in LICENSE_TEXT: 
+    #print 'pass: %s' % filename
+    continue
   license = LICENSE_TEXT[ext]
   old_license = OLD_LICENSE_TEXT[ext]
   with open(filename) as f:
@@ -81,6 +84,6 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
   elif old_license in text:
     pass
     #print 'old license in: %s' % filename
-  elif 'DO NOT EDIT' not in text:
+  elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename:
     print 'no license in: %s' % filename
 
