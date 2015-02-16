@@ -54,6 +54,7 @@ LICENSE_FMT = {
   '.php': ' * %s',
   '.py': '# %s',
   '.rb': '# %s',
+  '.sh': '# %s',
 }
 
 # pregenerate the actual text that we should have
