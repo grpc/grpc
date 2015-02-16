@@ -31,14 +31,6 @@
  *
  */
 
-/* Posix code for gpr time support. */
-
-/* So we get nanosleep and clock_* */
-#if !defined _POSIX_C_SOURCE || _POSIX_C_SOURCE < 199309L
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 199309L
-#endif
-
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_TIME
@@ -70,7 +62,9 @@ gpr_timespec gpr_now(void) {
 }
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
-/* TODO(klempner): Add special handling for Apple. */
+
+#include <sys/time.h>
+
 gpr_timespec gpr_now(void) {
   gpr_timespec now;
   struct timeval now_tv;

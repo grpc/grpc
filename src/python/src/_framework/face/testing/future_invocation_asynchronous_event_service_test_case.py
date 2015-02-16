@@ -116,7 +116,7 @@ class FutureInvocationAsynchronousEventServiceTestCase(
 
         response_future = self.stub.future_value_in_value_out(
             name, request, _TIMEOUT)
-        response = response_future.outcome().return_value
+        response = response_future.result()
 
         test_messages.verify(request, response, self)
 
@@ -144,7 +144,7 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         with request_iterator.pause():
           response_future = self.stub.future_stream_in_value_out(
               name, request_iterator, _TIMEOUT)
-        response = response_future.outcome().return_value
+        response = response_future.result()
 
         test_messages.verify(requests, response, self)
 
@@ -173,13 +173,13 @@ class FutureInvocationAsynchronousEventServiceTestCase(
 
         first_response_future = self.stub.future_value_in_value_out(
             name, first_request, _TIMEOUT)
-        first_response = first_response_future.outcome().return_value
+        first_response = first_response_future.result()
 
         test_messages.verify(first_request, first_response, self)
 
         second_response_future = self.stub.future_value_in_value_out(
             name, second_request, _TIMEOUT)
-        second_response = second_response_future.outcome().return_value
+        second_response = second_response_future.result()
 
         test_messages.verify(second_request, second_response, self)
 
@@ -192,10 +192,10 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         with self.control.pause():
           response_future = self.stub.future_value_in_value_out(
               name, request, _TIMEOUT)
-          outcome = response_future.outcome()
-
-        self.assertIsInstance(
-            outcome.exception, exceptions.ExpirationError)
+          self.assertIsInstance(
+              response_future.exception(), exceptions.ExpirationError)
+          with self.assertRaises(exceptions.ExpirationError):
+            response_future.result()
 
   def testExpiredUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -203,11 +203,11 @@ class FutureInvocationAsynchronousEventServiceTestCase(
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
-        with self.control.pause(), self.assertRaises(
-            exceptions.ExpirationError):
+        with self.control.pause():
           response_iterator = self.stub.inline_value_in_stream_out(
               name, request, _TIMEOUT)
-          list(response_iterator)
+          with self.assertRaises(exceptions.ExpirationError):
+            list(response_iterator)
 
   def testExpiredStreamRequestUnaryResponse(self):
     for name, test_messages_sequence in (
@@ -218,10 +218,10 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         with self.control.pause():
           response_future = self.stub.future_stream_in_value_out(
               name, iter(requests), _TIMEOUT)
-          outcome = response_future.outcome()
-
-        self.assertIsInstance(
-            outcome.exception, exceptions.ExpirationError)
+          self.assertIsInstance(
+              response_future.exception(), exceptions.ExpirationError)
+          with self.assertRaises(exceptions.ExpirationError):
+            response_future.result()
 
   def testExpiredStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -229,11 +229,11 @@ class FutureInvocationAsynchronousEventServiceTestCase(
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
-        with self.control.pause(), self.assertRaises(
-            exceptions.ExpirationError):
+        with self.control.pause():
           response_iterator = self.stub.inline_stream_in_stream_out(
               name, iter(requests), _TIMEOUT)
-          list(response_iterator)
+          with self.assertRaises(exceptions.ExpirationError):
+            list(response_iterator)
 
   def testFailedUnaryRequestUnaryResponse(self):
     for name, test_messages_sequence in (
@@ -244,13 +244,15 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         with self.control.fail():
           response_future = self.stub.future_value_in_value_out(
               name, request, _TIMEOUT)
-          outcome = response_future.outcome()
 
-        # Because the servicer fails outside of the thread from which the
-        # servicer-side runtime called into it its failure is indistinguishable
-        # from simply not having called its response_callback before the
-        # expiration of the RPC.
-        self.assertIsInstance(outcome.exception, exceptions.ExpirationError)
+          # Because the servicer fails outside of the thread from which the
+          # servicer-side runtime called into it its failure is
+          # indistinguishable from simply not having called its
+          # response_callback before the expiration of the RPC.
+          self.assertIsInstance(
+              response_future.exception(), exceptions.ExpirationError)
+          with self.assertRaises(exceptions.ExpirationError):
+            response_future.result()
 
   def testFailedUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -276,13 +278,15 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         with self.control.fail():
           response_future = self.stub.future_stream_in_value_out(
               name, iter(requests), _TIMEOUT)
-          outcome = response_future.outcome()
 
-        # Because the servicer fails outside of the thread from which the
-        # servicer-side runtime called into it its failure is indistinguishable
-        # from simply not having called its response_callback before the
-        # expiration of the RPC.
-        self.assertIsInstance(outcome.exception, exceptions.ExpirationError)
+          # Because the servicer fails outside of the thread from which the
+          # servicer-side runtime called into it its failure is
+          # indistinguishable from simply not having called its
+          # response_callback before the expiration of the RPC.
+          self.assertIsInstance(
+              response_future.exception(), exceptions.ExpirationError)
+          with self.assertRaises(exceptions.ExpirationError):
+            response_future.result()
 
   def testFailedStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -310,8 +314,8 @@ class FutureInvocationAsynchronousEventServiceTestCase(
             name, first_request, _TIMEOUT)
         second_response_future = self.stub.future_value_in_value_out(
             name, second_request, _TIMEOUT)
-        first_response = first_response_future.outcome().return_value
-        second_response = second_response_future.outcome().return_value
+        first_response = first_response_future.result()
+        second_response = second_response_future.result()
 
         test_messages.verify(first_request, first_response, self)
         test_messages.verify(second_request, second_response, self)
@@ -329,10 +333,10 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         with self.control.pause():
           response_future = self.stub.future_value_in_value_out(
               name, request, _TIMEOUT)
-          cancelled = response_future.cancel()
+          cancel_method_return_value = response_future.cancel()
 
-        self.assertFalse(cancelled)
-        self.assertEqual(future.ABORTED, response_future.outcome().category)
+        self.assertFalse(cancel_method_return_value)
+        self.assertTrue(response_future.cancelled())
 
   def testCancelledUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -345,7 +349,7 @@ class FutureInvocationAsynchronousEventServiceTestCase(
               name, request, _TIMEOUT)
           response_iterator.cancel()
 
-        with self.assertRaises(exceptions.CancellationError):
+        with self.assertRaises(future.CancelledError):
           next(response_iterator)
 
   def testCancelledStreamRequestUnaryResponse(self):
@@ -357,10 +361,10 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         with self.control.pause():
           response_future = self.stub.future_stream_in_value_out(
               name, iter(requests), _TIMEOUT)
-          cancelled = response_future.cancel()
+          cancel_method_return_value = response_future.cancel()
 
-        self.assertFalse(cancelled)
-        self.assertEqual(future.ABORTED, response_future.outcome().category)
+        self.assertFalse(cancel_method_return_value)
+        self.assertTrue(response_future.cancelled())
 
   def testCancelledStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -373,5 +377,5 @@ class FutureInvocationAsynchronousEventServiceTestCase(
               name, iter(requests), _TIMEOUT)
           response_iterator.cancel()
 
-        with self.assertRaises(exceptions.CancellationError):
+        with self.assertRaises(future.CancelledError):
           next(response_iterator)
