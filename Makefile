@@ -75,13 +75,13 @@ DEFINES_asan = NDEBUG
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
 CC_msan = clang
-CXX_msan = clang++
+CXX_msan = clang++-libc++
 LD_msan = clang
-LDXX_msan = clang++
-CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer
+LDXX_msan = clang++-libc++
+CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
 OPENSSL_CONFIG_msan = no-asm
-LDFLAGS_msan = -fsanitize=memory
+LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG
 
 VALID_CONFIG_ubsan = 1
