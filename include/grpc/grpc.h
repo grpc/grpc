@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-/* Completion Channels enable notification of the completion of asynchronous
+/* Completion Queues enable notification of the completion of asynchronous
    actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
 
@@ -156,7 +156,8 @@ typedef enum grpc_op_error {
 struct grpc_byte_buffer;
 typedef struct grpc_byte_buffer grpc_byte_buffer;
 
-/* Sample helpers to obtain byte buffers (these will certainly move place */
+/* Sample helpers to obtain byte buffers (these will certainly move
+   someplace else) */
 grpc_byte_buffer *grpc_byte_buffer_create(gpr_slice *slices, size_t nslices);
 grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb);
 size_t grpc_byte_buffer_length(grpc_byte_buffer *bb);
@@ -340,12 +341,12 @@ typedef struct grpc_op {
 /* Initialize the grpc library */
 void grpc_init(void);
 
-/* Shutdown the grpc library */
+/* Shut down the grpc library */
 void grpc_shutdown(void);
 
 grpc_completion_queue *grpc_completion_queue_create(void);
 
-/* Blocks until an event is available, the completion queue is being shutdown,
+/* Blocks until an event is available, the completion queue is being shut down,
    or deadline is reached. Returns NULL on timeout, otherwise the event that
    occurred. Callers should call grpc_event_finish once they have processed
    the event.
@@ -365,7 +366,7 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cq,
 grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
                                         gpr_timespec deadline);
 
-/* Cleanup any data owned by the event */
+/* Clean up any data owned by the event */
 void grpc_event_finish(grpc_event *event);
 
 /* Begin destruction of a completion queue. Once all possible events are
