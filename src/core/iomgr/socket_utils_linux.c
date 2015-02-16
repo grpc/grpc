@@ -31,12 +31,9 @@
  *
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_LINUX
+#ifdef GPR_LINUX_SOCKETUTILS
 
 #include "src/core/iomgr/socket_utils_posix.h"
 

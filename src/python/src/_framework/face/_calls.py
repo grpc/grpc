@@ -29,6 +29,7 @@
 
 """Utility functions for invoking RPCs."""
 
+import sys
 import threading
 
 from _framework.base import interfaces as base_interfaces
@@ -79,20 +80,46 @@ def _stream_event_subscription(result_consumer, abortion_callback):
       _EventServicedIngestor(result_consumer, abortion_callback))
 
 
+# NOTE(nathaniel): This class has some extremely special semantics around
+# cancellation that allow it to be used by both "blocking" APIs and "futures"
+# APIs.
+#
+# Since futures.Future defines its own exception for cancellation, we want these
+# objects, when returned by methods of a returning-Futures-from-other-methods
+# object, to raise the same exception for cancellation. But that's weird in a
+# blocking API - why should this object, also returned by methods of blocking
+# APIs, raise exceptions from the "future" module? Should we do something like
+# have this class be parameterized by the type of exception that it raises in
+# cancellation circumstances?
+#
+# We don't have to take such a dramatic step: since blocking APIs define no
+# cancellation semantics whatsoever, there is no supported way for
+# blocking-API-users of these objects to cancel RPCs, and thus no supported way
+# for them to see an exception the type of which would be weird to them.
+#
+# Bonus: in both blocking and futures APIs, this object still properly raises
+# exceptions.CancellationError for any *server-side cancellation* of an RPC.
 class _OperationCancellableIterator(interfaces.CancellableIterator):
   """An interfaces.CancellableIterator for response-streaming operations."""
 
   def __init__(self, rendezvous, operation):
+    self._lock = threading.Lock()
     self._rendezvous = rendezvous
     self._operation = operation
+    self._cancelled = False
 
   def __iter__(self):
     return self
 
   def next(self):
+    with self._lock:
+      if self._cancelled:
+        raise future.CancelledError()
     return next(self._rendezvous)
 
   def cancel(self):
+    with self._lock:
+      self._cancelled = True
     self._operation.cancel()
     self._rendezvous.set_outcome(base_interfaces.Outcome.CANCELLED)
 
@@ -105,46 +132,126 @@ class _OperationFuture(future.Future):
     self._rendezvous = rendezvous
     self._operation = operation
 
-    self._outcome = None
+    self._cancelled = False
+    self._computed = False
+    self._payload = None
+    self._exception = None
+    self._traceback = None
     self._callbacks = []
 
   def cancel(self):
     """See future.Future.cancel for specification."""
     with self._condition:
-      if self._outcome is None:
+      if not self._cancelled and not self._computed:
         self._operation.cancel()
-        self._outcome = future.aborted()
+        self._cancelled = True
         self._condition.notify_all()
     return False
 
   def cancelled(self):
     """See future.Future.cancelled for specification."""
-    return False
+    with self._condition:
+      return self._cancelled
+
+  def running(self):
+    """See future.Future.running for specification."""
+    with self._condition:
+      return not self._cancelled and not self._computed
 
   def done(self):
     """See future.Future.done for specification."""
     with self._condition:
-      return (self._outcome is not None and
-              self._outcome.category is not future.ABORTED)
+      return self._cancelled or self._computed
 
-  def outcome(self):
-    """See future.Future.outcome for specification."""
+  def result(self, timeout=None):
+    """See future.Future.result for specification."""
     with self._condition:
-      while self._outcome is None:
-        self._condition.wait()
-      return self._outcome
+      if self._cancelled:
+        raise future.CancelledError()
+      if self._computed:
+        if self._payload is None:
+          raise self._exception  # pylint: disable=raising-bad-type
+        else:
+          return self._payload
 
-  def add_done_callback(self, callback):
+      condition = threading.Condition()
+      def notify_condition(unused_future):
+        with condition:
+          condition.notify()
+      self._callbacks.append(notify_condition)
+
+    with condition:
+      condition.wait(timeout=timeout)
+
+    with self._condition:
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        if self._payload is None:
+          raise self._exception  # pylint: disable=raising-bad-type
+        else:
+          return self._payload
+      else:
+        raise future.TimeoutError()
+
+  def exception(self, timeout=None):
+    """See future.Future.exception for specification."""
+    with self._condition:
+      if self._cancelled:
+        raise future.CancelledError()
+      if self._computed:
+        return self._exception
+
+      condition = threading.Condition()
+      def notify_condition(unused_future):
+        with condition:
+          condition.notify()
+      self._callbacks.append(notify_condition)
+
+    with condition:
+      condition.wait(timeout=timeout)
+
+    with self._condition:
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        return self._exception
+      else:
+        raise future.TimeoutError()
+
+  def traceback(self, timeout=None):
+    """See future.Future.traceback for specification."""
+    with self._condition:
+      if self._cancelled:
+        raise future.CancelledError()
+      if self._computed:
+        return self._traceback
+
+      condition = threading.Condition()
+      def notify_condition(unused_future):
+        with condition:
+          condition.notify()
+      self._callbacks.append(notify_condition)
+
+    with condition:
+      condition.wait(timeout=timeout)
+
+    with self._condition:
+      if self._cancelled:
+        raise future.CancelledError()
+      elif self._computed:
+        return self._traceback
+      else:
+        raise future.TimeoutError()
+
+  def add_done_callback(self, fn):
     """See future.Future.add_done_callback for specification."""
     with self._condition:
       if self._callbacks is not None:
-        self._callbacks.add(callback)
+        self._callbacks.add(fn)
         return
 
-      outcome = self._outcome
-
-    callable_util.call_logging_exceptions(
-        callback, _DONE_CALLBACK_LOG_MESSAGE, outcome)
+    callable_util.call_logging_exceptions(fn, _DONE_CALLBACK_LOG_MESSAGE, self)
 
   def on_operation_termination(self, operation_outcome):
     """Indicates to this object that the operation has terminated.
@@ -154,34 +261,42 @@ class _OperationFuture(future.Future):
         outcome of the operation.
     """
     with self._condition:
-      if (self._outcome is None and
-          operation_outcome is not base_interfaces.Outcome.COMPLETED):
-        self._outcome = future.raised(
-            _control.abortion_outcome_to_exception(operation_outcome))
-        self._condition.notify_all()
-
-      outcome = self._outcome
-      rendezvous = self._rendezvous
-      callbacks = list(self._callbacks)
-      self._callbacks = None
-
-    if outcome is None:
-      try:
-        return_value = next(rendezvous)
-      except Exception as e:  # pylint: disable=broad-except
-        outcome = future.raised(e)
+      cancelled = self._cancelled
+      if cancelled:
+        callbacks = list(self._callbacks)
+        self._callbacks = None
       else:
-        outcome = future.returned(return_value)
+        rendezvous = self._rendezvous
+
+    if not cancelled:
+      payload = None
+      exception = None
+      traceback = None
+      if operation_outcome == base_interfaces.Outcome.COMPLETED:
+        try:
+          payload = next(rendezvous)
+        except Exception as e:  # pylint: disable=broad-except
+          exception = e
+          traceback = sys.exc_info()[2]
+      else:
+        try:
+          # We raise and then immediately catch in order to create a traceback.
+          raise _control.abortion_outcome_to_exception(operation_outcome)
+        except Exception as e:  # pylint: disable=broad-except
+          exception = e
+          traceback = sys.exc_info()[2]
       with self._condition:
-        if self._outcome is None:
-          self._outcome = outcome
-          self._condition.notify_all()
-        else:
-          outcome = self._outcome
+        if not self._cancelled:
+          self._computed = True
+          self._payload = payload
+          self._exception = exception
+          self._traceback = traceback
+        callbacks = list(self._callbacks)
+        self._callbacks = None
 
     for callback in callbacks:
       callable_util.call_logging_exceptions(
-          callback, _DONE_CALLBACK_LOG_MESSAGE, outcome)
+          callback, _DONE_CALLBACK_LOG_MESSAGE, self)
 
 
 class _Call(interfaces.Call):
