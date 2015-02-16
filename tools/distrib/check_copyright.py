@@ -56,6 +56,7 @@ LICENSE_FMT = {
   '.rb': '# %s',
   '.sh': '# %s',
   '.proto': '// %s',
+  '.js': ' * %s',
 }
 
 # pregenerate the actual text that we should have
