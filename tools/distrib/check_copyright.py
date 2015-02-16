@@ -51,6 +51,7 @@ LICENSE_FMT = {
   '.c': ' * %s',
   '.cc': ' * %s',
   '.h': ' * %s',
+  '.php': ' * %s',
   '.py': '# %s',
   '.rb': '# %s',
 }
@@ -77,6 +78,6 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
   elif old_license in text:
     pass
     #print 'old license in: %s' % filename
-  else:
+  elif 'DO NOT EDIT' not in text:
     print 'no license in: %s' % filename
 
