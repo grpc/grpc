@@ -40,6 +40,9 @@
 #include <grpc/support/time.h>
 #include "src/core/transport/metadata.h"
 
+/* this many stream ops are inlined into a sopb before allocating */
+#define GRPC_SOPB_INLINE_ELEMENTS 16
+
 /* Operations that can be performed on a stream.
    Used by grpc_stream_op. */
 typedef enum grpc_stream_op_code {
@@ -96,6 +99,7 @@ typedef struct grpc_stream_op_buffer {
   grpc_stream_op *ops;
   size_t nops;
   size_t capacity;
+  grpc_stream_op inlined_ops[GRPC_SOPB_INLINE_ELEMENTS];
 } grpc_stream_op_buffer;
 
 /* Initialize a stream op buffer */
@@ -104,6 +108,8 @@ void grpc_sopb_init(grpc_stream_op_buffer *sopb);
 void grpc_sopb_destroy(grpc_stream_op_buffer *sopb);
 /* Reset a sopb to no elements */
 void grpc_sopb_reset(grpc_stream_op_buffer *sopb);
+/* Swap two sopbs */
+void grpc_sopb_swap(grpc_stream_op_buffer *a, grpc_stream_op_buffer *b);
 
 void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops);
 
