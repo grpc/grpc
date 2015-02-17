@@ -292,6 +292,9 @@
       "src": [
         "test/core/util/test_config.c"
       ],
+      "deps": [
+        "gpr"
+      ],
       "vs_project_guid": "{EAB0A629-17A9-44DB-B5FF-E91A721FE037}"
     },
     {
@@ -369,6 +372,10 @@
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
         "test/core/util/slice_splitter.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
       ],
       "vs_project_guid": "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
     },
