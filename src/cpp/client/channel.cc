@@ -84,7 +84,7 @@ Call Channel::CreateCall(const RpcMethod &method, ClientContext *context,
       grpc_channel_create_call(
           c_channel_, cq->cq(), method.name(),
           context->authority().empty() ?  target_.c_str()
-                                       : context->authority(),
+                                       : context->authority().c_str(),
           context->RawDeadline());
   context->set_call(c_call);
   return Call(c_call, this, cq);
