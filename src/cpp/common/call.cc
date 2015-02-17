@@ -255,7 +255,7 @@ void CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   // Parse received message if any.
   if (recv_message_) {
     if (recv_message_buf_) {
-      got_message = true;
+      got_message = *status;
       *status = *status && DeserializeProto(recv_message_buf_, recv_message_);
       grpc_byte_buffer_destroy(recv_message_buf_);
       recv_message_buf_ = nullptr;
