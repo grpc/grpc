@@ -160,7 +160,7 @@ The first step in creating our example is to define a *service*: an RPC
 service specifies the methods that can be called remotely with their parameters
 and return types. As you saw in the
 [overview](#protocolbuffers) above, gRPC does this using [protocol
-buffers]((https://developers.google.com/protocol-buffers/docs/overview). We
+buffers](https://developers.google.com/protocol-buffers/docs/overview). We
 use the protocol buffers interface definition language (IDL) to define our
 service methods, and define the parameters and return
 types as protocol buffer message types. Both the client and the
