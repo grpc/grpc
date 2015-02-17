@@ -1352,6 +1352,20 @@
       ]
     },
     {
+      "name": "multi_init_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/surface/multi_init_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "murmur_hash_test",
       "build": "test",
       "language": "c",
@@ -1736,12 +1750,6 @@
       "name": "ruby_plugin",
       "build": "protoc",
       "language": "c++",
-      "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers-inl.h",
-        "src/compiler/cpp_generator_map-inl.h",
-        "src/compiler/cpp_generator_string-inl.h"
-      ],
       "src": [
         "src/compiler/ruby_generator.cc",
         "src/compiler/ruby_plugin.cc"

@@ -215,6 +215,10 @@
   }, 
   {
     "language": "c", 
+    "name": "multi_init_test"
+  }, 
+  {
+    "language": "c", 
     "name": "murmur_hash_test"
   }, 
   {
