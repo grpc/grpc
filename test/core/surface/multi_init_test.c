@@ -32,35 +32,22 @@
  */
 
 #include <grpc/grpc.h>
-#include "src/core/statistics/census_interface.h"
-#include "src/core/iomgr/iomgr.h"
+#include "test/core/util/test_config.h"
 
-static gpr_once g_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
-static int g_initializations;
-
-static void do_init() {
-  gpr_mu_init(&g_init_mu);
-  g_initializations = 0;
-}
-
-void grpc_init(void) {
-  gpr_once_init(&g_init, do_init);
-
-  gpr_mu_lock(&g_init_mu);
-  if (++g_initializations == 1) {
-    grpc_iomgr_init();
-    census_init();
+static void test(int rounds) {
+  int i;
+  for (i = 0; i < rounds; i++) {
+    grpc_init();
   }
-  gpr_mu_unlock(&g_init_mu);
-}
-
-void grpc_shutdown(void) {
-  gpr_mu_lock(&g_init_mu);
-  if (--g_initializations == 0) {
-    grpc_iomgr_shutdown();
-    census_shutdown();
+  for (i = 0; i < rounds; i++) {
+    grpc_shutdown();
   }
-  gpr_mu_unlock(&g_init_mu);
 }
 
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test(1);
+  test(2);
+  test(3);
+  return 0;
+}

@@ -215,6 +215,10 @@
   }, 
   {
     "language": "c", 
+    "name": "multi_init_test"
+  }, 
+  {
+    "language": "c", 
     "name": "murmur_hash_test"
   }, 
   {
@@ -279,6 +283,14 @@
   }, 
   {
     "language": "c++", 
+    "name": "pubsub_publisher_test"
+  }, 
+  {
+    "language": "c++", 
+    "name": "pubsub_subscriber_test"
+  }, 
+  {
+    "language": "c++", 
     "name": "status_test"
   }, 
   {
@@ -288,14 +300,6 @@
   {
     "language": "c++", 
     "name": "thread_pool_test"
-  }, 
-  {
-    "language": "c++", 
-    "name": "pubsub_publisher_test"
-  }, 
-  {
-    "language": "c++", 
-    "name": "pubsub_subscriber_test"
   }, 
   {
     "language": "c", 
