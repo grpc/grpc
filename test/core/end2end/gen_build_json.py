@@ -8,6 +8,7 @@ import simplejson
 END2END_FIXTURES = [
     'chttp2_fake_security',
     'chttp2_fullstack',
+    'chttp2_fullstack_uds',
     'chttp2_simple_ssl_fullstack',
     'chttp2_simple_ssl_with_oauth2_fullstack',
     'chttp2_socket_pair',

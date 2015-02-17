@@ -575,6 +575,54 @@ chttp2_fullstack_simple_delayed_request_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_
 chttp2_fullstack_simple_request_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_legacy_test
 chttp2_fullstack_thread_stress_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test
 chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test
+chttp2_fullstack_uds_cancel_after_accept_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test
+chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test
+chttp2_fullstack_uds_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test
+chttp2_fullstack_uds_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test
+chttp2_fullstack_uds_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test
+chttp2_fullstack_uds_census_simple_request_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test
+chttp2_fullstack_uds_disappearing_server_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test
+chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test
+chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test
+chttp2_fullstack_uds_empty_batch_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test
+chttp2_fullstack_uds_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test
+chttp2_fullstack_uds_invoke_large_request_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test
+chttp2_fullstack_uds_max_concurrent_streams_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test
+chttp2_fullstack_uds_no_op_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test
+chttp2_fullstack_uds_ping_pong_streaming_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test
+chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test
+chttp2_fullstack_uds_request_response_with_metadata_and_payload_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test
+chttp2_fullstack_uds_request_response_with_payload_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test
+chttp2_fullstack_uds_request_with_large_metadata_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test
+chttp2_fullstack_uds_request_with_payload_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test
+chttp2_fullstack_uds_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test
+chttp2_fullstack_uds_simple_request_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test
+chttp2_fullstack_uds_thread_stress_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test
+chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test
+chttp2_fullstack_uds_cancel_after_accept_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test
+chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test
+chttp2_fullstack_uds_cancel_after_invoke_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test
+chttp2_fullstack_uds_cancel_before_invoke_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test
+chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test
+chttp2_fullstack_uds_census_simple_request_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test
+chttp2_fullstack_uds_disappearing_server_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test
+chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test
+chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test
+chttp2_fullstack_uds_graceful_server_shutdown_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test
+chttp2_fullstack_uds_invoke_large_request_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test
+chttp2_fullstack_uds_max_concurrent_streams_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test
+chttp2_fullstack_uds_no_op_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test
+chttp2_fullstack_uds_ping_pong_streaming_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test
+chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test
+chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test
+chttp2_fullstack_uds_request_response_with_payload_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test
+chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test
+chttp2_fullstack_uds_request_with_large_metadata_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test
+chttp2_fullstack_uds_request_with_payload_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test
+chttp2_fullstack_uds_simple_delayed_request_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test
+chttp2_fullstack_uds_simple_request_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test
+chttp2_fullstack_uds_thread_stress_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test
+chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test: $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test
 chttp2_simple_ssl_fullstack_cancel_after_accept_test: $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test
 chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test: $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test
 chttp2_simple_ssl_fullstack_cancel_after_invoke_test: $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test
@@ -824,13 +872,13 @@ shared_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fake_security.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_fullstack.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_simple_ssl_with_oauth2_fullstack.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_socket_pair.a $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_socket_pair_one_byte_at_a_time.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a
 
 privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: privatelibs_c $(BINDIR)/$(CONFIG)/alarm_heap_test $(BINDIR)/$(CONFIG)/alarm_list_test $(BINDIR)/$(CONFIG)/alarm_test $(BINDIR)/$(CONFIG)/alpn_test $(BINDIR)/$(CONFIG)/bin_encoder_test $(BINDIR)/$(CONFIG)/census_hash_table_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_test $(BINDIR)/$(CONFIG)/census_statistics_performance_test $(BINDIR)/$(CONFIG)/census_statistics_quick_test $(BINDIR)/$(CONFIG)/census_statistics_small_log_test $(BINDIR)/$(CONFIG)/census_stub_test $(BINDIR)/$(CONFIG)/census_window_stats_test $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test $(BINDIR)/$(CONFIG)/chttp2_stream_encoder_test $(BINDIR)/$(CONFIG)/chttp2_stream_map_test $(BINDIR)/$(CONFIG)/chttp2_transport_end2end_test $(BINDIR)/$(CONFIG)/dualstack_socket_test $(BINDIR)/$(CONFIG)/echo_client $(BINDIR)/$(CONFIG)/echo_server $(BINDIR)/$(CONFIG)/echo_test $(BINDIR)/$(CONFIG)/fd_posix_test $(BINDIR)/$(CONFIG)/fling_client $(BINDIR)/$(CONFIG)/fling_server $(BINDIR)/$(CONFIG)/fling_stream_test $(BINDIR)/$(CONFIG)/fling_test $(BINDIR)/$(CONFIG)/gpr_cancellable_test $(BINDIR)/$(CONFIG)/gpr_cmdline_test $(BINDIR)/$(CONFIG)/gpr_env_test $(BINDIR)/$(CONFIG)/gpr_file_test $(BINDIR)/$(CONFIG)/gpr_histogram_test $(BINDIR)/$(CONFIG)/gpr_host_port_test $(BINDIR)/$(CONFIG)/gpr_log_test $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test $(BINDIR)/$(CONFIG)/gpr_slice_test $(BINDIR)/$(CONFIG)/gpr_string_test $(BINDIR)/$(CONFIG)/gpr_sync_test $(BINDIR)/$(CONFIG)/gpr_thd_test $(BINDIR)/$(CONFIG)/gpr_time_test $(BINDIR)/$(CONFIG)/gpr_useful_test $(BINDIR)/$(CONFIG)/grpc_base64_test $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test $(BINDIR)/$(CONFIG)/grpc_channel_stack_test $(BINDIR)/$(CONFIG)/grpc_completion_queue_test $(BINDIR)/$(CONFIG)/grpc_credentials_test $(BINDIR)/$(CONFIG)/grpc_json_token_test $(BINDIR)/$(CONFIG)/grpc_stream_op_test $(BINDIR)/$(CONFIG)/hpack_parser_test $(BINDIR)/$(CONFIG)/hpack_table_test $(BINDIR)/$(CONFIG)/httpcli_format_request_test $(BINDIR)/$(CONFIG)/httpcli_parser_test $(BINDIR)/$(CONFIG)/httpcli_test $(BINDIR)/$(CONFIG)/json_rewrite $(BINDIR)/$(CONFIG)/json_rewrite_test $(BINDIR)/$(CONFIG)/json_test $(BINDIR)/$(CONFIG)/lame_client_test $(BINDIR)/$(CONFIG)/message_compress_test $(BINDIR)/$(CONFIG)/metadata_buffer_test $(BINDIR)/$(CONFIG)/murmur_hash_test $(BINDIR)/$(CONFIG)/no_server_test $(BINDIR)/$(CONFIG)/poll_kick_posix_test $(BINDIR)/$(CONFIG)/resolve_address_test $(BINDIR)/$(CONFIG)/secure_endpoint_test $(BINDIR)/$(CONFIG)/sockaddr_utils_test $(BINDIR)/$(CONFIG)/tcp_client_posix_test $(BINDIR)/$(CONFIG)/tcp_posix_test $(BINDIR)/$(CONFIG)/tcp_server_posix_test $(BINDIR)/$(CONFIG)/time_averaged_stats_test $(BINDIR)/$(CONFIG)/time_test $(BINDIR)/$(CONFIG)/timeout_encoding_test $(BINDIR)/$(CONFIG)/transport_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test
+buildtests_c: privatelibs_c $(BINDIR)/$(CONFIG)/alarm_heap_test $(BINDIR)/$(CONFIG)/alarm_list_test $(BINDIR)/$(CONFIG)/alarm_test $(BINDIR)/$(CONFIG)/alpn_test $(BINDIR)/$(CONFIG)/bin_encoder_test $(BINDIR)/$(CONFIG)/census_hash_table_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_test $(BINDIR)/$(CONFIG)/census_statistics_performance_test $(BINDIR)/$(CONFIG)/census_statistics_quick_test $(BINDIR)/$(CONFIG)/census_statistics_small_log_test $(BINDIR)/$(CONFIG)/census_stub_test $(BINDIR)/$(CONFIG)/census_window_stats_test $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test $(BINDIR)/$(CONFIG)/chttp2_stream_encoder_test $(BINDIR)/$(CONFIG)/chttp2_stream_map_test $(BINDIR)/$(CONFIG)/chttp2_transport_end2end_test $(BINDIR)/$(CONFIG)/dualstack_socket_test $(BINDIR)/$(CONFIG)/echo_client $(BINDIR)/$(CONFIG)/echo_server $(BINDIR)/$(CONFIG)/echo_test $(BINDIR)/$(CONFIG)/fd_posix_test $(BINDIR)/$(CONFIG)/fling_client $(BINDIR)/$(CONFIG)/fling_server $(BINDIR)/$(CONFIG)/fling_stream_test $(BINDIR)/$(CONFIG)/fling_test $(BINDIR)/$(CONFIG)/gpr_cancellable_test $(BINDIR)/$(CONFIG)/gpr_cmdline_test $(BINDIR)/$(CONFIG)/gpr_env_test $(BINDIR)/$(CONFIG)/gpr_file_test $(BINDIR)/$(CONFIG)/gpr_histogram_test $(BINDIR)/$(CONFIG)/gpr_host_port_test $(BINDIR)/$(CONFIG)/gpr_log_test $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test $(BINDIR)/$(CONFIG)/gpr_slice_test $(BINDIR)/$(CONFIG)/gpr_string_test $(BINDIR)/$(CONFIG)/gpr_sync_test $(BINDIR)/$(CONFIG)/gpr_thd_test $(BINDIR)/$(CONFIG)/gpr_time_test $(BINDIR)/$(CONFIG)/gpr_useful_test $(BINDIR)/$(CONFIG)/grpc_base64_test $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test $(BINDIR)/$(CONFIG)/grpc_channel_stack_test $(BINDIR)/$(CONFIG)/grpc_completion_queue_test $(BINDIR)/$(CONFIG)/grpc_credentials_test $(BINDIR)/$(CONFIG)/grpc_json_token_test $(BINDIR)/$(CONFIG)/grpc_stream_op_test $(BINDIR)/$(CONFIG)/hpack_parser_test $(BINDIR)/$(CONFIG)/hpack_table_test $(BINDIR)/$(CONFIG)/httpcli_format_request_test $(BINDIR)/$(CONFIG)/httpcli_parser_test $(BINDIR)/$(CONFIG)/httpcli_test $(BINDIR)/$(CONFIG)/json_rewrite $(BINDIR)/$(CONFIG)/json_rewrite_test $(BINDIR)/$(CONFIG)/json_test $(BINDIR)/$(CONFIG)/lame_client_test $(BINDIR)/$(CONFIG)/message_compress_test $(BINDIR)/$(CONFIG)/metadata_buffer_test $(BINDIR)/$(CONFIG)/murmur_hash_test $(BINDIR)/$(CONFIG)/no_server_test $(BINDIR)/$(CONFIG)/poll_kick_posix_test $(BINDIR)/$(CONFIG)/resolve_address_test $(BINDIR)/$(CONFIG)/secure_endpoint_test $(BINDIR)/$(CONFIG)/sockaddr_utils_test $(BINDIR)/$(CONFIG)/tcp_client_posix_test $(BINDIR)/$(CONFIG)/tcp_posix_test $(BINDIR)/$(CONFIG)/tcp_server_posix_test $(BINDIR)/$(CONFIG)/time_averaged_stats_test $(BINDIR)/$(CONFIG)/time_test $(BINDIR)/$(CONFIG)/timeout_encoding_test $(BINDIR)/$(CONFIG)/transport_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test
 
 buildtests_cxx: privatelibs_cxx $(BINDIR)/$(CONFIG)/channel_arguments_test $(BINDIR)/$(CONFIG)/credentials_test $(BINDIR)/$(CONFIG)/end2end_test $(BINDIR)/$(CONFIG)/interop_client $(BINDIR)/$(CONFIG)/interop_server $(BINDIR)/$(CONFIG)/qps_client $(BINDIR)/$(CONFIG)/qps_server $(BINDIR)/$(CONFIG)/status_test $(BINDIR)/$(CONFIG)/sync_client_async_server_test $(BINDIR)/$(CONFIG)/thread_pool_test $(BINDIR)/$(CONFIG)/pubsub_client $(BINDIR)/$(CONFIG)/pubsub_publisher_test $(BINDIR)/$(CONFIG)/pubsub_subscriber_test
 
@@ -1159,6 +1207,102 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test || ( echo test chttp2_fullstack_thread_stress_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test"
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_after_accept_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test || ( echo test chttp2_fullstack_uds_cancel_after_accept_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test || ( echo test chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_after_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test || ( echo test chttp2_fullstack_uds_cancel_after_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_before_invoke_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test || ( echo test chttp2_fullstack_uds_cancel_before_invoke_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_in_a_vacuum_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test || ( echo test chttp2_fullstack_uds_cancel_in_a_vacuum_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_census_simple_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test || ( echo test chttp2_fullstack_uds_census_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_disappearing_server_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test || ( echo test chttp2_fullstack_uds_disappearing_server_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test || ( echo test chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test || ( echo test chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_empty_batch_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test || ( echo test chttp2_fullstack_uds_empty_batch_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_graceful_server_shutdown_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test || ( echo test chttp2_fullstack_uds_graceful_server_shutdown_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_invoke_large_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test || ( echo test chttp2_fullstack_uds_invoke_large_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_max_concurrent_streams_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test || ( echo test chttp2_fullstack_uds_max_concurrent_streams_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_no_op_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test || ( echo test chttp2_fullstack_uds_no_op_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_ping_pong_streaming_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test || ( echo test chttp2_fullstack_uds_ping_pong_streaming_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test || ( echo test chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_response_with_metadata_and_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test || ( echo test chttp2_fullstack_uds_request_response_with_metadata_and_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_response_with_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test || ( echo test chttp2_fullstack_uds_request_response_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_with_large_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test || ( echo test chttp2_fullstack_uds_request_with_large_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_with_payload_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test || ( echo test chttp2_fullstack_uds_request_with_payload_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_simple_delayed_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test || ( echo test chttp2_fullstack_uds_simple_delayed_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_simple_request_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test || ( echo test chttp2_fullstack_uds_simple_request_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_thread_stress_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test || ( echo test chttp2_fullstack_uds_thread_stress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test || ( echo test chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_after_accept_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test || ( echo test chttp2_fullstack_uds_cancel_after_accept_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test || ( echo test chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_after_invoke_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test || ( echo test chttp2_fullstack_uds_cancel_after_invoke_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_before_invoke_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test || ( echo test chttp2_fullstack_uds_cancel_before_invoke_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test || ( echo test chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_census_simple_request_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test || ( echo test chttp2_fullstack_uds_census_simple_request_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_disappearing_server_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test || ( echo test chttp2_fullstack_uds_disappearing_server_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test || ( echo test chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test || ( echo test chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_graceful_server_shutdown_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test || ( echo test chttp2_fullstack_uds_graceful_server_shutdown_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_invoke_large_request_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test || ( echo test chttp2_fullstack_uds_invoke_large_request_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_max_concurrent_streams_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test || ( echo test chttp2_fullstack_uds_max_concurrent_streams_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_no_op_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test || ( echo test chttp2_fullstack_uds_no_op_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_ping_pong_streaming_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test || ( echo test chttp2_fullstack_uds_ping_pong_streaming_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_response_with_payload_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test || ( echo test chttp2_fullstack_uds_request_response_with_payload_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test || ( echo test chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_with_large_metadata_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test || ( echo test chttp2_fullstack_uds_request_with_large_metadata_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_request_with_payload_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test || ( echo test chttp2_fullstack_uds_request_with_payload_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_simple_delayed_request_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test || ( echo test chttp2_fullstack_uds_simple_delayed_request_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_simple_request_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test || ( echo test chttp2_fullstack_uds_simple_request_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_thread_stress_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test || ( echo test chttp2_fullstack_uds_thread_stress_legacy_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test || ( echo test chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_test"
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test || ( echo test chttp2_simple_ssl_fullstack_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test"
@@ -3196,6 +3340,52 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/chttp2_fullstack.o: 
+
+
+LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_UDS_SRC = \
+    test/core/end2end/fixtures/chttp2_fullstack_uds.c \
+
+
+LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_UDS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_UDS_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL with ALPN.
+
+$(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a: openssl_dep_error
+
+
+else
+
+
+ifneq ($(OPENSSL_DEP),)
+# This is to ensure the embedded OpenSSL is built beforehand, properly
+# installing headers to their final destination on the drive. We need this
+# otherwise parallel compilation will fail if a source is compiled first.
+test/core/end2end/fixtures/chttp2_fullstack_uds.c: $(OPENSSL_DEP)
+endif
+
+$(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_UDS_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_UDS_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a 
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBEND2END_FIXTURE_CHTTP2_FULLSTACK_UDS_OBJS:.o=.dep)
+endif
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/chttp2_fullstack_uds.o: 
 
 
 LIBEND2END_FIXTURE_CHTTP2_SIMPLE_SSL_FULLSTACK_SRC = \
@@ -10291,6 +10481,1398 @@ deps_chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test: $(CHTTP2_
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CHTTP2_FULLSTACK_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_after_accept_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_after_invoke_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_before_invoke_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_in_a_vacuum_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test: $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_census_simple_request_test: $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test: $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_disappearing_server_test: $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_EMPTY_BATCH_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_EMPTY_BATCH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_EMPTY_BATCH_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test: $(CHTTP2_FULLSTACK_UDS_EMPTY_BATCH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_EMPTY_BATCH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_empty_batch.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_empty_batch_test: $(CHTTP2_FULLSTACK_UDS_EMPTY_BATCH_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_EMPTY_BATCH_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test: $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_graceful_server_shutdown_test: $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test: $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_invoke_large_request_test: $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_max_concurrent_streams_test: $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_NO_OP_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_NO_OP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_NO_OP_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test: $(CHTTP2_FULLSTACK_UDS_NO_OP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_NO_OP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_no_op_test: $(CHTTP2_FULLSTACK_UDS_NO_OP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_NO_OP_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_ping_pong_streaming_test: $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_response_with_metadata_and_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_response_with_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_with_large_metadata_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_with_payload_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_simple_delayed_request_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_simple_request_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_THREAD_STRESS_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_THREAD_STRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test: $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_thread_stress_test: $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test: $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test: $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_after_accept_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_accept_and_writes_closed_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_ACCEPT_AND_WRITES_CLOSED_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_after_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_after_invoke_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_AFTER_INVOKE_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_before_invoke_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_before_invoke_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_BEFORE_INVOKE_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_cancel_in_a_vacuum_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test: $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CANCEL_IN_A_VACUUM_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_census_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_census_simple_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_CENSUS_SIMPLE_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test: $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_disappearing_server_legacy_test: $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_DISAPPEARING_SERVER_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_inflight_calls_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_INFLIGHT_CALLS_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_early_server_shutdown_finishes_tags_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test: $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_EARLY_SERVER_SHUTDOWN_FINISHES_TAGS_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test: $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_graceful_server_shutdown_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_graceful_server_shutdown_legacy_test: $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_GRACEFUL_SERVER_SHUTDOWN_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_invoke_large_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_invoke_large_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_INVOKE_LARGE_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test: $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_max_concurrent_streams_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_max_concurrent_streams_legacy_test: $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_MAX_CONCURRENT_STREAMS_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_NO_OP_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_NO_OP_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_NO_OP_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test: $(CHTTP2_FULLSTACK_UDS_NO_OP_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_NO_OP_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_no_op_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_no_op_legacy_test: $(CHTTP2_FULLSTACK_UDS_NO_OP_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_NO_OP_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test: $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_ping_pong_streaming_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_ping_pong_streaming_legacy_test: $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_PING_PONG_STREAMING_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_binary_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_BINARY_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_response_with_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_response_with_trailing_metadata_and_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_RESPONSE_WITH_TRAILING_METADATA_AND_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_large_metadata_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_with_large_metadata_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_LARGE_METADATA_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_request_with_payload_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_request_with_payload_legacy_test: $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_REQUEST_WITH_PAYLOAD_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_simple_delayed_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_SIMPLE_DELAYED_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_request_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_simple_request_legacy_test: $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_SIMPLE_REQUEST_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_THREAD_STRESS_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_THREAD_STRESS_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test: $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_thread_stress_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_thread_stress_legacy_test: $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_THREAD_STRESS_LEGACY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_SRC = \
+
+CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test: $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_fixture_chttp2_fullstack_uds.a $(LIBDIR)/$(CONFIG)/libend2end_test_writes_done_hangs_with_pending_read_legacy.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test
+
+endif
+
+
+deps_chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test: $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_FULLSTACK_UDS_WRITES_DONE_HANGS_WITH_PENDING_READ_LEGACY_TEST_OBJS:.o=.dep)
 endif
 endif
 
