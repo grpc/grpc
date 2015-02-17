@@ -1645,6 +1645,58 @@
       ]
     },
     {
+      "name": "pubsub_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "examples/pubsub/main.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_publisher_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/pubsub/publisher_test.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_subscriber_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/pubsub/subscriber_test.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "qps_client",
       "build": "test",
       "run": false,
@@ -1720,58 +1772,6 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "pubsub_client",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "examples/pubsub/main.cc"
-      ],
-      "deps": [
-        "pubsub_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "pubsub_publisher_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/pubsub/publisher_test.cc"
-      ],
-      "deps": [
-        "pubsub_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "pubsub_subscriber_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/pubsub/subscriber_test.cc"
-      ],
-      "deps": [
-        "pubsub_client_lib",
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
