@@ -31,6 +31,7 @@
  *
  */
 
+#include <google/protobuf/message.h>
 #include <grpc/support/alloc.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/client_context.h>
@@ -144,6 +145,7 @@ void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
 
 void CallOpBuffer::AddRecvMessage(google::protobuf::Message* message) {
   recv_message_ = message;
+  recv_message_->Clear();
 }
 
 void CallOpBuffer::AddClientSendClose() { client_send_close_ = true; }
