@@ -52,7 +52,9 @@ void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }
 // Helper class so we can declare a unique_ptr with grpc_event
 class EventDeleter {
  public:
-  void operator()(grpc_event *ev) { if (ev) grpc_event_finish(ev); }
+  void operator()(grpc_event *ev) {
+    if (ev) grpc_event_finish(ev);
+  }
 };
 
 bool CompletionQueue::Next(void **tag, bool *ok) {

@@ -63,7 +63,7 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
 
 class ClientAsyncRequest final : public CallOpBuffer {
  public:
-  void FinalizeResult(void** tag, bool* status) override {
+  void FinalizeResult(void **tag, bool *status) override {
     CallOpBuffer::FinalizeResult(tag, status);
     delete this;
   }
@@ -74,7 +74,7 @@ void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
                     const google::protobuf::Message &request,
                     google::protobuf::Message *result, Status *status,
                     CompletionQueue *cq, void *tag) {
-  ClientAsyncRequest* buf = new ClientAsyncRequest;
+  ClientAsyncRequest *buf = new ClientAsyncRequest;
   buf->Reset(tag);
   Call call(channel->CreateCall(method, context, cq));
   buf->AddSendInitialMetadata(context);

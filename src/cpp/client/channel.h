@@ -59,8 +59,7 @@ class Channel final : public ChannelInterface {
 
   virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
                           CompletionQueue *cq) override;
-  virtual void PerformOpsOnCall(CallOpBuffer *ops,
-                                Call *call) override;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) override;
 
  private:
   const grpc::string target_;

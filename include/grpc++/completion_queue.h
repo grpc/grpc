@@ -81,24 +81,31 @@ class CompletionQueue {
   // destructed when false is returned from Next().
   void Shutdown();
 
-  grpc_completion_queue* cq() { return cq_; }
+  grpc_completion_queue *cq() { return cq_; }
 
  private:
-  template <class R> friend class ::grpc::ClientReader;
-  template <class W> friend class ::grpc::ClientWriter;
-  template <class R, class W> friend class ::grpc::ClientReaderWriter;
-  template <class R> friend class ::grpc::ServerReader;
-  template <class W> friend class ::grpc::ServerWriter;
-  template <class R, class W> friend class ::grpc::ServerReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientReader;
+  template <class W>
+  friend class ::grpc::ClientWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientReaderWriter;
+  template <class R>
+  friend class ::grpc::ServerReader;
+  template <class W>
+  friend class ::grpc::ServerWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerReaderWriter;
   friend class ::grpc::Server;
-  friend Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-      ClientContext *context,
-      const google::protobuf::Message &request,
-      google::protobuf::Message *result);
+  friend Status BlockingUnaryCall(ChannelInterface *channel,
+                                  const RpcMethod &method,
+                                  ClientContext *context,
+                                  const google::protobuf::Message &request,
+                                  google::protobuf::Message *result);
 
   bool Pluck(CompletionQueueTag *tag);
 
-  grpc_completion_queue* cq_;  // owned
+  grpc_completion_queue *cq_;  // owned
 };
 
 }  // namespace grpc

@@ -93,8 +93,7 @@ void Channel::PerformOpsOnCall(CallOpBuffer *buf, Call *call) {
   grpc_op ops[MAX_OPS];
   buf->FillOps(ops, &nops);
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), ops, nops,
-                                   buf));
+             grpc_call_start_batch(call->call(), ops, nops, buf));
 }
 
 }  // namespace grpc

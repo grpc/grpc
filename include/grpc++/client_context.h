@@ -60,12 +60,18 @@ class ChannelInterface;
 class CompletionQueue;
 class RpcMethod;
 class Status;
-template <class R> class ClientReader;
-template <class W> class ClientWriter;
-template <class R, class W> class ClientReaderWriter;
-template <class R> class ClientAsyncReader;
-template <class W> class ClientAsyncWriter;
-template <class R, class W> class ClientAsyncReaderWriter;
+template <class R>
+class ClientReader;
+template <class W>
+class ClientWriter;
+template <class R, class W>
+class ClientReaderWriter;
+template <class R>
+class ClientAsyncReader;
+template <class W>
+class ClientAsyncWriter;
+template <class R, class W>
+class ClientAsyncReaderWriter;
 
 class ClientContext {
  public:
@@ -97,16 +103,23 @@ class ClientContext {
 
   friend class CallOpBuffer;
   friend class Channel;
-  template <class R> friend class ::grpc::ClientReader;
-  template <class W> friend class ::grpc::ClientWriter;
-  template <class R, class W> friend class ::grpc::ClientReaderWriter;
-  template <class R> friend class ::grpc::ClientAsyncReader;
-  template <class W> friend class ::grpc::ClientAsyncWriter;
-  template <class R, class W> friend class ::grpc::ClientAsyncReaderWriter;
-  friend Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                         ClientContext *context,
-                         const google::protobuf::Message &request,
-                         google::protobuf::Message *result);
+  template <class R>
+  friend class ::grpc::ClientReader;
+  template <class W>
+  friend class ::grpc::ClientWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientAsyncReader;
+  template <class W>
+  friend class ::grpc::ClientAsyncWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientAsyncReaderWriter;
+  friend Status BlockingUnaryCall(ChannelInterface *channel,
+                                  const RpcMethod &method,
+                                  ClientContext *context,
+                                  const google::protobuf::Message &request,
+                                  google::protobuf::Message *result);
   friend void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
                              ClientContext *context,
                              const google::protobuf::Message &request,

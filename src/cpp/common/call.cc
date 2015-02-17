@@ -95,13 +95,13 @@ namespace {
 // mess. Make sure it does not happen.
 grpc_metadata* FillMetadataArray(
     std::multimap<grpc::string, grpc::string>* metadata) {
-  if (metadata->empty()) { return nullptr; }
-  grpc_metadata* metadata_array = (grpc_metadata*)gpr_malloc(
-      metadata->size()* sizeof(grpc_metadata));
+  if (metadata->empty()) {
+    return nullptr;
+  }
+  grpc_metadata* metadata_array =
+      (grpc_metadata*)gpr_malloc(metadata->size() * sizeof(grpc_metadata));
   size_t i = 0;
-  for (auto iter = metadata->cbegin();
-       iter != metadata->cend();
-       ++iter, ++i) {
+  for (auto iter = metadata->cbegin(); iter != metadata->cend(); ++iter, ++i) {
     metadata_array[i].key = iter->first.c_str();
     metadata_array[i].value = iter->second.c_str();
     metadata_array[i].value_length = iter->second.size();
@@ -114,7 +114,8 @@ void FillMetadataMap(grpc_metadata_array* arr,
   for (size_t i = 0; i < arr->count; i++) {
     // TODO(yangg) handle duplicates?
     metadata->insert(std::pair<grpc::string, grpc::string>(
-        arr->metadata[i].key, {arr->metadata[i].value, arr->metadata[i].value_length}));
+        arr->metadata[i].key,
+        {arr->metadata[i].value, arr->metadata[i].value_length}));
   }
   grpc_metadata_array_destroy(arr);
   grpc_metadata_array_init(arr);
@@ -133,8 +134,7 @@ void CallOpBuffer::AddRecvInitialMetadata(
   recv_initial_metadata_ = metadata;
 }
 
-
-void CallOpBuffer::AddSendInitialMetadata(ClientContext *ctx) {
+void CallOpBuffer::AddSendInitialMetadata(ClientContext* ctx) {
   AddSendInitialMetadata(&ctx->send_initial_metadata_);
 }
 
@@ -142,20 +142,18 @@ void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
   send_message_ = &message;
 }
 
-void CallOpBuffer::AddRecvMessage(google::protobuf::Message *message) {
+void CallOpBuffer::AddRecvMessage(google::protobuf::Message* message) {
   recv_message_ = message;
 }
 
-void CallOpBuffer::AddClientSendClose() {
-  client_send_close_ = true;
-}
+void CallOpBuffer::AddClientSendClose() { client_send_close_ = true; }
 
 void CallOpBuffer::AddServerRecvClose(bool* cancelled) {
   recv_closed_ = cancelled;
 }
 
 void CallOpBuffer::AddClientRecvStatus(
-    std::multimap<grpc::string, grpc::string>* metadata, Status *status) {
+    std::multimap<grpc::string, grpc::string>* metadata, Status* status) {
   recv_trailing_metadata_ = metadata;
   recv_status_ = status;
 }
@@ -171,7 +169,7 @@ void CallOpBuffer::AddServerSendStatus(
   send_status_ = &status;
 }
 
-void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
+void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
   *nops = 0;
   if (send_initial_metadata_) {
     ops[*nops].op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -232,7 +230,7 @@ void CallOpBuffer::FillOps(grpc_op *ops, size_t *nops) {
   }
 }
 
-void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
+void CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   // Release send buffers.
   if (send_message_buf_) {
     grpc_byte_buffer_destroy(send_message_buf_);
@@ -270,15 +268,14 @@ void CallOpBuffer::FinalizeResult(void **tag, bool *status) {
     FillMetadataMap(&recv_trailing_metadata_arr_, recv_trailing_metadata_);
     *recv_status_ = Status(
         static_cast<StatusCode>(status_code_),
-        status_details_ ?  grpc::string(status_details_)
-                        :  grpc::string());
+        status_details_ ? grpc::string(status_details_) : grpc::string());
   }
   if (recv_closed_) {
     *recv_closed_ = cancelled_buf_ != 0;
   }
 }
 
-Call::Call(grpc_call* call, CallHook *call_hook, CompletionQueue* cq)
+Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
     : call_hook_(call_hook), cq_(cq), call_(call) {}
 
 void Call::PerformOps(CallOpBuffer* buffer) {

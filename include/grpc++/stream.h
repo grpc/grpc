@@ -87,9 +87,8 @@ class ClientReader final : public ClientStreamingInterface,
                            public ReaderInterface<R> {
  public:
   // Blocking create a stream and write the first request out.
-  ClientReader(ChannelInterface *channel, const RpcMethod &method,
-               ClientContext *context,
-               const google::protobuf::Message &request)
+  ClientReader(ChannelInterface* channel, const RpcMethod& method,
+               ClientContext* context, const google::protobuf::Message& request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpBuffer buf;
     buf.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -113,7 +112,7 @@ class ClientReader final : public ClientStreamingInterface,
     context_->initial_metadata_received_ = true;
   }
 
-  virtual bool Read(R *msg) override {
+  virtual bool Read(R* msg) override {
     CallOpBuffer buf;
     if (!context_->initial_metadata_received_) {
       buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
@@ -144,10 +143,10 @@ class ClientWriter final : public ClientStreamingInterface,
                            public WriterInterface<W> {
  public:
   // Blocking create a stream.
-  ClientWriter(ChannelInterface *channel, const RpcMethod &method,
-               ClientContext *context,
-               google::protobuf::Message *response)
-      : context_(context), response_(response),
+  ClientWriter(ChannelInterface* channel, const RpcMethod& method,
+               ClientContext* context, google::protobuf::Message* response)
+      : context_(context),
+        response_(response),
         call_(channel->CreateCall(method, context, &cq_)) {
     CallOpBuffer buf;
     buf.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -182,7 +181,7 @@ class ClientWriter final : public ClientStreamingInterface,
 
  private:
   ClientContext* context_;
-  google::protobuf::Message *const response_;
+  google::protobuf::Message* const response_;
   CompletionQueue cq_;
   Call call_;
 };
@@ -194,8 +193,8 @@ class ClientReaderWriter final : public ClientStreamingInterface,
                                  public ReaderInterface<R> {
  public:
   // Blocking create a stream.
-  ClientReaderWriter(ChannelInterface *channel,
-                     const RpcMethod &method, ClientContext *context)
+  ClientReaderWriter(ChannelInterface* channel, const RpcMethod& method,
+                     ClientContext* context)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpBuffer buf;
     buf.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -217,7 +216,7 @@ class ClientReaderWriter final : public ClientStreamingInterface,
     context_->initial_metadata_received_ = true;
   }
 
-  virtual bool Read(R *msg) override {
+  virtual bool Read(R* msg) override {
     CallOpBuffer buf;
     if (!context_->initial_metadata_received_) {
       buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
@@ -318,7 +317,7 @@ class ServerWriter final : public WriterInterface<W> {
 // Server-side interface for bi-directional streaming.
 template <class W, class R>
 class ServerReaderWriter final : public WriterInterface<W>,
-                           public ReaderInterface<R> {
+                                 public ReaderInterface<R> {
  public:
   ServerReaderWriter(Call* call, ServerContext* ctx) : call_(call), ctx_(ctx) {}
 
@@ -386,12 +385,12 @@ class AsyncWriterInterface {
 
 template <class R>
 class ClientAsyncReader final : public ClientAsyncStreamingInterface,
-                           public AsyncReaderInterface<R> {
+                                public AsyncReaderInterface<R> {
  public:
   // Create a stream and write the first request out.
-  ClientAsyncReader(ChannelInterface *channel, CompletionQueue* cq,
-                    const RpcMethod &method, ClientContext *context,
-               const google::protobuf::Message &request, void* tag)
+  ClientAsyncReader(ChannelInterface* channel, CompletionQueue* cq,
+                    const RpcMethod& method, ClientContext* context,
+                    const google::protobuf::Message& request, void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -409,7 +408,7 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
     context_->initial_metadata_received_ = true;
   }
 
-  void Read(R *msg, void* tag) override {
+  void Read(R* msg, void* tag) override {
     read_buf_.Reset(tag);
     if (!context_->initial_metadata_received_) {
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
@@ -440,12 +439,13 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
 
 template <class W>
 class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
-                           public AsyncWriterInterface<W> {
+                                public AsyncWriterInterface<W> {
  public:
-  ClientAsyncWriter(ChannelInterface *channel, CompletionQueue* cq,
-                    const RpcMethod &method, ClientContext *context,
-                    google::protobuf::Message *response, void* tag)
-      : context_(context), response_(response),
+  ClientAsyncWriter(ChannelInterface* channel, CompletionQueue* cq,
+                    const RpcMethod& method, ClientContext* context,
+                    google::protobuf::Message* response, void* tag)
+      : context_(context),
+        response_(response),
         call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -486,7 +486,7 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
 
  private:
   ClientContext* context_ = nullptr;
-  google::protobuf::Message *const response_;
+  google::protobuf::Message* const response_;
   Call call_;
   CallOpBuffer init_buf_;
   CallOpBuffer meta_buf_;
@@ -498,11 +498,12 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
 // Client-side interface for bi-directional streaming.
 template <class W, class R>
 class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
-                                 public AsyncWriterInterface<W>,
-                                 public AsyncReaderInterface<R> {
+                                      public AsyncWriterInterface<W>,
+                                      public AsyncReaderInterface<R> {
  public:
-  ClientAsyncReaderWriter(ChannelInterface *channel, CompletionQueue* cq,
-                     const RpcMethod &method, ClientContext *context, void* tag)
+  ClientAsyncReaderWriter(ChannelInterface* channel, CompletionQueue* cq,
+                          const RpcMethod& method, ClientContext* context,
+                          void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -518,7 +519,7 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
     context_->initial_metadata_received_ = true;
   }
 
-  void Read(R *msg, void* tag) override {
+  void Read(R* msg, void* tag) override {
     read_buf_.Reset(tag);
     if (!context_->initial_metadata_received_) {
       read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
@@ -607,7 +608,7 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   }
 
  private:
-  void BindCall(Call *call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;
@@ -667,7 +668,7 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
   }
 
  private:
-  void BindCall(Call *call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;
@@ -715,7 +716,7 @@ class ServerAsyncWriter : public ServerAsyncStreamingInterface,
   }
 
  private:
-  void BindCall(Call *call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;
@@ -771,7 +772,7 @@ class ServerAsyncReaderWriter : public ServerAsyncStreamingInterface,
   }
 
  private:
-  void BindCall(Call *call) override { call_ = *call; }
+  void BindCall(Call* call) override { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;
