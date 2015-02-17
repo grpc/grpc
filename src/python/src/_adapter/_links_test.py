@@ -67,7 +67,7 @@ class RoundTripTest(unittest.TestCase):
     test_rear_link = _test_links.RearLink(rear_action, None)
 
     fore_link = fore.ForeLink(
-        self.fore_link_pool, {test_method: None}, {test_method: None})
+        self.fore_link_pool, {test_method: None}, {test_method: None}, None, ())
     fore_link.join_rear_link(test_rear_link)
     test_rear_link.join_fore_link(fore_link)
     port = fore_link.start()
@@ -120,7 +120,7 @@ class RoundTripTest(unittest.TestCase):
 
     fore_link = fore.ForeLink(
         self.fore_link_pool, {test_method: _IDENTITY},
-        {test_method: _IDENTITY})
+        {test_method: _IDENTITY}, None, ())
     fore_link.join_rear_link(test_rear_link)
     test_rear_link.join_fore_link(fore_link)
     port = fore_link.start()
@@ -182,7 +182,7 @@ class RoundTripTest(unittest.TestCase):
 
     fore_link = fore.ForeLink(
         self.fore_link_pool, {test_method: scenario.deserialize_request},
-        {test_method: scenario.serialize_response})
+        {test_method: scenario.serialize_response}, None, ())
     fore_link.join_rear_link(test_rear_link)
     test_rear_link.join_fore_link(fore_link)
     port = fore_link.start()

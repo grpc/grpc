@@ -27,61 +27,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""A setup module for the GRPC Python interop testing package."""
 
 from distutils import core as _core
 
-_EXTENSION_SOURCES = (
-    'src/_adapter/_c.c',
-    'src/_adapter/_call.c',
-    'src/_adapter/_channel.c',
-    'src/_adapter/_completion_queue.c',
-    'src/_adapter/_error.c',
-    'src/_adapter/_server.c',
-    'src/_adapter/_server_credentials.c',
-)
-
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    'src',
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../include',
-)
-
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
-
-_EXTENSION_LIBRARY_DIRECTORIES = (
-    # TODO(nathaniel): Can this path specification be made to work?
-    #'../../libs/dbg',
-)
-
-_EXTENSION_MODULE = _core.Extension(
-    '_adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    library_dirs=_EXTENSION_LIBRARY_DIRECTORIES)
-
-_PACKAGES=(
-    '_adapter',
-    '_framework',
-    '_framework.base',
-    '_framework.base.packets',
-    '_framework.common',
-    '_framework.face',
-    '_framework.face.testing',
-    '_framework.foundation',
-    '_junkdrawer',
+_PACKAGES = (
+    'interop',
 )
 
 _PACKAGE_DIRECTORIES = {
-    '_adapter': 'src/_adapter',
-    '_framework': 'src/_framework',
-    '_junkdrawer': 'src/_junkdrawer',
+    'interop': 'interop',
 }
 
+_PACKAGE_DATA = {
+    'interop': ['credentials/server1.key', 'credentials/server1.pem',]
+}
+
+_INSTALL_REQUIRES = ['grpc-2015>=0.0.1']
+
 _core.setup(
-    name='grpc', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+    name='interop', version='0.0.1', packages=_PACKAGES,
+    package_dir=_PACKAGE_DIRECTORIES, package_data=_PACKAGE_DATA,
+    install_requires=_INSTALL_REQUIRES)
