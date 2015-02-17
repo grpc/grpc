@@ -314,7 +314,7 @@ class Server::AsyncRequest final : public CompletionQueueTag {
     *tag = tag_;
     if (*status && request_) {
       if (payload_) {
-        *status = DeserializeProto(payload_, request_);
+        *status = *status && DeserializeProto(payload_, request_);
       } else {
         *status = false;
       }

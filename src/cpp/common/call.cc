@@ -31,6 +31,7 @@
  *
  */
 
+#include <google/protobuf/message.h>
 #include <grpc/support/alloc.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/client_context.h>
@@ -144,6 +145,7 @@ void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
 
 void CallOpBuffer::AddRecvMessage(google::protobuf::Message* message) {
   recv_message_ = message;
+  recv_message_->Clear();
 }
 
 void CallOpBuffer::AddClientSendClose() { client_send_close_ = true; }
@@ -253,8 +255,8 @@ void CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   // Parse received message if any.
   if (recv_message_) {
     if (recv_message_buf_) {
-      got_message = true;
-      *status = DeserializeProto(recv_message_buf_, recv_message_);
+      got_message = *status;
+      *status = *status && DeserializeProto(recv_message_buf_, recv_message_);
       grpc_byte_buffer_destroy(recv_message_buf_);
       recv_message_buf_ = nullptr;
     } else {
