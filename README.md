@@ -10,7 +10,54 @@ Hello World example. More documentation is coming soon!
 
 ## What is gRPC?
 
-## TODO: basic conceptual intro (anything more in-depth will go in gRPC Concepts doc)
+In gRPC, like other RPC systems, a *client* application can directly call
+methods on a *server* application on a different machine as if it was a
+local object, making it easier for you to create distributed applications and
+services. As in many RPC systems, gRPC is based around the idea of defining
+a *service*, specifying the methods that can be called remotely with their
+parameters and return types. On the server side, the server implements this
+interface and runs a gRPC server to handle client calls. On the client side,
+the client has a *stub* that provides exactly the same methods as the server.
+
+##TODO: diagram?
+
+gRPC clients and servers can run and talk to each other in a variety of
+environments - from servers inside Google to your own desktop - and can
+be written in any of gRPC's [supported languages](link to list). So, for
+example, you can easily create a gRPC server in Java with clients in Go,
+Python, or Ruby. In addition, the latest Google APIs will have gRPC versions
+of their interfaces, letting you easily build Google functionality into
+your applications.
+
+<a name="protocolbuffers"></a>
+### Working with protocol buffers
+
+While gRPC’s architecture allows it to be extended for use with other
+data formats such as JSON, by default it uses *protocol buffers*, Google’s
+mature open source mechanism for serializing structured data. As you'll
+see in our example below, you define gRPC services using *proto files*,
+with method parameters and return types specified as protocol buffer message
+types. You
+can find out lots more about protocol buffers in the [Protocol Buffers
+documentation](https://developers.google.com/protocol-buffers/docs/overview).
+
+#### Protocol buffer versions
+
+While protocol buffers have been available for open source users for some
+time, our examples use a new flavour of protocol buffers called proto3,
+which has a slightly simplified syntax, some useful new features, and supports
+lots more languages. This is currently available as an alpha release in
+[languages] from [wherever it's going], with more languages in development.
+
+In general, we recommend that you use proto3 with gRPC as it lets you use the
+full range of gRPC-supported languages, as well as avoiding compatibility
+issues with proto2 clients talking to proto3 servers and vice versa. You
+can find out more about these potential issues in [where should we put this
+info? It's important but not really part of an overview]. If you need to
+continue using proto2 for Java, C++, or Python but want
+to try gRPC, you can see an example using a proto2 gRPC client and server
+[wherever we put it].
+
 
 <a name="hello"></a>
 ## Hello gRPC!
@@ -19,11 +66,11 @@ Now that you know a bit more about gRPC, the easiest way to see how it
 works is to look at a simple example. Our Hello World walks you through the
 construction of a simple gRPC client-server application, showing you how to:
 
-- Create a protobuf schema that defines a simple RPC service with a single
+- Create a protocol buffers schema that defines a simple RPC service with a single
 Hello World method.
-- Create a Java server that implements the schema interface.
+- Create a Java server that implements thid interface.
 - Create a Java client that accesses the Java server.
-- Create a Go client that accesses the same Java server.
+- Create a [probably need a different language now] client that accesses the same Java server.
 - Update the service with more advanced features like RPC streaming.
 
 The complete code for the example is available in the `grpc-common` GitHub repository. You can
@@ -41,9 +88,8 @@ languages are coming soon.
 <a name="setup"></a>
 ### Setup
 
-The rest of this page explains how to set up your local machine to work with
-the example code.
-If you just want to read the example, you can go straight to the [next step](#servicedef).
+This section explains how to set up your local machine to work with
+the example code. If you just want to read the example, you can go straight to the [next step](#servicedef).
 
 #### Install Git
 
@@ -57,8 +103,10 @@ the code to hack on
 
 #### Get the source code
 
-The example code for this and our other examples lives in the `grpc-common` GitHub repository. Clone this repository to your local machine by running the
+The example code for this and our other examples lives in the `grpc-common`
+GitHub repository. Clone this repository to your local machine by running the
 following command:
+
 
 ```
 git clone https://github.com/google/grpc-common.git
@@ -110,16 +158,17 @@ with generating the code yourself, download and install protoc from its
 
 The first step in creating our example is to define a *service*: an RPC
 service specifies the methods that can be called remotely with their parameters
-and return types. In gRPC, we use the protocol buffers interface definition
-language (IDL) to define our service methods, and the parameters and return
-types are defined as protocol buffer message types. Both the client and the
-server use interface code generated from the service definition. If you're not
-familiar with protocol buffers, you can find out more in the [Protocol Buffers
-Developer Guide](https://developers.google.com/protocol-buffers/docs/overview).
+and return types. As you saw in the
+[overview](#protocolbuffers) above, gRPC does this using [protocol
+buffers](https://developers.google.com/protocol-buffers/docs/overview). We
+use the protocol buffers interface definition language (IDL) to define our
+service methods, and define the parameters and return
+types as protocol buffer message types. Both the client and the
+server use interface code generated from the service definition.
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](java/src/main/proto/helloworld.proto). The `Greeting` service
-has one method, `hello`, that lets the server receive a single `HelloRequest`
+[helloworld.proto](java/src/main/proto/helloworld.proto). The `Greeting`
+service has one method, `hello`, that lets the server receive a single `HelloRequest`
 message from the remote client containing the user's name, then send back
 a greeting in a single `HelloReply`. This is the simplest type of RPC you
 can specify in gRPC - we'll look at some other types later in this document.
