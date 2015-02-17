@@ -84,6 +84,8 @@ class CompletionQueue {
   grpc_completion_queue *cq() { return cq_; }
 
  private:
+  // Friend synchronous wrappers so that they can access Pluck(), which is
+  // a semi-private API geared towards the synchronous implementation.
   template <class R>
   friend class ::grpc::ClientReader;
   template <class W>
@@ -103,6 +105,8 @@ class CompletionQueue {
                                   const google::protobuf::Message &request,
                                   google::protobuf::Message *result);
 
+  // Wraps grpc_completion_queue_pluck.
+  // Cannot be mixed with calls to Next().
   bool Pluck(CompletionQueueTag *tag);
 
   grpc_completion_queue *cq_;  // owned
