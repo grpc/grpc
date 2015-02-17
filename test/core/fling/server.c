@@ -87,7 +87,6 @@ typedef struct {
 
 static void request_call(void) {
   grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
   grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
                            cq, tag(FLING_SERVER_NEW_REQUEST));
 }
@@ -218,6 +217,8 @@ int main(int argc, char **argv) {
   gpr_free(addr_buf);
   addr = addr_buf = NULL;
 
+  grpc_call_details_init(&call_details);
+
   request_call();
 
   grpc_profiler_start("server.prof");
@@ -264,6 +265,8 @@ int main(int argc, char **argv) {
             break;
           case FLING_SERVER_WRITE_FOR_STREAMING:
             /* Write completed at server  */
+            grpc_byte_buffer_destroy(payload_buffer);
+            payload_buffer = NULL;
             start_read_op(FLING_SERVER_READ_FOR_STREAMING);
             break;
           case FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING:
@@ -282,6 +285,8 @@ int main(int argc, char **argv) {
             break;
           case FLING_SERVER_BATCH_OPS_FOR_UNARY:
             /* Finished unary call. */
+            grpc_byte_buffer_destroy(payload_buffer);
+            payload_buffer = NULL;
             grpc_call_destroy(call);
             request_call();
             break;
@@ -305,6 +310,7 @@ int main(int argc, char **argv) {
     grpc_event_finish(ev);
   }
   grpc_profiler_stop();
+  grpc_call_details_destroy(&call_details);
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
