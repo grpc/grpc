@@ -46,8 +46,8 @@
 #include <grpc++/credentials.h>
 #include <grpc++/status.h>
 
-#include "examples/tips/publisher.h"
-#include "examples/tips/subscriber.h"
+#include "examples/pubsub/publisher.h"
+#include "examples/pubsub/subscriber.h"
 #include "test/cpp/util/create_test_channel.h"
 
 DEFINE_int32(server_port, 443, "Server port.");
@@ -82,7 +82,7 @@ grpc::string GetServiceAccountJsonKey() {
 int main(int argc, char** argv) {
   grpc_init();
   google::ParseCommandLineFlags(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Start TIPS client");
+  gpr_log(GPR_INFO, "Start PUBSUB client");
 
   std::ostringstream ss;
 
@@ -104,8 +104,8 @@ int main(int argc, char** argv) {
           true,                // use prod roots
           creds));
 
-  grpc::examples::tips::Publisher publisher(channel);
-  grpc::examples::tips::Subscriber subscriber(channel);
+  grpc::examples::pubsub::Publisher publisher(channel);
+  grpc::examples::pubsub::Subscriber subscriber(channel);
 
   GPR_ASSERT(FLAGS_project_id != "");
   ss.str("");

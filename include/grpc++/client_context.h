@@ -47,15 +47,31 @@ using std::chrono::system_clock;
 struct grpc_call;
 struct grpc_completion_queue;
 
+namespace google {
+namespace protobuf {
+class Message;
+}  // namespace protobuf
+}  // namespace google
+
 namespace grpc {
 
 class CallOpBuffer;
-template <class R> class ClientReader;
-template <class W> class ClientWriter;
-template <class R, class W> class ClientReaderWriter;
-template <class R> class ClientAsyncReader;
-template <class W> class ClientAsyncWriter;
-template <class R, class W> class ClientAsyncReaderWriter;
+class ChannelInterface;
+class CompletionQueue;
+class RpcMethod;
+class Status;
+template <class R>
+class ClientReader;
+template <class W>
+class ClientWriter;
+template <class R, class W>
+class ClientReaderWriter;
+template <class R>
+class ClientAsyncReader;
+template <class W>
+class ClientAsyncWriter;
+template <class R, class W>
+class ClientAsyncReaderWriter;
 
 class ClientContext {
  public:
@@ -65,10 +81,20 @@ class ClientContext {
   void AddMetadata(const grpc::string &meta_key,
                    const grpc::string &meta_value);
 
+  std::multimap<grpc::string, grpc::string> GetServerInitialMetadata() {
+    GPR_ASSERT(initial_metadata_received_);
+    return recv_initial_metadata_;
+  }
+
+  std::multimap<grpc::string, grpc::string> GetServerTrailingMetadata() {
+    // TODO(yangg) check finished
+    return trailing_metadata_;
+  }
+
   void set_absolute_deadline(const system_clock::time_point &deadline);
   system_clock::time_point absolute_deadline();
 
-  void StartCancel();
+  void TryCancel();
 
  private:
   // Disallow copy and assign.
@@ -77,12 +103,28 @@ class ClientContext {
 
   friend class CallOpBuffer;
   friend class Channel;
-  template <class R> friend class ::grpc::ClientReader;
-  template <class W> friend class ::grpc::ClientWriter;
-  template <class R, class W> friend class ::grpc::ClientReaderWriter;
-  template <class R> friend class ::grpc::ClientAsyncReader;
-  template <class W> friend class ::grpc::ClientAsyncWriter;
-  template <class R, class W> friend class ::grpc::ClientAsyncReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientReader;
+  template <class W>
+  friend class ::grpc::ClientWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientAsyncReader;
+  template <class W>
+  friend class ::grpc::ClientAsyncWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientAsyncReaderWriter;
+  friend Status BlockingUnaryCall(ChannelInterface *channel,
+                                  const RpcMethod &method,
+                                  ClientContext *context,
+                                  const google::protobuf::Message &request,
+                                  google::protobuf::Message *result);
+  friend void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
+                             ClientContext *context,
+                             const google::protobuf::Message &request,
+                             google::protobuf::Message *result, Status *status,
+                             CompletionQueue *cq, void *tag);
 
   grpc_call *call() { return call_; }
   void set_call(grpc_call *call) {

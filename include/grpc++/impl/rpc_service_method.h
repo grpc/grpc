@@ -55,14 +55,10 @@ class MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
-    HandlerParameter(Call *c,
-                     ServerContext* context,
+    HandlerParameter(Call* c, ServerContext* context,
                      const google::protobuf::Message* req,
                      google::protobuf::Message* resp)
-        : call(c),
-          server_context(context),
-          request(req),
-          response(resp) {}
+        : call(c), server_context(context), request(req), response(resp) {}
     Call* call;
     ServerContext* server_context;
     const google::protobuf::Message* request;
@@ -152,7 +148,8 @@ class BidiStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   Status RunHandler(const HandlerParameter& param) final {
-    ServerReaderWriter<ResponseType, RequestType> stream(param.call, param.server_context);
+    ServerReaderWriter<ResponseType, RequestType> stream(param.call,
+                                                         param.server_context);
     return func_(service_, param.server_context, &stream);
   }
 
@@ -195,9 +192,7 @@ class RpcServiceMethod : public RpcMethod {
 class RpcService {
  public:
   // Takes ownership.
-  void AddMethod(RpcServiceMethod* method) {
-    methods_.emplace_back(method);
-  }
+  void AddMethod(RpcServiceMethod* method) { methods_.emplace_back(method); }
 
   RpcServiceMethod* GetMethod(int i) { return methods_[i].get(); }
   int GetMethodCount() const { return methods_.size(); }

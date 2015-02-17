@@ -61,7 +61,6 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
                          const google::protobuf::Message &request,
                          google::protobuf::Message *result);
 
-} // namespace grpc
+}  // namespace grpc
 
 #endif
-

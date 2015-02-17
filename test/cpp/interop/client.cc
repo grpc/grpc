@@ -269,7 +269,7 @@ void DoResponseStreaming() {
   }
   StreamingOutputCallResponse response;
   std::unique_ptr<grpc::ClientReader<StreamingOutputCallResponse>> stream(
-      stub->StreamingOutputCall(&context, &request));
+      stub->StreamingOutputCall(&context, request));
 
   unsigned int i = 0;
   while (stream->Read(&response)) {
@@ -299,7 +299,7 @@ void DoResponseStreamingWithSlowConsumer() {
   }
   StreamingOutputCallResponse response;
   std::unique_ptr<grpc::ClientReader<StreamingOutputCallResponse>> stream(
-      stub->StreamingOutputCall(&context, &request));
+      stub->StreamingOutputCall(&context, request));
 
   int i = 0;
   while (stream->Read(&response)) {

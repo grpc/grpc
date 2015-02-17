@@ -62,7 +62,7 @@ ENV PATH /usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/s
 RUN rvm all do gem install ronn rake
 
 # Get the source from GitHub, this gets the protobuf library as well
-RUN git clone git@github.com:google/grpc.git /var/local/git/grpc
+RUN git clone git@github.com:grpc/grpc.git /var/local/git/grpc
 RUN cd /var/local/git/grpc && \
   git pull --recurse-submodules && \
   git submodule update --init --recursive

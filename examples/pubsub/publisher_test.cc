@@ -43,64 +43,65 @@
 #include <grpc++/status.h>
 #include <gtest/gtest.h>
 
-#include "examples/tips/subscriber.h"
+#include "examples/pubsub/publisher.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+using grpc::ChannelInterface;
 
 namespace grpc {
 namespace testing {
 namespace {
 
+const char kProjectId[] = "project id";
 const char kTopic[] = "test topic";
-const char kSubscriptionName[] = "subscription name";
-const char kData[] = "Message data";
+const char kMessageData[] = "test message data";
 
-class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
+class PublisherServiceImpl : public tech::pubsub::PublisherService::Service {
  public:
-  Status CreateSubscription(ServerContext* context,
-                            const tech::pubsub::Subscription* request,
-                            tech::pubsub::Subscription* response) override {
+  Status CreateTopic(::grpc::ServerContext* context,
+                     const ::tech::pubsub::Topic* request,
+                     ::tech::pubsub::Topic* response) override {
+    EXPECT_EQ(request->name(), kTopic);
+    return Status::OK;
+  }
+
+  Status Publish(ServerContext* context,
+                 const ::tech::pubsub::PublishRequest* request,
+                 ::proto2::Empty* response) override {
+    EXPECT_EQ(request->message().data(), kMessageData);
+    return Status::OK;
+  }
+
+  Status GetTopic(ServerContext* context,
+                  const ::tech::pubsub::GetTopicRequest* request,
+                  ::tech::pubsub::Topic* response) override {
     EXPECT_EQ(request->topic(), kTopic);
-    EXPECT_EQ(request->name(), kSubscriptionName);
     return Status::OK;
   }
 
-  Status GetSubscription(ServerContext* context,
-                         const tech::pubsub::GetSubscriptionRequest* request,
-                         tech::pubsub::Subscription* response) override {
-    EXPECT_EQ(request->subscription(), kSubscriptionName);
-    response->set_topic(kTopic);
-    return Status::OK;
-  }
+ Status ListTopics(ServerContext* context,
+                   const ::tech::pubsub::ListTopicsRequest* request,
+                   ::tech::pubsub::ListTopicsResponse* response) override {
+   std::ostringstream ss;
+   ss << "cloud.googleapis.com/project in (/projects/" << kProjectId << ")";
+   EXPECT_EQ(request->query(), ss.str());
+   response->add_topic()->set_name(kTopic);
+   return Status::OK;
+ }
 
-  Status DeleteSubscription(
-      ServerContext* context,
-      const tech::pubsub::DeleteSubscriptionRequest* request,
-      proto2::Empty* response) override {
-    EXPECT_EQ(request->subscription(), kSubscriptionName);
+ Status DeleteTopic(ServerContext* context,
+                    const ::tech::pubsub::DeleteTopicRequest* request,
+                    ::proto2::Empty* response) override {
+    EXPECT_EQ(request->topic(), kTopic);
     return Status::OK;
-  }
-
-  Status Pull(ServerContext* context,
-              const tech::pubsub::PullRequest* request,
-              tech::pubsub::PullResponse* response) override {
-    EXPECT_EQ(request->subscription(), kSubscriptionName);
-    response->set_ack_id("1");
-    response->mutable_pubsub_event()->mutable_message()->set_data(kData);
-    return Status::OK;
-  }
-
-  Status Acknowledge(ServerContext* context,
-                     const tech::pubsub::AcknowledgeRequest* request,
-                     proto2::Empty* response) override {
-    return Status::OK;
-  }
+ }
 
 };
 
-class SubscriberTest : public ::testing::Test {
+class PublisherTest : public ::testing::Test {
  protected:
-  // Setup a server and a client for SubscriberService.
+  // Setup a server and a client for PublisherService.
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
@@ -111,37 +112,34 @@ class SubscriberTest : public ::testing::Test {
 
     channel_ = CreateChannel(server_address_.str(), ChannelArguments());
 
-    subscriber_.reset(new grpc::examples::tips::Subscriber(channel_));
+    publisher_.reset(new grpc::examples::pubsub::Publisher(channel_));
   }
 
   void TearDown() override {
     server_->Shutdown();
-    subscriber_->Shutdown();
+    publisher_->Shutdown();
   }
 
   std::ostringstream server_address_;
   std::unique_ptr<Server> server_;
-  SubscriberServiceImpl service_;
+  PublisherServiceImpl service_;
 
   std::shared_ptr<ChannelInterface> channel_;
 
-  std::unique_ptr<grpc::examples::tips::Subscriber> subscriber_;
+  std::unique_ptr<grpc::examples::pubsub::Publisher> publisher_;
 };
 
-TEST_F(SubscriberTest, TestSubscriber) {
-  EXPECT_TRUE(subscriber_->CreateSubscription(kTopic,
-                                              kSubscriptionName).IsOk());
+TEST_F(PublisherTest, TestPublisher) {
+  EXPECT_TRUE(publisher_->CreateTopic(kTopic).IsOk());
 
-  grpc::string topic;
-  EXPECT_TRUE(subscriber_->GetSubscription(kSubscriptionName,
-                                           &topic).IsOk());
-  EXPECT_EQ(topic, kTopic);
+  EXPECT_TRUE(publisher_->Publish(kTopic, kMessageData).IsOk());
 
-  grpc::string data;
-  EXPECT_TRUE(subscriber_->Pull(kSubscriptionName,
-                                &data).IsOk());
+  EXPECT_TRUE(publisher_->GetTopic(kTopic).IsOk());
 
-  EXPECT_TRUE(subscriber_->DeleteSubscription(kSubscriptionName).IsOk());
+  std::vector<grpc::string> topics;
+  EXPECT_TRUE(publisher_->ListTopics(kProjectId, &topics).IsOk());
+  EXPECT_EQ(topics.size(), 1);
+  EXPECT_EQ(topics[0], kTopic);
 }
 
 }  // namespace

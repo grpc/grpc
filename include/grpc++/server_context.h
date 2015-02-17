@@ -45,10 +45,12 @@ struct grpc_call;
 
 namespace grpc {
 
-template <class R>
+template <class W, class R>
 class ServerAsyncReader;
 template <class W>
 class ServerAsyncWriter;
+template <class W>
+class ServerAsyncResponseWriter;
 template <class R, class W>
 class ServerAsyncReaderWriter;
 template <class R>
@@ -74,12 +76,18 @@ class ServerContext final {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
+  std::multimap<grpc::string, grpc::string> client_metadata() {
+    return client_metadata_;
+  }
+
  private:
   friend class ::grpc::Server;
-  template <class R>
+  template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
   template <class W>
   friend class ::grpc::ServerAsyncWriter;
+  template <class W>
+  friend class ::grpc::ServerAsyncResponseWriter;
   template <class R, class W>
   friend class ::grpc::ServerAsyncReaderWriter;
   template <class R>

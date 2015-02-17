@@ -96,9 +96,9 @@ class Server final : private CallHook,
 
   // DispatchImpl
   void RequestAsyncCall(void* registered_method, ServerContext* context,
-                         ::google::protobuf::Message* request,
-                         ServerAsyncStreamingInterface* stream,
-                         CompletionQueue* cq, void* tag);
+                        ::google::protobuf::Message* request,
+                        ServerAsyncStreamingInterface* stream,
+                        CompletionQueue* cq, void* tag);
 
   // Completion queue.
   CompletionQueue cq_;

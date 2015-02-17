@@ -38,6 +38,8 @@
 
 namespace grpc {
 
+ServerContext::ServerContext() {}
+
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata *metadata,
                              size_t metadata_count)
     : deadline_(Timespec2Timepoint(deadline)) {

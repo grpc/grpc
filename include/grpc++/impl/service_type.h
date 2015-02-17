@@ -59,7 +59,6 @@ class ServerAsyncStreamingInterface {
   virtual ~ServerAsyncStreamingInterface() {}
 
   virtual void SendInitialMetadata(void* tag) = 0;
-  virtual void Finish(const Status& status, void* tag) = 0;
 
  private:
   friend class Server;
@@ -82,7 +81,7 @@ class AsynchronousService {
                       size_t method_count)
       : cq_(cq), method_names_(method_names), method_count_(method_count) {}
 
-  ~AsynchronousService();
+  ~AsynchronousService() { delete[] request_args_; }
 
   CompletionQueue* completion_queue() const { return cq_; }
 

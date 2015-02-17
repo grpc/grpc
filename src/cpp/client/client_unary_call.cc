@@ -34,6 +34,7 @@
 #include <grpc++/impl/client_unary_call.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/channel_interface.h>
+#include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/status.h>
 #include <grpc/support/log.h>
@@ -51,20 +52,38 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   Status status;
   buf.AddSendInitialMetadata(context);
   buf.AddSendMessage(request);
-  bool got_message;
-  buf.AddRecvMessage(result, &got_message);
+  buf.AddRecvInitialMetadata(&context->recv_initial_metadata_);
+  buf.AddRecvMessage(result);
   buf.AddClientSendClose();
-  buf.AddClientRecvStatus(nullptr, &status);  // TODO metadata
+  buf.AddClientRecvStatus(&context->trailing_metadata_, &status);
   call.PerformOps(&buf);
-  GPR_ASSERT(cq.Pluck(&buf) && (got_message || !status.IsOk()));
+  GPR_ASSERT(cq.Pluck(&buf) && (buf.got_message || !status.IsOk()));
   return status;
 }
+
+class ClientAsyncRequest final : public CallOpBuffer {
+ public:
+  void FinalizeResult(void **tag, bool *status) override {
+    CallOpBuffer::FinalizeResult(tag, status);
+    delete this;
+  }
+};
 
 void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
                     ClientContext *context,
                     const google::protobuf::Message &request,
                     google::protobuf::Message *result, Status *status,
                     CompletionQueue *cq, void *tag) {
-
+  ClientAsyncRequest *buf = new ClientAsyncRequest;
+  buf->Reset(tag);
+  Call call(channel->CreateCall(method, context, cq));
+  buf->AddSendInitialMetadata(context);
+  buf->AddSendMessage(request);
+  buf->AddRecvInitialMetadata(&context->recv_initial_metadata_);
+  buf->AddRecvMessage(result);
+  buf->AddClientSendClose();
+  buf->AddClientRecvStatus(&context->trailing_metadata_, status);
+  call.PerformOps(buf);
 }
+
 }  // namespace grpc

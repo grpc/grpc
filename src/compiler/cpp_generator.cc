@@ -133,7 +133,7 @@ std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
     temp.append("template <class OutMessage> class ClientWriter;\n");
     temp.append("template <class InMessage> class ServerReader;\n");
     temp.append("template <class OutMessage> class ClientAsyncWriter;\n");
-    temp.append("template <class InMessage> class ServerAsyncReader;\n");
+    temp.append("template <class OutMessage, class InMessage> class ServerAsyncReader;\n");
   }
   if (HasServerOnlyStreaming(file)) {
     temp.append("template <class InMessage> class ClientReader;\n");
@@ -197,10 +197,10 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(
         *vars,
         "::grpc::ClientReader< $Response$>* $Method$("
-        "::grpc::ClientContext* context, const $Request$* request);\n");
+        "::grpc::ClientContext* context, const $Request$& request);\n");
     printer->Print(*vars,
                    "::grpc::ClientAsyncReader< $Response$>* $Method$("
-                   "::grpc::ClientContext* context, const $Request$* request, "
+                   "::grpc::ClientContext* context, const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag);\n");
   } else if (BidiStreaming(method)) {
     printer->Print(*vars,
@@ -267,7 +267,7 @@ void PrintHeaderServerMethodAsync(
     printer->Print(*vars,
                    "void Request$Method$("
                    "::grpc::ServerContext* context, "
-                   "::grpc::ServerAsyncReader< $Request$>* reader, "
+                   "::grpc::ServerAsyncReader< $Response$, $Request$>* reader, "
                    "::grpc::CompletionQueue* cq, void *tag);\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
@@ -335,7 +335,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   printer->Indent();
   (*vars)["MethodCount"] = as_string(service->method_count());
   printer->Print("explicit AsyncService(::grpc::CompletionQueue* cq);\n");
-  printer->Print("~AsyncService();\n");
+  printer->Print("~AsyncService() {};\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodAsync(printer, service->method(i), vars);
   }
@@ -415,25 +415,25 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(
         *vars,
         "::grpc::ClientReader< $Response$>* $Service$::Stub::$Method$("
-        "::grpc::ClientContext* context, const $Request$* request) {\n");
+        "::grpc::ClientContext* context, const $Request$& request) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientReader< $Response$>("
                    "channel(),"
                    "::grpc::RpcMethod($Service$_method_names[$Idx$], "
                    "::grpc::RpcMethod::RpcType::SERVER_STREAMING), "
-                   "context, *request);\n"
+                   "context, request);\n"
                    "}\n\n");
     printer->Print(
         *vars,
         "::grpc::ClientAsyncReader< $Response$>* $Service$::Stub::$Method$("
-        "::grpc::ClientContext* context, const $Request$* request, "
+        "::grpc::ClientContext* context, const $Request$& request, "
         "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientAsyncReader< $Response$>("
                    "channel(), cq, "
                    "::grpc::RpcMethod($Service$_method_names[$Idx$], "
                    "::grpc::RpcMethod::RpcType::SERVER_STREAMING), "
-                   "context, *request, tag);\n"
+                   "context, request, tag);\n"
                    "}\n\n");
   } else if (BidiStreaming(method)) {
     printer->Print(
@@ -538,7 +538,7 @@ void PrintSourceServerAsyncMethod(
     printer->Print(*vars,
                    "void $Service$::AsyncService::Request$Method$("
                    "::grpc::ServerContext* context, "
-                   "::grpc::ServerAsyncReader< $Request$>* reader, "
+                   "::grpc::ServerAsyncReader< $Response$, $Request$>* reader, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(
         *vars,

@@ -75,6 +75,10 @@ void ClientContext::AddMetadata(const grpc::string &meta_key,
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::StartCancel() {}
+void ClientContext::TryCancel() {
+  if (call_) {
+    grpc_call_cancel(call_);
+  }
+}
 
 }  // namespace grpc
