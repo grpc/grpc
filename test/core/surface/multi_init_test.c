@@ -44,10 +44,20 @@ static void test(int rounds) {
   }
 }
 
+static void test_mixed() {
+  grpc_init();
+  grpc_init();
+  grpc_shutdown();
+  grpc_init();
+  grpc_shutdown();
+  grpc_shutdown();
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test(1);
   test(2);
   test(3);
+  test_mixed();
   return 0;
 }
