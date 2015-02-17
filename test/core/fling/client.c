@@ -55,7 +55,6 @@ static grpc_op stream_step_ops[2];
 static grpc_metadata_array initial_metadata_recv;
 static grpc_metadata_array trailing_metadata_recv;
 static grpc_byte_buffer *response_payload_recv = NULL;
-static grpc_call_details call_details;
 static grpc_status_code status;
 static char *details = NULL;
 static size_t details_capacity = 0;
@@ -64,7 +63,6 @@ static grpc_op *op;
 static void init_ping_pong_request(void) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_call_details_init(&call_details);
 
   op = ops;
 
@@ -97,6 +95,7 @@ static void step_ping_pong_request(void) {
              grpc_call_start_batch(call, ops, op - ops, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_call_destroy(call);
+  grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
 }
 
@@ -121,6 +120,7 @@ static void step_ping_pong_stream(void) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call, stream_step_ops, 2, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  grpc_byte_buffer_destroy(response_payload_recv);
 }
 
 static double now(void) {
