@@ -94,6 +94,10 @@ class ClientContext {
   void set_absolute_deadline(const system_clock::time_point &deadline);
   system_clock::time_point absolute_deadline();
 
+  void set_authority(const grpc::string& authority) {
+    authority_ = authority;
+  }
+
   void TryCancel();
 
  private:
@@ -137,10 +141,15 @@ class ClientContext {
 
   gpr_timespec RawDeadline() { return absolute_deadline_; }
 
+  grpc::string authority() {
+    return authority_;
+  }
+
   bool initial_metadata_received_ = false;
   grpc_call *call_;
   grpc_completion_queue *cq_;
   gpr_timespec absolute_deadline_;
+  grpc::string authority_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
