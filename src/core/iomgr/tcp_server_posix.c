@@ -75,7 +75,11 @@ typedef struct {
   int fd;
   grpc_fd *emfd;
   grpc_tcp_server *server;
-  gpr_uint8 addr[GRPC_MAX_SOCKADDR_SIZE];
+  union {
+    gpr_uint8 untyped[GRPC_MAX_SOCKADDR_SIZE];
+    struct sockaddr sockaddr;
+    struct sockaddr_un un;
+  } addr;
   int addr_len;
 } server_port;
 
@@ -125,9 +129,8 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   /* delete ALL the things */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    if (((struct sockaddr *)sp->addr)->sa_family == AF_UNIX) {
-      struct sockaddr_un *un = (struct sockaddr_un *)sp->addr;
-      unlink(un->sun_path);
+    if (sp->addr.sockaddr.sa_family == AF_UNIX) {
+      unlink(sp->addr.un.sun_path);
     }
     grpc_fd_orphan(sp->emfd, NULL, NULL);
   }
@@ -273,7 +276,7 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     sp->server = s;
     sp->fd = fd;
     sp->emfd = grpc_fd_create(fd);
-    memcpy(sp->addr, addr, addr_len);
+    memcpy(sp->addr.untyped, addr, addr_len);
     sp->addr_len = addr_len;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
