@@ -57,7 +57,7 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   buf.AddClientSendClose();
   buf.AddClientRecvStatus(&context->trailing_metadata_, &status);
   call.PerformOps(&buf);
-  GPR_ASSERT(cq.Pluck(&buf) && (buf.got_message || !status.IsOk()));
+  GPR_ASSERT((cq.Pluck(&buf) && buf.got_message) || !status.IsOk());
   return status;
 }
 
