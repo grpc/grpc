@@ -81,8 +81,11 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 Call Channel::CreateCall(const RpcMethod &method, ClientContext *context,
                          CompletionQueue *cq) {
   auto c_call =
-      grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
-                               target_.c_str(), context->RawDeadline());
+      grpc_channel_create_call(
+          c_channel_, cq->cq(), method.name(),
+          context->authority().empty() ?  target_.c_str()
+                                       : context->authority(),
+          context->RawDeadline());
   context->set_call(c_call);
   return Call(c_call, this, cq);
 }
