@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 """Generates the appropriate build.json data for all the end2end tests."""
 
@@ -8,6 +8,7 @@ import simplejson
 END2END_FIXTURES = [
     'chttp2_fake_security',
     'chttp2_fullstack',
+    'chttp2_fullstack_uds',
     'chttp2_simple_ssl_fullstack',
     'chttp2_simple_ssl_with_oauth2_fullstack',
     'chttp2_socket_pair',
@@ -25,6 +26,7 @@ END2END_TESTS = [
     'disappearing_server',
     'early_server_shutdown_finishes_inflight_calls',
     'early_server_shutdown_finishes_tags',
+    'empty_batch',
     'graceful_server_shutdown',
     'invoke_large_request',
     'max_concurrent_streams',
@@ -33,11 +35,37 @@ END2END_TESTS = [
     'request_response_with_binary_metadata_and_payload',
     'request_response_with_metadata_and_payload',
     'request_response_with_payload',
-    'request_response_with_trailing_metadata_and_payload',
+    'request_with_large_metadata',
+    'request_with_payload',
     'simple_delayed_request',
     'simple_request',
     'thread_stress',
     'writes_done_hangs_with_pending_read',
+
+    'cancel_after_accept_legacy',
+    'cancel_after_accept_and_writes_closed_legacy',
+    'cancel_after_invoke_legacy',
+    'cancel_before_invoke_legacy',
+    'cancel_in_a_vacuum_legacy',
+    'census_simple_request_legacy',
+    'disappearing_server_legacy',
+    'early_server_shutdown_finishes_inflight_calls_legacy',
+    'early_server_shutdown_finishes_tags_legacy',
+    'graceful_server_shutdown_legacy',
+    'invoke_large_request_legacy',
+    'max_concurrent_streams_legacy',
+    'no_op_legacy',
+    'ping_pong_streaming_legacy',
+    'request_response_with_binary_metadata_and_payload_legacy',
+    'request_response_with_metadata_and_payload_legacy',
+    'request_response_with_payload_legacy',
+    'request_response_with_trailing_metadata_and_payload_legacy',
+    'request_with_large_metadata_legacy',
+    'request_with_payload_legacy',
+    'simple_delayed_request_legacy',
+    'simple_request_legacy',
+    'thread_stress_legacy',
+    'writes_done_hangs_with_pending_read_legacy',
 ]
 
 
@@ -97,4 +125,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-

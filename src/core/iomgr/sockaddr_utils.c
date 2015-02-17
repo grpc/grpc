@@ -111,13 +111,20 @@ int grpc_sockaddr_is_wildcard(const struct sockaddr *addr, int *port_out) {
 
 void grpc_sockaddr_make_wildcards(int port, struct sockaddr_in *wild4_out,
                                   struct sockaddr_in6 *wild6_out) {
-  memset(wild4_out, 0, sizeof(*wild4_out));
-  wild4_out->sin_family = AF_INET;
-  wild4_out->sin_port = htons(port);
+  grpc_sockaddr_make_wildcard4(port, wild4_out);
+  grpc_sockaddr_make_wildcard6(port, wild6_out);
+}
 
-  memset(wild6_out, 0, sizeof(*wild6_out));
-  wild6_out->sin6_family = AF_INET6;
-  wild6_out->sin6_port = htons(port);
+void grpc_sockaddr_make_wildcard4(int port, struct sockaddr_in *wild_out) {
+  memset(wild_out, 0, sizeof(*wild_out));
+  wild_out->sin_family = AF_INET;
+  wild_out->sin_port = htons(port);
+}
+
+void grpc_sockaddr_make_wildcard6(int port, struct sockaddr_in6 *wild_out) {
+  memset(wild_out, 0, sizeof(*wild_out));
+  wild_out->sin6_family = AF_INET6;
+  wild_out->sin6_port = htons(port);
 }
 
 int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
@@ -159,6 +166,8 @@ int grpc_sockaddr_get_port(const struct sockaddr *addr) {
       return ntohs(((struct sockaddr_in *)addr)->sin_port);
     case AF_INET6:
       return ntohs(((struct sockaddr_in6 *)addr)->sin6_port);
+    case AF_UNIX:
+      return 1;
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in %s", addr->sa_family,
               __FUNCTION__);

@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+require 'grpc/auth/compute_engine.rb'
+require 'grpc/auth/service_account.rb'
 require 'grpc/errors'
 require 'grpc/grpc'
 require 'grpc/logconfig'

@@ -112,35 +112,37 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
-  c = grpc_channel_create_call(client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(client, "/foo", "foo.test.google.com",
+                                   deadline);
   GPR_ASSERT(c);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(c, client_cq, tag(2), tag(3), 0));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(4)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_invoke_old(c, client_cq, tag(2), tag(3), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(4)));
   if (expect_ok) {
     /* Check for a successful request. */
     cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_OK);
     cq_verify(v_client);
 
-    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server, tag(100)));
-    cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
-                             deadline, NULL);
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(server, tag(100)));
+    cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo",
+                             "foo.test.google.com", deadline, NULL);
     cq_verify(v_server);
 
-    GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, server_cq, tag(102)));
-    GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
+    GPR_ASSERT(GRPC_CALL_OK ==
+               grpc_call_server_accept_old(s, server_cq, tag(102)));
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata_old(s, 0));
     cq_expect_client_metadata_read(v_client, tag(2), NULL);
     cq_verify(v_client);
 
     GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_write_status(s, GRPC_STATUS_UNIMPLEMENTED, "xyz",
-                                            tag(5)));
+               grpc_call_start_write_status_old(s, GRPC_STATUS_UNIMPLEMENTED,
+                                                "xyz", tag(5)));
     cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
                                    "xyz", NULL);
     cq_verify(v_client);
 
     cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
-    cq_verify(v_server);
     cq_expect_finished(v_server, tag(102), NULL);
     cq_verify(v_server);
 

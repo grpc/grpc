@@ -13,6 +13,7 @@ _VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
     'name', 
     'build', 
+    'run',
     'language', 
     'public_headers', 
     'headers', 
@@ -33,9 +34,9 @@ def clean_elem(indict):
   for name in ['public_headers', 'headers', 'src']:
     if name not in indict: continue
     inlist = indict[name]
-    protos = set(x for x in inlist if os.path.splitext(x)[1] == '.proto')
+    protos = list(x for x in inlist if os.path.splitext(x)[1] == '.proto')
     others = set(x for x in inlist if x not in protos)
-    indict[name] = sorted(protos) + sorted(others)
+    indict[name] = protos + sorted(others)
   return rebuild_as_ordered_dict(indict, _ELEM_KEYS)
 
 for filename in sys.argv[1:]:

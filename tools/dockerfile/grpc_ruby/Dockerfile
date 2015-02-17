@@ -6,23 +6,19 @@ RUN cd /var/local/git/grpc \
   && git pull --recurse-submodules \
   && git submodule update --init --recursive
 
-# TODO: remove this, once make install is fixed
-RUN touch /var/local/git/grpc/include/grpc/support/string.h
-
-# Build the C core.
+# Build the C core
 RUN make install_c -C /var/local/git/grpc
 
-# Install the grpc gem locally with its dependencies and build the extension
-RUN /bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && bundle && rake compile:grpc && gem build grpc.gemspec && gem install grpc'
+# Build ruby gRPC and run its tests
+RUN /bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && bundle && rake'
 
-# TODO add a command to run the unittest tests when the bug below is fixed
-# - the tests fail due to an error in the C threading library:
-#   they fail with 'ruby: __pthread_mutex_cond_lock_adjust for unknown reasons' at the end of a testcase
-# - however, the interop server and client run OK, so this bug can be investigated
-# RUN /bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && bundle && rake'
-
-# Add a cacerts directory containing the Google root pem file, allowing the ruby client to access the production test instance
+# Add a cacerts directory containing the Google root pem file, allowing the
+# ruby client to access the production test instance
 ADD cacerts cacerts
 
-# Specify the default command such that the interop server runs on its known testing port
+# Add a service_account directory containing the auth creds file
+ADD service_account service_account
+
+# Specify the default command such that the interop server runs on its known
+# testing port
 CMD ["/bin/bash", "-l", "-c", "ruby /var/local/git/grpc/src/ruby/bin/interop/interop_server.rb --use_tls --port 8060"]

@@ -913,7 +913,7 @@ static const size_t interesting_message_lengths[] = {1,      100,     10000,
                                                      100000, 1000000, };
 
 void grpc_transport_end2end_tests(grpc_transport_test_config *config) {
-  int i;
+  unsigned i;
 
   g_metadata_context = grpc_mdctx_create();
 

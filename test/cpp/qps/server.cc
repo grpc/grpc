@@ -33,6 +33,7 @@
 
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/signal.h>
 #include <thread>
 
 #include <google/gflags.h>
@@ -43,6 +44,8 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
+#include "src/cpp/server/thread_pool.h"
+#include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/qpstest.pb.h"
 
 #include <grpc/grpc.h>
@@ -50,10 +53,12 @@
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(server_threads, 4, "Number of server threads.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
+using grpc::ThreadPool;
 using grpc::testing::Payload;
 using grpc::testing::PayloadType;
 using grpc::testing::ServerStats;
@@ -63,11 +68,15 @@ using grpc::testing::StatsRequest;
 using grpc::testing::TestService;
 using grpc::Status;
 
+static bool got_sigint = false;
+
+static void sigint_handler(int x) { got_sigint = 1; }
+
 static double time_double(struct timeval* tv) {
   return tv->tv_sec + 1e-6 * tv->tv_usec;
 }
 
-bool SetPayload(PayloadType type, int size, Payload* payload) {
+static bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
   // TODO(yangg): Support UNCOMPRESSABLE payload.
   if (type != PayloadType::COMPRESSABLE) {
@@ -79,7 +88,9 @@ bool SetPayload(PayloadType type, int size, Payload* payload) {
   return true;
 }
 
-class TestServiceImpl : public TestService::Service {
+namespace {
+
+class TestServiceImpl final : public TestService::Service {
  public:
   Status CollectServerStats(ServerContext* context, const StatsRequest*,
                             ServerStats* response) {
@@ -104,7 +115,9 @@ class TestServiceImpl : public TestService::Service {
   }
 };
 
-void RunServer() {
+}  // namespace
+
+static void RunServer() {
   char* server_address = NULL;
   gpr_join_host_port(&server_address, "::", FLAGS_port);
 
@@ -116,11 +129,20 @@ void RunServer() {
   ServerBuilder builder;
   builder.AddPort(server_address);
   builder.RegisterService(service.service());
+
+  std::unique_ptr<ThreadPool> pool(new ThreadPool(FLAGS_server_threads));
+  builder.SetThreadPool(pool.get());
+
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
-  while (true) {
+
+  grpc_profiler_start("qps_server.prof");
+
+  while (!got_sigint) {
     std::this_thread::sleep_for(std::chrono::seconds(5));
   }
+
+  grpc_profiler_stop();
 
   gpr_free(server_address);
 }
@@ -129,6 +151,8 @@ int main(int argc, char** argv) {
   grpc_init();
   google::ParseCommandLineFlags(&argc, &argv, true);
 
+  signal(SIGINT, sigint_handler);
+  
   GPR_ASSERT(FLAGS_port != 0);
   GPR_ASSERT(!FLAGS_enable_ssl);
   RunServer();
@@ -136,3 +160,4 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return 0;
 }
+

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+#include <map>
+
 #include <node.h>
 #include <nan.h>
 #include "grpc/grpc.h"
@@ -43,6 +45,7 @@
 namespace grpc {
 namespace node {
 
+using ::node::Buffer;
 using v8::Array;
 using v8::Date;
 using v8::Handle;
@@ -52,6 +55,37 @@ using v8::Object;
 using v8::Persistent;
 using v8::String;
 using v8::Value;
+
+Handle<Value> ParseMetadata(grpc_metadata *metadata_elements, size_t length) {
+  NanEscapableScope();
+  std::map<const char*, size_t> size_map;
+  std::map<const char*, size_t> index_map;
+
+  for (unsigned int i = 0; i < length; i++) {
+    const char *key = metadata_elements[i].key;
+    if (size_map.count(key)) {
+      size_map[key] += 1;
+    }
+    index_map[key] = 0;
+  }
+  Handle<Object> metadata_object = NanNew<Object>();
+  for (unsigned int i = 0; i < length; i++) {
+    grpc_metadata* elem = &metadata_elements[i];
+    Handle<String> key_string = String::New(elem->key);
+    Handle<Array> array;
+    if (metadata_object->Has(key_string)) {
+      array = Handle<Array>::Cast(metadata_object->Get(key_string));
+    } else {
+      array = NanNew<Array>(size_map[elem->key]);
+      metadata_object->Set(key_string, array);
+    }
+    array->Set(index_map[elem->key],
+               MakeFastBuffer(
+                   NanNewBufferHandle(elem->value, elem->value_length)));
+    index_map[elem->key] += 1;
+  }
+  return NanEscapeScope(metadata_object);
+}
 
 Handle<Value> GetEventData(grpc_event *event) {
   NanEscapableScope();
@@ -63,8 +97,6 @@ Handle<Value> GetEventData(grpc_event *event) {
   switch (event->type) {
     case GRPC_READ:
       return NanEscapeScope(ByteBufferToBuffer(event->data.read));
-    case GRPC_INVOKE_ACCEPTED:
-      return NanEscapeScope(NanNew<Number>(event->data.invoke_accepted));
     case GRPC_WRITE_ACCEPTED:
       return NanEscapeScope(NanNew<Number>(event->data.write_accepted));
     case GRPC_FINISH_ACCEPTED:
@@ -72,18 +104,7 @@ Handle<Value> GetEventData(grpc_event *event) {
     case GRPC_CLIENT_METADATA_READ:
       count = event->data.client_metadata_read.count;
       items = event->data.client_metadata_read.elements;
-      metadata = NanNew<Array>(static_cast<int>(count));
-      for (unsigned int i = 0; i < count; i++) {
-        Handle<Object> item_obj = NanNew<Object>();
-        item_obj->Set(NanNew<String, const char *>("key"),
-                      NanNew<String, char *>(items[i].key));
-        item_obj->Set(
-            NanNew<String, const char *>("value"),
-            NanNew<String, char *>(items[i].value,
-                                   static_cast<int>(items[i].value_length)));
-        metadata->Set(i, item_obj);
-      }
-      return NanEscapeScope(metadata);
+      return NanEscapeScope(ParseMetadata(items, count));
     case GRPC_FINISHED:
       status = NanNew<Object>();
       status->Set(NanNew("code"), NanNew<Number>(event->data.finished.status));
@@ -93,18 +114,7 @@ Handle<Value> GetEventData(grpc_event *event) {
       }
       count = event->data.finished.metadata_count;
       items = event->data.finished.metadata_elements;
-      metadata = NanNew<Array>(static_cast<int>(count));
-      for (unsigned int i = 0; i < count; i++) {
-        Handle<Object> item_obj = NanNew<Object>();
-        item_obj->Set(NanNew<String, const char *>("key"),
-                      NanNew<String, char *>(items[i].key));
-        item_obj->Set(
-            NanNew<String, const char *>("value"),
-            NanNew<String, char *>(items[i].value,
-                                   static_cast<int>(items[i].value_length)));
-        metadata->Set(i, item_obj);
-      }
-      status->Set(NanNew("metadata"), metadata);
+      status->Set(NanNew("metadata"), ParseMetadata(items, count));
       return NanEscapeScope(status);
     case GRPC_SERVER_RPC_NEW:
       rpc_new = NanNew<Object>();
@@ -112,12 +122,12 @@ Handle<Value> GetEventData(grpc_event *event) {
         return NanEscapeScope(NanNull());
       }
       rpc_new->Set(
-          NanNew<String, const char *>("method"),
-          NanNew<String, const char *>(event->data.server_rpc_new.method));
+          NanNew("method"),
+          NanNew(event->data.server_rpc_new.method));
       rpc_new->Set(
-          NanNew<String, const char *>("host"),
-          NanNew<String, const char *>(event->data.server_rpc_new.host));
-      rpc_new->Set(NanNew<String, const char *>("absolute_deadline"),
+          NanNew("host"),
+          NanNew(event->data.server_rpc_new.host));
+      rpc_new->Set(NanNew("absolute_deadline"),
                    NanNew<Date>(TimespecToMilliseconds(
                        event->data.server_rpc_new.deadline)));
       count = event->data.server_rpc_new.metadata_count;
@@ -125,15 +135,14 @@ Handle<Value> GetEventData(grpc_event *event) {
       metadata = NanNew<Array>(static_cast<int>(count));
       for (unsigned int i = 0; i < count; i++) {
         Handle<Object> item_obj = Object::New();
-        item_obj->Set(NanNew<String, const char *>("key"),
-                      NanNew<String, char *>(items[i].key));
+        item_obj->Set(NanNew("key"),
+                      NanNew(items[i].key));
         item_obj->Set(
-            NanNew<String, const char *>("value"),
-            NanNew<String, char *>(items[i].value,
-                                   static_cast<int>(items[i].value_length)));
+            NanNew("value"),
+            NanNew(items[i].value, static_cast<int>(items[i].value_length)));
         metadata->Set(i, item_obj);
       }
-      rpc_new->Set(NanNew<String, const char *>("metadata"), metadata);
+      rpc_new->Set(NanNew("metadata"), ParseMetadata(items, count));
       return NanEscapeScope(rpc_new);
     default:
       return NanEscapeScope(NanNull());

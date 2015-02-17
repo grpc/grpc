@@ -37,39 +37,73 @@
 /* Override this file with one for your platform if you need to redefine
    things.  */
 
-/* For a common case, assume that the platform has a C99-like stdint.h */
-
-#include <stdint.h>
-
 #if !defined(GPR_NO_AUTODETECT_PLATFORM)
 #if defined(_WIN64) || defined(WIN64)
 #define GPR_WIN32 1
 #define GPR_ARCH_64 1
 #define GPR_GETPID_IN_PROCESS_H 1
+#define GPR_WINSOCK_SOCKET 1
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_ARCH_32 1
 #define GPR_WIN32 1
 #define GPR_GETPID_IN_PROCESS_H 1
+#define GPR_WINSOCK_SOCKET 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_ANDROID 1
 #define GPR_ARCH_32 1
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
+#define GPR_POSIX_WAKEUP_FD 1
+#define GPR_LINUX_EVENTFD 1
 #define GPR_POSIX_SOCKET 1
 #define GPR_POSIX_SOCKETADDR 1
 #define GPR_POSIX_SOCKETUTILS 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_FILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #elif defined(__linux__)
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <features.h>
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_LINUX 1
-#define GPR_POSIX_MULTIPOLL_WITH_POLL 1
+#define GPR_LINUX_MULTIPOLL_WITH_EPOLL 1
+#define GPR_POSIX_WAKEUP_FD 1
 #define GPR_POSIX_SOCKET 1
 #define GPR_POSIX_SOCKETADDR 1
+#ifdef __GLIBC_PREREQ
+#if __GLIBC_PREREQ(2, 9)
+#define GPR_LINUX_EVENTFD 1
+#endif
+#if __GLIBC_PREREQ(2, 10)
+#define GPR_LINUX_SOCKETUTILS 1
+#endif
+#if __GLIBC_PREREQ(2, 17)
+#define GPR_LINUX_ENV 1
+#endif
+#endif
+#ifndef GPR_LINUX_EVENTFD
+#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#endif
+#ifndef GPR_LINUX_SOCKETUTILS
+#define GPR_POSIX_SOCKETUTILS
+#endif
+#ifndef GPR_LINUX_ENV
+#define GPR_POSIX_ENV 1
+#endif
+#define GPR_POSIX_FILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
@@ -80,13 +114,20 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__APPLE__)
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
+#define GPR_POSIX_WAKEUP_FD 1
+#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #define GPR_POSIX_SOCKET 1
 #define GPR_POSIX_SOCKETADDR 1
 #define GPR_POSIX_SOCKETUTILS 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_FILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
@@ -100,6 +141,10 @@
 #error Could not auto-detect platform
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
+
+/* For a common case, assume that the platform has a C99-like stdint.h */
+
+#include <stdint.h>
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE
@@ -153,7 +198,7 @@ typedef uintmax_t gpr_uintmax;
 typedef uintptr_t gpr_uintptr;
 
 /* INT64_MAX is unavailable on some platforms. */
-#define GPR_INT64_MAX (~(gpr_uint64)0 >> 1)
+#define GPR_INT64_MAX (gpr_int64)(~(gpr_uint64)0 >> 1)
 
 /* maximum alignment needed for any type on this platform, rounded up to a
    power of two */

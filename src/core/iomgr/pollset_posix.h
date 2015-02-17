@@ -66,6 +66,7 @@ struct grpc_pollset_vtable {
   void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
   int (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
                     gpr_timespec now, int allow_synchronous_callback);
+  void (*kick)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
 
@@ -78,7 +79,11 @@ void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);
    poll after an fd is orphaned) */
 void grpc_pollset_del_fd(grpc_pollset *pollset, struct grpc_fd *fd);
 
-/* Force any current pollers to break polling */
+/* Force any current pollers to break polling: it's the callers responsibility
+   to ensure that the pollset indeed needs to be kicked - no verification that
+   the pollset is actually performing polling work is done. At worst this will
+   result in spurious wakeups if performed at the wrong moment.
+   Does not touch pollset->mu. */
 void grpc_pollset_force_kick(grpc_pollset *pollset);
 /* Returns the fd to listen on for kicks */
 int grpc_kick_read_fd(grpc_pollset *p);

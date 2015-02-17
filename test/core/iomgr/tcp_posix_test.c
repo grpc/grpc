@@ -94,7 +94,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
   ssize_t write_bytes;
   size_t total_bytes = 0;
   unsigned char *buf = malloc(bytes);
-  int i;
+  unsigned i;
   for (i = 0; i < bytes; ++i) {
     buf[i] = i % 256;
   }
@@ -115,15 +115,14 @@ struct read_socket_state {
   grpc_endpoint *ep;
   gpr_mu mu;
   gpr_cv cv;
-  size_t read_bytes;
+  ssize_t read_bytes;
   ssize_t target_read_bytes;
 };
 
 static ssize_t count_and_unref_slices(gpr_slice *slices, size_t nslices,
                                       int *current_data) {
   ssize_t num_bytes = 0;
-  int i;
-  int j;
+  unsigned i, j;
   unsigned char *buf;
   for (i = 0; i < nslices; ++i) {
     buf = GPR_SLICE_START_PTR(slices[i]);
@@ -254,8 +253,7 @@ static gpr_slice *allocate_blocks(ssize_t num_bytes, ssize_t slice_size,
   ssize_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
   gpr_slice *slices = gpr_malloc(sizeof(gpr_slice) * nslices);
   ssize_t num_bytes_left = num_bytes;
-  int i;
-  int j;
+  unsigned i, j;
   unsigned char *buf;
   *num_blocks = nslices;
 

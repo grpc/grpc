@@ -61,6 +61,7 @@ grpc_byte_buffer *grpc_byte_buffer_copy(grpc_byte_buffer *bb) {
 }
 
 void grpc_byte_buffer_destroy(grpc_byte_buffer *bb) {
+  if (!bb) return;
   switch (bb->type) {
     case GRPC_BB_SLICE_BUFFER:
       gpr_slice_buffer_destroy(&bb->data.slice_buffer);

@@ -41,7 +41,12 @@
     <Import Project="global.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -83,6 +88,7 @@
     <ClInclude Include="..\..\include\grpc\support\histogram.h" />
     <ClInclude Include="..\..\include\grpc\support\host_port.h" />
     <ClInclude Include="..\..\include\grpc\support\log.h" />
+    <ClInclude Include="..\..\include\grpc\support\log_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\port_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\slice.h" />
     <ClInclude Include="..\..\include\grpc\support\slice_buffer.h" />
@@ -91,17 +97,16 @@
     <ClInclude Include="..\..\include\grpc\support\sync_posix.h" />
     <ClInclude Include="..\..\include\grpc\support\sync_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\thd.h" />
-    <ClInclude Include="..\..\include\grpc\support\thd_posix.h" />
-    <ClInclude Include="..\..\include\grpc\support\thd_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\time.h" />
-    <ClInclude Include="..\..\include\grpc\support\time_posix.h" />
-    <ClInclude Include="..\..\include\grpc\support\time_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\useful.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\core\support\cpu.h" />
+    <ClInclude Include="..\..\src\core\support\env.h" />
+    <ClInclude Include="..\..\src\core\support\file.h" />
     <ClInclude Include="..\..\src\core\support\murmur_hash.h" />
     <ClInclude Include="..\..\src\core\support\string.h" />
+    <ClInclude Include="..\..\src\core\support\string_win32.h" />
     <ClInclude Include="..\..\src\core\support\thd_internal.h" />
   </ItemGroup>
   <ItemGroup>
@@ -114,6 +119,20 @@
     <ClCompile Include="..\..\src\core\support\cpu_linux.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\cpu_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\cpu_windows.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_linux.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\env_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\support\file_win32.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\histogram.c">
     </ClCompile>

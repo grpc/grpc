@@ -31,12 +31,15 @@
  *
  */
 
+#ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE
+#endif
 
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/resolve_address.h"
 
 #include <sys/types.h>
+#include <sys/un.h>
 #include <string.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
@@ -121,6 +124,19 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   size_t i;
   grpc_resolved_addresses *addrs = NULL;
   const gpr_timespec start_time = gpr_now();
+  struct sockaddr_un *un;
+
+  if (name[0] == 'u' && name[1] == 'n' && name[2] == 'i' && name[3] == 'x' &&
+      name[4] == ':' && name[5] != 0) {
+    addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
+    addrs->naddrs = 1;
+    addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address));
+    un = (struct sockaddr_un *)addrs->addrs->addr;
+    un->sun_family = AF_UNIX;
+    strcpy(un->sun_path, name + 5);
+    addrs->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family);
+    return addrs;
+  }
 
   /* parse name, splitting it into host and port parts */
   split_host_port(name, &host, &port);

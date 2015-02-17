@@ -42,6 +42,7 @@
         "src/core/iomgr/endpoint.h",
         "src/core/iomgr/endpoint_pair.h",
         "src/core/iomgr/fd_posix.h",
+        "src/core/iomgr/iocp_windows.h",
         "src/core/iomgr/iomgr.h",
         "src/core/iomgr/iomgr_internal.h",
         "src/core/iomgr/iomgr_posix.h",
@@ -57,16 +58,25 @@
         "src/core/iomgr/sockaddr_utils.h",
         "src/core/iomgr/sockaddr_win32.h",
         "src/core/iomgr/socket_utils_posix.h",
+        "src/core/iomgr/socket_windows.h",
         "src/core/iomgr/tcp_client.h",
         "src/core/iomgr/tcp_posix.h",
         "src/core/iomgr/tcp_server.h",
+        "src/core/iomgr/tcp_windows.h",
         "src/core/iomgr/time_averaged_stats.h",
+        "src/core/iomgr/wakeup_fd_pipe.h",
+        "src/core/iomgr/wakeup_fd_posix.h",
+        "src/core/json/json.h",
+        "src/core/json/json_common.h",
+        "src/core/json/json_reader.h",
+        "src/core/json/json_writer.h",
         "src/core/statistics/census_interface.h",
         "src/core/statistics/census_log.h",
         "src/core/statistics/census_rpc_stats.h",
         "src/core/statistics/census_tracing.h",
         "src/core/statistics/hash_table.h",
         "src/core/statistics/window_stats.h",
+        "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
         "src/core/surface/client.h",
@@ -123,10 +133,13 @@
         "src/core/iomgr/endpoint.c",
         "src/core/iomgr/endpoint_pair_posix.c",
         "src/core/iomgr/fd_posix.c",
+        "src/core/iomgr/iocp_windows.c",
         "src/core/iomgr/iomgr.c",
         "src/core/iomgr/iomgr_posix.c",
-        "src/core/iomgr/pollset_kick_posix.c",
+        "src/core/iomgr/iomgr_windows.c",
+        "src/core/iomgr/pollset_kick.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
+        "src/core/iomgr/pollset_multipoller_with_epoll.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
         "src/core/iomgr/resolve_address.c",
@@ -134,10 +147,22 @@
         "src/core/iomgr/socket_utils_common_posix.c",
         "src/core/iomgr/socket_utils_linux.c",
         "src/core/iomgr/socket_utils_posix.c",
+        "src/core/iomgr/socket_windows.c",
         "src/core/iomgr/tcp_client_posix.c",
+        "src/core/iomgr/tcp_client_windows.c",
         "src/core/iomgr/tcp_posix.c",
         "src/core/iomgr/tcp_server_posix.c",
+        "src/core/iomgr/tcp_server_windows.c",
+        "src/core/iomgr/tcp_windows.c",
         "src/core/iomgr/time_averaged_stats.c",
+        "src/core/iomgr/wakeup_fd_eventfd.c",
+        "src/core/iomgr/wakeup_fd_nospecial.c",
+        "src/core/iomgr/wakeup_fd_pipe.c",
+        "src/core/iomgr/wakeup_fd_posix.c",
+        "src/core/json/json.c",
+        "src/core/json/json_reader.c",
+        "src/core/json/json_string.c",
+        "src/core/json/json_writer.c",
         "src/core/statistics/census_init.c",
         "src/core/statistics/census_log.c",
         "src/core/statistics/census_rpc_stats.c",
@@ -145,8 +170,10 @@
         "src/core/statistics/hash_table.c",
         "src/core/statistics/window_stats.c",
         "src/core/surface/byte_buffer.c",
+        "src/core/surface/byte_buffer_queue.c",
         "src/core/surface/byte_buffer_reader.c",
         "src/core/surface/call.c",
+        "src/core/surface/call_details.c",
         "src/core/surface/channel.c",
         "src/core/surface/channel_create.c",
         "src/core/surface/client.c",
@@ -154,6 +181,7 @@
         "src/core/surface/event_string.c",
         "src/core/surface/init.c",
         "src/core/surface/lame_client.c",
+        "src/core/surface/metadata_array.c",
         "src/core/surface/secure_channel_create.c",
         "src/core/surface/secure_server_create.c",
         "src/core/surface/server.c",
@@ -178,8 +206,7 @@
         "src/core/transport/chttp2_transport.c",
         "src/core/transport/metadata.c",
         "src/core/transport/stream_op.c",
-        "src/core/transport/transport.c",
-        "third_party/cJSON/cJSON.c"
+        "src/core/transport/transport.c"
       ]
     }
   ],
@@ -199,6 +226,7 @@
         "include/grpc/support/histogram.h",
         "include/grpc/support/host_port.h",
         "include/grpc/support/log.h",
+        "include/grpc/support/log_win32.h",
         "include/grpc/support/port_platform.h",
         "include/grpc/support/slice.h",
         "include/grpc/support/slice_buffer.h",
@@ -207,17 +235,16 @@
         "include/grpc/support/sync_posix.h",
         "include/grpc/support/sync_win32.h",
         "include/grpc/support/thd.h",
-        "include/grpc/support/thd_posix.h",
-        "include/grpc/support/thd_win32.h",
         "include/grpc/support/time.h",
-        "include/grpc/support/time_posix.h",
-        "include/grpc/support/time_win32.h",
         "include/grpc/support/useful.h"
       ],
       "headers": [
         "src/core/support/cpu.h",
+        "src/core/support/env.h",
+        "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
         "src/core/support/string.h",
+        "src/core/support/string_win32.h",
         "src/core/support/thd_internal.h"
       ],
       "src": [
@@ -226,6 +253,13 @@
         "src/core/support/cmdline.c",
         "src/core/support/cpu_linux.c",
         "src/core/support/cpu_posix.c",
+        "src/core/support/cpu_windows.c",
+        "src/core/support/env_linux.c",
+        "src/core/support/env_posix.c",
+        "src/core/support/env_win32.c",
+        "src/core/support/file.c",
+        "src/core/support/file_posix.c",
+        "src/core/support/file_win32.c",
         "src/core/support/histogram.c",
         "src/core/support/host_port.c",
         "src/core/support/log.c",
@@ -257,6 +291,9 @@
       "language": "c",
       "src": [
         "test/core/util/test_config.c"
+      ],
+      "deps": [
+        "gpr"
       ],
       "vs_project_guid": "{EAB0A629-17A9-44DB-B5FF-E91A721FE037}"
     },
@@ -306,6 +343,19 @@
       "vs_project_guid": "{29D16885-7228-4C31-81ED-5F9187C7F2A9}"
     },
     {
+      "name": "grpc_csharp_ext",
+      "build": "all",
+      "language": "c",
+      "src": [
+        "src/csharp/ext/grpc_csharp_ext.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ],
+      "vs_project_guid": "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
+    },
+    {
       "name": "grpc_test_util",
       "build": "private",
       "language": "c",
@@ -322,6 +372,10 @@
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
         "test/core/util/slice_splitter.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
       ],
       "vs_project_guid": "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
     },
@@ -379,11 +433,11 @@
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
         "src/cpp/client/internal_stub.cc",
+        "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
         "src/cpp/server/async_server.cc",
         "src/cpp/server/async_server_context.cc",
-        "src/cpp/server/completion_queue.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_context_impl.cc",
@@ -413,14 +467,15 @@
       ]
     },
     {
-      "name": "tips_client_lib",
+      "name": "pubsub_client_lib",
       "build": "private",
       "language": "c++",
       "src": [
-        "examples/tips/label.proto",
-        "examples/tips/empty.proto",
-        "examples/tips/pubsub.proto",
-        "examples/tips/client.cc"
+        "examples/pubsub/label.proto",
+        "examples/pubsub/empty.proto",
+        "examples/pubsub/pubsub.proto",
+        "examples/pubsub/publisher.cc",
+        "examples/pubsub/subscriber.cc"
       ],
       "deps": [
         "grpc++",
@@ -713,6 +768,7 @@
     {
       "name": "echo_client",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/echo/client.c"
@@ -722,12 +778,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "echo_server",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/echo/server.c"
@@ -737,8 +793,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "echo_test",
@@ -771,6 +826,7 @@
     {
       "name": "fling_client",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/fling/client.c"
@@ -780,12 +836,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "fling_server",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/fling/server.c"
@@ -795,8 +851,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "fling_stream_test",
@@ -857,6 +912,30 @@
       "language": "c",
       "src": [
         "test/core/support/cmdline_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_env_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/env_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_file_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/file_test.c"
       ],
       "deps": [
         "gpr_test_util",
@@ -1180,6 +1259,48 @@
       ]
     },
     {
+      "name": "json_rewrite",
+      "build": "test",
+      "run": false,
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite.c"
+      ],
+      "deps": [
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "json_rewrite_test",
+      "build": "test",
+      "run": false,
+      "language": "c",
+      "src": [
+        "test/core/json/json_rewrite_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "json_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/json/json_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "lame_client_test",
       "build": "test",
       "language": "c",
@@ -1262,11 +1383,11 @@
       ]
     },
     {
-      "name": "poll_kick_test",
+      "name": "poll_kick_posix_test",
       "build": "test",
       "language": "c",
       "src": [
-        "test/core/iomgr/poll_kick_test.c"
+        "test/core/iomgr/poll_kick_posix_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1475,6 +1596,7 @@
     {
       "name": "interop_client",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/interop/empty.proto",
@@ -1489,12 +1611,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "interop_server",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/interop/empty.proto",
@@ -1509,47 +1631,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
-    },
-    {
-      "name": "tips_client",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "examples/tips/client_main.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_client_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/client_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
       ]
     },
     {
       "name": "qps_client",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1567,6 +1654,7 @@
     {
       "name": "qps_server",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/qps/qpstest.proto",
@@ -1637,6 +1725,58 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "examples/pubsub/main.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_publisher_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/pubsub/publisher_test.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_subscriber_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/pubsub/subscriber_test.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

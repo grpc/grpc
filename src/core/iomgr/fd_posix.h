@@ -47,7 +47,16 @@ typedef struct {
   gpr_atm state;
 } grpc_fd_state;
 
-typedef struct grpc_fd {
+typedef struct grpc_fd grpc_fd;
+
+typedef struct grpc_fd_watcher {
+  struct grpc_fd_watcher *next;
+  struct grpc_fd_watcher *prev;
+  grpc_pollset *pollset;
+  grpc_fd *fd;
+} grpc_fd_watcher;
+
+struct grpc_fd {
   int fd;
   /* refst format:
        bit0:   1=active/0=orphaned
@@ -60,16 +69,15 @@ typedef struct grpc_fd {
   gpr_atm shutdown;
 
   gpr_mu watcher_mu;
-  grpc_pollset **watchers;
-  size_t watcher_count;
-  size_t watcher_capacity;
+  grpc_fd_watcher watcher_root;
 
   grpc_fd_state readst;
   grpc_fd_state writest;
 
   grpc_iomgr_cb_func on_done;
   void *on_done_user_data;
-} grpc_fd;
+  struct grpc_fd *freelist_next;
+};
 
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
@@ -94,9 +102,10 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data);
    Polling strategies that do not need to alter their behavior depending on the
    fd's current interest (such as epoll) do not need to call this function. */
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              gpr_uint32 read_mask, gpr_uint32 write_mask);
+                              gpr_uint32 read_mask, gpr_uint32 write_mask,
+                              grpc_fd_watcher *rec);
 /* Complete polling previously started with grpc_fd_begin_poll */
-void grpc_fd_end_poll(grpc_fd *fd, grpc_pollset *pollset);
+void grpc_fd_end_poll(grpc_fd_watcher *rec);
 
 /* Return 1 if this fd is orphaned, 0 otherwise */
 int grpc_fd_is_orphaned(grpc_fd *fd);
@@ -134,5 +143,8 @@ void grpc_fd_become_writable(grpc_fd *fd, int allow_synchronous_callback);
 /* Reference counting for fds */
 void grpc_fd_ref(grpc_fd *fd);
 void grpc_fd_unref(grpc_fd *fd);
+
+void grpc_fd_global_init(void);
+void grpc_fd_global_shutdown(void);
 
 #endif /* __GRPC_INTERNAL_IOMGR_FD_POSIX_H_ */

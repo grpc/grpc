@@ -105,7 +105,7 @@ void grpc_channel_args_destroy(grpc_channel_args *a) {
 }
 
 int grpc_channel_args_is_census_enabled(const grpc_channel_args *a) {
-  int i;
+  unsigned i;
   if (a == NULL) return 0;
   for (i = 0; i < a->num_args; i++) {
     if (0 == strcmp(a->args[i].key, GRPC_ARG_ENABLE_CENSUS)) {

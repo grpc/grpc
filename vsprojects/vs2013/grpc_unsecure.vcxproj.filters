@@ -73,16 +73,25 @@
     <ClCompile Include="..\..\src\core\iomgr\fd_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iocp_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\pollset_kick_posix.c">
+    <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
@@ -106,7 +115,13 @@
     <ClCompile Include="..\..\src\core\iomgr\socket_utils_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_client_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_client_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_posix.c">
@@ -115,8 +130,38 @@
     <ClCompile Include="..\..\src\core\iomgr\tcp_server_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_server_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
       <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_nospecial.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_pipe.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_reader.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_string.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_writer.c">
+      <Filter>src\core\json</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\statistics\census_init.c">
       <Filter>src\core\statistics</Filter>
@@ -139,10 +184,16 @@
     <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\byte_buffer_queue.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer_reader.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\call.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call_details.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
@@ -164,6 +215,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\lame_client.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\metadata_array.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
@@ -240,9 +294,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\transport.c">
       <Filter>src\core\transport</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\cJSON\cJSON.c">
-      <Filter>third_party\cJSON</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -332,6 +383,9 @@
     <ClInclude Include="..\..\src\core\iomgr\fd_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\iocp_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\iomgr.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -377,6 +431,9 @@
     <ClInclude Include="..\..\src\core\iomgr\socket_utils_posix.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\socket_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\tcp_client.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -386,8 +443,29 @@
     <ClInclude Include="..\..\src\core\iomgr\tcp_server.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\tcp_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h">
       <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_common.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_reader.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_writer.h">
+      <Filter>src\core\json</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
@@ -406,6 +484,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\window_stats.h">
       <Filter>src\core\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">
+      <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\call.h">
       <Filter>src\core\surface</Filter>
@@ -524,6 +605,9 @@
     <Filter Include="src\core\iomgr">
       <UniqueIdentifier>{a9df8b24-ecea-ff6d-8999-d8fa54cd70bf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\json">
+      <UniqueIdentifier>{443ffc61-1bea-2477-6e54-1ddf8c139264}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\statistics">
       <UniqueIdentifier>{e084164c-a069-00e3-db35-4e0b1cd6f0b7}</UniqueIdentifier>
     </Filter>
@@ -535,12 +619,6 @@
     </Filter>
     <Filter Include="src\core\transport\chttp2">
       <UniqueIdentifier>{5fcd6206-f774-9ae6-4b85-305d6a723843}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party">
-      <UniqueIdentifier>{025c051e-8eba-125b-67f9-173f95176eb2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="third_party\cJSON">
-      <UniqueIdentifier>{7d75397e-988a-baac-897e-2ea7b43d5dd9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

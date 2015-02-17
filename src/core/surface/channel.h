@@ -45,6 +45,8 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 
+void grpc_client_channel_closed(grpc_channel_element *elem);
+
 void grpc_channel_internal_ref(grpc_channel *channel);
 void grpc_channel_internal_unref(grpc_channel *channel);
 

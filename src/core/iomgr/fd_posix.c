@@ -47,12 +47,60 @@
 
 enum descriptor_state { NOT_READY, READY, WAITING };
 
+/* We need to keep a freelist not because of any concerns of malloc performance
+ * but instead so that implementations with multiple threads in (for example)
+ * epoll_wait deal with the race between pollset removal and incoming poll
+ * notifications.
+ *
+ * The problem is that the poller ultimately holds a reference to this
+ * object, so it is very difficult to know when is safe to free it, at least
+ * without some expensive synchronization.
+ *
+ * If we keep the object freelisted, in the worst case losing this race just
+ * becomes a spurious read notification on a reused fd.
+ */
+/* TODO(klempner): We could use some form of polling generation count to know
+ * when these are safe to free. */
+/* TODO(klempner): Consider disabling freelisting if we don't have multiple
+ * threads in poll on the same fd */
+/* TODO(klempner): Batch these allocations to reduce fragmentation */
+static grpc_fd *fd_freelist = NULL;
+static gpr_mu fd_freelist_mu;
+
+static void freelist_fd(grpc_fd *fd) {
+  gpr_mu_lock(&fd_freelist_mu);
+  fd->freelist_next = fd_freelist;
+  fd_freelist = fd;
+  gpr_mu_unlock(&fd_freelist_mu);
+}
+
+static grpc_fd *alloc_fd(int fd) {
+  grpc_fd *r = NULL;
+  gpr_mu_lock(&fd_freelist_mu);
+  if (fd_freelist != NULL) {
+    r = fd_freelist;
+    fd_freelist = fd_freelist->freelist_next;
+  }
+  gpr_mu_unlock(&fd_freelist_mu);
+  if (r == NULL) {
+    r = gpr_malloc(sizeof(grpc_fd));
+    gpr_mu_init(&r->set_state_mu);
+    gpr_mu_init(&r->watcher_mu);
+  }
+  gpr_atm_rel_store(&r->refst, 1);
+  gpr_atm_rel_store(&r->readst.state, NOT_READY);
+  gpr_atm_rel_store(&r->writest.state, NOT_READY);
+  gpr_atm_rel_store(&r->shutdown, 0);
+  r->fd = fd;
+  r->watcher_root.next = r->watcher_root.prev = &r->watcher_root;
+  r->freelist_next = NULL;
+  return r;
+}
+
 static void destroy(grpc_fd *fd) {
-  grpc_iomgr_add_callback(fd->on_done, fd->on_done_user_data);
   gpr_mu_destroy(&fd->set_state_mu);
-  gpr_free(fd->watchers);
+  gpr_mu_destroy(&fd->watcher_mu);
   gpr_free(fd);
-  grpc_iomgr_unref();
 }
 
 static void ref_by(grpc_fd *fd, int n) {
@@ -61,25 +109,28 @@ static void ref_by(grpc_fd *fd, int n) {
 
 static void unref_by(grpc_fd *fd, int n) {
   if (gpr_atm_full_fetch_add(&fd->refst, -n) == n) {
+    grpc_iomgr_add_callback(fd->on_done, fd->on_done_user_data);
+    freelist_fd(fd);
+    grpc_iomgr_unref();
+  }
+}
+
+void grpc_fd_global_init(void) { gpr_mu_init(&fd_freelist_mu); }
+
+void grpc_fd_global_shutdown(void) {
+  while (fd_freelist != NULL) {
+    grpc_fd *fd = fd_freelist;
+    fd_freelist = fd_freelist->freelist_next;
     destroy(fd);
   }
+  gpr_mu_destroy(&fd_freelist_mu);
 }
 
 static void do_nothing(void *ignored, int success) {}
 
 grpc_fd *grpc_fd_create(int fd) {
-  grpc_fd *r = gpr_malloc(sizeof(grpc_fd));
+  grpc_fd *r = alloc_fd(fd);
   grpc_iomgr_ref();
-  gpr_atm_rel_store(&r->refst, 1);
-  gpr_atm_rel_store(&r->readst.state, NOT_READY);
-  gpr_atm_rel_store(&r->writest.state, NOT_READY);
-  gpr_mu_init(&r->set_state_mu);
-  gpr_mu_init(&r->watcher_mu);
-  gpr_atm_rel_store(&r->shutdown, 0);
-  r->fd = fd;
-  r->watchers = NULL;
-  r->watcher_count = 0;
-  r->watcher_capacity = 0;
   grpc_pollset_add_fd(grpc_backup_pollset(), r);
   return r;
 }
@@ -89,11 +140,11 @@ int grpc_fd_is_orphaned(grpc_fd *fd) {
 }
 
 static void wake_watchers(grpc_fd *fd) {
-  size_t i, n;
+  grpc_fd_watcher *watcher;
   gpr_mu_lock(&fd->watcher_mu);
-  n = fd->watcher_count;
-  for (i = 0; i < n; i++) {
-    grpc_pollset_force_kick(fd->watchers[i]);
+  for (watcher = fd->watcher_root.next; watcher != &fd->watcher_root;
+       watcher = watcher->next) {
+    grpc_pollset_force_kick(watcher->pollset);
   }
   gpr_mu_unlock(&fd->watcher_mu);
 }
@@ -237,36 +288,27 @@ void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_cb_func write_cb,
 }
 
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              gpr_uint32 read_mask, gpr_uint32 write_mask) {
+                              gpr_uint32 read_mask, gpr_uint32 write_mask,
+                              grpc_fd_watcher *watcher) {
   /* keep track of pollers that have requested our events, in case they change
    */
   gpr_mu_lock(&fd->watcher_mu);
-  if (fd->watcher_capacity == fd->watcher_count) {
-    fd->watcher_capacity =
-        GPR_MAX(fd->watcher_capacity + 8, fd->watcher_capacity * 3 / 2);
-    fd->watchers = gpr_realloc(fd->watchers,
-                               fd->watcher_capacity * sizeof(grpc_pollset *));
-  }
-  fd->watchers[fd->watcher_count++] = pollset;
+  watcher->next = &fd->watcher_root;
+  watcher->prev = watcher->next->prev;
+  watcher->next->prev = watcher->prev->next = watcher;
+  watcher->pollset = pollset;
+  watcher->fd = fd;
   gpr_mu_unlock(&fd->watcher_mu);
 
   return (gpr_atm_acq_load(&fd->readst.state) != READY ? read_mask : 0) |
          (gpr_atm_acq_load(&fd->writest.state) != READY ? write_mask : 0);
 }
 
-void grpc_fd_end_poll(grpc_fd *fd, grpc_pollset *pollset) {
-  size_t r, w, n;
-
-  gpr_mu_lock(&fd->watcher_mu);
-  n = fd->watcher_count;
-  for (r = 0, w = 0; r < n; r++) {
-    if (fd->watchers[r] == pollset) {
-      fd->watcher_count--;
-      continue;
-    }
-    fd->watchers[w++] = fd->watchers[r];
-  }
-  gpr_mu_unlock(&fd->watcher_mu);
+void grpc_fd_end_poll(grpc_fd_watcher *watcher) {
+  gpr_mu_lock(&watcher->fd->watcher_mu);
+  watcher->next->prev = watcher->prev;
+  watcher->prev->next = watcher->next;
+  gpr_mu_unlock(&watcher->fd->watcher_mu);
 }
 
 void grpc_fd_become_readable(grpc_fd *fd, int allow_synchronous_callback) {

@@ -125,7 +125,8 @@ void grpc_channel_stack_init(const grpc_channel_filter **filters,
     call_size += ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_call_data);
   }
 
-  GPR_ASSERT(user_data - (char *)stack ==
+  GPR_ASSERT(user_data > (char *)stack);
+  GPR_ASSERT((gpr_uintptr)(user_data - (char *)stack) ==
              grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;
@@ -209,6 +210,7 @@ void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
   metadata_op.dir = GRPC_CALL_UP;
   metadata_op.done_cb = do_nothing;
   metadata_op.user_data = NULL;
+  metadata_op.flags = 0;
   metadata_op.data.metadata = mdelem;
   grpc_call_next_op(cur_elem, &metadata_op);
 }
@@ -220,6 +222,7 @@ void grpc_call_element_send_metadata(grpc_call_element *cur_elem,
   metadata_op.dir = GRPC_CALL_DOWN;
   metadata_op.done_cb = do_nothing;
   metadata_op.user_data = NULL;
+  metadata_op.flags = 0;
   metadata_op.data.metadata = mdelem;
   grpc_call_next_op(cur_elem, &metadata_op);
 }
@@ -230,14 +233,16 @@ void grpc_call_element_send_cancel(grpc_call_element *cur_elem) {
   cancel_op.dir = GRPC_CALL_DOWN;
   cancel_op.done_cb = do_nothing;
   cancel_op.user_data = NULL;
+  cancel_op.flags = 0;
   grpc_call_next_op(cur_elem, &cancel_op);
 }
 
 void grpc_call_element_send_finish(grpc_call_element *cur_elem) {
-  grpc_call_op cancel_op;
-  cancel_op.type = GRPC_SEND_FINISH;
-  cancel_op.dir = GRPC_CALL_DOWN;
-  cancel_op.done_cb = do_nothing;
-  cancel_op.user_data = NULL;
-  grpc_call_next_op(cur_elem, &cancel_op);
+  grpc_call_op finish_op;
+  finish_op.type = GRPC_SEND_FINISH;
+  finish_op.dir = GRPC_CALL_DOWN;
+  finish_op.done_cb = do_nothing;
+  finish_op.user_data = NULL;
+  finish_op.flags = 0;
+  grpc_call_next_op(cur_elem, &finish_op);
 }

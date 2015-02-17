@@ -210,11 +210,30 @@ static void remove_waiting_child(channel_data *chand, call_data *calld) {
   chand->waiting_child_count = new_count;
 }
 
+static void send_up_cancelled_ops(grpc_call_element *elem) {
+  grpc_call_op finish_op;
+  channel_data *chand = elem->channel_data;
+  /* send up a synthesized status */
+  finish_op.type = GRPC_RECV_METADATA;
+  finish_op.dir = GRPC_CALL_UP;
+  finish_op.flags = 0;
+  finish_op.data.metadata = grpc_mdelem_ref(chand->cancel_status);
+  finish_op.done_cb = do_nothing;
+  finish_op.user_data = NULL;
+  grpc_call_next_op(elem, &finish_op);
+  /* send up a finish */
+  finish_op.type = GRPC_RECV_FINISH;
+  finish_op.dir = GRPC_CALL_UP;
+  finish_op.flags = 0;
+  finish_op.done_cb = do_nothing;
+  finish_op.user_data = NULL;
+  grpc_call_next_op(elem, &finish_op);
+}
+
 static void cancel_rpc(grpc_call_element *elem, grpc_call_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_call_element *child_elem;
-  grpc_call_op finish_op;
 
   gpr_mu_lock(&chand->mu);
   switch (calld->state) {
@@ -225,27 +244,16 @@ static void cancel_rpc(grpc_call_element *elem, grpc_call_op *op) {
       return; /* early out */
     case CALL_WAITING:
       remove_waiting_child(chand, calld);
+      calld->state = CALL_CANCELLED;
+      gpr_mu_unlock(&chand->mu);
+      send_up_cancelled_ops(elem);
       calld->s.waiting.on_complete(calld->s.waiting.on_complete_user_data,
                                    GRPC_OP_ERROR);
-    /* fallthrough intended */
+      return; /* early out */
     case CALL_CREATED:
       calld->state = CALL_CANCELLED;
       gpr_mu_unlock(&chand->mu);
-      /* send up a synthesized status */
-      finish_op.type = GRPC_RECV_METADATA;
-      finish_op.dir = GRPC_CALL_UP;
-      finish_op.flags = 0;
-      finish_op.data.metadata = grpc_mdelem_ref(chand->cancel_status);
-      finish_op.done_cb = do_nothing;
-      finish_op.user_data = NULL;
-      grpc_call_next_op(elem, &finish_op);
-      /* send up a finish */
-      finish_op.type = GRPC_RECV_FINISH;
-      finish_op.dir = GRPC_CALL_UP;
-      finish_op.flags = 0;
-      finish_op.done_cb = do_nothing;
-      finish_op.user_data = NULL;
-      grpc_call_next_op(elem, &finish_op);
+      send_up_cancelled_ops(elem);
       return; /* early out */
     case CALL_CANCELLED:
       gpr_mu_unlock(&chand->mu);
@@ -298,6 +306,7 @@ static void channel_op(grpc_channel_element *elem,
                        grpc_channel_element *from_elem, grpc_channel_op *op) {
   channel_data *chand = elem->channel_data;
   grpc_child_channel *child_channel;
+  grpc_channel_op rop;
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
 
   switch (op->type) {
@@ -323,6 +332,10 @@ static void channel_op(grpc_channel_element *elem,
       if (child_channel) {
         grpc_child_channel_destroy(child_channel, 1);
       }
+      /* fake a transport closed to satisfy the refcounting in client */
+      rop.type = GRPC_TRANSPORT_CLOSED;
+      rop.dir = GRPC_CALL_UP;
+      grpc_channel_next_op(elem, &rop);
       break;
     case GRPC_TRANSPORT_GOAWAY:
       /* receiving goaway: if it's from our active child, drop the active child;

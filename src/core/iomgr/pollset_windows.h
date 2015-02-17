@@ -34,9 +34,11 @@
 #ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
 #define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
 
+#include <windows.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/socket_windows.h"
 
 /* forward declare only in this file to avoid leaking impl details via
    pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not

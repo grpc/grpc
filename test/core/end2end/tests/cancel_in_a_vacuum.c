@@ -109,7 +109,8 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+                               "foo.test.google.com", deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
@@ -122,7 +123,7 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  int i;
+  unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
     test_cancel_in_a_vacuum(config, cancellation_modes[i]);

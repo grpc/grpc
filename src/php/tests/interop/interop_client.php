@@ -25,9 +25,9 @@ function hardAssert($value, $error_message) {
  * @param $stub Stub object that has service methods
  */
 function emptyUnary($stub) {
-  list($result, $status) = $stub->EmptyCall(new proto2\EmptyMessage())->wait();
-  hardAssert($status->code == Grpc\STATUS_OK, 'Call did not complete successfully');
-  hardAssert($result != null, 'Call completed with a null response');
+  list($result, $status) = $stub->EmptyCall(new grpc\testing\EmptyMessage())->wait();
+  hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
+  hardAssert($result !== null, 'Call completed with a null response');
 }
 
 /**
@@ -49,14 +49,14 @@ function largeUnary($stub) {
   $request->setPayload($payload);
 
   list($result, $status) = $stub->UnaryCall($request)->wait();
-  hardAssert($status->code == Grpc\STATUS_OK, 'Call did not complete successfully');
-  hardAssert($result != null, 'Call returned a null response');
+  hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
+  hardAssert($result !== null, 'Call returned a null response');
   $payload = $result->getPayload();
-  hardAssert($payload->getType() == grpc\testing\PayloadType::COMPRESSABLE,
+  hardAssert($payload->getType() === grpc\testing\PayloadType::COMPRESSABLE,
          'Payload had the wrong type');
-  hardAssert(strlen($payload->getBody()) == $response_len,
+  hardAssert(strlen($payload->getBody()) === $response_len,
          'Payload had the wrong length');
-  hardAssert($payload->getBody() == str_repeat("\0", $response_len),
+  hardAssert($payload->getBody() === str_repeat("\0", $response_len),
          'Payload had the wrong content');
 }
 
@@ -78,8 +78,8 @@ function clientStreaming($stub) {
       }, $request_lengths);
 
   list($result, $status) = $stub->StreamingInputCall($requests)->wait();
-  hardAssert($status->code == Grpc\STATUS_OK, 'Call did not complete successfully');
-  hardAssert($result->getAggregatedPayloadSize() == 74922,
+  hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
+  hardAssert($result->getAggregatedPayloadSize() === 74922,
               'aggregated_payload_size was incorrect');
 }
 
@@ -100,15 +100,15 @@ function serverStreaming($stub) {
   }
 
   $call = $stub->StreamingOutputCall($request);
-  hardAssert($call->getStatus()->code == Grpc\STATUS_OK,
+  hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
               'Call did not complete successfully');
   $i = 0;
   foreach($call->responses() as $value) {
     hardAssert($i < 4, 'Too many responses');
     $payload = $value->getPayload();
-    hardAssert($payload->getType() == grpc\testing\PayloadType::COMPRESSABLE,
+    hardAssert($payload->getType() === grpc\testing\PayloadType::COMPRESSABLE,
                 'Payload ' . $i . ' had the wrong type');
-    hardAssert(strlen($payload->getBody()) == $sizes[$i],
+    hardAssert(strlen($payload->getBody()) === $sizes[$i],
                 'Response ' . $i . ' had the wrong length');
   }
 }
@@ -136,17 +136,36 @@ function pingPong($stub) {
     $call->write($request);
     $response = $call->read();
 
-    hardAssert($response != null, 'Server returned too few responses');
+    hardAssert($response !== null, 'Server returned too few responses');
     $payload = $response->getPayload();
-    hardAssert($payload->getType() == grpc\testing\PayloadType::COMPRESSABLE,
+    hardAssert($payload->getType() === grpc\testing\PayloadType::COMPRESSABLE,
                 'Payload ' . $i . ' had the wrong type');
-    hardAssert(strlen($payload->getBody()) == $response_lengths[$i],
+    hardAssert(strlen($payload->getBody()) === $response_lengths[$i],
                 'Payload ' . $i . ' had the wrong length');
   }
   $call->writesDone();
-  hardAssert($call->read() == null, 'Server returned too many responses');
-  hardAssert($call->getStatus()->code == Grpc\STATUS_OK,
+  hardAssert($call->read() === null, 'Server returned too many responses');
+  hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
               'Call did not complete successfully');
+}
+
+function cancelAfterFirstResponse($stub) {
+  $call = $stub->FullDuplexCall();
+  $request = new grpc\testing\StreamingOutputCallRequest();
+  $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
+  $response_parameters = new grpc\testing\ResponseParameters();
+  $response_parameters->setSize(31415);
+  $request->addResponseParameters($response_parameters);
+  $payload = new grpc\testing\Payload();
+  $payload->setBody(str_repeat("\0", 27182));
+  $request->setPayload($payload);
+
+  $call->write($request);
+  $response = $call->read();
+
+  $call->cancel();
+  hardAssert($call->getStatus()->code === Grpc\STATUS_CANCELLED,
+             'Call status was not CANCELLED');
 }
 
 $args = getopt('', array('server_host:', 'server_port:', 'test_case:'));
@@ -161,11 +180,12 @@ $server_address = $args['server_host'] . ':' . $args['server_port'];
 $credentials = Grpc\Credentials::createSsl(
     file_get_contents(dirname(__FILE__) . '/../data/ca.pem'));
 $stub = new grpc\testing\TestServiceClient(
-    $server_address,
-    [
-        'grpc.ssl_target_name_override' => 'foo.test.google.com',
-        'credentials' => $credentials
-     ]);
+    new Grpc\BaseStub(
+        $server_address,
+        [
+            'grpc.ssl_target_name_override' => 'foo.test.google.com',
+            'credentials' => $credentials
+         ]));
 
 echo "Connecting to $server_address\n";
 echo "Running test case $args[test_case]\n";
@@ -186,4 +206,6 @@ switch($args['test_case']) {
   case 'ping_pong':
     pingPong($stub);
     break;
+  case 'cancel_after_first_response':
+    cancelAfterFirstResponse($stub);
 }

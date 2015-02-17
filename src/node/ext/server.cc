@@ -175,7 +175,7 @@ NAN_METHOD(Server::RequestCall) {
     return NanThrowTypeError("requestCall can only be called on a Server");
   }
   Server *server = ObjectWrap::Unwrap<Server>(args.This());
-  grpc_call_error error = grpc_server_request_call(
+  grpc_call_error error = grpc_server_request_call_old(
       server->wrapped_server, CreateTag(args[0], NanNull()));
   if (error == GRPC_CALL_OK) {
     CompletionQueueAsyncWorker::Next();

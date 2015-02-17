@@ -251,37 +251,6 @@ update_address_to() {
   }
 }
 
-# Allows instances to checkout repos on git-on-borg.
-#
-install_gob_daemon() {
-  local gob_dir=$1
-  [[ -n $gob_dir ]] || { echo "missing args: gob_dir" >&2; return 1;  }
-
-  local gob_repo=$2
-  [[ -n $gob_repo ]] || gob_repo='https://gerrit.googlesource.com/gcompute-tools/'
-
-  if [[ -e $gob_dir ]]
-  then
-    rm -fv $gob_dir || {
-      echo "could not remove existing git repo at $gob_dir" >&2
-      return 1
-    }
-  fi
-
-  git clone $gob_repo $gob_dir || { echo "failed to pull gerrit cookie repo" >&2; return 1; }
-  local startup_script=/etc/profile.d/gob_cookie_daemon.sh
-
-  cat <<EOF >> $startup_script
-#!/bin/bash
-
-$gob_dir/git-cookie-authdaemon
-
-EOF
-
-  chmod 755 $startup_script
-  $startup_script
-}
-
 # grpc_docker_add_docker_group
 #
 # Adds a docker group, restarts docker, relaunches the docker registry
@@ -367,7 +336,7 @@ grpc_docker_launch_registry() {
 grpc_docker_pull_known() {
   local addr=$1
   [[ -n $addr ]] || addr="0.0.0.0:5000"
-  local known="base cxx php_base php ruby_base ruby java_base java go"
+  local known="base cxx php_base php ruby_base ruby java_base java go node_base node"
   echo "... pulling docker images for '$known'"
   for i in $known
   do
@@ -403,7 +372,9 @@ grpc_dockerfile_install() {
 
   [[ -d $dockerfile_dir ]] || { echo "$FUNCNAME: not a valid dir: $dockerfile_dir"; return 1; }
 
-  # For specific base images, sync the ssh key into the .ssh dir in the dockerfile context
+  # For specific base images, sync private files.
+  #
+  # - the ssh key, ssh certs and/or service account info.
   [[ $image_label == "grpc/base" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'base_ssh_key' || return 1;
   }
@@ -415,6 +386,11 @@ grpc_dockerfile_install() {
   }
   [[ $image_label == "grpc/ruby" ]] && {
     grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
+  [[ $image_label == "grpc/cxx" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
 
 
@@ -502,4 +478,32 @@ grpc_docker_sync_roots_pem() {
     return 1
   }
   gsutil cp $src $gcs_certs_path $local_certs_path
+}
+
+# grpc_docker_sync_service_account.
+#
+# Copies the service account from GCS to the target dir
+#
+# call-seq:
+#   grpc_docker_sync_service_account <target_dir>
+grpc_docker_sync_service_account() {
+  local target_dir=$1
+  [[ -n $target_dir ]] || { echo "$FUNCNAME: missing arg: target_dir" >&2; return 1; }
+
+  # determine the admin root; the parent of the dockerfile root,
+  local gs_dockerfile_root=$(load_metadata "attributes/gs_dockerfile_root")
+  [[ -n $gs_dockerfile_root ]] || {
+    echo "$FUNCNAME: missing metadata: gs_dockerfile_root" >&2
+    return 1
+  }
+  local gcs_admin_root=$(dirname $gs_dockerfile_root)
+
+  # cp the file from gsutil to a known local area
+  local gcs_acct_path=$gcs_admin_root/service_account/stubbyCloudTestingTest-7dd63462c60c.json
+  local local_acct_path=$target_dir/stubbyCloudTestingTest-7dd63462c60c.json
+  mkdir -p $target_dir || {
+    echo "$FUNCNAME: could not create dir: $target_dir" 1>&2
+    return 1
+  }
+  gsutil cp $src $gcs_acct_path $local_acct_path
 }

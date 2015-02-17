@@ -92,7 +92,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   size_t i;
-  int count = 0;
+  unsigned count = 0;
   int port_num = -1;
   int port_temp;
 
@@ -127,6 +127,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
   if (count != resolved->naddrs) {
     gpr_log(GPR_ERROR, "Only %d addresses added out of total %d resolved",
             count, resolved->naddrs);
+    /* if it's an error, don't we want to goto error; here ? */
   }
   grpc_resolved_addresses_destroy(resolved);
 

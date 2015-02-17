@@ -292,10 +292,10 @@ shared_examples 'GRPC metadata delivery works OK' do
       # TODO: update this with the bug number to be resolved
       ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ,
                                 @client_metadata_tag)
-      expect(ev.result).to eq(':status' => '200')
+      expect(ev.result).to eq({})
     end
 
-    it 'sends all the pairs and status:200 when keys and values are valid' do
+    it 'sends all the pairs when keys and values are valid' do
       @valid_metadata.each do |md|
         call = new_client_call
         call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
@@ -314,7 +314,6 @@ shared_examples 'GRPC metadata delivery works OK' do
         ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ,
                                   @client_metadata_tag)
         replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
-        replace_symbols[':status'] = '200'
         expect(ev.result).to eq(replace_symbols)
       end
     end
@@ -363,9 +362,11 @@ describe 'the secure http client/server' do
     @server.close
   end
 
-  it_behaves_like 'basic GRPC message delivery is OK' do
-  end
+  # TODO: uncomment after updating the to the new c api
+  # it_behaves_like 'basic GRPC message delivery is OK' do
+  # end
 
-  it_behaves_like 'GRPC metadata delivery works OK' do
-  end
+  # TODO: uncomment after updating the to the new c api
+  # it_behaves_like 'GRPC metadata delivery works OK' do
+  # end
 end

@@ -70,7 +70,10 @@ DEFINE_string(test_case, "large_unary",
               "half_duplex : half-duplex streaming; "
               "ping_pong : full-duplex streaming; "
               "service_account_creds : large_unary with service_account auth; "
+              "compute_engine_creds: large_unary with compute engine auth; "
               "all : all of above.");
+DEFINE_string(default_service_account, "",
+              "Email of GCE default service account");
 DEFINE_string(service_account_key_file, "",
               "Path to service account json key file.");
 DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
@@ -127,6 +130,12 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
         json_key, FLAGS_oauth_scope, std::chrono::hours(1));
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
+  } else if (test_case == "compute_engine_creds") {
+    std::unique_ptr<Credentials> creds;
+    GPR_ASSERT(FLAGS_enable_ssl);
+    creds = CredentialsFactory::ComputeEngineCredentials();
+    return CreateTestChannel(host_port, FLAGS_server_host_override,
+                             FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots);
@@ -169,6 +178,26 @@ void PerformLargeUnary(std::shared_ptr<ChannelInterface> channel,
              grpc::string(kLargeResponseSize, '\0'));
 }
 
+void DoComputeEngineCreds() {
+  gpr_log(GPR_INFO,
+          "Sending a large unary rpc with compute engine credentials ...");
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannelForTestCase("compute_engine_creds");
+  SimpleRequest request;
+  SimpleResponse response;
+  request.set_fill_username(true);
+  request.set_fill_oauth_scope(true);
+  PerformLargeUnary(channel, &request, &response);
+  gpr_log(GPR_INFO, "Got username %s", response.username().c_str());
+  gpr_log(GPR_INFO, "Got oauth_scope %s", response.oauth_scope().c_str());
+  GPR_ASSERT(!response.username().empty());
+  GPR_ASSERT(response.username().c_str() == FLAGS_default_service_account);
+  GPR_ASSERT(!response.oauth_scope().empty());
+  const char *oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
+  gpr_log(GPR_INFO, "Large unary with compute engine creds done.");
+}
+
 void DoServiceAccountCreds() {
   gpr_log(GPR_INFO,
           "Sending a large unary rpc with service account credentials ...");
@@ -183,8 +212,8 @@ void DoServiceAccountCreds() {
   GPR_ASSERT(!response.oauth_scope().empty());
   grpc::string json_key = GetServiceAccountJsonKey();
   GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
-  GPR_ASSERT(FLAGS_oauth_scope.find(response.oauth_scope()) !=
-             grpc::string::npos);
+  const char *oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with service account creds done.");
 }
 
@@ -375,6 +404,8 @@ int main(int argc, char** argv) {
     DoPingPong();
   } else if (FLAGS_test_case == "service_account_creds") {
     DoServiceAccountCreds();
+  } else if (FLAGS_test_case == "compute_engine_creds") {
+    DoComputeEngineCreds();
   } else if (FLAGS_test_case == "all") {
     DoEmpty();
     DoLargeUnary();
@@ -386,12 +417,13 @@ int main(int argc, char** argv) {
     if (FLAGS_enable_ssl) {
       DoServiceAccountCreds();
     }
+    // compute_engine_creds only runs in GCE.
   } else {
     gpr_log(
         GPR_ERROR,
         "Unsupported test case %s. Valid options are all|empty_unary|"
         "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
-        "service_account_creds",
+        "service_account_creds|compute_engine_creds",
         FLAGS_test_case.c_str());
   }
 
