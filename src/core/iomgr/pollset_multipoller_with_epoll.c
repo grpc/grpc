@@ -93,7 +93,7 @@ static int multipoll_with_epoll_pollset_maybe_work(
 
   /* If you want to ignore epoll's ability to sanely handle parallel pollers,
    * for a more apples-to-apples performance comparison with poll, add a
-   * if (pollset->counter == 0) { return 0 }
+   * if (pollset->counter != 0) { return 0; }
    * here.
    */
 

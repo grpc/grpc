@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -313,7 +313,7 @@ static void oauth2_token_fetcher_destroy(grpc_credentials *creds) {
     grpc_mdelem_unref(c->access_token_md);
   }
   gpr_mu_destroy(&c->mu);
-  grpc_mdctx_orphan(c->md_ctx);
+  grpc_mdctx_unref(c->md_ctx);
   gpr_free(c);
 }
 
@@ -587,7 +587,7 @@ static void fake_oauth2_destroy(grpc_credentials *creds) {
   if (c->access_token_md != NULL) {
     grpc_mdelem_unref(c->access_token_md);
   }
-  grpc_mdctx_orphan(c->md_ctx);
+  grpc_mdctx_unref(c->md_ctx);
   gpr_free(c);
 }
 
@@ -897,7 +897,7 @@ static void iam_destroy(grpc_credentials *creds) {
   grpc_iam_credentials *c = (grpc_iam_credentials *)creds;
   grpc_mdelem_unref(c->token_md);
   grpc_mdelem_unref(c->authority_selector_md);
-  grpc_mdctx_orphan(c->md_ctx);
+  grpc_mdctx_unref(c->md_ctx);
   gpr_free(c);
 }
 

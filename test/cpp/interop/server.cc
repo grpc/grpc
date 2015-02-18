@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -200,7 +200,7 @@ void RunServer() {
 
   ServerBuilder builder;
   builder.AddPort(server_address.str());
-  builder.RegisterService(service.service());
+  builder.RegisterService(&service);
   if (FLAGS_enable_ssl) {
     SslServerCredentialsOptions ssl_opts = {
         "", {{test_server1_key, test_server1_cert}}};

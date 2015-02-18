@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,9 +91,9 @@
 */
 #include "src/core/statistics/census_log.h"
 #include <string.h>
-#include "src/core/support/cpu.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ grpc_server *grpc_server_create_from_filters(grpc_completion_queue *cq,
    and when it shuts down, it will call destroy */
 void grpc_server_add_listener(grpc_server *server, void *listener,
                               void (*start)(grpc_server *server, void *arg,
-                                            grpc_pollset *pollset),
+                                            grpc_pollset **pollsets, size_t npollsets),
                               void (*destroy)(grpc_server *server, void *arg));
 
 /* Setup a transport - creates a channel stack, binds the transport to the

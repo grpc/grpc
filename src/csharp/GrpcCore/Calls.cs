@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -47,50 +47,42 @@ namespace Google.GRPC.Core
     {
         public static TResponse BlockingUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
         {
-            //TODO: implement this in real synchronous style once new GRPC C core API is available.
-            return AsyncUnaryCall(call, req, token).Result;
+            //TODO: implement this in real synchronous style.
+            try {
+                return AsyncUnaryCall(call, req, token).Result;
+            } catch(AggregateException ae) {
+                foreach (var e in ae.InnerExceptions)
+                {
+                    if (e is RpcException)
+                    {
+                        throw e;
+                    }
+                }
+                throw;
+            }
         }
 
         public static async Task<TResponse> AsyncUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestSerializer, call.ResponseDeserializer);
-            asyncCall.Initialize(call.Channel, call.MethodName);
-            asyncCall.Start(false, GetCompletionQueue());
-
-            await asyncCall.WriteAsync(req);
-            await asyncCall.WritesCompletedAsync();
-
-            TResponse response = await asyncCall.ReadAsync();
-
-            Status status = await asyncCall.Finished;
-
-            if (status.StatusCode != StatusCode.GRPC_STATUS_OK)
-            {
-                throw new RpcException(status);
-            }
-            return response;
+            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.MethodName);
+            return await asyncCall.UnaryCallAsync(req);
         }
 
-        public static async Task AsyncServerStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, IObserver<TResponse> outputs, CancellationToken token)
+        public static void AsyncServerStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, IObserver<TResponse> outputs, CancellationToken token)
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestSerializer, call.ResponseDeserializer);
-            asyncCall.Initialize(call.Channel, call.MethodName);
-            asyncCall.Start(false, GetCompletionQueue());
 
-            asyncCall.StartReadingToStream(outputs);
-
-            await asyncCall.WriteAsync(req);
-            await asyncCall.WritesCompletedAsync();
+            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.MethodName);
+            asyncCall.StartServerStreamingCall(req, outputs);
         }
 
         public static ClientStreamingAsyncResult<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, CancellationToken token)
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestSerializer, call.ResponseDeserializer);
-            asyncCall.Initialize(call.Channel, call.MethodName);
-            asyncCall.Start(false, GetCompletionQueue());
-
-            var task = asyncCall.ReadAsync();
-            var inputs = new StreamingInputObserver<TRequest, TResponse>(asyncCall);
+            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.MethodName);
+            var task = asyncCall.ClientStreamingCallAsync();
+            var inputs = new ClientStreamingInputObserver<TRequest, TResponse>(asyncCall);
             return new ClientStreamingAsyncResult<TRequest, TResponse>(task, inputs);
         }
 
@@ -102,12 +94,10 @@ namespace Google.GRPC.Core
         public static IObserver<TRequest> DuplexStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, IObserver<TResponse> outputs, CancellationToken token)
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestSerializer, call.ResponseDeserializer);
-            asyncCall.Initialize(call.Channel, call.MethodName);
-            asyncCall.Start(false, GetCompletionQueue());
+            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.MethodName);
 
-            asyncCall.StartReadingToStream(outputs);
-            var inputs = new StreamingInputObserver<TRequest, TResponse>(asyncCall);
-            return inputs;
+            asyncCall.StartDuplexStreamingCall(outputs);
+            return new ClientStreamingInputObserver<TRequest, TResponse>(asyncCall);
         }
 
         private static CompletionQueueSafeHandle GetCompletionQueue() {

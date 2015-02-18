@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 extern VALUE rb_cCredentials;
 
 /* Initializes the ruby Credentials class. */
-void Init_google_rpc_credentials();
+void Init_grpc_credentials();
 
 /* Gets the wrapped credentials from the ruby wrapper */
 grpc_credentials* grpc_rb_get_wrapped_credentials(VALUE v);

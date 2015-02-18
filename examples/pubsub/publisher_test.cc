@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,7 +107,7 @@ class PublisherTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     ServerBuilder builder;
     builder.AddPort(server_address_.str());
-    builder.RegisterService(service_.service());
+    builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
     channel_ = CreateChannel(server_address_.str(), ChannelArguments());

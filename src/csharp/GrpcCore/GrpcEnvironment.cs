@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -42,7 +42,7 @@ namespace Google.GRPC.Core
     /// </summary>
     public class GrpcEnvironment
     {
-        const int THREAD_POOL_SIZE = 1;
+        const int THREAD_POOL_SIZE = 4;
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_init();
@@ -52,7 +52,7 @@ namespace Google.GRPC.Core
 
         static object staticLock = new object();
         static volatile GrpcEnvironment instance;
-       
+
         readonly GrpcThreadPool threadPool;
         bool isClosed;
 
@@ -60,7 +60,7 @@ namespace Google.GRPC.Core
         /// Makes sure GRPC environment is initialized. Subsequent invocations don't have any
         /// effect unless you call Shutdown first.
         /// Although normal use cases assume you will call this just once in your application's
-        /// lifetime (and call Shutdown once you're done), for the sake of easier testing it's 
+        /// lifetime (and call Shutdown once you're done), for the sake of easier testing it's
         /// allowed to initialize the environment again after it has been successfully shutdown.
         /// </summary>
         public static void Initialize() {

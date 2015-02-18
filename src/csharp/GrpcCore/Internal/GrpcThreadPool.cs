@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -48,17 +48,11 @@ namespace Google.GRPC.Core.Internal
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
-        readonly Action<EventSafeHandle> eventHandler;
 
         CompletionQueueSafeHandle cq;
 
         public GrpcThreadPool(int poolSize) {
             this.poolSize = poolSize;
-        }
-
-        internal GrpcThreadPool(int poolSize, Action<EventSafeHandle> eventHandler) {
-            this.poolSize = poolSize;
-            this.eventHandler = eventHandler;
         }
 
         public void Start() {
@@ -104,55 +98,24 @@ namespace Google.GRPC.Core.Internal
             }
         }
 
-        private Thread CreateAndStartThread(int i) {
-            Action body;
-            if (eventHandler != null)
-            {
-                body = ThreadBodyWithHandler;
-            }
-            else
-            {
-                body = ThreadBodyNoHandler;
-            }
-            var thread = new Thread(new ThreadStart(body));
+        private Thread CreateAndStartThread(int i)
+        {
+            var thread = new Thread(new ThreadStart(RunHandlerLoop));
             thread.IsBackground = false;
             thread.Start();
-            if (eventHandler != null)
-            {
-                thread.Name = "grpc_server_newrpc " + i;
-            }
-            else
-            {
-                thread.Name = "grpc " + i;
-            }
+            thread.Name = "grpc " + i;
             return thread;
         }
 
         /// <summary>
         /// Body of the polling thread.
         /// </summary>
-        private void ThreadBodyNoHandler()
+        private void RunHandlerLoop()
         {
             GRPCCompletionType completionType;
             do
             {
                 completionType = cq.NextWithCallback();
-            } while(completionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN);
-            Console.WriteLine("Completion queue has shutdown successfully, thread " + Thread.CurrentThread.Name + " exiting.");
-        }
-
-        /// <summary>
-        /// Body of the polling thread.
-        /// </summary>
-        private void ThreadBodyWithHandler()
-        {
-            GRPCCompletionType completionType;
-            do
-            {
-                using (EventSafeHandle ev = cq.Next(Timespec.InfFuture)) {
-                    completionType = ev.GetCompletionType();
-                    eventHandler(ev);
-                }
             } while(completionType != GRPCCompletionType.GRPC_QUEUE_SHUTDOWN);
             Console.WriteLine("Completion queue has shutdown successfully, thread " + Thread.CurrentThread.Name + " exiting.");
         }

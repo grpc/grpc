@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -182,7 +182,7 @@ static void test_case(size_t key_prefix_len, size_t value_prefix_len,
   gpr_free(stk);
 
   grpc_metadata_buffer_destroy(&buffer, GRPC_OP_OK);
-  grpc_mdctx_orphan(mdctx);
+  grpc_mdctx_unref(mdctx);
 }
 
 int main(int argc, char **argv) {

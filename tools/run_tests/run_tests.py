@@ -1,4 +1,33 @@
 #!/usr/bin/python2.7
+# Copyright 2015, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 """Run tests in parallel."""
 
 import argparse
@@ -33,15 +62,18 @@ class SimpleConfig(object):
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
 class ValgrindConfig(object):
 
-  def __init__(self, config, tool):
+  def __init__(self, config, tool, args=[]):
     self.build_config = config
     self.tool = tool
+    self.args = args
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
   def job_spec(self, binary, hash_targets):
-    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool, binary],
-                   hash_targets=None)
+    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
+                          self.args + [binary],
+                          shortname='valgrind %s' % binary,
+                          hash_targets=None)
 
 
 class CLanguage(object):
@@ -115,7 +147,7 @@ _CONFIGS = {
     'asan': SimpleConfig('asan', environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt'}),
     'gcov': SimpleConfig('gcov'),
-    'memcheck': ValgrindConfig('valgrind', 'memcheck'),
+    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
     'helgrind': ValgrindConfig('dbg', 'helgrind')
     }
 
@@ -136,6 +168,7 @@ argp.add_argument('-c', '--config',
                   nargs='+',
                   default=_DEFAULT)
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
+argp.add_argument('-j', '--jobs', default=1000, type=int)
 argp.add_argument('-f', '--forever',
                   default=False,
                   action='store_const',
@@ -225,7 +258,7 @@ def _build_and_run(check_cancelled, newline_on_success, cache):
       itertools.repeat(one_run, runs_per_test))
   if not jobset.run(all_runs, check_cancelled,
                     newline_on_success=newline_on_success,
-                    maxjobs=min(c.maxjobs for c in run_configs),
+                    maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
                     cache=cache):
     return 2
 
