@@ -109,12 +109,28 @@ namespace Google.GRPC.Core
 
             asyncCall.InitializeServer(call);
 
-            var finishedTask = asyncCall.ServerSideUnaryRequestCallAsync();
+            var finishedTask = asyncCall.ServerSideStreamingRequestCallAsync(new NullObserver<byte[]>());
 
             asyncCall.SendStatusFromServerAsync(new Status(StatusCode.GRPC_STATUS_UNIMPLEMENTED, "No such method.")).Wait();
 
             finishedTask.Wait();
         }
+    }
+
+    internal class NullObserver<T> : IObserver<T>
+    {
+        public void OnCompleted()
+        {
+        }
+
+        public void OnError(Exception error)
+        {
+        }
+
+        public void OnNext(T value)
+        {
+        }
+
     }
 }
 

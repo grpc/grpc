@@ -85,8 +85,6 @@ namespace Google.GRPC.Core.Tests
             }
 
             server.ShutdownAsync().Wait();
-
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]
