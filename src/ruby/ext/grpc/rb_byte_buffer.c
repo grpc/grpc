@@ -202,9 +202,9 @@ static VALUE grpc_rb_byte_buffer_init(VALUE self, VALUE src) {
 /* rb_cByteBuffer is the ruby class that proxies grpc_byte_buffer. */
 VALUE rb_cByteBuffer = Qnil;
 
-void Init_google_rpc_byte_buffer() {
+void Init_grpc_byte_buffer() {
   rb_cByteBuffer =
-      rb_define_class_under(rb_mGoogleRpcCore, "ByteBuffer", rb_cObject);
+      rb_define_class_under(rb_mGrpcCore, "ByteBuffer", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cByteBuffer, grpc_rb_byte_buffer_alloc);
