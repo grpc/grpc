@@ -580,15 +580,10 @@ grpc_call_error grpc_server_request_registered_call(
 grpc_server *grpc_server_create(grpc_completion_queue *cq,
                                 const grpc_channel_args *args);
 
-/* Add a http2 over tcp listener.
+/* Add a HTTP2 over plaintext over tcp listener.
    Returns bound port number on success, 0 on failure.
    REQUIRES: server not started */
 int grpc_server_add_http2_port(grpc_server *server, const char *addr);
-
-/* Add a secure port to server.
-   Returns bound port number on success, 0 on failure.
-   REQUIRES: server not started */
-int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr);
 
 /* Start a server - tells all listeners to start listening */
 void grpc_server_start(grpc_server *server);

@@ -29,7 +29,7 @@
 
 """Implementations of interoperability test methods."""
 
-from grpc_early_adopter import utilities
+from grpc.early_adopter import utilities
 
 from interop import empty_pb2
 from interop import messages_pb2

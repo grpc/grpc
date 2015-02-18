@@ -63,9 +63,6 @@ describe('Math client', function() {
       assert.ifError(err);
       assert.equal(value.quotient, 1);
       assert.equal(value.remainder, 3);
-    });
-    call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
       done();
     });
   });

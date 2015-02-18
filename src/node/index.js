@@ -35,9 +35,9 @@ var _ = require('underscore');
 
 var ProtoBuf = require('protobufjs');
 
-var surface_client = require('./src/surface_client.js');
+var client = require('./src/client.js');
 
-var surface_server = require('./src/surface_server.js');
+var server = require('./src/server.js');
 
 var grpc = require('bindings')('grpc');
 
@@ -54,7 +54,7 @@ function loadObject(value) {
     });
     return result;
   } else if (value.className === 'Service') {
-    return surface_client.makeClientConstructor(value);
+    return client.makeClientConstructor(value);
   } else if (value.className === 'Message' || value.className === 'Enum') {
     return value.build();
   } else {
@@ -84,9 +84,9 @@ exports.loadObject = loadObject;
 exports.load = load;
 
 /**
- * See docs for surface_server.makeServerConstructor
+ * See docs for server.makeServerConstructor
  */
-exports.buildServer = surface_server.makeServerConstructor;
+exports.buildServer = server.makeServerConstructor;
 
 /**
  * Status name to code number mapping

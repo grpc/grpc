@@ -33,9 +33,9 @@
 
 var assert = require('assert');
 
-var surface_server = require('../src/surface_server.js');
+var surface_server = require('../src/server.js');
 
-var surface_client = require('../src/surface_client.js');
+var surface_client = require('../src/client.js');
 
 var ProtoBuf = require('protobufjs');
 
