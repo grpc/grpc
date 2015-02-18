@@ -54,7 +54,7 @@ message Rectangle {
 
 // A feature names something at a given point.
 //
-// If a feature could not be named, the name value is blank.
+// If a feature could not be named, the name is empty.
 message Feature {
   // The name of the feature.
   optional string name = 1;
@@ -65,18 +65,18 @@ message Feature {
 
 // A RouteNote is a message sent while at a given point.
 message RouteNote {
-  // The location at from which the message is sent.
+  // The location from which the message is sent.
   optional Point location = 1;
 
-  // The message to be sent
+  // The message to be sent.
   optional string message = 2;
 }
 
-// Route summary is the message received in response to a RecordRoute rpc.
+// A RouteSummary is received in response to a RecordRoute rpc.
 //
-// It details the number of individual points received, the number of detected
-// features and the total distance covered as the cumulative sum of the
-// distance between each point.
+// It contains the number of individual points received, the number of
+// detected features, and the total distance covered as the cumulative sum of
+// the distance between each point.
 message RouteSummary {
   // The number of points received.
   optional int32 point_count = 1;
@@ -115,9 +115,9 @@ service RouteGuide {
   rpc RecordRoute(stream Point) returns (RouteSummary) {
   }
 
-  // Bidirectional streaming RPC.
+  // A Bidirectional streaming RPC.
   //
-  // Accepts a streams of RouteNotes sent while a route is being traversed,
+  // Accepts a stream of RouteNotes sent while a route is being traversed,
   // while receiving other RouteNotes (e.g. from other users).
   rpc RouteChat(stream RouteNote) returns (stream RouteNote) {
   }
