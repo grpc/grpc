@@ -44,7 +44,7 @@
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
 /* a large number */
-#define MANY 100000
+#define MANY 10000
 
 static void test_no_op(void) {
   grpc_mdctx *ctx;

@@ -1025,8 +1025,6 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
   int had_outgoing;
   char buffer[GPR_LTOA_MIN_BUFSIZE];
 
-  gpr_log(GPR_DEBUG, "cancel %d", id);
-
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */
     had_outgoing = s->outgoing_sopb.nops != 0;
