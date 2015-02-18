@@ -34,8 +34,6 @@
 #ifndef __GRPCPP_SERVER_CONTEXT_H_
 #define __GRPCPP_SERVER_CONTEXT_H_
 
-#include <grpc++/completion_queue.h>
-
 #include <chrono>
 #include <map>
 #include <mutex>
@@ -63,7 +61,9 @@ class ServerWriter;
 template <class R, class W>
 class ServerReaderWriter;
 
+class Call;
 class CallOpBuffer;
+class CompletionQueue;
 class Server;
 
 // Interface of server side rpc context.
@@ -79,7 +79,7 @@ class ServerContext final {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  bool IsCancelled() { return completion_op_.CheckCancelled(cq_); }
+  bool IsCancelled();
 
   std::multimap<grpc::string, grpc::string> client_metadata() {
     return client_metadata_;
@@ -102,22 +102,14 @@ class ServerContext final {
   template <class R, class W>
   friend class ::grpc::ServerReaderWriter;
 
-  class CompletionOp final : public CompletionQueueTag {
-   public:
-    bool FinalizeResult(void** tag, bool* status) override;
+  class CompletionOp;
 
-    bool CheckCancelled(CompletionQueue* cq);
-
-   private:
-    std::mutex mu_;
-    bool finalized_ = false;
-    int cancelled_ = 0;
-  };
+  void BeginCompletionOp(Call* call);
 
   ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                 size_t metadata_count);
 
-  CompletionOp completion_op_;
+  CompletionOp* completion_op_ = nullptr;
 
   std::chrono::system_clock::time_point deadline_;
   grpc_call* call_ = nullptr;

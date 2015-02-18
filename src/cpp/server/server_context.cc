@@ -34,9 +34,58 @@
 #include <grpc++/server_context.h>
 #include <grpc++/impl/call.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include "src/cpp/util/time.h"
 
 namespace grpc {
+
+// CompletionOp
+
+class ServerContext::CompletionOp final : public CallOpBuffer {
+ public:
+  CompletionOp();
+  bool FinalizeResult(void** tag, bool* status) override;
+
+  bool CheckCancelled(CompletionQueue* cq);
+
+  void Unref();
+
+ private:
+  std::mutex mu_;
+  int refs_ = 2;  // initial refs: one in the server context, one in the cq
+  bool finalized_ = false;
+  bool cancelled_ = false;
+};
+
+ServerContext::CompletionOp::CompletionOp() { AddServerRecvClose(&cancelled_); }
+
+void ServerContext::CompletionOp::Unref() {
+  std::unique_lock<std::mutex> lock(mu_);
+  if (--refs_ == 0) {
+    lock.unlock();
+    delete this;
+  }
+}
+
+bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
+  cq->TryPluck(this, false);
+  std::lock_guard<std::mutex> g(mu_);
+  return finalized_ ? cancelled_ : false;
+}
+
+bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
+  GPR_ASSERT(CallOpBuffer::FinalizeResult(tag, status));
+  std::unique_lock<std::mutex> lock(mu_);
+  finalized_ = true;
+  if (!*status) cancelled_ = true;
+  if (--refs_ == 0) {
+    lock.unlock();
+    delete this;
+  }
+  return false;
+}
+
+// ServerContext body
 
 ServerContext::ServerContext() {}
 
@@ -55,6 +104,15 @@ ServerContext::~ServerContext() {
   if (call_) {
     grpc_call_destroy(call_);
   }
+  if (completion_op_) {
+    completion_op_->Unref();
+  }
+}
+
+void ServerContext::BeginCompletionOp(Call* call) {
+  GPR_ASSERT(!completion_op_);
+  completion_op_ = new CompletionOp();
+  call->PerformOps(completion_op_);
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,
@@ -67,16 +125,8 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
-bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
-  cq->TryPluck(this);
-  std::lock_guard<std::mutex> g(mu_);
-  return finalized_ ? cancelled_ != 0 : false;
-}
-
-bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  std::lock_guard<std::mutex> g(mu_);
-  finalized_ = true;
-  return false;
+bool ServerContext::IsCancelled() {
+  return completion_op_ && completion_op_->CheckCancelled(cq_);
 }
 
 }  // namespace grpc
