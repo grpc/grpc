@@ -184,11 +184,13 @@ struct transport {
   gpr_uint8 is_client;
 
   gpr_mu mu;
+  gpr_cv cv;
 
   /* basic state management - what are we doing at the moment? */
   gpr_uint8 reading;
   gpr_uint8 writing;
   gpr_uint8 calling_back;
+  gpr_uint8 destroying;
   error_state error_state;
 
   /* stream indexing */
@@ -362,6 +364,7 @@ static void unref_transport(transport *t) {
 
   gpr_mu_unlock(&t->mu);
   gpr_mu_destroy(&t->mu);
+  gpr_cv_destroy(&t->cv);
 
   /* callback remaining pings: they're not allowed to call into the transpot,
      and maybe they hold resources that need to be freed */
@@ -397,6 +400,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   /* one ref is for destroy, the other for when ep becomes NULL */
   gpr_ref_init(&t->refs, 2);
   gpr_mu_init(&t->mu);
+  gpr_cv_init(&t->cv);
   t->metadata_context = mdctx;
   t->str_grpc_timeout =
       grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
@@ -405,6 +409,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->error_state = ERROR_STATE_NONE;
   t->next_stream_id = is_client ? 1 : 2;
   t->last_incoming_stream_id = 0;
+  t->destroying = 0;
   t->is_client = is_client;
   t->outgoing_window = DEFAULT_WINDOW;
   t->incoming_window = DEFAULT_WINDOW;
@@ -487,6 +492,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->cb = sr.callbacks;
   t->cb_user_data = sr.user_data;
   t->calling_back = 0;
+  if (t->destroying) gpr_cv_signal(&t->cv);
   unlock(t);
   unref_transport(t);
 }
@@ -495,6 +501,10 @@ static void destroy_transport(grpc_transport *gt) {
   transport *t = (transport *)gt;
 
   gpr_mu_lock(&t->mu);
+  t->destroying = 1;
+  while (t->calling_back) {
+    gpr_cv_wait(&t->cv, &t->mu, gpr_inf_future);
+  }
   t->cb = NULL;
   gpr_mu_unlock(&t->mu);
 
@@ -684,10 +694,11 @@ static void unlock(transport *t) {
   int i;
   pending_goaway *goaways = NULL;
   grpc_endpoint *ep = t->ep;
-  grpc_stream_op_buffer nuke_now = t->nuke_later_sopb;
-
-  if (nuke_now.nops) {
-    memset(&t->nuke_later_sopb, 0, sizeof(t->nuke_later_sopb));
+  grpc_stream_op_buffer nuke_now;
+  
+  grpc_sopb_init(&nuke_now);
+  if (t->nuke_later_sopb.nops) {
+    grpc_sopb_swap(&nuke_now, &t->nuke_later_sopb);
   }
 
   /* see if we need to trigger a write - and if so, get the data ready */
@@ -753,13 +764,12 @@ static void unlock(transport *t) {
   if (perform_callbacks || call_closed || num_goaways) {
     lock(t);
     t->calling_back = 0;
+    if (t->destroying) gpr_cv_signal(&t->cv);
     unlock(t);
     unref_transport(t);
   }
 
-  if (nuke_now.nops) {
-    grpc_sopb_destroy(&nuke_now);
-  }
+  grpc_sopb_destroy(&nuke_now);
 
   gpr_free(goaways);
 }
@@ -1698,13 +1708,10 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
 
 static int prepare_callbacks(transport *t) {
   stream *s;
-  grpc_stream_op_buffer temp_sopb;
   int n = 0;
   while ((s = stream_list_remove_head(t, PENDING_CALLBACKS))) {
     int execute = 1;
-    temp_sopb = s->parser.incoming_sopb;
-    s->parser.incoming_sopb = s->callback_sopb;
-    s->callback_sopb = temp_sopb;
+    grpc_sopb_swap(&s->parser.incoming_sopb, &s->callback_sopb);
 
     s->callback_state = compute_state(s->sent_write_closed, s->read_closed);
     if (s->callback_state == GRPC_STREAM_CLOSED) {

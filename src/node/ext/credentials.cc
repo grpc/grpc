@@ -63,7 +63,6 @@ Credentials::Credentials(grpc_credentials *credentials)
     : wrapped_credentials(credentials) {}
 
 Credentials::~Credentials() {
-  gpr_log(GPR_DEBUG, "Destroying credentials object");
   grpc_credentials_release(wrapped_credentials);
 }
 

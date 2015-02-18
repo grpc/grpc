@@ -45,7 +45,7 @@
     m = proto_re.match(filename)
     if not m:
       return filename
-    return 'gens/' + m.group(1) + '.pb.cc'
+    return '$(GENDIR)/' + m.group(1) + '.pb.cc'
 %>
 
 
@@ -55,6 +55,15 @@ ifeq ($(SYSTEM),)
 SYSTEM = $(HOST_SYSTEM)
 endif
 
+
+ifndef BUILDDIR
+BUILDDIR = .
+endif
+
+BINDIR = $(BUILDDIR)/bins
+OBJDIR = $(BUILDDIR)/objs
+LIBDIR = $(BUILDDIR)/libs
+GENDIR = $(BUILDDIR)/gens
 
 # Configurations
 
@@ -115,7 +124,7 @@ CC_msan = clang
 CXX_msan = clang++-libc++
 LD_msan = clang
 LDXX_msan = clang++-libc++
-CPPFLAGS_msan = -O1 -fsanitize=memory -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+CPPFLAGS_msan = -O1 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
 OPENSSL_CONFIG_msan = no-asm
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
@@ -183,7 +192,7 @@ CXXFLAGS += -std=c++11
 CPPFLAGS += -g -fPIC -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g -fPIC
 
-INCLUDES = . include gens
+INCLUDES = . include $(GENDIR)
 ifeq ($(SYSTEM),Darwin)
 LIBS = m z
 else
@@ -290,9 +299,9 @@ endif
 
 ifeq ($(HAS_SYSTEM_ZLIB),false)
 ifeq ($(HAS_EMBEDDED_ZLIB),true)
-ZLIB_DEP = libs/$(CONFIG)/zlib/libz.a
+ZLIB_DEP = $(LIBDIR)/$(CONFIG)/zlib/libz.a
 CPPFLAGS += -Ithird_party/zlib
-LDFLAGS += -Llibs/$(CONFIG)/zlib
+LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 DEP_MISSING += zlib
 endif
@@ -300,10 +309,10 @@ endif
 
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
-OPENSSL_DEP = libs/$(CONFIG)/openssl/libssl.a
-OPENSSL_MERGE_LIBS += libs/$(CONFIG)/openssl/libssl.a libs/$(CONFIG)/openssl/libcrypto.a
+OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
+OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
 CPPFLAGS += -Ithird_party/openssl/include
-LDFLAGS += -Llibs/$(CONFIG)/openssl
+LDFLAGS += -L$(LIBDIR)/$(CONFIG)/openssl
 LIBS_SECURE = dl
 else
 NO_SECURE = true
@@ -316,10 +325,10 @@ LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 
 ifeq ($(HAS_SYSTEM_PROTOBUF),false)
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
-PROTOBUF_DEP = libs/$(CONFIG)/protobuf/libprotobuf.a
+PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
 CPPFLAGS += -Ithird_party/protobuf/src
-LDFLAGS += -Llibs/$(CONFIG)/protobuf
-PROTOC = bins/$(CONFIG)/protobuf/protoc
+LDFLAGS += -L$(LIBDIR)/$(CONFIG)/protobuf
+PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
 endif
@@ -341,7 +350,7 @@ endif
 PROTOC_PLUGINS=\
 % for tgt in targets:
 % if tgt.build == 'protoc':
- bins/$(CONFIG)/${tgt.name}\
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
@@ -349,7 +358,7 @@ ifeq ($(DEP_MISSING),)
 all: static shared\
 % for tgt in targets:
 % if tgt.build == 'all':
- bins/$(CONFIG)/${tgt.name}\
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
@@ -437,7 +446,7 @@ stop:
 	@false
 
 % for tgt in targets:
-${tgt.name}: bins/$(CONFIG)/${tgt.name}
+${tgt.name}: $(BINDIR)/$(CONFIG)/${tgt.name}
 % endfor
 
 run_dep_checks:
@@ -447,15 +456,15 @@ run_dep_checks:
 	$(PROTOBUF_CHECK_CMD) || true
 	$(PROTOC_CHECK_CMD) || true
 
-libs/$(CONFIG)/zlib/libz.a:
+$(LIBDIR)/$(CONFIG)/zlib/libz.a:
 	$(E) "[MAKE]    Building zlib"
 	$(Q)(cd third_party/zlib ; CC="$(CC)" CFLAGS="-fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG))" ./configure --static)
 	$(Q)$(MAKE) -C third_party/zlib clean
 	$(Q)$(MAKE) -C third_party/zlib
-	$(Q)mkdir -p libs/$(CONFIG)/zlib
-	$(Q)cp third_party/zlib/libz.a libs/$(CONFIG)/zlib
+	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/zlib
+	$(Q)cp third_party/zlib/libz.a $(LIBDIR)/$(CONFIG)/zlib
 
-libs/$(CONFIG)/openssl/libssl.a:
+$(LIBDIR)/$(CONFIG)/openssl/libssl.a:
 	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
 ifeq ($(SYSTEM),Darwin)
 	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc $(OPENSSL_CONFIG_$(CONFIG)))
@@ -464,30 +473,30 @@ else
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
-	$(Q)mkdir -p libs/$(CONFIG)/openssl
-	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a libs/$(CONFIG)/openssl
+	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
+	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
 third_party/protobuf/configure:
 	$(E) "[AUTOGEN] Preparing protobuf"
 	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
 
-libs/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
+$(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
 	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="$(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
-	$(Q)mkdir -p libs/$(CONFIG)/protobuf
-	$(Q)mkdir -p bins/$(CONFIG)/protobuf
-	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a libs/$(CONFIG)/protobuf
-	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a libs/$(CONFIG)/protobuf
-	$(Q)cp third_party/protobuf/src/protoc bins/$(CONFIG)/protobuf
+	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
+	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
+	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
+	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
+	$(Q)cp third_party/protobuf/src/protoc $(BINDIR)/$(CONFIG)/protobuf
 
 static: static_c static_cxx
 
 static_c: \
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c':
- libs/$(CONFIG)/lib${lib.name}.a\
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -495,7 +504,7 @@ static_c: \
 static_cxx: \
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c++':
- libs/$(CONFIG)/lib${lib.name}.a\
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -505,7 +514,7 @@ shared: shared_c shared_cxx
 shared_c: \
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c':
- libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
 % endif
 % endfor
 
@@ -513,7 +522,7 @@ shared_c: \
 shared_cxx: \
 % for lib in libs:
 % if lib.build == 'all' and lib.language == 'c++':
- libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
 % endif
 % endfor
 
@@ -523,7 +532,7 @@ privatelibs: privatelibs_c privatelibs_cxx
 privatelibs_c: \
 % for lib in libs:
 % if lib.build == 'private' and lib.language == 'c':
- libs/$(CONFIG)/lib${lib.name}.a\
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -531,7 +540,7 @@ privatelibs_c: \
 privatelibs_cxx: \
 % for lib in libs:
 % if lib.build == 'private' and lib.language == 'c++':
- libs/$(CONFIG)/lib${lib.name}.a\
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
 % endif
 % endfor
 
@@ -541,7 +550,7 @@ buildtests: buildtests_c buildtests_cxx
 buildtests_c: privatelibs_c\
 % for tgt in targets:
 % if tgt.build == 'test' and not tgt.language == 'c++':
- bins/$(CONFIG)/${tgt.name}\
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
@@ -549,7 +558,7 @@ buildtests_c: privatelibs_c\
 buildtests_cxx: privatelibs_cxx\
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.language == 'c++':
- bins/$(CONFIG)/${tgt.name}\
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
@@ -560,7 +569,7 @@ test_c: buildtests_c
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('run', True) and not tgt.language == 'c++':
 	$(E) "[RUN]     Testing ${tgt.name}"
-	$(Q) ./bins/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
 % endfor
 
@@ -569,7 +578,7 @@ test_cxx: buildtests_cxx
 % for tgt in targets:
 % if tgt.build == 'test' and tgt.get('run', True) and tgt.language == 'c++':
 	$(E) "[RUN]     Testing ${tgt.name}"
-	$(Q) ./bins/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
+	$(Q) $(BINDIR)/$(CONFIG)/${tgt.name} || ( echo test ${tgt.name} failed ; exit 1 )
 % endif
 % endfor
 
@@ -577,7 +586,7 @@ test_cxx: buildtests_cxx
 tools: privatelibs\
 % for tgt in targets:
 % if tgt.build == 'tool':
- bins/$(CONFIG)/${tgt.name}\
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
@@ -585,7 +594,7 @@ tools: privatelibs\
 buildbenchmarks: privatelibs\
 % for tgt in targets:
 % if tgt.build == 'benchmark':
- bins/$(CONFIG)/${tgt.name}\
+ $(BINDIR)/$(CONFIG)/${tgt.name}\
 % endif
 % endfor
 
@@ -609,7 +618,7 @@ ifeq ($(CONFIG),opt)
 % if lib.language == "c":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
-	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.a
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -621,7 +630,7 @@ ifeq ($(CONFIG),opt)
 % if lib.language == "c++":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.a"
-	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.a
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -633,7 +642,7 @@ ifeq ($(CONFIG),opt)
 % if lib.language == "c":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
 % endif
 % endif
 % endfor
@@ -645,7 +654,7 @@ ifeq ($(CONFIG),opt)
 % if lib.language == "c++":
 % if lib.build == "all":
 	$(E) "[STRIP]   Stripping lib${lib.name}.so"
-	$(Q) $(STRIP) libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
 % endif
 % endif
 % endfor
@@ -653,32 +662,32 @@ endif
 
 % for p in protos:
 ifeq ($(NO_PROTOC),true)
-gens/${p}.pb.cc: protoc_dep_error
+$(GENDIR)/${p}.pb.cc: protoc_dep_error
 else
-gens/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=gens --grpc_out=gens --plugin=protoc-gen-grpc=bins/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
 endif
 
 % endfor
 
-objs/$(CONFIG)/%.o : %.c
+$(OBJDIR)/$(CONFIG)/%.o : %.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CC) $(CFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-objs/$(CONFIG)/%.o : gens/%.pb.cc
+$(OBJDIR)/$(CONFIG)/%.o : $(GENDIR)/%.pb.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-objs/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
+$(OBJDIR)/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
 	$(E) "[HOSTCXX] Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
-objs/$(CONFIG)/%.o : %.cc
+$(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
@@ -707,7 +716,7 @@ install-static_c: static_c strip-static_c
 % if lib.language == "c":
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
-	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -717,7 +726,7 @@ install-static_cxx: static_cxx strip-static_cxx
 % if lib.language == "c++":
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
-	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
 % endif
 % endif
 % endfor
@@ -728,11 +737,11 @@ install-shared_c: shared_c strip-shared_c
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) libs/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
-	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
 else
 	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
 endif
@@ -752,11 +761,11 @@ install-shared_cxx: shared_cxx strip-shared_cxx
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) libs/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
-	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
 else
 	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
 endif
@@ -771,7 +780,7 @@ endif
 endif
 
 clean:
-	$(Q) $(RM) -rf objs libs bins gens
+	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
 
 
 # The various libraries
@@ -809,7 +818,7 @@ PUBLIC_HEADERS_C += \\
 % endfor
 % endif
 
-LIB${lib.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
+LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
 ## If the library requires OpenSSL with ALPN, let's add some restrictions.
 % if lib.get('secure', True):
@@ -817,13 +826,13 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure libraries if you don't have OpenSSL with ALPN.
 
-libs/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.a: openssl_dep_error
 
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/${lib.name}.$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT): openssl_dep_error
 else
-libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): openssl_dep_error
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): openssl_dep_error
 endif
 % endif
 
@@ -834,13 +843,13 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-libs/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
 else
-libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
 endif
 % endif
 
@@ -856,7 +865,7 @@ ${src}: $(OPENSSL_DEP)
 % endfor
 endif
 
-libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
 ## The else here corresponds to the if secure earlier.
 % else:
 % if lib.language == 'c++':
@@ -864,20 +873,20 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-libs/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.a: protobuf_dep_error
 
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
-libs/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT): protobuf_dep_error
 else
-libs/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT): protobuf_dep_error
 endif
 % endif
 
 else
 
 % endif
-libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
+$(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
 % endif
 % if lib.language == 'c++':
  $(PROTOBUF_DEP)\
@@ -885,21 +894,21 @@ libs/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
  $(LIB${lib.name.upper()}_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f libs/$(CONFIG)/lib${lib.name}.a
-	$(Q) $(AR) rcs libs/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 % if lib.get('baselib', False):
 % if lib.get('secure', True):
 	$(Q) rm -rf tmp-merge
 	$(Q) mkdir tmp-merge
-	$(Q) ( cd tmp-merge ; $(AR) x ../libs/$(CONFIG)/lib${lib.name}.a )
+	$(Q) ( cd tmp-merge ; $(AR) x ../$(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
 	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; <%text>ar x ../$${l}</%text> ) ; done
-	$(Q) rm -f libs/$(CONFIG)/lib${lib.name}.a tmp-merge/__.SYMDEF*
-	$(Q) ar rcs libs/$(CONFIG)/lib${lib.name}.a tmp-merge/*
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge/*
 	$(Q) rm -rf tmp-merge
 % endif
 % endif
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib libs/$(CONFIG)/lib${lib.name}.a 
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a 
 endif
 
 <%
@@ -908,8 +917,8 @@ endif
   else:
     ld = '$(LD)'
 
-  out_base = 'libs/$(CONFIG)/' + lib.name
-  out_libbase = 'libs/$(CONFIG)/lib' + lib.name
+  out_base = '$(LIBDIR)/$(CONFIG)/' + lib.name
+  out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name
 
   common = '$(LIB' + lib.name.upper() + '_OBJS) $(LDLIBS)'
 
@@ -919,9 +928,9 @@ endif
   mingw_lib_deps = ' $(ZLIB_DEP)'
   for dep in lib.get('deps', []):
     libs = libs + ' -l' + dep
-    lib_deps = lib_deps + ' libs/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
+    lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT)'
     mingw_libs = mingw_libs + ' -l' + dep + '-imp'
-    mingw_lib_deps = mingw_lib_deps + 'libs/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
+    mingw_lib_deps = mingw_lib_deps + '$(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
   if lib.get('secure', True):
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
@@ -934,15 +943,15 @@ ifeq ($(SYSTEM),MINGW32)
 ${out_base}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) ${ld} $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,--output-def=${out_base}.def -Wl,--out-implib=${out_libbase}-imp.a -o ${out_base}.$(SHARED_EXT) ${common}${mingw_libs}
+	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_base}.def -Wl,--out-implib=${out_libbase}-imp.a -o ${out_base}.$(SHARED_EXT) ${common}${mingw_libs}
 else
 ${out_libbase}.$(SHARED_EXT): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ${ld} $(LDFLAGS) -Llibs/$(CONFIG) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
 else
-	$(Q) ${ld} $(LDFLAGS) -Llibs/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
+	$(Q) ${ld} $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.version.major} -o ${out_libbase}.$(SHARED_EXT) ${common}${libs}
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so.${settings.version.major}
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) ${out_libbase}.so
 endif
@@ -973,7 +982,7 @@ endif
 
 % for src in lib.src:
 % if not proto_re.match(src):
-objs/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
+$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 % for src2 in lib.src:
 % if proto_re.match(src2):
     ${proto_to_cc(src2)}\
@@ -992,14 +1001,14 @@ ${tgt.name.upper()}_SRC = \\
 
 % endfor
 
-${tgt.name.upper()}_OBJS = $(addprefix objs/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
+${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
 
 % if tgt.get('secure', True):
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL with ALPN.
 
-bins/$(CONFIG)/${tgt.name}: openssl_dep_error
+$(BINDIR)/$(CONFIG)/${tgt.name}: openssl_dep_error
 
 else
 
@@ -1019,16 +1028,16 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins if you don't have protobuf 3.0.0+.
 
-bins/$(CONFIG)/${tgt.name}: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 
 else
 
-bins/$(CONFIG)/${tgt.name}: $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: $(PROTOBUF_DEP) $(${tgt.name.upper()}_OBJS)\
 % else:
-bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
+$(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % endif
 % for dep in tgt.deps:
- libs/$(CONFIG)/lib${dep}.a\
+ $(LIBDIR)/$(CONFIG)/lib${dep}.a\
 % endfor
 
 % if tgt.language == "c++":
@@ -1052,7 +1061,7 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 	$(Q) $(LD) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
 % endif
 % for dep in tgt.deps:
- libs/$(CONFIG)/lib${dep}.a\
+ $(LIBDIR)/$(CONFIG)/lib${dep}.a\
 % endfor
 % if tgt.language == "c++":
 % if tgt.build == 'protoc':
@@ -1071,7 +1080,7 @@ bins/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % elif tgt.get('secure', True):
  $(LDLIBS_SECURE)\
 % endif
- -o bins/$(CONFIG)/${tgt.name}
+ -o $(BINDIR)/$(CONFIG)/${tgt.name}
 % if tgt.build == 'protoc':
 
 endif
@@ -1082,9 +1091,9 @@ endif
 % endif
 
 % for src in tgt.src:
-objs/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
+$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 % for dep in tgt.deps:
- libs/$(CONFIG)/lib${dep}.a\
+ $(LIBDIR)/$(CONFIG)/lib${dep}.a\
 % endfor
 
 % endfor
