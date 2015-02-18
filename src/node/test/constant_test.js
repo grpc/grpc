@@ -76,31 +76,6 @@ var callErrorNames = [
   'INVALID_FLAGS'
 ];
 
-/**
- * List of all op error names
- * @const
- * @type {Array.<string>}
- */
-var opErrorNames = [
-  'OK',
-  'ERROR'
-];
-
-/**
- * List of all completion type names
- * @const
- * @type {Array.<string>}
- */
-var completionTypeNames = [
-  'QUEUE_SHUTDOWN',
-  'READ',
-  'WRITE_ACCEPTED',
-  'FINISH_ACCEPTED',
-  'CLIENT_METADATA_READ',
-  'FINISHED',
-  'SERVER_RPC_NEW'
-];
-
 describe('constants', function() {
   it('should have all of the status constants', function() {
     for (var i = 0; i < statusNames.length; i++) {
@@ -112,18 +87,6 @@ describe('constants', function() {
     for (var i = 0; i < callErrorNames.length; i++) {
       assert(grpc.callError.hasOwnProperty(callErrorNames[i]),
              'call error missing: ' + callErrorNames[i]);
-    }
-  });
-  it('should have all of the op errors', function() {
-    for (var i = 0; i < opErrorNames.length; i++) {
-      assert(grpc.opError.hasOwnProperty(opErrorNames[i]),
-             'op error missing: ' + opErrorNames[i]);
-    }
-  });
-  it('should have all of the completion types', function() {
-    for (var i = 0; i < completionTypeNames.length; i++) {
-      assert(grpc.completionType.hasOwnProperty(completionTypeNames[i]),
-             'completion type missing: ' + completionTypeNames[i]);
     }
   });
 });

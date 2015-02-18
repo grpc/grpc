@@ -63,7 +63,6 @@ ServerCredentials::ServerCredentials(grpc_server_credentials *credentials)
     : wrapped_credentials(credentials) {}
 
 ServerCredentials::~ServerCredentials() {
-  gpr_log(GPR_DEBUG, "Destroying server credentials object");
   grpc_server_credentials_release(wrapped_credentials);
 }
 
