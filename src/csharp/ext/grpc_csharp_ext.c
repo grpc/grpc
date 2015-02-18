@@ -322,11 +322,6 @@ grpcsharp_server_add_http2_port(grpc_server *server, const char *addr) {
   return grpc_server_add_http2_port(server, addr);
 }
 
-GPR_EXPORT int GPR_CALLTYPE
-grpcsharp_server_add_secure_http2_port(grpc_server *server, const char *addr) {
-  return grpc_server_add_secure_http2_port(server, addr);
-}
-
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server *server) {
   grpc_server_start(server);
 }
