@@ -564,15 +564,19 @@ void grpc_server_start(grpc_server *server);
 
 /* Begin shutting down a server.
    After completion, no new calls or connections will be admitted.
-   Existing calls will be allowed to complete. */
+   Existing calls will be allowed to complete.
+   Shutdown is idempotent. */
 void grpc_server_shutdown(grpc_server *server);
 
 /* As per grpc_server_shutdown, but send a GRPC_SERVER_SHUTDOWN event when
-   there are no more calls being serviced. */
+   there are no more calls being serviced.
+   Shutdown is idempotent, and all tags will be notified at once if multiple
+   grpc_server_shutdown_and_notify calls are made. */
 void grpc_server_shutdown_and_notify(grpc_server *server, void *tag);
 
 /* Destroy a server.
-   Forcefully cancels all existing calls. */
+   Forcefully cancels all existing calls.
+   Implies grpc_server_shutdown() if one was not previously performed. */
 void grpc_server_destroy(grpc_server *server);
 
 #ifdef __cplusplus
