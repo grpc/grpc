@@ -64,6 +64,15 @@ namespace math.Tests
             client = MathGrpc.NewStub(channel);
         }
 
+        [TestFixtureTearDown]
+        public void Cleanup()
+        {
+            channel.Dispose();
+
+            server.ShutdownAsync().Wait();
+            GrpcEnvironment.Shutdown();
+        }
+
         [Test]
         public void Div1()
         {
@@ -135,15 +144,6 @@ namespace math.Tests
 
             CollectionAssert.AreEqual(new long[] {3, 4, 3}, result.ConvertAll((divReply) => divReply.Quotient));
             CollectionAssert.AreEqual(new long[] {1, 16, 1}, result.ConvertAll((divReply) => divReply.Remainder));
-        }
-
-        [TestFixtureTearDown]
-        public void Cleanup()
-        {
-            channel.Dispose();
-
-            server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
     }
 }

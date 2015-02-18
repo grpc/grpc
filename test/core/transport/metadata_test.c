@@ -44,7 +44,7 @@
 #define LOG_TEST() gpr_log(GPR_INFO, "%s", __FUNCTION__)
 
 /* a large number */
-#define MANY 100000
+#define MANY 10000
 
 static void test_no_op(void) {
   grpc_mdctx *ctx;
@@ -52,7 +52,7 @@ static void test_no_op(void) {
   LOG_TEST();
 
   ctx = grpc_mdctx_create();
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_create_string(void) {
@@ -71,7 +71,7 @@ static void test_create_string(void) {
   GPR_ASSERT(gpr_slice_str_cmp(s3->slice, "very much not hello") == 0);
   grpc_mdstr_unref(s1);
   grpc_mdstr_unref(s2);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
   grpc_mdstr_unref(s3);
 }
 
@@ -95,7 +95,7 @@ static void test_create_metadata(void) {
   grpc_mdelem_unref(m1);
   grpc_mdelem_unref(m2);
   grpc_mdelem_unref(m3);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_create_many_ephemeral_metadata(void) {
@@ -116,7 +116,7 @@ static void test_create_many_ephemeral_metadata(void) {
   /* capacity should not grow */
   GPR_ASSERT(mdtab_capacity_before ==
              grpc_mdctx_get_mdtab_capacity_test_only(ctx));
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_create_many_persistant_metadata(void) {
@@ -145,7 +145,7 @@ static void test_create_many_persistant_metadata(void) {
   for (i = 0; i < MANY; i++) {
     grpc_mdelem_unref(created[i]);
   }
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 
   gpr_free(created);
 }
@@ -171,7 +171,7 @@ static void test_spin_creating_the_same_thing(void) {
   GPR_ASSERT(grpc_mdctx_get_mdtab_count_test_only(ctx) == 1);
   GPR_ASSERT(grpc_mdctx_get_mdtab_free_test_only(ctx) == 1);
 
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_things_stick_around(void) {
@@ -218,7 +218,7 @@ static void test_things_stick_around(void) {
     }
   }
 
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
   gpr_free(strs);
   gpr_free(shuf);
 }
@@ -245,7 +245,7 @@ static void test_slices_work(void) {
   gpr_slice_unref(slice);
   grpc_mdstr_unref(str);
 
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_base64_and_huffman_works(void) {
@@ -264,7 +264,7 @@ static void test_base64_and_huffman_works(void) {
 
   gpr_slice_unref(slice2);
   grpc_mdstr_unref(str);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 int main(int argc, char **argv) {

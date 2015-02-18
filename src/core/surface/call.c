@@ -313,7 +313,6 @@ static void set_status_code(grpc_call *call, status_source source,
   }
 
   if (flush && !grpc_bbq_empty(&call->incoming_queue)) {
-    gpr_log(GPR_ERROR, "Flushing unread messages due to error status %d", status);
     grpc_bbq_flush(&call->incoming_queue);
   }
 }

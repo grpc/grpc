@@ -336,10 +336,8 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
 
-static void unref_transport(transport *t) {
+static void destruct_transport(transport *t) {
   size_t i;
-
-  if (!gpr_unref(&t->refs)) return;
 
   gpr_mu_lock(&t->mu);
 
@@ -380,7 +378,14 @@ static void unref_transport(transport *t) {
 
   grpc_sopb_destroy(&t->nuke_later_sopb);
 
+  grpc_mdctx_unref(t->metadata_context);
+
   gpr_free(t);
+}
+
+static void unref_transport(transport *t) {
+  if (!gpr_unref(&t->refs)) return;
+  destruct_transport(t);
 }
 
 static void ref_transport(transport *t) { gpr_ref(&t->refs); }
@@ -401,6 +406,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   gpr_ref_init(&t->refs, 2);
   gpr_mu_init(&t->mu);
   gpr_cv_init(&t->cv);
+  grpc_mdctx_ref(mdctx);
   t->metadata_context = mdctx;
   t->str_grpc_timeout =
       grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
@@ -1024,8 +1030,6 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 int send_rst) {
   int had_outgoing;
   char buffer[GPR_LTOA_MIN_BUFSIZE];
-
-  gpr_log(GPR_DEBUG, "cancel %d", id);
 
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */

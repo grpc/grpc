@@ -48,13 +48,6 @@ class CompletionQueue;
 class RpcMethod;
 class Status;
 
-// Wrapper that begins an asynchronous unary call
-void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                    ClientContext *context,
-                    const google::protobuf::Message &request,
-                    google::protobuf::Message *result, Status *status,
-                    CompletionQueue *cq, void *tag);
-
 // Wrapper that performs a blocking unary call
 Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
                          ClientContext *context,

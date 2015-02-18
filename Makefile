@@ -177,7 +177,9 @@ LDFLAGS += -g -fPIC
 
 INCLUDES = . include $(GENDIR)
 ifeq ($(SYSTEM),Darwin)
+INCLUDES += /usr/local/ssl/include /opt/local/include
 LIBS = m z
+LDFLAGS += -L/usr/local/ssl/lib -L/opt/local/lib
 else
 LIBS = rt m z pthread
 LDFLAGS += -pthread
@@ -890,15 +892,18 @@ $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 
 static: static_c static_cxx
 
-static_c:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+static_c:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 
 static_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.a
 
 shared: shared_c shared_cxx
 
-shared_c:  $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+shared_c:  $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 
 shared_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT)
+
+shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
+grpc_csharp_ext: shared_csharp
 
 privatelibs: privatelibs_c privatelibs_cxx
 
@@ -1763,8 +1768,6 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[STRIP]   Stripping libgrpc.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(E) "[STRIP]   Stripping libgrpc_csharp_ext.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
@@ -1781,8 +1784,6 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT)
-	$(E) "[STRIP]   Stripping libgrpc_csharp_ext.so"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 endif
@@ -1791,6 +1792,12 @@ strip-shared_cxx: shared_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT)
+endif
+
+strip-shared_csharp: shared_csharp
+ifeq ($(CONFIG),opt)
+	$(E) "[STRIP]   Stripping libgrpc_csharp_ext.so"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1911,6 +1918,10 @@ install_c: install-headers_c install-static_c install-shared_c
 
 install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
 
+install_csharp: install-shared_csharp install_c
+
+install_grpc_csharp_ext: install_csharp
+
 install-headers: install-headers_c install-headers_cxx
 
 install-headers_c:
@@ -1928,8 +1939,6 @@ install-static_c: static_c strip-static_c
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr.a $(prefix)/lib/libgpr.a
 	$(E) "[INSTALL] Installing libgrpc.a"
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc.a $(prefix)/lib/libgrpc.a
-	$(E) "[INSTALL] Installing libgrpc_csharp_ext.a"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(prefix)/lib/libgrpc_csharp_ext.a
 	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
 
@@ -1961,17 +1970,6 @@ ifneq ($(SYSTEM),Darwin)
 endif
 endif
 ifeq ($(SYSTEM),MINGW32)
-	$(E) "[INSTALL] Installing grpc_csharp_ext.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/grpc_csharp_ext.$(SHARED_EXT)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a $(prefix)/lib/libgrpc_csharp_ext-imp.a
-else
-	$(E) "[INSTALL] Installing libgrpc_csharp_ext.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so
-endif
-endif
-ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing grpc_unsecure.$(SHARED_EXT)"
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT) $(prefix)/lib/grpc_unsecure.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure-imp.a $(prefix)/lib/libgrpc_unsecure-imp.a
@@ -1998,6 +1996,24 @@ else
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
+endif
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig
+endif
+endif
+
+install-shared_csharp: shared_csharp strip-shared_csharp
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing grpc_csharp_ext.$(SHARED_EXT)"
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/grpc_csharp_ext.$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a $(prefix)/lib/libgrpc_csharp_ext-imp.a
+else
+	$(E) "[INSTALL] Installing libgrpc_csharp_ext.$(SHARED_EXT)"
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -3007,6 +3023,7 @@ LIBGRPC++_SRC = \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/async_unary_call.h \
     include/grpc++/channel_arguments.h \
     include/grpc++/channel_interface.h \
     include/grpc++/client_context.h \

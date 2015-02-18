@@ -345,7 +345,7 @@
     {
       "name": "grpc_csharp_ext",
       "build": "all",
-      "language": "c",
+      "language": "csharp",
       "src": [
         "src/csharp/ext/grpc_csharp_ext.c"
       ],
@@ -398,6 +398,7 @@
       "build": "all",
       "language": "c++",
       "public_headers": [
+        "include/grpc++/async_unary_call.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",

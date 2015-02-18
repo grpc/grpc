@@ -56,6 +56,12 @@ namespace Google.GRPC.Core.Internal
                 return handle == IntPtr.Zero;
             }
         }
+
+        protected override bool ReleaseHandle()
+        {
+            // handle is not owned.
+            return true;
+        }
     }
 }
 

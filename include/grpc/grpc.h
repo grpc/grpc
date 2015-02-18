@@ -354,10 +354,18 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
-/* Initialize the grpc library */
+/* Initialize the grpc library.
+   It is not safe to call any other grpc functions before calling this.
+   (To avoid overhead, little checking is done, and some things may work. We
+   do not warrant that they will continue to do so in future revisions of this
+   library). */
 void grpc_init(void);
 
-/* Shut down the grpc library */
+/* Shut down the grpc library. 
+   No memory is used by grpc after this call returns, nor are any instructions
+   executing within the grpc library.
+   Prior to calling, all application owned grpc objects must have been
+   destroyed. */
 void grpc_shutdown(void);
 
 grpc_completion_queue *grpc_completion_queue_create(void);
@@ -386,7 +394,12 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
 void grpc_event_finish(grpc_event *event);
 
 /* Begin destruction of a completion queue. Once all possible events are
-   drained it's safe to call grpc_completion_queue_destroy. */
+   drained then grpc_completion_queue_next will start to produce
+   GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call 
+   grpc_completion_queue_destroy. 
+   
+   After calling this function applications should ensure that no
+   NEW work is added to be published on this completion queue. */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
 
 /* Destroy a completion queue. The caller must ensure that the queue is
