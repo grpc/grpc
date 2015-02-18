@@ -394,7 +394,12 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
 void grpc_event_finish(grpc_event *event);
 
 /* Begin destruction of a completion queue. Once all possible events are
-   drained it's safe to call grpc_completion_queue_destroy. */
+   drained then grpc_completion_queue_next will start to produce
+   GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call 
+   grpc_completion_queue_destroy. 
+   
+   After calling this function applications should ensure that no
+   NEW work is added to be published on this completion queue. */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
 
 /* Destroy a completion queue. The caller must ensure that the queue is
