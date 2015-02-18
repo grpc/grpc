@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
 
   signal(SIGINT, sigint_handler);
-  
+
   GPR_ASSERT(FLAGS_port != 0);
   GPR_ASSERT(!FLAGS_enable_ssl);
   RunServer();
@@ -160,4 +160,3 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return 0;
 }
-

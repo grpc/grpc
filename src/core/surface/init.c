@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,4 +63,3 @@ void grpc_shutdown(void) {
   }
   gpr_mu_unlock(&g_init_mu);
 }
-

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -795,7 +795,7 @@ grpc_interop_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"
@@ -850,7 +850,7 @@ grpc_cloud_prod_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"

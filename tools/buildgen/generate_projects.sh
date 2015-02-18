@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -72,4 +72,3 @@ for dir in . ; do
 done
 
 rm $end2end_test_build
-

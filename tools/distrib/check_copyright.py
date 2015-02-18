@@ -41,15 +41,19 @@ os.chdir(ROOT)
 
 # parse command line
 argp = argparse.ArgumentParser(description='copyright checker')
-argp.add_argument('-o', '--output', 
-                  default='details', 
+argp.add_argument('-o', '--output',
+                  default='details',
                   choices=['list', 'details'])
-argp.add_argument('-s', '--skips', 
+argp.add_argument('-s', '--skips',
                   default=0,
                   action='store_const',
                   const=1)
-argp.add_argument('-a', '--ancient', 
-                  default=0, 
+argp.add_argument('-a', '--ancient',
+                  default=0,
+                  action='store_const',
+                  const=1)
+argp.add_argument('-f', '--fix',
+                  default=0,
                   action='store_const',
                   const=1)
 args = argp.parse_args()
@@ -94,7 +98,7 @@ def log(cond, why, filename):
 for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
                                         shell=True).splitlines():
   ext = os.path.splitext(filename)[1]
-  if ext not in LICENSE_TEXT: 
+  if ext not in LICENSE_TEXT:
     log(args.skips, 'skip', filename)
     continue
   license = LICENSE_TEXT[ext]
@@ -105,6 +109,9 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
     pass
   elif old_license in text:
     log(args.ancient, 'old', filename)
+    if args.fix:
+      with open(filename, 'w') as f:
+        f.write(text.replace('Copyright 2014, Google Inc.', 'Copyright 2015, Google Inc.'))
   elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename:
     log(1, 'missing', filename)
 

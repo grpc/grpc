@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -696,7 +696,7 @@ static void unlock(transport *t) {
   pending_goaway *goaways = NULL;
   grpc_endpoint *ep = t->ep;
   grpc_stream_op_buffer nuke_now;
-  
+
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
     grpc_sopb_swap(&nuke_now, &t->nuke_later_sopb);
