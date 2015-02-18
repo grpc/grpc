@@ -61,7 +61,7 @@ namespace Google.GRPC.Core.Tests
         [TestFixtureTearDown]
         public void Cleanup()
         {
-            GrpcEnvironment.Initialize();
+            GrpcEnvironment.Shutdown();
         }
 
         [Test]
