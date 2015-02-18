@@ -77,22 +77,18 @@ bool CompletionQueue::Next(void** tag, bool* ok) {
 bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
-  for (;;) {
-    ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_future));
-    bool ok = ev->data.op_complete == GRPC_OP_OK;
-    void* ignored = tag;
-    if (tag->FinalizeResult(&ignored, &ok)) {
-      GPR_ASSERT(ignored == tag);
-      return ok;
-    }
-  }
+  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_future));
+  bool ok = ev->data.op_complete == GRPC_OP_OK;
+  void* ignored = tag;
+  GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
+  GPR_ASSERT(ignored == tag);
+  return ok;
 }
 
-void CompletionQueue::TryPluck(CompletionQueueTag* tag, bool forever) {
+void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
-  ev.reset(grpc_completion_queue_pluck(
-      cq_, tag, forever ? gpr_inf_future : gpr_inf_past));
+  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_past));
   if (!ev) return;
   bool ok = ev->data.op_complete == GRPC_OP_OK;
   void* ignored = tag;

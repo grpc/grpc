@@ -114,7 +114,7 @@ class CompletionQueue {
   bool Pluck(CompletionQueueTag *tag);
 
   // Does a single polling pluck on tag
-  void TryPluck(CompletionQueueTag *tag, bool forever);
+  void TryPluck(CompletionQueueTag *tag);
 
   grpc_completion_queue *cq_;  // owned
 };

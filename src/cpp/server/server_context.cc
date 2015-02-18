@@ -71,7 +71,7 @@ void ServerContext::CompletionOp::Unref() {
 }
 
 bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
-  cq->TryPluck(this, false);
+  cq->TryPluck(this);
   std::lock_guard<std::mutex> g(mu_);
   return finalized_ ? cancelled_ : false;
 }
