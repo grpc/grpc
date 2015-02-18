@@ -74,6 +74,36 @@ function load(filename) {
 }
 
 /**
+ * Get a function that a client can use to update metadata with authentication
+ * information from a Google Auth credential object.
+ * @param {Object} credential The credential object to use
+ * @return {function(Object, callback)} Metadata updater function
+ */
+function getGoogleAuthDelegate(credential) {
+  /**
+   * Update a metadata object with authentication information.
+   * @param {Object} metadata Metadata object
+   * @param {function(Error, Object)} callback
+   */
+  return function updateMetadata(metadata, callback) {
+    metadata = _.clone(metadata);
+    if (metadata.Authorization) {
+      metadata.Authorization = _.clone(metadata.Authorization);
+    } else {
+      metadata.Authorization = [];
+    }
+    credential.getAccessToken(function(err, token) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      metadata.Authorization.push('Bearer ' + token);
+      callback(null, metadata);
+    });
+  };
+}
+
+/**
  * See docs for loadObject
  */
 exports.loadObject = loadObject;
@@ -106,3 +136,5 @@ exports.Credentials = grpc.Credentials;
  * ServerCredentials factories
  */
 exports.ServerCredentials = grpc.ServerCredentials;
+
+exports.getGoogleAuthDelegate = getGoogleAuthDelegate;

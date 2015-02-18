@@ -14,7 +14,8 @@
   },
   "devDependencies": {
     "mocha": "~1.21.0",
-    "minimist": "^1.1.0"
+    "minimist": "^1.1.0",
+    "googleauth": "google/google-auth-library-nodejs"
   },
   "main": "index.js"
 }
