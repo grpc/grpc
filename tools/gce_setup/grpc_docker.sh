@@ -766,7 +766,7 @@ grpc_interop_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"
@@ -821,7 +821,7 @@ grpc_cloud_prod_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"
@@ -1015,8 +1015,21 @@ grpc_interop_gen_php_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_node_cmd() {
   local cmd_prefix="sudo docker run grpc/node";
-  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true --use_test_ca=true";
   local the_cmd="$cmd_prefix $test_script $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized node interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_node_cmd() {
+  local cmd_prefix="sudo docker run grpc/node";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
 }
 
