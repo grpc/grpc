@@ -39,29 +39,27 @@ def read_json_key(json_key_io)
   [json_key['private_key'], json_key['client_email']]
 end
 
-module Google
-  module RPC
-    # Module Auth provides classes that provide Google-specific authentication
-    # used to access Google gRPC services.
-    module Auth
-      # Authenticates requests using Google's Service Account credentials.
-      # (cf https://developers.google.com/accounts/docs/OAuth2ServiceAccount)
-      class ServiceAccountCredentials < Signet::OAuth2::Client
-        TOKEN_CRED_URI = 'https://www.googleapis.com/oauth2/v3/token'
-        AUDIENCE = TOKEN_CRED_URI
+module GRPC
+  # Module Auth provides classes that provide Google-specific authentication
+  # used to access Google gRPC services.
+  module Auth
+    # Authenticates requests using Google's Service Account credentials.
+    # (cf https://developers.google.com/accounts/docs/OAuth2ServiceAccount)
+    class ServiceAccountCredentials < Signet::OAuth2::Client
+      TOKEN_CRED_URI = 'https://www.googleapis.com/oauth2/v3/token'
+      AUDIENCE = TOKEN_CRED_URI
 
-        # Initializes a ServiceAccountCredentials.
-        #
-        # @param scope [string|array] the scope(s) to access
-        # @param json_key_io [IO] an IO from which the JSON key can be read
-        def initialize(scope, json_key_io)
-          private_key, client_email = read_json_key(json_key_io)
-          super(token_credential_uri: TOKEN_CRED_URI,
-                audience: AUDIENCE,
-                scope: scope,
-                issuer: client_email,
-                signing_key: OpenSSL::PKey::RSA.new(private_key))
-        end
+      # Initializes a ServiceAccountCredentials.
+      #
+      # @param scope [string|array] the scope(s) to access
+      # @param json_key_io [IO] an IO from which the JSON key can be read
+      def initialize(scope, json_key_io)
+        private_key, client_email = read_json_key(json_key_io)
+        super(token_credential_uri: TOKEN_CRED_URI,
+              audience: AUDIENCE,
+              scope: scope,
+              issuer: client_email,
+              signing_key: OpenSSL::PKey::RSA.new(private_key))
       end
     end
   end

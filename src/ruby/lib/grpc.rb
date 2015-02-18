@@ -41,4 +41,4 @@ require 'grpc/generic/service'
 require 'grpc/generic/rpc_server'
 
 # alias GRPC
-GRPC = Google::RPC
+GRPC = GRPC
