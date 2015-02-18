@@ -386,7 +386,7 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
                    "const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  return new ClientAsyncResponseReader< $Response$>("
+                   "  return new ::grpc::ClientAsyncResponseReader< $Response$>("
                    "channel(), cq, "
                    "::grpc::RpcMethod($Service$_method_names[$Idx$]), "
                    "context, request, tag);\n"
