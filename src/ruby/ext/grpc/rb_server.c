@@ -251,8 +251,8 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
   return INT2NUM(recvd_port);
 }
 
-void Init_google_rpc_server() {
-  rb_cServer = rb_define_class_under(rb_mGoogleRpcCore, "Server", rb_cObject);
+void Init_grpc_server() {
+  rb_cServer = rb_define_class_under(rb_mGrpcCore, "Server", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cServer, grpc_rb_server_alloc);

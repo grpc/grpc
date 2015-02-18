@@ -42,7 +42,7 @@
 extern VALUE rb_cByteBuffer;
 
 /* Initializes the ByteBuffer class. */
-void Init_google_rpc_byte_buffer();
+void Init_grpc_byte_buffer();
 
 /* grpc_rb_byte_buffer_create_with_mark creates a grpc_rb_byte_buffer with a
  * ruby mark object that will be kept alive while the byte_buffer is alive. */

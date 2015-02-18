@@ -159,9 +159,9 @@ static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
 /* rb_cCompletionQueue is the ruby class that proxies grpc_completion_queue. */
 VALUE rb_cCompletionQueue = Qnil;
 
-void Init_google_rpc_completion_queue() {
+void Init_grpc_completion_queue() {
   rb_cCompletionQueue =
-      rb_define_class_under(rb_mGoogleRpcCore, "CompletionQueue", rb_cObject);
+      rb_define_class_under(rb_mGrpcCore, "CompletionQueue", rb_cObject);
 
   /* constructor: uses an alloc func without an initializer. Using a simple
      alloc func works here as the grpc header does not specify any args for

@@ -17,19 +17,19 @@ RUN cd /var/local/git/grpc \
 # Run Python GRPC's tests
 RUN cd /var/local/git/grpc \
   # TODO(nathaniel): It would be nice for these to be auto-discoverable?
-  && python2.7 -B -m _adapter._blocking_invocation_inline_service_test
-  && python2.7 -B -m _adapter._c_test
-  && python2.7 -B -m _adapter._event_invocation_synchronous_event_service_test
-  && python2.7 -B -m _adapter._future_invocation_asynchronous_event_service_test
-  && python2.7 -B -m _adapter._links_test
-  && python2.7 -B -m _adapter._lonely_rear_link_test
-  && python2.7 -B -m _adapter._low_test
-  && python2.7 -B -m _framework.base.packets.implementations_test
-  && python2.7 -B -m _framework.face.blocking_invocation_inline_service_test
-  && python2.7 -B -m _framework.face.event_invocation_synchronous_event_service_test
-  && python2.7 -B -m _framework.face.future_invocation_asynchronous_event_service_test
-  && python2.7 -B -m _framework.foundation._later_test
-  && python2.7 -B -m _framework.foundation._logging_pool_test
+  && python2.7 -B -m grpc._adapter._blocking_invocation_inline_service_test
+  && python2.7 -B -m grpc._adapter._c_test
+  && python2.7 -B -m grpc._adapter._event_invocation_synchronous_event_service_test
+  && python2.7 -B -m grpc._adapter._future_invocation_asynchronous_event_service_test
+  && python2.7 -B -m grpc._adapter._links_test
+  && python2.7 -B -m grpc._adapter._lonely_rear_link_test
+  && python2.7 -B -m grpc._adapter._low_test
+  && python2.7 -B -m grpc._framework.base.packets.implementations_test
+  && python2.7 -B -m grpc._framework.face.blocking_invocation_inline_service_test
+  && python2.7 -B -m grpc._framework.face.event_invocation_synchronous_event_service_test
+  && python2.7 -B -m grpc._framework.face.future_invocation_asynchronous_event_service_test
+  && python2.7 -B -m grpc._framework.foundation._later_test
+  && python2.7 -B -m grpc._framework.foundation._logging_pool_test
 
 # Add a cacerts directory containing the Google root pem file, allowing the interop client to access the production test instance
 ADD cacerts cacerts
