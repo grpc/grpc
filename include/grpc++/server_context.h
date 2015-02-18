@@ -81,7 +81,7 @@ class ServerContext final {
 
   bool IsCancelled();
 
-  std::multimap<grpc::string, grpc::string> client_metadata() {
+  const std::multimap<grpc::string, grpc::string>& client_metadata() {
     return client_metadata_;
   }
 
