@@ -42,15 +42,13 @@ using Google.GRPC.Core.Internal;
 namespace Google.GRPC.Core.Internal
 {
     /// <summary>
-    /// Handle native call lifecycle and provides convenience methods.
+    /// Handles native call lifecycle and provides convenience methods.
     /// </summary>
-    internal class AsyncCall<TWrite, TRead> : IDisposable
+    internal class AsyncCall<TWrite, TRead>
     {
         readonly Func<TWrite, byte[]> serializer;
         readonly Func<byte[], TRead> deserializer;
 
-        // TODO: make sure the delegate doesn't get garbage collected while 
-        // native callbacks are in the completion queue.
         readonly CompletionCallbackDelegate unaryResponseHandler;
         readonly CompletionCallbackDelegate finishedHandler;
         readonly CompletionCallbackDelegate writeFinishedHandler;
@@ -59,35 +57,44 @@ namespace Google.GRPC.Core.Internal
         readonly CompletionCallbackDelegate finishedServersideHandler;
 
         object myLock = new object();
-        bool disposed;
+        GCHandle gchandle;
         CallSafeHandle call;
+        bool disposed;
 
         bool server;
+
         bool started;
         bool errorOccured;
-
         bool cancelRequested;
+        bool readingDone;
         bool halfcloseRequested;
         bool halfclosed;
-        bool doneWithReading;
-        Nullable<Status> finishedStatus;
+        bool finished;
 
+        // Completion of a pending write if not null.
         TaskCompletionSource<object> writeTcs;
+
+        // Completion of a pending read if not null.
         TaskCompletionSource<TRead> readTcs;
 
-        TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
-        TaskCompletionSource<object> halfcloseTcs = new TaskCompletionSource<object>();
-        TaskCompletionSource<Status> finishedTcs = new TaskCompletionSource<Status>();
+        // Completion of a pending halfclose if not null.
+        TaskCompletionSource<object> halfcloseTcs;
 
+        // Completion of a pending unary response if not null.
         TaskCompletionSource<TRead> unaryResponseTcs;
 
+        // Set after status is received on client. Only used for server streaming and duplex streaming calls.
+        Nullable<Status> finishedStatus;
+        TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
+
+        // For streaming, the reads will be delivered to this observer.
         IObserver<TRead> readObserver;
 
         public AsyncCall(Func<TWrite, byte[]> serializer, Func<byte[], TRead> deserializer)
         {
             this.serializer = serializer;
             this.deserializer = deserializer;
-            this.unaryResponseHandler = HandleUnaryResponseCompletion;
+            this.unaryResponseHandler = HandleUnaryResponse;
             this.finishedHandler = HandleFinished;
             this.writeFinishedHandler = HandleWriteFinished;
             this.readFinishedHandler = HandleReadFinished;
@@ -95,39 +102,15 @@ namespace Google.GRPC.Core.Internal
             this.finishedServersideHandler = HandleFinishedServerside;
         }
 
-        /// <summary>
-        /// Initiates reading to given observer.
-        /// </summary>
-        public void StartReadingToStream(IObserver<TRead> readObserver) {
-            lock (myLock)
-            {
-                CheckStarted();
-                if (this.readObserver != null)
-                {
-                    throw new InvalidOperationException("Already registered an observer.");
-                }
-                this.readObserver = readObserver;
-                ReceiveMessageAsync();
-            }
-        }
-
-        public void Initialize(Channel channel, CompletionQueueSafeHandle cq, String methodName) {
-            lock (myLock)
-            {
-                this.call = CallSafeHandle.Create(channel.Handle, cq, methodName, channel.Target, Timespec.InfFuture);
-            }
+        public void Initialize(Channel channel, CompletionQueueSafeHandle cq, String methodName)
+        {
+            InitializeInternal(CallSafeHandle.Create(channel.Handle, cq, methodName, channel.Target, Timespec.InfFuture), false);
         }
 
         public void InitializeServer(CallSafeHandle call)
         {
-            lock(myLock)
-            {
-                this.call = call;
-                started = true;
-                server = true;
-            }
+            InitializeInternal(call, true);
         }
-
 
         public Task<TRead> UnaryCallAsync(TWrite msg)
         {
@@ -135,6 +118,7 @@ namespace Google.GRPC.Core.Internal
             {
                 started = true;
                 halfcloseRequested = true;
+                readingDone = true;
 
                 // TODO: handle serialization error...
                 byte[] payload = serializer(msg);
@@ -151,6 +135,7 @@ namespace Google.GRPC.Core.Internal
             lock (myLock)
             {
                 started = true;
+                readingDone = true;
 
                 unaryResponseTcs = new TaskCompletionSource<TRead>();
                 call.StartClientStreaming(unaryResponseHandler);
@@ -191,15 +176,43 @@ namespace Google.GRPC.Core.Internal
             }
         }
 
-        public Task SendMessageAsync(TWrite msg) {
+        public Task ServerSideUnaryRequestCallAsync()
+        {
             lock (myLock)
             {
-                CheckStarted();
-                CheckNotFinished();
-                CheckNoError();
-                CheckCancelNotRequested();
+                started = true;
+                call.StartServerSide(finishedServersideHandler);
+                return finishedServersideTcs.Task;
+            }
+        }
 
-                if (halfcloseRequested || halfclosed)
+        public Task ServerSideStreamingRequestCallAsync(IObserver<TRead> readObserver)
+        {
+            lock (myLock)
+            {
+                started = true;
+                call.StartServerSide(finishedServersideHandler);
+               
+                if (this.readObserver != null)
+                {
+                    throw new InvalidOperationException("Already registered an observer.");
+                }
+                this.readObserver = readObserver;
+                ReceiveMessageAsync();
+
+                return finishedServersideTcs.Task;
+            }
+        }
+
+        public Task SendMessageAsync(TWrite msg)
+        {
+            lock (myLock)
+            {
+                CheckNotDisposed();
+                CheckStarted();
+                CheckNoError();
+
+                if (halfcloseRequested)
                 {
                     throw new InvalidOperationException("Already halfclosed.");
                 }
@@ -222,18 +235,19 @@ namespace Google.GRPC.Core.Internal
         {
             lock (myLock)
             {
+                CheckNotDisposed();
                 CheckStarted();
-                CheckNotFinished();
                 CheckNoError();
-                CheckCancelNotRequested();
 
-                if (halfcloseRequested || halfclosed)
+                if (halfcloseRequested)
                 {
                     throw new InvalidOperationException("Already halfclosed.");
                 }
 
                 call.StartSendCloseFromClient(halfclosedHandler);
+
                 halfcloseRequested = true;
+                halfcloseTcs = new TaskCompletionSource<object>();
                 return halfcloseTcs.Task;
             }
         }
@@ -242,18 +256,18 @@ namespace Google.GRPC.Core.Internal
         {
             lock (myLock)
             {
+                CheckNotDisposed();
                 CheckStarted();
-                CheckNotFinished();
                 CheckNoError();
-                CheckCancelNotRequested();
 
-                if (halfcloseRequested || halfclosed)
+                if (halfcloseRequested)
                 {
                     throw new InvalidOperationException("Already halfclosed.");
                 }
 
                 call.StartSendStatusFromServer(status, halfclosedHandler);
                 halfcloseRequested = true;
+                halfcloseTcs = new TaskCompletionSource<object>();
                 return halfcloseTcs.Task;
             }
         }
@@ -262,13 +276,11 @@ namespace Google.GRPC.Core.Internal
         {
             lock (myLock)
             {
+                CheckNotDisposed();
                 CheckStarted();
-                CheckNotFinished();
                 CheckNoError();
 
-                // TODO: add check for not cancelled?
-
-                if (doneWithReading)
+                if (readingDone)
                 {
                     throw new InvalidOperationException("Already read the last message.");
                 }
@@ -285,22 +297,12 @@ namespace Google.GRPC.Core.Internal
             }
         }
 
-        internal Task StartServerSide()
-        {
-            lock (myLock)
-            {
-                call.StartServerSide(finishedServersideHandler);
-                return finishedServersideTcs.Task;
-            }
-        }
-
         public void Cancel()
         {
             lock (myLock)
             {
+                CheckNotDisposed();
                 CheckStarted();
-                CheckNotFinished();
-
                 cancelRequested = true;
             }
             // grpc_call_cancel is threadsafe
@@ -311,41 +313,23 @@ namespace Google.GRPC.Core.Internal
         {
             lock (myLock)
             {
+                CheckNotDisposed();
                 CheckStarted();
-                CheckNotFinished();
-
                 cancelRequested = true;
             }
             // grpc_call_cancel_with_status is threadsafe
             call.CancelWithStatus(status);
         }
-       
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
 
-        protected virtual void Dispose(bool disposing)
+        private void InitializeInternal(CallSafeHandle call, bool server)
         {
-            if (!disposed)
+            lock (myLock)
             {
-                if (disposing)
-                {
-                    if (call != null)
-                    {
-                        call.Dispose();
-                    }
-                } 
-                disposed = true;
-            }
-        }
-
-        private void UpdateErrorOccured(GRPCOpError error)
-        {
-            if (error == GRPCOpError.GRPC_OP_ERROR)
-            {
-                errorOccured = true;
+                // Make sure this object and the delegated held by it will not be garbage collected
+                // before we release this handle.
+                gchandle = GCHandle.Alloc(this);
+                this.call = call;
+                this.server = server;
             }
         }
 
@@ -357,6 +341,14 @@ namespace Google.GRPC.Core.Internal
             }
         }
 
+        private void CheckNotDisposed()
+        {
+            if (disposed)
+            {
+                throw new InvalidOperationException("Call has already been disposed.");
+            }
+        }
+
         private void CheckNoError()
         {
             if (errorOccured)
@@ -365,33 +357,30 @@ namespace Google.GRPC.Core.Internal
             }
         }
 
-        private void CheckNotFinished()
+        private bool ReleaseResourcesIfPossible()
         {
-            if (finishedStatus.HasValue)
+            if (!disposed && call != null)
             {
-                throw new InvalidOperationException("Already finished.");
+                if (halfclosed && readingDone && finished)
+                {
+                    ReleaseResources();
+                    return true;
+                }
             }
+            return false;
         }
 
-        private void CheckCancelNotRequested()
+        private void ReleaseResources()
         {
-            if (cancelRequested)
-            {
-                throw new InvalidOperationException("Cancel has been requested.");
-            }
-        }
-
-        private void DisposeResourcesIfNeeded()
-        {
-            if (call != null && started && finishedStatus.HasValue)
-            {
-                // TODO: should we also wait for all the pending events to finish?
-
+            if (call != null) {
                 call.Dispose();
             }
+            gchandle.Free();
+            disposed = true;
         }
 
-        private void CompleteStreamObserver(Status status) {
+        private void CompleteStreamObserver(Status status)
+        {
             if (status.StatusCode != StatusCode.GRPC_STATUS_OK)
             {
                 // TODO: wrap to handle exceptions;
@@ -402,20 +391,27 @@ namespace Google.GRPC.Core.Internal
             }
         }
 
-        private void HandleUnaryResponseCompletion(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
-
+        /// <summary>
+        /// Handler for unary response completion.
+        /// </summary>
+        private void HandleUnaryResponse(GRPCOpError error, IntPtr batchContextPtr)
+        {
+            try
+            {
                 TaskCompletionSource<TRead> tcs;
-                lock(myLock) {
+                lock(myLock)
+                {
+                    finished = true;
+                    halfclosed = true;
                     tcs = unaryResponseTcs;
-                }
 
-                // we're done with this call, get rid of the native object.
-                call.Dispose();
+                    ReleaseResourcesIfPossible();
+                }
 
                 var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
 
-                if (error != GRPCOpError.GRPC_OP_OK) {
+                if (error != GRPCOpError.GRPC_OP_OK)
+                {
                     tcs.SetException(new RpcException(
                         new Status(StatusCode.GRPC_STATUS_INTERNAL, "Internal error occured.")
                     ));
@@ -423,7 +419,8 @@ namespace Google.GRPC.Core.Internal
                 }
 
                 var status = ctx.GetReceivedStatus();
-                if (status.StatusCode != StatusCode.GRPC_STATUS_OK) {
+                if (status.StatusCode != StatusCode.GRPC_STATUS_OK)
+                {
                     tcs.SetException(new RpcException(status));
                     return;
                 }
@@ -431,18 +428,20 @@ namespace Google.GRPC.Core.Internal
                 // TODO: handle deserialize error...
                 var msg = deserializer(ctx.GetReceivedMessage());
                 tcs.SetResult(msg);
-            } catch(Exception e) {
+            } 
+            catch(Exception e)
+            {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }
 
-        private void HandleWriteFinished(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
-
+        private void HandleWriteFinished(GRPCOpError error, IntPtr batchContextPtr)
+        {
+            try
+            {
                 TaskCompletionSource<object> oldTcs = null;
                 lock (myLock)
                 {
-                    UpdateErrorOccured(error);
                     oldTcs = writeTcs;
                     writeTcs = null;
                 }
@@ -458,20 +457,25 @@ namespace Google.GRPC.Core.Internal
                     oldTcs.SetResult(null);
                 }
 
-            } catch(Exception e) {
+            }
+            catch(Exception e)
+            {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }
 
-        private void HandleHalfclosed(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
+        private void HandleHalfclosed(GRPCOpError error, IntPtr batchContextPtr)
+        {
+            try
+            {
                 lock (myLock)
                 {
-                    UpdateErrorOccured(error);
                     halfclosed = true;
+
+                    ReleaseResourcesIfPossible();
                 }
 
-                if (errorOccured)
+                if (error != GRPCOpError.GRPC_OP_OK)
                 {
                     halfcloseTcs.SetException(new Exception("Halfclose failed"));
 
@@ -480,14 +484,17 @@ namespace Google.GRPC.Core.Internal
                 {
                     halfcloseTcs.SetResult(null);
                 }
-            } catch(Exception e) {
+            }
+            catch(Exception e)
+            {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }
 
-        private void HandleReadFinished(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
-
+        private void HandleReadFinished(GRPCOpError error, IntPtr batchContextPtr)
+        {
+            try
+            {
                 var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
                 var payload = ctx.GetReceivedMessage();
 
@@ -502,7 +509,7 @@ namespace Google.GRPC.Core.Internal
                     readTcs = null;
                     if (payload == null)
                     {
-                        doneWithReading = true;
+                        readingDone = true;
                     }
                     observer = readObserver;
                     status = finishedStatus;
@@ -515,7 +522,8 @@ namespace Google.GRPC.Core.Internal
 
                 // TODO: make sure we deliver reads in the right order.
 
-                if (observer != null) {
+                if (observer != null)
+                {
                     if (payload != null)
                     {
                         // TODO: wrap to handle exceptions
@@ -526,58 +534,81 @@ namespace Google.GRPC.Core.Internal
                     }
                     else
                     {
-                        if (!server) {
-                            if (status.HasValue) {
+                        if (!server)
+                        {
+                            if (status.HasValue)
+                            {
                                 CompleteStreamObserver(status.Value);
                             }
-                        } else {
+                        } 
+                        else 
+                        {
                             // TODO: wrap to handle exceptions..
                             observer.OnCompleted();
                         }
                         // TODO: completeStreamObserver serverside...
                     }
                }
-            } catch(Exception e) {
+            }
+            catch(Exception e)
+            {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }
 
-        private void HandleFinished(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
+        private void HandleFinished(GRPCOpError error, IntPtr batchContextPtr)
+        {
+            try
+            {
                 var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
                 var status = ctx.GetReceivedStatus();
 
-                bool wasDoneWithReading;
+                bool wasReadingDone;
 
                 lock (myLock)
                 {
+                    finished = true;
                     finishedStatus = status;
 
-                    DisposeResourcesIfNeeded();
+                    wasReadingDone = readingDone;
 
-                    wasDoneWithReading = doneWithReading;
+                    ReleaseResourcesIfPossible();
                 }
 
-                if (wasDoneWithReading) {
+                if (wasReadingDone) {
                     CompleteStreamObserver(status);
                 }
 
-            } catch(Exception e) {
+            }
+            catch(Exception e)
+            {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }
 
-        private void HandleFinishedServerside(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
+        private void HandleFinishedServerside(GRPCOpError error, IntPtr batchContextPtr)
+        {
+            try
+            {
                 var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
 
+                lock(myLock)
+                {
+                    finished = true;
+
+                    // TODO: because of the way server calls are implemented, we need to set
+                    // reading done to true here. Should be fixed in the future.
+                    readingDone = true;
+
+                    ReleaseResourcesIfPossible();
+                }
                 // TODO: handle error ...
 
                 finishedServersideTcs.SetResult(null);
 
-                call.Dispose();
-
-            } catch(Exception e) {
+            }
+            catch(Exception e)
+            {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }

@@ -60,7 +60,7 @@ namespace Google.GRPC.Core
 
             asyncCall.InitializeServer(call);
            
-            var finishedTask = asyncCall.StartServerSide();
+            var finishedTask = asyncCall.ServerSideUnaryRequestCallAsync();
 
             var request = asyncCall.ReceiveMessageAsync().Result;
 
@@ -91,14 +91,9 @@ namespace Google.GRPC.Core
 
             asyncCall.InitializeServer(call);
 
-            var finishedTask = asyncCall.StartServerSide();
-
             var responseObserver = new ServerStreamingOutputObserver<TResponse, TRequest>(asyncCall);
             var requestObserver = handler(responseObserver);
-
-            // feed the requests
-            asyncCall.StartReadingToStream(requestObserver);
-
+            var finishedTask = asyncCall.ServerSideStreamingRequestCallAsync(requestObserver);
             finishedTask.Wait();
         }
     }
@@ -114,7 +109,7 @@ namespace Google.GRPC.Core
 
             asyncCall.InitializeServer(call);
 
-            var finishedTask = asyncCall.StartServerSide();
+            var finishedTask = asyncCall.ServerSideUnaryRequestCallAsync();
 
             asyncCall.SendStatusFromServerAsync(new Status(StatusCode.GRPC_STATUS_UNIMPLEMENTED, "No such method.")).Wait();
 

@@ -52,11 +52,21 @@ namespace Google.GRPC.Core.Tests
             Marshallers.StringMarshaller,
             Marshallers.StringMarshaller);
 
+        [TestFixtureSetUp]
+        public void Init()
+        {
+            GrpcEnvironment.Initialize();
+        }
+
+        [TestFixtureTearDown]
+        public void Cleanup()
+        {
+            GrpcEnvironment.Initialize();
+        }
+
         [Test]
         public void UnaryCall()
         {
-            GrpcEnvironment.Initialize();
-
             Server server = new Server();
             server.AddServiceDefinition(
                 ServerServiceDefinition.CreateBuilder("someService")
@@ -82,8 +92,6 @@ namespace Google.GRPC.Core.Tests
         [Test]
         public void UnaryCallPerformance()
         {
-            GrpcEnvironment.Initialize();
-
             Server server = new Server();
             server.AddServiceDefinition(
                 ServerServiceDefinition.CreateBuilder("someService")
@@ -107,16 +115,11 @@ namespace Google.GRPC.Core.Tests
             }
 
             server.ShutdownAsync().Wait();
-
-            GrpcEnvironment.Shutdown();
         }
-
 
         [Test]
         public void UnknownMethodHandler()
         {
-            GrpcEnvironment.Initialize();
-
             Server server = new Server();
             server.AddServiceDefinition(
                 ServerServiceDefinition.CreateBuilder("someService").Build());
@@ -137,8 +140,6 @@ namespace Google.GRPC.Core.Tests
             }
 
             server.ShutdownAsync().Wait();
-
-            GrpcEnvironment.Shutdown();
         }
 
         private void HandleUnaryEchoString(string request, IObserver<string> responseObserver) {
