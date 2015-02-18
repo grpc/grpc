@@ -38,11 +38,8 @@
 #include <ruby.h>
 #include <grpc/support/time.h>
 
-/* rb_mGoogle is the top-level Google module. */
-extern VALUE rb_mGoogle;
-
-/* rb_mGoogleRpcCore is the module containing the ruby wrapper GRPC classes. */
-extern VALUE rb_mGoogleRpcCore;
+/* rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
+extern VALUE rb_mGrpcCore;
 
 /* Class used to wrap timeval structs. */
 extern VALUE rb_cTimeVal;

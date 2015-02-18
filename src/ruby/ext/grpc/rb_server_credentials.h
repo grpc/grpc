@@ -42,7 +42,7 @@
 extern VALUE rb_cServerCredentials;
 
 /* Initializes the ruby ServerCredentials class. */
-void Init_google_rpc_server_credentials();
+void Init_grpc_server_credentials();
 
 /* Gets the wrapped server_credentials from the ruby wrapper */
 grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v);

@@ -45,6 +45,6 @@ grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v);
 extern VALUE rb_cCompletionQueue;
 
 /* Initializes the CompletionQueue class. */
-void Init_google_rpc_completion_queue();
+void Init_grpc_completion_queue();
 
 #endif /* GRPC_RB_COMPLETION_QUEUE_H_ */
