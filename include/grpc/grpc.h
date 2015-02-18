@@ -338,10 +338,18 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
-/* Initialize the grpc library */
+/* Initialize the grpc library.
+   It is not safe to call any other grpc functions before calling this.
+   (To avoid overhead, little checking is done, and some things may work. We
+   do not warrant that they will continue to do so in future revisions of this
+   library). */
 void grpc_init(void);
 
-/* Shut down the grpc library */
+/* Shut down the grpc library. 
+   No memory is used by grpc after this call returns, nor are any instructions
+   executing within the grpc library.
+   Prior to calling, all application owned grpc objects must have been
+   destroyed. */
 void grpc_shutdown(void);
 
 grpc_completion_queue *grpc_completion_queue_create(void);
