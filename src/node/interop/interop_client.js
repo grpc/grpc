@@ -280,11 +280,16 @@ var test_cases = {
  * @param {function} done Callback to call when the test is completed. Included
  *     primarily for use with mocha
  */
-function runTest(address, host_override, test_case, tls, done) {
+function runTest(address, host_override, test_case, tls, test_ca, done) {
   // TODO(mlumish): enable TLS functionality
   var options = {};
   if (tls) {
-    var ca_path = path.join(__dirname, '../test/data/ca.pem');
+    var ca_path;
+    if (test_ca) {
+      ca_path = path.join(__dirname, '../test/data/ca.pem');
+    } else {
+      ca_path = process.env.SSL_CERT_FILE;
+    }
     var ca_data = fs.readFileSync(ca_path);
     var creds = grpc.Credentials.createSsl(ca_data);
     options.credentials = creds;
@@ -304,7 +309,10 @@ if (require.main === module) {
              'use_tls', 'use_test_ca']
   });
   runTest(argv.server_host + ':' + argv.server_port, argv.server_host_override,
-          argv.test_case, argv.use_tls === 'true');
+          argv.test_case, argv.use_tls === 'true', argv.use_test_ca === 'true',
+          function () {
+            console.log('OK:', argv.test_case);
+          });
 }
 
 /**
