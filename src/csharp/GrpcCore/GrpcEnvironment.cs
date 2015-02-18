@@ -42,7 +42,7 @@ namespace Google.GRPC.Core
     /// </summary>
     public class GrpcEnvironment
     {
-        const int THREAD_POOL_SIZE = 1;
+        const int THREAD_POOL_SIZE = 4;
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_init();

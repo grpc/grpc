@@ -36,11 +36,15 @@ using Google.GRPC.Core.Internal;
 
 namespace Google.GRPC.Core.Internal
 {
-    internal class StreamingInputObserver<TWrite, TRead> : IObserver<TWrite>
+    /// <summary>
+    /// Observer that writes all arriving messages to a call abstraction (in blocking fashion)
+    /// and then halfcloses the call. Used for server-side call handling.
+    /// </summary>
+    internal class ServerStreamingOutputObserver<TWrite, TRead> : IObserver<TWrite>
 	{
         readonly AsyncCall<TWrite, TRead> call;
 
-        public StreamingInputObserver(AsyncCall<TWrite, TRead> call)
+        public ServerStreamingOutputObserver(AsyncCall<TWrite, TRead> call)
 		{
             this.call = call;
 		}
@@ -48,18 +52,19 @@ namespace Google.GRPC.Core.Internal
 		public void OnCompleted()
 		{
             // TODO: how bad is the Wait here?
-            call.WritesCompletedAsync().Wait();
+            call.SendStatusFromServerAsync(new Status(StatusCode.GRPC_STATUS_OK, "")).Wait();
 		}
 
 		public void OnError(Exception error)
 		{
+            // TODO: implement this...
 			throw new InvalidOperationException("This should never be called.");
 		}
 
 		public void OnNext(TWrite value)
 		{
             // TODO: how bad is the Wait here?
-            call.WriteAsync(value).Wait();
+            call.SendMessageAsync(value).Wait();
 		}
 	}
 }

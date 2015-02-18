@@ -49,8 +49,8 @@ namespace Google.GRPC.Core
     {
         // TODO: make sure the delegate doesn't get garbage collected while
         // native callbacks are in the completion queue.
-        readonly EventCallbackDelegate newRpcHandler;
-        readonly EventCallbackDelegate serverShutdownHandler;
+        readonly ServerShutdownCallbackDelegate serverShutdownHandler;
+        readonly CompletionCallbackDelegate newServerRpcHandler;
 
         readonly BlockingCollection<NewRpcInfo> newRpcQueue = new BlockingCollection<NewRpcInfo>();
         readonly ServerSafeHandle handle;
@@ -61,9 +61,8 @@ namespace Google.GRPC.Core
 
         public Server()
         {
-            // TODO: what is the tag for server shutdown?
             this.handle = ServerSafeHandle.NewServer(GetCompletionQueue(), IntPtr.Zero);
-            this.newRpcHandler = HandleNewRpc;
+            this.newServerRpcHandler = HandleNewServerRpc;
             this.serverShutdownHandler = HandleServerShutdown;
         }
 
@@ -99,7 +98,7 @@ namespace Google.GRPC.Core
             {
                 var rpcInfo = newRpcQueue.Take();
 
-                Console.WriteLine("Server received RPC " + rpcInfo.Method);
+                //Console.WriteLine("Server received RPC " + rpcInfo.Method);
 
                 IServerCallHandler callHandler;
                 if (!callHandlers.TryGetValue(rpcInfo.Method, out callHandler))
@@ -138,23 +137,25 @@ namespace Google.GRPC.Core
 
         private void AllowOneRpc()
         {
-            AssertCallOk(handle.RequestCall(newRpcHandler));
+            AssertCallOk(handle.RequestCall(GetCompletionQueue(), newServerRpcHandler));
         }
 
-        private void HandleNewRpc(IntPtr eventPtr)
-        {
-            try
-            {
-                var ev = new EventSafeHandleNotOwned(eventPtr);
-                var rpcInfo = new NewRpcInfo(ev.GetCall(), ev.GetServerRpcNewMethod());
+        private void HandleNewServerRpc(GRPCOpError error, IntPtr batchContextPtr) {
+            try {
+                var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
+
+                if (error != GRPCOpError.GRPC_OP_OK) {
+                    // TODO: handle error
+                }
+
+                var rpcInfo = new NewRpcInfo(ctx.GetServerRpcNewCall(), ctx.GetServerRpcNewMethod());
 
                 // after server shutdown, the callback returns with null call
                 if (!rpcInfo.Call.IsInvalid) {
                     newRpcQueue.Add(rpcInfo);
                 }
-            }
-            catch (Exception e)
-            {
+
+            } catch(Exception e) {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }
