@@ -42,17 +42,18 @@
 
 #include "src/core/iomgr/tcp_server.h"
 
-#include <limits.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/un.h>
-#include <sys/socket.h>
 #include <unistd.h>
-#include <string.h>
-#include <errno.h>
 
 #include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/resolve_address.h"
@@ -82,6 +83,14 @@ typedef struct {
   } addr;
   int addr_len;
 } server_port;
+
+static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
+  struct stat st;
+
+  if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
+    unlink(un->sun_path);
+  }
+}
 
 /* the overall server */
 struct grpc_tcp_server {
@@ -130,7 +139,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
     if (sp->addr.sockaddr.sa_family == AF_UNIX) {
-      unlink(sp->addr.un.sun_path);
+      unlink_if_unix_domain_socket(&sp->addr.un);
     }
     grpc_fd_orphan(sp->emfd, NULL, NULL);
   }
@@ -300,6 +309,10 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
   int port;
+
+  if (((struct sockaddr *)addr)->sa_family == AF_UNIX) {
+    unlink_if_unix_domain_socket(addr);
+  }
 
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */
