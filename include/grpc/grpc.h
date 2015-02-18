@@ -554,7 +554,8 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue *completion_queue, void *tag_new);
 
 /* Create a server. Additional configuration for each incoming channel can
-   be specified with args. See grpc_channel_args for more. */
+   be specified with args. If no additional configuration is needed, args can
+   be NULL. See grpc_channel_args for more. */
 grpc_server *grpc_server_create(grpc_completion_queue *cq,
                                 const grpc_channel_args *args);
 
