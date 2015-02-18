@@ -27,58 +27,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""Enables scheduling execution at a later time."""
 
-from distutils import core as _core
+import time
 
-_EXTENSION_SOURCES = (
-    'grpc/_adapter/_c.c',
-    'grpc/_adapter/_call.c',
-    'grpc/_adapter/_channel.c',
-    'grpc/_adapter/_completion_queue.c',
-    'grpc/_adapter/_error.c',
-    'grpc/_adapter/_server.c',
-    'grpc/_adapter/_server_credentials.c',
-)
+from grpc.framework.foundation import _timer_future
 
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    '.',
-)
 
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
+def later(delay, computation):
+  """Schedules later execution of a callable.
 
-_EXTENSION_MODULE = _core.Extension(
-    'grpc._adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    )
+  Args:
+    delay: Any numeric value. Represents the minimum length of time in seconds
+      to allow to pass before beginning the computation. No guarantees are made
+      about the maximum length of time that will pass.
+    computation: A callable that accepts no arguments.
 
-_PACKAGES=(
-    'grpc',
-    'grpc._adapter',
-    'grpc._junkdrawer',
-    'grpc.early_adopter',
-    'grpc.framework',
-    'grpc.framework.base',
-    'grpc.framework.base.packets',
-    'grpc.framework.common',
-    'grpc.framework.face',
-    'grpc.framework.face.testing',
-    'grpc.framework.foundation',
-)
-
-_PACKAGE_DIRECTORIES = {
-    'grpc': 'grpc',
-    'grpc._adapter': 'grpc/_adapter',
-    'grpc._junkdrawer': 'grpc/_junkdrawer',
-    'grpc.early_adopter': 'grpc/early_adopter',
-    'grpc.framework': 'grpc/framework',
-}
-
-_core.setup(
-    name='grpc-2015', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+  Returns:
+    A Future representing the scheduled computation.
+  """
+  timer_future = _timer_future.TimerFuture(time.time() + delay, computation)
+  timer_future.start()
+  return timer_future
