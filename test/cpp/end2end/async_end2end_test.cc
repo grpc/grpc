@@ -32,7 +32,7 @@
  */
 
 #include <chrono>
-#include <thread>
+#include <memory>
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.pb.h"
@@ -177,8 +177,8 @@ TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
   ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  ClientAsyncWriter<EchoRequest>* cli_stream =
-      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1));
+  std::unique_ptr<ClientAsyncWriter<EchoRequest> > cli_stream(
+      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1)));
 
   service_.RequestRequestStream(
       &srv_ctx, &srv_stream, &srv_cq_, tag(2));
@@ -231,8 +231,8 @@ TEST_F(AsyncEnd2endTest, SimpleServerStreaming) {
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  ClientAsyncReader<EchoResponse>* cli_stream =
-      stub_->ResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1));
+  std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
+      stub_->ResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   service_.RequestResponseStream(
       &srv_ctx, &recv_request, &srv_stream, &srv_cq_, tag(2));
@@ -282,8 +282,8 @@ TEST_F(AsyncEnd2endTest, SimpleBidiStreaming) {
   ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  ClientAsyncReaderWriter<EchoRequest, EchoResponse>* cli_stream =
-      stub_->BidiStream(&cli_ctx, &cli_cq_, tag(1));
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
+      cli_stream(stub_->BidiStream(&cli_ctx, &cli_cq_, tag(1)));
 
   service_.RequestBidiStream(
       &srv_ctx, &srv_stream, &srv_cq_, tag(2));
