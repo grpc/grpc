@@ -355,10 +355,8 @@ static void unlock(grpc_call *call) {
   send_action sa = SEND_NOTHING;
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
   int num_completed_requests = call->num_completed_requests;
-  int need_more_data =
-      call->need_more_data &&
-      !call->sending &&
-      call->write_state >= WRITE_STATE_STARTED;
+  int need_more_data = call->need_more_data &&
+                       !is_op_live(call, GRPC_IOREQ_SEND_INITIAL_METADATA);
   int i;
 
   if (need_more_data) {
