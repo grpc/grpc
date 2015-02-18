@@ -106,17 +106,15 @@ class ClientReader final : public ClientStreamingInterface,
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     CallOpBuffer buf;
-    buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    buf.AddRecvInitialMetadata(context_);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
-    context_->initial_metadata_received_ = true;
   }
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
     if (!context_->initial_metadata_received_) {
-      buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-      context_->initial_metadata_received_ = true;
+      buf.AddRecvInitialMetadata(context_);
     }
     buf.AddRecvMessage(msg);
     call_.PerformOps(&buf);
@@ -126,7 +124,7 @@ class ClientReader final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
+    buf.AddClientRecvStatus(context_, &status);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
@@ -173,7 +171,7 @@ class ClientWriter final : public ClientStreamingInterface,
     CallOpBuffer buf;
     Status status;
     buf.AddRecvMessage(response_);
-    buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
+    buf.AddClientRecvStatus(context_, &status);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf) && buf.got_message);
     return status;
@@ -210,17 +208,15 @@ class ClientReaderWriter final : public ClientStreamingInterface,
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     CallOpBuffer buf;
-    buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    buf.AddRecvInitialMetadata(context_);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
-    context_->initial_metadata_received_ = true;
   }
 
   virtual bool Read(R* msg) override {
     CallOpBuffer buf;
     if (!context_->initial_metadata_received_) {
-      buf.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-      context_->initial_metadata_received_ = true;
+      buf.AddRecvInitialMetadata(context_);
     }
     buf.AddRecvMessage(msg);
     call_.PerformOps(&buf);
@@ -244,7 +240,7 @@ class ClientReaderWriter final : public ClientStreamingInterface,
   virtual Status Finish() override {
     CallOpBuffer buf;
     Status status;
-    buf.AddClientRecvStatus(&context_->trailing_metadata_, &status);
+    buf.AddClientRecvStatus(context_, &status);
     call_.PerformOps(&buf);
     GPR_ASSERT(cq_.Pluck(&buf));
     return status;
@@ -403,16 +399,14 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_buf_.Reset(tag);
-    meta_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    meta_buf_.AddRecvInitialMetadata(context_);
     call_.PerformOps(&meta_buf_);
-    context_->initial_metadata_received_ = true;
   }
 
   void Read(R* msg, void* tag) override {
     read_buf_.Reset(tag);
     if (!context_->initial_metadata_received_) {
-      read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-      context_->initial_metadata_received_ = true;
+      read_buf_.AddRecvInitialMetadata(context_);
     }
     read_buf_.AddRecvMessage(msg);
     call_.PerformOps(&read_buf_);
@@ -421,10 +415,9 @@ class ClientAsyncReader final : public ClientAsyncStreamingInterface,
   void Finish(Status* status, void* tag) override {
     finish_buf_.Reset(tag);
     if (!context_->initial_metadata_received_) {
-      finish_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-      context_->initial_metadata_received_ = true;
+      finish_buf_.AddRecvInitialMetadata(context_);
     }
-    finish_buf_.AddClientRecvStatus(&context_->trailing_metadata_, status);
+    finish_buf_.AddClientRecvStatus(context_, status);
     call_.PerformOps(&finish_buf_);
   }
 
@@ -456,9 +449,8 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_buf_.Reset(tag);
-    meta_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    meta_buf_.AddRecvInitialMetadata(context_);
     call_.PerformOps(&meta_buf_);
-    context_->initial_metadata_received_ = true;
   }
 
   void Write(const W& msg, void* tag) override {
@@ -476,11 +468,10 @@ class ClientAsyncWriter final : public ClientAsyncStreamingInterface,
   void Finish(Status* status, void* tag) override {
     finish_buf_.Reset(tag);
     if (!context_->initial_metadata_received_) {
-      finish_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-      context_->initial_metadata_received_ = true;
+      finish_buf_.AddRecvInitialMetadata(context_);
     }
     finish_buf_.AddRecvMessage(response_);
-    finish_buf_.AddClientRecvStatus(&context_->trailing_metadata_, status);
+    finish_buf_.AddClientRecvStatus(context_, status);
     call_.PerformOps(&finish_buf_);
   }
 
@@ -514,16 +505,14 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     meta_buf_.Reset(tag);
-    meta_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
+    meta_buf_.AddRecvInitialMetadata(context_);
     call_.PerformOps(&meta_buf_);
-    context_->initial_metadata_received_ = true;
   }
 
   void Read(R* msg, void* tag) override {
     read_buf_.Reset(tag);
     if (!context_->initial_metadata_received_) {
-      read_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-      context_->initial_metadata_received_ = true;
+      read_buf_.AddRecvInitialMetadata(context_);
     }
     read_buf_.AddRecvMessage(msg);
     call_.PerformOps(&read_buf_);
@@ -544,10 +533,9 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
   void Finish(Status* status, void* tag) override {
     finish_buf_.Reset(tag);
     if (!context_->initial_metadata_received_) {
-      finish_buf_.AddRecvInitialMetadata(&context_->recv_initial_metadata_);
-      context_->initial_metadata_received_ = true;
+      finish_buf_.AddRecvInitialMetadata(context_);
     }
-    finish_buf_.AddClientRecvStatus(&context_->trailing_metadata_, status);
+    finish_buf_.AddClientRecvStatus(context_, status);
     call_.PerformOps(&finish_buf_);
   }
 

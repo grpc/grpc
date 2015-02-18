@@ -130,9 +130,9 @@ void CallOpBuffer::AddSendInitialMetadata(
   initial_metadata_ = FillMetadataArray(metadata);
 }
 
-void CallOpBuffer::AddRecvInitialMetadata(
-    std::multimap<grpc::string, grpc::string>* metadata) {
-  recv_initial_metadata_ = metadata;
+void CallOpBuffer::AddRecvInitialMetadata(ClientContext* ctx) {
+  ctx->initial_metadata_received_ = true;
+  recv_initial_metadata_ = &ctx->recv_initial_metadata_;
 }
 
 void CallOpBuffer::AddSendInitialMetadata(ClientContext* ctx) {
@@ -154,9 +154,8 @@ void CallOpBuffer::AddServerRecvClose(bool* cancelled) {
   recv_closed_ = cancelled;
 }
 
-void CallOpBuffer::AddClientRecvStatus(
-    std::multimap<grpc::string, grpc::string>* metadata, Status* status) {
-  recv_trailing_metadata_ = metadata;
+void CallOpBuffer::AddClientRecvStatus(ClientContext* context, Status* status) {
+  recv_trailing_metadata_ = &context->trailing_metadata_;
   recv_status_ = status;
 }
 

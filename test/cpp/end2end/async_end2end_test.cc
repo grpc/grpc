@@ -32,7 +32,7 @@
  */
 
 #include <chrono>
-#include <thread>
+#include <memory>
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.pb.h"
@@ -177,8 +177,8 @@ TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
   ServerAsyncReader<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  ClientAsyncWriter<EchoRequest>* cli_stream =
-      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1));
+  std::unique_ptr<ClientAsyncWriter<EchoRequest> > cli_stream(
+      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1)));
 
   service_.RequestRequestStream(
       &srv_ctx, &srv_stream, &srv_cq_, tag(2));
@@ -231,8 +231,8 @@ TEST_F(AsyncEnd2endTest, SimpleServerStreaming) {
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  ClientAsyncReader<EchoResponse>* cli_stream =
-      stub_->ResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1));
+  std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
+      stub_->ResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   service_.RequestResponseStream(
       &srv_ctx, &recv_request, &srv_stream, &srv_cq_, tag(2));
@@ -282,8 +282,8 @@ TEST_F(AsyncEnd2endTest, SimpleBidiStreaming) {
   ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  ClientAsyncReaderWriter<EchoRequest, EchoResponse>* cli_stream =
-      stub_->BidiStream(&cli_ctx, &cli_cq_, tag(1));
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
+      cli_stream(stub_->BidiStream(&cli_ctx, &cli_cq_, tag(1)));
 
   service_.RequestBidiStream(
       &srv_ctx, &srv_stream, &srv_cq_, tag(2));
@@ -364,6 +364,155 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   EXPECT_TRUE(recv_status.IsOk());
 }
 
+TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message("Hello");
+  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
+  std::pair<grpc::string, grpc::string> meta2("key2", "val2");
+
+  stub_->Echo(
+      &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
+
+  service_.RequestEcho(
+      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  server_ok(2);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+  srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
+  srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
+  response_writer.SendInitialMetadata(tag(3));
+  server_ok(3);
+
+  send_response.set_message(recv_request.message());
+  response_writer.Finish(send_response, Status::OK, tag(4));
+
+  server_ok(4);
+
+  client_ok(1);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.IsOk());
+  auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
+  EXPECT_EQ(meta1.second, server_initial_metadata.find(meta1.first)->second);
+  EXPECT_EQ(meta2.second, server_initial_metadata.find(meta2.first)->second);
+  EXPECT_EQ(2, server_initial_metadata.size());
+}
+
+TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message("Hello");
+  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
+  std::pair<grpc::string, grpc::string> meta2("key2", "val2");
+
+  stub_->Echo(
+      &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
+
+  service_.RequestEcho(
+      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  server_ok(2);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+  response_writer.SendInitialMetadata(tag(3));
+  server_ok(3);
+
+  send_response.set_message(recv_request.message());
+  srv_ctx.AddTrailingMetadata(meta1.first, meta1.second);
+  srv_ctx.AddTrailingMetadata(meta2.first, meta2.second);
+  response_writer.Finish(send_response, Status::OK, tag(4));
+
+  server_ok(4);
+
+  client_ok(1);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.IsOk());
+  auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
+  EXPECT_EQ(meta1.second, server_trailing_metadata.find(meta1.first)->second);
+  EXPECT_EQ(meta2.second, server_trailing_metadata.find(meta2.first)->second);
+  EXPECT_EQ(2, server_trailing_metadata.size());
+}
+
+TEST_F(AsyncEnd2endTest, MetadataRpc) {
+  ResetStub();
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message("Hello");
+  std::pair<grpc::string, grpc::string> meta1("key1", "val1");
+  std::pair<grpc::string, grpc::string> meta2("key2-bin", {"\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13});
+  std::pair<grpc::string, grpc::string> meta3("key3", "val3");
+  std::pair<grpc::string, grpc::string> meta6("key4-bin", {"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d", 14});
+  std::pair<grpc::string, grpc::string> meta5("key5", "val5");
+  std::pair<grpc::string, grpc::string> meta4("key6-bin", {"\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15});
+
+  cli_ctx.AddMetadata(meta1.first, meta1.second);
+  cli_ctx.AddMetadata(meta2.first, meta2.second);
+
+  stub_->Echo(
+      &cli_ctx, send_request, &recv_response, &recv_status, &cli_cq_, tag(1));
+
+  service_.RequestEcho(
+      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  server_ok(2);
+  EXPECT_EQ(send_request.message(), recv_request.message());
+  auto client_initial_metadata = srv_ctx.client_metadata();
+  EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
+  EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
+  EXPECT_EQ(2, client_initial_metadata.size());
+
+  srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
+  srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
+  response_writer.SendInitialMetadata(tag(3));
+  server_ok(3);
+
+  send_response.set_message(recv_request.message());
+  srv_ctx.AddTrailingMetadata(meta5.first, meta5.second);
+  srv_ctx.AddTrailingMetadata(meta6.first, meta6.second);
+  response_writer.Finish(send_response, Status::OK, tag(4));
+
+  server_ok(4);
+
+  client_ok(1);
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.IsOk());
+  auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
+  EXPECT_EQ(meta3.second, server_initial_metadata.find(meta3.first)->second);
+  EXPECT_EQ(meta4.second, server_initial_metadata.find(meta4.first)->second);
+  EXPECT_EQ(2, server_initial_metadata.size());
+  auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
+  EXPECT_EQ(meta5.second, server_trailing_metadata.find(meta5.first)->second);
+  EXPECT_EQ(meta6.second, server_trailing_metadata.find(meta6.first)->second);
+  EXPECT_EQ(2, server_trailing_metadata.size());
+}
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
