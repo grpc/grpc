@@ -7,12 +7,12 @@ using pbc = global::Google.ProtocolBuffers.Collections;
 using pbd = global::Google.ProtocolBuffers.Descriptors;
 using scg = global::System.Collections.Generic;
 namespace grpc.testing {
-  
+
   namespace Proto {
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public static partial class Empty {
-    
+
       #region Extension registration
       public static void RegisterAllExtensions(pb::ExtensionRegistry registry) {
       }
@@ -26,7 +26,7 @@ namespace grpc.testing {
         get { return descriptor; }
       }
       private static pbd::FileDescriptor descriptor;
-      
+
       static Empty() {
         byte[] descriptorData = global::System.Convert.FromBase64String(
             string.Concat(
@@ -34,7 +34,7 @@ namespace grpc.testing {
         pbd::FileDescriptor.InternalDescriptorAssigner assigner = delegate(pbd::FileDescriptor root) {
           descriptor = root;
           internal__static_grpc_testing_Empty__Descriptor = Descriptor.MessageTypes[0];
-          internal__static_grpc_testing_Empty__FieldAccessorTable = 
+          internal__static_grpc_testing_Empty__FieldAccessorTable =
               new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.Empty, global::grpc.testing.Empty.Builder>(internal__static_grpc_testing_Empty__Descriptor,
                   new string[] { });
           return null;
@@ -44,7 +44,7 @@ namespace grpc.testing {
             }, assigner);
       }
       #endregion
-      
+
     }
   }
   #region Messages
@@ -57,48 +57,48 @@ namespace grpc.testing {
     public static Empty DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override Empty DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override Empty ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Proto.Empty.internal__static_grpc_testing_Empty__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<Empty, Empty.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Proto.Empty.internal__static_grpc_testing_Empty__FieldAccessorTable; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _emptyFieldNames;
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         size += UnknownFields.SerializedSize;
         memoizedSerializedSize = size;
         return size;
       }
     }
-    
+
     public static Empty ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -132,14 +132,14 @@ namespace grpc.testing {
     private Empty MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(Empty prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<Empty, Builder> {
       protected override Builder ThisBuilder {
@@ -153,10 +153,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private Empty result;
-      
+
       private Empty PrepareBuilder() {
         if (resultIsReadOnly) {
           Empty original = result;
@@ -166,21 +166,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override Empty MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -188,15 +188,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.Empty.Descriptor; }
       }
-      
+
       public override Empty DefaultInstanceForType {
         get { return global::grpc.testing.Empty.DefaultInstance; }
       }
-      
+
       public override Empty BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -204,7 +204,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is Empty) {
           return MergeFrom((Empty) other);
@@ -213,18 +213,18 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(Empty other) {
         if (other == global::grpc.testing.Empty.DefaultInstance) return this;
         PrepareBuilder();
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -262,21 +262,21 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
+
     }
     static Empty() {
       object.ReferenceEquals(global::grpc.testing.Proto.Empty.Descriptor, null);
     }
   }
-  
+
   #endregion
-  
+
 }
 
 #endregion Designer generated code

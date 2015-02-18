@@ -181,7 +181,7 @@ class RpcMethod(object):
 class Server(object):
   """A GRPC Server."""
   __metaclass__ = abc.ABCMeta
-  
+
 
   @abc.abstractmethod
   def start(self):

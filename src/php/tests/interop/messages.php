@@ -17,10 +17,10 @@ namespace grpc\testing {
 
     /**  @var int - \grpc\testing\PayloadType */
     public $type = null;
-    
+
     /**  @var string */
     public $body = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -61,7 +61,7 @@ namespace grpc\testing {
     public function hasType(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <type> value
      *
@@ -70,7 +70,7 @@ namespace grpc\testing {
     public function clearType(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <type> value
      *
@@ -79,7 +79,7 @@ namespace grpc\testing {
     public function getType(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <type> value
      *
@@ -89,7 +89,7 @@ namespace grpc\testing {
     public function setType( $value){
       return $this->_set(1, $value);
     }
-    
+
     /**
      * Check if <body> has a value
      *
@@ -98,7 +98,7 @@ namespace grpc\testing {
     public function hasBody(){
       return $this->_has(2);
     }
-    
+
     /**
      * Clear <body> value
      *
@@ -107,7 +107,7 @@ namespace grpc\testing {
     public function clearBody(){
       return $this->_clear(2);
     }
-    
+
     /**
      * Get <body> value
      *
@@ -116,7 +116,7 @@ namespace grpc\testing {
     public function getBody(){
       return $this->_get(2);
     }
-    
+
     /**
      * Set <body> value
      *
@@ -135,19 +135,19 @@ namespace grpc\testing {
 
     /**  @var int - \grpc\testing\PayloadType */
     public $response_type = null;
-    
+
     /**  @var int */
     public $response_size = null;
-    
+
     /**  @var \grpc\testing\Payload */
     public $payload = null;
-    
+
     /**  @var boolean */
     public $fill_username = null;
-    
+
     /**  @var boolean */
     public $fill_oauth_scope = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -213,7 +213,7 @@ namespace grpc\testing {
     public function hasResponseType(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <response_type> value
      *
@@ -222,7 +222,7 @@ namespace grpc\testing {
     public function clearResponseType(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <response_type> value
      *
@@ -231,7 +231,7 @@ namespace grpc\testing {
     public function getResponseType(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <response_type> value
      *
@@ -241,7 +241,7 @@ namespace grpc\testing {
     public function setResponseType( $value){
       return $this->_set(1, $value);
     }
-    
+
     /**
      * Check if <response_size> has a value
      *
@@ -250,7 +250,7 @@ namespace grpc\testing {
     public function hasResponseSize(){
       return $this->_has(2);
     }
-    
+
     /**
      * Clear <response_size> value
      *
@@ -259,7 +259,7 @@ namespace grpc\testing {
     public function clearResponseSize(){
       return $this->_clear(2);
     }
-    
+
     /**
      * Get <response_size> value
      *
@@ -268,7 +268,7 @@ namespace grpc\testing {
     public function getResponseSize(){
       return $this->_get(2);
     }
-    
+
     /**
      * Set <response_size> value
      *
@@ -278,7 +278,7 @@ namespace grpc\testing {
     public function setResponseSize( $value){
       return $this->_set(2, $value);
     }
-    
+
     /**
      * Check if <payload> has a value
      *
@@ -287,7 +287,7 @@ namespace grpc\testing {
     public function hasPayload(){
       return $this->_has(3);
     }
-    
+
     /**
      * Clear <payload> value
      *
@@ -296,7 +296,7 @@ namespace grpc\testing {
     public function clearPayload(){
       return $this->_clear(3);
     }
-    
+
     /**
      * Get <payload> value
      *
@@ -305,7 +305,7 @@ namespace grpc\testing {
     public function getPayload(){
       return $this->_get(3);
     }
-    
+
     /**
      * Set <payload> value
      *
@@ -315,7 +315,7 @@ namespace grpc\testing {
     public function setPayload(\grpc\testing\Payload $value){
       return $this->_set(3, $value);
     }
-    
+
     /**
      * Check if <fill_username> has a value
      *
@@ -324,7 +324,7 @@ namespace grpc\testing {
     public function hasFillUsername(){
       return $this->_has(4);
     }
-    
+
     /**
      * Clear <fill_username> value
      *
@@ -333,7 +333,7 @@ namespace grpc\testing {
     public function clearFillUsername(){
       return $this->_clear(4);
     }
-    
+
     /**
      * Get <fill_username> value
      *
@@ -342,7 +342,7 @@ namespace grpc\testing {
     public function getFillUsername(){
       return $this->_get(4);
     }
-    
+
     /**
      * Set <fill_username> value
      *
@@ -352,7 +352,7 @@ namespace grpc\testing {
     public function setFillUsername( $value){
       return $this->_set(4, $value);
     }
-    
+
     /**
      * Check if <fill_oauth_scope> has a value
      *
@@ -361,7 +361,7 @@ namespace grpc\testing {
     public function hasFillOauthScope(){
       return $this->_has(5);
     }
-    
+
     /**
      * Clear <fill_oauth_scope> value
      *
@@ -370,7 +370,7 @@ namespace grpc\testing {
     public function clearFillOauthScope(){
       return $this->_clear(5);
     }
-    
+
     /**
      * Get <fill_oauth_scope> value
      *
@@ -379,7 +379,7 @@ namespace grpc\testing {
     public function getFillOauthScope(){
       return $this->_get(5);
     }
-    
+
     /**
      * Set <fill_oauth_scope> value
      *
@@ -398,13 +398,13 @@ namespace grpc\testing {
 
     /**  @var \grpc\testing\Payload */
     public $payload = null;
-    
+
     /**  @var string */
     public $username = null;
-    
+
     /**  @var string */
     public $oauth_scope = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -453,7 +453,7 @@ namespace grpc\testing {
     public function hasPayload(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <payload> value
      *
@@ -462,7 +462,7 @@ namespace grpc\testing {
     public function clearPayload(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <payload> value
      *
@@ -471,7 +471,7 @@ namespace grpc\testing {
     public function getPayload(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <payload> value
      *
@@ -481,7 +481,7 @@ namespace grpc\testing {
     public function setPayload(\grpc\testing\Payload $value){
       return $this->_set(1, $value);
     }
-    
+
     /**
      * Check if <username> has a value
      *
@@ -490,7 +490,7 @@ namespace grpc\testing {
     public function hasUsername(){
       return $this->_has(2);
     }
-    
+
     /**
      * Clear <username> value
      *
@@ -499,7 +499,7 @@ namespace grpc\testing {
     public function clearUsername(){
       return $this->_clear(2);
     }
-    
+
     /**
      * Get <username> value
      *
@@ -508,7 +508,7 @@ namespace grpc\testing {
     public function getUsername(){
       return $this->_get(2);
     }
-    
+
     /**
      * Set <username> value
      *
@@ -518,7 +518,7 @@ namespace grpc\testing {
     public function setUsername( $value){
       return $this->_set(2, $value);
     }
-    
+
     /**
      * Check if <oauth_scope> has a value
      *
@@ -527,7 +527,7 @@ namespace grpc\testing {
     public function hasOauthScope(){
       return $this->_has(3);
     }
-    
+
     /**
      * Clear <oauth_scope> value
      *
@@ -536,7 +536,7 @@ namespace grpc\testing {
     public function clearOauthScope(){
       return $this->_clear(3);
     }
-    
+
     /**
      * Get <oauth_scope> value
      *
@@ -545,7 +545,7 @@ namespace grpc\testing {
     public function getOauthScope(){
       return $this->_get(3);
     }
-    
+
     /**
      * Set <oauth_scope> value
      *
@@ -564,7 +564,7 @@ namespace grpc\testing {
 
     /**  @var \grpc\testing\Payload */
     public $payload = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -597,7 +597,7 @@ namespace grpc\testing {
     public function hasPayload(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <payload> value
      *
@@ -606,7 +606,7 @@ namespace grpc\testing {
     public function clearPayload(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <payload> value
      *
@@ -615,7 +615,7 @@ namespace grpc\testing {
     public function getPayload(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <payload> value
      *
@@ -634,7 +634,7 @@ namespace grpc\testing {
 
     /**  @var int */
     public $aggregated_payload_size = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -666,7 +666,7 @@ namespace grpc\testing {
     public function hasAggregatedPayloadSize(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <aggregated_payload_size> value
      *
@@ -675,7 +675,7 @@ namespace grpc\testing {
     public function clearAggregatedPayloadSize(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <aggregated_payload_size> value
      *
@@ -684,7 +684,7 @@ namespace grpc\testing {
     public function getAggregatedPayloadSize(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <aggregated_payload_size> value
      *
@@ -703,10 +703,10 @@ namespace grpc\testing {
 
     /**  @var int */
     public $size = null;
-    
+
     /**  @var int */
     public $interval_us = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -746,7 +746,7 @@ namespace grpc\testing {
     public function hasSize(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <size> value
      *
@@ -755,7 +755,7 @@ namespace grpc\testing {
     public function clearSize(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <size> value
      *
@@ -764,7 +764,7 @@ namespace grpc\testing {
     public function getSize(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <size> value
      *
@@ -774,7 +774,7 @@ namespace grpc\testing {
     public function setSize( $value){
       return $this->_set(1, $value);
     }
-    
+
     /**
      * Check if <interval_us> has a value
      *
@@ -783,7 +783,7 @@ namespace grpc\testing {
     public function hasIntervalUs(){
       return $this->_has(2);
     }
-    
+
     /**
      * Clear <interval_us> value
      *
@@ -792,7 +792,7 @@ namespace grpc\testing {
     public function clearIntervalUs(){
       return $this->_clear(2);
     }
-    
+
     /**
      * Get <interval_us> value
      *
@@ -801,7 +801,7 @@ namespace grpc\testing {
     public function getIntervalUs(){
       return $this->_get(2);
     }
-    
+
     /**
      * Set <interval_us> value
      *
@@ -820,13 +820,13 @@ namespace grpc\testing {
 
     /**  @var int - \grpc\testing\PayloadType */
     public $response_type = null;
-    
+
     /**  @var \grpc\testing\ResponseParameters[]  */
     public $response_parameters = array();
-    
+
     /**  @var \grpc\testing\Payload */
     public $payload = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -877,7 +877,7 @@ namespace grpc\testing {
     public function hasResponseType(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <response_type> value
      *
@@ -886,7 +886,7 @@ namespace grpc\testing {
     public function clearResponseType(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <response_type> value
      *
@@ -895,7 +895,7 @@ namespace grpc\testing {
     public function getResponseType(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <response_type> value
      *
@@ -905,7 +905,7 @@ namespace grpc\testing {
     public function setResponseType( $value){
       return $this->_set(1, $value);
     }
-    
+
     /**
      * Check if <response_parameters> has a value
      *
@@ -914,7 +914,7 @@ namespace grpc\testing {
     public function hasResponseParameters(){
       return $this->_has(2);
     }
-    
+
     /**
      * Clear <response_parameters> value
      *
@@ -923,7 +923,7 @@ namespace grpc\testing {
     public function clearResponseParameters(){
       return $this->_clear(2);
     }
-    
+
     /**
      * Get <response_parameters> value
      *
@@ -933,7 +933,7 @@ namespace grpc\testing {
     public function getResponseParameters($idx = NULL){
       return $this->_get(2, $idx);
     }
-    
+
     /**
      * Set <response_parameters> value
      *
@@ -943,7 +943,7 @@ namespace grpc\testing {
     public function setResponseParameters(\grpc\testing\ResponseParameters $value, $idx = NULL){
       return $this->_set(2, $value, $idx);
     }
-    
+
     /**
      * Get all elements of <response_parameters>
      *
@@ -952,7 +952,7 @@ namespace grpc\testing {
     public function getResponseParametersList(){
      return $this->_get(2);
     }
-    
+
     /**
      * Add a new element to <response_parameters>
      *
@@ -962,7 +962,7 @@ namespace grpc\testing {
     public function addResponseParameters(\grpc\testing\ResponseParameters $value){
      return $this->_add(2, $value);
     }
-    
+
     /**
      * Check if <payload> has a value
      *
@@ -971,7 +971,7 @@ namespace grpc\testing {
     public function hasPayload(){
       return $this->_has(3);
     }
-    
+
     /**
      * Clear <payload> value
      *
@@ -980,7 +980,7 @@ namespace grpc\testing {
     public function clearPayload(){
       return $this->_clear(3);
     }
-    
+
     /**
      * Get <payload> value
      *
@@ -989,7 +989,7 @@ namespace grpc\testing {
     public function getPayload(){
       return $this->_get(3);
     }
-    
+
     /**
      * Set <payload> value
      *
@@ -1008,7 +1008,7 @@ namespace grpc\testing {
 
     /**  @var \grpc\testing\Payload */
     public $payload = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -1041,7 +1041,7 @@ namespace grpc\testing {
     public function hasPayload(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <payload> value
      *
@@ -1050,7 +1050,7 @@ namespace grpc\testing {
     public function clearPayload(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <payload> value
      *
@@ -1059,7 +1059,7 @@ namespace grpc\testing {
     public function getPayload(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <payload> value
      *
