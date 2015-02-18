@@ -45,7 +45,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-enum descriptor_state { NOT_READY = 0, READY = 1 }; /* or a pointer to a closure to call */
+enum descriptor_state {
+  NOT_READY = 0,
+  READY = 1
+}; /* or a pointer to a closure to call */
 
 /* We need to keep a freelist not because of any concerns of malloc performance
  * but instead so that implementations with multiple threads in (for example)
@@ -184,8 +187,8 @@ static void make_callbacks(grpc_iomgr_closure *callbacks, size_t n, int success,
   }
 }
 
-static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure, 
-      int allow_synchronous_callback) {
+static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
+                      int allow_synchronous_callback) {
   switch (gpr_atm_acq_load(st)) {
     case NOT_READY:
       /* There is no race if the descriptor is already ready, so we skip
@@ -194,7 +197,7 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
          oldval should never be anything other than READY or NOT_READY.  We
          don't
          check for user error on the fast path. */
-      if (gpr_atm_rel_cas(st, NOT_READY, (gpr_intptr) closure)) {
+      if (gpr_atm_rel_cas(st, NOT_READY, (gpr_intptr)closure)) {
         /* swap was successful -- the closure will run after the next
            set_ready call.  NOTE: we don't have an ABA problem here,
            since we should never have concurrent calls to the same
@@ -207,7 +210,8 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_iomgr_closure *closure,
     case READY:
       assert(gpr_atm_acq_load(st) == READY);
       gpr_atm_rel_store(st, NOT_READY);
-      make_callback(closure->cb, closure->cb_arg, !gpr_atm_acq_load(&fd->shutdown),
+      make_callback(closure->cb, closure->cb_arg,
+                    !gpr_atm_acq_load(&fd->shutdown),
                     allow_synchronous_callback);
       return;
     default: /* WAITING */
@@ -235,12 +239,13 @@ static void set_ready_locked(gpr_atm *st, grpc_iomgr_closure *callbacks,
            notify_on call. */
         return;
       }
-    /* swap was unsuccessful due to an intervening set_ready call.
-       Fall through to the WAITING code below */
+      /* swap was unsuccessful due to an intervening set_ready call.
+         Fall through to the WAITING code below */
       state = gpr_atm_acq_load(st);
     default: /* waiting */
-      assert(gpr_atm_acq_load(st) != READY && gpr_atm_acq_load(st) != NOT_READY);
-      callbacks[(*ncallbacks)++] = *(grpc_iomgr_closure*)state;
+      assert(gpr_atm_acq_load(st) != READY &&
+             gpr_atm_acq_load(st) != NOT_READY);
+      callbacks[(*ncallbacks)++] = *(grpc_iomgr_closure *)state;
       gpr_atm_rel_store(st, NOT_READY);
       return;
   }
