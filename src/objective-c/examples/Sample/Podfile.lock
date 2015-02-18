@@ -1,0 +1,14 @@
+PODS:
+  - RxLibrary (0.0.1)
+
+DEPENDENCIES:
+  - RxLibrary (from `../../RxLibrary`)
+
+EXTERNAL SOURCES:
+  RxLibrary:
+    :path: ../../RxLibrary
+
+SPEC CHECKSUMS:
+  RxLibrary: fc24868ee72616e8c4e58128b439811fdade0da4
+
+COCOAPODS: 0.35.0
