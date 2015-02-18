@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -59,8 +59,8 @@ namespace Google.GRPC.Core.Internal
 
         [DllImport("grpc_csharp_ext.dll", EntryPoint = "grpcsharp_call_invoke_old")]
         static extern GRPCCallError grpcsharp_call_invoke_old_CALLBACK(CallSafeHandle call, CompletionQueueSafeHandle cq,
-                                                              [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate metadataReadCallback, 
-                                                              [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate finishedCallback, 
+                                                              [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate metadataReadCallback,
+                                                              [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate finishedCallback,
                                                               UInt32 flags);
 
         [DllImport("grpc_csharp_ext.dll")]
@@ -123,12 +123,12 @@ namespace Google.GRPC.Core.Internal
         }
 
         public void Invoke(CompletionQueueSafeHandle cq, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
-        {   
+        {
             AssertCallOk(grpcsharp_call_invoke_old(this, cq, metadataReadTag, finishedTag, GetFlags(buffered)));
         }
 
         public void Invoke(CompletionQueueSafeHandle cq, bool buffered, EventCallbackDelegate metadataReadCallback, EventCallbackDelegate finishedCallback)
-        {   
+        {
             AssertCallOk(grpcsharp_call_invoke_old_CALLBACK(this, cq, metadataReadCallback, finishedCallback, GetFlags(buffered)));
         }
 

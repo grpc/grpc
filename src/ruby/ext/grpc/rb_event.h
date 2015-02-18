@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,6 @@ extern VALUE rb_eEventError;
 VALUE grpc_rb_new_event(grpc_event *ev);
 
 /* Initializes the Event and EventError classes. */
-void Init_google_rpc_event();
+void Init_grpc_event();
 
 #endif /* GRPC_RB_EVENT_H_ */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -563,18 +563,18 @@ grpc_call_error grpc_server_request_call_old(grpc_server *server,
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
-    grpc_completion_queue *cq_bound_to_call, 
+    grpc_completion_queue *cq_bound_to_call,
     void *tag_new);
 
 /* Registers a method in the server.
    Methods to this (host, method) pair will not be reported by
-   grpc_server_request_call, but instead be reported by 
+   grpc_server_request_call, but instead be reported by
    grpc_server_request_registered_call when passed the appropriate
    registered_method (as returned by this function).
    Must be called before grpc_server_start.
    Returns NULL on failure. */
 void *grpc_server_register_method(grpc_server *server, const char *method,
-                                  const char *host, 
+                                  const char *host,
                                   grpc_completion_queue *new_call_cq);
 
 /* Request notification of a new pre-registered call */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@
 
 /* iomgr internal api for dealing with alarms */
 
-/* Check for alarms to be run, and run them. 
+/* Check for alarms to be run, and run them.
    Return non zero if alarm callbacks were executed.
    Drops drop_mu if it is non-null before executing callbacks.
    If next is non-null, TRY to update *next with the next running alarm

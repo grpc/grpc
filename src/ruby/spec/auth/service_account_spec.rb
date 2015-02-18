@@ -38,7 +38,7 @@ require 'multi_json'
 require 'openssl'
 require 'spec_helper'
 
-describe Google::RPC::Auth::ServiceAccountCredentials do
+describe GRPC::Auth::ServiceAccountCredentials do
   before(:example) do
     @key = OpenSSL::PKey::RSA.new(2048)
     cred_json = {
@@ -49,7 +49,7 @@ describe Google::RPC::Auth::ServiceAccountCredentials do
       type: 'service_account'
     }
     cred_json_text = MultiJson.dump(cred_json)
-    @client = Google::RPC::Auth::ServiceAccountCredentials.new(
+    @client = GRPC::Auth::ServiceAccountCredentials.new(
         'https://www.googleapis.com/auth/userinfo.profile',
         StringIO.new(cred_json_text))
   end

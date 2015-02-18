@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,6 @@ extern VALUE grpc_rb_metadata_create_with_mark(VALUE mark, grpc_metadata* md);
 grpc_metadata* grpc_rb_get_wrapped_metadata(VALUE v);
 
 /* Initializes the Metadata class. */
-void Init_google_rpc_metadata();
+void Init_grpc_metadata();
 
 #endif /* GRPC_RB_METADATA_H_ */

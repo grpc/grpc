@@ -415,8 +415,7 @@
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
         "include/grpc++/status.h",
-        "include/grpc++/stream.h",
-        "include/grpc++/stream_context_interface.h"
+        "include/grpc++/stream.h"
       ],
       "headers": [
         "src/cpp/client/channel.h",
