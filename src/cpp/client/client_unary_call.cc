@@ -63,9 +63,10 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
 
 class ClientAsyncRequest final : public CallOpBuffer {
  public:
-  void FinalizeResult(void **tag, bool *status) override {
-    CallOpBuffer::FinalizeResult(tag, status);
+  bool FinalizeResult(void **tag, bool *status) override {
+    bool r = CallOpBuffer::FinalizeResult(tag, status);
     delete this;
+    return r;
   }
 };
 

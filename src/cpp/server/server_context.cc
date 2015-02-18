@@ -40,7 +40,7 @@ namespace grpc {
 
 ServerContext::ServerContext() {}
 
-ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata *metadata,
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                              size_t metadata_count)
     : deadline_(Timespec2Timepoint(deadline)) {
   for (size_t i = 0; i < metadata_count; i++) {
@@ -58,13 +58,25 @@ ServerContext::~ServerContext() {
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,
-                                  const grpc::string& value) {
+                                       const grpc::string& value) {
   initial_metadata_.insert(std::make_pair(key, value));
 }
 
 void ServerContext::AddTrailingMetadata(const grpc::string& key,
-                                  const grpc::string& value) {
+                                        const grpc::string& value) {
   trailing_metadata_.insert(std::make_pair(key, value));
+}
+
+bool ServerContext::CompletionOp::CheckCancelled(CompletionQueue* cq) {
+  cq->TryPluck(this);
+  std::lock_guard<std::mutex> g(mu_);
+  return finalized_ ? cancelled_ != 0 : false;
+}
+
+bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
+  std::lock_guard<std::mutex> g(mu_);
+  finalized_ = true;
+  return false;
 }
 
 }  // namespace grpc

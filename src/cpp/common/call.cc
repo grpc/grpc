@@ -231,7 +231,7 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
   }
 }
 
-void CallOpBuffer::FinalizeResult(void** tag, bool* status) {
+bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   // Release send buffers.
   if (send_message_buf_) {
     grpc_byte_buffer_destroy(send_message_buf_);
@@ -274,6 +274,7 @@ void CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   if (recv_closed_) {
     *recv_closed_ = cancelled_buf_ != 0;
   }
+  return true;
 }
 
 Call::Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
