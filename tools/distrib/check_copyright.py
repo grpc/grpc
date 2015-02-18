@@ -111,7 +111,7 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
     log(args.ancient, 'old', filename)
     if args.fix:
       with open(filename, 'w') as f:
-        f.write(text.replace('Copyright 2014, Google Inc.', 'Copyright 2015, Google Inc.'))
+        f.write(text.replace('Copyright 2014, Google Inc.', 'Copyright 2015, Google Inc.') + '\n')
   elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename:
     log(1, 'missing', filename)
 
