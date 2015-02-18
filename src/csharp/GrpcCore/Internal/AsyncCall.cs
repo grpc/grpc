@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -45,7 +45,7 @@ namespace Google.GRPC.Core.Internal
     /// Listener for call events that can be delivered from a completion queue.
     /// </summary>
     internal interface ICallEventListener {
-    
+
         void OnClientMetadata();
 
         void OnRead(byte[] payload);
@@ -66,7 +66,7 @@ namespace Google.GRPC.Core.Internal
         readonly Func<TWrite, byte[]> serializer;
         readonly Func<byte[], TRead> deserializer;
 
-        // TODO: make sure the delegate doesn't get garbage collected while 
+        // TODO: make sure the delegate doesn't get garbage collected while
         // native callbacks are in the completion queue.
         readonly EventCallbackDelegate callbackHandler;
 
@@ -205,7 +205,7 @@ namespace Google.GRPC.Core.Internal
                 CheckNotFinished();
                 CheckNoError();
                 CheckCancelNotRequested();
-               
+
                 if (halfcloseRequested || halfclosed)
                 {
                     throw new InvalidOperationException("Already halfclosed.");
@@ -218,7 +218,7 @@ namespace Google.GRPC.Core.Internal
 
                 // TODO: wrap serialization...
                 byte[] payload = serializer(msg);
-               
+
                 call.StartWrite(payload, buffered, callbackHandler);
                 writeTcs = new TaskCompletionSource<object>();
                 return writeTcs;
@@ -317,7 +317,7 @@ namespace Google.GRPC.Core.Internal
             // grpc_call_cancel_with_status is threadsafe
             call.CancelWithStatus(status);
         }
-       
+
         public void OnClientMetadata()
         {
             // TODO: implement....
@@ -434,7 +434,7 @@ namespace Google.GRPC.Core.Internal
                     {
                         call.Dispose();
                     }
-                } 
+                }
                 disposed = true;
             }
         }

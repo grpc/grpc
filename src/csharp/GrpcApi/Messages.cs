@@ -7,10 +7,10 @@ using pbc = global::Google.ProtocolBuffers.Collections;
 using pbd = global::Google.ProtocolBuffers.Descriptors;
 using scg = global::System.Collections.Generic;
 namespace grpc.testing {
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public static partial class Messages {
-  
+
     #region Extension registration
     public static void RegisterAllExtensions(pb::ExtensionRegistry registry) {
     }
@@ -38,62 +38,62 @@ namespace grpc.testing {
       get { return descriptor; }
     }
     private static pbd::FileDescriptor descriptor;
-    
+
     static Messages() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "Cg5tZXNzYWdlcy5wcm90bxIMZ3JwYy50ZXN0aW5nIkAKB1BheWxvYWQSJwoE", 
-            "dHlwZRgBIAEoDjIZLmdycGMudGVzdGluZy5QYXlsb2FkVHlwZRIMCgRib2R5", 
-            "GAIgASgMIrEBCg1TaW1wbGVSZXF1ZXN0EjAKDXJlc3BvbnNlX3R5cGUYASAB", 
-            "KA4yGS5ncnBjLnRlc3RpbmcuUGF5bG9hZFR5cGUSFQoNcmVzcG9uc2Vfc2l6", 
-            "ZRgCIAEoBRImCgdwYXlsb2FkGAMgASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxv", 
-            "YWQSFQoNZmlsbF91c2VybmFtZRgEIAEoCBIYChBmaWxsX29hdXRoX3Njb3Bl", 
-            "GAUgASgIIl8KDlNpbXBsZVJlc3BvbnNlEiYKB3BheWxvYWQYASABKAsyFS5n", 
-            "cnBjLnRlc3RpbmcuUGF5bG9hZBIQCgh1c2VybmFtZRgCIAEoCRITCgtvYXV0", 
-            "aF9zY29wZRgDIAEoCSJDChlTdHJlYW1pbmdJbnB1dENhbGxSZXF1ZXN0EiYK", 
-            "B3BheWxvYWQYASABKAsyFS5ncnBjLnRlc3RpbmcuUGF5bG9hZCI9ChpTdHJl", 
-            "YW1pbmdJbnB1dENhbGxSZXNwb25zZRIfChdhZ2dyZWdhdGVkX3BheWxvYWRf", 
-            "c2l6ZRgBIAEoBSI3ChJSZXNwb25zZVBhcmFtZXRlcnMSDAoEc2l6ZRgBIAEo", 
-            "BRITCgtpbnRlcnZhbF91cxgCIAEoBSK1AQoaU3RyZWFtaW5nT3V0cHV0Q2Fs", 
-            "bFJlcXVlc3QSMAoNcmVzcG9uc2VfdHlwZRgBIAEoDjIZLmdycGMudGVzdGlu", 
-            "Zy5QYXlsb2FkVHlwZRI9ChNyZXNwb25zZV9wYXJhbWV0ZXJzGAIgAygLMiAu", 
-            "Z3JwYy50ZXN0aW5nLlJlc3BvbnNlUGFyYW1ldGVycxImCgdwYXlsb2FkGAMg", 
-            "ASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxvYWQiRQobU3RyZWFtaW5nT3V0cHV0", 
-            "Q2FsbFJlc3BvbnNlEiYKB3BheWxvYWQYASABKAsyFS5ncnBjLnRlc3Rpbmcu", 
-            "UGF5bG9hZCo/CgtQYXlsb2FkVHlwZRIQCgxDT01QUkVTU0FCTEUQABISCg5V", 
+            "Cg5tZXNzYWdlcy5wcm90bxIMZ3JwYy50ZXN0aW5nIkAKB1BheWxvYWQSJwoE",
+            "dHlwZRgBIAEoDjIZLmdycGMudGVzdGluZy5QYXlsb2FkVHlwZRIMCgRib2R5",
+            "GAIgASgMIrEBCg1TaW1wbGVSZXF1ZXN0EjAKDXJlc3BvbnNlX3R5cGUYASAB",
+            "KA4yGS5ncnBjLnRlc3RpbmcuUGF5bG9hZFR5cGUSFQoNcmVzcG9uc2Vfc2l6",
+            "ZRgCIAEoBRImCgdwYXlsb2FkGAMgASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxv",
+            "YWQSFQoNZmlsbF91c2VybmFtZRgEIAEoCBIYChBmaWxsX29hdXRoX3Njb3Bl",
+            "GAUgASgIIl8KDlNpbXBsZVJlc3BvbnNlEiYKB3BheWxvYWQYASABKAsyFS5n",
+            "cnBjLnRlc3RpbmcuUGF5bG9hZBIQCgh1c2VybmFtZRgCIAEoCRITCgtvYXV0",
+            "aF9zY29wZRgDIAEoCSJDChlTdHJlYW1pbmdJbnB1dENhbGxSZXF1ZXN0EiYK",
+            "B3BheWxvYWQYASABKAsyFS5ncnBjLnRlc3RpbmcuUGF5bG9hZCI9ChpTdHJl",
+            "YW1pbmdJbnB1dENhbGxSZXNwb25zZRIfChdhZ2dyZWdhdGVkX3BheWxvYWRf",
+            "c2l6ZRgBIAEoBSI3ChJSZXNwb25zZVBhcmFtZXRlcnMSDAoEc2l6ZRgBIAEo",
+            "BRITCgtpbnRlcnZhbF91cxgCIAEoBSK1AQoaU3RyZWFtaW5nT3V0cHV0Q2Fs",
+            "bFJlcXVlc3QSMAoNcmVzcG9uc2VfdHlwZRgBIAEoDjIZLmdycGMudGVzdGlu",
+            "Zy5QYXlsb2FkVHlwZRI9ChNyZXNwb25zZV9wYXJhbWV0ZXJzGAIgAygLMiAu",
+            "Z3JwYy50ZXN0aW5nLlJlc3BvbnNlUGFyYW1ldGVycxImCgdwYXlsb2FkGAMg",
+            "ASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxvYWQiRQobU3RyZWFtaW5nT3V0cHV0",
+            "Q2FsbFJlc3BvbnNlEiYKB3BheWxvYWQYASABKAsyFS5ncnBjLnRlc3Rpbmcu",
+            "UGF5bG9hZCo/CgtQYXlsb2FkVHlwZRIQCgxDT01QUkVTU0FCTEUQABISCg5V",
           "TkNPTVBSRVNTQUJMRRABEgoKBlJBTkRPTRAC"));
       pbd::FileDescriptor.InternalDescriptorAssigner assigner = delegate(pbd::FileDescriptor root) {
         descriptor = root;
         internal__static_grpc_testing_Payload__Descriptor = Descriptor.MessageTypes[0];
-        internal__static_grpc_testing_Payload__FieldAccessorTable = 
+        internal__static_grpc_testing_Payload__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.Payload, global::grpc.testing.Payload.Builder>(internal__static_grpc_testing_Payload__Descriptor,
                 new string[] { "Type", "Body", });
         internal__static_grpc_testing_SimpleRequest__Descriptor = Descriptor.MessageTypes[1];
-        internal__static_grpc_testing_SimpleRequest__FieldAccessorTable = 
+        internal__static_grpc_testing_SimpleRequest__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.SimpleRequest, global::grpc.testing.SimpleRequest.Builder>(internal__static_grpc_testing_SimpleRequest__Descriptor,
                 new string[] { "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", });
         internal__static_grpc_testing_SimpleResponse__Descriptor = Descriptor.MessageTypes[2];
-        internal__static_grpc_testing_SimpleResponse__FieldAccessorTable = 
+        internal__static_grpc_testing_SimpleResponse__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.SimpleResponse, global::grpc.testing.SimpleResponse.Builder>(internal__static_grpc_testing_SimpleResponse__Descriptor,
                 new string[] { "Payload", "Username", "OauthScope", });
         internal__static_grpc_testing_StreamingInputCallRequest__Descriptor = Descriptor.MessageTypes[3];
-        internal__static_grpc_testing_StreamingInputCallRequest__FieldAccessorTable = 
+        internal__static_grpc_testing_StreamingInputCallRequest__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.StreamingInputCallRequest, global::grpc.testing.StreamingInputCallRequest.Builder>(internal__static_grpc_testing_StreamingInputCallRequest__Descriptor,
                 new string[] { "Payload", });
         internal__static_grpc_testing_StreamingInputCallResponse__Descriptor = Descriptor.MessageTypes[4];
-        internal__static_grpc_testing_StreamingInputCallResponse__FieldAccessorTable = 
+        internal__static_grpc_testing_StreamingInputCallResponse__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.StreamingInputCallResponse, global::grpc.testing.StreamingInputCallResponse.Builder>(internal__static_grpc_testing_StreamingInputCallResponse__Descriptor,
                 new string[] { "AggregatedPayloadSize", });
         internal__static_grpc_testing_ResponseParameters__Descriptor = Descriptor.MessageTypes[5];
-        internal__static_grpc_testing_ResponseParameters__FieldAccessorTable = 
+        internal__static_grpc_testing_ResponseParameters__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.ResponseParameters, global::grpc.testing.ResponseParameters.Builder>(internal__static_grpc_testing_ResponseParameters__Descriptor,
                 new string[] { "Size", "IntervalUs", });
         internal__static_grpc_testing_StreamingOutputCallRequest__Descriptor = Descriptor.MessageTypes[6];
-        internal__static_grpc_testing_StreamingOutputCallRequest__FieldAccessorTable = 
+        internal__static_grpc_testing_StreamingOutputCallRequest__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.StreamingOutputCallRequest, global::grpc.testing.StreamingOutputCallRequest.Builder>(internal__static_grpc_testing_StreamingOutputCallRequest__Descriptor,
                 new string[] { "ResponseType", "ResponseParameters", "Payload", });
         internal__static_grpc_testing_StreamingOutputCallResponse__Descriptor = Descriptor.MessageTypes[7];
-        internal__static_grpc_testing_StreamingOutputCallResponse__FieldAccessorTable = 
+        internal__static_grpc_testing_StreamingOutputCallResponse__FieldAccessorTable =
             new pb::FieldAccess.FieldAccessorTable<global::grpc.testing.StreamingOutputCallResponse, global::grpc.testing.StreamingOutputCallResponse.Builder>(internal__static_grpc_testing_StreamingOutputCallResponse__Descriptor,
                 new string[] { "Payload", });
         return null;
@@ -103,7 +103,7 @@ namespace grpc.testing {
           }, assigner);
     }
     #endregion
-    
+
   }
   #region Enums
   public enum PayloadType {
@@ -111,9 +111,9 @@ namespace grpc.testing {
     UNCOMPRESSABLE = 1,
     RANDOM = 2,
   }
-  
+
   #endregion
-  
+
   #region Messages
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class Payload : pb::GeneratedMessage<Payload, Payload.Builder> {
@@ -124,23 +124,23 @@ namespace grpc.testing {
     public static Payload DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override Payload DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override Payload ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_Payload__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<Payload, Payload.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_Payload__FieldAccessorTable; }
     }
-    
+
     public const int TypeFieldNumber = 1;
     private bool hasType;
     private global::grpc.testing.PayloadType type_ = global::grpc.testing.PayloadType.COMPRESSABLE;
@@ -150,7 +150,7 @@ namespace grpc.testing {
     public global::grpc.testing.PayloadType Type {
       get { return type_; }
     }
-    
+
     public const int BodyFieldNumber = 2;
     private bool hasBody;
     private pb::ByteString body_ = pb::ByteString.Empty;
@@ -160,13 +160,13 @@ namespace grpc.testing {
     public pb::ByteString Body {
       get { return body_; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _payloadFieldNames;
@@ -178,13 +178,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasType) {
           size += pb::CodedOutputStream.ComputeEnumSize(1, (int) Type);
@@ -197,7 +197,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static Payload ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -231,14 +231,14 @@ namespace grpc.testing {
     private Payload MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(Payload prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<Payload, Builder> {
       protected override Builder ThisBuilder {
@@ -252,10 +252,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private Payload result;
-      
+
       private Payload PrepareBuilder() {
         if (resultIsReadOnly) {
           Payload original = result;
@@ -265,21 +265,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override Payload MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -287,15 +287,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.Payload.Descriptor; }
       }
-      
+
       public override Payload DefaultInstanceForType {
         get { return global::grpc.testing.Payload.DefaultInstance; }
       }
-      
+
       public override Payload BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -303,7 +303,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is Payload) {
           return MergeFrom((Payload) other);
@@ -312,7 +312,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(Payload other) {
         if (other == global::grpc.testing.Payload.DefaultInstance) return this;
         PrepareBuilder();
@@ -325,11 +325,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -383,14 +383,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasType {
        get { return result.hasType; }
       }
@@ -410,7 +410,7 @@ namespace grpc.testing {
         result.type_ = global::grpc.testing.PayloadType.COMPRESSABLE;
         return this;
       }
-      
+
       public bool HasBody {
         get { return result.hasBody; }
       }
@@ -436,7 +436,7 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class SimpleRequest : pb::GeneratedMessage<SimpleRequest, SimpleRequest.Builder> {
     private SimpleRequest() { }
@@ -446,23 +446,23 @@ namespace grpc.testing {
     public static SimpleRequest DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override SimpleRequest DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override SimpleRequest ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_SimpleRequest__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<SimpleRequest, SimpleRequest.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_SimpleRequest__FieldAccessorTable; }
     }
-    
+
     public const int ResponseTypeFieldNumber = 1;
     private bool hasResponseType;
     private global::grpc.testing.PayloadType responseType_ = global::grpc.testing.PayloadType.COMPRESSABLE;
@@ -472,7 +472,7 @@ namespace grpc.testing {
     public global::grpc.testing.PayloadType ResponseType {
       get { return responseType_; }
     }
-    
+
     public const int ResponseSizeFieldNumber = 2;
     private bool hasResponseSize;
     private int responseSize_;
@@ -482,7 +482,7 @@ namespace grpc.testing {
     public int ResponseSize {
       get { return responseSize_; }
     }
-    
+
     public const int PayloadFieldNumber = 3;
     private bool hasPayload;
     private global::grpc.testing.Payload payload_;
@@ -492,7 +492,7 @@ namespace grpc.testing {
     public global::grpc.testing.Payload Payload {
       get { return payload_ ?? global::grpc.testing.Payload.DefaultInstance; }
     }
-    
+
     public const int FillUsernameFieldNumber = 4;
     private bool hasFillUsername;
     private bool fillUsername_;
@@ -502,7 +502,7 @@ namespace grpc.testing {
     public bool FillUsername {
       get { return fillUsername_; }
     }
-    
+
     public const int FillOauthScopeFieldNumber = 5;
     private bool hasFillOauthScope;
     private bool fillOauthScope_;
@@ -512,13 +512,13 @@ namespace grpc.testing {
     public bool FillOauthScope {
       get { return fillOauthScope_; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _simpleRequestFieldNames;
@@ -539,13 +539,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasResponseType) {
           size += pb::CodedOutputStream.ComputeEnumSize(1, (int) ResponseType);
@@ -567,7 +567,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static SimpleRequest ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -601,14 +601,14 @@ namespace grpc.testing {
     private SimpleRequest MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(SimpleRequest prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<SimpleRequest, Builder> {
       protected override Builder ThisBuilder {
@@ -622,10 +622,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private SimpleRequest result;
-      
+
       private SimpleRequest PrepareBuilder() {
         if (resultIsReadOnly) {
           SimpleRequest original = result;
@@ -635,21 +635,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override SimpleRequest MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -657,15 +657,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.SimpleRequest.Descriptor; }
       }
-      
+
       public override SimpleRequest DefaultInstanceForType {
         get { return global::grpc.testing.SimpleRequest.DefaultInstance; }
       }
-      
+
       public override SimpleRequest BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -673,7 +673,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is SimpleRequest) {
           return MergeFrom((SimpleRequest) other);
@@ -682,7 +682,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(SimpleRequest other) {
         if (other == global::grpc.testing.SimpleRequest.DefaultInstance) return this;
         PrepareBuilder();
@@ -704,11 +704,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -779,14 +779,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasResponseType {
        get { return result.hasResponseType; }
       }
@@ -806,7 +806,7 @@ namespace grpc.testing {
         result.responseType_ = global::grpc.testing.PayloadType.COMPRESSABLE;
         return this;
       }
-      
+
       public bool HasResponseSize {
         get { return result.hasResponseSize; }
       }
@@ -826,7 +826,7 @@ namespace grpc.testing {
         result.responseSize_ = 0;
         return this;
       }
-      
+
       public bool HasPayload {
        get { return result.hasPayload; }
       }
@@ -866,7 +866,7 @@ namespace grpc.testing {
         result.payload_ = null;
         return this;
       }
-      
+
       public bool HasFillUsername {
         get { return result.hasFillUsername; }
       }
@@ -886,7 +886,7 @@ namespace grpc.testing {
         result.fillUsername_ = false;
         return this;
       }
-      
+
       public bool HasFillOauthScope {
         get { return result.hasFillOauthScope; }
       }
@@ -911,7 +911,7 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class SimpleResponse : pb::GeneratedMessage<SimpleResponse, SimpleResponse.Builder> {
     private SimpleResponse() { }
@@ -921,23 +921,23 @@ namespace grpc.testing {
     public static SimpleResponse DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override SimpleResponse DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override SimpleResponse ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_SimpleResponse__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<SimpleResponse, SimpleResponse.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_SimpleResponse__FieldAccessorTable; }
     }
-    
+
     public const int PayloadFieldNumber = 1;
     private bool hasPayload;
     private global::grpc.testing.Payload payload_;
@@ -947,7 +947,7 @@ namespace grpc.testing {
     public global::grpc.testing.Payload Payload {
       get { return payload_ ?? global::grpc.testing.Payload.DefaultInstance; }
     }
-    
+
     public const int UsernameFieldNumber = 2;
     private bool hasUsername;
     private string username_ = "";
@@ -957,7 +957,7 @@ namespace grpc.testing {
     public string Username {
       get { return username_; }
     }
-    
+
     public const int OauthScopeFieldNumber = 3;
     private bool hasOauthScope;
     private string oauthScope_ = "";
@@ -967,13 +967,13 @@ namespace grpc.testing {
     public string OauthScope {
       get { return oauthScope_; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _simpleResponseFieldNames;
@@ -988,13 +988,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasPayload) {
           size += pb::CodedOutputStream.ComputeMessageSize(1, Payload);
@@ -1010,7 +1010,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static SimpleResponse ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -1044,14 +1044,14 @@ namespace grpc.testing {
     private SimpleResponse MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(SimpleResponse prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<SimpleResponse, Builder> {
       protected override Builder ThisBuilder {
@@ -1065,10 +1065,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private SimpleResponse result;
-      
+
       private SimpleResponse PrepareBuilder() {
         if (resultIsReadOnly) {
           SimpleResponse original = result;
@@ -1078,21 +1078,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override SimpleResponse MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -1100,15 +1100,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.SimpleResponse.Descriptor; }
       }
-      
+
       public override SimpleResponse DefaultInstanceForType {
         get { return global::grpc.testing.SimpleResponse.DefaultInstance; }
       }
-      
+
       public override SimpleResponse BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -1116,7 +1116,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is SimpleResponse) {
           return MergeFrom((SimpleResponse) other);
@@ -1125,7 +1125,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(SimpleResponse other) {
         if (other == global::grpc.testing.SimpleResponse.DefaultInstance) return this;
         PrepareBuilder();
@@ -1141,11 +1141,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -1200,14 +1200,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasPayload {
        get { return result.hasPayload; }
       }
@@ -1247,7 +1247,7 @@ namespace grpc.testing {
         result.payload_ = null;
         return this;
       }
-      
+
       public bool HasUsername {
         get { return result.hasUsername; }
       }
@@ -1268,7 +1268,7 @@ namespace grpc.testing {
         result.username_ = "";
         return this;
       }
-      
+
       public bool HasOauthScope {
         get { return result.hasOauthScope; }
       }
@@ -1294,7 +1294,7 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingInputCallRequest : pb::GeneratedMessage<StreamingInputCallRequest, StreamingInputCallRequest.Builder> {
     private StreamingInputCallRequest() { }
@@ -1304,23 +1304,23 @@ namespace grpc.testing {
     public static StreamingInputCallRequest DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override StreamingInputCallRequest DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override StreamingInputCallRequest ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingInputCallRequest__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<StreamingInputCallRequest, StreamingInputCallRequest.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingInputCallRequest__FieldAccessorTable; }
     }
-    
+
     public const int PayloadFieldNumber = 1;
     private bool hasPayload;
     private global::grpc.testing.Payload payload_;
@@ -1330,13 +1330,13 @@ namespace grpc.testing {
     public global::grpc.testing.Payload Payload {
       get { return payload_ ?? global::grpc.testing.Payload.DefaultInstance; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _streamingInputCallRequestFieldNames;
@@ -1345,13 +1345,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasPayload) {
           size += pb::CodedOutputStream.ComputeMessageSize(1, Payload);
@@ -1361,7 +1361,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static StreamingInputCallRequest ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -1395,14 +1395,14 @@ namespace grpc.testing {
     private StreamingInputCallRequest MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(StreamingInputCallRequest prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<StreamingInputCallRequest, Builder> {
       protected override Builder ThisBuilder {
@@ -1416,10 +1416,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private StreamingInputCallRequest result;
-      
+
       private StreamingInputCallRequest PrepareBuilder() {
         if (resultIsReadOnly) {
           StreamingInputCallRequest original = result;
@@ -1429,21 +1429,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override StreamingInputCallRequest MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -1451,15 +1451,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.StreamingInputCallRequest.Descriptor; }
       }
-      
+
       public override StreamingInputCallRequest DefaultInstanceForType {
         get { return global::grpc.testing.StreamingInputCallRequest.DefaultInstance; }
       }
-      
+
       public override StreamingInputCallRequest BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -1467,7 +1467,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is StreamingInputCallRequest) {
           return MergeFrom((StreamingInputCallRequest) other);
@@ -1476,7 +1476,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(StreamingInputCallRequest other) {
         if (other == global::grpc.testing.StreamingInputCallRequest.DefaultInstance) return this;
         PrepareBuilder();
@@ -1486,11 +1486,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -1537,14 +1537,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasPayload {
        get { return result.hasPayload; }
       }
@@ -1589,7 +1589,7 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingInputCallResponse : pb::GeneratedMessage<StreamingInputCallResponse, StreamingInputCallResponse.Builder> {
     private StreamingInputCallResponse() { }
@@ -1599,23 +1599,23 @@ namespace grpc.testing {
     public static StreamingInputCallResponse DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override StreamingInputCallResponse DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override StreamingInputCallResponse ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingInputCallResponse__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<StreamingInputCallResponse, StreamingInputCallResponse.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingInputCallResponse__FieldAccessorTable; }
     }
-    
+
     public const int AggregatedPayloadSizeFieldNumber = 1;
     private bool hasAggregatedPayloadSize;
     private int aggregatedPayloadSize_;
@@ -1625,13 +1625,13 @@ namespace grpc.testing {
     public int AggregatedPayloadSize {
       get { return aggregatedPayloadSize_; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _streamingInputCallResponseFieldNames;
@@ -1640,13 +1640,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasAggregatedPayloadSize) {
           size += pb::CodedOutputStream.ComputeInt32Size(1, AggregatedPayloadSize);
@@ -1656,7 +1656,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static StreamingInputCallResponse ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -1690,14 +1690,14 @@ namespace grpc.testing {
     private StreamingInputCallResponse MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(StreamingInputCallResponse prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<StreamingInputCallResponse, Builder> {
       protected override Builder ThisBuilder {
@@ -1711,10 +1711,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private StreamingInputCallResponse result;
-      
+
       private StreamingInputCallResponse PrepareBuilder() {
         if (resultIsReadOnly) {
           StreamingInputCallResponse original = result;
@@ -1724,21 +1724,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override StreamingInputCallResponse MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -1746,15 +1746,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.StreamingInputCallResponse.Descriptor; }
       }
-      
+
       public override StreamingInputCallResponse DefaultInstanceForType {
         get { return global::grpc.testing.StreamingInputCallResponse.DefaultInstance; }
       }
-      
+
       public override StreamingInputCallResponse BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -1762,7 +1762,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is StreamingInputCallResponse) {
           return MergeFrom((StreamingInputCallResponse) other);
@@ -1771,7 +1771,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(StreamingInputCallResponse other) {
         if (other == global::grpc.testing.StreamingInputCallResponse.DefaultInstance) return this;
         PrepareBuilder();
@@ -1781,11 +1781,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -1827,14 +1827,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasAggregatedPayloadSize {
         get { return result.hasAggregatedPayloadSize; }
       }
@@ -1859,7 +1859,7 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class ResponseParameters : pb::GeneratedMessage<ResponseParameters, ResponseParameters.Builder> {
     private ResponseParameters() { }
@@ -1869,23 +1869,23 @@ namespace grpc.testing {
     public static ResponseParameters DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override ResponseParameters DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override ResponseParameters ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_ResponseParameters__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<ResponseParameters, ResponseParameters.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_ResponseParameters__FieldAccessorTable; }
     }
-    
+
     public const int SizeFieldNumber = 1;
     private bool hasSize;
     private int size_;
@@ -1895,7 +1895,7 @@ namespace grpc.testing {
     public int Size {
       get { return size_; }
     }
-    
+
     public const int IntervalUsFieldNumber = 2;
     private bool hasIntervalUs;
     private int intervalUs_;
@@ -1905,13 +1905,13 @@ namespace grpc.testing {
     public int IntervalUs {
       get { return intervalUs_; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _responseParametersFieldNames;
@@ -1923,13 +1923,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasSize) {
           size += pb::CodedOutputStream.ComputeInt32Size(1, Size);
@@ -1942,7 +1942,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static ResponseParameters ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -1976,14 +1976,14 @@ namespace grpc.testing {
     private ResponseParameters MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(ResponseParameters prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<ResponseParameters, Builder> {
       protected override Builder ThisBuilder {
@@ -1997,10 +1997,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private ResponseParameters result;
-      
+
       private ResponseParameters PrepareBuilder() {
         if (resultIsReadOnly) {
           ResponseParameters original = result;
@@ -2010,21 +2010,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override ResponseParameters MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -2032,15 +2032,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.ResponseParameters.Descriptor; }
       }
-      
+
       public override ResponseParameters DefaultInstanceForType {
         get { return global::grpc.testing.ResponseParameters.DefaultInstance; }
       }
-      
+
       public override ResponseParameters BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -2048,7 +2048,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is ResponseParameters) {
           return MergeFrom((ResponseParameters) other);
@@ -2057,7 +2057,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(ResponseParameters other) {
         if (other == global::grpc.testing.ResponseParameters.DefaultInstance) return this;
         PrepareBuilder();
@@ -2070,11 +2070,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -2120,14 +2120,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasSize {
         get { return result.hasSize; }
       }
@@ -2147,7 +2147,7 @@ namespace grpc.testing {
         result.size_ = 0;
         return this;
       }
-      
+
       public bool HasIntervalUs {
         get { return result.hasIntervalUs; }
       }
@@ -2172,7 +2172,7 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingOutputCallRequest : pb::GeneratedMessage<StreamingOutputCallRequest, StreamingOutputCallRequest.Builder> {
     private StreamingOutputCallRequest() { }
@@ -2182,23 +2182,23 @@ namespace grpc.testing {
     public static StreamingOutputCallRequest DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override StreamingOutputCallRequest DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override StreamingOutputCallRequest ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingOutputCallRequest__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<StreamingOutputCallRequest, StreamingOutputCallRequest.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingOutputCallRequest__FieldAccessorTable; }
     }
-    
+
     public const int ResponseTypeFieldNumber = 1;
     private bool hasResponseType;
     private global::grpc.testing.PayloadType responseType_ = global::grpc.testing.PayloadType.COMPRESSABLE;
@@ -2208,7 +2208,7 @@ namespace grpc.testing {
     public global::grpc.testing.PayloadType ResponseType {
       get { return responseType_; }
     }
-    
+
     public const int ResponseParametersFieldNumber = 2;
     private pbc::PopsicleList<global::grpc.testing.ResponseParameters> responseParameters_ = new pbc::PopsicleList<global::grpc.testing.ResponseParameters>();
     public scg::IList<global::grpc.testing.ResponseParameters> ResponseParametersList {
@@ -2220,7 +2220,7 @@ namespace grpc.testing {
     public global::grpc.testing.ResponseParameters GetResponseParameters(int index) {
       return responseParameters_[index];
     }
-    
+
     public const int PayloadFieldNumber = 3;
     private bool hasPayload;
     private global::grpc.testing.Payload payload_;
@@ -2230,13 +2230,13 @@ namespace grpc.testing {
     public global::grpc.testing.Payload Payload {
       get { return payload_ ?? global::grpc.testing.Payload.DefaultInstance; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _streamingOutputCallRequestFieldNames;
@@ -2251,13 +2251,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasResponseType) {
           size += pb::CodedOutputStream.ComputeEnumSize(1, (int) ResponseType);
@@ -2273,7 +2273,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static StreamingOutputCallRequest ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -2308,14 +2308,14 @@ namespace grpc.testing {
       responseParameters_.MakeReadOnly();
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(StreamingOutputCallRequest prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<StreamingOutputCallRequest, Builder> {
       protected override Builder ThisBuilder {
@@ -2329,10 +2329,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private StreamingOutputCallRequest result;
-      
+
       private StreamingOutputCallRequest PrepareBuilder() {
         if (resultIsReadOnly) {
           StreamingOutputCallRequest original = result;
@@ -2342,21 +2342,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override StreamingOutputCallRequest MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -2364,15 +2364,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.StreamingOutputCallRequest.Descriptor; }
       }
-      
+
       public override StreamingOutputCallRequest DefaultInstanceForType {
         get { return global::grpc.testing.StreamingOutputCallRequest.DefaultInstance; }
       }
-      
+
       public override StreamingOutputCallRequest BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -2380,7 +2380,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is StreamingOutputCallRequest) {
           return MergeFrom((StreamingOutputCallRequest) other);
@@ -2389,7 +2389,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(StreamingOutputCallRequest other) {
         if (other == global::grpc.testing.StreamingOutputCallRequest.DefaultInstance) return this;
         PrepareBuilder();
@@ -2405,11 +2405,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -2472,14 +2472,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasResponseType {
        get { return result.hasResponseType; }
       }
@@ -2499,7 +2499,7 @@ namespace grpc.testing {
         result.responseType_ = global::grpc.testing.PayloadType.COMPRESSABLE;
         return this;
       }
-      
+
       public pbc::IPopsicleList<global::grpc.testing.ResponseParameters> ResponseParametersList {
         get { return PrepareBuilder().responseParameters_; }
       }
@@ -2543,7 +2543,7 @@ namespace grpc.testing {
         result.responseParameters_.Clear();
         return this;
       }
-      
+
       public bool HasPayload {
        get { return result.hasPayload; }
       }
@@ -2588,7 +2588,7 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class StreamingOutputCallResponse : pb::GeneratedMessage<StreamingOutputCallResponse, StreamingOutputCallResponse.Builder> {
     private StreamingOutputCallResponse() { }
@@ -2598,23 +2598,23 @@ namespace grpc.testing {
     public static StreamingOutputCallResponse DefaultInstance {
       get { return defaultInstance; }
     }
-    
+
     public override StreamingOutputCallResponse DefaultInstanceForType {
       get { return DefaultInstance; }
     }
-    
+
     protected override StreamingOutputCallResponse ThisMessage {
       get { return this; }
     }
-    
+
     public static pbd::MessageDescriptor Descriptor {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingOutputCallResponse__Descriptor; }
     }
-    
+
     protected override pb::FieldAccess.FieldAccessorTable<StreamingOutputCallResponse, StreamingOutputCallResponse.Builder> InternalFieldAccessors {
       get { return global::grpc.testing.Messages.internal__static_grpc_testing_StreamingOutputCallResponse__FieldAccessorTable; }
     }
-    
+
     public const int PayloadFieldNumber = 1;
     private bool hasPayload;
     private global::grpc.testing.Payload payload_;
@@ -2624,13 +2624,13 @@ namespace grpc.testing {
     public global::grpc.testing.Payload Payload {
       get { return payload_ ?? global::grpc.testing.Payload.DefaultInstance; }
     }
-    
+
     public override bool IsInitialized {
       get {
         return true;
       }
     }
-    
+
     public override void WriteTo(pb::ICodedOutputStream output) {
       int size = SerializedSize;
       string[] field_names = _streamingOutputCallResponseFieldNames;
@@ -2639,13 +2639,13 @@ namespace grpc.testing {
       }
       UnknownFields.WriteTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public override int SerializedSize {
       get {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-        
+
         size = 0;
         if (hasPayload) {
           size += pb::CodedOutputStream.ComputeMessageSize(1, Payload);
@@ -2655,7 +2655,7 @@ namespace grpc.testing {
         return size;
       }
     }
-    
+
     public static StreamingOutputCallResponse ParseFrom(pb::ByteString data) {
       return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
     }
@@ -2689,14 +2689,14 @@ namespace grpc.testing {
     private StreamingOutputCallResponse MakeReadOnly() {
       return this;
     }
-    
+
     public static Builder CreateBuilder() { return new Builder(); }
     public override Builder ToBuilder() { return CreateBuilder(this); }
     public override Builder CreateBuilderForType() { return new Builder(); }
     public static Builder CreateBuilder(StreamingOutputCallResponse prototype) {
       return new Builder(prototype);
     }
-    
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public sealed partial class Builder : pb::GeneratedBuilder<StreamingOutputCallResponse, Builder> {
       protected override Builder ThisBuilder {
@@ -2710,10 +2710,10 @@ namespace grpc.testing {
         result = cloneFrom;
         resultIsReadOnly = true;
       }
-      
+
       private bool resultIsReadOnly;
       private StreamingOutputCallResponse result;
-      
+
       private StreamingOutputCallResponse PrepareBuilder() {
         if (resultIsReadOnly) {
           StreamingOutputCallResponse original = result;
@@ -2723,21 +2723,21 @@ namespace grpc.testing {
         }
         return result;
       }
-      
+
       public override bool IsInitialized {
         get { return result.IsInitialized; }
       }
-      
+
       protected override StreamingOutputCallResponse MessageBeingBuilt {
         get { return PrepareBuilder(); }
       }
-      
+
       public override Builder Clear() {
         result = DefaultInstance;
         resultIsReadOnly = true;
         return this;
       }
-      
+
       public override Builder Clone() {
         if (resultIsReadOnly) {
           return new Builder(result);
@@ -2745,15 +2745,15 @@ namespace grpc.testing {
           return new Builder().MergeFrom(result);
         }
       }
-      
+
       public override pbd::MessageDescriptor DescriptorForType {
         get { return global::grpc.testing.StreamingOutputCallResponse.Descriptor; }
       }
-      
+
       public override StreamingOutputCallResponse DefaultInstanceForType {
         get { return global::grpc.testing.StreamingOutputCallResponse.DefaultInstance; }
       }
-      
+
       public override StreamingOutputCallResponse BuildPartial() {
         if (resultIsReadOnly) {
           return result;
@@ -2761,7 +2761,7 @@ namespace grpc.testing {
         resultIsReadOnly = true;
         return result.MakeReadOnly();
       }
-      
+
       public override Builder MergeFrom(pb::IMessage other) {
         if (other is StreamingOutputCallResponse) {
           return MergeFrom((StreamingOutputCallResponse) other);
@@ -2770,7 +2770,7 @@ namespace grpc.testing {
           return this;
         }
       }
-      
+
       public override Builder MergeFrom(StreamingOutputCallResponse other) {
         if (other == global::grpc.testing.StreamingOutputCallResponse.DefaultInstance) return this;
         PrepareBuilder();
@@ -2780,11 +2780,11 @@ namespace grpc.testing {
         this.MergeUnknownFields(other.UnknownFields);
         return this;
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input) {
         return MergeFrom(input, pb::ExtensionRegistry.Empty);
       }
-      
+
       public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
         PrepareBuilder();
         pb::UnknownFieldSet.Builder unknownFields = null;
@@ -2831,14 +2831,14 @@ namespace grpc.testing {
             }
           }
         }
-        
+
         if (unknownFields != null) {
           this.UnknownFields = unknownFields.Build();
         }
         return this;
       }
-      
-      
+
+
       public bool HasPayload {
        get { return result.hasPayload; }
       }
@@ -2883,9 +2883,9 @@ namespace grpc.testing {
       object.ReferenceEquals(global::grpc.testing.Messages.Descriptor, null);
     }
   }
-  
+
   #endregion
-  
+
 }
 
 #endregion Designer generated code
