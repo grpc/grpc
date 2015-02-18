@@ -146,7 +146,7 @@ static void destroy_channel(void *p, int ok) {
   grpc_mdstr_unref(channel->grpc_message_string);
   grpc_mdstr_unref(channel->path_string);
   grpc_mdstr_unref(channel->authority_string);
-  grpc_mdctx_orphan(channel->metadata_context);
+  grpc_mdctx_unref(channel->metadata_context);
   gpr_free(channel);
 }
 

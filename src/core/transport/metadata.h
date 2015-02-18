@@ -84,7 +84,8 @@ struct grpc_mdelem {
 /* Create/orphan a metadata context */
 grpc_mdctx *grpc_mdctx_create(void);
 grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed);
-void grpc_mdctx_orphan(grpc_mdctx *mdctx);
+void grpc_mdctx_ref(grpc_mdctx *mdctx);
+void grpc_mdctx_unref(grpc_mdctx *mdctx);
 
 /* Test only accessors to internal state - only for testing this code - do not
    rely on it outside of metadata_test.c */

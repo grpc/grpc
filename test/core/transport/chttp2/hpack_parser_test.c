@@ -214,7 +214,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
-  grpc_mdctx_orphan(mdctx);
+  grpc_mdctx_unref(mdctx);
 }
 
 int main(int argc, char **argv) {
