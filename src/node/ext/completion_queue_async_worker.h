@@ -67,6 +67,8 @@ class CompletionQueueAsyncWorker : public NanAsyncWorker {
      completion_queue_next */
   void HandleOKCallback();
 
+  void HandleErrorCallback();
+
  private:
   grpc_event *result;
 
