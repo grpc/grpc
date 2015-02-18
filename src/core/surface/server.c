@@ -330,6 +330,7 @@ static void start_new_rpc(grpc_call_element *elem) {
 
   gpr_mu_lock(&server->mu);
   if (chand->registered_methods && calld->path && calld->host) {
+    /* TODO(ctiller): unify these two searches */
     /* check for an exact match with host */
     hash = GRPC_MDSTR_KV_HASH(calld->host->hash, calld->path->hash);
     for (i = 0; i < chand->registered_method_max_probes; i++) {
