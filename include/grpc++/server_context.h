@@ -36,7 +36,6 @@
 
 #include <chrono>
 #include <map>
-#include <mutex>
 
 #include "config.h"
 

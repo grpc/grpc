@@ -32,6 +32,9 @@
  */
 
 #include <grpc++/server_context.h>
+
+#include <mutex>
+
 #include <grpc++/impl/call.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
