@@ -353,6 +353,7 @@ static grpc_security_status ssl_channel_check_peer(grpc_security_context *ctx,
                                                    ? c->overridden_target_name
                                                    : c->target_name,
                                                &peer);
+  tsi_peer_destruct(&c->peer);
   c->peer = peer;
   return status;
 }
