@@ -284,6 +284,9 @@ grpc_dockerfile_pull() {
     echo "Did not copy docker files from $gs_dockerfile_root -> $dockerfile_parent"
     return 1
   }
+  docker rm $(docker ps -aq)
+  docker rmi $(docker images -qf dangling=true)
+  return 0
  }
 
 # grpc_docker_launch_registry
@@ -407,6 +410,9 @@ grpc_dockerfile_install() {
     echo "$FUNCNAME: failed to push $docker_img_url"
     return 1
   }
+  docker rm $(docker ps -aq)
+  docker rmi $(docker images -qf dangling=true)
+  return 0
 }
 
 # grpc_dockerfile_refresh
