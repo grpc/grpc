@@ -51,16 +51,38 @@ var EventEmitter = require('events').EventEmitter;
 
 var common = require('./common.js');
 
+/**
+ * Handle an error on a call by sending it as a status
+ * @param {grpc.Call} call The call to send the error on
+ * @param {Object} error The error object
+ */
 function handleError(call, error) {
-  var error_batch = {};
-  error_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+  var status = {
     code: grpc.status.INTERNAL,
     details: 'Unknown Error',
     metadata: {}
   };
+  if (error.hasOwnProperty('message')) {
+    status.details = error.message;
+  }
+  if (error.hasOwnProperty('code')) {
+    status.code = error.code;
+    if (error.hasOwnProperty('details')) {
+      status.details = error.details;
+    }
+  }
+  var error_batch = {};
+  error_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = status;
   call.startBatch(error_batch, function(){});
 }
 
+/**
+ * Wait for the client to close, then emit a cancelled event if the client
+ * cancelled.
+ * @param {grpc.Call} call The call object to wait on
+ * @param {EventEmitter} emitter The event emitter to emit the cancelled event
+ *     on
+ */
 function waitForCancel(call, emitter) {
   var cancel_batch = {};
   cancel_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
@@ -75,6 +97,13 @@ function waitForCancel(call, emitter) {
   });
 }
 
+/**
+ * Send a response to a unary or client streaming call.
+ * @param {grpc.Call} call The call to respond on
+ * @param {*} value The value to respond with
+ * @param {function(*):Buffer=} serialize Serialization function for the
+ *     response
+ */
 function sendUnaryResponse(call, value, serialize) {
   var end_batch = {};
   end_batch[grpc.opType.SEND_MESSAGE] = serialize(value);
@@ -86,6 +115,12 @@ function sendUnaryResponse(call, value, serialize) {
   call.startBatch(end_batch, function (){});
 }
 
+/**
+ * Initialize a writable stream. This is used for both the writable and duplex
+ * stream constructors.
+ * @param {Writable} stream The stream to set up
+ * @param {function(*):Buffer=} Serialization function for responses
+ */
 function setUpWritable(stream, serialize) {
   stream.finished = false;
   stream.status = {
@@ -109,7 +144,9 @@ function setUpWritable(stream, serialize) {
   function setStatus(err) {
     var code = grpc.status.INTERNAL;
     var details = 'Unknown Error';
-
+    if (err.hasOwnProperty('message')) {
+      details = err.message;
+    }
     if (err.hasOwnProperty('code')) {
       code = err.code;
       if (err.hasOwnProperty('details')) {
@@ -132,6 +169,13 @@ function setUpWritable(stream, serialize) {
   stream.on('error', terminateCall);
 }
 
+/**
+ * Initialize a readable stream. This is used for both the readable and duplex
+ * stream constructors.
+ * @param {Readable} stream The stream to initialize
+ * @param {function(Buffer):*=} deserialize Deserialization function for
+ *     incoming data.
+ */
 function setUpReadable(stream, deserialize) {
   stream.deserialize = common.wrapIgnoreNull(deserialize);
   stream.finished = false;
@@ -149,6 +193,13 @@ function setUpReadable(stream, deserialize) {
 
 util.inherits(ServerWritableStream, Writable);
 
+/**
+ * A stream that the server can write to. Used for calls that are streaming from
+ * the server side.
+ * @constructor
+ * @param {grpc.Call} call The call object to send data with
+ * @param {function(*):Buffer=} serialize Serialization function for writes
+ */
 function ServerWritableStream(call, serialize) {
   Writable.call(this, {objectMode: true});
   this.call = call;
@@ -181,6 +232,13 @@ ServerWritableStream.prototype._write = _write;
 
 util.inherits(ServerReadableStream, Readable);
 
+/**
+ * A stream that the server can read from. Used for calls that are streaming
+ * from the client side.
+ * @constructor
+ * @param {grpc.Call} call The call object to read data with
+ * @param {function(Buffer):*=} deserialize Deserialization function for reads
+ */
 function ServerReadableStream(call, deserialize) {
   Readable.call(this, {objectMode: true});
   this.call = call;
@@ -233,6 +291,15 @@ ServerReadableStream.prototype._read = _read;
 
 util.inherits(ServerDuplexStream, Duplex);
 
+/**
+ * A stream that the server can read from or write to. Used for calls with
+ * duplex streaming.
+ * @constructor
+ * @param {grpc.Call} call Call object to proxy
+ * @param {function(*):Buffer=} serialize Serialization function for requests
+ * @param {function(Buffer):*=} deserialize Deserialization function for
+ *     responses
+ */
 function ServerDuplexStream(call, serialize, deserialize) {
   Duplex.call(this, {objectMode: true});
   this.call = call;
@@ -243,6 +310,12 @@ function ServerDuplexStream(call, serialize, deserialize) {
 ServerDuplexStream.prototype._read = _read;
 ServerDuplexStream.prototype._write = _write;
 
+/**
+ * Fully handle a unary call
+ * @param {grpc.Call} call The call to handle
+ * @param {Object} handler Request handler object for the method that was called
+ * @param {Object} metadata Metadata from the client
+ */
 function handleUnary(call, handler, metadata) {
   var emitter = new EventEmitter();
   emitter.on('error', function(error) {
@@ -270,6 +343,12 @@ function handleUnary(call, handler, metadata) {
   });
 }
 
+/**
+ * Fully handle a server streaming call
+ * @param {grpc.Call} call The call to handle
+ * @param {Object} handler Request handler object for the method that was called
+ * @param {Object} metadata Metadata from the client
+ */
 function handleServerStreaming(call, handler, metadata) {
   var stream = new ServerWritableStream(call, handler.serialize);
   waitForCancel(call, stream);
@@ -286,6 +365,12 @@ function handleServerStreaming(call, handler, metadata) {
   });
 }
 
+/**
+ * Fully handle a client streaming call
+ * @param {grpc.Call} call The call to handle
+ * @param {Object} handler Request handler object for the method that was called
+ * @param {Object} metadata Metadata from the client
+ */
 function handleClientStreaming(call, handler, metadata) {
   var stream = new ServerReadableStream(call, handler.deserialize);
   waitForCancel(call, stream);
@@ -301,6 +386,12 @@ function handleClientStreaming(call, handler, metadata) {
   });
 }
 
+/**
+ * Fully handle a bidirectional streaming call
+ * @param {grpc.Call} call The call to handle
+ * @param {Object} handler Request handler object for the method that was called
+ * @param {Object} metadata Metadata from the client
+ */
 function handleBidiStreaming(call, handler, metadata) {
   var stream = new ServerDuplexStream(call, handler.serialize,
                                       handler.deserialize);

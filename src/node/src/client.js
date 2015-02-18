@@ -51,6 +51,13 @@ var util = require('util');
 
 util.inherits(ClientWritableStream, Writable);
 
+/**
+ * A stream that the client can write to. Used for calls that are streaming from
+ * the client side.
+ * @constructor
+ * @param {grpc.Call} call The call object to send data with
+ * @param {function(*):Buffer=} serialize Serialization function for writes.
+ */
 function ClientWritableStream(call, serialize) {
   Writable.call(this, {objectMode: true});
   this.call = call;
@@ -84,6 +91,13 @@ ClientWritableStream.prototype._write = _write;
 
 util.inherits(ClientReadableStream, Readable);
 
+/**
+ * A stream that the client can read from. Used for calls that are streaming
+ * from the server side.
+ * @constructor
+ * @param {grpc.Call} call The call object to read data with
+ * @param {function(Buffer):*=} deserialize Deserialization function for reads
+ */
 function ClientReadableStream(call, deserialize) {
   Readable.call(this, {objectMode: true});
   this.call = call;
@@ -92,6 +106,10 @@ function ClientReadableStream(call, deserialize) {
   this.deserialize = common.wrapIgnoreNull(deserialize);
 }
 
+/**
+ * Read the next object from the stream.
+ * @param {*} size Ignored because we use objectMode=true
+ */
 function _read(size) {
   var self = this;
   /**
@@ -133,8 +151,8 @@ ClientReadableStream.prototype._read = _read;
 util.inherits(ClientDuplexStream, Duplex);
 
 /**
- * Class for representing a gRPC client side stream as a Node stream. Extends
- * from stream.Duplex.
+ * A stream that the client can read from or write to. Used for calls with
+ * duplex streaming.
  * @constructor
  * @param {grpc.Call} call Call object to proxy
  * @param {function(*):Buffer=} serialize Serialization function for requests
@@ -160,6 +178,9 @@ function ClientDuplexStream(call, serialize, deserialize) {
 ClientDuplexStream.prototype._read = _read;
 ClientDuplexStream.prototype._write = _write;
 
+/**
+ * Cancel the ongoing call
+ */
 function cancel() {
   this.call.cancel();
 }
