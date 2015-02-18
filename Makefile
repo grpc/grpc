@@ -3009,6 +3009,7 @@ LIBGRPC++_SRC = \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/async_unary_call.h \
     include/grpc++/channel_arguments.h \
     include/grpc++/channel_interface.h \
     include/grpc++/client_context.h \
