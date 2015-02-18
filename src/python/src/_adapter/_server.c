@@ -85,6 +85,19 @@ static PyObject *pygrpc_server_add_http2_addr(Server *self, PyObject *args) {
   return PyInt_FromLong(port);
 }
 
+static PyObject *pygrpc_server_add_secure_http2_addr(Server *self,
+                                                     PyObject *args) {
+  const char *addr;
+  int port;
+  PyArg_ParseTuple(args, "s", &addr);
+  port = grpc_server_add_secure_http2_port(self->c_server, addr);
+  if (port == 0) {
+    PyErr_SetString(PyExc_RuntimeError, "Couldn't add port to server!");
+    return NULL;
+  }
+  return PyInt_FromLong(port);
+}
+
 static PyObject *pygrpc_server_start(Server *self) {
   grpc_server_start(self->c_server);
 
@@ -118,6 +131,8 @@ static PyObject *pygrpc_server_stop(Server *self) {
 static PyMethodDef methods[] = {
     {"add_http2_addr", (PyCFunction)pygrpc_server_add_http2_addr, METH_VARARGS,
      "Add an HTTP2 address."},
+    {"add_secure_http2_addr", (PyCFunction)pygrpc_server_add_secure_http2_addr,
+     METH_VARARGS, "Add a secure HTTP2 address."},
     {"start", (PyCFunction)pygrpc_server_start, METH_NOARGS,
      "Starts the server."},
     {"service", (PyCFunction)pygrpc_server_service, METH_VARARGS,

@@ -49,41 +49,78 @@ static grpc_byte_buffer *the_buffer;
 static grpc_channel *channel;
 static grpc_completion_queue *cq;
 static grpc_call *call;
+static grpc_op ops[6];
+static grpc_op stream_init_op;
+static grpc_op stream_step_ops[2];
+static grpc_metadata_array initial_metadata_recv;
+static grpc_metadata_array trailing_metadata_recv;
+static grpc_byte_buffer *response_payload_recv = NULL;
+static grpc_status_code status;
+static char *details = NULL;
+static size_t details_capacity = 0;
+static grpc_op *op;
 
-static void init_ping_pong_request(void) {}
+static void init_ping_pong_request(void) {
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+
+  op = ops;
+
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = the_buffer;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &response_payload_recv;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op++;
+}
 
 static void step_ping_pong_request(void) {
-  call = grpc_channel_create_call_old(channel, "/Reflector/reflectUnary",
-                                      "localhost", gpr_inf_future);
-  GPR_ASSERT(grpc_call_invoke_old(call, cq, (void *)1, (void *)1,
-                                  GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
-  GPR_ASSERT(grpc_call_start_write_old(call, the_buffer, (void *)1,
-                                       GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
-  GPR_ASSERT(grpc_call_start_read_old(call, (void *)1) == GRPC_CALL_OK);
-  GPR_ASSERT(grpc_call_writes_done_old(call, (void *)1) == GRPC_CALL_OK);
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  call = grpc_channel_create_call(channel, cq, "/Reflector/reflectUnary",
+                                  "localhost", gpr_inf_future);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, op - ops, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
   grpc_call_destroy(call);
+  grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
 }
 
 static void init_ping_pong_stream(void) {
-  call = grpc_channel_create_call_old(channel, "/Reflector/reflectStream",
-                                      "localhost", gpr_inf_future);
-  GPR_ASSERT(grpc_call_invoke_old(call, cq, (void *)1, (void *)1, 0) ==
-             GRPC_CALL_OK);
+  call = grpc_channel_create_call(channel, cq, "/Reflector/reflectStream",
+                                  "localhost", gpr_inf_future);
+  stream_init_op.op = GRPC_OP_SEND_INITIAL_METADATA;
+  stream_init_op.data.send_initial_metadata.count = 0;
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, &stream_init_op, 1, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+
+  stream_step_ops[0].op = GRPC_OP_SEND_MESSAGE;
+  stream_step_ops[0].data.send_message = the_buffer;
+  stream_step_ops[1].op = GRPC_OP_RECV_MESSAGE;
+  stream_step_ops[1].data.recv_message = &response_payload_recv;
 }
 
 static void step_ping_pong_stream(void) {
-  GPR_ASSERT(grpc_call_start_write_old(call, the_buffer, (void *)1, 0) ==
-             GRPC_CALL_OK);
-  GPR_ASSERT(grpc_call_start_read_old(call, (void *)1) == GRPC_CALL_OK);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, stream_step_ops, 2, (void *)1));
   grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
-  grpc_event_finish(grpc_completion_queue_next(cq, gpr_inf_future));
+  grpc_byte_buffer_destroy(response_payload_recv);
 }
 
 static double now(void) {
@@ -99,7 +136,8 @@ typedef struct {
 
 static const scenario scenarios[] = {
     {"ping-pong-request", init_ping_pong_request, step_ping_pong_request},
-    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream}, };
+    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
+};
 
 int main(int argc, char **argv) {
   gpr_slice slice = gpr_slice_from_copied_string("x");
@@ -148,6 +186,7 @@ int main(int argc, char **argv) {
   cq = grpc_completion_queue_create();
   the_buffer = grpc_byte_buffer_create(&slice, payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
+
   sc.init();
 
   for (i = 0; i < 1000; i++) {

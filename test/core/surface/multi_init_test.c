@@ -31,37 +31,33 @@
  *
  */
 
-#ifndef __GRPCPP_EXAMPLES_TIPS_PUBLISHER_H_
-#define __GRPCPP_EXAMPLES_TIPS_PUBLISHER_H_
+#include <grpc/grpc.h>
+#include "test/core/util/test_config.h"
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+static void test(int rounds) {
+  int i;
+  for (i = 0; i < rounds; i++) {
+    grpc_init();
+  }
+  for (i = 0; i < rounds; i++) {
+    grpc_shutdown();
+  }
+}
 
-#include "examples/tips/pubsub.pb.h"
+static void test_mixed() {
+  grpc_init();
+  grpc_init();
+  grpc_shutdown();
+  grpc_init();
+  grpc_shutdown();
+  grpc_shutdown();
+}
 
-namespace grpc {
-namespace examples {
-namespace tips {
-
-class Publisher {
- public:
-  Publisher(std::shared_ptr<ChannelInterface> channel);
-  void Shutdown();
-
-  Status CreateTopic(const grpc::string& topic);
-  Status GetTopic(const grpc::string& topic);
-  Status DeleteTopic(const grpc::string& topic);
-  Status ListTopics(const grpc::string& project_id,
-                    std::vector<grpc::string>* topics);
-
-  Status Publish(const grpc::string& topic, const grpc::string& data);
-
- private:
-  std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
-};
-
-}  // namespace tips
-}  // namespace examples
-}  // namespace grpc
-
-#endif  // __GRPCPP_EXAMPLES_TIPS_PUBLISHER_H_
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test(1);
+  test(2);
+  test(3);
+  test_mixed();
+  return 0;
+}

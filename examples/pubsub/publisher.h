@@ -31,29 +31,37 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_TAG_H_
-#define NET_GRPC_NODE_TAG_H_
+#ifndef __GRPCPP_EXAMPLES_PUBSUB_PUBLISHER_H_
+#define __GRPCPP_EXAMPLES_PUBSUB_PUBLISHER_H_
 
-#include <node.h>
+#include <grpc++/channel_interface.h>
+#include <grpc++/status.h>
+
+#include "examples/pubsub/pubsub.pb.h"
 
 namespace grpc {
-namespace node {
+namespace examples {
+namespace pubsub {
 
-/* Create a void* tag that can be passed to various grpc_call functions from
-   a javascript value and the javascript wrapper for the call. The call can be
-   null. */
-void *CreateTag(v8::Handle<v8::Value> tag, v8::Handle<v8::Value> call);
-/* Return the javascript value stored in the tag */
-v8::Handle<v8::Value> GetTagHandle(void *tag);
-/* Returns true if the call was set (non-null) when the tag was created */
-bool TagHasCall(void *tag);
-/* Returns the javascript wrapper for the call associated with this tag */
-v8::Handle<v8::Value> TagGetCall(void *call);
-/* Destroy the tag and all resources it is holding. It is illegal to call any
-   of these other functions on a tag after it has been destroyed. */
-void DestroyTag(void *tag);
+class Publisher {
+ public:
+  Publisher(std::shared_ptr<ChannelInterface> channel);
+  void Shutdown();
 
-}  // namespace node
+  Status CreateTopic(const grpc::string& topic);
+  Status GetTopic(const grpc::string& topic);
+  Status DeleteTopic(const grpc::string& topic);
+  Status ListTopics(const grpc::string& project_id,
+                    std::vector<grpc::string>* topics);
+
+  Status Publish(const grpc::string& topic, const grpc::string& data);
+
+ private:
+  std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
+};
+
+}  // namespace pubsub
+}  // namespace examples
 }  // namespace grpc
 
-#endif  // NET_GRPC_NODE_TAG_H_
+#endif  // __GRPCPP_EXAMPLES_PUBSUB_PUBLISHER_H_

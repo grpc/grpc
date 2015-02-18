@@ -31,18 +31,38 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_EVENT_H_
-#define NET_GRPC_NODE_EVENT_H_
+#ifndef __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
+#define __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
 
-#include <node.h>
-#include "grpc/grpc.h"
+#include <grpc++/channel_interface.h>
+#include <grpc++/status.h>
+
+#include "examples/pubsub/pubsub.pb.h"
 
 namespace grpc {
-namespace node {
+namespace examples {
+namespace pubsub {
 
-v8::Handle<v8::Value> CreateEventObject(grpc_event *event);
+class Subscriber {
+ public:
+  Subscriber(std::shared_ptr<ChannelInterface> channel);
+  void Shutdown();
 
-}  // namespace node
+  Status CreateSubscription(const grpc::string& topic,
+                            const grpc::string& name);
+
+  Status GetSubscription(const grpc::string& name, grpc::string* topic);
+
+  Status DeleteSubscription(const grpc::string& name);
+
+  Status Pull(const grpc::string& name, grpc::string* data);
+
+ private:
+  std::unique_ptr<tech::pubsub::SubscriberService::Stub> stub_;
+};
+
+}  // namespace pubsub
+}  // namespace examples
 }  // namespace grpc
 
-#endif  // NET_GRPC_NODE_EVENT_H_
+#endif  // __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_

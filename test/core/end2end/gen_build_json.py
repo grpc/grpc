@@ -8,6 +8,7 @@ import simplejson
 END2END_FIXTURES = [
     'chttp2_fake_security',
     'chttp2_fullstack',
+    'chttp2_fullstack_uds',
     'chttp2_simple_ssl_fullstack',
     'chttp2_simple_ssl_with_oauth2_fullstack',
     'chttp2_socket_pair',
@@ -25,6 +26,7 @@ END2END_TESTS = [
     'disappearing_server',
     'early_server_shutdown_finishes_inflight_calls',
     'early_server_shutdown_finishes_tags',
+    'empty_batch',
     'graceful_server_shutdown',
     'invoke_large_request',
     'max_concurrent_streams',
@@ -123,4 +125,3 @@ def main():
 
 if __name__ == '__main__':
   main()
-
