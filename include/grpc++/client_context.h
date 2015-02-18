@@ -81,12 +81,12 @@ class ClientContext {
   void AddMetadata(const grpc::string &meta_key,
                    const grpc::string &meta_value);
 
-  std::multimap<grpc::string, grpc::string> GetServerInitialMetadata() {
+  const std::multimap<grpc::string, grpc::string>& GetServerInitialMetadata() {
     GPR_ASSERT(initial_metadata_received_);
     return recv_initial_metadata_;
   }
 
-  std::multimap<grpc::string, grpc::string> GetServerTrailingMetadata() {
+  const std::multimap<grpc::string, grpc::string>& GetServerTrailingMetadata() {
     // TODO(yangg) check finished
     return trailing_metadata_;
   }
