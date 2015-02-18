@@ -60,30 +60,4 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
   GPR_ASSERT((cq.Pluck(&buf) && buf.got_message) || !status.IsOk());
   return status;
 }
-
-class ClientAsyncRequest final : public CallOpBuffer {
- public:
-  void FinalizeResult(void **tag, bool *status) override {
-    CallOpBuffer::FinalizeResult(tag, status);
-    delete this;
-  }
-};
-
-void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                    ClientContext *context,
-                    const google::protobuf::Message &request,
-                    google::protobuf::Message *result, Status *status,
-                    CompletionQueue *cq, void *tag) {
-  ClientAsyncRequest *buf = new ClientAsyncRequest;
-  buf->Reset(tag);
-  Call call(channel->CreateCall(method, context, cq));
-  buf->AddSendInitialMetadata(context);
-  buf->AddSendMessage(request);
-  buf->AddRecvInitialMetadata(context);
-  buf->AddRecvMessage(result);
-  buf->AddClientSendClose();
-  buf->AddClientRecvStatus(context, status);
-  call.PerformOps(buf);
-}
-
 }  // namespace grpc

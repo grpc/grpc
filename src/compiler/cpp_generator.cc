@@ -127,6 +127,8 @@ std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
       "class ServerContext;\n";
   if (HasUnaryCalls(file)) {
     temp.append(
+        "template <class OutMessage> class ClientAsyncResponseReader;\n");
+    temp.append(
         "template <class OutMessage> class ServerAsyncResponseWriter;\n");
   }
   if (HasClientOnlyStreaming(file)) {
@@ -160,7 +162,8 @@ std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file) {
 }
 
 std::string GetSourceIncludes() {
-  return "#include <grpc++/channel_interface.h>\n"
+  return "#include <grpc++/async_unary_call.h>\n"
+         "#include <grpc++/channel_interface.h>\n"
          "#include <grpc++/impl/client_unary_call.h>\n"
          "#include <grpc++/impl/rpc_method.h>\n"
          "#include <grpc++/impl/rpc_service_method.h>\n"
@@ -181,9 +184,9 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
                    "::grpc::Status $Method$(::grpc::ClientContext* context, "
                    "const $Request$& request, $Response$* response);\n");
     printer->Print(*vars,
-                   "void $Method$(::grpc::ClientContext* context, "
-                   "const $Request$& request, $Response$* response, "
-                   "::grpc::Status* status, "
+                   "::grpc::ClientAsyncResponseReader< $Response$>* "
+                   "$Method$(::grpc::ClientContext* context, "
+                   "const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag);\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
@@ -378,14 +381,15 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
                    "context, request, response);\n"
                    "}\n\n");
     printer->Print(*vars,
-                   "void $Service$::Stub::$Method$("
-                   "::grpc::ClientContext* context, "
-                   "const $Request$& request, $Response$* response, ::grpc::Status* status, "
+                   "::grpc::ClientAsyncResponseReader< $Response$>* "
+                   "$Service$::Stub::$Method$(::grpc::ClientContext* context, "
+                   "const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
-                   "  ::grpc::AsyncUnaryCall(channel(),"
+                   "  return new ClientAsyncResponseReader< $Response$>("
+                   "channel(), cq, "
                    "::grpc::RpcMethod($Service$_method_names[$Idx$]), "
-                   "context, request, response, status, cq, tag);\n"
+                   "context, request, tag);\n"
                    "}\n\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(

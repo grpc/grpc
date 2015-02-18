@@ -72,6 +72,8 @@ template <class W>
 class ClientAsyncWriter;
 template <class R, class W>
 class ClientAsyncReaderWriter;
+template <class R>
+class ClientAsyncResponseReader;
 
 class ClientContext {
  public:
@@ -119,6 +121,8 @@ class ClientContext {
   friend class ::grpc::ClientAsyncWriter;
   template <class R, class W>
   friend class ::grpc::ClientAsyncReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientAsyncResponseReader;
 
   grpc_call *call() { return call_; }
   void set_call(grpc_call *call) {
