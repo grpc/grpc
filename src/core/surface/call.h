@@ -89,6 +89,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             const void *server_transport_data);
 
 void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
+grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
 void grpc_call_internal_ref(grpc_call *call);
 void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);

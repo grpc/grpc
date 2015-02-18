@@ -35,32 +35,30 @@
 #define __GRPCPP_CHANNEL_INTERFACE_H__
 
 #include <grpc++/status.h>
+#include <grpc++/impl/call.h>
 
 namespace google {
 namespace protobuf {
 class Message;
-}
-}
+}  // namespace protobuf
+}  // namespace google
+
+struct grpc_call;
 
 namespace grpc {
-
+class Call;
+class CallOpBuffer;
 class ClientContext;
+class CompletionQueue;
 class RpcMethod;
-class StreamContextInterface;
+class CallInterface;
 
-class ChannelInterface {
+class ChannelInterface : public CallHook {
  public:
   virtual ~ChannelInterface() {}
 
-  virtual Status StartBlockingRpc(const RpcMethod& method,
-                                  ClientContext* context,
-                                  const google::protobuf::Message& request,
-                                  google::protobuf::Message* result) = 0;
-
-  virtual StreamContextInterface* CreateStream(
-      const RpcMethod& method, ClientContext* context,
-      const google::protobuf::Message* request,
-      google::protobuf::Message* result) = 0;
+  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
+                          CompletionQueue *cq) = 0;
 };
 
 }  // namespace grpc
