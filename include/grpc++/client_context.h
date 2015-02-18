@@ -119,16 +119,6 @@ class ClientContext {
   friend class ::grpc::ClientAsyncWriter;
   template <class R, class W>
   friend class ::grpc::ClientAsyncReaderWriter;
-  friend Status BlockingUnaryCall(ChannelInterface *channel,
-                                  const RpcMethod &method,
-                                  ClientContext *context,
-                                  const google::protobuf::Message &request,
-                                  google::protobuf::Message *result);
-  friend void AsyncUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                             ClientContext *context,
-                             const google::protobuf::Message &request,
-                             google::protobuf::Message *result, Status *status,
-                             CompletionQueue *cq, void *tag);
 
   grpc_call *call() { return call_; }
   void set_call(grpc_call *call) {

@@ -57,4 +57,14 @@ ServerContext::~ServerContext() {
   }
 }
 
+void ServerContext::AddInitialMetadata(const grpc::string& key,
+                                  const grpc::string& value) {
+  initial_metadata_.insert(std::make_pair(key, value));
+}
+
+void ServerContext::AddTrailingMetadata(const grpc::string& key,
+                                  const grpc::string& value) {
+  trailing_metadata_.insert(std::make_pair(key, value));
+}
+
 }  // namespace grpc
