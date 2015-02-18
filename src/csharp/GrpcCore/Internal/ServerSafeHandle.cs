@@ -52,13 +52,8 @@ namespace Google.GRPC.Core.Internal
         [DllImport("grpc_csharp_ext.dll")]
         static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
 
-        // TODO: check int representation size
         [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
-
-        // TODO: check int representation size
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr);
+        static extern Int32 grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_start(ServerSafeHandle server);
@@ -85,7 +80,6 @@ namespace Google.GRPC.Core.Internal
 
         public int AddPort(string addr)
         {
-            // TODO: also grpc_server_add_secure_http2_port...
             return grpcsharp_server_add_http2_port(this, addr);
         }
 
