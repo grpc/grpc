@@ -40,13 +40,13 @@ TEST = (os.environ.get('TEST', 'false') == 'true')
 _TOP_LEVEL_KEYS = ['settings', 'filegroups', 'libs', 'targets']
 _VERSION_KEYS = ['major', 'minor', 'micro', 'build']
 _ELEM_KEYS = [
-    'name', 
-    'build', 
+    'name',
+    'build',
     'run',
-    'language', 
-    'public_headers', 
-    'headers', 
-    'src', 
+    'language',
+    'public_headers',
+    'headers',
+    'src',
     'deps']
 
 def rebuild_as_ordered_dict(indict, special_keys):
