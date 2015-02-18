@@ -59,9 +59,9 @@
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\RecordingObserver.cs" />
     <Compile Include="Utils\RecordingQueue.cs" />
-    <Compile Include="Internal\BatchContextSafeHandle.cs" />
     <Compile Include="Internal\ClientStreamingInputObserver.cs" />
     <Compile Include="Internal\ServerStreamingOutputObserver.cs" />
+    <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
