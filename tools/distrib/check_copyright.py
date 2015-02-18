@@ -29,7 +29,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+import argparse
 import os
 import sys
 import subprocess
@@ -38,6 +38,21 @@ import subprocess
 ROOT = os.path.abspath(
     os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
+
+# parse command line
+argp = argparse.ArgumentParser(description='copyright checker')
+argp.add_argument('-o', '--output', 
+                  default='details', 
+                  choices=['list', 'details'])
+argp.add_argument('-s', '--skips', 
+                  default=0,
+                  action='store_const',
+                  const=1)
+argp.add_argument('-a', '--ancient', 
+                  default=0, 
+                  action='store_const',
+                  const=1)
+args = argp.parse_args()
 
 # open the license text
 with open('LICENSE') as f:
@@ -68,12 +83,19 @@ LICENSE_TEXT = dict(
 OLD_LICENSE_TEXT = dict(
     (k, v.replace('2015', '2014')) for k, v in LICENSE_TEXT.iteritems())
 
+def log(cond, why, filename):
+  if not cond: return
+  if args.output == 'details':
+    print '%s: %s' % (why, filename)
+  else:
+    print filename
+
 # scan files, validate the text
 for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
                                         shell=True).splitlines():
   ext = os.path.splitext(filename)[1]
   if ext not in LICENSE_TEXT: 
-    #print 'pass: %s' % filename
+    log(args.skips, 'skip', filename)
     continue
   license = LICENSE_TEXT[ext]
   old_license = OLD_LICENSE_TEXT[ext]
@@ -82,8 +104,7 @@ for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
   if license in text:
     pass
   elif old_license in text:
-    pass
-    #print 'old license in: %s' % filename
+    log(args.ancient, 'old', filename)
   elif 'DO NOT EDIT' not in text and 'AssemblyInfo.cs' not in filename:
-    print 'no license in: %s' % filename
+    log(1, 'missing', filename)
 
