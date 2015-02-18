@@ -9,9 +9,9 @@ See grpc/INSTALL for installation instructions for various platforms.
 
 #Repository Structure
 
-This repository contains source code for gRPC libraries for multiple lanugages.
+This repository contains source code for gRPC libraries for multiple lanugages written on top
+of shared C core library [src/core] (src/core).
 
-   * C source code: [src/core] (src/core)
    * C++ source code: [src/cpp] (src/cpp)
    * Python source code: [src/python] (src/python)
    * Python source code: [src/ruby] (src/ruby)
