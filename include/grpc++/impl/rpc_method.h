@@ -37,8 +37,8 @@
 namespace google {
 namespace protobuf {
 class Message;
-}
-}
+}  // namespace protobuf
+}  // namespace google
 
 namespace grpc {
 

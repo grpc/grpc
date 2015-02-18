@@ -31,59 +31,27 @@
  *
  */
 
-#include <grpc++/async_server.h>
+#ifndef __GRPC_INTERNAL_SUPPORT_CPU_H__
+#define __GRPC_INTERNAL_SUPPORT_CPU_H__
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc++/completion_queue.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace grpc {
+/* Interface providing CPU information for currently running system */
 
-AsyncServer::AsyncServer(CompletionQueue *cc)
-    : started_(false), shutdown_(false) {
-  server_ = grpc_server_create(cc->cq(), nullptr);
-}
+/* Return the number of CPU cores on the current system. Will return 0 if
+   if information is not available. */
+unsigned gpr_cpu_num_cores(void);
 
-AsyncServer::~AsyncServer() {
-  std::unique_lock<std::mutex> lock(shutdown_mu_);
-  if (started_ && !shutdown_) {
-    lock.unlock();
-    Shutdown();
-  }
-  grpc_server_destroy(server_);
-}
+/* Return the CPU on which the current thread is executing; N.B. This should
+   be considered advisory only - it is possible that the thread is switched
+   to a different CPU at any time. Returns a value in range
+   [0, gpr_cpu_num_cores() - 1] */
+unsigned gpr_cpu_current_cpu(void);
 
-void AsyncServer::AddPort(const grpc::string &addr) {
-  GPR_ASSERT(!started_);
-  int success = grpc_server_add_http2_port(server_, addr.c_str());
-  GPR_ASSERT(success);
-}
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
-void AsyncServer::Start() {
-  GPR_ASSERT(!started_);
-  started_ = true;
-  grpc_server_start(server_);
-}
-
-void AsyncServer::RequestOneRpc() {
-  GPR_ASSERT(started_);
-  std::unique_lock<std::mutex> lock(shutdown_mu_);
-  if (shutdown_) {
-    return;
-  }
-  lock.unlock();
-  grpc_call_error err = grpc_server_request_call_old(server_, nullptr);
-  GPR_ASSERT(err == GRPC_CALL_OK);
-}
-
-void AsyncServer::Shutdown() {
-  std::unique_lock<std::mutex> lock(shutdown_mu_);
-  if (started_ && !shutdown_) {
-    shutdown_ = true;
-    lock.unlock();
-    // TODO(yangg) should we shutdown without start?
-    grpc_server_shutdown(server_);
-  }
-}
-
-}  // namespace grpc
+#endif /* __GRPC_INTERNAL_SUPPORT_CPU_H__ */

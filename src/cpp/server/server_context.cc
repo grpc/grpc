@@ -31,6 +31,30 @@
  *
  */
 
-#include "src/cpp/server/server_context_impl.h"
+#include <grpc++/server_context.h>
+#include <grpc++/impl/call.h>
+#include <grpc/grpc.h>
+#include "src/cpp/util/time.h"
 
-namespace grpc {}  // namespace grpc
+namespace grpc {
+
+ServerContext::ServerContext() {}
+
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata *metadata,
+                             size_t metadata_count)
+    : deadline_(Timespec2Timepoint(deadline)) {
+  for (size_t i = 0; i < metadata_count; i++) {
+    client_metadata_.insert(std::make_pair(
+        grpc::string(metadata[i].key),
+        grpc::string(metadata[i].value,
+                     metadata[i].value + metadata[i].value_length)));
+  }
+}
+
+ServerContext::~ServerContext() {
+  if (call_) {
+    grpc_call_destroy(call_);
+  }
+}
+
+}  // namespace grpc

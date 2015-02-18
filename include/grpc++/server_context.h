@@ -35,15 +35,77 @@
 #define __GRPCPP_SERVER_CONTEXT_H_
 
 #include <chrono>
+#include <map>
+
+#include "config.h"
+
+struct gpr_timespec;
+struct grpc_metadata;
+struct grpc_call;
 
 namespace grpc {
 
-// Interface of server side rpc context.
-class ServerContext {
- public:
-  virtual ~ServerContext() {}
+template <class W, class R>
+class ServerAsyncReader;
+template <class W>
+class ServerAsyncWriter;
+template <class W>
+class ServerAsyncResponseWriter;
+template <class R, class W>
+class ServerAsyncReaderWriter;
+template <class R>
+class ServerReader;
+template <class W>
+class ServerWriter;
+template <class R, class W>
+class ServerReaderWriter;
 
-  virtual std::chrono::system_clock::time_point absolute_deadline() const = 0;
+class CallOpBuffer;
+class Server;
+
+// Interface of server side rpc context.
+class ServerContext final {
+ public:
+  ServerContext();  // for async calls
+  ~ServerContext();
+
+  std::chrono::system_clock::time_point absolute_deadline() {
+    return deadline_;
+  }
+
+  void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
+  void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
+
+  std::multimap<grpc::string, grpc::string> client_metadata() {
+    return client_metadata_;
+  }
+
+ private:
+  friend class ::grpc::Server;
+  template <class W, class R>
+  friend class ::grpc::ServerAsyncReader;
+  template <class W>
+  friend class ::grpc::ServerAsyncWriter;
+  template <class W>
+  friend class ::grpc::ServerAsyncResponseWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerAsyncReaderWriter;
+  template <class R>
+  friend class ::grpc::ServerReader;
+  template <class W>
+  friend class ::grpc::ServerWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerReaderWriter;
+
+  ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
+                size_t metadata_count);
+
+  std::chrono::system_clock::time_point deadline_;
+  grpc_call* call_ = nullptr;
+  bool sent_initial_metadata_ = false;
+  std::multimap<grpc::string, grpc::string> client_metadata_;
+  std::multimap<grpc::string, grpc::string> initial_metadata_;
+  std::multimap<grpc::string, grpc::string> trailing_metadata_;
 };
 
 }  // namespace grpc

@@ -59,9 +59,9 @@ static void new_transport(void *server, grpc_endpoint *tcp) {
 }
 
 /* Server callback: start listening on our ports */
-static void start(grpc_server *server, void *tcpp, grpc_pollset *pollset) {
+static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets, size_t pollset_count) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start(tcp, pollset, new_transport, server);
+  grpc_tcp_server_start(tcp, pollsets, pollset_count, new_transport, server);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further

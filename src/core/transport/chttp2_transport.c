@@ -483,9 +483,6 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   ref_transport(t);
   gpr_mu_unlock(&t->mu);
 
-  ref_transport(t);
-  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
-
   sr = setup(arg, &t->base, t->metadata_context);
 
   lock(t);
@@ -494,6 +491,10 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->calling_back = 0;
   if (t->destroying) gpr_cv_signal(&t->cv);
   unlock(t);
+
+  ref_transport(t);
+  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
+
   unref_transport(t);
 }
 
@@ -1023,6 +1024,8 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 int send_rst) {
   int had_outgoing;
   char buffer[GPR_LTOA_MIN_BUFSIZE];
+
+  gpr_log(GPR_DEBUG, "cancel %d", id);
 
   if (s) {
     /* clear out any unreported input & output: nobody cares anymore */

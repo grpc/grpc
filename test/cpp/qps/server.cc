@@ -128,7 +128,7 @@ static void RunServer() {
 
   ServerBuilder builder;
   builder.AddPort(server_address);
-  builder.RegisterService(service.service());
+  builder.RegisterService(&service);
 
   std::unique_ptr<ThreadPool> pool(new ThreadPool(FLAGS_server_threads));
   builder.SetThreadPool(pool.get());

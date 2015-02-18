@@ -166,7 +166,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq, tag(2)));
+                                                      f.server_cq,
+                                                      tag(2)));
   cq_expect_completion(v_server, tag(2), GRPC_OP_OK);
   cq_verify(v_server);
 

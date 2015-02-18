@@ -258,6 +258,10 @@ void grpc_call_set_completion_queue(grpc_call *call,
   call->cq = cq;
 }
 
+grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
+  return call->cq;
+}
+
 void grpc_call_internal_ref(grpc_call *c) { gpr_ref(&c->internal_refcount); }
 
 static void destroy_call(void *call, int ignored_success) {
