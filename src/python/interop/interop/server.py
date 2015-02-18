@@ -34,7 +34,7 @@ import logging
 import pkg_resources
 import time
 
-from grpc_early_adopter import implementations
+from grpc.early_adopter import implementations
 
 from interop import methods
 

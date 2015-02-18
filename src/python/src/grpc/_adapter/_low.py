@@ -27,58 +27,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""A Python interface for GRPC C core structures and behaviors."""
 
-from distutils import core as _core
+import atexit
+import gc
 
-_EXTENSION_SOURCES = (
-    'grpc/_adapter/_c.c',
-    'grpc/_adapter/_call.c',
-    'grpc/_adapter/_channel.c',
-    'grpc/_adapter/_completion_queue.c',
-    'grpc/_adapter/_error.c',
-    'grpc/_adapter/_server.c',
-    'grpc/_adapter/_server_credentials.c',
-)
+from grpc._adapter import _c
+from grpc._adapter import _datatypes
 
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    '.',
-)
+def _shut_down():
+  # force garbage collection before shutting down grpc, to ensure all grpc
+  # objects are cleaned up
+  gc.collect()
+  _c.shut_down()
 
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
+_c.init()
+atexit.register(_shut_down)
 
-_EXTENSION_MODULE = _core.Extension(
-    'grpc._adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    )
-
-_PACKAGES=(
-    'grpc',
-    'grpc._adapter',
-    'grpc._junkdrawer',
-    'grpc.early_adopter',
-    'grpc.framework',
-    'grpc.framework.base',
-    'grpc.framework.base.packets',
-    'grpc.framework.common',
-    'grpc.framework.face',
-    'grpc.framework.face.testing',
-    'grpc.framework.foundation',
-)
-
-_PACKAGE_DIRECTORIES = {
-    'grpc': 'grpc',
-    'grpc._adapter': 'grpc/_adapter',
-    'grpc._junkdrawer': 'grpc/_junkdrawer',
-    'grpc.early_adopter': 'grpc/early_adopter',
-    'grpc.framework': 'grpc/framework',
-}
-
-_core.setup(
-    name='grpc-2015', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+# pylint: disable=invalid-name
+Code = _datatypes.Code
+Status = _datatypes.Status
+Event = _datatypes.Event
+Call = _c.Call
+Channel = _c.Channel
+CompletionQueue = _c.CompletionQueue
+Server = _c.Server
+ServerCredentials = _c.ServerCredentials
+# pylint: enable=invalid-name

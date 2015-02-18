@@ -27,58 +27,47 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python package."""
+"""Utilities for testing stream-related code."""
 
-from distutils import core as _core
+from grpc.framework.foundation import stream
 
-_EXTENSION_SOURCES = (
-    'grpc/_adapter/_c.c',
-    'grpc/_adapter/_call.c',
-    'grpc/_adapter/_channel.c',
-    'grpc/_adapter/_completion_queue.c',
-    'grpc/_adapter/_error.c',
-    'grpc/_adapter/_server.c',
-    'grpc/_adapter/_server_credentials.c',
-)
 
-_EXTENSION_INCLUDE_DIRECTORIES = (
-    '.',
-)
+class TestConsumer(stream.Consumer):
+  """A stream.Consumer instrumented for testing.
 
-_EXTENSION_LIBRARIES = (
-    'gpr',
-    'grpc',
-)
+  Attributes:
+    calls: A sequence of value-termination pairs describing the history of calls
+      made on this object.
+  """
 
-_EXTENSION_MODULE = _core.Extension(
-    'grpc._adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
-    )
+  def __init__(self):
+    self.calls = []
 
-_PACKAGES=(
-    'grpc',
-    'grpc._adapter',
-    'grpc._junkdrawer',
-    'grpc.early_adopter',
-    'grpc.framework',
-    'grpc.framework.base',
-    'grpc.framework.base.packets',
-    'grpc.framework.common',
-    'grpc.framework.face',
-    'grpc.framework.face.testing',
-    'grpc.framework.foundation',
-)
+  def consume(self, value):
+    """See stream.Consumer.consume for specification."""
+    self.calls.append((value, False))
 
-_PACKAGE_DIRECTORIES = {
-    'grpc': 'grpc',
-    'grpc._adapter': 'grpc/_adapter',
-    'grpc._junkdrawer': 'grpc/_junkdrawer',
-    'grpc.early_adopter': 'grpc/early_adopter',
-    'grpc.framework': 'grpc/framework',
-}
+  def terminate(self):
+    """See stream.Consumer.terminate for specification."""
+    self.calls.append((None, True))
 
-_core.setup(
-    name='grpc-2015', version='0.0.1',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES)
+  def consume_and_terminate(self, value):
+    """See stream.Consumer.consume_and_terminate for specification."""
+    self.calls.append((value, True))
+
+  def is_legal(self):
+    """Reports whether or not a legal sequence of calls has been made."""
+    terminated = False
+    for value, terminal in self.calls:
+      if terminated:
+        return False
+      elif terminal:
+        terminated = True
+      elif value is None:
+        return False
+    else:  # pylint: disable=useless-else-on-loop
+      return True
+
+  def values(self):
+    """Returns the sequence of values that have been passed to this Consumer."""
+    return [value for value, _ in self.calls if value]
