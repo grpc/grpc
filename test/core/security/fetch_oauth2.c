@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
   gpr_cv_init(&sync.cv);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, on_oauth2_response, &sync);
+  grpc_credentials_get_request_metadata(creds, "", on_oauth2_response, &sync);
 
   gpr_mu_lock(&sync.mu);
   while (!sync.is_done) gpr_cv_wait(&sync.cv, &sync.mu, gpr_inf_future);
