@@ -140,7 +140,8 @@ namespace Google.GRPC.Core.Tests
             server.ShutdownAsync().Wait();
         }
 
-        private void HandleUnaryEchoString(string request, IObserver<string> responseObserver) {
+        private void HandleUnaryEchoString(string request, IObserver<string> responseObserver)
+        {
             responseObserver.OnNext(request);
             responseObserver.OnCompleted();
         }
