@@ -59,6 +59,96 @@ class CancellableIterator(object):
     raise NotImplementedError()
 
 
+class UnaryUnarySyncAsync(object):
+  """Affords invoking a unary-unary RPC synchronously or asynchronously.
+
+  Values implementing this interface are directly callable and present an
+  "async" method. Both calls take a request value and a numeric timeout.
+  Direct invocation of a value of this type invokes its associated RPC and
+  blocks until the RPC's response is available. Calling the "async" method
+  of a value of this type invokes its associated RPC and immediately returns a
+  future.Future bound to the asynchronous execution of the RPC.
+  """
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def __call__(self, request, timeout):
+    """Synchronously invokes the underlying RPC.
+
+    Args:
+      request: The request value for the RPC.
+      timeout: A duration of time in seconds to allow for the RPC.
+
+    Returns:
+      The response value for the RPC.
+
+    Raises:
+      exceptions.RpcError: Indicating that the RPC was aborted.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def async(self, request, timeout):
+    """Asynchronously invokes the underlying RPC.
+
+    Args:
+      request: The request value for the RPC.
+      timeout: A duration of time in seconds to allow for the RPC.
+
+    Returns:
+      A future.Future representing the RPC. In the event of RPC completion, the
+        returned Future's result value will be the response value of the RPC.
+        In the event of RPC abortion, the returned Future's exception value
+        will be an exceptions.RpcError.
+    """
+    raise NotImplementedError()
+
+
+class StreamUnarySyncAsync(object):
+  """Affords invoking a stream-unary RPC synchronously or asynchronously.
+
+  Values implementing this interface are directly callable and present an
+  "async" method. Both calls take an iterator of request values and a numeric
+  timeout. Direct invocation of a value of this type invokes its associated RPC
+  and blocks until the RPC's response is available. Calling the "async" method
+  of a value of this type invokes its associated RPC and immediately returns a
+  future.Future bound to the asynchronous execution of the RPC.
+  """
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def __call__(self, request_iterator, timeout):
+    """Synchronously invokes the underlying RPC.
+
+    Args:
+      request_iterator: An iterator that yields request values for the RPC.
+      timeout: A duration of time in seconds to allow for the RPC.
+
+    Returns:
+      The response value for the RPC.
+
+    Raises:
+      exceptions.RpcError: Indicating that the RPC was aborted.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def async(self, request, timeout):
+    """Asynchronously invokes the underlying RPC.
+
+    Args:
+      request_iterator: An iterator that yields request values for the RPC.
+      timeout: A duration of time in seconds to allow for the RPC.
+
+    Returns:
+      A future.Future representing the RPC. In the event of RPC completion, the
+        returned Future's result value will be the response value of the RPC.
+        In the event of RPC abortion, the returned Future's exception value
+        will be an exceptions.RpcError.
+    """
+    raise NotImplementedError()
+
+
 @enum.unique
 class Abortion(enum.Enum):
   """Categories of RPC abortion."""
@@ -538,5 +628,29 @@ class Stub(object):
     Returns:
       A pair of a Call object for the RPC and a stream.Consumer to which the
         request values of the RPC should be passed.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def unary_unary_sync_async(self, name):
+    """Creates a UnaryUnarySyncAsync value for a unary-unary RPC method.
+
+    Args:
+      name: The RPC method name.
+
+    Returns:
+      A UnaryUnarySyncAsync value for the named unary-unary RPC method.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def stream_unary_sync_async(self, name):
+    """Creates a StreamUnarySyncAsync value for a stream-unary RPC method.
+
+    Args:
+      name: The RPC method name.
+
+    Returns:
+      A StreamUnarySyncAsync value for the named stream-unary RPC method.
     """
     raise NotImplementedError()
