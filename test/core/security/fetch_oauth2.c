@@ -95,7 +95,7 @@ static grpc_credentials *create_service_account_creds(
       break;
     }
     current += bytes_read;
-  } while (sizeof(json_key) > (current - json_key));
+  } while (sizeof(json_key) > (size_t)(current - json_key));
 
   if ((current - json_key) == sizeof(json_key)) {
     gpr_log(GPR_ERROR, "Json key file %s exceeds size limit (%d bytes).",
