@@ -3,7 +3,7 @@ gRPC C#
 
 A C# implementation of gRPC, Google's RPC library.
 
-EXPERIMENTAL ONLY
+Status
 -----------------
 
 **This gRPC C# implementation is work-in-progress and is not expected to work yet.**
