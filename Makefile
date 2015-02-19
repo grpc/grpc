@@ -1986,7 +1986,7 @@ endif
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
+	$(Q) ldconfig || true
 endif
 endif
 
@@ -2005,7 +2005,7 @@ endif
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
+	$(Q) ldconfig || true
 endif
 endif
 
@@ -2024,7 +2024,7 @@ endif
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
+	$(Q) ldconfig || true
 endif
 endif
 
@@ -2035,7 +2035,7 @@ ifneq ($(PROTOBUF_DEP),)
 	$(Q) $(MAKE) -C third_party/protobuf install prefix=$(prefix)
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
+	$(Q) ldconfig || true
 endif
 endif
 endif

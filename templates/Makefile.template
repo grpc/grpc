@@ -780,7 +780,7 @@ endif
 % endfor
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
+	$(Q) ldconfig || true
 endif
 endif
 </%def>
@@ -800,7 +800,7 @@ ifneq ($(PROTOBUF_DEP),)
 	$(Q) $(MAKE) -C third_party/protobuf install prefix=$(prefix)
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
+	$(Q) ldconfig || true
 endif
 endif
 endif
