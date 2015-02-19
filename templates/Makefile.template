@@ -256,6 +256,8 @@ ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz 
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o /dev/null test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
+AUTORECONF_CHECK_CMD = which autoreconf > /dev/null
+LIBTOOL_CHECK_CMD = which libtool > /dev/null
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_PERFTOOLS = $(shell $(PERFTOOLS_CHECK_CMD) 2> /dev/null && echo true || echo false)
@@ -277,6 +279,15 @@ HAS_SYSTEM_PROTOBUF = false
 endif
 
 HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_AUTORECONF = $(shell $(AUTORECONF_CHECK_CMD) && echo true || echo false)
+HAS_LIBTOOL = $(shell $(LIBTOOL_CHECK_CMD) && echo true || echo false)
+
+CAN_BUILD_PROTOBUF = false
+ifeq ($(HAS_AUTORECONF),true)
+ifeq ($(HAS_LIBTOOL),true)
+CAN_BUILD_PROTOBUF = true
+endif
+endif
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
@@ -402,6 +413,8 @@ protobuf_dep_error: protobuf_dep_message git_update stop
 
 protoc_dep_error: protoc_dep_message git_update stop
 
+protobuf_build_dep_error: protobuf_build_dep_message stop
+
 openssl_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
@@ -444,6 +457,18 @@ protoc_dep_message:
 	@echo "  make run_dep_checks"
 	@echo
 
+protobuf_build_dep_message:
+	@echo
+	@echo "DEPENDENCY ERROR"
+	@echo
+	@echo "The target you are trying to run requires protobuf-compiler 3.0.0+"
+	@echo "We tried to build the one you have in third_party, but your system"
+	@echo "is missing the autoconf and libtool tools to proceed."
+	@echo
+	@echo "Please consult INSTALL to get more information."
+	@echo
+
+
 stop:
 	@false
 
@@ -478,9 +503,13 @@ endif
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
 	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
+ifeq ($(CAN_BUILD_PROTOBUF),true)
 third_party/protobuf/configure:
 	$(E) "[AUTOGEN] Preparing protobuf"
 	$(Q)(cd third_party/protobuf ; autoreconf -f -i -Wall,no-obsolete)
+else
+third_party/protobuf/configure: protobuf_build_dep_error
+endif
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
