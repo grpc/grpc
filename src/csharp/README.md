@@ -1,7 +1,7 @@
 gRPC C#
 =======
 
-A C# implementation of gRPC, Google's RPC library.
+A C# implementation of gRPC.
 
 EXPERIMENTAL ONLY
 -----------------
