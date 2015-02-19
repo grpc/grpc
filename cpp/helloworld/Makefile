@@ -29,19 +29,28 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-CC=g++
-CCFLAGS=-I/usr/local/include -std=c++11
-LDFLAGS=-L/usr/local/lib -lgrpc -lgrpc++ -lprotobuf -ldl
+CXX=g++
+CPPFLAGS=-I/usr/local/include -pthread
+CXXFLAGS=-std=c++11
+LDFLAGS=-L/usr/local/lib -lgrpc -lgrpc++ -lprotobuf -lpthread -ldl
 
 all: greeter_client greeter_server
 
-greeter_client: helloworld.pb.cc greeter_client.cc
-	$(CC) $(CCFLAGS) greeter_client.cc helloworld.pb.cc $(LDFLAGS) -o greeter_client.out
+helloworld.o: helloworld.pb.cc
+	$(CXX) -c $(CXXFLAGS) $^
 
+greeter_client.o: greeter_client.cc
+	$(CXX) -c $(CXXFLAGS) $^
 
-greeter_server: helloworld.pb.cc greeter_server.cc
-	$(CC) $(CCFLAGS) greeter_server.cc helloworld.pb.cc $(LDFLAGS) -o greeter_server.out
+greeter_server.o: greeter_server.cc
+	$(CXX) -c $(CXXFLAGS) $^
+
+greeter_client: helloworld.pb.o greeter_client.o
+	$(CXX) $(CPPFLAGS) $^ $(LDFLAGS) -o $@
+
+greeter_server: helloworld.pb.o greeter_server.o
+	$(CXX) $(CPPFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
-	rm *.out
+	rm -f *.o greeter_client greeter_server
 
