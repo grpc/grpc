@@ -3,6 +3,10 @@ gRPC Ruby
 
 A Ruby implementation of gRPC.
 
+Status
+-------
+
+Alpha : Ready for early adopters
 
 INSTALLATION PREREQUISITES
 --------------------------
