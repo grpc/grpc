@@ -47,7 +47,7 @@ static int pygrpc_server_credentials_init(ServerCredentials *self,
   PyObject *iterator;
   int i;
   PyObject *pair;
-  static char *kwlist[] = {"root_credentials", "pair_sequence"};
+  static char *kwlist[] = {"root_credentials", "pair_sequence", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "zO:ServerCredentials", kwlist,
                                    &root_certificates, &pair_sequence)) {
