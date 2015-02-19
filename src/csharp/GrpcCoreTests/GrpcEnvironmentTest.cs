@@ -32,11 +32,11 @@
 #endregion
 
 using System;
-using NUnit.Framework;
-using Google.GRPC.Core;
 using System.Threading;
+using Grpc.Core;
+using NUnit.Framework;
 
-namespace Google.GRPC.Core.Tests
+namespace Grpc.Core.Tests
 {
     public class GrpcEnvironmentTest
     {

@@ -32,15 +32,15 @@
 #endregion
 
 using System;
-using NUnit.Framework;
-using Google.GRPC.Core;
-using Google.GRPC.Core.Internal;
-using System.Threading;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
-using Google.GRPC.Core.Utils;
+using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Google.GRPC.Core.Tests
+namespace Grpc.Core.Tests
 {
     public class ClientServerTest
     {
@@ -133,7 +133,7 @@ namespace Google.GRPC.Core.Tests
                     Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
                     Assert.Fail();
                 } catch(RpcException e) {
-                    Assert.AreEqual(StatusCode.GRPC_STATUS_UNIMPLEMENTED, e.Status.StatusCode);
+                    Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
                 }
             }
 

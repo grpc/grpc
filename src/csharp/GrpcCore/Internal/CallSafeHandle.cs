@@ -32,11 +32,11 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
-using Google.GRPC.Core;
+using System.Runtime.InteropServices;
+using Grpc.Core;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     //TODO: rename the delegate
     internal delegate void CompletionCallbackDelegate(GRPCOpError error, IntPtr batchContextPtr);

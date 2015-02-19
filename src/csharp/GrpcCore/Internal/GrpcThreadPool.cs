@@ -32,13 +32,13 @@
 #endregion
 
 using System;
-using Google.GRPC.Core.Internal;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Pool of threads polling on the same completion queue.

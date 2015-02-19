@@ -33,9 +33,9 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Google.GRPC.Core;
+using Grpc.Core;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Not owned version of 

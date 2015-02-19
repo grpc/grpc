@@ -32,12 +32,12 @@
 #endregion
 
 using System;
-using NUnit.Framework;
-using Google.GRPC.Core;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.GRPC.Core.Utils;
-using System.Collections.Generic;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
 namespace math.Tests
 {

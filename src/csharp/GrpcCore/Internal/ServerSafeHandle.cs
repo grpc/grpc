@@ -32,11 +32,11 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     // TODO: we need to make sure that the delegates are not collected before invoked.
     internal delegate void ServerShutdownCallbackDelegate(IntPtr eventPtr);

@@ -34,7 +34,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Safe handle to wrap native objects.
