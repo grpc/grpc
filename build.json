@@ -239,7 +239,6 @@
         "include/grpc/support/useful.h"
       ],
       "headers": [
-        "src/core/support/cpu.h",
         "src/core/support/env.h",
         "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
