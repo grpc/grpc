@@ -27,6 +27,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+var fs = require('fs');
 var _ = require('underscore');
 var grpc = require('..');
 var examples = grpc.load(__dirname + '/route_guide.proto').examples;
@@ -48,21 +49,6 @@ var COORD_FACTOR = 1e7;
 var feature_list = [];
 
 /**
- * Return a random "word" (alphabetic character sequence) of the given length.
- * @param {number} length The length of the word to create
- * @return {string} An alphabetic string with the given length.
- */
-function randomWord(length) {
-  var alphabet = 'abcdefghijklmnopqrstuvwxyz';
-  var word = '';
-  for (var i = 0; i < length; i++) {
-    // Add a random character from the alphabet to the word
-    word += alphabet[_.random(0, alphabet.length - 1)];
-  }
-  return word;
-}
-
-/**
  * Get a feature object at the given point, or creates one if it does not exist.
  * @param {point} point The point to check
  * @return {feature} The feature object at the point. Note that an empty name
@@ -78,19 +64,11 @@ function checkFeature(point) {
       return feature;
     }
   }
-  // If not, create a new one with 50% chance of indicating "no feature present"
-  var name;
-  if (_.random(0,1) === 0) {
-    name = '';
-  } else {
-    name = randomWord(5);
-  }
+  var name = '';
   feature = {
     name: name,
     location: point
   };
-  // Add the feature object to the list and return it
-  feature_list.push(feature);
   return feature;
 }
 
@@ -253,7 +231,11 @@ if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
   routeServer.bind('0.0.0.0:0');
-  routeServer.listen();
+  fs.readFile(__dirname + '/route_guide_db.json', function(err, data) {
+    if (err) throw err;
+    feature_list = JSON.parse(data);
+    routeServer.listen();
+  });
 }
 
 exports.getServer = getServer;
