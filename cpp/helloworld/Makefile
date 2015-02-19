@@ -36,15 +36,6 @@ LDFLAGS=-L/usr/local/lib -lgrpc -lgrpc++ -lprotobuf -lpthread -ldl
 
 all: greeter_client greeter_server
 
-helloworld.o: helloworld.pb.cc
-	$(CXX) -c $(CXXFLAGS) $^
-
-greeter_client.o: greeter_client.cc
-	$(CXX) -c $(CXXFLAGS) $^
-
-greeter_server.o: greeter_server.cc
-	$(CXX) -c $(CXXFLAGS) $^
-
 greeter_client: helloworld.pb.o greeter_client.o
 	$(CXX) $(CPPFLAGS) $^ $(LDFLAGS) -o $@
 
