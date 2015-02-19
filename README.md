@@ -25,7 +25,7 @@ Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
 
 #Documentation
 
-You can find more detailed documentation of grpc in [grpc-common repository](http://github.com/grpc/grpc-common).
+You can find more detailed documentation about grpc in [grpc-common repository](http://github.com/grpc/grpc-common).
 
 #Current Status of libraries
 
