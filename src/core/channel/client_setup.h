@@ -58,6 +58,12 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
 const grpc_channel_args *grpc_client_setup_get_channel_args(
     grpc_client_setup_request *r);
 
+/* Call before calling back into the setup listener, and call only if
+   this function returns 1. If it returns 1, also promise to call
+   grpc_client_setup_cb_end */
+int grpc_client_setup_cb_begin(grpc_client_setup_request *r);
+void grpc_client_setup_cb_end(grpc_client_setup_request *r);
+
 /* Get the deadline for a request passed in to initiate. Implementations should
    make a best effort to honor this deadline. */
 gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r);

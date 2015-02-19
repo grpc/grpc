@@ -97,12 +97,15 @@ static void on_secure_transport_setup_done(void *rp,
   if (status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
     done(r, 0);
-  } else {
+  } else if (grpc_client_setup_cb_begin(r->cs_request)) {
     grpc_create_chttp2_transport(
         r->setup->setup_callback, r->setup->setup_user_data,
         grpc_client_setup_get_channel_args(r->cs_request), secure_endpoint,
         NULL, 0, grpc_client_setup_get_mdctx(r->cs_request), 1);
+    grpc_client_setup_cb_end(r->cs_request);
     done(r, 1);
+  } else {
+    done(r, 0);
   }
 }
 
