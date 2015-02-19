@@ -1,12 +1,45 @@
-using System;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
-using Google.GRPC.Core;
+#region Copyright notice and license
 
-namespace Google.GRPC.Core.Internal
+// Copyright 2015, Google Inc.
+// All rights reserved.
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#endregion
+
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Grpc.Core;
+
+namespace Grpc.Core.Internal
 {
-    // TODO: we need to make sure that the delegates are not collected before invoked.
-    internal delegate void EventCallbackDelegate(IntPtr eventPtr);
+    //TODO: rename the delegate
+    internal delegate void CompletionCallbackDelegate(GRPCOpError error, IntPtr batchContextPtr);
 
     /// <summary>
     /// grpc_call from <grpc/grpc.h>
@@ -15,158 +48,124 @@ namespace Google.GRPC.Core.Internal
 	{
         const UInt32 GRPC_WRITE_BUFFER_HINT = 1;
 
-        [DllImport("grpc.dll")]
-        static extern CallSafeHandle grpc_channel_create_call_old(ChannelSafeHandle channel, string method, string host, Timespec deadline);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_add_metadata(CallSafeHandle call, IntPtr metadata, UInt32 flags);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_invoke_old(CallSafeHandle call, CompletionQueueSafeHandle cq, IntPtr metadataReadTag, IntPtr finishedTag, UInt32 flags);
-
-        [DllImport("grpc.dll", EntryPoint = "grpc_call_invoke_old")]
-        static extern GRPCCallError grpc_call_invoke_old_CALLBACK(CallSafeHandle call, CompletionQueueSafeHandle cq,
-                                                              [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate metadataReadCallback, 
-                                                              [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate finishedCallback, 
-                                                              UInt32 flags);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_server_accept_old(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, IntPtr finishedTag);
-
-        [DllImport("grpc.dll", EntryPoint = "grpc_call_server_accept_old")]
-        static extern GRPCCallError grpc_call_server_accept_old_CALLBACK(CallSafeHandle call, CompletionQueueSafeHandle completionQueue, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate finishedCallback);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_server_end_initial_metadata_old(CallSafeHandle call, UInt32 flags);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_cancel(CallSafeHandle call);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_start_write_status_old(CallSafeHandle call, StatusCode statusCode, string statusMessage, IntPtr tag);
-
-        [DllImport("grpc.dll", EntryPoint = "grpc_call_start_write_status_old")]
-        static extern GRPCCallError grpc_call_start_write_status_old_CALLBACK(CallSafeHandle call, StatusCode statusCode, string statusMessage, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_writes_done_old(CallSafeHandle call, IntPtr tag);
-
-        [DllImport("grpc.dll", EntryPoint = "grpc_call_writes_done_old")]
-        static extern GRPCCallError grpc_call_writes_done_old_CALLBACK(CallSafeHandle call, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
-
-        [DllImport("grpc.dll")]
-        static extern GRPCCallError grpc_call_start_read_old(CallSafeHandle call, IntPtr tag);
-
-        [DllImport("grpc.dll", EntryPoint = "grpc_call_start_read_old")]
-        static extern GRPCCallError grpc_call_start_read_old_CALLBACK(CallSafeHandle call, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpc_call_start_write_from_copied_buffer(CallSafeHandle call,
-                                                                    byte[] buffer, UIntPtr length,
-                                                                    IntPtr tag, UInt32 flags);
+        static extern GRPCCallError grpcsharp_call_cancel(CallSafeHandle call);
 
-        [DllImport("grpc_csharp_ext.dll", EntryPoint = "grpc_call_start_write_from_copied_buffer")]
-        static extern void grpc_call_start_write_from_copied_buffer_CALLBACK(CallSafeHandle call,
-                                                                             byte[] buffer, UIntPtr length,
-                                                                             [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback,
-                                                                             UInt32 flags);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
 
-		[DllImport("grpc.dll")]
-		static extern void grpc_call_destroy(IntPtr call);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_start_unary(CallSafeHandle call,
+                                                                        [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
+                                                                        byte[] send_buffer, UIntPtr send_buffer_len);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_start_client_streaming(CallSafeHandle call,
+                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_start_server_streaming(CallSafeHandle call,
+                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
+                                                                      byte[] send_buffer, UIntPtr send_buffer_len);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call,
+                                                                          [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_send_message(CallSafeHandle call,
+                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
+                                                                      byte[] send_buffer, UIntPtr send_buffer_len);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_send_close_from_client(CallSafeHandle call,
+                                                                             [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_send_status_from_server(CallSafeHandle call, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback, StatusCode statusCode, string statusMessage);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_recv_message(CallSafeHandle call,
+                                                               [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_start_serverside(CallSafeHandle call,
+                                                                [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_call_destroy(IntPtr call);
+
 
         private CallSafeHandle()
         {
         }
 
-        /// <summary>
-        /// Creates a client call.
-        /// </summary>
-        public static CallSafeHandle Create(ChannelSafeHandle channel, string method, string host, Timespec deadline)
+        public static CallSafeHandle Create(ChannelSafeHandle channel, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline)
         {
-            return grpc_channel_create_call_old(channel, method, host, deadline);
+            return grpcsharp_channel_create_call(channel, cq, method, host, deadline);
         }
 
-        public void Invoke(CompletionQueueSafeHandle cq, IntPtr metadataReadTag, IntPtr finishedTag, bool buffered)
-        {   
-            AssertCallOk(grpc_call_invoke_old(this, cq, metadataReadTag, finishedTag, GetFlags(buffered)));
-        }
-
-        public void Invoke(CompletionQueueSafeHandle cq, bool buffered, EventCallbackDelegate metadataReadCallback, EventCallbackDelegate finishedCallback)
-        {   
-            AssertCallOk(grpc_call_invoke_old_CALLBACK(this, cq, metadataReadCallback, finishedCallback, GetFlags(buffered)));
-        }
-
-        public void ServerAccept(CompletionQueueSafeHandle cq, IntPtr finishedTag)
+        public void StartUnary(byte[] payload, CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpc_call_server_accept_old(this, cq, finishedTag));
+            AssertCallOk(grpcsharp_call_start_unary(this, callback, payload, new UIntPtr((ulong) payload.Length)));
         }
 
-        public void ServerAccept(CompletionQueueSafeHandle cq, EventCallbackDelegate callback)
+        public void StartClientStreaming(CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpc_call_server_accept_old_CALLBACK(this, cq, callback));
+            AssertCallOk(grpcsharp_call_start_client_streaming(this, callback));
         }
 
-        public void ServerEndInitialMetadata(UInt32 flags)
+        public void StartServerStreaming(byte[] payload, CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpc_call_server_end_initial_metadata_old(this, flags));
+            AssertCallOk(grpcsharp_call_start_server_streaming(this, callback, payload, new UIntPtr((ulong) payload.Length)));
         }
 
-        public void StartWrite(byte[] payload, IntPtr tag, bool buffered)
+        public void StartDuplexStreaming(CompletionCallbackDelegate callback)
         {
-            grpc_call_start_write_from_copied_buffer(this, payload, new UIntPtr((ulong) payload.Length), tag, GetFlags(buffered));
+            AssertCallOk(grpcsharp_call_start_duplex_streaming(this, callback));
         }
 
-        public void StartWrite(byte[] payload, bool buffered, EventCallbackDelegate callback)
+        public void StartSendMessage(byte[] payload, CompletionCallbackDelegate callback)
         {
-            grpc_call_start_write_from_copied_buffer_CALLBACK(this, payload, new UIntPtr((ulong) payload.Length), callback, GetFlags(buffered));
+            AssertCallOk(grpcsharp_call_send_message(this, callback, payload, new UIntPtr((ulong) payload.Length)));
         }
 
-        public void StartWriteStatus(Status status, IntPtr tag)
+        public void StartSendCloseFromClient(CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpc_call_start_write_status_old(this, status.StatusCode, status.Detail, tag));
+            AssertCallOk(grpcsharp_call_send_close_from_client(this, callback));
         }
 
-        public void StartWriteStatus(Status status, EventCallbackDelegate callback)
+        public void StartSendStatusFromServer(Status status, CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpc_call_start_write_status_old_CALLBACK(this, status.StatusCode, status.Detail, callback));
+            AssertCallOk(grpcsharp_call_send_status_from_server(this, callback, status.StatusCode, status.Detail));
         }
 
-        public void WritesDone(IntPtr tag)
+        public void StartReceiveMessage(CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpc_call_writes_done_old(this, tag));
+            AssertCallOk(grpcsharp_call_recv_message(this, callback));
         }
 
-        public void WritesDone(EventCallbackDelegate callback)
+        public void StartServerSide(CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpc_call_writes_done_old_CALLBACK(this, callback));
-        }
-
-        public void StartRead(IntPtr tag)
-        {
-            AssertCallOk(grpc_call_start_read_old(this, tag));
-        }
-
-        public void StartRead(EventCallbackDelegate callback)
-        {
-            AssertCallOk(grpc_call_start_read_old_CALLBACK(this, callback));
+            AssertCallOk(grpcsharp_call_start_serverside(this, callback));
         }
 
         public void Cancel()
         {
-            AssertCallOk(grpc_call_cancel(this));
+            AssertCallOk(grpcsharp_call_cancel(this));
         }
 
         public void CancelWithStatus(Status status)
         {
-            AssertCallOk(grpc_call_cancel_with_status(this, status.StatusCode, status.Detail));
+            AssertCallOk(grpcsharp_call_cancel_with_status(this, status.StatusCode, status.Detail));
         }
 
 		protected override bool ReleaseHandle()
 		{
-			grpc_call_destroy(handle);
+            grpcsharp_call_destroy(handle);
 			return true;
 		}
 

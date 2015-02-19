@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 namespace grpc {
 
 typedef std::string string;
-}
+
+}  // namespace grpc
 
 #endif  // __GRPCPP_CONFIG_H__

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,185 +31,496 @@
  *
  */
 
+'use strict';
+
+var _ = require('underscore');
+
+var capitalize = require('underscore.string/capitalize');
+var decapitalize = require('underscore.string/decapitalize');
+
 var grpc = require('bindings')('grpc.node');
 
-var common = require('./common');
+var common = require('./common.js');
 
-var Duplex = require('stream').Duplex;
+var EventEmitter = require('events').EventEmitter;
+
+var stream = require('stream');
+
+var Readable = stream.Readable;
+var Writable = stream.Writable;
+var Duplex = stream.Duplex;
 var util = require('util');
 
-util.inherits(GrpcClientStream, Duplex);
+util.inherits(ClientWritableStream, Writable);
 
 /**
- * Class for representing a gRPC client side stream as a Node stream. Extends
- * from stream.Duplex.
+ * A stream that the client can write to. Used for calls that are streaming from
+ * the client side.
  * @constructor
- * @param {grpc.Call} call Call object to proxy
- * @param {function(*):Buffer=} serialize Serialization function for requests
- * @param {function(Buffer):*=} deserialize Deserialization function for
- *     responses
+ * @param {grpc.Call} call The call object to send data with
+ * @param {function(*):Buffer=} serialize Serialization function for writes.
  */
-function GrpcClientStream(call, serialize, deserialize) {
-  Duplex.call(this, {objectMode: true});
-  if (!serialize) {
-    serialize = function(value) {
-      return value;
-    };
-  }
-  if (!deserialize) {
-    deserialize = function(value) {
-      return value;
-    };
-  }
-  var self = this;
-  var finished = false;
-  // Indicates that a read is currently pending
-  var reading = false;
-  // Indicates that a write is currently pending
-  var writing = false;
-  this._call = call;
-
-  /**
-   * Serialize a request value to a buffer. Always maps null to null. Otherwise
-   * uses the provided serialize function
-   * @param {*} value The value to serialize
-   * @return {Buffer} The serialized value
-   */
-  this.serialize = function(value) {
-    if (value === null || value === undefined) {
-      return null;
-    }
-    return serialize(value);
-  };
-
-  /**
-   * Deserialize a response buffer to a value. Always maps null to null.
-   * Otherwise uses the provided deserialize function.
-   * @param {Buffer} buffer The buffer to deserialize
-   * @return {*} The deserialized value
-   */
-  this.deserialize = function(buffer) {
-    if (buffer === null) {
-      return null;
-    }
-    return deserialize(buffer);
-  };
-  /**
-   * Callback to be called when a READ event is received. Pushes the data onto
-   * the read queue and starts reading again if applicable
-   * @param {grpc.Event} event READ event object
-   */
-  function readCallback(event) {
-    if (finished) {
-      self.push(null);
-      return;
-    }
-    var data = event.data;
-    if (self.push(self.deserialize(data)) && data != null) {
-      self._call.startRead(readCallback);
-    } else {
-      reading = false;
-    }
-  }
-  call.invoke(function(event) {
-    self.emit('metadata', event.data);
-  }, function(event) {
-    finished = true;
-    self.emit('status', event.data);
-  }, 0);
+function ClientWritableStream(call, serialize) {
+  Writable.call(this, {objectMode: true});
+  this.call = call;
+  this.serialize = common.wrapIgnoreNull(serialize);
   this.on('finish', function() {
-    call.writesDone(function() {});
+    var batch = {};
+    batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+    call.startBatch(batch, function() {});
   });
-  /**
-   * Start reading if there is not already a pending read. Reading will
-   * continue until self.push returns false (indicating reads should slow
-   * down) or the read data is null (indicating that there is no more data).
-   */
-  this.startReading = function() {
-    if (finished) {
-      self.push(null);
-    } else {
-      if (!reading) {
-        reading = true;
-        self._call.startRead(readCallback);
-      }
-    }
-  };
 }
-
-/**
- * Start reading. This is an implementation of a method needed for implementing
- * stream.Readable.
- * @param {number} size Ignored
- */
-GrpcClientStream.prototype._read = function(size) {
-  this.startReading();
-};
 
 /**
  * Attempt to write the given chunk. Calls the callback when done. This is an
  * implementation of a method needed for implementing stream.Writable.
  * @param {Buffer} chunk The chunk to write
  * @param {string} encoding Ignored
- * @param {function(Error=)} callback Ignored
+ * @param {function(Error=)} callback Called when the write is complete
  */
-GrpcClientStream.prototype._write = function(chunk, encoding, callback) {
-  var self = this;
-  self._call.startWrite(self.serialize(chunk), function(event) {
+function _write(chunk, encoding, callback) {
+  /* jshint validthis: true */
+  var batch = {};
+  batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
+  this.call.startBatch(batch, function(err, event) {
+    if (err) {
+      throw err;
+    }
     callback();
-  }, 0);
-};
+  });
+}
+
+ClientWritableStream.prototype._write = _write;
+
+util.inherits(ClientReadableStream, Readable);
 
 /**
- * Cancel the ongoing call. If the call has not already finished, it will finish
- * with status CANCELLED.
+ * A stream that the client can read from. Used for calls that are streaming
+ * from the server side.
+ * @constructor
+ * @param {grpc.Call} call The call object to read data with
+ * @param {function(Buffer):*=} deserialize Deserialization function for reads
  */
-GrpcClientStream.prototype.cancel = function() {
-  this._call.cancel();
-};
-
-/**
- * Make a request on the channel to the given method with the given arguments
- * @param {grpc.Channel} channel The channel on which to make the request
- * @param {string} method The method to request
- * @param {function(*):Buffer} serialize Serialization function for requests
- * @param {function(Buffer):*} deserialize Deserialization function for
- *     responses
- * @param {array=} metadata Array of metadata key/value pairs to add to the call
- * @param {(number|Date)=} deadline The deadline for processing this request.
- *     Defaults to infinite future.
- * @return {stream=} The stream of responses
- */
-function makeRequest(channel,
-                     method,
-                     serialize,
-                     deserialize,
-                     metadata,
-                     deadline) {
-  if (deadline === undefined) {
-    deadline = Infinity;
-  }
-  var call = new grpc.Call(channel, method, deadline);
-  if (metadata) {
-    call.addMetadata(metadata);
-  }
-  return new GrpcClientStream(call, serialize, deserialize);
+function ClientReadableStream(call, deserialize) {
+  Readable.call(this, {objectMode: true});
+  this.call = call;
+  this.finished = false;
+  this.reading = false;
+  this.deserialize = common.wrapIgnoreNull(deserialize);
 }
 
 /**
- * See documentation for makeRequest above
+ * Read the next object from the stream.
+ * @param {*} size Ignored because we use objectMode=true
  */
-exports.makeRequest = makeRequest;
+function _read(size) {
+  /* jshint validthis: true */
+  var self = this;
+  /**
+   * Callback to be called when a READ event is received. Pushes the data onto
+   * the read queue and starts reading again if applicable
+   * @param {grpc.Event} event READ event object
+   */
+  function readCallback(err, event) {
+    if (err) {
+      throw err;
+    }
+    if (self.finished) {
+      self.push(null);
+      return;
+    }
+    var data = event.read;
+    if (self.push(self.deserialize(data)) && data !== null) {
+      var read_batch = {};
+      read_batch[grpc.opType.RECV_MESSAGE] = true;
+      self.call.startBatch(read_batch, readCallback);
+    } else {
+      self.reading = false;
+    }
+  }
+  if (self.finished) {
+    self.push(null);
+  } else {
+    if (!self.reading) {
+      self.reading = true;
+      var read_batch = {};
+      read_batch[grpc.opType.RECV_MESSAGE] = true;
+      self.call.startBatch(read_batch, readCallback);
+    }
+  }
+}
+
+ClientReadableStream.prototype._read = _read;
+
+util.inherits(ClientDuplexStream, Duplex);
 
 /**
- * Represents a client side gRPC channel associated with a single host.
+ * A stream that the client can read from or write to. Used for calls with
+ * duplex streaming.
+ * @constructor
+ * @param {grpc.Call} call Call object to proxy
+ * @param {function(*):Buffer=} serialize Serialization function for requests
+ * @param {function(Buffer):*=} deserialize Deserialization function for
+ *     responses
  */
-exports.Channel = grpc.Channel;
+function ClientDuplexStream(call, serialize, deserialize) {
+  Duplex.call(this, {objectMode: true});
+  this.serialize = common.wrapIgnoreNull(serialize);
+  this.deserialize = common.wrapIgnoreNull(deserialize);
+  this.call = call;
+  this.on('finish', function() {
+    var batch = {};
+    batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+    call.startBatch(batch, function() {});
+  });
+}
+
+ClientDuplexStream.prototype._read = _read;
+ClientDuplexStream.prototype._write = _write;
+
 /**
- * Status name to code number mapping
+ * Cancel the ongoing call
+ */
+function cancel() {
+  /* jshint validthis: true */
+  this.call.cancel();
+}
+
+ClientReadableStream.prototype.cancel = cancel;
+ClientWritableStream.prototype.cancel = cancel;
+ClientDuplexStream.prototype.cancel = cancel;
+
+/**
+ * Get a function that can make unary requests to the specified method.
+ * @param {string} method The name of the method to request
+ * @param {function(*):Buffer} serialize The serialization function for inputs
+ * @param {function(Buffer)} deserialize The deserialization function for
+ *     outputs
+ * @return {Function} makeUnaryRequest
+ */
+function makeUnaryRequestFunction(method, serialize, deserialize) {
+  /**
+   * Make a unary request with this method on the given channel with the given
+   * argument, callback, etc.
+   * @this {Client} Client object. Must have a channel member.
+   * @param {*} argument The argument to the call. Should be serializable with
+   *     serialize
+   * @param {function(?Error, value=)} callback The callback to for when the
+   *     response is received
+   * @param {array=} metadata Array of metadata key/value pairs to add to the
+   *     call
+   * @param {(number|Date)=} deadline The deadline for processing this request.
+   *     Defaults to infinite future
+   * @return {EventEmitter} An event emitter for stream related events
+   */
+  function makeUnaryRequest(argument, callback, metadata, deadline) {
+    /* jshint validthis: true */
+    if (deadline === undefined) {
+      deadline = Infinity;
+    }
+    var emitter = new EventEmitter();
+    var call = new grpc.Call(this.channel, method, deadline);
+    if (metadata === null || metadata === undefined) {
+      metadata = {};
+    }
+    emitter.cancel = function cancel() {
+      call.cancel();
+    };
+    this.updateMetadata(metadata, function(error, metadata) {
+      if (error) {
+        call.cancel();
+        callback(error);
+        return;
+      }
+      var client_batch = {};
+      client_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
+      client_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+      client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+      client_batch[grpc.opType.RECV_MESSAGE] = true;
+      client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(client_batch, function(err, response) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        if (response.status.code !== grpc.status.OK) {
+          callback(response.status);
+          return;
+        }
+        emitter.emit('status', response.status);
+        emitter.emit('metadata', response.metadata);
+        callback(null, deserialize(response.read));
+      });
+    });
+    return emitter;
+  }
+  return makeUnaryRequest;
+}
+
+/**
+ * Get a function that can make client stream requests to the specified method.
+ * @param {string} method The name of the method to request
+ * @param {function(*):Buffer} serialize The serialization function for inputs
+ * @param {function(Buffer)} deserialize The deserialization function for
+ *     outputs
+ * @return {Function} makeClientStreamRequest
+ */
+function makeClientStreamRequestFunction(method, serialize, deserialize) {
+  /**
+   * Make a client stream request with this method on the given channel with the
+   * given callback, etc.
+   * @this {Client} Client object. Must have a channel member.
+   * @param {function(?Error, value=)} callback The callback to for when the
+   *     response is received
+   * @param {array=} metadata Array of metadata key/value pairs to add to the
+   *     call
+   * @param {(number|Date)=} deadline The deadline for processing this request.
+   *     Defaults to infinite future
+   * @return {EventEmitter} An event emitter for stream related events
+   */
+  function makeClientStreamRequest(callback, metadata, deadline) {
+    /* jshint validthis: true */
+    if (deadline === undefined) {
+      deadline = Infinity;
+    }
+    var call = new grpc.Call(this.channel, method, deadline);
+    if (metadata === null || metadata === undefined) {
+      metadata = {};
+    }
+    var stream = new ClientWritableStream(call, serialize);
+    this.updateMetadata(metadata, function(error, metadata) {
+      if (error) {
+        call.cancel();
+        callback(error);
+        return;
+      }
+      var metadata_batch = {};
+      metadata_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
+      metadata_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+      call.startBatch(metadata_batch, function(err, response) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        stream.emit('metadata', response.metadata);
+      });
+      var client_batch = {};
+      client_batch[grpc.opType.RECV_MESSAGE] = true;
+      client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(client_batch, function(err, response) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        if (response.status.code !== grpc.status.OK) {
+          callback(response.status);
+          return;
+        }
+        stream.emit('status', response.status);
+        callback(null, deserialize(response.read));
+      });
+    });
+    return stream;
+  }
+  return makeClientStreamRequest;
+}
+
+/**
+ * Get a function that can make server stream requests to the specified method.
+ * @param {string} method The name of the method to request
+ * @param {function(*):Buffer} serialize The serialization function for inputs
+ * @param {function(Buffer)} deserialize The deserialization function for
+ *     outputs
+ * @return {Function} makeServerStreamRequest
+ */
+function makeServerStreamRequestFunction(method, serialize, deserialize) {
+  /**
+   * Make a server stream request with this method on the given channel with the
+   * given argument, etc.
+   * @this {SurfaceClient} Client object. Must have a channel member.
+   * @param {*} argument The argument to the call. Should be serializable with
+   *     serialize
+   * @param {array=} metadata Array of metadata key/value pairs to add to the
+   *     call
+   * @param {(number|Date)=} deadline The deadline for processing this request.
+   *     Defaults to infinite future
+   * @return {EventEmitter} An event emitter for stream related events
+   */
+  function makeServerStreamRequest(argument, metadata, deadline) {
+    /* jshint validthis: true */
+    if (deadline === undefined) {
+      deadline = Infinity;
+    }
+    var call = new grpc.Call(this.channel, method, deadline);
+    if (metadata === null || metadata === undefined) {
+      metadata = {};
+    }
+    var stream = new ClientReadableStream(call, deserialize);
+    this.updateMetadata(metadata, function(error, metadata) {
+      if (error) {
+        call.cancel();
+        stream.emit('error', error);
+        return;
+      }
+      var start_batch = {};
+      start_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
+      start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+      start_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      start_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+      call.startBatch(start_batch, function(err, response) {
+        if (err) {
+          throw err;
+        }
+        stream.emit('metadata', response.metadata);
+      });
+      var status_batch = {};
+      status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(status_batch, function(err, response) {
+        if (err) {
+          throw err;
+        }
+        stream.emit('status', response.status);
+      });
+    });
+    return stream;
+  }
+  return makeServerStreamRequest;
+}
+
+/**
+ * Get a function that can make bidirectional stream requests to the specified
+ * method.
+ * @param {string} method The name of the method to request
+ * @param {function(*):Buffer} serialize The serialization function for inputs
+ * @param {function(Buffer)} deserialize The deserialization function for
+ *     outputs
+ * @return {Function} makeBidiStreamRequest
+ */
+function makeBidiStreamRequestFunction(method, serialize, deserialize) {
+  /**
+   * Make a bidirectional stream request with this method on the given channel.
+   * @this {SurfaceClient} Client object. Must have a channel member.
+   * @param {array=} metadata Array of metadata key/value pairs to add to the
+   *     call
+   * @param {(number|Date)=} deadline The deadline for processing this request.
+   *     Defaults to infinite future
+   * @return {EventEmitter} An event emitter for stream related events
+   */
+  function makeBidiStreamRequest(metadata, deadline) {
+    /* jshint validthis: true */
+    if (deadline === undefined) {
+      deadline = Infinity;
+    }
+    var call = new grpc.Call(this.channel, method, deadline);
+    if (metadata === null || metadata === undefined) {
+      metadata = {};
+    }
+    var stream = new ClientDuplexStream(call, serialize, deserialize);
+    this.updateMetadata(metadata, function(error, metadata) {
+      if (error) {
+        call.cancel();
+        stream.emit('error', error);
+        return;
+      }
+      var start_batch = {};
+      start_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
+      start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+      call.startBatch(start_batch, function(err, response) {
+        if (err) {
+          throw err;
+        }
+        stream.emit('metadata', response.metadata);
+      });
+      var status_batch = {};
+      status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(status_batch, function(err, response) {
+        if (err) {
+          throw err;
+        }
+        stream.emit('status', response.status);
+      });
+    });
+    return stream;
+  }
+  return makeBidiStreamRequest;
+}
+
+
+/**
+ * Map with short names for each of the requester maker functions. Used in
+ * makeClientConstructor
+ */
+var requester_makers = {
+  unary: makeUnaryRequestFunction,
+  server_stream: makeServerStreamRequestFunction,
+  client_stream: makeClientStreamRequestFunction,
+  bidi: makeBidiStreamRequestFunction
+};
+
+/**
+ * Creates a constructor for clients for the given service
+ * @param {ProtoBuf.Reflect.Service} service The service to generate a client
+ *     for
+ * @return {function(string, Object)} New client constructor
+ */
+function makeClientConstructor(service) {
+  var prefix = '/' + common.fullyQualifiedName(service) + '/';
+  /**
+   * Create a client with the given methods
+   * @constructor
+   * @param {string} address The address of the server to connect to
+   * @param {Object} options Options to pass to the underlying channel
+   * @param {function(Object, function)=} updateMetadata function to update the
+   *     metadata for each request
+   */
+  function Client(address, options, updateMetadata) {
+    if (updateMetadata) {
+      this.updateMetadata = updateMetadata;
+    } else {
+      this.updateMetadata = function(metadata, callback) {
+        callback(null, metadata);
+      };
+    }
+    this.channel = new grpc.Channel(address, options);
+  }
+
+  _.each(service.children, function(method) {
+    var method_type;
+    if (method.requestStream) {
+      if (method.responseStream) {
+        method_type = 'bidi';
+      } else {
+        method_type = 'client_stream';
+      }
+    } else {
+      if (method.responseStream) {
+        method_type = 'server_stream';
+      } else {
+        method_type = 'unary';
+      }
+    }
+    var serialize = common.serializeCls(method.resolvedRequestType.build());
+    var deserialize = common.deserializeCls(
+        method.resolvedResponseType.build());
+    Client.prototype[decapitalize(method.name)] = requester_makers[method_type](
+        prefix + capitalize(method.name), serialize, deserialize);
+    Client.prototype[decapitalize(method.name)].serialize = serialize;
+    Client.prototype[decapitalize(method.name)].deserialize = deserialize;
+  });
+
+  Client.service = service;
+
+  return Client;
+}
+
+exports.makeClientConstructor = makeClientConstructor;
+
+/**
+ * See docs for client.status
  */
 exports.status = grpc.status;
 /**
- * Call error name to code number mapping
+ * See docs for client.callError
  */
 exports.callError = grpc.callError;

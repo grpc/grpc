@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -449,9 +449,9 @@ VALUE rb_cCall = Qnil;
    operations; */
 VALUE rb_eCallError = Qnil;
 
-void Init_google_rpc_error_codes() {
+void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
-  VALUE rb_RpcErrors = rb_define_module_under(rb_mGoogleRpcCore, "RpcErrors");
+  VALUE rb_RpcErrors = rb_define_module_under(rb_mGrpcCore, "RpcErrors");
   rb_define_const(rb_RpcErrors, "OK", UINT2NUM(GRPC_CALL_OK));
   rb_define_const(rb_RpcErrors, "ERROR", UINT2NUM(GRPC_CALL_ERROR));
   rb_define_const(rb_RpcErrors, "NOT_ON_SERVER",
@@ -500,11 +500,11 @@ void Init_google_rpc_error_codes() {
   rb_obj_freeze(rb_error_code_details);
 }
 
-void Init_google_rpc_call() {
+void Init_grpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
   rb_eCallError =
-      rb_define_class_under(rb_mGoogleRpcCore, "CallError", rb_eException);
-  rb_cCall = rb_define_class_under(rb_mGoogleRpcCore, "Call", rb_cObject);
+      rb_define_class_under(rb_mGrpcCore, "CallError", rb_eException);
+  rb_cCall = rb_define_class_under(rb_mGrpcCore, "Call", rb_cObject);
 
   /* Prevent allocation or inialization of the Call class */
   rb_define_alloc_func(rb_cCall, grpc_rb_cannot_alloc);
@@ -542,7 +542,7 @@ void Init_google_rpc_call() {
   hash_all_calls = rb_hash_new();
   rb_define_const(rb_cCall, "INTERNAL_ALL_CALLs", hash_all_calls);
 
-  Init_google_rpc_error_codes();
+  Init_grpc_error_codes();
 }
 
 /* Gets the call from the ruby object */

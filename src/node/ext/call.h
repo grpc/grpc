@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,14 +34,70 @@
 #ifndef NET_GRPC_NODE_CALL_H_
 #define NET_GRPC_NODE_CALL_H_
 
+#include <memory>
+#include <vector>
+
 #include <node.h>
 #include <nan.h>
 #include "grpc/grpc.h"
 
 #include "channel.h"
 
+
 namespace grpc {
 namespace node {
+
+using std::unique_ptr;
+using std::shared_ptr;
+
+v8::Handle<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
+
+class PersistentHolder {
+ public:
+  explicit PersistentHolder(v8::Persistent<v8::Value> persist) :
+      persist(persist) {
+  }
+
+  ~PersistentHolder() {
+    NanDisposePersistent(persist);
+  }
+
+ private:
+  v8::Persistent<v8::Value> persist;
+};
+
+struct Resources {
+  std::vector<unique_ptr<NanUtf8String> > strings;
+  std::vector<unique_ptr<PersistentHolder> > handles;
+};
+
+class Op {
+ public:
+  virtual v8::Handle<v8::Value> GetNodeValue() const = 0;
+  virtual bool ParseOp(v8::Handle<v8::Value> value, grpc_op *out,
+                       shared_ptr<Resources> resources) = 0;
+  v8::Handle<v8::Value> GetOpType() const;
+
+ protected:
+  virtual std::string GetTypeString() const = 0;
+};
+
+typedef std::vector<unique_ptr<Op>> OpVec;
+
+struct tag {
+  tag(NanCallback *callback, OpVec *ops,
+      shared_ptr<Resources> resources);
+  ~tag();
+  NanCallback *callback;
+  OpVec *ops;
+  shared_ptr<Resources> resources;
+};
+
+v8::Handle<v8::Value> GetTagNodeValue(void *tag);
+
+NanCallback *GetTagCallback(void *tag);
+
+void DestroyTag(void *tag);
 
 /* Wrapper class for grpc_call structs. */
 class Call : public ::node::ObjectWrap {
@@ -60,15 +116,8 @@ class Call : public ::node::ObjectWrap {
   Call &operator=(const Call &);
 
   static NAN_METHOD(New);
-  static NAN_METHOD(AddMetadata);
-  static NAN_METHOD(Invoke);
-  static NAN_METHOD(ServerAccept);
-  static NAN_METHOD(ServerEndInitialMetadata);
+  static NAN_METHOD(StartBatch);
   static NAN_METHOD(Cancel);
-  static NAN_METHOD(StartWrite);
-  static NAN_METHOD(StartWriteStatus);
-  static NAN_METHOD(WritesDone);
-  static NAN_METHOD(StartRead);
   static v8::Persistent<v8::Function> constructor;
   // Used for typechecking instances of this javascript class
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;

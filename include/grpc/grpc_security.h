@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -161,6 +161,13 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
 grpc_server *grpc_secure_server_create(grpc_server_credentials *creds,
                                        grpc_completion_queue *cq,
                                        const grpc_channel_args *args);
+
+/* Add a HTTP2 over an encrypted link over tcp listener.
+   Server must have been created with grpc_secure_server_create.
+   Returns bound port number on success, 0 on failure.
+   REQUIRES: server not started */
+int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr);
+
 
 #ifdef __cplusplus
 }

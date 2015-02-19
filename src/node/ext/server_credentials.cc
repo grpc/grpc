@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,6 @@ ServerCredentials::ServerCredentials(grpc_server_credentials *credentials)
     : wrapped_credentials(credentials) {}
 
 ServerCredentials::~ServerCredentials() {
-  gpr_log(GPR_DEBUG, "Destroying server credentials object");
   grpc_server_credentials_release(wrapped_credentials);
 }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -248,7 +248,7 @@ void DoRequestStreaming() {
     aggregated_payload_size += request_stream_sizes[i];
   }
   stream->WritesDone();
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
 
   GPR_ASSERT(response.aggregated_payload_size() == aggregated_payload_size);
   GPR_ASSERT(s.IsOk());
@@ -269,7 +269,7 @@ void DoResponseStreaming() {
   }
   StreamingOutputCallResponse response;
   std::unique_ptr<grpc::ClientReader<StreamingOutputCallResponse>> stream(
-      stub->StreamingOutputCall(&context, &request));
+      stub->StreamingOutputCall(&context, request));
 
   unsigned int i = 0;
   while (stream->Read(&response)) {
@@ -278,7 +278,7 @@ void DoResponseStreaming() {
     ++i;
   }
   GPR_ASSERT(response_stream_sizes.size() == i);
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
 
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Response streaming done.");
@@ -299,7 +299,7 @@ void DoResponseStreamingWithSlowConsumer() {
   }
   StreamingOutputCallResponse response;
   std::unique_ptr<grpc::ClientReader<StreamingOutputCallResponse>> stream(
-      stub->StreamingOutputCall(&context, &request));
+      stub->StreamingOutputCall(&context, request));
 
   int i = 0;
   while (stream->Read(&response)) {
@@ -311,7 +311,7 @@ void DoResponseStreamingWithSlowConsumer() {
     ++i;
   }
   GPR_ASSERT(kNumResponseMessages == i);
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
 
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Response streaming done.");
@@ -345,7 +345,7 @@ void DoHalfDuplex() {
     ++i;
   }
   GPR_ASSERT(response_stream_sizes.size() == i);
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Half-duplex streaming rpc done.");
 }
@@ -378,7 +378,7 @@ void DoPingPong() {
 
   stream->WritesDone();
   GPR_ASSERT(!stream->Read(&response));
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Ping pong streaming done.");
 }

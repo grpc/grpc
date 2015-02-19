@@ -138,8 +138,8 @@
         "src/core/iomgr/iomgr_posix.c",
         "src/core/iomgr/iomgr_windows.c",
         "src/core/iomgr/pollset_kick.c",
-        "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_multipoller_with_epoll.c",
+        "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
         "src/core/iomgr/resolve_address.c",
@@ -239,7 +239,6 @@
         "include/grpc/support/useful.h"
       ],
       "headers": [
-        "src/core/support/cpu.h",
         "src/core/support/env.h",
         "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
@@ -292,6 +291,9 @@
       "src": [
         "test/core/util/test_config.c"
       ],
+      "deps": [
+        "gpr"
+      ],
       "vs_project_guid": "{EAB0A629-17A9-44DB-B5FF-E91A721FE037}"
     },
     {
@@ -342,7 +344,7 @@
     {
       "name": "grpc_csharp_ext",
       "build": "all",
-      "language": "c",
+      "language": "csharp",
       "src": [
         "src/csharp/ext/grpc_csharp_ext.c"
       ],
@@ -370,6 +372,10 @@
         "test/core/util/port_posix.c",
         "test/core/util/slice_splitter.c"
       ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ],
       "vs_project_guid": "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
     },
     {
@@ -391,8 +397,7 @@
       "build": "all",
       "language": "c++",
       "public_headers": [
-        "include/grpc++/async_server.h",
-        "include/grpc++/async_server_context.h",
+        "include/grpc++/async_unary_call.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
@@ -400,44 +405,44 @@
         "include/grpc++/config.h",
         "include/grpc++/create_channel.h",
         "include/grpc++/credentials.h",
+        "include/grpc++/impl/call.h",
+        "include/grpc++/impl/client_unary_call.h",
         "include/grpc++/impl/internal_stub.h",
         "include/grpc++/impl/rpc_method.h",
         "include/grpc++/impl/rpc_service_method.h",
+        "include/grpc++/impl/service_type.h",
         "include/grpc++/server.h",
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
         "include/grpc++/status.h",
+        "include/grpc++/status_code_enum.h",
         "include/grpc++/stream.h",
-        "include/grpc++/stream_context_interface.h"
+        "include/grpc++/thread_pool_interface.h"
       ],
       "headers": [
         "src/cpp/client/channel.h",
         "src/cpp/proto/proto_utils.h",
-        "src/cpp/server/server_rpc_handler.h",
         "src/cpp/server/thread_pool.h",
-        "src/cpp/stream/stream_context.h",
         "src/cpp/util/time.h"
       ],
       "src": [
         "src/cpp/client/channel.cc",
         "src/cpp/client/channel_arguments.cc",
         "src/cpp/client/client_context.cc",
+        "src/cpp/client/client_unary_call.cc",
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
         "src/cpp/client/internal_stub.cc",
+        "src/cpp/common/call.cc",
         "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
-        "src/cpp/server/async_server.cc",
-        "src/cpp/server/async_server_context.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
-        "src/cpp/server/server_context_impl.cc",
+        "src/cpp/server/server_context.cc",
         "src/cpp/server/server_credentials.cc",
-        "src/cpp/server/server_rpc_handler.cc",
         "src/cpp/server/thread_pool.cc",
-        "src/cpp/stream/stream_context.cc",
         "src/cpp/util/status.cc",
         "src/cpp/util/time.cc"
       ],
@@ -455,20 +460,19 @@
         "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
-        "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
     },
     {
-      "name": "tips_client_lib",
+      "name": "pubsub_client_lib",
       "build": "private",
       "language": "c++",
       "src": [
-        "examples/tips/label.proto",
-        "examples/tips/empty.proto",
-        "examples/tips/pubsub.proto",
-        "examples/tips/publisher.cc",
-        "examples/tips/subscriber.cc"
+        "examples/pubsub/label.proto",
+        "examples/pubsub/empty.proto",
+        "examples/pubsub/pubsub.proto",
+        "examples/pubsub/publisher.cc",
+        "examples/pubsub/subscriber.cc"
       ],
       "deps": [
         "grpc++",
@@ -1350,6 +1354,20 @@
       ]
     },
     {
+      "name": "multi_init_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/surface/multi_init_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "murmur_hash_test",
       "build": "test",
       "language": "c",
@@ -1530,6 +1548,22 @@
       ]
     },
     {
+      "name": "async_end2end_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/async_end2end_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",
@@ -1543,7 +1577,7 @@
       ]
     },
     {
-      "name": "cpp_plugin",
+      "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
       "headers": [
@@ -1627,6 +1661,58 @@
       ]
     },
     {
+      "name": "pubsub_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "examples/pubsub/main.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_publisher_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/pubsub/publisher_test.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_subscriber_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/pubsub/subscriber_test.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "qps_client",
       "build": "test",
       "run": false,
@@ -1663,15 +1749,9 @@
       ]
     },
     {
-      "name": "ruby_plugin",
+      "name": "grpc_ruby_plugin",
       "build": "protoc",
       "language": "c++",
-      "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers-inl.h",
-        "src/compiler/cpp_generator_map-inl.h",
-        "src/compiler/cpp_generator_string-inl.h"
-      ],
       "src": [
         "src/compiler/ruby_generator.cc",
         "src/compiler/ruby_plugin.cc"
@@ -1695,22 +1775,6 @@
       ]
     },
     {
-      "name": "sync_client_async_server_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "test/cpp/end2end/sync_client_async_server_test.cc"
-      ],
-      "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "thread_pool_test",
       "build": "test",
       "language": "c++",
@@ -1718,58 +1782,6 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_client",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "examples/tips/main.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_publisher_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/publisher_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_subscriber_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/subscriber_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

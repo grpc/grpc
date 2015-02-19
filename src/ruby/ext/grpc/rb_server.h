@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 extern VALUE rb_cServer;
 
 /* Initializes the Server class. */
-void Init_google_rpc_server();
+void Init_grpc_server();
 
 /* Gets the wrapped server from the ruby wrapper */
 grpc_server* grpc_rb_get_wrapped_server(VALUE v);

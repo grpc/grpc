@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -138,7 +138,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   GPR_ASSERT(!strcmp(grpc_mdstr_as_c_string(token_elem->value),
                      "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"));
   grpc_mdelem_unref(token_elem);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
@@ -150,7 +150,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
@@ -161,7 +161,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
@@ -176,7 +176,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
@@ -190,7 +190,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
@@ -205,7 +205,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
@@ -220,7 +220,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void check_metadata(expected_md *expected, grpc_mdelem **md_elems,

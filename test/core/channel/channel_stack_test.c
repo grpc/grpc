@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -128,7 +128,7 @@ static void test_create_channel_stack(void) {
   grpc_channel_stack_destroy(channel_stack);
   gpr_free(channel_stack);
 
-  grpc_mdctx_orphan(metadata_context);
+  grpc_mdctx_unref(metadata_context);
 }
 
 int main(int argc, char **argv) {

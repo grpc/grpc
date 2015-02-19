@@ -1,12 +1,45 @@
+#region Copyright notice and license
+
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#endregion
+
 using System;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using Google.GRPC.Core.Internal;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core
+namespace Grpc.Core
 {
     /// <summary>
     /// Server is implemented only to be able to do
@@ -14,10 +47,10 @@ namespace Google.GRPC.Core
     /// </summary>
     public class Server
     {
-        // TODO: make sure the delegate doesn't get garbage collected while 
+        // TODO: make sure the delegate doesn't get garbage collected while
         // native callbacks are in the completion queue.
-        readonly EventCallbackDelegate newRpcHandler;
-        readonly EventCallbackDelegate serverShutdownHandler;
+        readonly ServerShutdownCallbackDelegate serverShutdownHandler;
+        readonly CompletionCallbackDelegate newServerRpcHandler;
 
         readonly BlockingCollection<NewRpcInfo> newRpcQueue = new BlockingCollection<NewRpcInfo>();
         readonly ServerSafeHandle handle;
@@ -26,15 +59,10 @@ namespace Google.GRPC.Core
 
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
-        static Server() {
-            GrpcEnvironment.EnsureInitialized();
-        }
-
         public Server()
         {
-            // TODO: what is the tag for server shutdown?
             this.handle = ServerSafeHandle.NewServer(GetCompletionQueue(), IntPtr.Zero);
-            this.newRpcHandler = HandleNewRpc;
+            this.newServerRpcHandler = HandleNewServerRpc;
             this.serverShutdownHandler = HandleServerShutdown;
         }
 
@@ -65,18 +93,18 @@ namespace Google.GRPC.Core
         internal void RunRpc()
         {
             AllowOneRpc();
-         
+
             try
             {
                 var rpcInfo = newRpcQueue.Take();
 
-                Console.WriteLine("Server received RPC " + rpcInfo.Method);
+                //Console.WriteLine("Server received RPC " + rpcInfo.Method);
 
                 IServerCallHandler callHandler;
                 if (!callHandlers.TryGetValue(rpcInfo.Method, out callHandler))
                 {
                     callHandler = new NoSuchMethodCallHandler();
-                } 
+                }
                 callHandler.StartCall(rpcInfo.Method, rpcInfo.Call, GetCompletionQueue());
             }
             catch(Exception e)
@@ -109,23 +137,25 @@ namespace Google.GRPC.Core
 
         private void AllowOneRpc()
         {
-            AssertCallOk(handle.RequestCall(newRpcHandler));
+            AssertCallOk(handle.RequestCall(GetCompletionQueue(), newServerRpcHandler));
         }
 
-        private void HandleNewRpc(IntPtr eventPtr)
-        {
-            try
-            {
-                var ev = new EventSafeHandleNotOwned(eventPtr);
-                var rpcInfo = new NewRpcInfo(ev.GetCall(), ev.GetServerRpcNewMethod());
+        private void HandleNewServerRpc(GRPCOpError error, IntPtr batchContextPtr) {
+            try {
+                var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
+
+                if (error != GRPCOpError.GRPC_OP_OK) {
+                    // TODO: handle error
+                }
+
+                var rpcInfo = new NewRpcInfo(ctx.GetServerRpcNewCall(), ctx.GetServerRpcNewMethod());
 
                 // after server shutdown, the callback returns with null call
                 if (!rpcInfo.Call.IsInvalid) {
                     newRpcQueue.Add(rpcInfo);
                 }
-            }
-            catch (Exception e)
-            {
+
+            } catch(Exception e) {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }

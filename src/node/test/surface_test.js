@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,11 @@
  *
  */
 
+'use strict';
+
 var assert = require('assert');
 
-var surface_server = require('../src/surface_server.js');
-
-var surface_client = require('../src/surface_client.js');
+var surface_client = require('../src/client.js');
 
 var ProtoBuf = require('protobufjs');
 

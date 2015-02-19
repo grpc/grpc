@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -214,6 +214,7 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
      * unary poller */
     grpc_fd_unref(fds[0]);
     pollset->data.ptr = fd;
+    grpc_fd_ref(fd);
   }
 }
 

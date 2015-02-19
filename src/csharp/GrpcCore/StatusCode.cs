@@ -1,21 +1,54 @@
+#region Copyright notice and license
+
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#endregion
+
 using System;
 
-namespace Google.GRPC.Core
+namespace Grpc.Core
 {
     // TODO: element names should changed to comply with C# naming conventions.
     /// <summary>
-    /// grpc_status_code from grpc/status.h
+    /// based on grpc_status_code from grpc/status.h
     /// </summary>
     public enum StatusCode
     {
         /* Not an error; returned on success
 
      HTTP Mapping: 200 OK */
-        GRPC_STATUS_OK = 0,
+        OK = 0,
         /* The operation was cancelled (typically by the caller).
 
      HTTP Mapping: 499 Client Closed Request */
-        GRPC_STATUS_CANCELLED = 1,
+        Cancelled = 1,
         /* Unknown error.  An example of where this error may be returned is
      if a Status value received from another address space belongs to
      an error-space that is not known in this address space.  Also
@@ -23,14 +56,14 @@ namespace Google.GRPC.Core
      may be converted to this error.
 
      HTTP Mapping: 500 Internal Server Error */
-        GRPC_STATUS_UNKNOWN = 2,
+        Unknown = 2,
         /* Client specified an invalid argument.  Note that this differs
      from FAILED_PRECONDITION.  INVALID_ARGUMENT indicates arguments
      that are problematic regardless of the state of the system
      (e.g., a malformed file name).
 
      HTTP Mapping: 400 Bad Request */
-        GRPC_STATUS_INVALID_ARGUMENT = 3,
+        InvalidArgument = 3,
         /* Deadline expired before operation could complete.  For operations
      that change the state of the system, this error may be returned
      even if the operation has completed successfully.  For example, a
@@ -38,16 +71,16 @@ namespace Google.GRPC.Core
      enough for the deadline to expire.
 
      HTTP Mapping: 504 Gateway Timeout */
-        GRPC_STATUS_DEADLINE_EXCEEDED = 4,
+        DeadlineExceeded = 4,
         /* Some requested entity (e.g., file or directory) was not found.
 
      HTTP Mapping: 404 Not Found */
-        GRPC_STATUS_NOT_FOUND = 5,
+        NotFound = 5,
         /* Some entity that we attempted to create (e.g., file or directory)
      already exists.
 
      HTTP Mapping: 409 Conflict */
-        GRPC_STATUS_ALREADY_EXISTS = 6,
+        AlreadyExists = 6,
         /* The caller does not have permission to execute the specified
      operation.  PERMISSION_DENIED must not be used for rejections
      caused by exhausting some resource (use RESOURCE_EXHAUSTED
@@ -56,17 +89,17 @@ namespace Google.GRPC.Core
      instead for those errors).
 
      HTTP Mapping: 403 Forbidden */
-        GRPC_STATUS_PERMISSION_DENIED = 7,
+        PermissionDenied = 7,
         /* The request does not have valid authentication credentials for the
      operation.
 
      HTTP Mapping: 401 Unauthorized */
-        GRPC_STATUS_UNAUTHENTICATED = 16,
+        Unauthenticated = 16,
         /* Some resource has been exhausted, perhaps a per-user quota, or
      perhaps the entire file system is out of space.
 
      HTTP Mapping: 429 Too Many Requests */
-        GRPC_STATUS_RESOURCE_EXHAUSTED = 8,
+        ResourceExhausted = 8,
         /* Operation was rejected because the system is not in a state
      required for the operation's execution.  For example, directory
      to be deleted may be non-empty, an rmdir operation is applied to
@@ -93,7 +126,7 @@ namespace Google.GRPC.Core
      the request contains Etag related headers. So if the server does see
      Etag related headers in the request, it may choose to return 412
      instead of 400 for this error code. */
-        GRPC_STATUS_FAILED_PRECONDITION = 9,
+        FailedPrecondition = 9,
         /* The operation was aborted, typically due to a concurrency issue
      like sequencer check failures, transaction aborts, etc.
 
@@ -101,7 +134,7 @@ namespace Google.GRPC.Core
      ABORTED, and UNAVAILABLE.
 
      HTTP Mapping: 409 Conflict */
-        GRPC_STATUS_ABORTED = 10,
+        Aborted = 10,
         /* Operation was attempted past the valid range.  E.g., seeking or
      reading past end of file.
 
@@ -119,17 +152,17 @@ namespace Google.GRPC.Core
      they are done.
 
      HTTP Mapping: 400 Bad Request */
-        GRPC_STATUS_OUT_OF_RANGE = 11,
+        OutOfRange = 11,
         /* Operation is not implemented or not supported/enabled in this service.
 
      HTTP Mapping: 501 Not Implemented */
-        GRPC_STATUS_UNIMPLEMENTED = 12,
+        Unimplemented = 12,
         /* Internal errors.  Means some invariants expected by underlying
      system has been broken.  If you see one of these errors,
      something is very broken.
 
      HTTP Mapping: 500 Internal Server Error */
-        GRPC_STATUS_INTERNAL = 13,
+        Internal = 13,
         /* The service is currently unavailable.  This is a most likely a
      transient condition and may be corrected by retrying with
      a backoff.
@@ -138,13 +171,11 @@ namespace Google.GRPC.Core
      ABORTED, and UNAVAILABLE.
 
      HTTP Mapping: 503 Service Unavailable */
-        GRPC_STATUS_UNAVAILABLE = 14,
+        Unavailable = 14,
         /* Unrecoverable data loss or corruption.
 
      HTTP Mapping: 500 Internal Server Error */
-        GRPC_STATUS_DATA_LOSS = 15,
-        /* Force users to include a default branch: */
-        GRPC_STATUS__DO_NOT_USE = -1
+        DataLoss = 15
     }
 }
 

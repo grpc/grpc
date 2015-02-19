@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,13 +62,13 @@ typedef struct {
   int refs;
 } async_connect;
 
-static int prepare_socket(int fd) {
+static int prepare_socket(const struct sockaddr *addr, int fd) {
   if (fd < 0) {
     goto error;
   }
 
   if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1) ||
-      !grpc_set_socket_low_latency(fd, 1)) {
+      (addr->sa_family != AF_UNIX && !grpc_set_socket_low_latency(fd, 1))) {
     gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
             strerror(errno));
     goto error;
@@ -200,7 +200,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
     addr = (struct sockaddr *)&addr4_copy;
     addr_len = sizeof(addr4_copy);
   }
-  if (!prepare_socket(fd)) {
+  if (!prepare_socket(addr, fd)) {
     cb(arg, NULL);
     return;
   }

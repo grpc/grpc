@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,9 @@
  *
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_LINUX
+#ifdef GPR_LINUX_SOCKETUTILS
 
 #include "src/core/iomgr/socket_utils_posix.h"
 

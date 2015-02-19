@@ -1,5 +1,9 @@
 # Node.js gRPC Library
 
+## Status
+
+Alpha : Ready for early adopters
+
 ## Installation
 
 First, clone this repository (NPM package coming soon). Then follow the instructions in the `INSTALL` file in the root of the repository to install the C core library that this package depends on.

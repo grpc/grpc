@@ -1,8 +1,41 @@
+#region Copyright notice and license
+
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#endregion
+
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
 	/// <summary>
 	/// gpr_timespec from grpc/support/time.h
@@ -13,13 +46,20 @@ namespace Google.GRPC.Core.Internal
         const int nanosPerSecond = 1000 * 1000 * 1000;
         const int nanosPerTick = 100;
 
-        [DllImport("gpr.dll")]
-        static extern Timespec gpr_now();
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern Timespec gprsharp_now();
 
-		// TODO: this only works on 64bit linux, can we autoselect the right size of ints?
-		// perhaps using IntPtr would work.
-		public System.Int64 tv_sec;
-		public System.Int64 tv_nsec;
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern Timespec gprsharp_inf_future();
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern int gprsharp_sizeof_timespec();
+
+        // TODO: revisit this.
+		// NOTE: on linux 64bit  sizeof(gpr_timespec) = 16, on windows 32bit sizeof(gpr_timespec) = 8
+        // so IntPtr seems to have the right size to work on both.
+		public System.IntPtr tv_sec;
+		public System.IntPtr tv_nsec;
 
 		/// <summary>
 		/// Timespec a long time in the future.
@@ -28,8 +68,7 @@ namespace Google.GRPC.Core.Internal
 		{
 			get
 			{
-				// TODO: set correct value based on the length of the struct
-				return new Timespec { tv_sec = Int32.MaxValue, tv_nsec = 0 };
+                return gprsharp_inf_future();
 			}
 		}
 
@@ -37,7 +76,15 @@ namespace Google.GRPC.Core.Internal
         {
             get
             {
-                return gpr_now();
+                return gprsharp_now();
+            }
+        }
+
+        internal static int NativeSize
+        {
+            get
+            {
+                return gprsharp_sizeof_timespec();
             }
         }
 
@@ -54,12 +101,12 @@ namespace Google.GRPC.Core.Internal
         }
 
         public Timespec Add(TimeSpan timeSpan) {
-            long nanos = tv_nsec + (timeSpan.Ticks % TimeSpan.TicksPerSecond) * nanosPerTick;
+            long nanos = tv_nsec.ToInt64() + (timeSpan.Ticks % TimeSpan.TicksPerSecond) * nanosPerTick;
             long overflow_sec = (nanos > nanosPerSecond) ? 1 : 0;
 
             Timespec result;
-            result.tv_nsec = nanos % nanosPerSecond;
-            result.tv_sec = tv_sec + (timeSpan.Ticks / TimeSpan.TicksPerSecond) + overflow_sec; 
+            result.tv_nsec = new IntPtr(nanos % nanosPerSecond);
+            result.tv_sec = new IntPtr(tv_sec.ToInt64() + (timeSpan.Ticks / TimeSpan.TicksPerSecond) + overflow_sec);
             return result;
         }
 	}

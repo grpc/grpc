@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -184,9 +184,9 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
    grpc_server_credentials. */
 VALUE rb_cServerCredentials = Qnil;
 
-void Init_google_rpc_server_credentials() {
+void Init_grpc_server_credentials() {
   rb_cServerCredentials =
-      rb_define_class_under(rb_mGoogleRpcCore, "ServerCredentials", rb_cObject);
+      rb_define_class_under(rb_mGrpcCore, "ServerCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cServerCredentials, grpc_rb_server_credentials_alloc);

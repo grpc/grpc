@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,6 +66,8 @@ class CompletionQueueAsyncWorker : public NanAsyncWorker {
      message). Calls the saved callback with the event that came from
      completion_queue_next */
   void HandleOKCallback();
+
+  void HandleErrorCallback();
 
  private:
   grpc_event *result;

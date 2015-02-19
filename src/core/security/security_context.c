@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -349,11 +349,13 @@ static grpc_security_status ssl_channel_check_peer(grpc_security_context *ctx,
                                                    void *user_data) {
   grpc_ssl_channel_security_context *c =
       (grpc_ssl_channel_security_context *)ctx;
-  grpc_security_status status = ssl_check_peer(c->overridden_target_name != NULL
-                                                   ? c->overridden_target_name
-                                                   : c->target_name,
-                                               &peer);
+  grpc_security_status status;
+  tsi_peer_destruct(&c->peer);
   c->peer = peer;
+  status = ssl_check_peer(c->overridden_target_name != NULL
+                              ? c->overridden_target_name
+                              : c->target_name,
+                          &peer);
   return status;
 }
 
