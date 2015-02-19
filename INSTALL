@@ -23,6 +23,11 @@ Building the python wrapper requires the following:
 
   # apt-get install python-all-dev python-virtualenv
 
+If you want to install in a different directory than the default /usr/lib, you can
+override it on the command line:
+
+  # make install prefix=/opt
+
 
 *******************************
 * More detailled instructions *
@@ -95,6 +100,44 @@ will need clang and its instrumented libc++:
 
   # apt-get install clang libc++-dev
 
+Mac-specific notes:
+-------------------
+
+For a Mac system, git is not available by default. You will first need to
+install Xcode from the Mac AppStore and then run the following command from a
+terminal:
+
+  $ sudo xcode-select --install
+
+You should also install "port" following the instructions at
+https://www.macports.org . This will reside in /opt/local/bin/port for
+most Mac installations. Do the "git submodule" command listed above.
+
+Then execute the following for all the needed build dependencies
+
+  $ sudo /opt/local/bin/port install autoconf automake libtool gflags cmake
+  $ mkdir ~/gtest
+  $ svn checkout http://googletest.googlecode.com/svn/trunk/ gtest-svn
+  $ mkdir mybuild
+  $ cd mybuild
+  $ cmake ../gtest-svn
+  $ make
+  $ make gtest.a gtest_main.a
+  $ sudo cp libgtest.a libgtest_main.a /opt/local/lib
+  $ sudo mkdir /opt/local/include/gtest
+  $ sudo cp -pr ../gtest-svn/include/gtest /opt/local/include/gtest 
+
+We will also need to make openssl and install it appropriately
+
+  $ cd <git directory>
+  $ cd third_party/openssl
+  $ sudo make install
+  $ cd ../../
+
+If you are going to make changes and need to regenerate the projects file,
+you will need to install certain modules for python.
+
+  $ sudo easy_install simplejson mako
 
 A word on OpenSSL
 -----------------

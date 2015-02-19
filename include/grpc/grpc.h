@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -354,10 +354,18 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
-/* Initialize the grpc library */
+/* Initialize the grpc library.
+   It is not safe to call any other grpc functions before calling this.
+   (To avoid overhead, little checking is done, and some things may work. We
+   do not warrant that they will continue to do so in future revisions of this
+   library). */
 void grpc_init(void);
 
-/* Shut down the grpc library */
+/* Shut down the grpc library. 
+   No memory is used by grpc after this call returns, nor are any instructions
+   executing within the grpc library.
+   Prior to calling, all application owned grpc objects must have been
+   destroyed. */
 void grpc_shutdown(void);
 
 grpc_completion_queue *grpc_completion_queue_create(void);
@@ -386,7 +394,12 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
 void grpc_event_finish(grpc_event *event);
 
 /* Begin destruction of a completion queue. Once all possible events are
-   drained it's safe to call grpc_completion_queue_destroy. */
+   drained then grpc_completion_queue_next will start to produce
+   GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call 
+   grpc_completion_queue_destroy. 
+   
+   After calling this function applications should ensure that no
+   NEW work is added to be published on this completion queue. */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
 
 /* Destroy a completion queue. The caller must ensure that the queue is
@@ -563,18 +576,18 @@ grpc_call_error grpc_server_request_call_old(grpc_server *server,
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
-    grpc_completion_queue *cq_bound_to_call, 
+    grpc_completion_queue *cq_bound_to_call,
     void *tag_new);
 
 /* Registers a method in the server.
    Methods to this (host, method) pair will not be reported by
-   grpc_server_request_call, but instead be reported by 
+   grpc_server_request_call, but instead be reported by
    grpc_server_request_registered_call when passed the appropriate
    registered_method (as returned by this function).
    Must be called before grpc_server_start.
    Returns NULL on failure. */
 void *grpc_server_register_method(grpc_server *server, const char *method,
-                                  const char *host, 
+                                  const char *host,
                                   grpc_completion_queue *new_call_cq);
 
 /* Request notification of a new pre-registered call */

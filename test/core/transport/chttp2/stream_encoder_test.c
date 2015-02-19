@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -309,7 +309,7 @@ static void run_test(void (*test)(), const char *name) {
   grpc_sopb_init(&g_sopb);
   test();
   grpc_chttp2_hpack_compressor_destroy(&g_compressor);
-  grpc_mdctx_orphan(g_mdctx);
+  grpc_mdctx_unref(g_mdctx);
   grpc_sopb_destroy(&g_sopb);
 }
 

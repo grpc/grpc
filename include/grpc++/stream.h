@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -550,60 +550,6 @@ class ClientAsyncReaderWriter final : public ClientAsyncStreamingInterface,
   CallOpBuffer finish_buf_;
 };
 
-// TODO(yangg) Move out of stream.h
-template <class W>
-class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
- public:
-  explicit ServerAsyncResponseWriter(ServerContext* ctx)
-      : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
-
-  void SendInitialMetadata(void* tag) {
-    GPR_ASSERT(!ctx_->sent_initial_metadata_);
-
-    meta_buf_.Reset(tag);
-    meta_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
-    ctx_->sent_initial_metadata_ = true;
-    call_.PerformOps(&meta_buf_);
-  }
-
-  void Finish(const W& msg, const Status& status, void* tag) {
-    finish_buf_.Reset(tag);
-    if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
-      ctx_->sent_initial_metadata_ = true;
-    }
-    // The response is dropped if the status is not OK.
-    if (status.IsOk()) {
-      finish_buf_.AddSendMessage(msg);
-    }
-    bool cancelled = false;
-    finish_buf_.AddServerRecvClose(&cancelled);
-    finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
-    call_.PerformOps(&finish_buf_);
-  }
-
-  void FinishWithError(const Status& status, void* tag) {
-    GPR_ASSERT(!status.IsOk());
-    finish_buf_.Reset(tag);
-    if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
-      ctx_->sent_initial_metadata_ = true;
-    }
-    bool cancelled = false;
-    finish_buf_.AddServerRecvClose(&cancelled);
-    finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
-    call_.PerformOps(&finish_buf_);
-  }
-
- private:
-  void BindCall(Call* call) override { call_ = *call; }
-
-  Call call_;
-  ServerContext* ctx_;
-  CallOpBuffer meta_buf_;
-  CallOpBuffer finish_buf_;
-};
-
 template <class W, class R>
 class ServerAsyncReader : public ServerAsyncStreamingInterface,
                           public AsyncReaderInterface<R> {
@@ -636,8 +582,6 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
     if (status.IsOk()) {
       finish_buf_.AddSendMessage(msg);
     }
-    bool cancelled = false;
-    finish_buf_.AddServerRecvClose(&cancelled);
     finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
@@ -649,8 +593,6 @@ class ServerAsyncReader : public ServerAsyncStreamingInterface,
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    bool cancelled = false;
-    finish_buf_.AddServerRecvClose(&cancelled);
     finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
@@ -697,8 +639,6 @@ class ServerAsyncWriter : public ServerAsyncStreamingInterface,
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    bool cancelled = false;
-    finish_buf_.AddServerRecvClose(&cancelled);
     finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }
@@ -753,8 +693,6 @@ class ServerAsyncReaderWriter : public ServerAsyncStreamingInterface,
       finish_buf_.AddSendInitialMetadata(&ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    bool cancelled = false;
-    finish_buf_.AddServerRecvClose(&cancelled);
     finish_buf_.AddServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&finish_buf_);
   }

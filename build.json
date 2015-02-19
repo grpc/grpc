@@ -239,7 +239,6 @@
         "include/grpc/support/useful.h"
       ],
       "headers": [
-        "src/core/support/cpu.h",
         "src/core/support/env.h",
         "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
@@ -345,7 +344,7 @@
     {
       "name": "grpc_csharp_ext",
       "build": "all",
-      "language": "c",
+      "language": "csharp",
       "src": [
         "src/csharp/ext/grpc_csharp_ext.c"
       ],
@@ -398,6 +397,7 @@
       "build": "all",
       "language": "c++",
       "public_headers": [
+        "include/grpc++/async_unary_call.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
@@ -415,8 +415,7 @@
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
         "include/grpc++/status.h",
-        "include/grpc++/stream.h",
-        "include/grpc++/stream_context_interface.h"
+        "include/grpc++/stream.h"
       ],
       "headers": [
         "src/cpp/client/channel.h",
@@ -1575,7 +1574,7 @@
       ]
     },
     {
-      "name": "cpp_plugin",
+      "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
       "headers": [
@@ -1747,7 +1746,7 @@
       ]
     },
     {
-      "name": "ruby_plugin",
+      "name": "grpc_ruby_plugin",
       "build": "protoc",
       "language": "c++",
       "src": [

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,6 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_CPU_POSIX
-
-#include "src/core/support/cpu.h"
 
 #include <errno.h>
 #include <unistd.h>

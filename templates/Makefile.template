@@ -1,5 +1,34 @@
 # GRPC global makefile
 # This currently builds C and C++ code.
+
+# Copyright 2014, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <%!
   import re
   import os
@@ -165,7 +194,9 @@ LDFLAGS += -g -fPIC
 
 INCLUDES = . include $(GENDIR)
 ifeq ($(SYSTEM),Darwin)
+INCLUDES += /usr/local/ssl/include /opt/local/include
 LIBS = m z
+LDFLAGS += -L/usr/local/ssl/lib -L/opt/local/lib
 else
 LIBS = rt m z pthread
 LDFLAGS += -pthread
@@ -318,7 +349,7 @@ endif
 
 .SECONDARY = %.pb.h %.pb.cc
 
-PROTOC_PLUGINS=\
+PROTOC_PLUGINS =\
 % for tgt in targets:
 % if tgt.build == 'protoc':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -326,7 +357,7 @@ PROTOC_PLUGINS=\
 % endfor
 
 ifeq ($(DEP_MISSING),)
-all: static shared\
+all: static shared plugins\
 % for tgt in targets:
 % if tgt.build == 'all':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -498,6 +529,17 @@ shared_cxx: \
 % endfor
 
 
+shared_csharp: shared_c \
+% for lib in libs:
+% if lib.build == 'all' and lib.language == 'csharp':
+ $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)\
+% endif
+% endfor
+
+grpc_csharp_ext: shared_csharp
+
+plugins: $(PROTOC_PLUGINS)
+
 privatelibs: privatelibs_c privatelibs_cxx
 
 privatelibs_c: \
@@ -631,6 +673,18 @@ ifeq ($(CONFIG),opt)
 % endfor
 endif
 
+strip-shared_csharp: shared_csharp
+ifeq ($(CONFIG),opt)
+% for lib in libs:
+% if lib.language == "csharp":
+% if lib.build == "all":
+	$(E) "[STRIP]   Stripping lib${lib.name}.so"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT)
+% endif
+% endif
+% endfor
+endif
+
 % for p in protos:
 ifeq ($(NO_PROTOC),true)
 $(GENDIR)/${p}.pb.cc: protoc_dep_error
@@ -638,7 +692,7 @@ else
 $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 % endfor
@@ -664,11 +718,15 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
-install: install_c install_cxx
+install: install_c install_cxx install-protobuf install-plugins
 
 install_c: install-headers_c install-static_c install-shared_c
 
 install_cxx: install-headers_cxx install-static_cxx install-shared_cxx
+
+install_csharp: install-shared_csharp install_c
+
+install_grpc_csharp_ext: install_csharp
 
 install-headers: install-headers_c install-headers_cxx
 
@@ -702,9 +760,9 @@ install-static_cxx: static_cxx strip-static_cxx
 % endif
 % endfor
 
-install-shared_c: shared_c strip-shared_c
+<%def name="install_shared(lang_filter)">\
 % for lib in libs:
-% if lib.language == "c":
+% if lib.language == lang_filter:
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
@@ -723,34 +781,44 @@ endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ldconfig
+endif
+endif
+</%def>
+
+install-shared_c: shared_c strip-shared_c
+${install_shared("c")}
+
+install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c
+${install_shared("c++")}
+
+install-shared_csharp: shared_csharp strip-shared_csharp
+${install_shared("csharp")}
+
+install-protobuf: $(PROTOBUF_DEP)
+ifneq ($(PROTOBUF_DEP),)
+	$(E) "[INSTALL] Installing embedded protobufs"
+	$(Q) $(MAKE) -C third_party/protobuf install prefix=$(prefix)
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig
+endif
 endif
 endif
 
-install-shared_cxx: shared_cxx strip-shared_cxx
-% for lib in libs:
-% if lib.language == "c++":
-% if lib.build == "all":
+install-plugins: $(PROTOC_PLUGINS)
 ifeq ($(SYSTEM),MINGW32)
-	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+	$(Q) false
 else
-	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-endif
-endif
-% endif
+	$(E) "[INSTALL] Installing grpc protoc plugins"
+% for tgt in targets:
+% if tgt.build == 'protoc':
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
 % endif
 % endfor
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
-endif
 endif
 
 clean:
+	$(E) "[CLEAN]   Cleaning build directories."
 	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
 
 

@@ -1,4 +1,33 @@
 #!/bin/bash
+# Copyright 2015, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #
 # Contains funcs that help maintain GRPC's Docker images.
 #
@@ -766,7 +795,7 @@ grpc_interop_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"
@@ -821,7 +850,7 @@ grpc_cloud_prod_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"
@@ -1015,8 +1044,36 @@ grpc_interop_gen_php_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_node_cmd() {
   local cmd_prefix="sudo docker run grpc/node";
-  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true --use_test_ca=true";
   local the_cmd="$cmd_prefix $test_script $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized node gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_node_cmd() {
+  local cmd_prefix="sudo docker run grpc/node";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized node service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_node_cmd() {
+  local cmd_prefix="sudo docker run grpc/node";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
+  local the_cmd="$env_prefix $cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
 }
 

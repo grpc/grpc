@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -146,7 +146,7 @@ static void destroy_channel(void *p, int ok) {
   grpc_mdstr_unref(channel->grpc_message_string);
   grpc_mdstr_unref(channel->path_string);
   grpc_mdstr_unref(channel->authority_string);
-  grpc_mdctx_orphan(channel->metadata_context);
+  grpc_mdctx_unref(channel->metadata_context);
   gpr_free(channel);
 }
 

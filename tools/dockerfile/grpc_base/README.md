@@ -2,7 +2,8 @@ Base GRPC Dockerfile
 ====================
 
 Dockerfile for creating the base gRPC development Docker instance.
-For now, this assumes that the development will be done on GCE instances, with source code on Git-on-Borg.
+For now, this assumes that the development will be done on GCE instances,
+with source code on GitHub.
 
 As of 2015/02/02, it includes
 - git

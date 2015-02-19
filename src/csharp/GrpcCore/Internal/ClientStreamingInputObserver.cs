@@ -32,23 +32,24 @@
 #endregion
 
 using System;
-using Google.GRPC.Core.Internal;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
-    internal class StreamingInputObserver<TWrite, TRead> : IObserver<TWrite>
+    internal class ClientStreamingInputObserver<TWrite, TRead> : IObserver<TWrite>
 	{
         readonly AsyncCall<TWrite, TRead> call;
 
-        public StreamingInputObserver(AsyncCall<TWrite, TRead> call)
+        public ClientStreamingInputObserver(AsyncCall<TWrite, TRead> call)
 		{
             this.call = call;
 		}
 
 		public void OnCompleted()
 		{
+
             // TODO: how bad is the Wait here?
-            call.WritesCompletedAsync().Wait();
+            call.SendCloseFromClientAsync().Wait();
 		}
 
 		public void OnError(Exception error)
@@ -59,7 +60,7 @@ namespace Google.GRPC.Core.Internal
 		public void OnNext(TWrite value)
 		{
             // TODO: how bad is the Wait here?
-            call.WriteAsync(value).Wait();
+            call.SendMessageAsync(value).Wait();
 		}
 	}
 }

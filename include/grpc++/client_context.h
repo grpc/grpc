@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,8 @@ template <class W>
 class ClientAsyncWriter;
 template <class R, class W>
 class ClientAsyncReaderWriter;
+template <class R>
+class ClientAsyncResponseReader;
 
 class ClientContext {
  public:
@@ -81,12 +83,12 @@ class ClientContext {
   void AddMetadata(const grpc::string &meta_key,
                    const grpc::string &meta_value);
 
-  std::multimap<grpc::string, grpc::string> GetServerInitialMetadata() {
+  const std::multimap<grpc::string, grpc::string>& GetServerInitialMetadata() {
     GPR_ASSERT(initial_metadata_received_);
     return recv_initial_metadata_;
   }
 
-  std::multimap<grpc::string, grpc::string> GetServerTrailingMetadata() {
+  const std::multimap<grpc::string, grpc::string>& GetServerTrailingMetadata() {
     // TODO(yangg) check finished
     return trailing_metadata_;
   }
@@ -119,6 +121,8 @@ class ClientContext {
   friend class ::grpc::ClientAsyncWriter;
   template <class R, class W>
   friend class ::grpc::ClientAsyncReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientAsyncResponseReader;
 
   grpc_call *call() { return call_; }
   void set_call(grpc_call *call) {
