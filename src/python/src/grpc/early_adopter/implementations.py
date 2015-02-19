@@ -92,7 +92,7 @@ class _Server(interfaces.Server):
 
 
 def _build_server(methods, port, private_key, certificate_chain):
-  breakdown = _face_utilities.break_down(methods)
+  breakdown = _face_utilities.server_break_down(methods)
   return _Server(breakdown, port, private_key, certificate_chain)
 
 
@@ -101,8 +101,8 @@ def insecure_server(methods, port):
 
   Args:
     methods: A dictionary from RPC method name to
-      interfaces.RpcMethod object describing the RPCs to be
-      serviced by the created server.
+      interfaces.ServerRpcMethod object describing the RPCs to
+      be serviced by the created server.
     port: The port on which to serve.
 
   Returns:
@@ -117,8 +117,8 @@ def secure_server(methods, port, private_key, certificate_chain):
 
   Args:
     methods: A dictionary from RPC method name to
-      interfaces.RpcMethod object describing the RPCs to be
-      serviced by the created server.
+      interfaces.ServerRpcMethod object describing the RPCs to
+      be serviced by the created server.
     port: The port on which to serve.
     private_key: A pem-encoded private key.
     certificate_chain: A pem-encoded certificate chain.

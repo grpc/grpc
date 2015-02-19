@@ -43,19 +43,6 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _PRIVATE_KEY_RESOURCE_PATH = 'credentials/server1.key'
 _CERTIFICATE_CHAIN_RESOURCE_PATH = 'credentials/server1.pem'
 
-_METHODS = {
-    '/grpc.testing.TestService/EmptyCall': methods.EMPTY_CALL,
-    '/grpc.testing.TestService/UnaryCall': methods.UNARY_CALL,
-    '/grpc.testing.TestService/StreamingOutputCall':
-        methods.STREAMING_OUTPUT_CALL,
-    '/grpc.testing.TestService/StreamingInputCall':
-        methods.STREAMING_INPUT_CALL,
-    '/grpc.testing.TestService/FullDuplexCall':
-        methods.FULL_DUPLEX_CALL,
-    '/grpc.testing.TestService/HalfDuplexCall':
-        methods.HALF_DUPLEX_CALL,
-}
-
 
 def serve():
   parser = argparse.ArgumentParser()
@@ -72,10 +59,10 @@ def serve():
     certificate_chain = pkg_resources.resource_string(
         __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
     server = implementations.secure_server(
-        _METHODS, args.port, private_key, certificate_chain)
+        methods.SERVER_METHODS, args.port, private_key, certificate_chain)
   else:
     server = implementations.insecure_server(
-        _METHODS, args.port)
+        methods.SERVER_METHODS, args.port)
 
   server.start()
   logging.info('Server serving.')
