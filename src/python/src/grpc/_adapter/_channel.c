@@ -38,7 +38,7 @@
 
 static int pygrpc_channel_init(Channel *self, PyObject *args, PyObject *kwds) {
   const char *hostport;
-  static char *kwlist = {"hostport", NULL};
+  static char *kwlist[] = {"hostport", NULL};
 
   if (!(PyArg_ParseTupleAndKeywords(args, kwds, "s:Channel", kwlist,
                                     &hostport))) {

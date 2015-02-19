@@ -169,7 +169,7 @@ static PyObject *pygrpc_service_event_args(grpc_event *c_event) {
     service_acceptance =
         PyObject_CallFunctionObjArgs(service_acceptance_class, call, method,
                                      host, service_deadline, NULL);
-    if (service_acceptence == NULL) {
+    if (service_acceptance == NULL) {
       goto error;
     }
 
