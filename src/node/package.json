@@ -17,5 +17,15 @@
     "minimist": "^1.1.0",
     "googleauth": "google/google-auth-library-nodejs"
   },
+  "files": [
+    "README.md",
+    "index.js",
+    "binding.gyp",
+    "examples",
+    "ext",
+    "interop",
+    "src",
+    "test"
+  ],
   "main": "index.js"
 }
