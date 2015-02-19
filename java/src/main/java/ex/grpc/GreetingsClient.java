@@ -13,13 +13,13 @@ public class GreetingsClient {
   private final Logger logger = Logger.getLogger(
       GreetingsClient.class.getName());
   private final ChannelImpl channel;
-  private final GreetingsGrpc.GreetingsBlockingStub blockingStub;
+  private final GreeterGrpc.GreeterBlockingStub blockingStub;
 
   public GreetingsClient(String host, int port) {
     channel = NettyChannelBuilder.forAddress(host, port)
               .negotiationType(NegotiationType.PLAINTEXT)
               .build();
-    blockingStub = GreetingsGrpc.newBlockingStub(channel);
+    blockingStub = GreeterGrpc.newBlockingStub(channel);
   }
 
   public void shutdown() throws InterruptedException {
@@ -31,7 +31,7 @@ public class GreetingsClient {
       logger.fine("Will try to greet " + name + " ...");
       Helloworld.HelloRequest req =
           Helloworld.HelloRequest.newBuilder().setName(name).build();
-      Helloworld.HelloReply reply = blockingStub.hello(req);
+      Helloworld.HelloReply reply = blockingStub.sayHello(req);
       logger.info("Greeting: " + reply.getMessage());
     } catch (RuntimeException e) {
       logger.log(Level.WARNING, "RPC failed", e);

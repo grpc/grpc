@@ -16,7 +16,7 @@ public class GreetingsServer {
 
   private void start() throws Exception {
     server = NettyServerBuilder.forPort(port)
-             .addService(GreetingsGrpc.bindService(new GreetingsImpl()))
+             .addService(GreeterGrpc.bindService(new GreeterImpl()))
              .build();
     server.startAsync();
     server.awaitRunning(5, TimeUnit.SECONDS);
