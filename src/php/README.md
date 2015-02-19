@@ -1,4 +1,12 @@
-# PHP wrapper for the GRPC interfaces.
+
+#Overview
+
+This directory contains source code for PHP implementation of gRPC layered on shared C library.
+
+#Status
+
+Pre-Alpha : Not ready for usage yet.
+
 
 ## LAYOUT
 
