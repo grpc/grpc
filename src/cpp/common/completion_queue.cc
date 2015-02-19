@@ -43,7 +43,7 @@ namespace grpc {
 
 CompletionQueue::CompletionQueue() { cq_ = grpc_completion_queue_create(); }
 
-CompletionQueue::CompletionQueue(grpc_completion_queue *take) : cq_(take) {}
+CompletionQueue::CompletionQueue(grpc_completion_queue* take) : cq_(take) {}
 
 CompletionQueue::~CompletionQueue() { grpc_completion_queue_destroy(cq_); }
 
@@ -52,34 +52,48 @@ void CompletionQueue::Shutdown() { grpc_completion_queue_shutdown(cq_); }
 // Helper class so we can declare a unique_ptr with grpc_event
 class EventDeleter {
  public:
-  void operator()(grpc_event *ev) {
+  void operator()(grpc_event* ev) {
     if (ev) grpc_event_finish(ev);
   }
 };
 
-bool CompletionQueue::Next(void **tag, bool *ok) {
+bool CompletionQueue::Next(void** tag, bool* ok) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
-  ev.reset(grpc_completion_queue_next(cq_, gpr_inf_future));
-  if (ev->type == GRPC_QUEUE_SHUTDOWN) {
-    return false;
+  for (;;) {
+    ev.reset(grpc_completion_queue_next(cq_, gpr_inf_future));
+    if (ev->type == GRPC_QUEUE_SHUTDOWN) {
+      return false;
+    }
+    auto cq_tag = static_cast<CompletionQueueTag*>(ev->tag);
+    *ok = ev->data.op_complete == GRPC_OP_OK;
+    *tag = cq_tag;
+    if (cq_tag->FinalizeResult(tag, ok)) {
+      return true;
+    }
   }
-  auto cq_tag = static_cast<CompletionQueueTag *>(ev->tag);
-  *ok = ev->data.op_complete == GRPC_OP_OK;
-  *tag = cq_tag;
-  cq_tag->FinalizeResult(tag, ok);
-  return true;
 }
 
-bool CompletionQueue::Pluck(CompletionQueueTag *tag) {
+bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
   ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_future));
   bool ok = ev->data.op_complete == GRPC_OP_OK;
-  void *ignored = tag;
-  tag->FinalizeResult(&ignored, &ok);
+  void* ignored = tag;
+  GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
   GPR_ASSERT(ignored == tag);
   return ok;
+}
+
+void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
+  std::unique_ptr<grpc_event, EventDeleter> ev;
+
+  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_past));
+  if (!ev) return;
+  bool ok = ev->data.op_complete == GRPC_OP_OK;
+  void* ignored = tag;
+  // the tag must be swallowed if using TryPluck
+  GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
 }
 
 }  // namespace grpc

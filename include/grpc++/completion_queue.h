@@ -55,6 +55,7 @@ class ServerReaderWriter;
 
 class CompletionQueue;
 class Server;
+class ServerContext;
 
 class CompletionQueueTag {
  public:
@@ -62,7 +63,9 @@ class CompletionQueueTag {
   // Called prior to returning from Next(), return value
   // is the status of the operation (return status is the default thing
   // to do)
-  virtual void FinalizeResult(void **tag, bool *status) = 0;
+  // If this function returns false, the tag is dropped and not returned
+  // from the completion queue
+  virtual bool FinalizeResult(void **tag, bool *status) = 0;
 };
 
 // grpc_completion_queue wrapper class
@@ -99,6 +102,7 @@ class CompletionQueue {
   template <class R, class W>
   friend class ::grpc::ServerReaderWriter;
   friend class ::grpc::Server;
+  friend class ::grpc::ServerContext;
   friend Status BlockingUnaryCall(ChannelInterface *channel,
                                   const RpcMethod &method,
                                   ClientContext *context,
@@ -108,6 +112,9 @@ class CompletionQueue {
   // Wraps grpc_completion_queue_pluck.
   // Cannot be mixed with calls to Next().
   bool Pluck(CompletionQueueTag *tag);
+
+  // Does a single polling pluck on tag
+  void TryPluck(CompletionQueueTag *tag);
 
   grpc_completion_queue *cq_;  // owned
 };

@@ -91,7 +91,17 @@ class AsyncEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override { server_->Shutdown(); }
+  void TearDown() override {
+    server_->Shutdown();
+    void* ignored_tag;
+    bool ignored_ok;
+    cli_cq_.Shutdown();
+    srv_cq_.Shutdown();
+    while (cli_cq_.Next(&ignored_tag, &ignored_ok))
+      ;
+    while (srv_cq_.Next(&ignored_tag, &ignored_ok))
+      ;
+  }
 
   void ResetStub() {
     std::shared_ptr<ChannelInterface> channel =
