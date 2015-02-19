@@ -3069,6 +3069,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/server_context.h \
     include/grpc++/server_credentials.h \
     include/grpc++/status.h \
+    include/grpc++/status_code_enum.h \
     include/grpc++/stream.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
