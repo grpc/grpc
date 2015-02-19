@@ -7,7 +7,7 @@
   "immed": true,
   "indent": 2,
   "latedef": "nofunc",
-  "maxlen": 100,
+  "maxlen": 80,
   "newcap": true,
   "node": true,
   "noarg": true,
@@ -15,7 +15,7 @@
   "strict": true,
   "trailing": true,
   "undef": true,
-  "unused": true,
+  "unused": "vars",
   "globals": {
     /* Mocha-provided globals */
     "describe": false,

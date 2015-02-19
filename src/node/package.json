@@ -4,7 +4,7 @@
   "description": "gRPC Library for Node",
   "scripts": {
     "lint": "jshint src test examples interop index.js",
-    "test": "./node_modules/mocha/bin/mocha"
+    "test": "./node_modules/mocha/bin/mocha && npm run-script lint"
   },
   "dependencies": {
     "bindings": "^1.2.1",

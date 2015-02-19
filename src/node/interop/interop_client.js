@@ -31,6 +31,8 @@
  *
  */
 
+'use strict';
+
 var fs = require('fs');
 var path = require('path');
 var grpc = require('..');
@@ -41,7 +43,8 @@ var assert = require('assert');
 
 var AUTH_SCOPE = 'https://www.googleapis.com/auth/xapi.zoo';
 var AUTH_SCOPE_RESPONSE = 'xapi.zoo';
-var AUTH_USER = '155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk@developer.gserviceaccount.com';
+var AUTH_USER = ('155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk' +
+    '@developer.gserviceaccount.com');
 
 /**
  * Create a buffer filled with size zeroes
@@ -318,7 +321,7 @@ var test_cases = {
 /**
  * Execute a single test case.
  * @param {string} address The address of the server to connect to, in the
- *     format "hostname:port"
+ *     format 'hostname:port'
  * @param {string} host_overrirde The hostname of the server to use as an SSL
  *     override
  * @param {string} test_case The name of the test case to run

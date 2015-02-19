@@ -31,6 +31,8 @@
  *
  */
 
+'use strict';
+
 var _ = require('underscore');
 var grpc = require('..');
 var examples = grpc.load(__dirname + '/stock.proto').examples;
