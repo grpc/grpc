@@ -31,6 +31,8 @@
  *
  */
 
+'use strict';
+
 var _ = require('underscore');
 
 var capitalize = require('underscore.string/capitalize');
@@ -77,6 +79,7 @@ function ClientWritableStream(call, serialize) {
  * @param {function(Error=)} callback Called when the write is complete
  */
 function _write(chunk, encoding, callback) {
+  /* jshint validthis: true */
   var batch = {};
   batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
   this.call.startBatch(batch, function(err, event) {
@@ -85,7 +88,7 @@ function _write(chunk, encoding, callback) {
     }
     callback();
   });
-};
+}
 
 ClientWritableStream.prototype._write = _write;
 
@@ -111,6 +114,7 @@ function ClientReadableStream(call, deserialize) {
  * @param {*} size Ignored because we use objectMode=true
  */
 function _read(size) {
+  /* jshint validthis: true */
   var self = this;
   /**
    * Callback to be called when a READ event is received. Pushes the data onto
@@ -126,7 +130,7 @@ function _read(size) {
       return;
     }
     var data = event.read;
-    if (self.push(self.deserialize(data)) && data != null) {
+    if (self.push(self.deserialize(data)) && data !== null) {
       var read_batch = {};
       read_batch[grpc.opType.RECV_MESSAGE] = true;
       self.call.startBatch(read_batch, readCallback);
@@ -144,7 +148,7 @@ function _read(size) {
       self.call.startBatch(read_batch, readCallback);
     }
   }
-};
+}
 
 ClientReadableStream.prototype._read = _read;
 
@@ -163,10 +167,6 @@ function ClientDuplexStream(call, serialize, deserialize) {
   Duplex.call(this, {objectMode: true});
   this.serialize = common.wrapIgnoreNull(serialize);
   this.deserialize = common.wrapIgnoreNull(deserialize);
-  var self = this;
-  var finished = false;
-  // Indicates that a read is currently pending
-  var reading = false;
   this.call = call;
   this.on('finish', function() {
     var batch = {};
@@ -182,6 +182,7 @@ ClientDuplexStream.prototype._write = _write;
  * Cancel the ongoing call
  */
 function cancel() {
+  /* jshint validthis: true */
   this.call.cancel();
 }
 
@@ -213,6 +214,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeUnaryRequest(argument, callback, metadata, deadline) {
+    /* jshint validthis: true */
     if (deadline === undefined) {
       deadline = Infinity;
     }
@@ -242,7 +244,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
           callback(err);
           return;
         }
-        if (response.status.code != grpc.status.OK) {
+        if (response.status.code !== grpc.status.OK) {
           callback(response.status);
           return;
         }
@@ -278,6 +280,7 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeClientStreamRequest(callback, metadata, deadline) {
+    /* jshint validthis: true */
     if (deadline === undefined) {
       deadline = Infinity;
     }
@@ -310,7 +313,7 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
           callback(err);
           return;
         }
-        if (response.status.code != grpc.status.OK) {
+        if (response.status.code !== grpc.status.OK) {
           callback(response.status);
           return;
         }
@@ -345,6 +348,7 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeServerStreamRequest(argument, metadata, deadline) {
+    /* jshint validthis: true */
     if (deadline === undefined) {
       deadline = Infinity;
     }
@@ -404,6 +408,7 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
    * @return {EventEmitter} An event emitter for stream related events
    */
   function makeBidiStreamRequest(metadata, deadline) {
+    /* jshint validthis: true */
     if (deadline === undefined) {
       deadline = Infinity;
     }

@@ -31,9 +31,8 @@
  *
  */
 
-var _ = require('underscore');
-var ProtoBuf = require('protobufjs');
-var fs = require('fs');
+'use strict';
+
 var util = require('util');
 
 var Transform = require('stream').Transform;
