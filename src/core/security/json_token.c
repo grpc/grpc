@@ -206,15 +206,14 @@ static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
   char *result = NULL;
   gpr_timespec now = gpr_now();
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
-  /* log10(2^64) ~= 20 */
-  char now_str[24];
-  char expiration_str[24];
+  char now_str[GPR_LTOA_MIN_BUFSIZE];
+  char expiration_str[GPR_LTOA_MIN_BUFSIZE];
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime) > 0) {
     gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime);
   }
-  sprintf(now_str, "%ld", now.tv_sec);
-  sprintf(expiration_str, "%ld", expiration.tv_sec);
+  gpr_ltoa(now.tv_sec, now_str);
+  gpr_ltoa(expiration.tv_sec, expiration_str);
 
   child = create_child(NULL, json, "iss", json_key->client_email,
                        GRPC_JSON_STRING);
