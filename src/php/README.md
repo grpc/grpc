@@ -5,7 +5,7 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Pre-Alpha : Not ready for usage yet.
+Pre-Alpha : This gRPC PHP implementation is work-in-progress and is not expected to work yet.
 
 
 ## LAYOUT
