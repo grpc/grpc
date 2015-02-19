@@ -7,14 +7,14 @@ A Ruby implementation of gRPC.
 INSTALLATION PREREQUISITES
 --------------------------
 
-This requires Ruby 2.x, as the rpc api surface uses keyword args.
+This requires Ruby 2.x, as the RPC API surface uses keyword args.
 
 
 QUICK - INSTALL
 ---------------
 
 - Clone this repository.
-- Follow the instructions in the [INSTALL](../../INSTALL) to install grpc C core library.
+- Follow the instructions in [INSTALL](../../INSTALL) to install the gRPC C core.
 - Use bundler to install
 ```sh
 $ # from this directory
@@ -24,8 +24,8 @@ $ gem install bundler && bundle install
 Installing from source
 ----------------------
 
-- Build or Install the gRPC core
-E.g, from the root of the grpc [git repo](https://github.com/google/grpc)
+- Build the gRPC C core
+E.g, from the root of the gRPC [git repo](https://github.com/google/grpc)
 ```sh
 $ cd ../..
 $ make && sudo make install
@@ -46,7 +46,7 @@ $ # and that the rvm command is installed
 $ gem install bundler
 ```
 
-- Finally, install grpc ruby locally.
+- Finally, install the gRPC gem locally.
 ```sh
 $ cd <install_dir>
 $ bundle install
@@ -61,7 +61,7 @@ Directory structure is the layout for [ruby extensions](http://guides.rubygems.o
 - ext:
   the gRPC ruby extension
 - lib:
-  the entrypoint grpc ruby library to be used in a 'require' statement
+  the entrypoint gRPC ruby library to be used in a 'require' statement
 - spec:
   Rspec unittest
 - bin:
