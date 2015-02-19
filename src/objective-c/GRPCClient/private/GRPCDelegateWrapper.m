@@ -1,6 +1,6 @@
 #import "GRPCDelegateWrapper.h"
 
-#import <net/grpc/objc/RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriteable.h>
 
 @interface GRPCDelegateWrapper ()
 // These are atomic so that cancellation can nillify them from any thread.
