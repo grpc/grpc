@@ -14,11 +14,14 @@ This requires Node 10.x or greater.
 ## USAGE
 
  - Run the server
+
    ```sh
    $ # from this directory
    $ nodejs ./greeter_server.js &
    ```
+
  - Run the client
+
    ```sh
    $ # from this directory
    $ nodejs ./greeter_client.js
