@@ -23,6 +23,11 @@ Building the python wrapper requires the following:
 
   # apt-get install python-all-dev python-virtualenv
 
+If you want to install in a different directory than the default /usr/lib, you can
+override it on the command line:
+
+  # make install prefix=/opt
+
 
 *******************************
 * More detailled instructions *

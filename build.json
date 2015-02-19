@@ -1575,7 +1575,7 @@
       ]
     },
     {
-      "name": "cpp_plugin",
+      "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
       "headers": [
@@ -1747,7 +1747,7 @@
       ]
     },
     {
-      "name": "ruby_plugin",
+      "name": "grpc_ruby_plugin",
       "build": "protoc",
       "language": "c++",
       "src": [
