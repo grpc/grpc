@@ -18,6 +18,7 @@ of shared C core library [src/core] (src/core).
    * NodeJS source code: [src/node] (src/node)
    * PHP source code: [src/php] (src/php)
    * C# source code: [src/csharp] (src/csharp)
+   * Objective-C source code: [src/objective-c] (src/objective-c)
    
 Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository. 
 Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
@@ -25,6 +26,19 @@ Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
 #Documentation
 
 You can find more detailed documentation of grpc in [grpc-common repository](http://github.com/grpc/grpc-common).
+
+#Current Status of libraries
+
+Libraries in different languages are in different state of development. We are seeking contributions for all of these libraries.
+
+   * shared C core library [src/core] (src/core) : Early adopter ready - Alpha.
+   * C++ Library: [src/cpp] (src/cpp) : Early adopter ready - Alpha.
+   * Python Library: [src/python] (src/python) : Early adopter ready - Alpha.
+   * Ruby Library: [src/ruby] (src/ruby) : Early adopter ready - Alpha.
+   * NodeJS Library: [src/node] (src/node) : Early adopter ready - Alpha.
+   * PHP Library: [src/php] (src/php) : Pre-Alpha.
+   * C# Library: [src/csharp] (src/csharp) : Pre-Alpha.
+   * Objective-C Library: [src/objective-c] (src/objective-c): Pre-Alpha.
 
 #Overview
 
