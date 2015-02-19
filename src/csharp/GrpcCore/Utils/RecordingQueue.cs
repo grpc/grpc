@@ -36,7 +36,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
-namespace Google.GRPC.Core.Utils
+namespace Grpc.Core.Utils
 {
     // TODO: replace this by something that implements IAsyncEnumerator.
     /// <summary>

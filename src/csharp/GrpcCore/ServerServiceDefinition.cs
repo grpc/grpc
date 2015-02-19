@@ -34,7 +34,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Google.GRPC.Core
+namespace Grpc.Core
 {
     public class ServerServiceDefinition
     {

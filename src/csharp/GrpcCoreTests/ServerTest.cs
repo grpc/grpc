@@ -32,12 +32,12 @@
 #endregion
 
 using System;
+using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 using NUnit.Framework;
-using Google.GRPC.Core.Internal;
-using Google.GRPC.Core;
-using Google.GRPC.Core.Utils;
 
-namespace Google.GRPC.Core.Tests
+namespace Grpc.Core.Tests
 {
     public class ServerTest
     {
@@ -47,7 +47,7 @@ namespace Google.GRPC.Core.Tests
             GrpcEnvironment.Initialize();
 
             Server server = new Server();
-            int port = server.AddPort("localhost:0");
+            server.AddPort("localhost:0");
             server.Start();
             server.ShutdownAsync().Wait();
 

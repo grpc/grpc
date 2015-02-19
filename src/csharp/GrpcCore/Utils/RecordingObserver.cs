@@ -32,10 +32,10 @@
 #endregion
 
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace Google.GRPC.Core.Utils
+namespace Grpc.Core.Utils
 {
     public class RecordingObserver<T> : IObserver<T>
     {

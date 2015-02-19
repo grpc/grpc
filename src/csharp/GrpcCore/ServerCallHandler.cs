@@ -32,9 +32,9 @@
 #endregion
 
 using System;
-using Google.GRPC.Core.Internal;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core
+namespace Grpc.Core
 {
     internal interface IServerCallHandler
     {
@@ -111,7 +111,7 @@ namespace Google.GRPC.Core
 
             var finishedTask = asyncCall.ServerSideStreamingRequestCallAsync(new NullObserver<byte[]>());
 
-            asyncCall.SendStatusFromServerAsync(new Status(StatusCode.GRPC_STATUS_UNIMPLEMENTED, "No such method.")).Wait();
+            asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, "No such method.")).Wait();
 
             finishedTask.Wait();
         }

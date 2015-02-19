@@ -33,8 +33,8 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Google.GRPC.Core;
 using System.Threading;
+using Grpc.Core;
 
 namespace math
 {

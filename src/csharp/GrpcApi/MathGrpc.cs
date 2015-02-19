@@ -32,11 +32,11 @@
 #endregion
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reactive.Linq;
-using Google.GRPC.Core;
+using System.Threading;
+using System.Threading.Tasks;
+using Grpc.Core;
 
 namespace math
 {
@@ -99,31 +99,31 @@ namespace math
 
             public DivReply Div(DivArgs request, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<DivArgs, DivReply>(divMethod, channel);
+                var call = new Grpc.Core.Call<DivArgs, DivReply>(divMethod, channel);
                 return Calls.BlockingUnaryCall(call, request, token);
             }
 
             public Task<DivReply> DivAsync(DivArgs request, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<DivArgs, DivReply>(divMethod, channel);
+                var call = new Grpc.Core.Call<DivArgs, DivReply>(divMethod, channel);
                 return Calls.AsyncUnaryCall(call, request, token);
             }
 
             public void Fib(FibArgs request, IObserver<Num> responseObserver, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<FibArgs, Num>(fibMethod, channel);
+                var call = new Grpc.Core.Call<FibArgs, Num>(fibMethod, channel);
                 Calls.AsyncServerStreamingCall(call, request, responseObserver, token);
             }
 
             public ClientStreamingAsyncResult<Num, Num> Sum(CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<Num, Num>(sumMethod, channel);
+                var call = new Grpc.Core.Call<Num, Num>(sumMethod, channel);
                 return Calls.AsyncClientStreamingCall(call, token);
             }
 
             public IObserver<DivArgs> DivMany(IObserver<DivReply> responseObserver, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<DivArgs, DivReply>(divManyMethod, channel);
+                var call = new Grpc.Core.Call<DivArgs, DivReply>(divManyMethod, channel);
                 return Calls.DuplexStreamingCall(call, responseObserver, token);
             }
         }

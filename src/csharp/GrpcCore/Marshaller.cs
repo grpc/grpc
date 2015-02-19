@@ -33,7 +33,7 @@
 
 using System;
 
-namespace Google.GRPC.Core
+namespace Grpc.Core
 {
     /// <summary>
     /// For serializing and deserializing messages.

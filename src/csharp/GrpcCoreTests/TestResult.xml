@@ -15,17 +15,17 @@
                     <results>
                       <test-suite type="TestFixture" name="CallsTest" executed="True" result="Success" success="True" time="0.009" asserts="0">
                         <results>
-                          <test-case name="Google.GRPC.Core.Tests.CallsTest.Test1" executed="True" result="Success" success="True" time="0.004" asserts="0" />
+                          <test-case name="Grpc.Core.Tests.CallsTest.Test1" executed="True" result="Success" success="True" time="0.004" asserts="0" />
                         </results>
                       </test-suite>
                       <test-suite type="TestFixture" name="ClientServerTest" executed="True" result="Success" success="True" time="0.149" asserts="0">
                         <results>
-                          <test-case name="Google.GRPC.Core.Tests.ClientServerTest.EmptyCall" executed="True" result="Success" success="True" time="0.111" asserts="0" />
+                          <test-case name="Grpc.Core.Tests.ClientServerTest.EmptyCall" executed="True" result="Success" success="True" time="0.111" asserts="0" />
                         </results>
                       </test-suite>
                       <test-suite type="TestFixture" name="ServerTest" executed="True" result="Success" success="True" time="0.001" asserts="0">
                         <results>
-                          <test-case name="Google.GRPC.Core.Tests.ServerTest.StartAndShutdownServer" executed="True" result="Success" success="True" time="0.001" asserts="0" />
+                          <test-case name="Grpc.Core.Tests.ServerTest.StartAndShutdownServer" executed="True" result="Success" success="True" time="0.001" asserts="0" />
                         </results>
                       </test-suite>
                     </results>

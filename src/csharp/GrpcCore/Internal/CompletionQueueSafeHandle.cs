@@ -35,7 +35,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// grpc_completion_queue from <grpc/grpc.h>

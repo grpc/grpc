@@ -34,7 +34,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Google.GRPC.Core
+namespace Grpc.Core
 {
     /// <summary>
     /// Return type for client streaming async method.

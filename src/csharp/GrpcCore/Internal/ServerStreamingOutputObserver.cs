@@ -32,9 +32,9 @@
 #endregion
 
 using System;
-using Google.GRPC.Core.Internal;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Observer that writes all arriving messages to a call abstraction (in blocking fashion)
@@ -52,7 +52,7 @@ namespace Google.GRPC.Core.Internal
 		public void OnCompleted()
 		{
             // TODO: how bad is the Wait here?
-            call.SendStatusFromServerAsync(new Status(StatusCode.GRPC_STATUS_OK, "")).Wait();
+            call.SendStatusFromServerAsync(new Status(StatusCode.OK, "")).Wait();
 		}
 
 		public void OnError(Exception error)

@@ -32,14 +32,14 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
-using Google.GRPC.Core.Internal;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// Handles native call lifecycle and provides convenience methods.
@@ -381,7 +381,7 @@ namespace Google.GRPC.Core.Internal
 
         private void CompleteStreamObserver(Status status)
         {
-            if (status.StatusCode != StatusCode.GRPC_STATUS_OK)
+            if (status.StatusCode != StatusCode.OK)
             {
                 // TODO: wrap to handle exceptions;
                 readObserver.OnError(new RpcException(status));
@@ -413,13 +413,13 @@ namespace Google.GRPC.Core.Internal
                 if (error != GRPCOpError.GRPC_OP_OK)
                 {
                     tcs.SetException(new RpcException(
-                        new Status(StatusCode.GRPC_STATUS_INTERNAL, "Internal error occured.")
+                        new Status(StatusCode.Internal, "Internal error occured.")
                     ));
                     return;
                 }
 
                 var status = ctx.GetReceivedStatus();
-                if (status.StatusCode != StatusCode.GRPC_STATUS_OK)
+                if (status.StatusCode != StatusCode.OK)
                 {
                     tcs.SetException(new RpcException(status));
                     return;
