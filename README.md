@@ -22,6 +22,9 @@ of shared C core library [src/core] (src/core).
 Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository. 
 Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
 
+#Documentation
+
+You can find more detailed documentation of grpc in [grpc-common repository](http://github.com/grpc/grpc-common).
 
 #Overview
 
