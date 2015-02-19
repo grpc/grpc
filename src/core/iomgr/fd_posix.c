@@ -295,6 +295,8 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
                               grpc_fd_watcher *watcher) {
   /* keep track of pollers that have requested our events, in case they change
    */
+  grpc_fd_ref(fd);
+
   gpr_mu_lock(&fd->watcher_mu);
   watcher->next = &fd->watcher_root;
   watcher->prev = watcher->next->prev;
@@ -312,6 +314,8 @@ void grpc_fd_end_poll(grpc_fd_watcher *watcher) {
   watcher->next->prev = watcher->prev;
   watcher->prev->next = watcher->next;
   gpr_mu_unlock(&watcher->fd->watcher_mu);
+
+  grpc_fd_unref(watcher->fd);
 }
 
 void grpc_fd_become_readable(grpc_fd *fd, int allow_synchronous_callback) {
