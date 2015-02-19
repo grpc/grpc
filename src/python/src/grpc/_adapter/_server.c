@@ -113,7 +113,6 @@ static PyObject *pygrpc_server_start(Server *self) {
 }
 
 static const PyObject *pygrpc_server_service(Server *self, PyObject *tag) {
-  const PyObject *tag;
   grpc_call_error call_error;
   const PyObject *result;
 
