@@ -14,10 +14,10 @@ of shared C core library [src/core] (src/core).
 
    * C++ source code: [src/cpp] (src/cpp)
    * Python source code: [src/python] (src/python)
-   * Python source code: [src/ruby] (src/ruby)
-   * Ruby source code: [src/node] (src/node)
+   * Ruby source code: [src/ruby] (src/ruby)
+   * NodeJS source code: [src/node] (src/node)
    * PHP source code: [src/php] (src/php)
-   * Python source code: [src/csharp] (src/csharp)
+   * C# source code: [src/csharp] (src/csharp)
    
 Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository. 
 Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
