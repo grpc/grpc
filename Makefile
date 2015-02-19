@@ -1808,7 +1808,7 @@ else
 $(GENDIR)/examples/pubsub/empty.pb.cc: examples/pubsub/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1817,7 +1817,7 @@ else
 $(GENDIR)/examples/pubsub/label.pb.cc: examples/pubsub/label.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1826,7 +1826,7 @@ else
 $(GENDIR)/examples/pubsub/pubsub.pb.cc: examples/pubsub/pubsub.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1835,7 +1835,7 @@ else
 $(GENDIR)/test/cpp/interop/empty.pb.cc: test/cpp/interop/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1844,7 +1844,7 @@ else
 $(GENDIR)/test/cpp/interop/messages.pb.cc: test/cpp/interop/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1853,7 +1853,7 @@ else
 $(GENDIR)/test/cpp/interop/test.pb.cc: test/cpp/interop/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1862,7 +1862,7 @@ else
 $(GENDIR)/test/cpp/qps/qpstest.pb.cc: test/cpp/qps/qpstest.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1871,7 +1871,7 @@ else
 $(GENDIR)/test/cpp/util/echo.pb.cc: test/cpp/util/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1880,7 +1880,7 @@ else
 $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc: test/cpp/util/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1889,7 +1889,7 @@ else
 $(GENDIR)/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 
