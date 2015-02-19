@@ -38,9 +38,10 @@
 
 static int pygrpc_channel_init(Channel *self, PyObject *args, PyObject *kwds) {
   const char *hostport;
+  static char *kwlist[] = {"hostport", NULL};
 
-  if (!(PyArg_ParseTuple(args, "s", &hostport))) {
-    self->c_channel = NULL;
+  if (!(PyArg_ParseTupleAndKeywords(args, kwds, "s:Channel", kwlist,
+                                    &hostport))) {
     return -1;
   }
 
@@ -56,7 +57,7 @@ static void pygrpc_channel_dealloc(Channel *self) {
 }
 
 PyTypeObject pygrpc_ChannelType = {
-    PyObject_HEAD_INIT(NULL)0,          /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_grpc.Channel",                    /*tp_name*/
     sizeof(Channel),                    /*tp_basicsize*/
     0,                                  /*tp_itemsize*/
@@ -92,17 +93,16 @@ PyTypeObject pygrpc_ChannelType = {
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
     (initproc)pygrpc_channel_init,      /* tp_init */
+    0,                                  /* tp_alloc */
+    PyType_GenericNew,                  /* tp_new */
 };
 
 int pygrpc_add_channel(PyObject *module) {
-  pygrpc_ChannelType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&pygrpc_ChannelType) < 0) {
-    PyErr_SetString(PyExc_RuntimeError, "Error defining pygrpc_ChannelType!");
     return -1;
   }
   if (PyModule_AddObject(module, "Channel", (PyObject *)&pygrpc_ChannelType) ==
       -1) {
-    PyErr_SetString(PyExc_ImportError, "Couldn't add Channel type to module!");
     return -1;
   }
   return 0;

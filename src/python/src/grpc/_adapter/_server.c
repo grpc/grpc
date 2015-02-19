@@ -43,9 +43,11 @@
 static int pygrpc_server_init(Server *self, PyObject *args, PyObject *kwds) {
   const PyObject *completion_queue;
   PyObject *server_credentials;
-  if (!(PyArg_ParseTuple(args, "O!O", &pygrpc_CompletionQueueType,
-                         &completion_queue, &server_credentials))) {
-    self->c_server = NULL;
+  static char *kwlist[] = {"completion_queue", "server_credentials", NULL};
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!O:Server", kwlist,
+                                   &pygrpc_CompletionQueueType,
+                                   &completion_queue, &server_credentials)) {
     return -1;
   }
   if (server_credentials == Py_None) {
@@ -59,7 +61,9 @@ static int pygrpc_server_init(Server *self, PyObject *args, PyObject *kwds) {
         ((CompletionQueue *)completion_queue)->c_completion_queue, NULL);
     return 0;
   } else {
-    self->c_server = NULL;
+    PyErr_Format(PyExc_TypeError,
+                 "server_credentials must be _grpc.ServerCredentials, not %s",
+                 Py_TYPE(server_credentials)->tp_name);
     return -1;
   }
 }
@@ -74,7 +78,9 @@ static void pygrpc_server_dealloc(Server *self) {
 static PyObject *pygrpc_server_add_http2_addr(Server *self, PyObject *args) {
   const char *addr;
   int port;
-  PyArg_ParseTuple(args, "s", &addr);
+  if (!PyArg_ParseTuple(args, "s:add_http2_addr", &addr)) {
+    return NULL;
+  }
 
   port = grpc_server_add_http2_port(self->c_server, addr);
   if (port == 0) {
@@ -89,7 +95,9 @@ static PyObject *pygrpc_server_add_secure_http2_addr(Server *self,
                                                      PyObject *args) {
   const char *addr;
   int port;
-  PyArg_ParseTuple(args, "s", &addr);
+  if (!PyArg_ParseTuple(args, "s:add_secure_http2_addr", &addr)) {
+    return NULL;
+  }
   port = grpc_server_add_secure_http2_port(self->c_server, addr);
   if (port == 0) {
     PyErr_SetString(PyExc_RuntimeError, "Couldn't add port to server!");
@@ -104,14 +112,9 @@ static PyObject *pygrpc_server_start(Server *self) {
   Py_RETURN_NONE;
 }
 
-static const PyObject *pygrpc_server_service(Server *self, PyObject *args) {
-  const PyObject *tag;
+static const PyObject *pygrpc_server_service(Server *self, PyObject *tag) {
   grpc_call_error call_error;
   const PyObject *result;
-
-  if (!(PyArg_ParseTuple(args, "O", &tag))) {
-    return NULL;
-  }
 
   call_error = grpc_server_request_call_old(self->c_server, (void *)tag);
 
@@ -135,13 +138,13 @@ static PyMethodDef methods[] = {
      METH_VARARGS, "Add a secure HTTP2 address."},
     {"start", (PyCFunction)pygrpc_server_start, METH_NOARGS,
      "Starts the server."},
-    {"service", (PyCFunction)pygrpc_server_service, METH_VARARGS,
+    {"service", (PyCFunction)pygrpc_server_service, METH_O,
      "Services a call."},
     {"stop", (PyCFunction)pygrpc_server_stop, METH_NOARGS, "Stops the server."},
     {NULL}};
 
 static PyTypeObject pygrpc_ServerType = {
-    PyObject_HEAD_INIT(NULL)0,         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_gprc.Server",                    /*tp_name*/
     sizeof(Server),                    /*tp_basicsize*/
     0,                                 /*tp_itemsize*/
@@ -177,17 +180,16 @@ static PyTypeObject pygrpc_ServerType = {
     0,                                 /* tp_descr_set */
     0,                                 /* tp_dictoffset */
     (initproc)pygrpc_server_init,      /* tp_init */
+    0,                                 /* tp_alloc */
+    PyType_GenericNew,                 /* tp_new */
 };
 
 int pygrpc_add_server(PyObject *module) {
-  pygrpc_ServerType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&pygrpc_ServerType) < 0) {
-    PyErr_SetString(PyExc_RuntimeError, "Error defining pygrpc_ServerType!");
     return -1;
   }
   if (PyModule_AddObject(module, "Server", (PyObject *)&pygrpc_ServerType) ==
       -1) {
-    PyErr_SetString(PyExc_ImportError, "Couldn't add Server type to module!");
     return -1;
   }
   return 0;
