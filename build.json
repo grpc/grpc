@@ -1592,6 +1592,31 @@
       "secure": false
     },
     {
+      "name": "grpc_ruby_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "src": [
+        "src/compiler/ruby_generator.cc",
+        "src/compiler/ruby_plugin.cc"
+      ],
+      "deps": [],
+      "secure": false
+    },
+    {
+      "name": "grpc_python_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "headers": [
+        "src/compiler/python_generator.h"
+      ],
+      "src": [
+        "src/compiler/python_generator.cc",
+        "src/compiler/python_plugin.cc"
+      ],
+      "deps": [],
+      "secure": false
+    },
+    {
       "name": "credentials_test",
       "build": "test",
       "language": "c++",
@@ -1747,17 +1772,6 @@
         "gpr_test_util",
         "gpr"
       ]
-    },
-    {
-      "name": "grpc_ruby_plugin",
-      "build": "protoc",
-      "language": "c++",
-      "src": [
-        "src/compiler/ruby_generator.cc",
-        "src/compiler/ruby_plugin.cc"
-      ],
-      "deps": [],
-      "secure": false
     },
     {
       "name": "status_test",
