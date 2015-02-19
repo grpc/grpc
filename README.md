@@ -369,7 +369,7 @@ We'll look at using a client to access the server in the next section.
 Client-side gRPC is pretty simple. In this step, we'll use the generated code
 to write a simple client that can access the `Greeter` server we created
 in the [previous section](#server). You can see the complete client code in
-[GreetingClient.java](java/src/main/java/ex/grpc/GreetingsClient.java).
+[GreeterClient.java](java/src/main/java/ex/grpc/GreeterClient.java).
 
 Again, we're not going to go into much detail about how to implement a client
 - we'll leave that for the tutorial.
@@ -462,13 +462,13 @@ We've added simple shell scripts to simplifying running the examples. Now
 that they are built, you can run the server with:
 
 ```sh
-$ ./run_greetings_server.sh
+$ ./run_greeter_server.sh
 ```
 
 and in another terminal window confirm that it receives a message.
 
 ```sh
-$ ./run_greetings_client.sh
+$ ./run_greeter_client.sh
 ```
 
 ### Adding another client

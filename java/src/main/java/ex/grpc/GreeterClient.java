@@ -9,13 +9,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.concurrent.TimeUnit;
 
-public class GreetingsClient {
+public class GreeterClient {
   private final Logger logger = Logger.getLogger(
-      GreetingsClient.class.getName());
+      GreeterClient.class.getName());
   private final ChannelImpl channel;
   private final GreeterGrpc.GreeterBlockingStub blockingStub;
 
-  public GreetingsClient(String host, int port) {
+  public GreeterClient(String host, int port) {
     channel = NettyChannelBuilder.forAddress(host, port)
               .negotiationType(NegotiationType.PLAINTEXT)
               .build();
@@ -40,7 +40,7 @@ public class GreetingsClient {
   }
 
   public static void main(String[] args) throws Exception {
-    GreetingsClient client = new GreetingsClient("localhost", 50051);
+    GreeterClient client = new GreeterClient("localhost", 50051);
     try {
       /* Access a service running on the local machine on port 50051 */
       String user = "world";

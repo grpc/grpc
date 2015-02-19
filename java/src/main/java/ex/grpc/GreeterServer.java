@@ -7,9 +7,9 @@ import com.google.net.stubby.transport.netty.NettyServerBuilder;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Server that manages startup/shutdown of a {@code Greetings} server.
+ * Server that manages startup/shutdown of a {@code Greeter} server.
  */
-public class GreetingsServer {
+public class GreeterServer {
   /* The port on which the server should run */
   private int port = 50051;
   private ServerImpl server;
@@ -33,7 +33,7 @@ public class GreetingsServer {
    * Main launches the server from the command line.
    */
   public static void main(String[] args) throws Exception {
-    final GreetingsServer server = new GreetingsServer();
+    final GreeterServer server = new GreeterServer();
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
