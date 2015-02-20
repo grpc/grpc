@@ -21,8 +21,21 @@ $ go install -u github.com/grpc-common/go/greeter_client
 $ go install -u github.com/grpc-common/go/greeter_server
 ```
 
-OPTIONAL - Rebuild the generated code
--------------------------------------
+TRY IT!
+-------
+
+- Run the server
+```sh
+$ greeter_server &
+```
+
+- Run the client
+```sh
+$ greeter_client
+```
+
+OPTIONAL - Rebuilding the generated code
+----------------------------------------
 
 1 First [install protoc](https://github.com/google/protobuf/blob/master/INSTALL.txt)
   - For now, this needs to be installed from source
@@ -35,17 +48,4 @@ $ export PATH=PATH:<your/gopath/bin>
 $
 $ # from ths dir; invoke protoc
 $ protoc -I ../protos ../protos/helloworld.proto --go_out=plugins=grpc:.
-```
-
-TRY IT!
--------
-
-- Run the server
-```sh
-$ greeter_server &
-```
-
-- Run the client
-```sh
-$ greeter_client
 ```
