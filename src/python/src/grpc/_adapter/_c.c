@@ -40,19 +40,20 @@
 #include "grpc/_adapter/_server.h"
 #include "grpc/_adapter/_server_credentials.h"
 
-static PyObject *init(PyObject *self, PyObject *args) {
+static PyObject *init(PyObject *self) {
   grpc_init();
   Py_RETURN_NONE;
 }
 
-static PyObject *shutdown(PyObject *self, PyObject *args) {
+static PyObject *shutdown(PyObject *self) {
   grpc_shutdown();
   Py_RETURN_NONE;
 }
 
 static PyMethodDef _c_methods[] = {
-    {"init", init, METH_VARARGS, "Initialize the module's static state."},
-    {"shut_down", shutdown, METH_VARARGS,
+    {"init", (PyCFunction)init, METH_NOARGS,
+     "Initialize the module's static state."},
+    {"shut_down", (PyCFunction)shutdown, METH_NOARGS,
      "Shut down the module's static state."},
     {NULL},
 };
