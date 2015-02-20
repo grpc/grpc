@@ -6,4 +6,4 @@ Section: libdevel
 Priority: optional
 Homepage: https://github.com/grpc/grpc
 Description: gRPC C Core - header files
-  Core C libraries for gRPC - An RPC library and framework.
+ Core C libraries for gRPC - An RPC library and framework.

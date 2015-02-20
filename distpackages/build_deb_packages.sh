@@ -61,6 +61,8 @@ do
 
   # Adjust mode for some files in the package
   find $tmp_dir/$pkg_name -type d | xargs chmod 755
+  find $tmp_dir/$pkg_name -type f | xargs chmod 644
+  chmod 755 $tmp_dir/$pkg_name/DEBIAN/{postinst,postrm}
 
   # Build the debian package
   fakeroot dpkg-deb --build $tmp_dir/$pkg_name || { echo "dpkg-deb failed"; exit 1; }

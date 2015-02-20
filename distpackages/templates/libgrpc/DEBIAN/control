@@ -5,5 +5,5 @@ Maintainer: Jan Tattermusch <jtattermusch@google.com>
 Section: libs
 Priority: optional
 Homepage: https://github.com/grpc/grpc
-Description: The gRPC C Core
-  Core C libraries for gRPC - An RPC library and framework.
+Description: gRPC C Core
+ Core C libraries for gRPC - An RPC library and framework.
