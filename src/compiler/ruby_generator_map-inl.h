@@ -51,8 +51,8 @@ namespace grpc_ruby_generator {
 inline std::map<std::string, std::string> ListToDict(
     const initializer_list<std::string> &values) {
   if (values.size() % 2 != 0) {
-    // MOE: insert     std::cerr << "Not every 'key' has a value in `values`."
-    // << std::endl;
+    std::cerr << "Not every 'key' has a value in `values`."
+              << std::endl;
   }
   std::map<std::string, std::string> value_map;
   auto value_iter = values.begin();
