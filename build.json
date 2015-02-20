@@ -1282,7 +1282,6 @@
     {
       "name": "json_rewrite_test",
       "build": "test",
-      "run": false,
       "language": "c",
       "src": [
         "test/core/json/json_rewrite_test.c"
