@@ -406,7 +406,7 @@ static void init_default_pem_root_certs(void) {
   }
 }
 
-static size_t get_default_pem_roots(const unsigned char **pem_root_certs) {
+size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
   /* TODO(jboeuf@google.com): Maybe revisit the approach which consists in
      loading all the roots once for the lifetime of the process. */
   static gpr_once once = GPR_ONCE_INIT;
@@ -460,7 +460,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
   if (config->pem_root_certs == NULL) {
-    pem_root_certs_size = get_default_pem_roots(&pem_root_certs);
+    pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
     if (pem_root_certs == NULL || pem_root_certs_size == 0) {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       goto error;

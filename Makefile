@@ -2237,7 +2237,6 @@ LIBGRPC_SRC = \
     src/core/security/base64.c \
     src/core/security/credentials.c \
     src/core/security/factories.c \
-    src/core/security/google_root_certs.c \
     src/core/security/json_token.c \
     src/core/security/secure_endpoint.c \
     src/core/security/secure_transport_setup.c \
@@ -2377,7 +2376,6 @@ src/core/security/auth.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
 src/core/security/factories.c: $(OPENSSL_DEP)
-src/core/security/google_root_certs.c: $(OPENSSL_DEP)
 src/core/security/json_token.c: $(OPENSSL_DEP)
 src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
@@ -2534,7 +2532,6 @@ $(OBJDIR)/$(CONFIG)/src/core/security/auth.o:
 $(OBJDIR)/$(CONFIG)/src/core/security/base64.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/factories.o: 
-$(OBJDIR)/$(CONFIG)/src/core/security/google_root_certs.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/json_token.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_endpoint.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_transport_setup.o: 
