@@ -42,6 +42,11 @@ class TerminationManager(object):
   __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
+  def set_expiration_manager(self, expiration_manager):
+    """Sets the ExpirationManager with which this object will cooperate."""
+    raise NotImplementedError()
+
+  @abc.abstractmethod
   def is_active(self):
     """Reports whether or not the operation is active.
 
@@ -169,6 +174,7 @@ class IngestionManager(stream.Consumer):
   @abc.abstractmethod
   def set_expiration_manager(self, expiration_manager):
     """Sets the ExpirationManager with which this object will cooperate."""
+    raise NotImplementedError()
 
   @abc.abstractmethod
   def start(self, requirement):
