@@ -33,10 +33,14 @@
 deb_dest="deb_out"
 mkdir -p $deb_dest
 
-# First use make to install gRPC to a temporary directory
-#tmp_install_dir=`mktemp -d`
-#echo "Installing gRPC C core to temp dir $tmp_install_dir"
-#(cd ..; make install_c prefix=$tmp_install_dir)
+version='0.8.0.0'
+
+arch=`uname -p`
+if [ $arch != "x86_64" ]
+then
+  echo Unsupported architecture.
+  exit 1
+fi
 
 # Build debian packages
 for pkg_name in libgrpc libgrpc-dev
@@ -48,16 +52,34 @@ do
 
   cp -a templates/$pkg_name $tmp_dir
 
+  arch_lib_dir=$tmp_dir/$pkg_name/usr/lib/$arch-linux-gnu
+
   if [ $pkg_name == "libgrpc" ]
   then
-    # Copy libraries
-    (cd ..; make install-static_c install-shared_c prefix=$tmp_dir/$pkg_name/usr)
+    # Copy shared libraries
+    (cd ../..; make install-shared_c prefix=$tmp_dir/$pkg_name/usr/lib)
+    mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
+
+    # non-dev package should contain so.0 symlinks
+    for symlink in $arch_lib_dir/*.so
+    do
+      mv $symlink $symlink.0
+    done
   fi
 
   if [ $pkg_name == "libgrpc-dev" ]
   then
-    # Copy headers
-    (cd ..; make install-headers_c prefix=$tmp_dir/$pkg_name/usr)
+    # Copy headers and static libraries
+    (cd ../..; make install-headers_c install-static_c prefix=$tmp_dir/$pkg_name/usr/lib)
+    mv $tmp_dir/$pkg_name/usr/lib/include $tmp_dir/$pkg_name/usr/include
+    mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
+
+    # create symlinks to shared libraries
+    for libname in $arch_lib_dir/*.a
+    do
+      base=`basename -s .a $libname`
+      ln -s $base.so.$version $arch_lib_dir/$base.so
+    done
   fi
 
   # Adjust mode for some files in the package
@@ -68,16 +90,18 @@ do
   # Build the debian package
   fakeroot dpkg-deb --build $tmp_dir/$pkg_name || { echo "dpkg-deb failed"; exit 1; }
 
-  # Copy the .deb file to destination dir
-  cp $tmp_dir/$pkg_name.deb $deb_dest
+  deb_path=$deb_dest/${pkg_name}_${version}_amd64.deb
 
-  echo "Resulting package: $deb_dest/$pkg_name.deb"
+  # Copy the .deb file to destination dir
+  cp $tmp_dir/$pkg_name.deb $deb_path
+
+  echo "Resulting package: $deb_path"
   echo "Package info:"
-  dpkg-deb -I $deb_dest/$pkg_name.deb
+  dpkg-deb -I $deb_path
   echo "Package contents:"
-  dpkg-deb -c $deb_dest/$pkg_name.deb
+  dpkg-deb -c $deb_path
   echo "Problems reported by lintian:"
-  lintian $deb_dest/$pkg_name.deb
+  lintian $deb_path
 
   echo
 done
