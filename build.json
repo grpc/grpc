@@ -1102,6 +1102,7 @@
       "name": "grpc_completion_queue_benchmark",
       "build": "benchmark",
       "language": "c",
+      "run": false,
       "src": [
         "test/core/surface/completion_queue_benchmark.c"
       ],

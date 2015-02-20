@@ -47,15 +47,7 @@
   }, 
   {
     "language": "c", 
-    "name": "census_stats_store_test"
-  }, 
-  {
-    "language": "c", 
     "name": "census_stub_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "census_trace_store_test"
   }, 
   {
     "language": "c", 
@@ -96,10 +88,6 @@
   {
     "language": "c", 
     "name": "fling_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "gen_hpack_tables"
   }, 
   {
     "language": "c", 
@@ -171,19 +159,11 @@
   }, 
   {
     "language": "c", 
-    "name": "grpc_completion_queue_benchmark"
-  }, 
-  {
-    "language": "c", 
     "name": "grpc_completion_queue_test"
   }, 
   {
     "language": "c", 
     "name": "grpc_credentials_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "grpc_fetch_oauth2"
   }, 
   {
     "language": "c", 
@@ -224,10 +204,6 @@
   {
     "language": "c", 
     "name": "lame_client_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "low_level_ping_pong_benchmark"
   }, 
   {
     "language": "c", 
@@ -308,18 +284,6 @@
   {
     "language": "c++", 
     "name": "end2end_test"
-  }, 
-  {
-    "language": "c++", 
-    "name": "grpc_cpp_plugin"
-  }, 
-  {
-    "language": "c++", 
-    "name": "grpc_python_plugin"
-  }, 
-  {
-    "language": "c++", 
-    "name": "grpc_ruby_plugin"
   }, 
   {
     "language": "c++", 
