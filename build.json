@@ -32,10 +32,6 @@
         "src/core/channel/noop_filter.h",
         "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
-        "src/core/httpcli/format_request.h",
-        "src/core/httpcli/httpcli.h",
-        "src/core/httpcli/httpcli_security_context.h",
-        "src/core/httpcli/parser.h",
         "src/core/iomgr/alarm.h",
         "src/core/iomgr/alarm_heap.h",
         "src/core/iomgr/alarm_internal.h",
@@ -124,10 +120,6 @@
         "src/core/channel/noop_filter.c",
         "src/core/compression/algorithm.c",
         "src/core/compression/message_compress.c",
-        "src/core/httpcli/format_request.c",
-        "src/core/httpcli/httpcli.c",
-        "src/core/httpcli/httpcli_security_context.c",
-        "src/core/httpcli/parser.c",
         "src/core/iomgr/alarm.c",
         "src/core/iomgr/alarm_heap.c",
         "src/core/iomgr/endpoint.c",
@@ -182,8 +174,6 @@
         "src/core/surface/init.c",
         "src/core/surface/lame_client.c",
         "src/core/surface/metadata_array.c",
-        "src/core/surface/secure_channel_create.c",
-        "src/core/surface/secure_server_create.c",
         "src/core/surface/server.c",
         "src/core/surface/server_chttp2.c",
         "src/core/surface/server_create.c",
@@ -304,6 +294,10 @@
         "include/grpc/grpc_security.h"
       ],
       "headers": [
+        "src/core/httpcli/format_request.h",
+        "src/core/httpcli/httpcli.h",
+        "src/core/httpcli/httpcli_security_context.h",
+        "src/core/httpcli/parser.h",
         "src/core/security/auth.h",
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
@@ -316,6 +310,10 @@
         "src/core/tsi/transport_security_interface.h"
       ],
       "src": [
+        "src/core/httpcli/format_request.c",
+        "src/core/httpcli/httpcli.c",
+        "src/core/httpcli/httpcli_security_context.c",
+        "src/core/httpcli/parser.c",
         "src/core/security/auth.c",
         "src/core/security/base64.c",
         "src/core/security/credentials.c",
@@ -325,6 +323,8 @@
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_context.c",
         "src/core/security/server_secure_chttp2.c",
+        "src/core/surface/secure_channel_create.c",
+        "src/core/surface/secure_server_create.c",
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
         "src/core/tsi/transport_security.c"
@@ -431,6 +431,7 @@
         "src/cpp/util/time.cc"
       ],
       "deps": [
+        "gpr",
         "grpc"
       ],
       "secure": true,

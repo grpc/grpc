@@ -98,10 +98,6 @@
     <ClInclude Include="..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\src\core\compression\algorithm.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
-    <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
-    <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
-    <ClInclude Include="..\..\src\core\httpcli\httpcli_security_context.h" />
-    <ClInclude Include="..\..\src\core\httpcli\parser.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_heap.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_internal.h" />
@@ -204,14 +200,6 @@
     <ClCompile Include="..\..\src\core\compression\algorithm.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\compression\message_compress.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli_security_context.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\parser.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\alarm.c">
     </ClCompile>
@@ -320,10 +308,6 @@
     <ClCompile Include="..\..\src\core\surface\lame_client.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\metadata_array.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\secure_server_create.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server.c">
     </ClCompile>
