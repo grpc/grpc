@@ -1,6 +1,6 @@
 #!/bin/bash -e
-TARGET='Greetings Client'
-TARGET_CLASS='ex.grpc.GreetingsClient'
+TARGET='Greeter Client'
+TARGET_CLASS='ex.grpc.GreeterClient'
 TARGET_ARGS="$@"
 
 cd "$(dirname "$0")"

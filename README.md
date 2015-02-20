@@ -294,6 +294,7 @@ actually implements our GreetingService's required behaviour.
 
 As you can see, the class `GreeterImpl` implements the interface
 `GreeterGrpc.Greeter` that we [generated](#generating) from our proto
+[IDL](java/src/main/proto/helloworld.proto) by implementing the method `hello`:
 
 ```java
   public void hello(Helloworld.HelloRequest req,
@@ -337,10 +338,8 @@ implementation available from the network.
 
 ```
 
-
 Here we create an appropriate gRPC server, binding the `GreeterService`
-implementation that we created to a
-port. Then we start the server running: the server is now ready to receive
+implementation that we created to a port. Then we start the server running: the server is now ready to receive
 requests from `Greeter` service clients on our specified port. We'll cover
 how all this works in a bit more detail in our language-specific documentation.
 
@@ -443,8 +442,9 @@ $ ./run_greeter_client.sh
 
 ### Adding another client
 
+
 Finally, let's look at one of gRPC's most useful features - interoperability
 between code in different languages. So far, we've just generated Java code
-from our `Greetings` service definition....
+from our `Greeter` service definition....
 
 ###TODO: Section on Go client for same server
