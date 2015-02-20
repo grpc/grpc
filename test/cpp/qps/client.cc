@@ -80,6 +80,13 @@ using grpc::testing::SimpleResponse;
 using grpc::testing::StatsRequest;
 using grpc::testing::TestService;
 
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
+
 static double now() {
   gpr_timespec tv = gpr_now();
   return 1e9 * tv.tv_sec + tv.tv_nsec;
@@ -221,7 +228,7 @@ void RunTest(const int client_threads, const int client_channels,
 
 int main(int argc, char **argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   GPR_ASSERT(FLAGS_server_port);
 

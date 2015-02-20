@@ -68,6 +68,13 @@ using grpc::testing::StatsRequest;
 using grpc::testing::TestService;
 using grpc::Status;
 
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
+
 static bool got_sigint = false;
 
 static void sigint_handler(int x) { got_sigint = 1; }
@@ -149,7 +156,7 @@ static void RunServer() {
 
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   signal(SIGINT, sigint_handler);
 
