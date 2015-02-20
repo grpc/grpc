@@ -7,7 +7,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{61ECB8EE-0C96-4F8E-B187-8E4D227417C0}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>MathClient</RootNamespace>
+    <RootNamespace>math</RootNamespace>
     <AssemblyName>MathClient</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
@@ -44,7 +44,7 @@
       <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
       <Name>Grpc.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Grpc.Api\Grpc.Examples.csproj">
+    <ProjectReference Include="..\Grpc.Examples\Grpc.Examples.csproj">
       <Project>{7DC1433E-3225-42C7-B7EA-546D56E27A4B}</Project>
       <Name>Grpc.Examples</Name>
     </ProjectReference>
