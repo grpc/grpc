@@ -39,6 +39,7 @@
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/security/credentials.h"
 #include "src/core/security/secure_endpoint.h"
+#include "src/core/security/ssl_roots.h"
 #include "src/core/support/env.h"
 #include "src/core/support/file.h"
 #include "src/core/support/string.h"
@@ -403,6 +404,10 @@ static void init_default_pem_root_certs(void) {
   } else {
     default_pem_root_certs = gpr_load_file(default_root_certs_path, NULL);
     gpr_free(default_root_certs_path);
+    if (GPR_SLICE_IS_EMPTY(default_pem_root_certs)) {
+      default_pem_root_certs =
+          gpr_load_file(GRPC_SSL_ROOTS_WELL_KNOWN_PATH, NULL);
+    }
   }
 }
 
