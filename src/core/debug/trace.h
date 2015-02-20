@@ -31,17 +31,21 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
-#define __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
+#ifndef GRPC_CORE_DEBUG_TRACE_H
+#define GRPC_CORE_DEBUG_TRACE_H
 
-#include "src/core/debug/trace.h"
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (grpc_trace_bits & GRPC_TRACE_SURFACE) {           \
-    char *_ev = grpc_event_string(event);               \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
-    gpr_free(_ev);                                      \
-  }
+typedef enum {
+  GRPC_TRACE_SURFACE = 1 << 0,
+  GRPC_TRACE_CHANNEL = 1 << 1,
+  GRPC_TRACE_TCP = 1 << 2,
+  GRPC_TRACE_SECURE_ENDPOINT = 1 << 3
+} grpc_trace_bit_value;
 
-#endif /* __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__ */
+extern gpr_uint32 grpc_trace_bits;
+
+void grpc_init_trace_bits();
+
+#endif
+

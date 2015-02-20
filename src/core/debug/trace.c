@@ -31,17 +31,75 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
-#define __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
-
 #include "src/core/debug/trace.h"
-#include <grpc/support/log.h>
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (grpc_trace_bits & GRPC_TRACE_SURFACE) {           \
-    char *_ev = grpc_event_string(event);               \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
-    gpr_free(_ev);                                      \
+#include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include "src/core/support/env.h"
+
+gpr_uint32 grpc_trace_bits;
+
+static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
+  size_t n = *ns;
+  size_t np = n + 1;
+  char *s = gpr_malloc(end - beg + 1);
+  memcpy(s, beg, end - beg);
+  s[end-beg] = 0;
+  *ss = gpr_realloc(*ss, sizeof(char**) * np);
+  (*ss)[n] = s;
+  *ns = np;
+}
+
+static void split(const char *s, char ***ss, size_t *ns) {
+  const char *c = strchr(s, ',');
+  if (c == NULL) {
+    add(s, s + strlen(s), ss, ns);
+  } else {
+    add(s, c, ss, ns);
+    split(c+1, ss, ns);
+  }
+}
+
+static void parse(const char *s) {
+  char **strings = NULL;
+  size_t nstrings = 0;
+  size_t i;
+  split(s, &strings, &nstrings);
+
+  grpc_trace_bits = 0;
+
+  for (i = 0; i < nstrings; i++) {
+    const char *s = strings[i];
+    if (0 == strcmp(s, "surface")) {
+      grpc_trace_bits |= GRPC_TRACE_SURFACE;
+    } else if (0 == strcmp(s, "channel")) {
+      grpc_trace_bits |= GRPC_TRACE_CHANNEL;
+    } else if (0 == strcmp(s, "tcp")) {
+      grpc_trace_bits |= GRPC_TRACE_TCP;
+    } else if (0 == strcmp(s, "secure_endpoint")) {
+      grpc_trace_bits |= GRPC_TRACE_SECURE_ENDPOINT;
+    } else if (0 == strcmp(s, "all")) {
+      grpc_trace_bits = -1;
+    } else {
+      gpr_log(GPR_ERROR, "Unknown trace var: '%s'", s);
+    }
   }
 
-#endif /* __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__ */
+  for (i = 0; i < nstrings; i++) {
+    gpr_free(strings[i]);
+  }
+  gpr_free(strings);
+}
+
+void grpc_init_trace_bits() {
+  char *e = gpr_getenv("GRPC_TRACE");
+  if (e == NULL) {
+    grpc_trace_bits = 0;
+  } else {
+    parse(e);
+    gpr_free(e);
+  }
+}
+

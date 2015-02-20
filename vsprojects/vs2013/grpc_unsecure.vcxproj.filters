@@ -46,6 +46,9 @@
     <ClCompile Include="..\..\src\core\compression\message_compress.c">
       <Filter>src\core\compression</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\debug\trace.c">
+      <Filter>src\core\debug</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\format_request.c">
       <Filter>src\core\httpcli</Filter>
     </ClCompile>
@@ -353,6 +356,9 @@
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\debug\trace.h">
+      <Filter>src\core\debug</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\httpcli\format_request.h">
       <Filter>src\core\httpcli</Filter>
     </ClInclude>
@@ -598,6 +604,9 @@
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{2e3aca1d-223d-10a1-b282-7f9fc68ee6f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\debug">
+      <UniqueIdentifier>{6d8d5774-7291-554d-fafa-583463cd3fd9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\httpcli">
       <UniqueIdentifier>{1ba3a245-47e7-89b5-b0c9-aca758bd0277}</UniqueIdentifier>
