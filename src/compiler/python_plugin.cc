@@ -63,7 +63,7 @@ class PythonGrpcGenerator : public CodeGenerator {
     // Get output file name.
     string file_name;
     static const int proto_suffix_length = 6;  // length of ".proto"
-    if (file->name().size() > proto_suffix_length &&
+    if (file->name().size() > static_cast<size_t>(proto_suffix_length) &&
         file->name().find_last_of(".proto") == file->name().size() - 1) {
       file_name = file->name().substr(
           0, file->name().size() - proto_suffix_length) + "_pb2.py";

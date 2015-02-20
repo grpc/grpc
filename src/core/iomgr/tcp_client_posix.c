@@ -60,6 +60,7 @@ typedef struct {
   gpr_timespec deadline;
   grpc_alarm alarm;
   int refs;
+  grpc_iomgr_closure write_closure;
 } async_connect;
 
 static int prepare_socket(const struct sockaddr *addr, int fd) {
@@ -136,7 +137,7 @@ static void on_writable(void *acp, int success) {
            opened too many network connections.  The "easy" fix:
            don't do that! */
         gpr_log(GPR_ERROR, "kernel out of buffers");
-        grpc_fd_notify_on_write(ac->fd, on_writable, ac);
+        grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
         return;
       } else {
         switch (so_error) {
@@ -229,9 +230,11 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->fd = grpc_fd_create(fd);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
+  ac->write_closure.cb = on_writable;
+  ac->write_closure.cb_arg = ac;
 
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac, gpr_now());
-  grpc_fd_notify_on_write(ac->fd, on_writable, ac);
+  grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
 }
 
 #endif

@@ -13,9 +13,6 @@
     <ClCompile Include="..\..\src\core\security\factories.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\google_root_certs.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
@@ -360,9 +357,6 @@
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\security\credentials.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\security\google_root_certs.h">
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\security\json_token.h">

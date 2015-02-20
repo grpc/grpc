@@ -163,7 +163,7 @@ HOST_LD = $(LD)
 HOST_LDXX = $(LDXX)
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
-DEFINES += $(DEFINES_$(CONFIG))
+DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
 LDFLAGS += $(LDFLAGS_$(CONFIG))
 
 CFLAGS += -std=c89 -pedantic
@@ -1018,6 +1018,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing json_rewrite_test"
+	$(Q) $(BINDIR)/$(CONFIG)/json_rewrite_test || ( echo test json_rewrite_test failed ; exit 1 )
 	$(E) "[RUN]     Testing json_test"
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
@@ -2237,7 +2239,6 @@ LIBGRPC_SRC = \
     src/core/security/base64.c \
     src/core/security/credentials.c \
     src/core/security/factories.c \
-    src/core/security/google_root_certs.c \
     src/core/security/json_token.c \
     src/core/security/secure_endpoint.c \
     src/core/security/secure_transport_setup.c \
@@ -2377,7 +2378,6 @@ src/core/security/auth.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
 src/core/security/factories.c: $(OPENSSL_DEP)
-src/core/security/google_root_certs.c: $(OPENSSL_DEP)
 src/core/security/json_token.c: $(OPENSSL_DEP)
 src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
@@ -2534,7 +2534,6 @@ $(OBJDIR)/$(CONFIG)/src/core/security/auth.o:
 $(OBJDIR)/$(CONFIG)/src/core/security/base64.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/factories.o: 
-$(OBJDIR)/$(CONFIG)/src/core/security/google_root_certs.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/json_token.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_endpoint.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_transport_setup.o: 
