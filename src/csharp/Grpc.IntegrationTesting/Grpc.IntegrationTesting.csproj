@@ -54,10 +54,6 @@
       <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
       <Name>Grpc.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Grpc.Api\Grpc.Api.csproj">
-      <Project>{7DC1433E-3225-42C7-B7EA-546D56E27A4B}</Project>
-      <Name>Grpc.Api</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
