@@ -31,6 +31,7 @@
 
 # Where to put resulting .deb packages.
 deb_dest="deb"
+mkdir -p $deb_dest
 
 # First use make to install gRPC to a temporary directory
 #tmp_install_dir=`mktemp -d`
