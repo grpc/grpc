@@ -36,6 +36,11 @@ var client = new examples.RouteGuide('localhost:50051');
 
 var COORD_FACTOR = 1e7;
 
+/**
+ * Run the getFeature demo. Calls getFeature with a point known to have a
+ * feature and a point known not to have a feature.
+ * @param {function} callback Called when this demo is complete
+ */
 function runGetFeature(callback) {
   var next = _.after(2, callback);
   function featureCallback(error, feature) {
@@ -65,6 +70,12 @@ function runGetFeature(callback) {
   client.getFeature(point2, featureCallback);
 }
 
+/**
+ * Run the listFeatures demo. Calls listFeatures with a rectangle containing all
+ * of the features in the pre-generated database. Prints each response as it
+ * comes in.
+ * @param {function} callback Called when this demo is complete
+ */
 function runListFeatures(callback) {
   var rectangle = {
     lo: {
@@ -86,6 +97,12 @@ function runListFeatures(callback) {
   call.on('end', callback);
 }
 
+/**
+ * Run the recordRoute demo. Sends several randomly chosen points from the
+ * pre-generated feature database with a variable delay in between. Prints the
+ * statistics when they are sent from the server.
+ * @param {function} callback Called when this demo is complete
+ */
 function runRecordRoute(callback) {
   fs.readFile(__dirname + '/route_guide_db.json', function(err, data) {
     if (err) callback(err);
@@ -102,7 +119,18 @@ function runRecordRoute(callback) {
       console.log('It took', stats.elapsed_time, 'seconds');
       callback();
     });
+    /**
+     * Constructs a function that asynchronously sends the given point and then
+     * delays sending its callback
+     * @param {number} lat The latitude to send
+     * @param {number} lng The longitude to send
+     * @return {function(function)} The function that sends the point
+     */
     function pointSender(lat, lng) {
+      /**
+       * Sends the point, then calls the callback after a delay
+       * @param {function} callback Called when complete
+       */
       return function(callback) {
         console.log('Visiting point ' + lat/COORD_FACTOR + ', ' +
             lng/COORD_FACTOR);
@@ -125,6 +153,11 @@ function runRecordRoute(callback) {
   });
 }
 
+/**
+ * Run the routeChat demo. Send some chat messages, and print any chat messages
+ * that are sent from the server.
+ * @param {function} callback Called when the demo is complete
+ */
 function runRouteChat(callback) {
   var call = client.routeChat();
   call.on('data', function(note) {
@@ -168,6 +201,9 @@ function runRouteChat(callback) {
   call.end();
 }
 
+/**
+ * Run all of the demos in order
+ */
 function main() {
   async.series([
     runGetFeature,
