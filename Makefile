@@ -2645,7 +2645,6 @@ $(OBJDIR)/$(CONFIG)/src/core/transport/transport.o:
 
 LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/cq_verifier.c \
-    test/core/end2end/data/prod_roots_certs.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
     test/core/end2end/data/test_root_cert.c \
@@ -2675,7 +2674,6 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 test/core/end2end/cq_verifier.c: $(OPENSSL_DEP)
-test/core/end2end/data/prod_roots_certs.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
 test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
@@ -2709,7 +2707,6 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/cq_verifier.o: 
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/prod_roots_certs.o: 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o: 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o: 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o: 
@@ -4845,7 +4842,6 @@ $(OBJDIR)/$(CONFIG)/test/core/end2end/tests/writes_done_hangs_with_pending_read_
 
 LIBEND2END_CERTS_SRC = \
     test/core/end2end/data/test_root_cert.c \
-    test/core/end2end/data/prod_roots_certs.c \
     test/core/end2end/data/server1_cert.c \
     test/core/end2end/data/server1_key.c \
 
@@ -4867,7 +4863,6 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
-test/core/end2end/data/prod_roots_certs.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
 test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
 endif
@@ -4893,7 +4888,6 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/data/test_root_cert.o: 
-$(OBJDIR)/$(CONFIG)/test/core/end2end/data/prod_roots_certs.o: 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_cert.o: 
 $(OBJDIR)/$(CONFIG)/test/core/end2end/data/server1_key.o: 
 

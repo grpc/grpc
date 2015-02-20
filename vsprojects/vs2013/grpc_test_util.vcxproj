@@ -80,8 +80,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
     </ClCompile>
-    <ClCompile Include="..\..\test\core\end2end\data\prod_roots_certs.c">
-    </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_cert.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_key.c">
