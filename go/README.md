@@ -1,5 +1,5 @@
-gRPC Go Hello World
-===================
+gRPC in 3 minutes (Go)
+======================
 
 PREREQUISITES
 -------------
