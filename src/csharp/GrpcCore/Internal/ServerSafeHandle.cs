@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,30 +32,28 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
+    // TODO: we need to make sure that the delegates are not collected before invoked.
+    internal delegate void ServerShutdownCallbackDelegate(IntPtr eventPtr);
+
     /// <summary>
     /// grpc_server from grpc/grpc.h
     /// </summary>
     internal sealed class ServerSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll", EntryPoint = "grpcsharp_server_request_call_old")]
-        static extern GRPCCallError grpcsharp_server_request_call_old_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
 
-        // TODO: check int representation size
         [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
-
-        // TODO: check int representation size
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr);
+        static extern Int32 grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_start(ServerSafeHandle server);
@@ -63,8 +61,9 @@ namespace Google.GRPC.Core.Internal
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_shutdown(ServerSafeHandle server);
 
+        // TODO: get rid of the old callback style
         [DllImport("grpc_csharp_ext.dll", EntryPoint = "grpcsharp_server_shutdown_and_notify")]
-        static extern void grpcsharp_server_shutdown_and_notify_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] EventCallbackDelegate callback);
+        static extern void grpcsharp_server_shutdown_and_notify_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] ServerShutdownCallbackDelegate callback);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_destroy(IntPtr server);
@@ -81,7 +80,6 @@ namespace Google.GRPC.Core.Internal
 
         public int AddPort(string addr)
         {
-            // TODO: also grpc_server_add_secure_http2_port...
             return grpcsharp_server_add_http2_port(this, addr);
         }
 
@@ -95,14 +93,14 @@ namespace Google.GRPC.Core.Internal
             grpcsharp_server_shutdown(this);
         }
 
-        public void ShutdownAndNotify(EventCallbackDelegate callback)
+        public void ShutdownAndNotify(ServerShutdownCallbackDelegate callback)
         {
             grpcsharp_server_shutdown_and_notify_CALLBACK(this, callback);
         }
 
-        public GRPCCallError RequestCall(EventCallbackDelegate callback)
+        public GRPCCallError RequestCall(CompletionQueueSafeHandle cq, CompletionCallbackDelegate callback)
         {
-            return grpcsharp_server_request_call_old_CALLBACK(this, callback);
+            return grpcsharp_server_request_call(this, cq, callback);
         }
 
         protected override bool ReleaseHandle()

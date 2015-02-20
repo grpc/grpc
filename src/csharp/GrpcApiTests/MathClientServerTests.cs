@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,12 +32,12 @@
 #endregion
 
 using System;
-using NUnit.Framework;
-using Google.GRPC.Core;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.GRPC.Core.Utils;
-using System.Collections.Generic;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
 namespace math.Tests
 {
@@ -62,6 +62,15 @@ namespace math.Tests
             server.Start();
             channel = new Channel(host + ":" + port);
             client = MathGrpc.NewStub(channel);
+        }
+
+        [TestFixtureTearDown]
+        public void Cleanup()
+        {
+            channel.Dispose();
+
+            server.ShutdownAsync().Wait();
+            GrpcEnvironment.Shutdown();
         }
 
         [Test]
@@ -96,7 +105,7 @@ namespace math.Tests
             var recorder = new RecordingObserver<Num>();
             client.Fib(new FibArgs.Builder { Limit = 6 }.Build(), recorder);
 
-            CollectionAssert.AreEqual(new List<long>{1, 1, 2, 3, 5, 8}, 
+            CollectionAssert.AreEqual(new List<long>{1, 1, 2, 3, 5, 8},
                 recorder.ToList().Result.ConvertAll((n) => n.Num_));
         }
 
@@ -135,15 +144,6 @@ namespace math.Tests
 
             CollectionAssert.AreEqual(new long[] {3, 4, 3}, result.ConvertAll((divReply) => divReply.Quotient));
             CollectionAssert.AreEqual(new long[] {1, 16, 1}, result.ConvertAll((divReply) => divReply.Remainder));
-        }
-
-        [TestFixtureTearDown]
-        public void Cleanup()
-        {
-            channel.Dispose();
-
-            server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
     }
 }

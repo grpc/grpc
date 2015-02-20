@@ -44,7 +44,7 @@ class Cardinality(enum.Enum):
 
 
 class RpcMethod(object):
-  """A sum type for the implementation of an RPC method."""
+  """A type for the common aspects of RPC method specifications."""
   __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
@@ -59,6 +59,11 @@ class RpcMethod(object):
     """
     raise NotImplementedError()
 
+
+class ClientRpcMethod(RpcMethod):
+  """Invocation-side description of an RPC method."""
+  __metaclass__ = abc.ABCMeta
+
   @abc.abstractmethod
   def serialize_request(self, request):
     """Serializes a request value.
@@ -71,6 +76,25 @@ class RpcMethod(object):
         bytestring.
     """
     raise NotImplementedError()
+
+  @abc.abstractmethod
+  def deserialize_response(self, serialized_response):
+    """Deserializes a response value.
+
+    Args:
+      serialized_response: A bytestring that is the
+        serialization of a response value appropriate for this
+        RpcMethod.
+
+    Returns:
+      A response value corresponding to the given bytestring.
+    """
+    raise NotImplementedError()
+
+
+class ServerRpcMethod(RpcMethod):
+  """Service-side description of an RPC method."""
+  __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
   def deserialize_request(self, serialized_request):
@@ -96,20 +120,6 @@ class RpcMethod(object):
     Returns:
       The serialization of the given response value as a
         bytestring.
-    """
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def deserialize_response(self, serialized_response):
-    """Deserializes a response value.
-
-    Args:
-      serialized_response: A bytestring that is the
-        serialization of a response value appropriate for this
-        RpcMethod.
-
-    Returns:
-      A response value corresponding to the given bytestring.
     """
     raise NotImplementedError()
 
@@ -181,7 +191,6 @@ class RpcMethod(object):
 class Server(object):
   """A GRPC Server."""
   __metaclass__ = abc.ABCMeta
-  
 
   @abc.abstractmethod
   def start(self):

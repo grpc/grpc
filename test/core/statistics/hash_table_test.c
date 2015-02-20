@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,7 +97,7 @@ static void test_table_with_int_key(void) {
   for (i = 0; i < 20; ++i) {
     census_ht_key key;
     key.val = i;
-    census_ht_insert(ht, key, (void*)i);
+    census_ht_insert(ht, key, (void*)(gpr_intptr)i);
     GPR_ASSERT(census_ht_get_size(ht) == i + 1);
   }
   for (i = 0; i < 20; i++) {
@@ -105,7 +105,7 @@ static void test_table_with_int_key(void) {
     census_ht_key key;
     key.val = i;
     val = census_ht_find(ht, key);
-    GPR_ASSERT(val == (void*)i);
+    GPR_ASSERT(val == (void*)(gpr_intptr)i);
   }
   elements = census_ht_get_all_elements(ht, &num_elements);
   GPR_ASSERT(elements != NULL);

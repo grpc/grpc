@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -350,7 +350,7 @@ grpc_interop_test_flags() {
     echo "$FUNCNAME: missing arg: test_case" 1>&2
     return 1
   }
-  echo "--server_host_override=foo.test.google.fr --server_host=$server_ip --server_port=$port --test_case=$test_case"
+  echo "--server_host=$server_ip --server_port=$port --test_case=$test_case"
 }
 
 # checks the positional args and assigns them to variables visible in the caller
@@ -795,7 +795,7 @@ grpc_interop_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"
@@ -850,7 +850,7 @@ grpc_cloud_prod_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" & 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
   PID=$!
   sleep 10
   echo "pid is $PID"
@@ -974,7 +974,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_ruby_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_go_cmd() {
   local cmd_prefix="sudo docker run grpc/go /bin/bash -c"
-  local test_script="cd /go/src/github.com/google/grpc-go/rpc/interop/client"
+  local test_script="cd src/google.golang.org/grpc/interop/client"
   local test_script+=" && go run client.go --use_tls=true"
   local the_cmd="$cmd_prefix '$test_script $@'"
   echo $the_cmd
@@ -987,7 +987,7 @@ grpc_interop_gen_go_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_gen_go_cmd() {
   local cmd_prefix="sudo docker run grpc/go /bin/bash -c"
-  local test_script="cd /go/src/github.com/google/grpc-go/rpc/interop/client"
+  local test_script="cd src/google.golang.org/grpc/interop/client"
   local test_script+=" && go run client.go --use_tls=true"
   local gfe_flags="  --tls_ca_file=\"\" --tls_server_name=\"\" --server_port=443 --server_host=grpc-test.sandbox.google.com"
   local the_cmd="$cmd_prefix '$test_script $gfe_flags $@'"
@@ -1044,8 +1044,36 @@ grpc_interop_gen_php_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_node_cmd() {
   local cmd_prefix="sudo docker run grpc/node";
-  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true --use_test_ca=true";
   local the_cmd="$cmd_prefix $test_script $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized node gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_node_cmd() {
+  local cmd_prefix="sudo docker run grpc/node";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized node service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_node_cmd() {
+  local cmd_prefix="sudo docker run grpc/node";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
+  local the_cmd="$env_prefix $cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
 }
 

@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,14 +33,14 @@
 
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using System.Text.RegularExpressions;
-using Google.GRPC.Core;
-using Google.GRPC.Core.Utils;
 using Google.ProtocolBuffers;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 using grpc.testing;
 
-namespace Google.GRPC.Interop
+namespace Grpc.Interop
 {
     class Client
     {
@@ -83,7 +83,7 @@ namespace Google.GRPC.Interop
                 Console.WriteLine("  --test_case=TESTCASE");
                 Console.WriteLine("  --use_tls=BOOLEAN");
                 Console.WriteLine("  --use_test_ca=BOOLEAN");
-                Console.WriteLine();  
+                Console.WriteLine();
                 Environment.Exit(1);
             }
 
@@ -149,7 +149,7 @@ namespace Google.GRPC.Interop
                     .SetResponseSize(314159)
                     .SetPayload(CreateZerosPayload(271828))
                     .Build();
-             
+
             var response = client.UnaryCall(request);
 
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
@@ -214,8 +214,8 @@ namespace Google.GRPC.Interop
                 .SetResponseType(PayloadType.COMPRESSABLE)
                 .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
                 .SetPayload(CreateZerosPayload(27182)).Build());
-           
-            response = recorder.Queue.Take();             
+
+            response = recorder.Queue.Take();
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(31415, response.Payload.Body.Length);
 
@@ -224,7 +224,7 @@ namespace Google.GRPC.Interop
                           .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(9))
                           .SetPayload(CreateZerosPayload(8)).Build());
 
-            response = recorder.Queue.Take();             
+            response = recorder.Queue.Take();
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(9, response.Payload.Body.Length);
 
@@ -233,7 +233,7 @@ namespace Google.GRPC.Interop
                           .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(2635))
                           .SetPayload(CreateZerosPayload(1828)).Build());
 
-            response = recorder.Queue.Take();             
+            response = recorder.Queue.Take();
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(2653, response.Payload.Body.Length);
 
@@ -243,7 +243,7 @@ namespace Google.GRPC.Interop
                           .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(58979))
                           .SetPayload(CreateZerosPayload(45904)).Build());
 
-            response = recorder.Queue.Take();             
+            response = recorder.Queue.Take();
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(58979, response.Payload.Body.Length);
 

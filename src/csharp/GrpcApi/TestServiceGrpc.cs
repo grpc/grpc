@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,12 +30,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
+
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Reactive.Linq;
-using Google.GRPC.Core;
+using System.Threading;
+using System.Threading.Tasks;
+using Grpc.Core;
 
 namespace grpc.testing
 {
@@ -99,7 +100,7 @@ namespace grpc.testing
 
             Task<SimpleResponse> UnaryCallAsync(SimpleRequest request, CancellationToken token = default(CancellationToken));
 
-            Task StreamingOutputCall(StreamingOutputCallRequest request, IObserver<StreamingOutputCallResponse> responseObserver, CancellationToken token = default(CancellationToken));
+            void StreamingOutputCall(StreamingOutputCallRequest request, IObserver<StreamingOutputCallResponse> responseObserver, CancellationToken token = default(CancellationToken));
 
             ClientStreamingAsyncResult<StreamingInputCallRequest, StreamingInputCallResponse> StreamingInputCall(CancellationToken token = default(CancellationToken));
 
@@ -119,49 +120,49 @@ namespace grpc.testing
 
             public Empty EmptyCall(Empty request, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<Empty, Empty>(emptyCallMethod, channel);
+                var call = new Grpc.Core.Call<Empty, Empty>(emptyCallMethod, channel);
                 return Calls.BlockingUnaryCall(call, request, token);
             }
 
             public Task<Empty> EmptyCallAsync(Empty request, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<Empty, Empty>(emptyCallMethod, channel);
+                var call = new Grpc.Core.Call<Empty, Empty>(emptyCallMethod, channel);
                 return Calls.AsyncUnaryCall(call, request, token);
             }
 
             public SimpleResponse UnaryCall(SimpleRequest request, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<SimpleRequest, SimpleResponse>(unaryCallMethod, channel);
+                var call = new Grpc.Core.Call<SimpleRequest, SimpleResponse>(unaryCallMethod, channel);
                 return Calls.BlockingUnaryCall(call, request, token);
             }
 
             public Task<SimpleResponse> UnaryCallAsync(SimpleRequest request, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<SimpleRequest, SimpleResponse>(unaryCallMethod, channel);
+                var call = new Grpc.Core.Call<SimpleRequest, SimpleResponse>(unaryCallMethod, channel);
                 return Calls.AsyncUnaryCall(call, request, token);
             }
 
-            public Task StreamingOutputCall(StreamingOutputCallRequest request, IObserver<StreamingOutputCallResponse> responseObserver, CancellationToken token = default(CancellationToken)) {
-                var call = new Google.GRPC.Core.Call<StreamingOutputCallRequest, StreamingOutputCallResponse>(streamingOutputCallMethod, channel);
-                return Calls.AsyncServerStreamingCall(call, request, responseObserver, token);
+            public void StreamingOutputCall(StreamingOutputCallRequest request, IObserver<StreamingOutputCallResponse> responseObserver, CancellationToken token = default(CancellationToken)) {
+                var call = new Grpc.Core.Call<StreamingOutputCallRequest, StreamingOutputCallResponse>(streamingOutputCallMethod, channel);
+                Calls.AsyncServerStreamingCall(call, request, responseObserver, token);
             }
 
             public ClientStreamingAsyncResult<StreamingInputCallRequest, StreamingInputCallResponse> StreamingInputCall(CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<StreamingInputCallRequest, StreamingInputCallResponse>(streamingInputCallMethod, channel);
+                var call = new Grpc.Core.Call<StreamingInputCallRequest, StreamingInputCallResponse>(streamingInputCallMethod, channel);
                 return Calls.AsyncClientStreamingCall(call, token);
             }
 
             public IObserver<StreamingOutputCallRequest> FullDuplexCall(IObserver<StreamingOutputCallResponse> responseObserver, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<StreamingOutputCallRequest, StreamingOutputCallResponse>(fullDuplexCallMethod, channel);
+                var call = new Grpc.Core.Call<StreamingOutputCallRequest, StreamingOutputCallResponse>(fullDuplexCallMethod, channel);
                 return Calls.DuplexStreamingCall(call, responseObserver, token);
             }
 
 
             public IObserver<StreamingOutputCallRequest> HalfDuplexCall(IObserver<StreamingOutputCallResponse> responseObserver, CancellationToken token = default(CancellationToken))
             {
-                var call = new Google.GRPC.Core.Call<StreamingOutputCallRequest, StreamingOutputCallResponse>(halfDuplexCallMethod, channel);
+                var call = new Grpc.Core.Call<StreamingOutputCallRequest, StreamingOutputCallResponse>(halfDuplexCallMethod, channel);
                 return Calls.DuplexStreamingCall(call, responseObserver, token);
             }
         }

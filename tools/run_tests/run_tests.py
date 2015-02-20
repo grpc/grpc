@@ -62,15 +62,18 @@ class SimpleConfig(object):
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
 class ValgrindConfig(object):
 
-  def __init__(self, config, tool):
+  def __init__(self, config, tool, args=[]):
     self.build_config = config
     self.tool = tool
+    self.args = args
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
   def job_spec(self, binary, hash_targets):
-    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool, binary],
-                   hash_targets=None)
+    return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
+                          self.args + [binary],
+                          shortname='valgrind %s' % binary,
+                          hash_targets=None)
 
 
 class CLanguage(object):
@@ -144,7 +147,7 @@ _CONFIGS = {
     'asan': SimpleConfig('asan', environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt'}),
     'gcov': SimpleConfig('gcov'),
-    'memcheck': ValgrindConfig('valgrind', 'memcheck'),
+    'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
     'helgrind': ValgrindConfig('dbg', 'helgrind')
     }
 

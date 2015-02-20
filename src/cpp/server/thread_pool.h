@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,12 +44,12 @@
 
 namespace grpc {
 
-class ThreadPool : public ThreadPoolInterface {
+class ThreadPool final : public ThreadPoolInterface {
  public:
   explicit ThreadPool(int num_threads);
   ~ThreadPool();
 
-  void ScheduleCallback(const std::function<void()> &callback) final;
+  void ScheduleCallback(const std::function<void()> &callback) override;
 
  private:
   std::mutex mu_;

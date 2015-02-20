@@ -3,10 +3,12 @@
   "version": "0.2.0",
   "description": "gRPC Library for Node",
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha"
+    "lint": "nodejs ./node_modules/jshint/bin/jshint src test examples interop index.js",
+    "test": "nodejs ./node_modules/mocha/bin/mocha && npm run-script lint"
   },
   "dependencies": {
     "bindings": "^1.2.1",
+    "jshint": "^2.5.5",
     "nan": "~1.3.0",
     "protobufjs": "murgatroid99/ProtoBuf.js",
     "underscore": "^1.7.0",
@@ -14,7 +16,18 @@
   },
   "devDependencies": {
     "mocha": "~1.21.0",
-    "minimist": "^1.1.0"
+    "minimist": "^1.1.0",
+    "googleauth": "google/google-auth-library-nodejs"
   },
+  "files": [
+    "README.md",
+    "index.js",
+    "binding.gyp",
+    "examples",
+    "ext",
+    "interop",
+    "src",
+    "test"
+  ],
   "main": "index.js"
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ main() {
 
   # launch images for all languages on  server
   grpc_launch_servers grpc-docker-server
-  
+
 }
 
 set -x

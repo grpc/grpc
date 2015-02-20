@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 
 main() {
   source grpc_docker.sh
-  test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming)
+  test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming service_account_creds compute_engine_creds)
   clients=(cxx java go ruby node)
   for test_case in "${test_cases[@]}"
   do

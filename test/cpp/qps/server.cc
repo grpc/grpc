@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include <sys/signal.h>
 #include <thread>
 
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc++/config.h>
@@ -67,6 +67,13 @@ using grpc::testing::SimpleResponse;
 using grpc::testing::StatsRequest;
 using grpc::testing::TestService;
 using grpc::Status;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
 
 static bool got_sigint = false;
 
@@ -128,7 +135,7 @@ static void RunServer() {
 
   ServerBuilder builder;
   builder.AddPort(server_address);
-  builder.RegisterService(service.service());
+  builder.RegisterService(&service);
 
   std::unique_ptr<ThreadPool> pool(new ThreadPool(FLAGS_server_threads));
   builder.SetThreadPool(pool.get());
@@ -149,10 +156,10 @@ static void RunServer() {
 
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   signal(SIGINT, sigint_handler);
-  
+
   GPR_ASSERT(FLAGS_port != 0);
   GPR_ASSERT(!FLAGS_enable_ssl);
   RunServer();
@@ -160,4 +167,3 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return 0;
 }
-

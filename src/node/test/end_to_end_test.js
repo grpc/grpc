@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+'use strict';
 
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
@@ -227,7 +229,7 @@ describe('end-to-end', function() {
         response_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
         server_call.startBatch(response_batch, function(err, response) {
           assert(response['send status']);
-          assert(!response['cancelled']);
+          assert(!response.cancelled);
           done();
         });
       });

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@
 
 #include "call.h"
 #include "channel.h"
-#include "event.h"
 #include "server.h"
 #include "completion_queue_async_worker.h"
 #include "credentials.h"

@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,7 +35,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     /// <summary>
     /// grpc_completion_queue from <grpc/grpc.h>
@@ -44,12 +44,6 @@ namespace Google.GRPC.Core.Internal
 	{
         [DllImport("grpc_csharp_ext.dll")]
         static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern EventSafeHandle grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag, Timespec deadline);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern EventSafeHandle grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq, Timespec deadline);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
@@ -69,19 +63,9 @@ namespace Google.GRPC.Core.Internal
             return grpcsharp_completion_queue_create();
         }
 
-        public EventSafeHandle Next(Timespec deadline)
-        {
-            return grpcsharp_completion_queue_next(this, deadline);
-        }
-
         public GRPCCompletionType NextWithCallback()
         {
             return grpcsharp_completion_queue_next_with_callback(this);
-        }
-
-        public EventSafeHandle Pluck(IntPtr tag, Timespec deadline)
-        {
-            return grpcsharp_completion_queue_pluck(this, tag, deadline);
         }
 
         public void Shutdown()

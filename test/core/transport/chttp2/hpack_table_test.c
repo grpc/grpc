@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -126,7 +126,7 @@ static void test_static_lookup(void) {
   assert_index(&tbl, 61, "www-authenticate", "");
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_mdctx_orphan(mdctx);
+  grpc_mdctx_unref(mdctx);
 }
 
 static void test_many_additions(void) {
@@ -158,7 +158,7 @@ static void test_many_additions(void) {
   }
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_mdctx_orphan(mdctx);
+  grpc_mdctx_unref(mdctx);
 }
 
 static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
@@ -262,7 +262,7 @@ static void test_find(void) {
   GPR_ASSERT(r.has_value == 0);
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_mdctx_orphan(mdctx);
+  grpc_mdctx_unref(mdctx);
 }
 
 int main(int argc, char **argv) {

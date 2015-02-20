@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -187,9 +187,9 @@ static VALUE grpc_rb_metadata_value(VALUE self) {
 
 /* rb_cMetadata is the Metadata class whose instances proxy grpc_metadata. */
 VALUE rb_cMetadata = Qnil;
-void Init_google_rpc_metadata() {
+void Init_grpc_metadata() {
   rb_cMetadata =
-      rb_define_class_under(rb_mGoogleRpcCore, "Metadata", rb_cObject);
+      rb_define_class_under(rb_mGrpcCore, "Metadata", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cMetadata, grpc_rb_metadata_alloc);

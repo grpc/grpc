@@ -9,10 +9,10 @@ namespace math {
 
     /**  @var int */
     public $dividend = null;
-    
+
     /**  @var int */
     public $divisor = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -52,7 +52,7 @@ namespace math {
     public function hasDividend(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <dividend> value
      *
@@ -61,7 +61,7 @@ namespace math {
     public function clearDividend(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <dividend> value
      *
@@ -70,7 +70,7 @@ namespace math {
     public function getDividend(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <dividend> value
      *
@@ -80,7 +80,7 @@ namespace math {
     public function setDividend( $value){
       return $this->_set(1, $value);
     }
-    
+
     /**
      * Check if <divisor> has a value
      *
@@ -89,7 +89,7 @@ namespace math {
     public function hasDivisor(){
       return $this->_has(2);
     }
-    
+
     /**
      * Clear <divisor> value
      *
@@ -98,7 +98,7 @@ namespace math {
     public function clearDivisor(){
       return $this->_clear(2);
     }
-    
+
     /**
      * Get <divisor> value
      *
@@ -107,7 +107,7 @@ namespace math {
     public function getDivisor(){
       return $this->_get(2);
     }
-    
+
     /**
      * Set <divisor> value
      *
@@ -126,10 +126,10 @@ namespace math {
 
     /**  @var int */
     public $quotient = null;
-    
+
     /**  @var int */
     public $remainder = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -169,7 +169,7 @@ namespace math {
     public function hasQuotient(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <quotient> value
      *
@@ -178,7 +178,7 @@ namespace math {
     public function clearQuotient(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <quotient> value
      *
@@ -187,7 +187,7 @@ namespace math {
     public function getQuotient(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <quotient> value
      *
@@ -197,7 +197,7 @@ namespace math {
     public function setQuotient( $value){
       return $this->_set(1, $value);
     }
-    
+
     /**
      * Check if <remainder> has a value
      *
@@ -206,7 +206,7 @@ namespace math {
     public function hasRemainder(){
       return $this->_has(2);
     }
-    
+
     /**
      * Clear <remainder> value
      *
@@ -215,7 +215,7 @@ namespace math {
     public function clearRemainder(){
       return $this->_clear(2);
     }
-    
+
     /**
      * Get <remainder> value
      *
@@ -224,7 +224,7 @@ namespace math {
     public function getRemainder(){
       return $this->_get(2);
     }
-    
+
     /**
      * Set <remainder> value
      *
@@ -243,7 +243,7 @@ namespace math {
 
     /**  @var int */
     public $limit = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -275,7 +275,7 @@ namespace math {
     public function hasLimit(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <limit> value
      *
@@ -284,7 +284,7 @@ namespace math {
     public function clearLimit(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <limit> value
      *
@@ -293,7 +293,7 @@ namespace math {
     public function getLimit(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <limit> value
      *
@@ -312,7 +312,7 @@ namespace math {
 
     /**  @var int */
     public $num = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -344,7 +344,7 @@ namespace math {
     public function hasNum(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <num> value
      *
@@ -353,7 +353,7 @@ namespace math {
     public function clearNum(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <num> value
      *
@@ -362,7 +362,7 @@ namespace math {
     public function getNum(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <num> value
      *
@@ -381,7 +381,7 @@ namespace math {
 
     /**  @var int */
     public $count = null;
-    
+
 
     /** @var \Closure[] */
     protected static $__extensions = array();
@@ -413,7 +413,7 @@ namespace math {
     public function hasCount(){
       return $this->_has(1);
     }
-    
+
     /**
      * Clear <count> value
      *
@@ -422,7 +422,7 @@ namespace math {
     public function clearCount(){
       return $this->_clear(1);
     }
-    
+
     /**
      * Get <count> value
      *
@@ -431,7 +431,7 @@ namespace math {
     public function getCount(){
       return $this->_get(1);
     }
-    
+
     /**
      * Set <count> value
      *

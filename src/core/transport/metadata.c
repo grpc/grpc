@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,7 +79,7 @@ typedef struct internal_metadata {
 
 struct grpc_mdctx {
   gpr_uint32 hash_seed;
-  int orphaned;
+  int refs;
 
   gpr_mu mu;
 
@@ -114,7 +114,7 @@ static void unlock(grpc_mdctx *ctx) {
      mdelems on every unlock (instead of the usual 'I'm too loaded' trigger
      case), since otherwise we can be stuck waiting for a garbage collection
      that will never happen. */
-  if (ctx->orphaned) {
+  if (ctx->refs == 0) {
     /* uncomment if you're having trouble diagnosing an mdelem leak to make
        things clearer (slows down destruction a lot, however) */
     /* gc_mdtab(ctx); */
@@ -139,7 +139,7 @@ static void ref_md(internal_metadata *md) {
 grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed) {
   grpc_mdctx *ctx = gpr_malloc(sizeof(grpc_mdctx));
 
-  ctx->orphaned = 0;
+  ctx->refs = 1;
   ctx->hash_seed = seed;
   gpr_mu_init(&ctx->mu);
   ctx->strtab = gpr_malloc(sizeof(internal_string *) * INITIAL_STRTAB_CAPACITY);
@@ -197,10 +197,17 @@ static void metadata_context_destroy(grpc_mdctx *ctx) {
   gpr_free(ctx);
 }
 
-void grpc_mdctx_orphan(grpc_mdctx *ctx) {
+void grpc_mdctx_ref(grpc_mdctx *ctx) {
   lock(ctx);
-  GPR_ASSERT(!ctx->orphaned);
-  ctx->orphaned = 1;
+  GPR_ASSERT(ctx->refs > 0);
+  ctx->refs++;
+  unlock(ctx);
+}
+
+void grpc_mdctx_unref(grpc_mdctx *ctx) {
+  lock(ctx);
+  GPR_ASSERT(ctx->refs > 0);
+  ctx->refs--;
   unlock(ctx);
 }
 

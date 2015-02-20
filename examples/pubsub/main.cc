@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
@@ -59,6 +59,13 @@ DEFINE_string(service_account_key_file, "",
 DEFINE_string(oauth_scope,
               "https://www.googleapis.com/auth/cloud-platform",
               "Scope for OAuth tokens.");
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
 
 namespace {
 
@@ -81,7 +88,7 @@ grpc::string GetServiceAccountJsonKey() {
 
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
   gpr_log(GPR_INFO, "Start PUBSUB client");
 
   std::ostringstream ss;

@@ -239,7 +239,6 @@
         "include/grpc/support/useful.h"
       ],
       "headers": [
-        "src/core/support/cpu.h",
         "src/core/support/env.h",
         "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
@@ -345,7 +344,7 @@
     {
       "name": "grpc_csharp_ext",
       "build": "all",
-      "language": "c",
+      "language": "csharp",
       "src": [
         "src/csharp/ext/grpc_csharp_ext.c"
       ],
@@ -398,8 +397,7 @@
       "build": "all",
       "language": "c++",
       "public_headers": [
-        "include/grpc++/async_server.h",
-        "include/grpc++/async_server_context.h",
+        "include/grpc++/async_unary_call.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
@@ -407,44 +405,44 @@
         "include/grpc++/config.h",
         "include/grpc++/create_channel.h",
         "include/grpc++/credentials.h",
+        "include/grpc++/impl/call.h",
+        "include/grpc++/impl/client_unary_call.h",
         "include/grpc++/impl/internal_stub.h",
         "include/grpc++/impl/rpc_method.h",
         "include/grpc++/impl/rpc_service_method.h",
+        "include/grpc++/impl/service_type.h",
         "include/grpc++/server.h",
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
         "include/grpc++/status.h",
+        "include/grpc++/status_code_enum.h",
         "include/grpc++/stream.h",
-        "include/grpc++/stream_context_interface.h"
+        "include/grpc++/thread_pool_interface.h"
       ],
       "headers": [
         "src/cpp/client/channel.h",
         "src/cpp/proto/proto_utils.h",
-        "src/cpp/server/server_rpc_handler.h",
         "src/cpp/server/thread_pool.h",
-        "src/cpp/stream/stream_context.h",
         "src/cpp/util/time.h"
       ],
       "src": [
         "src/cpp/client/channel.cc",
         "src/cpp/client/channel_arguments.cc",
         "src/cpp/client/client_context.cc",
+        "src/cpp/client/client_unary_call.cc",
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
         "src/cpp/client/internal_stub.cc",
+        "src/cpp/common/call.cc",
         "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
-        "src/cpp/server/async_server.cc",
-        "src/cpp/server/async_server_context.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
-        "src/cpp/server/server_context_impl.cc",
+        "src/cpp/server/server_context.cc",
         "src/cpp/server/server_credentials.cc",
-        "src/cpp/server/server_rpc_handler.cc",
         "src/cpp/server/thread_pool.cc",
-        "src/cpp/stream/stream_context.cc",
         "src/cpp/util/status.cc",
         "src/cpp/util/time.cc"
       ],
@@ -462,7 +460,6 @@
         "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
-        "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
     },
@@ -1551,6 +1548,22 @@
       ]
     },
     {
+      "name": "async_end2end_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/async_end2end_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",
@@ -1564,7 +1577,7 @@
       ]
     },
     {
-      "name": "cpp_plugin",
+      "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
       "headers": [
@@ -1574,6 +1587,31 @@
       "src": [
         "src/compiler/cpp_generator.cc",
         "src/compiler/cpp_plugin.cc"
+      ],
+      "deps": [],
+      "secure": false
+    },
+    {
+      "name": "grpc_ruby_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "src": [
+        "src/compiler/ruby_generator.cc",
+        "src/compiler/ruby_plugin.cc"
+      ],
+      "deps": [],
+      "secure": false
+    },
+    {
+      "name": "grpc_python_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "headers": [
+        "src/compiler/python_generator.h"
+      ],
+      "src": [
+        "src/compiler/python_generator.cc",
+        "src/compiler/python_plugin.cc"
       ],
       "deps": [],
       "secure": false
@@ -1736,23 +1774,6 @@
       ]
     },
     {
-      "name": "ruby_plugin",
-      "build": "protoc",
-      "language": "c++",
-      "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers-inl.h",
-        "src/compiler/cpp_generator_map-inl.h",
-        "src/compiler/cpp_generator_string-inl.h"
-      ],
-      "src": [
-        "src/compiler/ruby_generator.cc",
-        "src/compiler/ruby_plugin.cc"
-      ],
-      "deps": [],
-      "secure": false
-    },
-    {
       "name": "status_test",
       "build": "test",
       "language": "c++",
@@ -1760,22 +1781,6 @@
         "test/cpp/util/status_test.cc"
       ],
       "deps": [
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "sync_client_async_server_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "test/cpp/end2end/sync_client_async_server_test.cc"
-      ],
-      "deps": [
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

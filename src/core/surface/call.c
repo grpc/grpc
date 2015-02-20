@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -258,6 +258,10 @@ void grpc_call_set_completion_queue(grpc_call *call,
   call->cq = cq;
 }
 
+grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
+  return call->cq;
+}
+
 void grpc_call_internal_ref(grpc_call *c) { gpr_ref(&c->internal_refcount); }
 
 static void destroy_call(void *call, int ignored_success) {
@@ -309,7 +313,6 @@ static void set_status_code(grpc_call *call, status_source source,
   }
 
   if (flush && !grpc_bbq_empty(&call->incoming_queue)) {
-    gpr_log(GPR_ERROR, "Flushing unread messages due to error status %d", status);
     grpc_bbq_flush(&call->incoming_queue);
   }
 }

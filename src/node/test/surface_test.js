@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,9 @@
  *
  */
 
-var assert = require('assert');
+'use strict';
 
-var surface_server = require('../src/server.js');
+var assert = require('assert');
 
 var surface_client = require('../src/client.js');
 
