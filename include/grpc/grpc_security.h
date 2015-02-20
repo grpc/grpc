@@ -73,8 +73,11 @@ typedef struct {
 
 /* Creates an SSL credentials object.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding
-     of the server root certificates. If this parameter is NULL, the default
-     roots will be used.
+     of the server root certificates. If this parameter is NULL, the
+     implementation will first try to dereference the file pointed by the
+     GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable, and if that fails,
+     get the roots from a well-known place on disk (in the grpc install
+     directory).
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair.  */

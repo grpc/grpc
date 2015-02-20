@@ -402,6 +402,7 @@ static grpc_security_context_vtable ssl_server_vtable = {
 static gpr_slice default_pem_root_certs;
 
 static void init_default_pem_root_certs(void) {
+  /* First try to load the roots from the environment. */
   char *default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
   if (default_root_certs_path == NULL) {
@@ -410,7 +411,11 @@ static void init_default_pem_root_certs(void) {
     default_pem_root_certs = gpr_load_file(default_root_certs_path, NULL);
     gpr_free(default_root_certs_path);
   }
-  (void) installed_roots_path;
+
+  /* Fall back to installed certs if needed. */
+  if (GPR_SLICE_IS_EMPTY(default_pem_root_certs)) {
+    default_pem_root_certs = gpr_load_file(installed_roots_path, NULL);
+  }
 }
 
 size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
