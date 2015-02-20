@@ -30,7 +30,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Where to put resulting .deb packages.
-deb_dest="deb"
+deb_dest="deb_out"
 mkdir -p $deb_dest
 
 # First use make to install gRPC to a temporary directory
