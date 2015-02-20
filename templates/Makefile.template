@@ -349,7 +349,7 @@ endif
 
 .SECONDARY = %.pb.h %.pb.cc
 
-PROTOC_PLUGINS=\
+PROTOC_PLUGINS =\
 % for tgt in targets:
 % if tgt.build == 'protoc':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -357,7 +357,7 @@ PROTOC_PLUGINS=\
 % endfor
 
 ifeq ($(DEP_MISSING),)
-all: static shared\
+all: static shared plugins\
 % for tgt in targets:
 % if tgt.build == 'all':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -538,6 +538,8 @@ shared_csharp: shared_c \
 
 grpc_csharp_ext: shared_csharp
 
+plugins: $(PROTOC_PLUGINS)
+
 privatelibs: privatelibs_c privatelibs_cxx
 
 privatelibs_c: \
@@ -690,7 +692,7 @@ else
 $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 % endfor
@@ -716,7 +718,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
-install: install_c install_cxx
+install: install_c install_cxx install-protobuf install-plugins
 
 install_c: install-headers_c install-static_c install-shared_c
 
@@ -758,9 +760,9 @@ install-static_cxx: static_cxx strip-static_cxx
 % endif
 % endfor
 
-install-shared_c: shared_c strip-shared_c
+<%def name="install_shared(lang_filter)">\
 % for lib in libs:
-% if lib.language == "c":
+% if lib.language == lang_filter:
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
@@ -781,56 +783,42 @@ ifneq ($(SYSTEM),Darwin)
 	$(Q) ldconfig
 endif
 endif
+</%def>
 
-install-shared_cxx: shared_cxx strip-shared_cxx
-% for lib in libs:
-% if lib.language == "c++":
-% if lib.build == "all":
-ifeq ($(SYSTEM),MINGW32)
-	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
-else
-	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-endif
-endif
-% endif
-% endif
-% endfor
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
-endif
-endif
+install-shared_c: shared_c strip-shared_c
+${install_shared("c")}
+
+install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c
+${install_shared("c++")}
 
 install-shared_csharp: shared_csharp strip-shared_csharp
-% for lib in libs:
-% if lib.language == "csharp":
-% if lib.build == "all":
-ifeq ($(SYSTEM),MINGW32)
-	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
-else
-	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-endif
-endif
-% endif
-% endif
-% endfor
+${install_shared("csharp")}
+
+install-protobuf: $(PROTOBUF_DEP)
+ifneq ($(PROTOBUF_DEP),)
+	$(E) "[INSTALL] Installing embedded protobufs"
+	$(Q) $(MAKE) -C third_party/protobuf install prefix=$(prefix)
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ldconfig
 endif
+endif
+endif
+
+install-plugins: $(PROTOC_PLUGINS)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) false
+else
+	$(E) "[INSTALL] Installing grpc protoc plugins"
+% for tgt in targets:
+% if tgt.build == 'protoc':
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
+% endif
+% endfor
 endif
 
 clean:
+	$(E) "[CLEAN]   Cleaning build directories."
 	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
 
 

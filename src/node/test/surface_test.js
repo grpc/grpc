@@ -31,9 +31,9 @@
  *
  */
 
-var assert = require('assert');
+'use strict';
 
-var surface_server = require('../src/server.js');
+var assert = require('assert');
 
 var surface_client = require('../src/client.js');
 

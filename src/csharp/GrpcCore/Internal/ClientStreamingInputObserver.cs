@@ -32,9 +32,9 @@
 #endregion
 
 using System;
-using Google.GRPC.Core.Internal;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core.Internal
+namespace Grpc.Core.Internal
 {
     internal class ClientStreamingInputObserver<TWrite, TRead> : IObserver<TWrite>
 	{

@@ -31,7 +31,7 @@
 
 import unittest
 
-from grpc.framework.base import interfaces_test
+from grpc.framework.base import interfaces_test_case
 from grpc.framework.base import util
 from grpc.framework.base.packets import implementations
 from grpc.framework.foundation import logging_pool
@@ -42,7 +42,7 @@ MAXIMUM_TIMEOUT = 60
 
 
 class ImplementationsTest(
-    interfaces_test.FrontAndBackTest, unittest.TestCase):
+    interfaces_test_case.FrontAndBackTest, unittest.TestCase):
 
   def setUp(self):
     self.memory_transmission_pool = logging_pool.pool(POOL_MAX_WORKERS)
@@ -53,7 +53,7 @@ class ImplementationsTest(
     self.back_transmission_pool = logging_pool.pool(POOL_MAX_WORKERS)
     self.back_utility_pool = logging_pool.pool(POOL_MAX_WORKERS)
     self.test_pool = logging_pool.pool(POOL_MAX_WORKERS)
-    self.test_servicer = interfaces_test.TestServicer(self.test_pool)
+    self.test_servicer = interfaces_test_case.TestServicer(self.test_pool)
     self.front = implementations.front(
         self.front_work_pool, self.front_transmission_pool,
         self.front_utility_pool)

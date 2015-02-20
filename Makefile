@@ -332,9 +332,9 @@ endif
 
 .SECONDARY = %.pb.h %.pb.cc
 
-PROTOC_PLUGINS= $(BINDIR)/$(CONFIG)/cpp_plugin $(BINDIR)/$(CONFIG)/ruby_plugin
+PROTOC_PLUGINS = $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(BINDIR)/$(CONFIG)/grpc_python_plugin
 ifeq ($(DEP_MISSING),)
-all: static shared
+all: static shared plugins
 dep_error:
 	@echo "You shouldn't see this message - all of your dependencies are correct."
 else
@@ -498,7 +498,9 @@ timeout_encoding_test: $(BINDIR)/$(CONFIG)/timeout_encoding_test
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
-cpp_plugin: $(BINDIR)/$(CONFIG)/cpp_plugin
+grpc_cpp_plugin: $(BINDIR)/$(CONFIG)/grpc_cpp_plugin
+grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
+grpc_python_plugin: $(BINDIR)/$(CONFIG)/grpc_python_plugin
 credentials_test: $(BINDIR)/$(CONFIG)/credentials_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
@@ -508,7 +510,6 @@ pubsub_publisher_test: $(BINDIR)/$(CONFIG)/pubsub_publisher_test
 pubsub_subscriber_test: $(BINDIR)/$(CONFIG)/pubsub_subscriber_test
 qps_client: $(BINDIR)/$(CONFIG)/qps_client
 qps_server: $(BINDIR)/$(CONFIG)/qps_server
-ruby_plugin: $(BINDIR)/$(CONFIG)/ruby_plugin
 status_test: $(BINDIR)/$(CONFIG)/status_test
 thread_pool_test: $(BINDIR)/$(CONFIG)/thread_pool_test
 chttp2_fake_security_cancel_after_accept_test: $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test
@@ -904,6 +905,8 @@ shared_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 grpc_csharp_ext: shared_csharp
+
+plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
@@ -1806,7 +1809,7 @@ else
 $(GENDIR)/examples/pubsub/empty.pb.cc: examples/pubsub/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1815,7 +1818,7 @@ else
 $(GENDIR)/examples/pubsub/label.pb.cc: examples/pubsub/label.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1824,7 +1827,7 @@ else
 $(GENDIR)/examples/pubsub/pubsub.pb.cc: examples/pubsub/pubsub.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1833,7 +1836,7 @@ else
 $(GENDIR)/test/cpp/interop/empty.pb.cc: test/cpp/interop/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1842,7 +1845,7 @@ else
 $(GENDIR)/test/cpp/interop/messages.pb.cc: test/cpp/interop/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1851,7 +1854,7 @@ else
 $(GENDIR)/test/cpp/interop/test.pb.cc: test/cpp/interop/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1860,7 +1863,7 @@ else
 $(GENDIR)/test/cpp/qps/qpstest.pb.cc: test/cpp/qps/qpstest.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1869,7 +1872,7 @@ else
 $(GENDIR)/test/cpp/util/echo.pb.cc: test/cpp/util/echo.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1878,7 +1881,7 @@ else
 $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc: test/cpp/util/echo_duplicate.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -1887,7 +1890,7 @@ else
 $(GENDIR)/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 
@@ -1912,7 +1915,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
-install: install_c install_cxx
+install: install_c install_cxx install-protobuf install-plugins
 
 install_c: install-headers_c install-static_c install-shared_c
 
@@ -1945,6 +1948,8 @@ install-static_c: static_c strip-static_c
 install-static_cxx: static_cxx strip-static_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
+
+
 
 install-shared_c: shared_c strip-shared_c
 ifeq ($(SYSTEM),MINGW32)
@@ -1986,7 +1991,8 @@ ifneq ($(SYSTEM),Darwin)
 endif
 endif
 
-install-shared_cxx: shared_cxx strip-shared_cxx
+
+install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing grpc++.$(SHARED_EXT)"
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(prefix)/lib/grpc++.$(SHARED_EXT)
@@ -2003,6 +2009,7 @@ ifneq ($(SYSTEM),Darwin)
 	$(Q) ldconfig
 endif
 endif
+
 
 install-shared_csharp: shared_csharp strip-shared_csharp
 ifeq ($(SYSTEM),MINGW32)
@@ -2022,7 +2029,30 @@ ifneq ($(SYSTEM),Darwin)
 endif
 endif
 
+
+install-protobuf: $(PROTOBUF_DEP)
+ifneq ($(PROTOBUF_DEP),)
+	$(E) "[INSTALL] Installing embedded protobufs"
+	$(Q) $(MAKE) -C third_party/protobuf install prefix=$(prefix)
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig
+endif
+endif
+endif
+
+install-plugins: $(PROTOC_PLUGINS)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) false
+else
+	$(E) "[INSTALL] Installing grpc protoc plugins"
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(prefix)/bin/grpc_cpp_plugin
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_python_plugin $(prefix)/bin/grpc_python_plugin
+endif
+
 clean:
+	$(E) "[CLEAN]   Cleaning build directories."
 	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
 
 
@@ -3036,12 +3066,15 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
+    include/grpc++/impl/service_type.h \
     include/grpc++/server.h \
     include/grpc++/server_builder.h \
     include/grpc++/server_context.h \
     include/grpc++/server_credentials.h \
     include/grpc++/status.h \
+    include/grpc++/status_code_enum.h \
     include/grpc++/stream.h \
+    include/grpc++/thread_pool_interface.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -7350,35 +7383,99 @@ endif
 endif
 
 
-CPP_PLUGIN_SRC = \
+GRPC_CPP_PLUGIN_SRC = \
     src/compiler/cpp_generator.cc \
     src/compiler/cpp_plugin.cc \
 
-CPP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CPP_PLUGIN_SRC))))
+GRPC_CPP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CPP_PLUGIN_SRC))))
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/cpp_plugin: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/grpc_cpp_plugin: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/cpp_plugin: $(PROTOBUF_DEP) $(CPP_PLUGIN_OBJS)
+$(BINDIR)/$(CONFIG)/grpc_cpp_plugin: $(PROTOBUF_DEP) $(GRPC_CPP_PLUGIN_OBJS)
 	$(E) "[HOSTLD]  Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(CPP_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o $(BINDIR)/$(CONFIG)/cpp_plugin
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(GRPC_CPP_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o $(BINDIR)/$(CONFIG)/grpc_cpp_plugin
 
 endif
 
 $(OBJDIR)/$(CONFIG)/src/compiler/cpp_generator.o: 
 $(OBJDIR)/$(CONFIG)/src/compiler/cpp_plugin.o: 
 
-deps_cpp_plugin: $(CPP_PLUGIN_OBJS:.o=.dep)
+deps_grpc_cpp_plugin: $(GRPC_CPP_PLUGIN_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
--include $(CPP_PLUGIN_OBJS:.o=.dep)
+-include $(GRPC_CPP_PLUGIN_OBJS:.o=.dep)
+endif
+
+
+GRPC_RUBY_PLUGIN_SRC = \
+    src/compiler/ruby_generator.cc \
+    src/compiler/ruby_plugin.cc \
+
+GRPC_RUBY_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_RUBY_PLUGIN_SRC))))
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpc_ruby_plugin: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_ruby_plugin: $(PROTOBUF_DEP) $(GRPC_RUBY_PLUGIN_OBJS)
+	$(E) "[HOSTLD]  Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(GRPC_RUBY_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/compiler/ruby_generator.o: 
+$(OBJDIR)/$(CONFIG)/src/compiler/ruby_plugin.o: 
+
+deps_grpc_ruby_plugin: $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_RUBY_PLUGIN_OBJS:.o=.dep)
+endif
+
+
+GRPC_PYTHON_PLUGIN_SRC = \
+    src/compiler/python_generator.cc \
+    src/compiler/python_plugin.cc \
+
+GRPC_PYTHON_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_PYTHON_PLUGIN_SRC))))
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpc_python_plugin: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_python_plugin: $(PROTOBUF_DEP) $(GRPC_PYTHON_PLUGIN_OBJS)
+	$(E) "[HOSTLD]  Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(GRPC_PYTHON_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o $(BINDIR)/$(CONFIG)/grpc_python_plugin
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/compiler/python_generator.o: 
+$(OBJDIR)/$(CONFIG)/src/compiler/python_plugin.o: 
+
+deps_grpc_python_plugin: $(GRPC_PYTHON_PLUGIN_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_PYTHON_PLUGIN_OBJS:.o=.dep)
 endif
 
 
@@ -7674,38 +7771,6 @@ ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(QPS_SERVER_OBJS:.o=.dep)
 endif
-endif
-
-
-RUBY_PLUGIN_SRC = \
-    src/compiler/ruby_generator.cc \
-    src/compiler/ruby_plugin.cc \
-
-RUBY_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RUBY_PLUGIN_SRC))))
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/ruby_plugin: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/ruby_plugin: $(PROTOBUF_DEP) $(RUBY_PLUGIN_OBJS)
-	$(E) "[HOSTLD]  Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(HOST_LDXX) $(HOST_LDFLAGS) $(RUBY_PLUGIN_OBJS) $(HOST_LDLIBSXX) $(HOST_LDLIBS_PROTOC) $(HOST_LDLIBS) $(HOST_LDLIBS_PROTOC) -o $(BINDIR)/$(CONFIG)/ruby_plugin
-
-endif
-
-$(OBJDIR)/$(CONFIG)/src/compiler/ruby_generator.o: 
-$(OBJDIR)/$(CONFIG)/src/compiler/ruby_plugin.o: 
-
-deps_ruby_plugin: $(RUBY_PLUGIN_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(RUBY_PLUGIN_OBJS:.o=.dep)
 endif
 
 

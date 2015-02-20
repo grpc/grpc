@@ -32,10 +32,10 @@
 #endregion
 
 using System;
-using Google.GRPC.Core.Internal;
 using System.Runtime.InteropServices;
+using Grpc.Core.Internal;
 
-namespace Google.GRPC.Core
+namespace Grpc.Core
 {
     /// <summary>
     /// Encapsulates initialization and shutdown of gRPC library.

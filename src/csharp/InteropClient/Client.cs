@@ -33,14 +33,14 @@
 
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using System.Text.RegularExpressions;
-using Google.GRPC.Core;
-using Google.GRPC.Core.Utils;
 using Google.ProtocolBuffers;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 using grpc.testing;
 
-namespace Google.GRPC.Interop
+namespace Grpc.Interop
 {
     class Client
     {

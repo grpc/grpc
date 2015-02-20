@@ -336,6 +336,12 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
   grpc_json *json = NULL;
 
+  if (response == NULL) {
+    gpr_log(GPR_ERROR, "Received NULL response.");
+    status = GRPC_CREDENTIALS_ERROR;
+    goto end;
+  }
+
   if (response->body_length > 0) {
     null_terminated_body = gpr_malloc(response->body_length + 1);
     null_terminated_body[response->body_length] = '\0';

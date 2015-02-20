@@ -49,6 +49,126 @@
 
 namespace grpc {
 
+class Server::SyncRequest final : public CompletionQueueTag {
+ public:
+  SyncRequest(RpcServiceMethod* method, void* tag)
+      : method_(method),
+        tag_(tag),
+        has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
+                             method->method_type() ==
+                                 RpcMethod::SERVER_STREAMING),
+        has_response_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
+                              method->method_type() ==
+                                  RpcMethod::CLIENT_STREAMING) {
+    grpc_metadata_array_init(&request_metadata_);
+  }
+
+  static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
+    void* tag = nullptr;
+    *ok = false;
+    if (!cq->Next(&tag, ok)) {
+      return nullptr;
+    }
+    auto* mrd = static_cast<SyncRequest*>(tag);
+    GPR_ASSERT(mrd->in_flight_);
+    return mrd;
+  }
+
+  void Request(grpc_server* server) {
+    GPR_ASSERT(!in_flight_);
+    in_flight_ = true;
+    cq_ = grpc_completion_queue_create();
+    GPR_ASSERT(GRPC_CALL_OK ==
+               grpc_server_request_registered_call(
+                   server, tag_, &call_, &deadline_, &request_metadata_,
+                   has_request_payload_ ? &request_payload_ : nullptr, cq_,
+                   this));
+  }
+
+  bool FinalizeResult(void** tag, bool* status) override {
+    if (!*status) {
+      grpc_completion_queue_destroy(cq_);
+    }
+    return true;
+  }
+
+  class CallData final {
+   public:
+    explicit CallData(Server* server, SyncRequest* mrd)
+        : cq_(mrd->cq_),
+          call_(mrd->call_, server, &cq_),
+          ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
+               mrd->request_metadata_.count),
+          has_request_payload_(mrd->has_request_payload_),
+          has_response_payload_(mrd->has_response_payload_),
+          request_payload_(mrd->request_payload_),
+          method_(mrd->method_) {
+      ctx_.call_ = mrd->call_;
+      GPR_ASSERT(mrd->in_flight_);
+      mrd->in_flight_ = false;
+      mrd->request_metadata_.count = 0;
+    }
+
+    ~CallData() {
+      if (has_request_payload_ && request_payload_) {
+        grpc_byte_buffer_destroy(request_payload_);
+      }
+    }
+
+    void Run() {
+      std::unique_ptr<google::protobuf::Message> req;
+      std::unique_ptr<google::protobuf::Message> res;
+      if (has_request_payload_) {
+        req.reset(method_->AllocateRequestProto());
+        if (!DeserializeProto(request_payload_, req.get())) {
+          abort();  // for now
+        }
+      }
+      if (has_response_payload_) {
+        res.reset(method_->AllocateResponseProto());
+      }
+      ctx_.BeginCompletionOp(&call_);
+      auto status = method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
+      CallOpBuffer buf;
+      if (!ctx_.sent_initial_metadata_) {
+        buf.AddSendInitialMetadata(&ctx_.initial_metadata_);
+      }
+      if (has_response_payload_) {
+        buf.AddSendMessage(*res);
+      }
+      buf.AddServerSendStatus(&ctx_.trailing_metadata_, status);
+      call_.PerformOps(&buf);
+      GPR_ASSERT(cq_.Pluck(&buf));
+      void* ignored_tag;
+      bool ignored_ok;
+      cq_.Shutdown();
+      GPR_ASSERT(cq_.Next(&ignored_tag, &ignored_ok) == false);
+    }
+
+   private:
+    CompletionQueue cq_;
+    Call call_;
+    ServerContext ctx_;
+    const bool has_request_payload_;
+    const bool has_response_payload_;
+    grpc_byte_buffer* request_payload_;
+    RpcServiceMethod* const method_;
+  };
+
+ private:
+  RpcServiceMethod* const method_;
+  void* const tag_;
+  bool in_flight_ = false;
+  const bool has_request_payload_;
+  const bool has_response_payload_;
+  grpc_call* call_;
+  gpr_timespec deadline_;
+  grpc_metadata_array request_metadata_;
+  grpc_byte_buffer* request_payload_;
+  grpc_completion_queue* cq_;
+};
+
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
                ServerCredentials* creds)
     : started_(false),
@@ -127,122 +247,6 @@ int Server::AddPort(const grpc::string& addr) {
   }
 }
 
-class Server::SyncRequest final : public CompletionQueueTag {
- public:
-  SyncRequest(RpcServiceMethod* method, void* tag)
-      : method_(method),
-        tag_(tag),
-        has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
-                             method->method_type() ==
-                                 RpcMethod::SERVER_STREAMING),
-        has_response_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
-                              method->method_type() ==
-                                  RpcMethod::CLIENT_STREAMING) {
-    grpc_metadata_array_init(&request_metadata_);
-  }
-
-  static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
-    void* tag = nullptr;
-    *ok = false;
-    if (!cq->Next(&tag, ok)) {
-      return nullptr;
-    }
-    auto* mrd = static_cast<SyncRequest*>(tag);
-    GPR_ASSERT(mrd->in_flight_);
-    return mrd;
-  }
-
-  void Request(grpc_server* server) {
-    GPR_ASSERT(!in_flight_);
-    in_flight_ = true;
-    cq_ = grpc_completion_queue_create();
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_server_request_registered_call(
-                   server, tag_, &call_, &deadline_, &request_metadata_,
-                   has_request_payload_ ? &request_payload_ : nullptr, cq_,
-                   this));
-  }
-
-  void FinalizeResult(void** tag, bool* status) override {
-    if (!*status) {
-      grpc_completion_queue_destroy(cq_);
-    }
-  }
-
-  class CallData final {
-   public:
-    explicit CallData(Server* server, SyncRequest* mrd)
-        : cq_(mrd->cq_),
-          call_(mrd->call_, server, &cq_),
-          ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
-               mrd->request_metadata_.count),
-          has_request_payload_(mrd->has_request_payload_),
-          has_response_payload_(mrd->has_response_payload_),
-          request_payload_(mrd->request_payload_),
-          method_(mrd->method_) {
-      ctx_.call_ = mrd->call_;
-      GPR_ASSERT(mrd->in_flight_);
-      mrd->in_flight_ = false;
-      mrd->request_metadata_.count = 0;
-    }
-
-    ~CallData() {
-      if (has_request_payload_ && request_payload_) {
-        grpc_byte_buffer_destroy(request_payload_);
-      }
-    }
-
-    void Run() {
-      std::unique_ptr<google::protobuf::Message> req;
-      std::unique_ptr<google::protobuf::Message> res;
-      if (has_request_payload_) {
-        req.reset(method_->AllocateRequestProto());
-        if (!DeserializeProto(request_payload_, req.get())) {
-          abort();  // for now
-        }
-      }
-      if (has_response_payload_) {
-        res.reset(method_->AllocateResponseProto());
-      }
-      auto status = method_->handler()->RunHandler(
-          MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
-      CallOpBuffer buf;
-      if (!ctx_.sent_initial_metadata_) {
-        buf.AddSendInitialMetadata(&ctx_.initial_metadata_);
-      }
-      if (has_response_payload_) {
-        buf.AddSendMessage(*res);
-      }
-      buf.AddServerSendStatus(&ctx_.trailing_metadata_, status);
-      bool cancelled;
-      buf.AddServerRecvClose(&cancelled);
-      call_.PerformOps(&buf);
-      GPR_ASSERT(cq_.Pluck(&buf));
-    }
-
-   private:
-    CompletionQueue cq_;
-    Call call_;
-    ServerContext ctx_;
-    const bool has_request_payload_;
-    const bool has_response_payload_;
-    grpc_byte_buffer* request_payload_;
-    RpcServiceMethod* const method_;
-  };
-
- private:
-  RpcServiceMethod* const method_;
-  void* const tag_;
-  bool in_flight_ = false;
-  const bool has_request_payload_;
-  const bool has_response_payload_;
-  grpc_call* call_;
-  gpr_timespec deadline_;
-  grpc_metadata_array request_metadata_;
-  grpc_byte_buffer* request_payload_;
-  grpc_completion_queue* cq_;
-};
-
 bool Server::Start() {
   GPR_ASSERT(!started_);
   started_ = true;
@@ -310,11 +314,11 @@ class Server::AsyncRequest final : public CompletionQueueTag {
     grpc_metadata_array_destroy(&array_);
   }
 
-  void FinalizeResult(void** tag, bool* status) override {
+  bool FinalizeResult(void** tag, bool* status) override {
     *tag = tag_;
     if (*status && request_) {
       if (payload_) {
-        *status = *status && DeserializeProto(payload_, request_);
+        *status = DeserializeProto(payload_, request_);
       } else {
         *status = false;
       }
@@ -331,8 +335,11 @@ class Server::AsyncRequest final : public CompletionQueueTag {
     }
     ctx_->call_ = call_;
     Call call(call_, server_, cq_);
+    ctx_->BeginCompletionOp(&call);
+    // just the pointers inside call are copied here
     stream_->BindCall(&call);
     delete this;
+    return true;
   }
 
  private:

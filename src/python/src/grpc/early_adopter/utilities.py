@@ -32,7 +32,7 @@
 from grpc.early_adopter import interfaces
 
 
-class _RpcMethod(interfaces.RpcMethod):
+class _RpcMethod(interfaces.ClientRpcMethod, interfaces.ServerRpcMethod):
 
   def __init__(
       self, cardinality, unary_unary, unary_stream, stream_unary,
@@ -85,129 +85,181 @@ class _RpcMethod(interfaces.RpcMethod):
     return self._stream_stream(request_iterator)
 
 
-def unary_unary_rpc_method(
-    behavior, request_serializer, request_deserializer, response_serializer,
-    response_deserializer):
-  """Constructs an interfaces.RpcMethod for the given behavior.
+def unary_unary_client_rpc_method(request_serializer, response_deserializer):
+  """Constructs an interfaces.ClientRpcMethod for a unary-unary RPC method.
+
+  Args:
+    request_serializer: A callable that when called on a request
+      value returns a bytestring corresponding to that value.
+    response_deserializer: A callable that when called on a
+      bytestring returns the response value corresponding to
+      that bytestring.
+
+  Returns:
+    An interfaces.ClientRpcMethod constructed from the given
+      arguments representing a unary-request/unary-response RPC
+      method.
+  """
+  return _RpcMethod(
+      interfaces.Cardinality.UNARY_UNARY, None, None, None, None,
+      request_serializer, None, None, response_deserializer)
+
+
+def unary_stream_client_rpc_method(request_serializer, response_deserializer):
+  """Constructs an interfaces.ClientRpcMethod for a unary-stream RPC method.
+
+  Args:
+    request_serializer: A callable that when called on a request
+      value returns a bytestring corresponding to that value.
+    response_deserializer: A callable that when called on a
+      bytestring returns the response value corresponding to
+      that bytestring.
+
+  Returns:
+    An interfaces.ClientRpcMethod constructed from the given
+      arguments representing a unary-request/streaming-response
+      RPC method.
+  """
+  return _RpcMethod(
+      interfaces.Cardinality.UNARY_STREAM, None, None, None, None,
+      request_serializer, None, None, response_deserializer)
+
+
+def stream_unary_client_rpc_method(request_serializer, response_deserializer):
+  """Constructs an interfaces.ClientRpcMethod for a stream-unary RPC method.
+
+  Args:
+    request_serializer: A callable that when called on a request
+      value returns a bytestring corresponding to that value.
+    response_deserializer: A callable that when called on a
+      bytestring returns the response value corresponding to
+      that bytestring.
+
+  Returns:
+    An interfaces.ClientRpcMethod constructed from the given
+      arguments representing a streaming-request/unary-response
+      RPC method.
+  """
+  return _RpcMethod(
+      interfaces.Cardinality.STREAM_UNARY, None, None, None, None,
+      request_serializer, None, None, response_deserializer)
+
+
+def stream_stream_client_rpc_method(request_serializer, response_deserializer):
+  """Constructs an interfaces.ClientRpcMethod for a stream-stream RPC method.
+
+  Args:
+    request_serializer: A callable that when called on a request
+      value returns a bytestring corresponding to that value.
+    response_deserializer: A callable that when called on a
+      bytestring returns the response value corresponding to
+      that bytestring.
+
+  Returns:
+    An interfaces.ClientRpcMethod constructed from the given
+      arguments representing a
+      streaming-request/streaming-response RPC method.
+  """
+  return _RpcMethod(
+      interfaces.Cardinality.STREAM_STREAM, None, None, None, None,
+      request_serializer, None, None, response_deserializer)
+
+
+def unary_unary_server_rpc_method(
+    behavior, request_deserializer, response_serializer):
+  """Constructs an interfaces.ServerRpcMethod for the given behavior.
 
   Args:
     behavior: A callable that implements a unary-unary RPC
       method that accepts a single request and returns a single
       response.
-    request_serializer: A callable that when called on a request
-      value returns a bytestring corresponding to that value.
     request_deserializer: A callable that when called on a
       bytestring returns the request value corresponding to that
       bytestring.
     response_serializer: A callable that when called on a
       response value returns the bytestring corresponding to
       that value.
-    response_deserializer: A callable that when called on a
-      bytestring returns the response value corresponding to
-      that bytestring.
 
   Returns:
-    An interfaces.RpcMethod constructed from the given
+    An interfaces.ServerRpcMethod constructed from the given
       arguments representing a unary-request/unary-response RPC
       method.
   """
   return _RpcMethod(
       interfaces.Cardinality.UNARY_UNARY, behavior, None, None, None,
-      request_serializer, request_deserializer, response_serializer,
-      response_deserializer)
+      None, request_deserializer, response_serializer, None)
 
 
-def unary_stream_rpc_method(
-    behavior, request_serializer, request_deserializer, response_serializer,
-    response_deserializer):
-  """Constructs an interfaces.RpcMethod for the given behavior.
+def unary_stream_server_rpc_method(
+    behavior, request_deserializer, response_serializer):
+  """Constructs an interfaces.ServerRpcMethod for the given behavior.
 
   Args:
     behavior: A callable that implements a unary-stream RPC
       method that accepts a single request and returns an
       iterator of zero or more responses.
-    request_serializer: A callable that when called on a request
-      value returns a bytestring corresponding to that value.
     request_deserializer: A callable that when called on a
       bytestring returns the request value corresponding to that
       bytestring.
     response_serializer: A callable that when called on a
       response value returns the bytestring corresponding to
       that value.
-    response_deserializer: A callable that when called on a
-      bytestring returns the response value corresponding to
-      that bytestring.
 
   Returns:
-    An interfaces.RpcMethod constructed from the given
+    An interfaces.ServerRpcMethod constructed from the given
       arguments representing a unary-request/streaming-response
       RPC method.
   """
   return _RpcMethod(
       interfaces.Cardinality.UNARY_STREAM, None, behavior, None, None,
-      request_serializer, request_deserializer, response_serializer,
-      response_deserializer)
+      None, request_deserializer, response_serializer, None)
 
 
-def stream_unary_rpc_method(
-    behavior, request_serializer, request_deserializer, response_serializer,
-    response_deserializer):
-  """Constructs an interfaces.RpcMethod for the given behavior.
+def stream_unary_server_rpc_method(
+    behavior, request_deserializer, response_serializer):
+  """Constructs an interfaces.ServerRpcMethod for the given behavior.
 
   Args:
     behavior: A callable that implements a stream-unary RPC
       method that accepts an iterator of zero or more requests
       and returns a single response.
-    request_serializer: A callable that when called on a request
-      value returns a bytestring corresponding to that value.
     request_deserializer: A callable that when called on a
       bytestring returns the request value corresponding to that
       bytestring.
     response_serializer: A callable that when called on a
       response value returns the bytestring corresponding to
       that value.
-    response_deserializer: A callable that when called on a
-      bytestring returns the response value corresponding to
-      that bytestring.
 
   Returns:
-    An interfaces.RpcMethod constructed from the given
+    An interfaces.ServerRpcMethod constructed from the given
       arguments representing a streaming-request/unary-response
       RPC method.
   """
   return _RpcMethod(
       interfaces.Cardinality.STREAM_UNARY, None, None, behavior, None,
-      request_serializer, request_deserializer, response_serializer,
-      response_deserializer)
+      None, request_deserializer, response_serializer, None)
 
 
-def stream_stream_rpc_method(
-    behavior, request_serializer, request_deserializer, response_serializer,
-    response_deserializer):
-  """Constructs an interfaces.RpcMethod for the given behavior.
+def stream_stream_server_rpc_method(
+    behavior, request_deserializer, response_serializer):
+  """Constructs an interfaces.ServerRpcMethod for the given behavior.
 
   Args:
     behavior: A callable that implements a stream-stream RPC
       method that accepts an iterator of zero or more requests
       and returns an iterator of zero or more responses.
-    request_serializer: A callable that when called on a request
-      value returns a bytestring corresponding to that value.
     request_deserializer: A callable that when called on a
       bytestring returns the request value corresponding to that
       bytestring.
     response_serializer: A callable that when called on a
       response value returns the bytestring corresponding to
       that value.
-    response_deserializer: A callable that when called on a
-      bytestring returns the response value corresponding to
-      that bytestring.
 
   Returns:
-    An interfaces.RpcMethod constructed from the given
+    An interfaces.ServerRpcMethod constructed from the given
       arguments representing a
       streaming-request/streaming-response RPC method.
   """
   return _RpcMethod(
       interfaces.Cardinality.STREAM_STREAM, None, None, None, behavior,
-      request_serializer, request_deserializer, response_serializer,
-      response_deserializer)
+      None, request_deserializer, response_serializer, None)
