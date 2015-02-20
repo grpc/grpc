@@ -40,7 +40,7 @@ using Grpc.Core.Utils;
 using NUnit.Framework;
 using grpc.testing;
 
-namespace Grpc.Interop
+namespace Grpc.IntegrationTesting
 {
     class Client
     {
