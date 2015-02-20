@@ -60,6 +60,12 @@
   "AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-"  \
   "SHA256:AES256-SHA256"
 
+#ifndef INSTALL_PREFIX
+static const char *installed_roots_path = "/etc/grpc/roots.pem";
+#else
+static const char *installed_roots_path = INSTALL_PREFIX "/etc/grpc/roots.pem";
+#endif
+
 /* -- Common methods. -- */
 
 grpc_security_status grpc_security_context_create_handshaker(
@@ -404,6 +410,7 @@ static void init_default_pem_root_certs(void) {
     default_pem_root_certs = gpr_load_file(default_root_certs_path, NULL);
     gpr_free(default_root_certs_path);
   }
+  (void) installed_roots_path;
 }
 
 static size_t get_default_pem_roots(const unsigned char **pem_root_certs) {
