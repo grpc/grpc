@@ -90,7 +90,7 @@ do
   # Build the debian package
   fakeroot dpkg-deb --build $tmp_dir/$pkg_name || { echo "dpkg-deb failed"; exit 1; }
 
-  deb_path=$deb_dest/${pkg_name}_${version}_amd64.deb
+  deb_path=$deb_dest/${pkg_name}_amd64.deb
 
   # Copy the .deb file to destination dir
   cp $tmp_dir/$pkg_name.deb $deb_path
