@@ -434,6 +434,14 @@ grpc_fetch_oauth2: grpc_fetch_oauth2.exe
 	echo Running grpc_fetch_oauth2
 	$(OUT_DIR)\grpc_fetch_oauth2.exe
 
+grpc_create_jwt.exe: grpc_test_util
+	echo Building grpc_create_jwt
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ ..\..\test\core\security\create_jwt.c 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\grpc_create_jwt.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\create_jwt.obj 
+grpc_create_jwt: grpc_create_jwt.exe
+	echo Running grpc_create_jwt
+	$(OUT_DIR)\grpc_create_jwt.exe
+
 grpc_json_token_test.exe: grpc_test_util
 	echo Building grpc_json_token_test
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ ..\..\test\core\security\json_token_test.c 

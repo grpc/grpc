@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     }
   } else {
     if (json_key_file_path == NULL) {
-      gpr_log(GPR_ERROR, "missing --json_key option.");
+      gpr_log(GPR_ERROR, "Missing --json_key option.");
       exit(1);
     }
     if (scope == NULL) {
