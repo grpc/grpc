@@ -75,6 +75,8 @@ do
   dpkg-deb -I $deb_dest/$pkg_name.deb
   echo "Package contents:"
   dpkg-deb -c $deb_dest/$pkg_name.deb
+  echo "Problems reported by lintian:"
+  lintian $deb_dest/$pkg_name.deb
 
   echo
 done
