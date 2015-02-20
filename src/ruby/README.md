@@ -56,8 +56,8 @@ $ gem install bundler
 - Finally, install the gRPC gem locally.
 ```sh
 $ # from this directory
-$ bundle install
-$ rake  # compiles the extension, runs the unit tests, see rake -T for other options
+$ bundle install  # creates the ruby bundle, including building the grpc extension
+$ rake  # runs the unit tests, see rake -T for other options
 ```
 
 CONTENTS
