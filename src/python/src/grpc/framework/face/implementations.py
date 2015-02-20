@@ -56,6 +56,38 @@ class _BaseServicer(base_interfaces.Servicer):
       raise _base_exceptions.NoSuchMethodError()
 
 
+class _UnaryUnarySyncAsync(interfaces.UnaryUnarySyncAsync):
+
+  def __init__(self, front, name):
+    self._front = front
+    self._name = name
+
+  def __call__(self, request, timeout):
+    return _calls.blocking_value_in_value_out(
+        self._front, self._name, request, timeout, 'unused trace ID')
+
+  def async(self, request, timeout):
+    return _calls.future_value_in_value_out(
+        self._front, self._name, request, timeout, 'unused trace ID')
+
+
+class _StreamUnarySyncAsync(interfaces.StreamUnarySyncAsync):
+
+  def __init__(self, front, name, pool):
+    self._front = front
+    self._name = name
+    self._pool = pool
+
+  def __call__(self, request_iterator, timeout):
+    return _calls.blocking_stream_in_value_out(
+        self._front, self._name, request_iterator, timeout, 'unused trace ID')
+
+  def async(self, request_iterator, timeout):
+    return _calls.future_stream_in_value_out(
+        self._front, self._name, request_iterator, timeout, 'unused trace ID',
+        self._pool)
+
+
 class _Server(interfaces.Server):
   """An interfaces.Server implementation."""
 
@@ -116,6 +148,12 @@ class _Stub(interfaces.Stub):
     return _calls.event_stream_in_stream_out(
         self._front, name, response_consumer, abortion_callback, timeout,
         'unused trace ID')
+
+  def unary_unary_sync_async(self, name):
+    return _UnaryUnarySyncAsync(self._front, name)
+
+  def stream_unary_sync_async(self, name):
+    return _StreamUnarySyncAsync(self._front, name, self._pool)
 
 
 def _aggregate_methods(

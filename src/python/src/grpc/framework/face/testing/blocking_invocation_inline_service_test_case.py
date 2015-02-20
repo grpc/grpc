@@ -147,7 +147,8 @@ class BlockingInvocationInlineServiceTestCase(
 
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
-          self.stub.blocking_value_in_value_out(name, request, _TIMEOUT)
+          sync_async = self.stub.unary_unary_sync_async(name)
+          sync_async(request, _TIMEOUT)
 
   def testExpiredUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -169,7 +170,8 @@ class BlockingInvocationInlineServiceTestCase(
 
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
-          self.stub.blocking_stream_in_value_out(name, iter(requests), _TIMEOUT)
+          sync_async = self.stub.stream_unary_sync_async(name)
+          sync_async(iter(requests), _TIMEOUT)
 
   def testExpiredStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (

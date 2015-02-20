@@ -59,7 +59,7 @@ mono ~/Downloads/NuGet.exe restore Grpc.sln
   one will make them pass.
 
 ```
-nunit-console GrpcCoreTests.dll
+nunit-console Grpc.Core.Tests.dll
 ```
 
 CONTENTS
@@ -67,11 +67,11 @@ CONTENTS
 
 - ext:
   The extension library that wraps C API to be more digestible by C#.
-- GrpcApi:
-  API examples for math.proto and testservice.proto
-- GrpcCore:
+- Grpc.Core:
   The main gRPC C# library.
-- InteropClient:
-  Client for interop testing.
-- MathClient:
+- Grpc.Examples:
+  API examples for math.proto
+- Grpc.Examples.MathClient:
   An example client that sends some requests to math server.
+- Grpc.IntegrationTesting:
+  Client for cross-language gRPC implementation testing (interop testing).
