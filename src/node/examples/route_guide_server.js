@@ -39,8 +39,8 @@ var COORD_FACTOR = 1e7;
 /**
  * For simplicity, a point is a record type that looks like
  * {latitude: number, longitude: number}, and a feature is a record type that
- * looks like {name: string, location: point}. feature objects with name==='' are
- * points with no feature.
+ * looks like {name: string, location: point}. feature objects with name===''
+ * are points with no feature.
  */
 
 /**
