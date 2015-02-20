@@ -41,7 +41,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc++/client_context.h>
 #include <grpc++/status.h>
 #include "test/core/util/grpc_profiler.h"

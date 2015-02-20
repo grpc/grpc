@@ -40,7 +40,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>

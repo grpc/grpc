@@ -36,7 +36,7 @@
 #include <sys/signal.h>
 #include <thread>
 
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc++/config.h>
