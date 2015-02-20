@@ -441,4 +441,6 @@ StreamingOutputCallResponse = _reflection.GeneratedProtocolMessageType('Streamin
 _sym_db.RegisterMessage(StreamingOutputCallResponse)
 
 
+from grpc.framework.face import demonstration as _face_testing
+from grpc.framework.face import interfaces as _face_interfaces
 # @@protoc_insertion_point(module_scope)
