@@ -44,7 +44,7 @@ function main() {
   } else {
     user = 'world';
   }
-  client.sayHello({name: user}, function(err, response) {
+  client.SayHello({name: user}, function(err, response) {
     console.log('Greeting:', response.message);
   });
 }

@@ -39,9 +39,9 @@ var hello_proto = grpc.load(PROTO_PATH).helloworld;
 var Server = grpc.buildServer([hello_proto.Greeter.service]);
 
 /**
- * Implements the sayHello RPC method.
+ * Implements the SayHello RPC method.
  */
-function sayHello(call, callback) {
+function SayHello(call, callback) {
   callback(null, {message: 'Hello ' + call.request.name});
 }
 
@@ -52,7 +52,7 @@ function sayHello(call, callback) {
 function main() {
   var server = new Server({
     "helloworld.Greeter": {
-      sayHello: sayHello
+      SayHello: SayHello
     }
   });
 
