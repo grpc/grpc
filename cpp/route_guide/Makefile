@@ -34,14 +34,14 @@ CPPFLAGS=-I/usr/local/include -pthread
 CXXFLAGS=-std=c++11
 LDFLAGS=-L/usr/local/lib -lgrpc -lgrpc++ -lprotobuf -lpthread -ldl
 
-all: greeter_client greeter_server
+all: route_guide_client route_guide_server
 
-greeter_client: helloworld.pb.o greeter_client.o
+route_guide_client: route_guide.pb.o route_guide_client.o
 	$(CXX) $(CPPFLAGS) $^ $(LDFLAGS) -o $@
 
-greeter_server: helloworld.pb.o greeter_server.o
+route_guide_server: route_guide.pb.o route_guide_server.o
 	$(CXX) $(CPPFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
-	rm -f *.o greeter_client greeter_server
+	rm -f *.o route_guide_client route_guide_server
 
