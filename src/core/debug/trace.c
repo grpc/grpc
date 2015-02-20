@@ -39,6 +39,7 @@
 #include <grpc/support/log.h>
 #include "src/core/support/env.h"
 
+#if GRPC_ENABLE_TRACING
 gpr_uint32 grpc_trace_bits;
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
@@ -102,4 +103,8 @@ void grpc_init_trace_bits() {
     gpr_free(e);
   }
 }
+#else
+void grpc_init_trace_bits() {
+}
+#endif
 
