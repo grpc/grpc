@@ -7,8 +7,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7DC1433E-3225-42C7-B7EA-546D56E27A4B}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>GrpcApi</RootNamespace>
-    <AssemblyName>GrpcApi</AssemblyName>
+    <RootNamespace>Grpc.Api</RootNamespace>
+    <AssemblyName>Grpc.Api</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -30,10 +30,6 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Google.ProtocolBuffers, Version=2.4.1.521, Culture=neutral, PublicKeyToken=55f7125234beb589, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -48,6 +44,9 @@
     <Reference Include="System.Reactive.PlatformServices">
       <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
     </Reference>
+    <Reference Include="Google.ProtocolBuffers">
+      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -61,9 +60,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\GrpcCore\GrpcCore.csproj">
+    <ProjectReference Include="..\Grpc.Core\Grpc.Core.csproj">
       <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
-      <Name>GrpcCore</Name>
+      <Name>Grpc.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

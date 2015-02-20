@@ -1,17 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcApi", "GrpcApi\GrpcApi.csproj", "{7DC1433E-3225-42C7-B7EA-546D56E27A4B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.Api", "Grpc.Api\Grpc.Api.csproj", "{7DC1433E-3225-42C7-B7EA-546D56E27A4B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcCore", "GrpcCore\GrpcCore.csproj", "{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.Core", "Grpc.Core\Grpc.Core.csproj", "{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcCoreTests", "GrpcCoreTests\GrpcCoreTests.csproj", "{86EC5CB4-4EA2-40A2-8057-86542A0353BB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.Core.Tests", "Grpc.Core.Tests\Grpc.Core.Tests.csproj", "{86EC5CB4-4EA2-40A2-8057-86542A0353BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcApiTests", "GrpcApiTests\GrpcApiTests.csproj", "{143B1C29-C442-4BE0-BF3F-A8F92288AC9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.Api.Tests", "Grpc.Api.Tests\Grpc.Api.Tests.csproj", "{143B1C29-C442-4BE0-BF3F-A8F92288AC9F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MathClient", "MathClient\MathClient.csproj", "{61ECB8EE-0C96-4F8E-B187-8E4D227417C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteropClient", "InteropClient\InteropClient.csproj", "{C61154BA-DD4A-4838-8420-0162A28925E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grpc.IntegrationTesting", "Grpc.IntegrationTesting\Grpc.IntegrationTesting.csproj", "{C61154BA-DD4A-4838-8420-0162A28925E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +45,6 @@ Global
 		{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = InteropClient\InteropClient.csproj
+		StartupItem = Grpc.Api\Grpc.Api.csproj
 	EndGlobalSection
 EndGlobal
