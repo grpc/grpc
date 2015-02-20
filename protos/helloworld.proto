@@ -33,19 +33,18 @@ option java_package = "ex.grpc";
 
 package helloworld;
 
+// The greeting service definition.
+service Greeter {
+  // Sends a greeting
+  rpc sayHello (HelloRequest) returns (HelloReply) {}
+}
+
 // The request message containing the user's name.
 message HelloRequest {
-  optional string name = 1;
+  string name = 1;
 }
 
 // The response message containing the greetings
 message HelloReply {
-  optional string message = 1;
-}
-
-// The greeting service definition.
-service Greetings {
-  // Sends a greeting
-  rpc hello (HelloRequest) returns (HelloReply) {
-  }
+  string message = 1;
 }
