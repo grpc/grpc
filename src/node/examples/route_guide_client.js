@@ -29,6 +29,8 @@
 
 var async = require('async');
 var fs = require('fs');
+var parseArgs = require('minimist');
+var path = require('path');
 var _ = require('underscore');
 var grpc = require('..');
 var examples = grpc.load(__dirname + '/route_guide.proto').examples;
@@ -104,7 +106,10 @@ function runListFeatures(callback) {
  * @param {function} callback Called when this demo is complete
  */
 function runRecordRoute(callback) {
-  fs.readFile(__dirname + '/route_guide_db.json', function(err, data) {
+  var argv = parseArgs(process.argv, {
+    string: 'db_path'
+  });
+  fs.readFile(path.resolve(argv.db_path), function(err, data) {
     if (err) callback(err);
     var feature_list = JSON.parse(data);
 

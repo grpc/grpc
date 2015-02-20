@@ -28,6 +28,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 var fs = require('fs');
+var parseArgs = require('minimist');
+var path = require('path');
 var _ = require('underscore');
 var grpc = require('..');
 var examples = grpc.load(__dirname + '/route_guide.proto').examples;
@@ -234,7 +236,10 @@ if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
   routeServer.bind('0.0.0.0:50051');
-  fs.readFile(__dirname + '/route_guide_db.json', function(err, data) {
+  var argv = parseArgs(process.argv, {
+    string: 'db_path'
+  });
+  fs.readFile(path.resolve(argv.db_path), function(err, data) {
     if (err) throw err;
     feature_list = JSON.parse(data);
     routeServer.listen();
