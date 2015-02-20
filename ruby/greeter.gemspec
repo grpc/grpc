@@ -2,8 +2,8 @@
 # encoding: utf-8
 
 Gem::Specification.new do |s|
-  s.name          = 'grpc'
-  s.version       = '0.0.0'
+  s.name          = 'grpc-greeter'
+  s.version       = '0.1.0'
   s.authors       = ['gRPC Authors']
   s.email         = 'temiola@google.com'
   s.homepage      = 'https://github.com/grpc/grpc-common'
