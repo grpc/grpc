@@ -60,6 +60,13 @@ DEFINE_string(oauth_scope,
               "https://www.googleapis.com/auth/cloud-platform",
               "Scope for OAuth tokens.");
 
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
+
 namespace {
 
 const char kTopic[] = "testtopics";
@@ -81,7 +88,7 @@ grpc::string GetServiceAccountJsonKey() {
 
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
   gpr_log(GPR_INFO, "Start PUBSUB client");
 
   std::ostringstream ss;

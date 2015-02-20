@@ -92,6 +92,13 @@ using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
+
 namespace {
 // The same value is defined by the Java client.
 const std::vector<int> request_stream_sizes = {27182, 8, 1828, 45904};
@@ -386,7 +393,7 @@ void DoPingPong() {
 int main(int argc, char** argv) {
   grpc_init();
 
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_test_case == "empty_unary") {
     DoEmpty();
