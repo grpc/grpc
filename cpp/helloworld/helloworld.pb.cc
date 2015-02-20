@@ -109,7 +109,7 @@ void protobuf_AddDesc_helloworld_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\020helloworld.proto\022\nhelloworld\"\034\n\014HelloR"
     "equest\022\014\n\004name\030\001 \001(\t\"\035\n\nHelloReply\022\017\n\007me"
-    "ssage\030\001 \001(\t2I\n\007Greeter\022>\n\010sayHello\022\030.hel"
+    "ssage\030\001 \001(\t2I\n\007Greeter\022>\n\010SayHello\022\030.hel"
     "loworld.HelloRequest\032\026.helloworld.HelloR"
     "eply\"\000B\t\n\007ex.grpcb\006proto3", 185);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
@@ -587,7 +587,7 @@ void HelloReply::InternalSwap(HelloReply* other) {
 
 
 static const char* Greeter_method_names[] = {
-  "/helloworld.Greeter/sayHello",
+  "/helloworld.Greeter/SayHello",
 };
 
 Greeter::Stub* Greeter::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel) {
@@ -596,11 +596,11 @@ Greeter::Stub* Greeter::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>
   return stub;
 };
 
-::grpc::Status Greeter::Stub::sayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::helloworld::HelloReply* response) {
+::grpc::Status Greeter::Stub::SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::helloworld::HelloReply* response) {
   return ::grpc::BlockingUnaryCall(channel(),::grpc::RpcMethod(Greeter_method_names[0]), context, request, response);
 }
 
-::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>* Greeter::Stub::sayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>* Greeter::Stub::SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
   return new ::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>(channel(), cq, ::grpc::RpcMethod(Greeter_method_names[0]), context, request, tag);
 }
 
@@ -610,11 +610,11 @@ Greeter::Service::~Service() {
   delete service_;
 }
 
-::grpc::Status Greeter::Service::sayHello(::grpc::ServerContext* context, const ::helloworld::HelloRequest* request, ::helloworld::HelloReply* response) {
+::grpc::Status Greeter::Service::SayHello(::grpc::ServerContext* context, const ::helloworld::HelloRequest* request, ::helloworld::HelloReply* response) {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED);
 }
 
-void Greeter::AsyncService::RequestsayHello(::grpc::ServerContext* context, ::helloworld::HelloRequest* request, ::grpc::ServerAsyncResponseWriter< ::helloworld::HelloReply>* response, ::grpc::CompletionQueue* cq, void* tag) {
+void Greeter::AsyncService::RequestSayHello(::grpc::ServerContext* context, ::helloworld::HelloRequest* request, ::grpc::ServerAsyncResponseWriter< ::helloworld::HelloReply>* response, ::grpc::CompletionQueue* cq, void* tag) {
   AsynchronousService::RequestAsyncUnary(0, context, request, response, cq, tag);
 }
 
@@ -627,7 +627,7 @@ void Greeter::AsyncService::RequestsayHello(::grpc::ServerContext* context, ::he
       Greeter_method_names[0],
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler< Greeter::Service, ::helloworld::HelloRequest, ::helloworld::HelloReply>(
-          std::function< ::grpc::Status(Greeter::Service*, ::grpc::ServerContext*, const ::helloworld::HelloRequest*, ::helloworld::HelloReply*)>(&Greeter::Service::sayHello), this),
+          std::function< ::grpc::Status(Greeter::Service*, ::grpc::ServerContext*, const ::helloworld::HelloRequest*, ::helloworld::HelloReply*)>(&Greeter::Service::SayHello), this),
       new ::helloworld::HelloRequest, new ::helloworld::HelloReply));
   return service_;
 }

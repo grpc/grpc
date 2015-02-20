@@ -16,7 +16,7 @@ module Helloworld
       self.unmarshal_class_method = :decode
       self.service_name = 'helloworld.Greeter'
 
-      rpc :sayHello, HelloRequest, HelloReply
+      rpc :SayHello, HelloRequest, HelloReply
     end
 
     Stub = Service.rpc_stub_class

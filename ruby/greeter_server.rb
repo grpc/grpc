@@ -42,7 +42,7 @@ require 'helloworld_services'
 
 # GreeterServer is simple server that implements the Helloworld Greeter server.
 class GreeterServer < Helloworld::Greeter::Service
-  # say_hello implements the sayHello rpc method.
+  # say_hello implements the SayHello rpc method.
   def say_hello(hello_req, _unused_call)
     Helloworld::HelloReply.new(message: "Hello #{hello_req.name}")
   end

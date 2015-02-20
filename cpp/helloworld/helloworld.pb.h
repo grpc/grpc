@@ -319,8 +319,8 @@ class Greeter final {
  public:
   class Stub final : public ::grpc::InternalStub {
    public:
-    ::grpc::Status sayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::helloworld::HelloReply* response);
-    ::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>* sayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::grpc::CompletionQueue* cq, void* tag);
+    ::grpc::Status SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::helloworld::HelloReply* response);
+    ::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>* SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::grpc::CompletionQueue* cq, void* tag);
   };
   static Stub* NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
 
@@ -328,7 +328,7 @@ class Greeter final {
    public:
     Service() : service_(nullptr) {}
     virtual ~Service();
-    virtual ::grpc::Status sayHello(::grpc::ServerContext* context, const ::helloworld::HelloRequest* request, ::helloworld::HelloReply* response);
+    virtual ::grpc::Status SayHello(::grpc::ServerContext* context, const ::helloworld::HelloRequest* request, ::helloworld::HelloReply* response);
     ::grpc::RpcService* service() override final;
    private:
     ::grpc::RpcService* service_;
@@ -337,7 +337,7 @@ class Greeter final {
    public:
     explicit AsyncService(::grpc::CompletionQueue* cq);
     ~AsyncService() {};
-    void RequestsayHello(::grpc::ServerContext* context, ::helloworld::HelloRequest* request, ::grpc::ServerAsyncResponseWriter< ::helloworld::HelloReply>* response, ::grpc::CompletionQueue* cq, void *tag);
+    void RequestSayHello(::grpc::ServerContext* context, ::helloworld::HelloRequest* request, ::grpc::ServerAsyncResponseWriter< ::helloworld::HelloReply>* response, ::grpc::CompletionQueue* cq, void *tag);
   };
 };
 

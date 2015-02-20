@@ -187,7 +187,7 @@ package helloworld;
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
-  rpc sayHello (HelloRequest) returns (HelloReply) {}
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
 }
 
 // The request message containing the user's name.
@@ -254,7 +254,7 @@ which contains (along with some other useful code):
     ```java
   public static interface Greeter {
 
-    public void sayHello(ex.grpc.Helloworld.HelloRequest request,
+    public void SayHello(ex.grpc.Helloworld.HelloRequest request,
         com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply>
         responseObserver);
   }
@@ -405,7 +405,7 @@ from which we can get our greeting.
     try {
       Helloworld.HelloRequest request =
       Helloworld.HelloRequest.newBuilder().setName(name).build();
-      Helloworld.HelloReply reply = blockingStub.sayHello(request);
+      Helloworld.HelloReply reply = blockingStub.SayHello(request);
       logger.info("Greeting: " + reply.getMessage());
     } catch (RuntimeException e) {
       logger.log(Level.WARNING, "RPC failed", e);
