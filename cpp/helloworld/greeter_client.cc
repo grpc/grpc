@@ -62,7 +62,7 @@ class GreeterClient {
     HelloReply reply;
     ClientContext context;
 
-    Status status = stub_->sayHello(&context, request, &reply);
+    Status status = stub_->SayHello(&context, request, &reply);
     if (status.IsOk()) {
       return reply.message();
     } else {
