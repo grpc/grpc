@@ -35,7 +35,7 @@
 #include <sstream>
 #include <thread>
 
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/data/ssl_test_data.h"
