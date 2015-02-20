@@ -59,8 +59,8 @@ function checkFeature(point) {
   // Check if there is already a feature object for the given point
   for (var i = 0; i < feature_list.length; i++) {
     feature = feature_list[i];
-    if (feature.point.latitude === point.latitude &&
-        feature.point.longitude === point.longitude) {
+    if (feature.location.latitude === point.latitude &&
+        feature.location.longitude === point.longitude) {
       return feature;
     }
   }
@@ -91,10 +91,10 @@ function getFeature(call, callback) {
 function listFeatures(call) {
   var lo = call.request.lo;
   var hi = call.request.hi;
-  var left = _.min(lo.longitude, hi.longitude);
-  var right = _.max(lo.longitude, hi.longitude);
-  var top = _.max(lo.latitude, hi.latitude);
-  var bottom = _.max(lo.latitude, hi.latitude);
+  var left = _.min([lo.longitude, hi.longitude]);
+  var right = _.max([lo.longitude, hi.longitude]);
+  var top = _.max([lo.latitude, hi.latitude]);
+  var bottom = _.min([lo.latitude, hi.latitude]);
   // For each feature, check if it is in the given bounding box
   _.each(feature_list, function(feature) {
     if (feature.name === '') {
@@ -118,15 +118,18 @@ function listFeatures(call) {
  * @return The distance between the points in meters
  */
 function getDistance(start, end) {
+  function toRadians(num) {
+    return num * Math.PI / 180;
+  }
   var lat1 = start.latitude / COORD_FACTOR;
   var lat2 = end.latitude / COORD_FACTOR;
   var lon1 = start.longitude / COORD_FACTOR;
   var lon2 = end.longitude / COORD_FACTOR;
   var R = 6371000; // metres
-  var φ1 = lat1.toRadians();
-  var φ2 = lat2.toRadians();
-  var Δφ = (lat2-lat1).toRadians();
-  var Δλ = (lon2-lon1).toRadians();
+  var φ1 = toRadians(lat1);
+  var φ2 = toRadians(lat2);
+  var Δφ = toRadians(lat2-lat1);
+  var Δλ = toRadians(lon2-lon1);
 
   var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
       Math.cos(φ1) * Math.cos(φ2) *
@@ -204,7 +207,7 @@ function routeChat(call) {
       route_notes[key] = [];
     }
     // Then add the new note to the list
-    route_notes[key].push(note);
+    route_notes[key].push(JSON.parse(JSON.stringify(note)));
   });
   call.on('end', function() {
     call.end();
@@ -230,7 +233,7 @@ function getServer() {
 if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
-  routeServer.bind('0.0.0.0:0');
+  routeServer.bind('0.0.0.0:50051');
   fs.readFile(__dirname + '/route_guide_db.json', function(err, data) {
     if (err) throw err;
     feature_list = JSON.parse(data);
