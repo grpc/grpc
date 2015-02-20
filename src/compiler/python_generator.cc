@@ -313,8 +313,6 @@ string GetServices(const FileDescriptor* file) {
   string output;
   StringOutputStream output_stream(&output);
   Printer out(&output_stream, '$');
-  out.Print("import abc\n");
-  out.Print("import google3\n");
   out.Print("from grpc.framework.face import demonstration as _face_testing\n");
   out.Print("from grpc.framework.face import interfaces as _face_interfaces\n");
 
