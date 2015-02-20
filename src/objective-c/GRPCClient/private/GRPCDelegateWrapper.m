@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,7 @@
 
 #import "GRPCDelegateWrapper.h"
 
-#import <net/grpc/objc/RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriteable.h>
 
 @interface GRPCDelegateWrapper ()
 // These are atomic so that cancellation can nillify them from any thread.

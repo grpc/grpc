@@ -35,7 +35,7 @@
 #include <sstream>
 #include <thread>
 
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -72,6 +72,13 @@ using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 using grpc::Status;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
 
 bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
@@ -217,7 +224,7 @@ void RunServer() {
 
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   GPR_ASSERT(FLAGS_port != 0);
   RunServer();

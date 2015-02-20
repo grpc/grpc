@@ -47,21 +47,20 @@ static int pygrpc_server_credentials_init(ServerCredentials *self,
   PyObject *iterator;
   int i;
   PyObject *pair;
+  static char *kwlist[] = {"root_credentials", "pair_sequence", NULL};
 
-  if (!(PyArg_ParseTuple(args, "zO", &root_certificates, &pair_sequence))) {
-    self->c_server_credentials = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "zO:ServerCredentials", kwlist,
+                                   &root_certificates, &pair_sequence)) {
     return -1;
   }
 
   pair_count = PySequence_Length(pair_sequence);
   if (pair_count == -1) {
-    self->c_server_credentials = NULL;
     return -1;
   }
 
   iterator = PyObject_GetIter(pair_sequence);
   if (iterator == NULL) {
-    self->c_server_credentials = NULL;
     return -1;
   }
   pairs = gpr_malloc(pair_count * sizeof(grpc_ssl_pem_key_cert_pair));
@@ -72,8 +71,8 @@ static int pygrpc_server_credentials_init(ServerCredentials *self,
       error = 1;
       break;
     }
-    if (!(PyArg_ParseTuple(pair, "ss", &pairs[i].private_key,
-                           &pairs[i].cert_chain))) {
+    if (!PyArg_ParseTuple(pair, "ss", &pairs[i].private_key,
+                           &pairs[i].cert_chain)) {
       error = 1;
       Py_DECREF(pair);
       break;
@@ -83,7 +82,6 @@ static int pygrpc_server_credentials_init(ServerCredentials *self,
   Py_DECREF(iterator);
 
   if (error) {
-    self->c_server_credentials = NULL;
     gpr_free(pairs);
     return -1;
   } else {
@@ -102,7 +100,7 @@ static void pygrpc_server_credentials_dealloc(ServerCredentials *self) {
 }
 
 PyTypeObject pygrpc_ServerCredentialsType = {
-    PyObject_HEAD_INIT(NULL)0,                     /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_grpc.ServerCredencials",                     /*tp_name*/
     sizeof(ServerCredentials),                     /*tp_basicsize*/
     0,                                             /*tp_itemsize*/
@@ -138,19 +136,16 @@ PyTypeObject pygrpc_ServerCredentialsType = {
     0,                                             /* tp_descr_set */
     0,                                             /* tp_dictoffset */
     (initproc)pygrpc_server_credentials_init,      /* tp_init */
+    0,                                             /* tp_alloc */
+    PyType_GenericNew,                             /* tp_new */
 };
 
 int pygrpc_add_server_credentials(PyObject *module) {
-  pygrpc_ServerCredentialsType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&pygrpc_ServerCredentialsType) < 0) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "Error defining pygrpc_ServerCredentialsType!");
     return -1;
   }
   if (PyModule_AddObject(module, "ServerCredentials",
                          (PyObject *)&pygrpc_ServerCredentialsType) == -1) {
-    PyErr_SetString(PyExc_ImportError,
-                    "Couldn't add ServerCredentials type to module!");
     return -1;
   }
   return 0;

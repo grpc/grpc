@@ -31,11 +31,21 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#ifndef __GRPC_COMPILER_PYTHON_GENERATOR_H__
+#define __GRPC_COMPILER_PYTHON_GENERATOR_H__
 
-// Concrete subclass of NSEnumerator whose instances return a single object before finishing.
-@interface GRXNSScalarEnumerator : NSEnumerator
-// Param value: the single object this instance will produce. After the first invocation of
-// nextObject, the value is released.
-- (instancetype)initWithValue:(id)value;
-@end
+#include <string>
+
+namespace google {
+namespace protobuf {
+class FileDescriptor;
+}  // namespace protobuf
+}  // namespace google
+
+namespace grpc_python_generator {
+
+std::string GetServices(const google::protobuf::FileDescriptor* file);
+
+}  // namespace grpc_python_generator
+
+#endif  // __GRPC_COMPILER_PYTHON_GENERATOR_H__

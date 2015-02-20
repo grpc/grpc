@@ -31,6 +31,8 @@
  *
  */
 
+'use strict';
+
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
 
@@ -227,7 +229,7 @@ describe('end-to-end', function() {
         response_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
         server_call.startBatch(response_batch, function(err, response) {
           assert(response['send status']);
-          assert(!response['cancelled']);
+          assert(!response.cancelled);
           done();
         });
       });

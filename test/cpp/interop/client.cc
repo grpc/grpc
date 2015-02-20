@@ -40,7 +40,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -91,6 +91,13 @@ using grpc::testing::StreamingInputCallResponse;
 using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
 
 namespace {
 // The same value is defined by the Java client.
@@ -386,7 +393,7 @@ void DoPingPong() {
 int main(int argc, char** argv) {
   grpc_init();
 
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_test_case == "empty_unary") {
     DoEmpty();

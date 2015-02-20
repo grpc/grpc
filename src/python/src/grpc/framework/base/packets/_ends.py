@@ -215,6 +215,7 @@ def _front_operate(
         lock, termination_manager, transmission_manager, ingestion_manager,
         expiration_manager)
 
+    termination_manager.set_expiration_manager(expiration_manager)
     transmission_manager.set_ingestion_and_expiration_managers(
         ingestion_manager, expiration_manager)
     operation_context.set_ingestion_and_expiration_managers(
@@ -340,6 +341,7 @@ def _back_operate(
         lock, termination_manager, transmission_manager, ingestion_manager,
         expiration_manager)
 
+    termination_manager.set_expiration_manager(expiration_manager)
     transmission_manager.set_ingestion_and_expiration_managers(
         ingestion_manager, expiration_manager)
     operation_context.set_ingestion_and_expiration_managers(
