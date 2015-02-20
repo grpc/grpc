@@ -138,7 +138,7 @@ TEST_F(PublisherTest, TestPublisher) {
 
   std::vector<grpc::string> topics;
   EXPECT_TRUE(publisher_->ListTopics(kProjectId, &topics).IsOk());
-  EXPECT_EQ(topics.size(), 1);
+  EXPECT_EQ(topics.size(), static_cast<size_t>(1));
   EXPECT_EQ(topics[0], kTopic);
 }
 
