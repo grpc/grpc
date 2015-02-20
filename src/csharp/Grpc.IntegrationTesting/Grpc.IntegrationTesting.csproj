@@ -44,6 +44,9 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Client.cs" />
+    <Compile Include="TestServiceGrpc.cs" />
+    <Compile Include="Empty.cs" />
+    <Compile Include="Messages.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
