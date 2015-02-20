@@ -86,7 +86,6 @@ CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O1 -fsanitize=thread -fno-omit-frame-pointer
-OPENSSL_CONFIG_tsan = no-asm
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG
 
@@ -97,7 +96,6 @@ CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
 CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
-OPENSSL_CONFIG_asan = no-asm
 LDFLAGS_asan = -fsanitize=address
 DEFINES_asan = NDEBUG
 
@@ -109,7 +107,6 @@ LD_msan = clang
 LDXX_msan = clang++-libc++
 CPPFLAGS_msan = -O1 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
-OPENSSL_CONFIG_msan = no-asm
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG
 
@@ -121,7 +118,6 @@ LD_ubsan = clang
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer
 OPENSSL_CFLAGS_ubsan = -DPURIFY
-OPENSSL_CONFIG_ubsan = no-asm
 LDFLAGS_ubsan = -fsanitize=undefined
 DEFINES_ubsan = NDEBUG
 
@@ -867,9 +863,9 @@ $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 $(LIBDIR)/$(CONFIG)/openssl/libssl.a:
 	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
 ifeq ($(SYSTEM),Darwin)
-	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc)
 else
-	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
