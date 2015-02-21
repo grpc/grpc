@@ -40,6 +40,7 @@ from grpc.framework.base import interfaces
 from grpc.framework.base.packets import interfaces as ticket_interfaces
 from grpc.framework.base.packets import null
 from grpc.framework.base.packets import packets as tickets
+from grpc.framework.foundation import activated
 
 
 @enum.unique
@@ -65,7 +66,7 @@ def _status(call, rpc_state):
   rpc_state.write.low = _LowWrite.CLOSED
 
 
-class ForeLink(ticket_interfaces.ForeLink):
+class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
   """A service-side bridge between RPC Framework and the C-ish _low code."""
 
   def __init__(
@@ -92,13 +93,14 @@ class ForeLink(ticket_interfaces.ForeLink):
     self._response_serializers = response_serializers
     self._root_certificates = root_certificates
     self._key_chain_pairs = key_chain_pairs
-    self._port = port
+    self._requested_port = port
 
     self._rear_link = null.NULL_REAR_LINK
     self._completion_queue = None
     self._server = None
     self._rpc_states = {}
     self._spinning = False
+    self._port = None
 
   def _on_stop_event(self):
     self._spinning = False
@@ -264,23 +266,24 @@ class ForeLink(ticket_interfaces.ForeLink):
     """See ticket_interfaces.ForeLink.join_rear_link for specification."""
     self._rear_link = null.NULL_REAR_LINK if rear_link is None else rear_link
 
-  def start(self):
+  def _start(self):
     """Starts this ForeLink.
 
     This method must be called before attempting to exchange tickets with this
     object.
     """
     with self._condition:
-      address = '[::]:%d' % (0 if self._port is None else self._port)
+      address = '[::]:%d' % (
+          0 if self._requested_port is None else self._requested_port)
       self._completion_queue = _low.CompletionQueue()
       if self._root_certificates is None and not self._key_chain_pairs:
         self._server = _low.Server(self._completion_queue, None)
-        port = self._server.add_http2_addr(address)
+        self._port = self._server.add_http2_addr(address)
       else:
         server_credentials = _low.ServerCredentials(
           self._root_certificates, self._key_chain_pairs)
         self._server = _low.Server(self._completion_queue, server_credentials)
-        port = self._server.add_secure_http2_addr(address)
+        self._port = self._server.add_secure_http2_addr(address)
       self._server.start()
 
       self._server.service(None)
@@ -288,11 +291,11 @@ class ForeLink(ticket_interfaces.ForeLink):
       self._pool.submit(self._spin, self._completion_queue, self._server)
       self._spinning = True
 
-      return port
+      return self
 
   # TODO(nathaniel): Expose graceful-shutdown semantics in which this object
   # enters a state in which it finishes ongoing RPCs but refuses new ones.
-  def stop(self):
+  def _stop(self):
     """Stops this ForeLink.
 
     This method must be called for proper termination of this object, and no
@@ -301,13 +304,42 @@ class ForeLink(ticket_interfaces.ForeLink):
     """
     with self._condition:
       self._server.stop()
-      # TODO(b/18904187): Yep, this is weird. Deleting a server shouldn't have a
+      # TODO(nathaniel): Yep, this is weird. Deleting a server shouldn't have a
       # behaviorally significant side-effect.
       self._server = None
       self._completion_queue.stop()
 
       while self._spinning:
         self._condition.wait()
+
+      self._port = None
+
+  def __enter__(self):
+    """See activated.Activated.__enter__ for specification."""
+    return self._start()
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    """See activated.Activated.__exit__ for specification."""
+    self._stop()
+    return False
+
+  def start(self):
+    """See activated.Activated.start for specification."""
+    return self._start()
+
+  def stop(self):
+    """See activated.Activated.stop for specification."""
+    self._stop()
+
+  def port(self):
+    """Identifies the port on which this ForeLink is servicing RPCs.
+
+    Returns:
+      The number of the port on which this ForeLink is servicing RPCs, or None
+        if this ForeLink is not currently activated and servicing RPCs.
+    """
+    with self._condition:
+      return self._port
 
   def accept_back_to_front_ticket(self, ticket):
     """See ticket_interfaces.ForeLink.accept_back_to_front_ticket for spec."""

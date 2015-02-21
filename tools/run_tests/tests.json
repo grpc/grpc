@@ -191,7 +191,7 @@
   }, 
   {
     "language": "c", 
-    "name": "httpcli_test"
+    "name": "interop_test"
   }, 
   {
     "language": "c", 

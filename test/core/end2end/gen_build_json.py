@@ -125,7 +125,6 @@ def main():
               'language': 'c',
               'src': [
                   "test/core/end2end/data/test_root_cert.c",
-                  "test/core/end2end/data/prod_roots_certs.c",
                   "test/core/end2end/data/server1_cert.c",
                   "test/core/end2end/data/server1_key.c"
               ]

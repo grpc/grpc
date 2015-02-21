@@ -46,10 +46,11 @@ static int pygrpc_call_init(Call *self, PyObject *args, PyObject *kwds) {
   const char *method;
   const char *host;
   const double deadline;
+  static char *kwlist[] = {"channel", "method", "host", "deadline", NULL};
 
-  if (!PyArg_ParseTuple(args, "O!ssd", &pygrpc_ChannelType, &channel, &method,
-                        &host, &deadline)) {
-    self->c_call = NULL;
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!ssd:Call", kwlist,
+                                   &pygrpc_ChannelType, &channel, &method,
+                                   &host, &deadline)) {
     return -1;
   }
 
@@ -77,7 +78,7 @@ static const PyObject *pygrpc_call_invoke(Call *self, PyObject *args) {
   grpc_call_error call_error;
   const PyObject *result;
 
-  if (!(PyArg_ParseTuple(args, "O!OO", &pygrpc_CompletionQueueType,
+  if (!(PyArg_ParseTuple(args, "O!OO:invoke", &pygrpc_CompletionQueueType,
                          &completion_queue, &metadata_tag, &finish_tag))) {
     return NULL;
   }
@@ -103,7 +104,7 @@ static const PyObject *pygrpc_call_write(Call *self, PyObject *args) {
   grpc_call_error call_error;
   const PyObject *result;
 
-  if (!(PyArg_ParseTuple(args, "s#O", &bytes, &length, &tag))) {
+  if (!(PyArg_ParseTuple(args, "s#O:write", &bytes, &length, &tag))) {
     return NULL;
   }
 
@@ -123,14 +124,9 @@ static const PyObject *pygrpc_call_write(Call *self, PyObject *args) {
   return result;
 }
 
-static const PyObject *pygrpc_call_complete(Call *self, PyObject *args) {
-  const PyObject *tag;
+static const PyObject *pygrpc_call_complete(Call *self, PyObject *tag) {
   grpc_call_error call_error;
   const PyObject *result;
-
-  if (!(PyArg_ParseTuple(args, "O", &tag))) {
-    return NULL;
-  }
 
   call_error = grpc_call_writes_done_old(self->c_call, (void *)tag);
 
@@ -147,7 +143,7 @@ static const PyObject *pygrpc_call_accept(Call *self, PyObject *args) {
   grpc_call_error call_error;
   const PyObject *result;
 
-  if (!(PyArg_ParseTuple(args, "O!O", &pygrpc_CompletionQueueType,
+  if (!(PyArg_ParseTuple(args, "O!O:accept", &pygrpc_CompletionQueueType,
                          &completion_queue, &tag))) {
     return NULL;
   }
@@ -164,20 +160,15 @@ static const PyObject *pygrpc_call_accept(Call *self, PyObject *args) {
   return result;
 }
 
-static const PyObject *pygrpc_call_premetadata(Call *self, PyObject *args) {
+static const PyObject *pygrpc_call_premetadata(Call *self) {
   /* TODO(b/18702680): Actually support metadata. */
   return pygrpc_translate_call_error(
       grpc_call_server_end_initial_metadata_old(self->c_call, 0));
 }
 
-static const PyObject *pygrpc_call_read(Call *self, PyObject *args) {
-  const PyObject *tag;
+static const PyObject *pygrpc_call_read(Call *self, PyObject *tag) {
   grpc_call_error call_error;
   const PyObject *result;
-
-  if (!(PyArg_ParseTuple(args, "O", &tag))) {
-    return NULL;
-  }
 
   call_error = grpc_call_start_read_old(self->c_call, (void *)tag);
 
@@ -198,16 +189,30 @@ static const PyObject *pygrpc_call_status(Call *self, PyObject *args) {
   grpc_call_error call_error;
   const PyObject *result;
 
-  if (!(PyArg_ParseTuple(args, "OO", &status, &tag))) {
+  if (!(PyArg_ParseTuple(args, "OO:status", &status, &tag))) {
     return NULL;
   }
 
   code = PyObject_GetAttrString(status, "code");
+  if (code == NULL) {
+    return NULL;
+  }
   details = PyObject_GetAttrString(status, "details");
+  if (details == NULL) {
+    Py_DECREF(code);
+    return NULL;
+  }
   c_code = PyInt_AsLong(code);
-  c_message = PyBytes_AsString(details);
   Py_DECREF(code);
+  if (c_code == -1 && PyErr_Occurred()) {
+    Py_DECREF(details);
+    return NULL;
+  }
+  c_message = PyBytes_AsString(details);
   Py_DECREF(details);
+  if (c_message == NULL) {
+    return NULL;
+  }
 
   call_error = grpc_call_start_write_status_old(self->c_call, c_code, c_message,
                                                 (void *)tag);
@@ -228,12 +233,12 @@ static PyMethodDef methods[] = {
      "Invoke this call."},
     {"write", (PyCFunction)pygrpc_call_write, METH_VARARGS,
      "Write bytes to this call."},
-    {"complete", (PyCFunction)pygrpc_call_complete, METH_VARARGS,
+    {"complete", (PyCFunction)pygrpc_call_complete, METH_O,
      "Complete writes to this call."},
     {"accept", (PyCFunction)pygrpc_call_accept, METH_VARARGS, "Accept an RPC."},
     {"premetadata", (PyCFunction)pygrpc_call_premetadata, METH_VARARGS,
      "Indicate the end of leading metadata in the response."},
-    {"read", (PyCFunction)pygrpc_call_read, METH_VARARGS,
+    {"read", (PyCFunction)pygrpc_call_read, METH_O,
      "Read bytes from this call."},
     {"status", (PyCFunction)pygrpc_call_status, METH_VARARGS,
      "Report this call's status."},
@@ -242,7 +247,7 @@ static PyMethodDef methods[] = {
     {NULL}};
 
 PyTypeObject pygrpc_CallType = {
-    PyObject_HEAD_INIT(NULL)0,       /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_grpc.Call",                    /*tp_name*/
     sizeof(Call),                    /*tp_basicsize*/
     0,                               /*tp_itemsize*/
@@ -278,16 +283,16 @@ PyTypeObject pygrpc_CallType = {
     0,                               /* tp_descr_set */
     0,                               /* tp_dictoffset */
     (initproc)pygrpc_call_init,      /* tp_init */
+    0,                               /* tp_alloc */
+    PyType_GenericNew,               /* tp_new */
 };
 
 int pygrpc_add_call(PyObject *module) {
-  pygrpc_CallType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&pygrpc_CallType) < 0) {
-    PyErr_SetString(PyExc_RuntimeError, "Error defining pygrpc_CallType!");
     return -1;
   }
   if (PyModule_AddObject(module, "Call", (PyObject *)&pygrpc_CallType) == -1) {
-    PyErr_SetString(PyExc_ImportError, "Couldn't add Call type to module!");
+    return -1;
   }
   return 0;
 }

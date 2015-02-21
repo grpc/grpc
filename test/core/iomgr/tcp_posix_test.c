@@ -250,7 +250,7 @@ struct write_socket_state {
 
 static gpr_slice *allocate_blocks(ssize_t num_bytes, ssize_t slice_size,
                                   size_t *num_blocks, int *current_data) {
-  ssize_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
+  size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
   gpr_slice *slices = gpr_malloc(sizeof(gpr_slice) * nslices);
   ssize_t num_bytes_left = num_bytes;
   unsigned i, j;

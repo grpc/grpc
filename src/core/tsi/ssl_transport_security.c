@@ -1084,7 +1084,7 @@ static int server_handshaker_factory_alpn_callback(
   tsi_ssl_server_handshaker_factory* factory =
       (tsi_ssl_server_handshaker_factory*)arg;
   const unsigned char* client_current = in;
-  while ((client_current - in) < inlen) {
+  while ((unsigned int)(client_current - in) < inlen) {
     unsigned char client_current_len = *(client_current++);
     const unsigned char* server_current = factory->alpn_protocol_list;
     while ((server_current >= factory->alpn_protocol_list) &&
