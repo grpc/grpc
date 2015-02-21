@@ -42,6 +42,8 @@ then
   exit 1
 fi
 
+(cd ../..; make static_c shared_c prefix=/usr COMPAT=1)
+
 # Build debian packages
 for pkg_name in libgrpc libgrpc-dev
 do
@@ -57,8 +59,8 @@ do
   if [ $pkg_name == "libgrpc" ]
   then
     # Copy shared libraries
-    (cd ../..; make install-shared_c prefix=$tmp_dir/$pkg_name/usr/lib)
-    mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
+    (cd ../..; make install-shared_c prefix=$tmp_dir/$pkg_name/usr)
+    mv $tmp_dir/$pkg_name/usr/lib $arch_lib_dir
 
     # non-dev package should contain so.0 symlinks
     for symlink in $arch_lib_dir/*.so
@@ -70,9 +72,8 @@ do
   if [ $pkg_name == "libgrpc-dev" ]
   then
     # Copy headers and static libraries
-    (cd ../..; make install-headers_c install-static_c prefix=$tmp_dir/$pkg_name/usr/lib)
-    mv $tmp_dir/$pkg_name/usr/lib/include $tmp_dir/$pkg_name/usr/include
-    mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
+    (cd ../..; make install-headers_c install-static_c prefix=$tmp_dir/$pkg_name/usr)
+    mv $tmp_dir/$pkg_name/usr/lib $arch_lib_dir
 
     # create symlinks to shared libraries
     for libname in $arch_lib_dir/*.a
