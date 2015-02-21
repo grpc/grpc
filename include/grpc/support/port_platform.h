@@ -91,7 +91,9 @@
 #define GPR_LINUX_SOCKETUTILS 1
 #endif
 #if __GLIBC_PREREQ(2, 17)
+#ifndef OLDER_COMPAT
 #define GPR_LINUX_ENV 1
+#endif
 #endif
 #endif
 #ifndef GPR_LINUX_EVENTFD

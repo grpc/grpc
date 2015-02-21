@@ -183,6 +183,10 @@ CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
 LDFLAGS += $(LDFLAGS_$(CONFIG))
 
+ifdef COMPAT
+DEFINES += OLDER_COMPAT
+endif
+
 CFLAGS += -std=c89 -pedantic
 CXXFLAGS += -std=c++11
 CPPFLAGS += -g -fPIC -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
