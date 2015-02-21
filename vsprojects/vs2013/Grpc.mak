@@ -450,6 +450,14 @@ grpc_json_token_test: grpc_json_token_test.exe
 	echo Running grpc_json_token_test
 	$(OUT_DIR)\grpc_json_token_test.exe
 
+grpc_print_default_creds_token.exe: grpc_test_util
+	echo Building grpc_print_default_creds_token
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ ..\..\test\core\security\print_default_creds_token.c 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\grpc_print_default_creds_token.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\print_default_creds_token.obj 
+grpc_print_default_creds_token: grpc_print_default_creds_token.exe
+	echo Running grpc_print_default_creds_token
+	$(OUT_DIR)\grpc_print_default_creds_token.exe
+
 grpc_stream_op_test.exe: grpc_test_util
 	echo Building grpc_stream_op_test
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ ..\..\test\core\transport\stream_op_test.c 

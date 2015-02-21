@@ -51,7 +51,7 @@ typedef struct grpc_credentials grpc_credentials;
    The creator of the credentials object is responsible for its release. */
 void grpc_credentials_release(grpc_credentials *creds);
 
-/* Creates default credentials. */
+/* Creates default credentials to connect to a google gRPC service. */
 grpc_credentials *grpc_default_credentials_create(void);
 
 /* Environment variable that points to the default SSL roots file. This file
