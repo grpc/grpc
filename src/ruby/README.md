@@ -19,7 +19,7 @@ QUICK - INSTALL
 
 - Clone this repository.
 - Follow the instructions in [INSTALL](../../INSTALL) to install the gRPC C core.
-- If you don't have Ruby 2.1 installed, switch the more detailed instructions below
+- If you don't have Ruby 2.1 installed, switch to the more detailed instructions below
 - Use bundler to install
 ```sh
 $ # from this directory
