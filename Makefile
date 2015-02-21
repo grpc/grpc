@@ -315,8 +315,8 @@ LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 ifeq ($(HAS_SYSTEM_PROTOBUF),false)
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
-CPPFLAGS += -Ithird_party/protobuf/src
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/protobuf
+CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
+LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
 PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
