@@ -1915,7 +1915,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
-install: install_c install_cxx install-protobuf install-plugins
+install: install_c install_cxx install-plugins
 
 install_c: install-headers_c install-static_c install-shared_c
 
@@ -2045,17 +2045,6 @@ ifneq ($(SYSTEM),Darwin)
 endif
 endif
 
-
-install-protobuf: $(PROTOBUF_DEP)
-ifneq ($(PROTOBUF_DEP),)
-	$(E) "[INSTALL] Installing embedded protobufs"
-	$(Q) $(MAKE) -C third_party/protobuf install prefix=$(prefix)
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
-endif
-endif
-endif
 
 install-plugins: $(PROTOC_PLUGINS)
 ifeq ($(SYSTEM),MINGW32)
