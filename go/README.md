@@ -4,7 +4,7 @@ gRPC in 3 minutes (Go)
 PREREQUISITES
 -------------
 
-- This requires Go 1.4.x
+- This requires Go 1.4
 - Requires that [GOPATH is set](https://golang.org/doc/code.html#GOPATH)
 ```sh
 $ go help gopath
@@ -42,10 +42,10 @@ OPTIONAL - Rebuilding the generated code
   - This is will change once proto3 is officially released
 2 Install the protoc Go plugin.
 ```sh
-$ go install -a github.com/golang/protobuf/protoc-gen-go
-$ # ensure the PATH contains $GOPATH/bin or $GOBIN
-$ export PATH=PATH:<your/gopath/bin>
+$ go get -a github.com/golang/protobuf/protoc-gen-go
+$ # ensure the PATH contains $GOPATH/bin
+$ export PATH=PATH:$GOPATH/bin
 $
-$ # from ths dir; invoke protoc
+$ # from this dir; invoke protoc
 $ protoc -I ../protos ../protos/helloworld.proto --go_out=plugins=grpc:.
 ```
