@@ -91,7 +91,10 @@
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\resolve_address.c">
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\sockaddr_utils.c">
