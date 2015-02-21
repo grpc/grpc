@@ -8,8 +8,8 @@ PREREQUISITES
 - Requires that [GOPATH is set](https://golang.org/doc/code.html#GOPATH)
 ```sh
 $ go help gopath
-$ # ensure the PATH contains $GOPATH/bin or $GOBIN
-$ export PATH=PATH:<your/gopath/bin>
+$ # ensure the PATH contains $GOPATH/bin
+$ export PATH=$PATH:$GOPATH/bin
 ```
 
 INSTALL
@@ -43,8 +43,6 @@ OPTIONAL - Rebuilding the generated code
 2 Install the protoc Go plugin.
 ```sh
 $ go get -a github.com/golang/protobuf/protoc-gen-go
-$ # ensure the PATH contains $GOPATH/bin
-$ export PATH=PATH:$GOPATH/bin
 $
 $ # from this dir; invoke protoc
 $ protoc -I ../protos ../protos/helloworld.proto --go_out=plugins=grpc:.
