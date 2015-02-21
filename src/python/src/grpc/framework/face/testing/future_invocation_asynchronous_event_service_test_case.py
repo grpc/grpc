@@ -190,8 +190,8 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         request = test_messages.request()
 
         with self.control.pause():
-          response_future = self.stub.future_value_in_value_out(
-              name, request, _TIMEOUT)
+          sync_async = self.stub.unary_unary_sync_async(name)
+          response_future = sync_async.async(request, _TIMEOUT)
           self.assertIsInstance(
               response_future.exception(), exceptions.ExpirationError)
           with self.assertRaises(exceptions.ExpirationError):
@@ -216,8 +216,8 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         requests = test_messages.requests()
 
         with self.control.pause():
-          response_future = self.stub.future_stream_in_value_out(
-              name, iter(requests), _TIMEOUT)
+          sync_async = self.stub.stream_unary_sync_async(name)
+          response_future = sync_async.async(iter(requests), _TIMEOUT)
           self.assertIsInstance(
               response_future.exception(), exceptions.ExpirationError)
           with self.assertRaises(exceptions.ExpirationError):

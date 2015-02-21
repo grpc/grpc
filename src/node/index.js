@@ -31,6 +31,8 @@
  *
  */
 
+'use strict';
+
 var _ = require('underscore');
 
 var ProtoBuf = require('protobufjs');

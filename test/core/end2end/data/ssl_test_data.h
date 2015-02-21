@@ -38,6 +38,4 @@ extern const char test_root_cert[];
 extern const char test_server1_cert[];
 extern const char test_server1_key[];
 
-extern const char prod_roots_certs[];
-
 #endif /* __GRPC_TEST_END2END_DATA_SSL_TEST_DATA_H__ */

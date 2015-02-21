@@ -70,7 +70,7 @@ static PyObject *metadata_event_kind;
 static PyObject *finish_event_kind;
 
 static PyObject *pygrpc_as_py_time(gpr_timespec *timespec) {
-  return Py_BuildValue("f",
+  return PyFloat_FromDouble(
                        timespec->tv_sec + ((double)timespec->tv_nsec) / 1.0E9);
 }
 
@@ -116,67 +116,82 @@ static PyObject *pygrpc_status_code(grpc_status_code c_status_code) {
 }
 
 static PyObject *pygrpc_stop_event_args(grpc_event *c_event) {
-  return Py_BuildValue("(OOOOOOO)", stop_event_kind, Py_None, Py_None, Py_None,
-                       Py_None, Py_None, Py_None);
+  return PyTuple_Pack(7, stop_event_kind, Py_None, Py_None, Py_None,
+                      Py_None, Py_None, Py_None);
 }
 
 static PyObject *pygrpc_write_event_args(grpc_event *c_event) {
   PyObject *write_accepted =
       c_event->data.write_accepted == GRPC_OP_OK ? Py_True : Py_False;
-  return Py_BuildValue("(OOOOOOO)", write_event_kind, (PyObject *)c_event->tag,
-                       write_accepted, Py_None, Py_None, Py_None, Py_None);
+  return PyTuple_Pack(7, write_event_kind, (PyObject *)c_event->tag,
+                      write_accepted, Py_None, Py_None, Py_None, Py_None);
 }
 
 static PyObject *pygrpc_complete_event_args(grpc_event *c_event) {
   PyObject *complete_accepted =
       c_event->data.finish_accepted == GRPC_OP_OK ? Py_True : Py_False;
-  return Py_BuildValue("(OOOOOOO)", complete_event_kind,
-                       (PyObject *)c_event->tag, Py_None, complete_accepted,
-                       Py_None, Py_None, Py_None);
+  return PyTuple_Pack(7, complete_event_kind, (PyObject *)c_event->tag,
+                      Py_None, complete_accepted, Py_None, Py_None, Py_None);
 }
 
 static PyObject *pygrpc_service_event_args(grpc_event *c_event) {
   if (c_event->data.server_rpc_new.method == NULL) {
-    return Py_BuildValue("(OOOOOOO)", service_event_kind, c_event->tag,
-                         Py_None, Py_None, Py_None, Py_None, Py_None);
+    return PyTuple_Pack(7, service_event_kind, c_event->tag,
+                        Py_None, Py_None, Py_None, Py_None, Py_None);
   } else {
-    PyObject *method = PyBytes_FromString(c_event->data.server_rpc_new.method);
-    PyObject *host = PyBytes_FromString(c_event->data.server_rpc_new.host);
-    PyObject *service_deadline =
-        pygrpc_as_py_time(&c_event->data.server_rpc_new.deadline);
+    PyObject *method = NULL;
+    PyObject *host = NULL;
+    PyObject *service_deadline = NULL;
+    Call *call = NULL;
+    PyObject *service_acceptance = NULL;
+    PyObject *event_args = NULL;
 
-    Call *call;
-    PyObject *service_acceptance_args;
-    PyObject *service_acceptance;
-    PyObject *event_args;
+    method = PyBytes_FromString(c_event->data.server_rpc_new.method);
+    if (method == NULL) {
+      goto error;
+    }
+    host = PyBytes_FromString(c_event->data.server_rpc_new.host);
+    if (host == NULL) {
+      goto error;
+    }
+    service_deadline =
+        pygrpc_as_py_time(&c_event->data.server_rpc_new.deadline);
+    if (service_deadline == NULL) {
+      goto error;
+    }
 
     call = PyObject_New(Call, &pygrpc_CallType);
+    if (call == NULL) {
+      goto error;
+    }
     call->c_call = c_event->call;
 
-    service_acceptance_args =
-        Py_BuildValue("(OOOO)", call, method, host, service_deadline);
-    Py_DECREF(call);
-    Py_DECREF(method);
-    Py_DECREF(host);
-    Py_DECREF(service_deadline);
-
     service_acceptance =
-        PyObject_CallObject(service_acceptance_class, service_acceptance_args);
-    Py_DECREF(service_acceptance_args);
+        PyObject_CallFunctionObjArgs(service_acceptance_class, call, method,
+                                     host, service_deadline, NULL);
+    if (service_acceptance == NULL) {
+      goto error;
+    }
 
-    event_args = Py_BuildValue("(OOOOOOO)", service_event_kind,
-                               (PyObject *)c_event->tag, Py_None, Py_None,
-                               service_acceptance, Py_None, Py_None);
+    event_args = PyTuple_Pack(7, service_event_kind,
+                              (PyObject *)c_event->tag, Py_None, Py_None,
+                              service_acceptance, Py_None, Py_None);
+
     Py_DECREF(service_acceptance);
+error:
+    Py_XDECREF(call);
+    Py_XDECREF(method);
+    Py_XDECREF(host);
+    Py_XDECREF(service_deadline);
+
     return event_args;
   }
 }
 
 static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
   if (c_event->data.read == NULL) {
-    return Py_BuildValue("(OOOOOOO)", read_event_kind,
-                         (PyObject *)c_event->tag, Py_None, Py_None, Py_None,
-                         Py_None, Py_None);
+    return PyTuple_Pack(7, read_event_kind, (PyObject *)c_event->tag,
+                        Py_None, Py_None, Py_None, Py_None, Py_None);
   } else {
     size_t length;
     size_t offset;
@@ -198,9 +213,11 @@ static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
     grpc_byte_buffer_reader_destroy(reader);
     bytes = PyBytes_FromStringAndSize(c_bytes, length);
     gpr_free(c_bytes);
-    event_args =
-        Py_BuildValue("(OOOOOOO)", read_event_kind, (PyObject *)c_event->tag,
-                      Py_None, Py_None, Py_None, bytes, Py_None);
+    if (bytes == NULL) {
+      return NULL;
+    }
+    event_args = PyTuple_Pack(7, read_event_kind, (PyObject *)c_event->tag,
+                              Py_None, Py_None, Py_None, bytes, Py_None);
     Py_DECREF(bytes);
     return event_args;
   }
@@ -208,15 +225,13 @@ static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
 
 static PyObject *pygrpc_metadata_event_args(grpc_event *c_event) {
   /* TODO(nathaniel): Actual transmission of metadata. */
-  return Py_BuildValue("(OOOOOOO)", metadata_event_kind,
-                       (PyObject *)c_event->tag, Py_None, Py_None, Py_None,
-                       Py_None, Py_None);
+  return PyTuple_Pack(7, metadata_event_kind, (PyObject *)c_event->tag,
+                      Py_None, Py_None, Py_None, Py_None, Py_None);
 }
 
 static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
   PyObject *code;
   PyObject *details;
-  PyObject *status_args;
   PyObject *status;
   PyObject *event_args;
 
@@ -230,19 +245,26 @@ static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
   } else {
     details = PyBytes_FromString(c_event->data.finished.details);
   }
-  status_args = Py_BuildValue("(OO)", code, details);
+  if (details == NULL) {
+    return NULL;
+  }
+  status = PyObject_CallFunctionObjArgs(status_class, code, details, NULL);
   Py_DECREF(details);
-  status = PyObject_CallObject(status_class, status_args);
-  Py_DECREF(status_args);
-  event_args =
-      Py_BuildValue("(OOOOOOO)", finish_event_kind, (PyObject *)c_event->tag,
-                    Py_None, Py_None, Py_None, Py_None, status);
+  if (status == NULL) {
+    return NULL;
+  }
+  event_args = PyTuple_Pack(7, finish_event_kind, (PyObject *)c_event->tag,
+                            Py_None, Py_None, Py_None, Py_None, status);
   Py_DECREF(status);
   return event_args;
 }
 
 static int pygrpc_completion_queue_init(CompletionQueue *self, PyObject *args,
                                         PyObject *kwds) {
+  static char *kwlist[] = {NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, ":CompletionQueue", kwlist)) {
+    return -1;
+  }
   self->c_completion_queue = grpc_completion_queue_create();
   return 0;
 }
@@ -262,7 +284,7 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
   PyObject *event_args;
   PyObject *event;
 
-  if (!(PyArg_ParseTuple(args, "O", &deadline))) {
+  if (!(PyArg_ParseTuple(args, "O:get", &deadline))) {
     return NULL;
   }
 
@@ -270,6 +292,9 @@ static PyObject *pygrpc_completion_queue_get(CompletionQueue *self,
     deadline_timespec = gpr_inf_future;
   } else {
     double_deadline = PyFloat_AsDouble(deadline);
+    if (PyErr_Occurred()) {
+      return NULL;
+    }
     deadline_timespec = gpr_time_from_nanos((long)(double_deadline * 1.0E9));
   }
 
@@ -339,7 +364,7 @@ static PyMethodDef methods[] = {
     {NULL}};
 
 PyTypeObject pygrpc_CompletionQueueType = {
-    PyObject_HEAD_INIT(NULL)0,                   /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_gprc.CompletionQueue",                     /*tp_name*/
     sizeof(CompletionQueue),                     /*tp_basicsize*/
     0,                                           /*tp_itemsize*/
@@ -375,6 +400,8 @@ PyTypeObject pygrpc_CompletionQueueType = {
     0,                                           /* tp_descr_set */
     0,                                           /* tp_dictoffset */
     (initproc)pygrpc_completion_queue_init,      /* tp_init */
+    0,                                           /* tp_alloc */
+    PyType_GenericNew,                           /* tp_new */
 };
 
 static int pygrpc_get_status_codes(PyObject *datatypes_module) {
@@ -503,7 +530,6 @@ int pygrpc_add_completion_queue(PyObject *module) {
   char *datatypes_module_path = "grpc._adapter._datatypes";
   PyObject *datatypes_module = PyImport_ImportModule(datatypes_module_path);
   if (datatypes_module == NULL) {
-    PyErr_SetString(PyExc_ImportError, datatypes_module_path);
     return -1;
   }
   status_class = PyObject_GetAttrString(datatypes_module, "Status");
@@ -512,29 +538,21 @@ int pygrpc_add_completion_queue(PyObject *module) {
   event_class = PyObject_GetAttrString(datatypes_module, "Event");
   if (status_class == NULL || service_acceptance_class == NULL ||
       event_class == NULL) {
-    PyErr_SetString(PyExc_ImportError, "Missing classes in _datatypes module!");
     return -1;
   }
   if (pygrpc_get_status_codes(datatypes_module) == -1) {
-    PyErr_SetString(PyExc_ImportError, "Status codes import broken!");
     return -1;
   }
   if (pygrpc_get_event_kinds(event_class) == -1) {
-    PyErr_SetString(PyExc_ImportError, "Event kinds import broken!");
     return -1;
   }
   Py_DECREF(datatypes_module);
 
-  pygrpc_CompletionQueueType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&pygrpc_CompletionQueueType) < 0) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "Error defining pygrpc_CompletionQueueType!");
     return -1;
   }
   if (PyModule_AddObject(module, "CompletionQueue",
                          (PyObject *)&pygrpc_CompletionQueueType) == -1) {
-    PyErr_SetString(PyExc_ImportError,
-                    "Couldn't add CompletionQueue type to module!");
     return -1;
   }
   return 0;

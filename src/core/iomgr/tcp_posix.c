@@ -263,6 +263,9 @@ typedef struct {
   void *write_user_data;
 
   grpc_tcp_slice_state write_state;
+
+  grpc_iomgr_closure read_closure;
+  grpc_iomgr_closure write_closure;
 } grpc_tcp;
 
 static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success);
@@ -370,7 +373,7 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
         } else {
           /* Spurious read event, consume it here */
           slice_state_destroy(&read_state);
-          grpc_fd_notify_on_read(tcp->em_fd, grpc_tcp_handle_read, tcp);
+          grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
         }
       } else {
         /* TODO(klempner): Log interesting errors */
@@ -405,7 +408,7 @@ static void grpc_tcp_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
   tcp->read_cb = cb;
   tcp->read_user_data = user_data;
   gpr_ref(&tcp->refcount);
-  grpc_fd_notify_on_read(tcp->em_fd, grpc_tcp_handle_read, tcp);
+  grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
 }
 
 #define MAX_WRITE_IOVEC 16
@@ -468,7 +471,7 @@ static void grpc_tcp_handle_write(void *arg /* grpc_tcp */, int success) {
 
   write_status = grpc_tcp_flush(tcp);
   if (write_status == GRPC_ENDPOINT_WRITE_PENDING) {
-    grpc_fd_notify_on_write(tcp->em_fd, grpc_tcp_handle_write, tcp);
+    grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_closure);
   } else {
     slice_state_destroy(&tcp->write_state);
     if (write_status == GRPC_ENDPOINT_WRITE_DONE) {
@@ -513,7 +516,7 @@ static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
     gpr_ref(&tcp->refcount);
     tcp->write_cb = cb;
     tcp->write_user_data = user_data;
-    grpc_fd_notify_on_write(tcp->em_fd, grpc_tcp_handle_write, tcp);
+    grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_closure);
   }
 
   return status;
@@ -541,6 +544,10 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size) {
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
   tcp->em_fd = em_fd;
+  tcp->read_closure.cb = grpc_tcp_handle_read;
+  tcp->read_closure.cb_arg = tcp;
+  tcp->write_closure.cb = grpc_tcp_handle_write;
+  tcp->write_closure.cb_arg = tcp;
   return &tcp->base;
 }
 

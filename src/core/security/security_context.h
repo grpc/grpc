@@ -171,6 +171,8 @@ grpc_security_status grpc_ssl_server_security_context_create(
 
 /* Secure client channel creation. */
 
+size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs);
+
 grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
                                       grpc_credentials *request_metadata_creds,
                                       const char *target,

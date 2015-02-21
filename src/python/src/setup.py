@@ -56,12 +56,13 @@ _EXTENSION_MODULE = _core.Extension(
     libraries=_EXTENSION_LIBRARIES,
     )
 
-_PACKAGES=(
+_PACKAGES = (
     'grpc',
     'grpc._adapter',
     'grpc._junkdrawer',
     'grpc.early_adopter',
     'grpc.framework',
+    'grpc.framework.assembly',
     'grpc.framework.base',
     'grpc.framework.base.packets',
     'grpc.framework.common',

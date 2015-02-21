@@ -86,10 +86,14 @@ class _TerminationManager(_interfaces.TerminationManager):
     self._action = action
     self._local_failure = local_failure
     self._has_locally_failed = False
+    self._expiration_manager = None
 
     self._outstanding_requirements = set(requirements)
     self._kind = None
     self._callbacks = []
+
+  def set_expiration_manager(self, expiration_manager):
+    self._expiration_manager = expiration_manager
 
   def _terminate(self, kind):
     """Terminates the operation.
@@ -100,6 +104,7 @@ class _TerminationManager(_interfaces.TerminationManager):
         packets.Kind.TRANSMISSION_FAILURE, packets.Kind.SERVICER_FAILURE, or
         packets.Kind.SERVICED_FAILURE.
     """
+    self._expiration_manager.abort()
     self._outstanding_requirements = None
     callbacks = list(self._callbacks)
     self._callbacks = None

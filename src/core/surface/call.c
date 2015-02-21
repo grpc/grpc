@@ -360,8 +360,7 @@ static void unlock(grpc_call *call) {
   int num_completed_requests = call->num_completed_requests;
   int need_more_data =
       call->need_more_data &&
-      !call->sending &&
-      call->write_state >= WRITE_STATE_STARTED;
+      (call->write_state >= WRITE_STATE_STARTED || !call->is_client);
   int i;
 
   if (need_more_data) {
@@ -536,14 +535,16 @@ static void finish_finish_step(void *pc, grpc_op_error error) {
 }
 
 static void finish_start_step(void *pc, grpc_op_error error) {
-  finish_send_op(pc, GRPC_IOREQ_SEND_INITIAL_METADATA, WRITE_STATE_STARTED, error);
+  finish_send_op(pc, GRPC_IOREQ_SEND_INITIAL_METADATA, WRITE_STATE_STARTED,
+                 error);
 }
 
 static send_action choose_send_action(grpc_call *call) {
   switch (call->write_state) {
     case WRITE_STATE_INITIAL:
       if (is_op_live(call, GRPC_IOREQ_SEND_INITIAL_METADATA)) {
-        if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE) || is_op_live(call, GRPC_IOREQ_SEND_CLOSE)) {
+        if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE) ||
+            is_op_live(call, GRPC_IOREQ_SEND_CLOSE)) {
           return SEND_BUFFERED_INITIAL_METADATA;
         } else {
           return SEND_INITIAL_METADATA;
