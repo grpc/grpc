@@ -40,7 +40,7 @@
 #include "src/core/support/env.h"
 
 #if GRPC_ENABLE_TRACING
-gpr_uint32 grpc_trace_bits;
+gpr_uint32 grpc_trace_bits = 0;
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
   size_t n = *ns;
