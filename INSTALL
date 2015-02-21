@@ -162,6 +162,11 @@ to go ahead and run "make" to compile grpc's C and C++ libraries:
 
   $ make
 
+Another word on OpenSSL
+-----------------------
+
+OpenSSL's build process cannot handle Make's `-B` flag. As we call into their
+Makefile, you should not use the `-B` flag.
 
 Testing
 =======
