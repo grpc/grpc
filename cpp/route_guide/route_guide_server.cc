@@ -41,28 +41,45 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
-#include "helloworld.pb.h"
+#include <grpc++/stream.h>
+#include "route_guide.pb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
+using grpc::ServerReader;
+using grpc::ServerReaderWriter;
+using grpc::ServerWriter;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
-using helloworld::Greeter;
+using examples::Point;
+using examples::Feature;
+using examples::Rectangle;
+using examples::RouteSummary;
+using examples::RouteNote;
+using examples::RouteGuide;
 
-class GreeterServiceImpl final : public Greeter::Service {
-  Status sayHello(ServerContext* context, const HelloRequest* request,
-                  HelloReply* reply) override {
-    std::string prefix("Hello ");
-    reply->set_message(prefix + request->name());
+class RouteGuideImpl final : public RouteGuide::Service {
+  Status GetFeature(ServerContext* context, const Point* point,
+                    Feature* feature) override {
+    return Status::OK;
+  }
+  Status ListFeatures(ServerContext* context, const Rectangle* rectangle,
+                      ServerWriter<Feature>* writer) override {
+    return Status::OK;
+  }
+  Status RecordRoute(ServerContext* context, ServerReader<Point>* reader,
+                     RouteSummary* summary) override {
+    return Status::OK;
+  }
+  Status RouteChat(ServerContext* context,
+                   ServerReaderWriter<RouteNote, RouteNote>* stream) override {
     return Status::OK;
   }
 };
 
 void RunServer() {
   std::string server_address("0.0.0.0:50051");
-  GreeterServiceImpl service;
+  RouteGuideImpl service;
 
   ServerBuilder builder;
   builder.AddPort(server_address);

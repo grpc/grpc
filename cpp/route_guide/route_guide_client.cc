@@ -41,51 +41,110 @@
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/status.h>
-#include "helloworld.pb.h"
+#include <grpc++/stream.h>
+#include "route_guide.pb.h"
 
 using grpc::ChannelArguments;
 using grpc::ChannelInterface;
 using grpc::ClientContext;
+using grpc::ClientReader;
+using grpc::ClientReaderWriter;
+using grpc::ClientWriter;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
-using helloworld::Greeter;
+using examples::Point;
+using examples::Feature;
+using examples::Rectangle;
+using examples::RouteSummary;
+using examples::RouteNote;
+using examples::RouteGuide;
 
-class GreeterClient {
+class RouteGuideClient {
  public:
-  GreeterClient(std::shared_ptr<ChannelInterface> channel)
-      : stub_(Greeter::NewStub(channel)) {}
+  RouteGuideClient(std::shared_ptr<ChannelInterface> channel)
+      : stub_(RouteGuide::NewStub(channel)) {}
 
-  std::string SayHello(const std::string& user) {
-    HelloRequest request;
-    request.set_name(user);
-    HelloReply reply;
+  void GetFeature() {
+    Point point;
+    Feature feature;
     ClientContext context;
 
-    Status status = stub_->sayHello(&context, request, &reply);
+    Status status = stub_->GetFeature(&context, point, &feature);
     if (status.IsOk()) {
-      return reply.message();
+      std::cout << "GetFeature rpc succeeded." << std::endl;
     } else {
-      return "Rpc failed";
+      std::cout << "GetFeature rpc failed." << std::endl;
+    }
+  }
+
+  void ListFeatures() {
+    Rectangle rect;
+    Feature feature;
+    ClientContext context;
+
+    std::unique_ptr<ClientReader<Feature> > reader(
+        stub_->ListFeatures(&context, rect));
+    while (reader->Read(&feature)) {
+      std::cout << "Received feature" << std::endl;
+    }
+    Status status = reader->Finish();
+    if (status.IsOk()) {
+      std::cout << "ListFeatures rpc succeeded." << std::endl;
+    } else {
+      std::cout << "ListFeatures rpc failed." << std::endl;
+    }
+  }
+
+  void RecordRoute() {
+    Point point;
+    RouteSummary summary;
+    ClientContext context;
+
+    std::unique_ptr<ClientWriter<Point> > writer(
+        stub_->RecordRoute(&context, &summary));
+    writer->WritesDone();
+    Status status = writer->Finish();
+    if (status.IsOk()) {
+      std::cout << "RecordRoute rpc succeeded." << std::endl;
+    } else {
+      std::cout << "RecordRoute rpc failed." << std::endl;
+    }
+  }
+
+  void RouteChat() {
+    RouteNote server_note;
+    ClientContext context;
+
+    std::unique_ptr<ClientReaderWriter<RouteNote, RouteNote> > stream(
+        stub_->RouteChat(&context));
+    stream->WritesDone();
+    while (stream->Read(&server_note)) {
+    }
+    Status status = stream->Finish();
+    if (status.IsOk()) {
+      std::cout << "RouteChat rpc succeeded." << std::endl;
+    } else {
+      std::cout << "RouteChat rpc failed." << std::endl;
     }
   }
 
   void Shutdown() { stub_.reset(); }
 
  private:
-  std::unique_ptr<Greeter::Stub> stub_;
+  std::unique_ptr<RouteGuide::Stub> stub_;
 };
 
 int main(int argc, char** argv) {
   grpc_init();
 
-  GreeterClient greeter(
+  RouteGuideClient guide(
       grpc::CreateChannel("localhost:50051", ChannelArguments()));
-  std::string user("world");
-  std::string reply = greeter.SayHello(user);
-  std::cout << "Greeter received: " << reply << std::endl;
 
-  greeter.Shutdown();
+  guide.GetFeature();
+  guide.ListFeatures();
+  guide.RecordRoute();
+  guide.RouteChat();
+
+  guide.Shutdown();
 
   grpc_shutdown();
 }
