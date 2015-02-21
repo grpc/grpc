@@ -1130,6 +1130,20 @@
       ]
     },
     {
+      "name": "grpc_create_jwt",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "test/core/security/create_jwt.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_credentials_test",
       "build": "test",
       "language": "c",
@@ -1149,20 +1163,6 @@
       "language": "c",
       "src": [
         "test/core/security/fetch_oauth2.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "grpc_create_jwt",
-      "build": "tool",
-      "language": "c",
-      "src": [
-        "test/core/security/create_jwt.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1262,20 +1262,6 @@
       "language": "c",
       "src": [
         "test/core/httpcli/httpcli_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "interop_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/cpp/interop/interop_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1708,6 +1694,20 @@
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "interop_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/interop/interop_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
         "grpc",
         "gpr_test_util",
         "gpr"
