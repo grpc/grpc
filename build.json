@@ -136,7 +136,8 @@
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
-        "src/core/iomgr/resolve_address.c",
+        "src/core/iomgr/resolve_address_posix.c",
+        "src/core/iomgr/resolve_address_windows.c",
         "src/core/iomgr/sockaddr_utils.c",
         "src/core/iomgr/socket_utils_common_posix.c",
         "src/core/iomgr/socket_utils_linux.c",
@@ -1121,6 +1122,20 @@
       "language": "c",
       "src": [
         "test/core/surface/completion_queue_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_create_jwt",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "test/core/security/create_jwt.c"
       ],
       "deps": [
         "grpc_test_util",

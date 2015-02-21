@@ -40,7 +40,7 @@ static gpr_once g_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 static int g_initializations;
 
-static void do_init() {
+static void do_init(void) {
   gpr_mu_init(&g_init_mu);
   g_initializations = 0;
 }

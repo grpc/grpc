@@ -291,7 +291,7 @@ static void orphan_channel(channel_data *chand) {
 static void finish_destroy_channel(void *cd, int success) {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
-  grpc_channel_destroy(chand->channel);
+  grpc_channel_internal_unref(chand->channel);
   server_unref(server);
 }
 

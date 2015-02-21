@@ -50,6 +50,11 @@ extern "C" {
    In the unlikely event of an error, returns -1 and sets *out to NULL. */
 int gpr_join_host_port(char **out, const char *host, int port);
 
+/* Given a name in the form "host:port" or "[ho:st]:port", split into hostname
+   and port number, into newly allocated strings, which must later be
+   destroyed using gpr_free(). */
+void gpr_split_host_port(const char *name, char **host, char **port);
+
 #ifdef __cplusplus
 }
 #endif

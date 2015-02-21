@@ -234,6 +234,7 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o /dev/null test/build/protobuf.cc -lprotobuf $(LDFLAGS)
+PROTOC_CMD = which protoc
 PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
@@ -244,10 +245,11 @@ LIBS += profiler
 endif
 endif
 
+HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_SYSTEM_PROTOBUF = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_PROTOBUF = $(HAS_SYSTEM_PROTOBUF_VERIFY)
 else
 # override system libraries if the config requires a custom compiled library
 HAS_SYSTEM_OPENSSL_ALPN = false
@@ -255,7 +257,12 @@ HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
+HAS_PROTOC = $(shell $(PROTOC_CMD) && echo true || echo false)
+ifeq ($(HAS_PROTOC),true)
 HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+else
+HAS_VALID_PROTOC = false
+endif
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
@@ -308,8 +315,8 @@ LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 ifeq ($(HAS_SYSTEM_PROTOBUF),false)
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
-CPPFLAGS += -Ithird_party/protobuf/src
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/protobuf
+CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
+LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
 PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
@@ -325,6 +332,13 @@ HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
+endif
+
+INSTALL_OK = false
+ifeq ($(HAS_VALID_PROTOC),true)
+ifeq ($(HAS_SYSTEM_PROTOBUF_VERIFY),true)
+INSTALL_OK = true
+endif
 endif
 
 .SECONDARY = %.pb.h %.pb.cc
@@ -463,6 +477,7 @@ grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
 grpc_completion_queue_benchmark: $(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
+grpc_create_jwt: $(BINDIR)/$(CONFIG)/grpc_create_jwt
 grpc_credentials_test: $(BINDIR)/$(CONFIG)/grpc_credentials_test
 grpc_fetch_oauth2: $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2
 grpc_json_token_test: $(BINDIR)/$(CONFIG)/grpc_json_token_test
@@ -880,7 +895,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CPPFLAGS="-fPIC" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="$(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="-fPIC $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -1748,7 +1763,7 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_pool_test || ( echo test thread_pool_test failed ; exit 1 )
 
 
-tools: privatelibs $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2
+tools: privatelibs $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2
 
 buildbenchmarks: privatelibs $(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 
@@ -1915,7 +1930,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
-install: install_c install_cxx install-plugins
+install: install_c install_cxx install-plugins verify-install
 
 install_c: install-headers_c install-static_c install-shared_c
 
@@ -2057,6 +2072,25 @@ else
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_python_plugin $(prefix)/bin/grpc_python_plugin
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
+endif
+
+verify-install:
+ifeq ($(SYSTEM_OK),true)
+	@echo "Your system looks ready to go."
+	@echo
+else
+	@echo "Your system doesn't have protoc 3.0.0+ installed. While this"
+	@echo "won't prevent grpc from working, you won't be able to compile"
+	@echo "and run any meaningful code with it."
+	@echo
+	@echo
+	@echo "Please download and install protobuf 3.0.0+ from:"
+	@echo
+	@echo "   https://github.com/google/protobuf/releases"
+	@echo
+	@echo "Once you've done so, you can re-run this check by doing:"
+	@echo
+	@echo "   make verify-install"
 endif
 
 clean:
@@ -2290,7 +2324,8 @@ LIBGRPC_SRC = \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
     src/core/iomgr/pollset_windows.c \
-    src/core/iomgr/resolve_address.c \
+    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/resolve_address_windows.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -2430,7 +2465,8 @@ src/core/iomgr/pollset_multipoller_with_epoll.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_multipoller_with_poll_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_windows.c: $(OPENSSL_DEP)
-src/core/iomgr/resolve_address.c: $(OPENSSL_DEP)
+src/core/iomgr/resolve_address_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/resolve_address_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/sockaddr_utils.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_common_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_linux.c: $(OPENSSL_DEP)
@@ -2587,7 +2623,8 @@ $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_epoll.o:
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
-$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
@@ -2759,7 +2796,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
     src/core/iomgr/pollset_windows.c \
-    src/core/iomgr/resolve_address.c \
+    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/resolve_address_windows.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -2894,7 +2932,8 @@ $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_epoll.o:
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
-$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
@@ -6379,6 +6418,37 @@ deps_grpc_completion_queue_test: $(GRPC_COMPLETION_QUEUE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_COMPLETION_QUEUE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GRPC_CREATE_JWT_SRC = \
+    test/core/security/create_jwt.c \
+
+GRPC_CREATE_JWT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CREATE_JWT_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/grpc_create_jwt: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_create_jwt: $(GRPC_CREATE_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CREATE_JWT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_create_jwt
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/create_jwt.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_create_jwt: $(GRPC_CREATE_JWT_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_CREATE_JWT_OBJS:.o=.dep)
 endif
 endif
 
