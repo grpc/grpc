@@ -191,6 +191,7 @@ struct transport {
   gpr_uint8 writing;
   gpr_uint8 calling_back;
   gpr_uint8 destroying;
+  gpr_uint8 closed;
   error_state error_state;
 
   /* stream indexing */
@@ -416,6 +417,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->next_stream_id = is_client ? 1 : 2;
   t->last_incoming_stream_id = 0;
   t->destroying = 0;
+  t->closed = 0;
   t->is_client = is_client;
   t->outgoing_window = DEFAULT_WINDOW;
   t->incoming_window = DEFAULT_WINDOW;
@@ -521,6 +523,8 @@ static void destroy_transport(grpc_transport *gt) {
 static void close_transport(grpc_transport *gt) {
   transport *t = (transport *)gt;
   gpr_mu_lock(&t->mu);
+  GPR_ASSERT(!t->closed);
+  t->closed = 1;
   if (t->ep) {
     grpc_endpoint_shutdown(t->ep);
   }
