@@ -144,7 +144,7 @@ LD = $(LD_$(CONFIG))
 LDXX = $(LDXX_$(CONFIG))
 AR = ar
 STRIP = strip --strip-unneeded
-INSTALL = install -D
+INSTALL = install
 RM = rm -f
 
 ifndef VALID_CONFIG_$(CONFIG)
@@ -292,8 +292,9 @@ ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
-CPPFLAGS += -Ithird_party/openssl/include
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/openssl
+# need to prefix these to ensure overriding system libraries
+CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
+LDFLAGS := -L$(LIBDIR)/$(CONFIG)/openssl $(LDFLAGS)
 LIBS_SECURE = dl
 else
 NO_SECURE = true
@@ -879,7 +880,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="$(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CPPFLAGS="-fPIC" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="$(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -1014,8 +1015,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_format_request_test || ( echo test httpcli_format_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_parser_test || ( echo test httpcli_parser_test failed ; exit 1 )
-	$(E) "[RUN]     Testing httpcli_test"
-	$(Q) $(BINDIR)/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing json_rewrite_test"
@@ -1930,24 +1929,30 @@ install-headers: install-headers_c install-headers_cxx
 
 install-headers_c:
 	$(E) "[INSTALL] Installing public C headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
 	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
 install-headers_cxx:
 	$(E) "[INSTALL] Installing public C++ headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
 	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
 install-static: install-static_c install-static_cxx
 
 install-static_c: static_c strip-static_c
 	$(E) "[INSTALL] Installing libgpr.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr.a $(prefix)/lib/libgpr.a
 	$(E) "[INSTALL] Installing libgrpc.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc.a $(prefix)/lib/libgrpc.a
 	$(E) "[INSTALL] Installing libgrpc_unsecure.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(prefix)/lib/libgrpc_unsecure.a
 
 install-static_cxx: static_cxx strip-static_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
 
 
@@ -1955,10 +1960,12 @@ install-static_cxx: static_cxx strip-static_cxx
 install-shared_c: shared_c strip-shared_c
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing gpr.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(prefix)/lib/gpr.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr-imp.a $(prefix)/lib/libgpr-imp.a
 else
 	$(E) "[INSTALL] Installing libgpr.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(prefix)/lib/libgpr.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgpr.$(SHARED_EXT) $(prefix)/lib/libgpr.so
@@ -1966,10 +1973,12 @@ endif
 endif
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing grpc.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(prefix)/lib/grpc.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc-imp.a $(prefix)/lib/libgrpc-imp.a
 else
 	$(E) "[INSTALL] Installing libgrpc.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.so
@@ -1977,10 +1986,12 @@ endif
 endif
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing grpc_unsecure.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT) $(prefix)/lib/grpc_unsecure.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure-imp.a $(prefix)/lib/libgrpc_unsecure-imp.a
 else
 	$(E) "[INSTALL] Installing libgrpc_unsecure.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so
@@ -1996,10 +2007,12 @@ endif
 install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing grpc++.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(prefix)/lib/grpc++.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++-imp.a $(prefix)/lib/libgrpc++-imp.a
 else
 	$(E) "[INSTALL] Installing libgrpc++.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
@@ -2015,10 +2028,12 @@ endif
 install-shared_csharp: shared_csharp strip-shared_csharp
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing grpc_csharp_ext.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/grpc_csharp_ext.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a $(prefix)/lib/libgrpc_csharp_ext-imp.a
 else
 	$(E) "[INSTALL] Installing libgrpc_csharp_ext.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so
@@ -2047,8 +2062,11 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) false
 else
 	$(E) "[INSTALL] Installing grpc protoc plugins"
+	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cpp_plugin $(prefix)/bin/grpc_cpp_plugin
+	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_python_plugin $(prefix)/bin/grpc_python_plugin
+	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
 endif
 
@@ -2235,6 +2253,10 @@ $(OBJDIR)/$(CONFIG)/test/core/util/test_config.o:
 
 
 LIBGRPC_SRC = \
+    src/core/httpcli/format_request.c \
+    src/core/httpcli/httpcli.c \
+    src/core/httpcli/httpcli_security_context.c \
+    src/core/httpcli/parser.c \
     src/core/security/auth.c \
     src/core/security/base64.c \
     src/core/security/credentials.c \
@@ -2244,6 +2266,8 @@ LIBGRPC_SRC = \
     src/core/security/secure_transport_setup.c \
     src/core/security/security_context.c \
     src/core/security/server_secure_chttp2.c \
+    src/core/surface/secure_channel_create.c \
+    src/core/surface/secure_server_create.c \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
@@ -2263,10 +2287,6 @@ LIBGRPC_SRC = \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
-    src/core/httpcli/format_request.c \
-    src/core/httpcli/httpcli.c \
-    src/core/httpcli/httpcli_security_context.c \
-    src/core/httpcli/parser.c \
     src/core/iomgr/alarm.c \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
@@ -2321,8 +2341,6 @@ LIBGRPC_SRC = \
     src/core/surface/init.c \
     src/core/surface/lame_client.c \
     src/core/surface/metadata_array.c \
-    src/core/surface/secure_channel_create.c \
-    src/core/surface/secure_server_create.c \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
@@ -2375,6 +2393,10 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/httpcli/format_request.c: $(OPENSSL_DEP)
+src/core/httpcli/httpcli.c: $(OPENSSL_DEP)
+src/core/httpcli/httpcli_security_context.c: $(OPENSSL_DEP)
+src/core/httpcli/parser.c: $(OPENSSL_DEP)
 src/core/security/auth.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
@@ -2384,6 +2406,8 @@ src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
 src/core/security/security_context.c: $(OPENSSL_DEP)
 src/core/security/server_secure_chttp2.c: $(OPENSSL_DEP)
+src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
+src/core/surface/secure_server_create.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
@@ -2403,10 +2427,6 @@ src/core/channel/noop_filter.c: $(OPENSSL_DEP)
 src/core/compression/algorithm.c: $(OPENSSL_DEP)
 src/core/compression/message_compress.c: $(OPENSSL_DEP)
 src/core/debug/trace.c: $(OPENSSL_DEP)
-src/core/httpcli/format_request.c: $(OPENSSL_DEP)
-src/core/httpcli/httpcli.c: $(OPENSSL_DEP)
-src/core/httpcli/httpcli_security_context.c: $(OPENSSL_DEP)
-src/core/httpcli/parser.c: $(OPENSSL_DEP)
 src/core/iomgr/alarm.c: $(OPENSSL_DEP)
 src/core/iomgr/alarm_heap.c: $(OPENSSL_DEP)
 src/core/iomgr/endpoint.c: $(OPENSSL_DEP)
@@ -2461,8 +2481,6 @@ src/core/surface/event_string.c: $(OPENSSL_DEP)
 src/core/surface/init.c: $(OPENSSL_DEP)
 src/core/surface/lame_client.c: $(OPENSSL_DEP)
 src/core/surface/metadata_array.c: $(OPENSSL_DEP)
-src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
-src/core/surface/secure_server_create.c: $(OPENSSL_DEP)
 src/core/surface/server.c: $(OPENSSL_DEP)
 src/core/surface/server_chttp2.c: $(OPENSSL_DEP)
 src/core/surface/server_create.c: $(OPENSSL_DEP)
@@ -2532,6 +2550,10 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+$(OBJDIR)/$(CONFIG)/src/core/httpcli/format_request.o: 
+$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli.o: 
+$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli_security_context.o: 
+$(OBJDIR)/$(CONFIG)/src/core/httpcli/parser.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/auth.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/base64.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials.o: 
@@ -2541,6 +2563,8 @@ $(OBJDIR)/$(CONFIG)/src/core/security/secure_endpoint.o:
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_transport_setup.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/security_context.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/server_secure_chttp2.o: 
+$(OBJDIR)/$(CONFIG)/src/core/surface/secure_channel_create.o: 
+$(OBJDIR)/$(CONFIG)/src/core/surface/secure_server_create.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/fake_transport_security.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/ssl_transport_security.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/transport_security.o: 
@@ -2560,10 +2584,6 @@ $(OBJDIR)/$(CONFIG)/src/core/channel/noop_filter.o:
 $(OBJDIR)/$(CONFIG)/src/core/compression/algorithm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/compression/message_compress.o: 
 $(OBJDIR)/$(CONFIG)/src/core/debug/trace.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/format_request.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli_security_context.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/parser.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint.o: 
@@ -2618,8 +2638,6 @@ $(OBJDIR)/$(CONFIG)/src/core/surface/event_string.o:
 $(OBJDIR)/$(CONFIG)/src/core/surface/init.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/lame_client.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/metadata_array.o: 
-$(OBJDIR)/$(CONFIG)/src/core/surface/secure_channel_create.o: 
-$(OBJDIR)/$(CONFIG)/src/core/surface/secure_server_create.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_chttp2.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_create.o: 
@@ -2738,10 +2756,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
     src/core/debug/trace.c \
-    src/core/httpcli/format_request.c \
-    src/core/httpcli/httpcli.c \
-    src/core/httpcli/httpcli_security_context.c \
-    src/core/httpcli/parser.c \
     src/core/iomgr/alarm.c \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
@@ -2796,8 +2810,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/init.c \
     src/core/surface/lame_client.c \
     src/core/surface/metadata_array.c \
-    src/core/surface/secure_channel_create.c \
-    src/core/surface/secure_server_create.c \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
@@ -2879,10 +2891,6 @@ $(OBJDIR)/$(CONFIG)/src/core/channel/noop_filter.o:
 $(OBJDIR)/$(CONFIG)/src/core/compression/algorithm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/compression/message_compress.o: 
 $(OBJDIR)/$(CONFIG)/src/core/debug/trace.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/format_request.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli_security_context.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/parser.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint.o: 
@@ -2937,8 +2945,6 @@ $(OBJDIR)/$(CONFIG)/src/core/surface/event_string.o:
 $(OBJDIR)/$(CONFIG)/src/core/surface/init.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/lame_client.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/metadata_array.o: 
-$(OBJDIR)/$(CONFIG)/src/core/surface/secure_channel_create.o: 
-$(OBJDIR)/$(CONFIG)/src/core/surface/secure_server_create.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_chttp2.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_create.o: 
@@ -3074,18 +3080,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT)$(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++-imp.a -o $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++-imp.a -o $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc-imp
 else
-$(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++.so.0
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++.so
 endif
