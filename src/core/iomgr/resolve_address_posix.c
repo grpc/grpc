@@ -133,7 +133,7 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
     un = (struct sockaddr_un *)addrs->addrs->addr;
     un->sun_family = AF_UNIX;
     strcpy(un->sun_path, name + 5);
-    addrs->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family);
+    addrs->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
     return addrs;
   }
 
