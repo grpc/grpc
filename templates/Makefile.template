@@ -971,6 +971,9 @@ endif
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
     mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
+
+  if lib.language == 'c++':
+    common = common + ' $(LDLIBSXX) $(LDLIBS_PROTOBUF)'
 %>
 
 % if lib.build == "all":
