@@ -292,8 +292,9 @@ ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
-CPPFLAGS += -Ithird_party/openssl/include
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/openssl
+# need to prefix these to ensure overriding system libraries
+CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
+LDFLAGS := -L$(LIBDIR)/$(CONFIG)/openssl $(LDFLAGS)
 LIBS_SECURE = dl
 else
 NO_SECURE = true
