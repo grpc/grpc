@@ -84,6 +84,9 @@ RUN wget https://phar.phpunit.de/phpunit.phar \
   && chmod +x phpunit.phar \
   && mv phpunit.phar /usr/local/bin/phpunit
 
+
+# TODO: pre-building seems unnecessary, because we need to run make clean
+# anyway to prevent build from crashing if header files are added/removed.
 # Build the C core
 RUN make static_c shared_c -j12 -C /var/local/git/grpc
 

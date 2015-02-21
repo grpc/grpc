@@ -1,13 +1,13 @@
 # Dockerfile for GRPC Python
 FROM grpc/python_base
 
-# Build the C library
+# Pull the latest sources
 RUN cd /var/local/git/grpc \
   && git pull --recurse-submodules \
   && git submodule update --init --recursive
 
 # Build the C core.
-RUN make install_c -C /var/local/git/grpc
+RUN make install_c -j12 -C /var/local/git/grpc
 
 # Build Python GRPC
 RUN cd /var/local/git/grpc \
