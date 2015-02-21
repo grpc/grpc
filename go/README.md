@@ -16,9 +16,8 @@ INSTALL
 -------
 
 ```sh
-$ export GOPATH=<path/to/your/go/workspace>
-$ go install -u github.com/grpc-common/go/greeter_client
-$ go install -u github.com/grpc-common/go/greeter_server
+$ go get -u github.com/grpc-common/go/greeter_client
+$ go get -u github.com/grpc-common/go/greeter_server
 ```
 
 TRY IT!
