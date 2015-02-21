@@ -31,9 +31,8 @@
  *
  */
 
-#ifndef _POSIX_SOURCE
-#define _POSIX_SOURCE
-#endif
+#include <grpc/support/port_platform.h>
+#ifdef GPR_POSIX_SOCKET
 
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/resolve_address.h"
@@ -233,3 +232,5 @@ void grpc_resolve_address(const char *name, const char *default_port,
   r->arg = arg;
   gpr_thd_new(&id, do_request, r, NULL);
 }
+
+#endif

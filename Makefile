@@ -2290,7 +2290,8 @@ LIBGRPC_SRC = \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
     src/core/iomgr/pollset_windows.c \
-    src/core/iomgr/resolve_address.c \
+    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/resolve_address_windows.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -2430,7 +2431,8 @@ src/core/iomgr/pollset_multipoller_with_epoll.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_multipoller_with_poll_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/pollset_windows.c: $(OPENSSL_DEP)
-src/core/iomgr/resolve_address.c: $(OPENSSL_DEP)
+src/core/iomgr/resolve_address_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/resolve_address_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/sockaddr_utils.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_common_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/socket_utils_linux.c: $(OPENSSL_DEP)
@@ -2587,7 +2589,8 @@ $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_epoll.o:
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
-$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
@@ -2759,7 +2762,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/pollset_multipoller_with_poll_posix.c \
     src/core/iomgr/pollset_posix.c \
     src/core/iomgr/pollset_windows.c \
-    src/core/iomgr/resolve_address.c \
+    src/core/iomgr/resolve_address_posix.c \
+    src/core/iomgr/resolve_address_windows.c \
     src/core/iomgr/sockaddr_utils.c \
     src/core/iomgr/socket_utils_common_posix.c \
     src/core/iomgr/socket_utils_linux.c \
@@ -2894,7 +2898,8 @@ $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_epoll.o:
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_multipoller_with_poll_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/pollset_windows.o: 
-$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_posix.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/resolve_address_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/sockaddr_utils.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_common_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/socket_utils_linux.o: 
