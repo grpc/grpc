@@ -32,6 +32,7 @@
         "src/core/channel/noop_filter.h",
         "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
+        "src/core/debug/trace.h",
         "src/core/iomgr/alarm.h",
         "src/core/iomgr/alarm_heap.h",
         "src/core/iomgr/alarm_internal.h",
@@ -120,6 +121,7 @@
         "src/core/channel/noop_filter.c",
         "src/core/compression/algorithm.c",
         "src/core/compression/message_compress.c",
+        "src/core/debug/trace.c",
         "src/core/iomgr/alarm.c",
         "src/core/iomgr/alarm_heap.c",
         "src/core/iomgr/endpoint.c",
@@ -1283,7 +1285,6 @@
     {
       "name": "json_rewrite_test",
       "build": "test",
-      "run": false,
       "language": "c",
       "src": [
         "test/core/json/json_rewrite_test.c"

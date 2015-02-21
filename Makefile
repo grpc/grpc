@@ -1018,6 +1018,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing json_rewrite_test"
+	$(Q) $(BINDIR)/$(CONFIG)/json_rewrite_test || ( echo test json_rewrite_test failed ; exit 1 )
 	$(E) "[RUN]     Testing json_test"
 	$(Q) $(BINDIR)/$(CONFIG)/json_test || ( echo test json_test failed ; exit 1 )
 	$(E) "[RUN]     Testing lame_client_test"
@@ -2266,6 +2268,7 @@ LIBGRPC_SRC = \
     src/core/channel/noop_filter.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
+    src/core/debug/trace.c \
     src/core/iomgr/alarm.c \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
@@ -2405,6 +2408,7 @@ src/core/channel/metadata_buffer.c: $(OPENSSL_DEP)
 src/core/channel/noop_filter.c: $(OPENSSL_DEP)
 src/core/compression/algorithm.c: $(OPENSSL_DEP)
 src/core/compression/message_compress.c: $(OPENSSL_DEP)
+src/core/debug/trace.c: $(OPENSSL_DEP)
 src/core/iomgr/alarm.c: $(OPENSSL_DEP)
 src/core/iomgr/alarm_heap.c: $(OPENSSL_DEP)
 src/core/iomgr/endpoint.c: $(OPENSSL_DEP)
@@ -2561,6 +2565,7 @@ $(OBJDIR)/$(CONFIG)/src/core/channel/metadata_buffer.o:
 $(OBJDIR)/$(CONFIG)/src/core/channel/noop_filter.o: 
 $(OBJDIR)/$(CONFIG)/src/core/compression/algorithm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/compression/message_compress.o: 
+$(OBJDIR)/$(CONFIG)/src/core/debug/trace.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint.o: 
@@ -2732,6 +2737,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/noop_filter.c \
     src/core/compression/algorithm.c \
     src/core/compression/message_compress.c \
+    src/core/debug/trace.c \
     src/core/iomgr/alarm.c \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
@@ -2866,6 +2872,7 @@ $(OBJDIR)/$(CONFIG)/src/core/channel/metadata_buffer.o:
 $(OBJDIR)/$(CONFIG)/src/core/channel/noop_filter.o: 
 $(OBJDIR)/$(CONFIG)/src/core/compression/algorithm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/compression/message_compress.o: 
+$(OBJDIR)/$(CONFIG)/src/core/debug/trace.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint.o: 
