@@ -47,6 +47,11 @@ typedef enum {
   GRPC_SECURITY_ERROR
 } grpc_security_status;
 
+/* --- URL schemes. --- */
+
+#define GRPC_SSL_URL_SCHEME "https"
+#define GRPC_FAKE_SECURITY_URL_SCHEME "http+fake_security"
+
 /* --- security_context object. ---
 
     A security context object represents away to configure the underlying
@@ -72,6 +77,7 @@ struct grpc_security_context {
   const grpc_security_context_vtable *vtable;
   gpr_refcount refcount;
   int is_client_side;
+  const char *url_scheme;
 };
 
 /* Increments the refcount. */

@@ -238,6 +238,7 @@ grpc_channel_security_context *grpc_fake_channel_security_context_create(
       gpr_malloc(sizeof(grpc_fake_channel_security_context));
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.is_client_side = 1;
+  c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.base.vtable = &fake_channel_vtable;
   GPR_ASSERT(check_request_metadata_creds(request_metadata_creds));
   c->base.request_metadata_creds = grpc_credentials_ref(request_metadata_creds);
@@ -250,6 +251,7 @@ grpc_security_context *grpc_fake_server_security_context_create(void) {
   grpc_security_context *c = gpr_malloc(sizeof(grpc_security_context));
   gpr_ref_init(&c->refcount, 1);
   c->vtable = &fake_server_vtable;
+  c->url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   return c;
 }
 
@@ -458,6 +460,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
   c->base.base.is_client_side = 1;
+  c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.request_metadata_creds = grpc_credentials_ref(request_metadata_creds);
   c->base.check_call_host = ssl_channel_check_call_host;
   if (target_name != NULL) {
@@ -525,6 +528,7 @@ grpc_security_status grpc_ssl_server_security_context_create(
   memset(c, 0, sizeof(grpc_ssl_server_security_context));
 
   gpr_ref_init(&c->base.refcount, 1);
+  c->base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.vtable = &ssl_server_vtable;
   result = tsi_create_ssl_server_handshaker_factory(
       (const unsigned char **)config->pem_private_keys,
