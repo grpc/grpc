@@ -1930,7 +1930,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
-install: install_c install_cxx install-plugins verify-install
+install: install_c install_cxx install-plugins install-certs verify-install
 
 install_c: install-headers_c install-static_c install-shared_c
 
@@ -2073,6 +2073,11 @@ else
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
 endif
+
+install-certs: etc/roots.pem
+	$(E) "[INSTALL] Installing root certificates"
+	$(Q) $(INSTALL) -d $(prefix)/share/grpc
+	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
 
 verify-install:
 ifeq ($(SYSTEM_OK),true)
