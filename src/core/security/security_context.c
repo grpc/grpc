@@ -61,9 +61,9 @@
   "SHA256:AES256-SHA256"
 
 #ifndef INSTALL_PREFIX
-static const char *installed_roots_path = "/etc/grpc/roots.pem";
+static const char *installed_roots_path = "/usr/share/grpc/roots.pem";
 #else
-static const char *installed_roots_path = INSTALL_PREFIX "/etc/grpc/roots.pem";
+static const char *installed_roots_path = INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
 
 /* -- Common methods. -- */
