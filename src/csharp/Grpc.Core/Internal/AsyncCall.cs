@@ -112,6 +112,31 @@ namespace Grpc.Core.Internal
             InitializeInternal(call, true);
         }
 
+        public TRead UnaryCall(Channel channel, String methodName, TWrite msg)
+        {
+            using(CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
+            {
+                // TODO: handle serialization error...
+                byte[] payload = serializer(msg);
+
+                unaryResponseTcs = new TaskCompletionSource<TRead>();
+
+                lock (myLock)
+                {
+                    Initialize(channel, cq, methodName);
+                    started = true;
+                    halfcloseRequested = true;
+                    readingDone = true;
+                }
+                call.BlockingUnary(cq, payload, unaryResponseHandler);
+
+                // task should be finished once BlockingUnary returns.
+                return unaryResponseTcs.Task.Result;
+
+                // TODO: unwrap aggregate exception...
+            }
+        }
+
         public Task<TRead> UnaryCallAsync(TWrite msg)
         {
             lock (myLock)

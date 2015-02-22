@@ -62,6 +62,7 @@
     <Compile Include="Internal\ClientStreamingInputObserver.cs" />
     <Compile Include="Internal\ServerStreamingOutputObserver.cs" />
     <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
+    <Compile Include="Utils\BenchmarkUtil.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
