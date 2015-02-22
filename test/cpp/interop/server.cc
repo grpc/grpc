@@ -77,8 +77,8 @@ using grpc::Status;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
+namespace google {}
+namespace gflags {}
 using namespace google;
 using namespace gflags;
 
@@ -215,8 +215,7 @@ void RunServer() {
   if (FLAGS_enable_ssl) {
     SslServerCredentialsOptions ssl_opts = {
         "", {{test_server1_key, test_server1_cert}}};
-    std::shared_ptr<ServerCredentials> creds =
-        ServerCredentialsFactory::SslCredentials(ssl_opts);
+    std::shared_ptr<ServerCredentials> creds = ServerSslCredentials(ssl_opts);
     builder.SetCredentials(creds);
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());

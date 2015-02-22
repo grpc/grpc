@@ -61,12 +61,10 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     const std::unique_ptr<Credentials>& creds) {
   ChannelArguments channel_args;
   if (enable_ssl) {
-    const char* roots_certs =
-        use_prod_roots ? "" : test_root_cert;
+    const char* roots_certs = use_prod_roots ? "" : test_root_cert;
     SslCredentialsOptions ssl_opts = {roots_certs, "", ""};
 
-    std::unique_ptr<Credentials> channel_creds =
-        CredentialsFactory::SslCredentials(ssl_opts);
+    std::unique_ptr<Credentials> channel_creds = SslCredentials(ssl_opts);
 
     if (!server.empty() && !override_hostname.empty()) {
       channel_args.SetSslTargetNameOverride(override_hostname);
@@ -74,12 +72,11 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& connect_to =
         server.empty() ? override_hostname : server;
     if (creds.get()) {
-      channel_creds =
-          CredentialsFactory::ComposeCredentials(creds, channel_creds);
+      channel_creds = ComposeCredentials(creds, channel_creds);
     }
     return CreateChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannel(server, channel_args);
+    return CreateChannel(server, InsecureCredentials(), channel_args);
   }
 }
 

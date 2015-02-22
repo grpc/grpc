@@ -10,6 +10,60 @@
   },
   "filegroups": [
     {
+      "name": "grpc++_base",
+      "public_headers": [
+        "include/grpc++/async_unary_call.h",
+        "include/grpc++/channel_arguments.h",
+        "include/grpc++/channel_interface.h",
+        "include/grpc++/client_context.h",
+        "include/grpc++/completion_queue.h",
+        "include/grpc++/config.h",
+        "include/grpc++/create_channel.h",
+        "include/grpc++/credentials.h",
+        "include/grpc++/impl/call.h",
+        "include/grpc++/impl/client_unary_call.h",
+        "include/grpc++/impl/internal_stub.h",
+        "include/grpc++/impl/rpc_method.h",
+        "include/grpc++/impl/rpc_service_method.h",
+        "include/grpc++/impl/service_type.h",
+        "include/grpc++/server.h",
+        "include/grpc++/server_builder.h",
+        "include/grpc++/server_context.h",
+        "include/grpc++/server_credentials.h",
+        "include/grpc++/status.h",
+        "include/grpc++/status_code_enum.h",
+        "include/grpc++/stream.h",
+        "include/grpc++/thread_pool_interface.h"
+      ],
+      "headers": [
+        "src/cpp/client/channel.h",
+        "src/cpp/proto/proto_utils.h",
+        "src/cpp/server/thread_pool.h",
+        "src/cpp/util/time.h"
+      ],
+      "src": [
+        "src/cpp/client/channel.cc",
+        "src/cpp/client/channel_arguments.cc",
+        "src/cpp/client/client_context.cc",
+        "src/cpp/client/client_unary_call.cc",
+        "src/cpp/client/create_channel.cc",
+        "src/cpp/client/credentials.cc",
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/client/internal_stub.cc",
+        "src/cpp/common/call.cc",
+        "src/cpp/common/completion_queue.cc",
+        "src/cpp/common/rpc_method.cc",
+        "src/cpp/proto/proto_utils.cc",
+        "src/cpp/server/server.cc",
+        "src/cpp/server/server_builder.cc",
+        "src/cpp/server/server_context.cc",
+        "src/cpp/server/server_credentials.cc",
+        "src/cpp/server/thread_pool.cc",
+        "src/cpp/util/status.cc",
+        "src/cpp/util/time.cc"
+      ]
+    },
+    {
       "name": "grpc_base",
       "public_headers": [
         "include/grpc/byte_buffer.h",
@@ -383,59 +437,16 @@
       "name": "grpc++",
       "build": "all",
       "language": "c++",
-      "public_headers": [
-        "include/grpc++/async_unary_call.h",
-        "include/grpc++/channel_arguments.h",
-        "include/grpc++/channel_interface.h",
-        "include/grpc++/client_context.h",
-        "include/grpc++/completion_queue.h",
-        "include/grpc++/config.h",
-        "include/grpc++/create_channel.h",
-        "include/grpc++/credentials.h",
-        "include/grpc++/impl/call.h",
-        "include/grpc++/impl/client_unary_call.h",
-        "include/grpc++/impl/internal_stub.h",
-        "include/grpc++/impl/rpc_method.h",
-        "include/grpc++/impl/rpc_service_method.h",
-        "include/grpc++/impl/service_type.h",
-        "include/grpc++/server.h",
-        "include/grpc++/server_builder.h",
-        "include/grpc++/server_context.h",
-        "include/grpc++/server_credentials.h",
-        "include/grpc++/status.h",
-        "include/grpc++/status_code_enum.h",
-        "include/grpc++/stream.h",
-        "include/grpc++/thread_pool_interface.h"
-      ],
-      "headers": [
-        "src/cpp/client/channel.h",
-        "src/cpp/proto/proto_utils.h",
-        "src/cpp/server/thread_pool.h",
-        "src/cpp/util/time.h"
-      ],
       "src": [
-        "src/cpp/client/channel.cc",
-        "src/cpp/client/channel_arguments.cc",
-        "src/cpp/client/client_context.cc",
-        "src/cpp/client/client_unary_call.cc",
-        "src/cpp/client/create_channel.cc",
-        "src/cpp/client/credentials.cc",
-        "src/cpp/client/internal_stub.cc",
-        "src/cpp/common/call.cc",
-        "src/cpp/common/completion_queue.cc",
-        "src/cpp/common/rpc_method.cc",
-        "src/cpp/proto/proto_utils.cc",
-        "src/cpp/server/server.cc",
-        "src/cpp/server/server_builder.cc",
-        "src/cpp/server/server_context.cc",
-        "src/cpp/server/server_credentials.cc",
-        "src/cpp/server/thread_pool.cc",
-        "src/cpp/util/status.cc",
-        "src/cpp/util/time.cc"
+        "src/cpp/client/secure_credentials.cc"
       ],
       "deps": [
         "gpr",
         "grpc"
+      ],
+      "baselib": true,
+      "filegroups": [
+        "grpc++_base"
       ],
       "secure": true,
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
@@ -450,6 +461,20 @@
         "test/cpp/util/echo_duplicate.proto",
         "test/cpp/util/create_test_channel.cc"
       ]
+    },
+    {
+      "name": "grpc++_unsecure",
+      "build": "all",
+      "language": "c++",
+      "deps": [
+        "gpr",
+        "grpc_unsecure"
+      ],
+      "baselib": true,
+      "filegroups": [
+        "grpc++_base"
+      ],
+      "secure": false
     },
     {
       "name": "pubsub_client_lib",

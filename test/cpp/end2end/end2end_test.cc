@@ -160,8 +160,8 @@ class End2endTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), ChannelArguments());
+    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+        server_address_.str(), InsecureCredentials(), ChannelArguments());
     stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
@@ -328,8 +328,7 @@ TEST_F(End2endTest, ResponseStream) {
   ClientContext context;
   request.set_message("hello");
 
-  ClientReader<EchoResponse>* stream =
-      stub_->ResponseStream(&context, request);
+  ClientReader<EchoResponse>* stream = stub_->ResponseStream(&context, request);
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message() + "0");
   EXPECT_TRUE(stream->Read(&response));
@@ -381,8 +380,8 @@ TEST_F(End2endTest, BidiStream) {
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
 TEST_F(End2endTest, DiffPackageServices) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
+  std::shared_ptr<ChannelInterface> channel = CreateChannel(
+      server_address_.str(), InsecureCredentials(), ChannelArguments());
 
   EchoRequest request;
   EchoResponse response;
@@ -407,8 +406,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
   std::unique_ptr<Credentials> bad_creds =
-      CredentialsFactory::ServiceAccountCredentials("", "",
-                                                    std::chrono::seconds(1));
+      ServiceAccountCredentials("", "", std::chrono::seconds(1));
   EXPECT_EQ(nullptr, bad_creds.get());
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());

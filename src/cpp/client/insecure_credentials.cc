@@ -31,23 +31,30 @@
  *
  */
 
-#ifndef __GRPCPP_CREATE_CHANNEL_H__
-#define __GRPCPP_CREATE_CHANNEL_H__
+#include <string>
 
-#include <memory>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
-#include <grpc++/config.h>
+#include <grpc++/channel_arguments.h>
 #include <grpc++/credentials.h>
+#include "src/cpp/client/channel.h"
 
 namespace grpc {
-class ChannelArguments;
-class ChannelInterface;
 
-// If creds does not hold an object or is invalid, a lame channel is returned.
-std::shared_ptr<ChannelInterface> CreateChannel(
-    const grpc::string& target, const std::unique_ptr<Credentials>& creds,
-    const ChannelArguments& args);
+namespace {
+class InsecureCredentialsImpl final : public Credentials {
+ public:
+  std::shared_ptr<grpc::ChannelInterface> CreateChannel(const string& target, const grpc::ChannelArguments& args) override {
+    grpc_channel_args channel_args;
+    args.SetChannelArgs(&channel_args);
+    return std::shared_ptr<ChannelInterface>(new Channel(target, grpc_channel_create(target.c_str(), &channel_args)));
+  }
+};
+}  // namespace
+
+std::unique_ptr<Credentials> InsecureCredentials() {
+  return std::unique_ptr<Credentials>(new InsecureCredentialsImpl());
+}
 
 }  // namespace grpc
-
-#endif  // __GRPCPP_CREATE_CHANNEL_H__
