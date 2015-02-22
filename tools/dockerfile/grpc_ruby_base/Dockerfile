@@ -54,5 +54,10 @@ RUN cd /var/local/git/grpc/third_party/protobuf && \
   ./configure --prefix=/usr && \
   make -j12 && make check && make install && make clean
 
+# TODO: pre-building seems unnecessary, because we need to run make clean
+# anyway to prevent build from crashing if header files are added/removed.
 # Build the C core
 RUN make static_c shared_c -j12 -C /var/local/git/grpc
+
+# Define the default command.
+CMD ["bash"]

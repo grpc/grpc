@@ -127,7 +127,7 @@ void RunTest(const int client_threads, const int client_channels,
   }
 
   std::vector<std::thread> threads;  // Will add threads when ready to execute
-  std::vector<::gpr_histogram *> thread_stats(client_threads);
+  std::vector< ::gpr_histogram *> thread_stats(client_threads);
 
   TestService::Stub *stub_stats = channels[0].get_stub();
   grpc::ClientContext context_stats_begin;

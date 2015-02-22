@@ -35,8 +35,6 @@
 
 #ifdef GPR_WIN32
 
-#include "src/core/support/cpu.h"
-
 #include <grpc/support/log.h>
 
 unsigned gpr_cpu_num_cores(void) {

@@ -1,13 +1,16 @@
 # Dockerfile for gRPC Ruby
 FROM grpc/ruby_base
 
-# Build the C libary
+# Pull the latest sources
 RUN cd /var/local/git/grpc \
   && git pull --recurse-submodules \
   && git submodule update --init --recursive
 
+# Prevent breaking the build if header files are added/removed.
+RUN make clean -C /var/local/git/grpc
+
 # Build the C core
-RUN make install_c -C /var/local/git/grpc
+RUN make install_c -j12 -C /var/local/git/grpc
 
 # Build ruby gRPC and run its tests
 RUN /bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && bundle && rake'

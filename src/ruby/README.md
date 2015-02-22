@@ -11,7 +11,7 @@ Alpha : Ready for early adopters
 INSTALLATION PREREQUISITES
 --------------------------
 
-This requires Ruby 2.x, as the RPC API surface uses keyword args.
+This requires Ruby 2.1, as the RPC API surface uses keyword args.
 
 
 QUICK - INSTALL
@@ -19,6 +19,7 @@ QUICK - INSTALL
 
 - Clone this repository.
 - Follow the instructions in [INSTALL](../../INSTALL) to install the gRPC C core.
+- If you don't have Ruby 2.1 installed, switch to the more detailed instructions below
 - Use bundler to install
 ```sh
 $ # from this directory
@@ -35,15 +36,17 @@ $ cd ../..
 $ make && sudo make install
 ```
 
-- Install Ruby 2.x. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
+- Install Ruby 2.1. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
   the exact ruby version that's used.
 ```sh
 $ command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
-$ \curl -sSL https://get.rvm.io | bash -s stable --ruby
+$ \curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-2.1
 $
 $ # follow the instructions to ensure that your're using the latest stable version of Ruby
 $ # and that the rvm command is installed
 ```
+
+- Make sure your run `source $HOME/.rvm/scripts/rvm` as instructed to complete the set up of RVM
 
 - Install [bundler](http://bundler.io/)
 ```
@@ -52,9 +55,9 @@ $ gem install bundler
 
 - Finally, install the gRPC gem locally.
 ```sh
-$ cd <install_dir>
-$ bundle install
-$ rake  # compiles the extension, runs the unit tests, see rake -T for other options
+$ # from this directory
+$ bundle install  # creates the ruby bundle, including building the grpc extension
+$ rake  # runs the unit tests, see rake -T for other options
 ```
 
 CONTENTS

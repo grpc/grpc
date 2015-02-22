@@ -103,6 +103,14 @@ extern const gpr_timespec grpc_max_auth_token_lifetime;
 grpc_credentials *grpc_service_account_credentials_create(
     const char *json_key, const char *scope, gpr_timespec token_lifetime);
 
+/* Creates a JWT credentials object. May return NULL if the input is invalid.
+   - json_key is the JSON key string containing the client's private key.
+   - token_lifetime is the lifetime of each Json Web Token (JWT) created with
+     this credentials.  It should not exceed grpc_max_auth_token_lifetime or
+     will be cropped to this value.  */
+grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
+                                              gpr_timespec token_lifetime);
+
 /* Creates a fake transport security credentials object for testing. */
 grpc_credentials *grpc_fake_transport_security_credentials_create(void);
 
