@@ -2,6 +2,9 @@
   "name": "grpc-greeter",
   "version": "0.1.0",
   "dependencies": {
-    "grpc" : "~0.2.0"
+    "async": "^0.9.0",
+    "grpc": "~0.2.0",
+    "minimist": "^1.1.0",
+    "underscore": "^1.8.2"
   }
 }
