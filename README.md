@@ -8,9 +8,14 @@ Hello World example. More documentation is coming soon!
 
 ## What's in this repository?
 
-The `grpc-common` repository contains documentation, resources, and examples for all gRPC users
+The `grpc-common` repository contains documentation, resources, and examples
+for all gRPC users. You can find examples and instructions specific to your
+favourite language in the relevant subdirectory.
 
-You can find out about the gRPC source code repositories in [`grpc`](https://github.com/grpc/grpc).
+You can find out about the gRPC source code repositories in
+[`grpc`](https://github.com/grpc/grpc). Each repository provides instructions
+for building the appropriate libraries for your language.
+
 
 ## What is gRPC?
 
@@ -51,7 +56,11 @@ While protocol buffers have been available for open source users for some
 time, our examples use a new flavour of protocol buffers called proto3,
 which has a slightly simplified syntax, some useful new features, and supports
 lots more languages. This is currently available as an alpha release in
-[languages] from [wherever it's going], with more languages in development.
+Java, C++ from [the protocol buffers Github
+repo](https://github.com/google/protobuf/releases), as well as a Go language
+generator [wherever that is](), with more languages in development. Full
+documentation for proto3 is currently in development but you can see
+the major differences from the current default version in the [release notes](https://github.com/google/protobuf/releases).
 
 In general, we recommend that you use proto3 with gRPC as it lets you use the
 full range of gRPC-supported languages, as well as avoiding compatibility
@@ -86,7 +95,10 @@ than how to install and run a few git commands.
 
 This is an introductory example rather than a comprehensive tutorial, so
 don't worry if you're not a Go or
-Java developer - the concepts are similar for all languages, and you can find more implementations of our Hello World example in other languages in the language-specific folders in this repository. Complete tutorials and reference documentation for all gRPC languages are coming soon.
+Java developer - the concepts are similar for all languages, and you can
+find more implementations of our Hello World example in other languages in
+the language-specific folders in this repository. Complete tutorials and
+reference documentation for all gRPC languages are coming soon.
 
 <a name="setup"></a>
 ### Setup
@@ -224,7 +236,8 @@ classes. By default `protoc` just generates code for reading and writing
 protocol buffers, so you need to use plugins to add additional features
 to generated code. As we're creating Java code, we use the gRPC Java plugin.
 
-To build the plugin, follow the instructions in the relevant repo: for Java, the instructions are in [`grpc-java1](https://github.com/grpc/grpc-java).
+To build the plugin, follow the instructions in the relevant repo: for Java,
+the instructions are in [`grpc-java1](https://github.com/grpc/grpc-java).
 
 To use it to generate the code:
 
@@ -235,6 +248,8 @@ $ protoc -I . helloworld.proto
                                --grpc_out=src/main/java \
                                --java_out=src/main/java
 ```
+
+[need to update this once I get the plugin built]
 
 This generates the following classes, which contain all the generated code
 we need to create our example:
@@ -435,12 +450,60 @@ and in another terminal window confirm that it receives a message.
 $ ./run_greeter_client.sh
 ```
 
-
 ### Adding another client
 
-
 Finally, let's look at one of gRPC's most useful features - interoperability
-between code in different languages. So far, we've just generated Java code
-from our `Greeter` service definition....
+between code in different languages. So far, we've just looked at Java code
+generated from and implementing our `Greeter` service definition. However,
+as you'll see if you look at the language-specific subdirectories
+in this repository, we've also generated and implemented `Greeter`
+in some of gRPC's other supported languages. Each service
+and client uses interface code generated from [exactly the same
+.proto](https://github.com/grpc/grpc-common/blob/master/protos/helloworld.proto)
+that we used for the Java example.
 
-###TODO: Section on Go client for same server
+So, for example, if we visit the [`go`
+directory](https://github.com/grpc/grpc-common/tree/master/go) and look at the
+[`greeter_client`](https://github.com/grpc/grpc-common/blob/master/go/greeter_client/main.go),
+we can see that like the Java client, it connects to a `Greeter` service
+at `localhost:50051` and uses a stub to call the `SayHello` method with a
+`HelloRequest`:
+
+```go
+const (
+	address = "localhost:50051"
+	defaultName = "world"
+)
+
+func main() {
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(address)
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	c := pb.NewGreeterClient(conn)
+
+	// Contact the server and print out its response.
+	name := defaultName
+	if len(os.Args) > 1 {
+		name = os.Args[1]
+	}
+	r, err := c.SayHello(context.Background(), &pb.HelloRequest{Name:
+	name})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+	log.Printf("Greeting: %s", r.Message)
+}
+```
+
+
+If we run the Java server from earlier in another terminal window, we can
+run the Go client and connect to it just like the Java client, even though
+it's written in a different language.
+
+```
+$ greeter_client
+```
+
