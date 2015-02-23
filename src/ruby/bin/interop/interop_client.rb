@@ -56,7 +56,7 @@ require 'test/cpp/interop/empty'
 
 require 'signet/ssl_config'
 
-include Google::RPC::Auth
+include GRPC::Auth
 
 # loads the certificates used to access the test server securely.
 def load_test_certs
