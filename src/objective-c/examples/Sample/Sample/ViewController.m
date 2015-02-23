@@ -32,6 +32,10 @@
  */
 
 #import "ViewController.h"
+#import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCMethodName.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
+#import <RxLibrary/GRXWriteable.h>
 
 @interface ViewController ()
 
@@ -42,6 +46,20 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
   // Do any additional setup after loading the view, typically from a nib.
+
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
+                                                         interface:@"TestService"
+                                                            method:@"EmptyCall"];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"localhost"
+                                           method:method
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+
+  [call startWithWriteable:[[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    NSLog(@"Received response: %@", value);
+  } completionHandler:^(NSError *errorOrNil) {
+    NSLog(@"Finished with error: %@", errorOrNil);
+  }]];
 }
 
 - (void)didReceiveMemoryWarning {
