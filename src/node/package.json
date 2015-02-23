@@ -15,9 +15,10 @@
     "underscore.string": "^3.0.0"
   },
   "devDependencies": {
-    "mocha": "~1.21.0",
+    "googleauth": "google/google-auth-library-nodejs",
     "minimist": "^1.1.0",
-    "googleauth": "google/google-auth-library-nodejs"
+    "mocha": "~1.21.0",
+    "strftime": "^0.8.2"
   },
   "files": [
     "README.md",
