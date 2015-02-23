@@ -237,7 +237,7 @@ protocol buffers, so you need to use plugins to add additional features
 to generated code. As we're creating Java code, we use the gRPC Java plugin.
 
 To build the plugin, follow the instructions in the relevant repo: for Java,
-the instructions are in [`grpc-java1](https://github.com/grpc/grpc-java).
+the instructions are in [`grpc-java`](https://github.com/grpc/grpc-java).
 
 To use it to generate the code:
 
