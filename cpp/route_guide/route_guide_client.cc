@@ -86,7 +86,7 @@ RouteNote MakeRouteNote(const std::string& message,
   return n;
 }
 
-bool ParseDb(stringstream stream, std::vector<Feature>* feature_list) {
+bool ParseDb(const std::string& stream, std::vector<Feature>* feature_list) {
   // TODO
 }
 
@@ -173,8 +173,8 @@ class RouteGuideClient {
   void RouteChat() {
     ClientContext context;
 
-    ClientReaderWriter<RouteNote, RouteNote>* stream =
-        stub_->RouteChat(&context);
+    std::shared_ptr<ClientReaderWriter<RouteNote, RouteNote> > stream(
+        stub_->RouteChat(&context));
 
     std::thread writer([stream]() {
       std::vector<RouteNote> notes{
@@ -202,7 +202,6 @@ class RouteGuideClient {
     if (!status.IsOk()) {
       std::cout << "RouteChat rpc failed." << std::endl;
     }
-    delete stream;
   }
 
   void Shutdown() { stub_.reset(); }
@@ -217,7 +216,7 @@ class RouteGuideClient {
     }
     std::stringstream db;
     db << db_file.rdbuf();
-    ParseDb(db, &feature_list_);
+    ParseDb(db.str(), &feature_list_);
   }
 
  private:
