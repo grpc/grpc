@@ -18,7 +18,8 @@
     "async": "^0.9.0",
     "googleauth": "google/google-auth-library-nodejs",
     "minimist": "^1.1.0",
-    "mocha": "~1.21.0"
+    "mocha": "~1.21.0",
+    "strftime": "^0.8.2"
   },
   "files": [
     "README.md",
