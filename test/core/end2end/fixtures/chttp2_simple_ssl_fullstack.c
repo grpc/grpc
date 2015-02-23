@@ -105,7 +105,7 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
       grpc_ssl_credentials_create(NULL, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                                {"foo.test.google.com"}};
+                                {"foo.test.google.fr"}};
   grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);

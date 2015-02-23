@@ -125,7 +125,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
       grpc_byte_buffer_create(&request_payload_slice, 1);
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
-                               "foo.test.google.com", deadline);
+                               "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

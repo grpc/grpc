@@ -127,7 +127,7 @@ def main
   if options['secure']
     stub_opts = {
       :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com'
+      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
     }
     p stub_opts
     p options['host']
