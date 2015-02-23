@@ -191,14 +191,6 @@
   }, 
   {
     "language": "c", 
-    "name": "httpcli_test"
-  }, 
-  {
-    "language": "c", 
-    "name": "interop_test"
-  }, 
-  {
-    "language": "c", 
     "name": "json_rewrite_test"
   }, 
   {
@@ -288,6 +280,10 @@
   {
     "language": "c++", 
     "name": "end2end_test"
+  }, 
+  {
+    "language": "c++", 
+    "name": "interop_test"
   }, 
   {
     "language": "c++", 

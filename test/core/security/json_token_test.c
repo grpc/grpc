@@ -76,6 +76,8 @@ static const char test_json_key_str_part3[] =
 
 static const char test_scope[] = "myperm1 myperm2";
 
+static const char test_service_url[] = "https://foo.com/foo.v1";
+
 static char *test_json_key_str(const char *bad_part3) {
   const char *part3 = bad_part3 != NULL ? bad_part3 : test_json_key_str_part3;
   size_t result_len = strlen(test_json_key_str_part1) +
@@ -229,12 +231,15 @@ static void check_jwt_header(grpc_json *header) {
   grpc_json *ptr;
   grpc_json *alg = NULL;
   grpc_json *typ = NULL;
+  grpc_json *kid = NULL;
 
   for (ptr = header->child; ptr; ptr = ptr->next) {
     if (strcmp(ptr->key, "alg") == 0) {
       alg = ptr;
     } else if (strcmp(ptr->key, "typ") == 0) {
       typ = ptr;
+    } else if (strcmp(ptr->key, "kid") == 0) {
+      kid = ptr;
     }
   }
   GPR_ASSERT(alg != NULL);
@@ -244,9 +249,14 @@ static void check_jwt_header(grpc_json *header) {
   GPR_ASSERT(typ != NULL);
   GPR_ASSERT(typ->type == GRPC_JSON_STRING);
   GPR_ASSERT(!strcmp(typ->value, "JWT"));
+
+  GPR_ASSERT(kid != NULL);
+  GPR_ASSERT(kid->type == GRPC_JSON_STRING);
+  GPR_ASSERT(!strcmp(kid->value, "e6b5137873db8d2ef81e06a47289e6434ec8a165"));
 }
 
-static void check_jwt_claim(grpc_json *claim) {
+static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
+                            const char *expected_scope) {
   gpr_timespec expiration = {0, 0};
   gpr_timespec issue_time = {0, 0};
   gpr_timespec parsed_lifetime;
@@ -255,11 +265,14 @@ static void check_jwt_claim(grpc_json *claim) {
   grpc_json *aud = NULL;
   grpc_json *exp = NULL;
   grpc_json *iat = NULL;
+  grpc_json *sub = NULL;
   grpc_json *ptr;
 
   for (ptr = claim->child; ptr; ptr = ptr->next) {
     if (strcmp(ptr->key, "iss") == 0) {
       iss = ptr;
+    } else if (strcmp(ptr->key, "sub") == 0) {
+      sub = ptr;
     } else if (strcmp(ptr->key, "scope") == 0) {
       scope = ptr;
     } else if (strcmp(ptr->key, "aud") == 0) {
@@ -278,14 +291,22 @@ static void check_jwt_claim(grpc_json *claim) {
           iss->value,
           "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com"));
 
-  GPR_ASSERT(scope != NULL);
-  GPR_ASSERT(scope->type == GRPC_JSON_STRING);
-  GPR_ASSERT(!strcmp(scope->value, test_scope));
+  if (expected_scope != NULL) {
+    GPR_ASSERT(scope != NULL);
+    GPR_ASSERT(sub == NULL);
+    GPR_ASSERT(scope->type == GRPC_JSON_STRING);
+    GPR_ASSERT(!strcmp(scope->value, expected_scope));
+  } else {
+    /* Claims without scope must have a sub. */
+    GPR_ASSERT(scope == NULL);
+    GPR_ASSERT(sub != NULL);
+    GPR_ASSERT(sub->type == GRPC_JSON_STRING);
+    GPR_ASSERT(!strcmp(iss->value, sub->value));
+  }
 
   GPR_ASSERT(aud != NULL);
   GPR_ASSERT(aud->type == GRPC_JSON_STRING);
-  GPR_ASSERT(!strcmp(aud->value,
-                     "https://www.googleapis.com/oauth2/v3/token"));
+  GPR_ASSERT(!strcmp(aud->value, expected_audience));
 
   GPR_ASSERT(exp != NULL);
   GPR_ASSERT(exp->type == GRPC_JSON_NUMBER);
@@ -324,7 +345,28 @@ static void check_jwt_signature(const char *b64_signature, RSA *rsa_key,
   if (md_ctx != NULL) EVP_MD_CTX_destroy(md_ctx);
 }
 
-static void test_jwt_encode_and_sign(void) {
+static char *service_account_creds_jwt_encode_and_sign(
+    const grpc_auth_json_key *key) {
+  return grpc_jwt_encode_and_sign(key, GRPC_JWT_OAUTH2_AUDIENCE,
+                                  grpc_max_auth_token_lifetime, test_scope);
+}
+
+static char *jwt_creds_jwt_encode_and_sign(const grpc_auth_json_key *key) {
+  return grpc_jwt_encode_and_sign(key, test_service_url,
+                                  grpc_max_auth_token_lifetime, NULL);
+}
+
+static void service_account_creds_check_jwt_claim(grpc_json *claim) {
+  check_jwt_claim(claim, GRPC_JWT_OAUTH2_AUDIENCE, test_scope);
+}
+
+static void jwt_creds_check_jwt_claim(grpc_json *claim) {
+  check_jwt_claim(claim, test_service_url, NULL);
+}
+
+static void test_jwt_encode_and_sign(
+    char *(*jwt_encode_and_sign_func)(const grpc_auth_json_key *),
+    void (*check_jwt_claim_func)(grpc_json *)) {
   char *json_string = test_json_key_str(NULL);
   grpc_json *parsed_header = NULL;
   grpc_json *parsed_claim = NULL;
@@ -333,8 +375,7 @@ static void test_jwt_encode_and_sign(void) {
       grpc_auth_json_key_create_from_string(json_string);
   const char *b64_signature;
   size_t offset = 0;
-  char *jwt = grpc_jwt_encode_and_sign(&json_key, test_scope,
-                                       grpc_max_auth_token_lifetime);
+  char *jwt = jwt_encode_and_sign_func(&json_key);
   const char *dot = strchr(jwt, '.');
   GPR_ASSERT(dot != NULL);
   parsed_header = parse_json_part_from_jwt(jwt, dot - jwt, &scratchpad);
@@ -346,9 +387,10 @@ static void test_jwt_encode_and_sign(void) {
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot != NULL);
-  parsed_claim = parse_json_part_from_jwt(jwt + offset, dot - (jwt + offset), &scratchpad);
+  parsed_claim =
+      parse_json_part_from_jwt(jwt + offset, dot - (jwt + offset), &scratchpad);
   GPR_ASSERT(parsed_claim != NULL);
-  check_jwt_claim(parsed_claim);
+  check_jwt_claim_func(parsed_claim);
   offset = dot - jwt + 1;
   grpc_json_destroy(parsed_claim);
   gpr_free(scratchpad);
@@ -363,6 +405,16 @@ static void test_jwt_encode_and_sign(void) {
   gpr_free(jwt);
 }
 
+static void test_service_account_creds_jwt_encode_and_sign(void) {
+  test_jwt_encode_and_sign(service_account_creds_jwt_encode_and_sign,
+                           service_account_creds_check_jwt_claim);
+}
+
+static void test_jwt_creds_jwt_encode_and_sign(void) {
+  test_jwt_encode_and_sign(jwt_creds_jwt_encode_and_sign,
+                           jwt_creds_check_jwt_claim);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_parse_json_key_success();
@@ -372,6 +424,7 @@ int main(int argc, char **argv) {
   test_parse_json_key_failure_no_client_email();
   test_parse_json_key_failure_no_private_key_id();
   test_parse_json_key_failure_no_private_key();
-  test_jwt_encode_and_sign();
+  test_service_account_creds_jwt_encode_and_sign();
+  test_jwt_creds_jwt_encode_and_sign();
   return 0;
 }

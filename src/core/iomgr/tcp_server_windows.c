@@ -355,8 +355,9 @@ SOCKET grpc_tcp_server_get_socket(grpc_tcp_server *s, unsigned index) {
   return (index < s->nports) ? s->ports[index].socket->socket : INVALID_SOCKET;
 }
 
-void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset *pollset,
-                           grpc_tcp_server_cb cb, void *cb_arg) {
+void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollset,
+                           size_t pollset_count, grpc_tcp_server_cb cb,
+                           void *cb_arg) {
   size_t i;
   GPR_ASSERT(cb);
   gpr_mu_lock(&s->mu);
