@@ -22,7 +22,16 @@
     <ClCompile Include="..\..\src\core\security\credentials.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_posix.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_win32.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\factories.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\google_default_credentials.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
