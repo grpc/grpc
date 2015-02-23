@@ -32,11 +32,9 @@
  */
 
 #include <chrono>
-#include <fstream>
 #include <iostream>
 #include <memory>
 #include <random>
-#include <sstream>
 #include <string>
 #include <thread>
 
@@ -47,6 +45,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include "helper.h"
 #include "route_guide.pb.h"
 
 using grpc::ChannelArguments;
@@ -84,23 +83,6 @@ RouteNote MakeRouteNote(const std::string& message,
   n.set_message(message);
   n.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
   return n;
-}
-
-bool ParseDb(const std::string& stream, std::vector<Feature>* feature_list) {
-  // TODO
-}
-
-void FillFeatureList(const std::string& db_path, std::vector<Feature>* feature_list) {
-  if (db_path.empty()) {
-    return;
-  }
-  std::ifstream db_file(db_path);
-  if (!db_file.is_open()) {
-    std::cout << "Failed to open " << db_path << std::endl;
-  }
-  std::stringstream db;
-  db << db_file.rdbuf();
-  ParseDb(db.str(), feature_list);
 }
 
 class RouteGuideClient {
@@ -219,8 +201,8 @@ class RouteGuideClient {
 
   void Shutdown() { stub_.reset(); }
 
-  void FillFeatureList(const std::string& db_path) {
-    ::FillFeatureList(db_path, &feature_list_);
+  void FillFeatureList(const std::string& db) {
+    examples::ParseDb(db, &feature_list_);
   }
 
  private:
@@ -258,20 +240,8 @@ int main(int argc, char** argv) {
 
   RouteGuideClient guide(
       grpc::CreateChannel("localhost:50051", ChannelArguments()));
-  std::string db_path;
-  std::string arg_str("--db_path");
-  if (argc > 1) {
-    std::string argv_1 = argv[1];
-    size_t start_position = argv_1.find(arg_str);
-    if (start_position != std::string::npos) {
-      start_position += arg_str.size();
-      if (argv_1[start_position] == ' ' ||
-          argv_1[start_position] == '=') {
-        db_path = argv_1.substr(start_position + 1);
-      }
-    }
-  }
-  guide.FillFeatureList(db_path);
+  std::string db = examples::GetDbFileContent(argc, argv);
+  guide.FillFeatureList(db);
 
   guide.GetFeature();
   guide.ListFeatures();

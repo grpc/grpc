@@ -34,10 +34,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-#include <fstream>
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <thread>
 
@@ -47,6 +45,7 @@
 #include <grpc++/server_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
+#include "helper.h"
 #include "route_guide.pb.h"
 
 using grpc::Server;
@@ -64,18 +63,13 @@ using examples::RouteNote;
 using examples::RouteGuide;
 using std::chrono::system_clock;
 
-const float kCoordFactor = 10000000.0;
-
-bool ParseDb(const std::string& stream, std::vector<Feature>* feature_list) {
-  // TODO
-}
 
 float ConvertToRadians(float num) {
   return num * 3.1415926 /180;
 }
 
 float GetDistance(const Point& start, const Point& end) {
-
+  const float kCoordFactor = 10000000.0;
   float lat_1 = start.latitude() / kCoordFactor;
   float lat_2 = end.latitude() / kCoordFactor;
   float lon_1 = start.longitude() / kCoordFactor;
@@ -93,19 +87,6 @@ float GetDistance(const Point& start, const Point& end) {
   return R * c;
 }
 
-void FillFeatureList(const std::string& db_path, std::vector<Feature>* feature_list) {
-  if (db_path.empty()) {
-    return;
-  }
-  std::ifstream db_file(db_path);
-  if (!db_file.is_open()) {
-    std::cout << "Failed to open " << db_path << std::endl;
-  }
-  std::stringstream db;
-  db << db_file.rdbuf();
-  ParseDb(db.str(), feature_list);
-}
-
 std::string GetFeatureName(const Point& point,
                            const std::vector<Feature>& feature_list) {
   for (const Feature& f : feature_list) {
@@ -119,8 +100,8 @@ std::string GetFeatureName(const Point& point,
 
 class RouteGuideImpl final : public RouteGuide::Service {
  public:
-  RouteGuideImpl(const std::string& db_path) {
-    FillFeatureList(db_path, &feature_list_);
+  RouteGuideImpl(const std::string& db) {
+    examples::ParseDb(db, &feature_list_);
   }
 
   Status GetFeature(ServerContext* context, const Point* point,
@@ -218,20 +199,8 @@ void RunServer(const std::string& db_path) {
 int main(int argc, char** argv) {
   grpc_init();
 
-  std::string db_path;
-  std::string arg_str("--db_path");
-  if (argc > 1) {
-    std::string argv_1 = argv[1];
-    size_t start_position = argv_1.find(arg_str);
-    if (start_position != std::string::npos) {
-      start_position += arg_str.size();
-      if (argv_1[start_position] == ' ' ||
-          argv_1[start_position] == '=') {
-        db_path = argv_1.substr(start_position + 1);
-      }
-    }
-  }
-  RunServer(db_path);
+  std::string db = examples::GetDbFileContent(argc, argv);
+  RunServer(db);
 
   grpc_shutdown();
   return 0;
