@@ -100,7 +100,7 @@ std::string GetFeatureName(const Point& point,
 
 class RouteGuideImpl final : public RouteGuide::Service {
  public:
-  RouteGuideImpl(const std::string& db) {
+  explicit RouteGuideImpl(const std::string& db) {
     examples::ParseDb(db, &feature_list_);
   }
 

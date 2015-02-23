@@ -87,8 +87,11 @@ RouteNote MakeRouteNote(const std::string& message,
 
 class RouteGuideClient {
  public:
-  RouteGuideClient(std::shared_ptr<ChannelInterface> channel)
-      : stub_(RouteGuide::NewStub(channel)) {}
+  RouteGuideClient(std::shared_ptr<ChannelInterface> channel,
+                   const std::string& db)
+      : stub_(RouteGuide::NewStub(channel)) {
+    examples::ParseDb(db, &feature_list_);
+  }
 
   void GetFeature() {
     Point point;
@@ -201,10 +204,6 @@ class RouteGuideClient {
 
   void Shutdown() { stub_.reset(); }
 
-  void FillFeatureList(const std::string& db) {
-    examples::ParseDb(db, &feature_list_);
-  }
-
  private:
 
   bool GetOneFeature(const Point& point, Feature* feature) {
@@ -238,10 +237,10 @@ class RouteGuideClient {
 int main(int argc, char** argv) {
   grpc_init();
 
-  RouteGuideClient guide(
-      grpc::CreateChannel("localhost:50051", ChannelArguments()));
   std::string db = examples::GetDbFileContent(argc, argv);
-  guide.FillFeatureList(db);
+  RouteGuideClient guide(
+      grpc::CreateChannel("localhost:50051", ChannelArguments()),
+      db);
 
   guide.GetFeature();
   guide.ListFeatures();

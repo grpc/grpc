@@ -65,6 +65,7 @@ std::string GetDbFileContent(int argc, char** argv) {
 }
 
 void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
+  feature_list->clear();
 
 }
 
