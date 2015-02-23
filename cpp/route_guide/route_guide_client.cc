@@ -90,6 +90,19 @@ bool ParseDb(const std::string& stream, std::vector<Feature>* feature_list) {
   // TODO
 }
 
+void FillFeatureList(const std::string& db_path, std::vector<Feature>* feature_list) {
+  if (db_path.empty()) {
+    return;
+  }
+  std::ifstream db_file(db_path);
+  if (!db_file.is_open()) {
+    std::cout << "Failed to open " << db_path << std::endl;
+  }
+  std::stringstream db;
+  db << db_file.rdbuf();
+  ParseDb(db.str(), feature_list);
+}
+
 class RouteGuideClient {
  public:
   RouteGuideClient(std::shared_ptr<ChannelInterface> channel)
@@ -207,16 +220,7 @@ class RouteGuideClient {
   void Shutdown() { stub_.reset(); }
 
   void FillFeatureList(const std::string& db_path) {
-    if (db_path.empty()) {
-      return;
-    }
-    std::ifstream db_file(db_path);
-    if (!db_file.is_open()) {
-      std::cout << "Failed to open " << db_path << std::endl;
-    }
-    std::stringstream db;
-    db << db_file.rdbuf();
-    ParseDb(db.str(), &feature_list_);
+    ::FillFeatureList(db_path, &feature_list_);
   }
 
  private:
