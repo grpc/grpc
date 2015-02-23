@@ -95,7 +95,7 @@ static grpc_credentials *create_service_account_creds(
       break;
     }
     current += bytes_read;
-  } while (sizeof(json_key) > (current - json_key));
+  } while (sizeof(json_key) > (size_t)(current - json_key));
 
   if ((current - json_key) == sizeof(json_key)) {
     gpr_log(GPR_ERROR, "Json key file %s exceeds size limit (%d bytes).",
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     }
   } else {
     if (json_key_file_path == NULL) {
-      gpr_log(GPR_ERROR, "missing --json_key option.");
+      gpr_log(GPR_ERROR, "Missing --json_key option.");
       exit(1);
     }
     if (scope == NULL) {
@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
   gpr_cv_init(&sync.cv);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, on_oauth2_response, &sync);
+  grpc_credentials_get_request_metadata(creds, "", on_oauth2_response, &sync);
 
   gpr_mu_lock(&sync.mu);
   while (!sync.is_done) gpr_cv_wait(&sync.cv, &sync.mu, gpr_inf_future);

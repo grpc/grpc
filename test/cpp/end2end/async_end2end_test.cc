@@ -364,7 +364,7 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   auto client_initial_metadata = srv_ctx.client_metadata();
   EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
-  EXPECT_EQ(2, client_initial_metadata.size());
+  EXPECT_EQ(static_cast<size_t>(2), client_initial_metadata.size());
   client_ok(1);
 
   send_response.set_message(recv_request.message());
@@ -414,7 +414,7 @@ TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta1.second, server_initial_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, server_initial_metadata.find(meta2.first)->second);
-  EXPECT_EQ(2, server_initial_metadata.size());
+  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(5));
@@ -470,7 +470,7 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
   EXPECT_EQ(meta1.second, server_trailing_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, server_trailing_metadata.find(meta2.first)->second);
-  EXPECT_EQ(2, server_trailing_metadata.size());
+  EXPECT_EQ(static_cast<size_t>(2), server_trailing_metadata.size());
 }
 
 TEST_F(AsyncEnd2endTest, MetadataRpc) {
@@ -510,7 +510,7 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   auto client_initial_metadata = srv_ctx.client_metadata();
   EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
   EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
-  EXPECT_EQ(2, client_initial_metadata.size());
+  EXPECT_EQ(static_cast<size_t>(2), client_initial_metadata.size());
   client_ok(1);
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
@@ -522,7 +522,7 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta3.second, server_initial_metadata.find(meta3.first)->second);
   EXPECT_EQ(meta4.second, server_initial_metadata.find(meta4.first)->second);
-  EXPECT_EQ(2, server_initial_metadata.size());
+  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
   srv_ctx.AddTrailingMetadata(meta5.first, meta5.second);
@@ -539,7 +539,7 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
   EXPECT_EQ(meta5.second, server_trailing_metadata.find(meta5.first)->second);
   EXPECT_EQ(meta6.second, server_trailing_metadata.find(meta6.first)->second);
-  EXPECT_EQ(2, server_trailing_metadata.size());
+  EXPECT_EQ(static_cast<size_t>(2), server_trailing_metadata.size());
 }
 }  // namespace
 }  // namespace testing

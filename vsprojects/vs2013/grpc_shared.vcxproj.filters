@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli_security_context.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\parser.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\security\auth.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
@@ -11,9 +23,6 @@
       <Filter>src\core\security</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\factories.c">
-      <Filter>src\core\security</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\google_root_certs.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
@@ -30,6 +39,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\server_secure_chttp2.c">
       <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\secure_server_create.c">
+      <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\tsi\fake_transport_security.c">
       <Filter>src\core\tsi</Filter>
@@ -85,17 +100,8 @@
     <ClCompile Include="..\..\src\core\compression\message_compress.c">
       <Filter>src\core\compression</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
-      <Filter>src\core\httpcli</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
-      <Filter>src\core\httpcli</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli_security_context.c">
-      <Filter>src\core\httpcli</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\parser.c">
-      <Filter>src\core\httpcli</Filter>
+    <ClCompile Include="..\..\src\core\debug\trace.c">
+      <Filter>src\core\debug</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\alarm.c">
       <Filter>src\core\iomgr</Filter>
@@ -139,7 +145,10 @@
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\resolve_address.c">
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\sockaddr_utils.c">
@@ -259,12 +268,6 @@
     <ClCompile Include="..\..\src\core\surface\metadata_array.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\secure_server_create.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -353,6 +356,18 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\core\httpcli\format_request.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\httpcli.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\httpcli_security_context.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\parser.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\security\auth.h">
       <Filter>src\core\security</Filter>
     </ClInclude>
@@ -360,9 +375,6 @@
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\security\credentials.h">
-      <Filter>src\core\security</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\security\google_root_certs.h">
       <Filter>src\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\security\json_token.h">
@@ -428,17 +440,8 @@
     <ClInclude Include="..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\httpcli\format_request.h">
-      <Filter>src\core\httpcli</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\httpcli\httpcli.h">
-      <Filter>src\core\httpcli</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\httpcli\httpcli_security_context.h">
-      <Filter>src\core\httpcli</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\httpcli\parser.h">
-      <Filter>src\core\httpcli</Filter>
+    <ClInclude Include="..\..\src\core\debug\trace.h">
+      <Filter>src\core\debug</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\alarm.h">
       <Filter>src\core\iomgr</Filter>
@@ -673,6 +676,9 @@
     </Filter>
     <Filter Include="src\core\compression">
       <UniqueIdentifier>{263cb913-dfe6-42a4-096b-cac231f76305}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\debug">
+      <UniqueIdentifier>{1da7ef8a-a06d-5499-b3de-19fee4a4214d}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\httpcli">
       <UniqueIdentifier>{a9bc00ad-835f-c625-c6d9-6a1324f98b9f}</UniqueIdentifier>

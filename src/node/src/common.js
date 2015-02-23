@@ -31,6 +31,8 @@
  *
  */
 
+'use strict';
+
 var _ = require('underscore');
 
 var capitalize = require('underscore.string/capitalize');

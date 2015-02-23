@@ -35,7 +35,9 @@
 #include <sstream>
 #include <thread>
 
-#include <google/gflags.h>
+#include <signal.h>
+
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -72,6 +74,15 @@ using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 using grpc::Status;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
+
+static bool got_sigint = false;
 
 bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
@@ -210,14 +221,17 @@ void RunServer() {
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (true) {
+  while (!got_sigint) {
     std::this_thread::sleep_for(std::chrono::seconds(5));
   }
 }
 
+static void sigint_handler(int x) { got_sigint = true; }
+
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
+  signal(SIGINT, sigint_handler);
 
   GPR_ASSERT(FLAGS_port != 0);
   RunServer();

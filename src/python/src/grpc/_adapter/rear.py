@@ -39,6 +39,10 @@ from grpc._adapter import _low
 from grpc.framework.base.packets import interfaces as ticket_interfaces
 from grpc.framework.base.packets import null
 from grpc.framework.base.packets import packets as tickets
+from grpc.framework.foundation import activated
+from grpc.framework.foundation import logging_pool
+
+_THREAD_POOL_SIZE = 100
 
 _INVOCATION_EVENT_KINDS = (
     _low.Event.Kind.METADATA_ACCEPTED,
@@ -84,7 +88,7 @@ def _write(operation_id, call, outstanding, write_state, serialized_payload):
     raise ValueError('Write attempted after writes completed!')
 
 
-class RearLink(ticket_interfaces.RearLink):
+class RearLink(ticket_interfaces.RearLink, activated.Activated):
   """An invocation-side bridge between RPC Framework and the C-ish _low code."""
 
   def __init__(
@@ -297,7 +301,7 @@ class RearLink(ticket_interfaces.RearLink):
     with self._condition:
       self._fore_link = null.NULL_FORE_LINK if fore_link is None else fore_link
 
-  def start(self):
+  def _start(self):
     """Starts this RearLink.
 
     This method must be called before attempting to exchange tickets with this
@@ -306,8 +310,9 @@ class RearLink(ticket_interfaces.RearLink):
     with self._condition:
       self._completion_queue = _low.CompletionQueue()
       self._channel = _low.Channel('%s:%d' % (self._host, self._port))
+    return self
 
-  def stop(self):
+  def _stop(self):
     """Stops this RearLink.
 
     This method must be called for proper termination of this object, and no
@@ -320,6 +325,23 @@ class RearLink(ticket_interfaces.RearLink):
 
       while self._spinning:
         self._condition.wait()
+
+  def __enter__(self):
+    """See activated.Activated.__enter__ for specification."""
+    return self._start()
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    """See activated.Activated.__exit__ for specification."""
+    self._stop()
+    return False
+
+  def start(self):
+    """See activated.Activated.start for specification."""
+    return self._start()
+
+  def stop(self):
+    """See activated.Activated.stop for specification."""
+    self._stop()
 
   def accept_front_to_back_ticket(self, ticket):
     """See ticket_interfaces.RearLink.accept_front_to_back_ticket for spec."""
@@ -342,3 +364,75 @@ class RearLink(ticket_interfaces.RearLink):
       else:
         # NOTE(nathaniel): All other categories are treated as cancellation.
         self._cancel(ticket.operation_id)
+
+
+class _ActivatedRearLink(ticket_interfaces.RearLink, activated.Activated):
+
+  def __init__(self, host, port, request_serializers, response_deserializers):
+    self._host = host
+    self._port = port
+    self._request_serializers = request_serializers
+    self._response_deserializers = response_deserializers
+
+    self._lock = threading.Lock()
+    self._pool = None
+    self._rear_link = None
+    self._fore_link = null.NULL_FORE_LINK
+
+  def join_fore_link(self, fore_link):
+    with self._lock:
+      self._fore_link = null.NULL_FORE_LINK if fore_link is None else fore_link
+
+  def _start(self):
+    with self._lock:
+      self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
+      self._rear_link = RearLink(
+          self._host, self._port, self._pool, self._request_serializers,
+          self._response_deserializers)
+      self._rear_link.join_fore_link(self._fore_link)
+      self._rear_link.start()
+    return self
+
+  def _stop(self):
+    with self._lock:
+      self._rear_link.stop()
+      self._rear_link = None
+      self._pool.shutdown(wait=True)
+      self._pool = None
+
+  def __enter__(self):
+    return self._start()
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    self._stop()
+    return False
+
+  def start(self):
+    return self._start()
+
+  def stop(self):
+    self._stop()
+
+  def accept_front_to_back_ticket(self, ticket):
+    with self._lock:
+      if self._rear_link is not None:
+        self._rear_link.accept_front_to_back_ticket(ticket)
+
+
+def activated_rear_link(
+    host, port, request_serializers, response_deserializers):
+  """Creates a RearLink that is also an activated.Activated.
+
+  The returned object is only valid for use between calls to its start and stop
+  methods (or in context when used as a context manager).
+
+  Args:
+    host: The host to which to connect for RPC service.
+    port: The port to which to connect for RPC service.
+    request_serializers: A dictionary from RPC method name to request object
+      serializer behavior.
+    response_deserializers: A dictionary from RPC method name to response
+      object deserializer behavior.
+  """
+  return _ActivatedRearLink(
+      host, port, request_serializers, response_deserializers)

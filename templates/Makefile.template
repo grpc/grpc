@@ -1,7 +1,7 @@
 # GRPC global makefile
 # This currently builds C and C++ code.
 
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -103,7 +103,6 @@ CXX_tsan = clang++
 LD_tsan = clang
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O1 -fsanitize=thread -fno-omit-frame-pointer
-OPENSSL_CONFIG_tsan = no-asm
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = NDEBUG
 
@@ -114,7 +113,6 @@ CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
 CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
-OPENSSL_CONFIG_asan = no-asm
 LDFLAGS_asan = -fsanitize=address
 DEFINES_asan = NDEBUG
 
@@ -126,7 +124,6 @@ LD_msan = clang
 LDXX_msan = clang++-libc++
 CPPFLAGS_msan = -O1 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
-OPENSSL_CONFIG_msan = no-asm
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG
 
@@ -138,7 +135,6 @@ LD_ubsan = clang
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer
 OPENSSL_CFLAGS_ubsan = -DPURIFY
-OPENSSL_CONFIG_ubsan = no-asm
 LDFLAGS_ubsan = -fsanitize=undefined
 DEFINES_ubsan = NDEBUG
 
@@ -165,7 +161,7 @@ LD = $(LD_$(CONFIG))
 LDXX = $(LDXX_$(CONFIG))
 AR = ar
 STRIP = strip --strip-unneeded
-INSTALL = install -D
+INSTALL = install
 RM = rm -f
 
 ifndef VALID_CONFIG_$(CONFIG)
@@ -184,7 +180,7 @@ HOST_LD = $(LD)
 HOST_LDXX = $(LDXX)
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
-DEFINES += $(DEFINES_$(CONFIG))
+DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
 LDFLAGS += $(LDFLAGS_$(CONFIG))
 
 CFLAGS += -std=c89 -pedantic
@@ -255,6 +251,7 @@ OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/ope
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o /dev/null test/build/protobuf.cc -lprotobuf $(LDFLAGS)
+PROTOC_CMD = which protoc
 PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
@@ -265,10 +262,11 @@ LIBS += profiler
 endif
 endif
 
+HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN = $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 HAS_SYSTEM_ZLIB = $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
-HAS_SYSTEM_PROTOBUF = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo true || echo false)
+HAS_SYSTEM_PROTOBUF = $(HAS_SYSTEM_PROTOBUF_VERIFY)
 else
 # override system libraries if the config requires a custom compiled library
 HAS_SYSTEM_OPENSSL_ALPN = false
@@ -276,7 +274,12 @@ HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
+HAS_PROTOC = $(shell $(PROTOC_CMD) && echo true || echo false)
+ifeq ($(HAS_PROTOC),true)
 HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
+else
+HAS_VALID_PROTOC = false
+endif
 
 ifeq ($(wildcard third_party/openssl/ssl/ssl.h),)
 HAS_EMBEDDED_OPENSSL_ALPN = false
@@ -313,8 +316,9 @@ ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),false)
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/openssl/libcrypto.a
-CPPFLAGS += -Ithird_party/openssl/include
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/openssl
+# need to prefix these to ensure overriding system libraries
+CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
+LDFLAGS := -L$(LIBDIR)/$(CONFIG)/openssl $(LDFLAGS)
 LIBS_SECURE = dl
 else
 NO_SECURE = true
@@ -328,8 +332,8 @@ LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 ifeq ($(HAS_SYSTEM_PROTOBUF),false)
 ifeq ($(HAS_EMBEDDED_PROTOBUF),true)
 PROTOBUF_DEP = $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a
-CPPFLAGS += -Ithird_party/protobuf/src
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/protobuf
+CPPFLAGS := -Ithird_party/protobuf/src $(CPPFLAGS)
+LDFLAGS := -L$(LIBDIR)/$(CONFIG)/protobuf $(LDFLAGS)
 PROTOC = $(BINDIR)/$(CONFIG)/protobuf/protoc
 else
 NO_PROTOBUF = true
@@ -347,9 +351,16 @@ ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
 endif
 
+INSTALL_OK = false
+ifeq ($(HAS_VALID_PROTOC),true)
+ifeq ($(HAS_SYSTEM_PROTOBUF_VERIFY),true)
+INSTALL_OK = true
+endif
+endif
+
 .SECONDARY = %.pb.h %.pb.cc
 
-PROTOC_PLUGINS=\
+PROTOC_PLUGINS =\
 % for tgt in targets:
 % if tgt.build == 'protoc':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -357,7 +368,7 @@ PROTOC_PLUGINS=\
 % endfor
 
 ifeq ($(DEP_MISSING),)
-all: static shared\
+all: static shared plugins\
 % for tgt in targets:
 % if tgt.build == 'all':
  $(BINDIR)/$(CONFIG)/${tgt.name}\
@@ -469,9 +480,9 @@ $(LIBDIR)/$(CONFIG)/zlib/libz.a:
 $(LIBDIR)/$(CONFIG)/openssl/libssl.a:
 	$(E) "[MAKE]    Building openssl for $(SYSTEM)"
 ifeq ($(SYSTEM),Darwin)
-	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./Configure darwin64-x86_64-cc)
 else
-	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config $(OPENSSL_CONFIG_$(CONFIG)))
+	$(Q)(cd third_party/openssl ; CC="$(CC) -fPIC -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG))" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
 endif
 	$(Q)$(MAKE) -C third_party/openssl clean
 	$(Q)$(MAKE) -C third_party/openssl build_crypto build_ssl
@@ -484,7 +495,7 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
-	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="$(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="-fPIC $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -537,6 +548,8 @@ shared_csharp: shared_c \
 % endfor
 
 grpc_csharp_ext: shared_csharp
+
+plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
@@ -690,7 +703,7 @@ else
 $(GENDIR)/${p}.pb.cc: ${p}.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/cpp_plugin $<
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
 endif
 
 % endfor
@@ -716,7 +729,7 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) $(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 
-install: install_c install_cxx
+install: install_c install_cxx install-plugins install-certs verify-install
 
 install_c: install-headers_c install-static_c install-shared_c
 
@@ -730,10 +743,12 @@ install-headers: install-headers_c install-headers_cxx
 
 install-headers_c:
 	$(E) "[INSTALL] Installing public C headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
 	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
 install-headers_cxx:
 	$(E) "[INSTALL] Installing public C++ headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
 	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
 install-static: install-static_c install-static_cxx
@@ -743,6 +758,7 @@ install-static_c: static_c strip-static_c
 % if lib.language == "c":
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
 % endif
 % endif
@@ -753,21 +769,24 @@ install-static_cxx: static_cxx strip-static_cxx
 % if lib.language == "c++":
 % if lib.build == "all":
 	$(E) "[INSTALL] Installing lib${lib.name}.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(prefix)/lib/lib${lib.name}.a
 % endif
 % endif
 % endfor
 
-install-shared_c: shared_c strip-shared_c
+<%def name="install_shared(lang_filter)">\
 % for lib in libs:
-% if lib.language == "c":
+% if lib.language == lang_filter:
 % if lib.build == "all":
 ifeq ($(SYSTEM),MINGW32)
 	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
 else
 	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
@@ -778,59 +797,59 @@ endif
 % endfor
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
+	$(Q) ldconfig || true
 endif
 endif
+</%def>
 
-install-shared_cxx: shared_cxx strip-shared_cxx
-% for lib in libs:
-% if lib.language == "c++":
-% if lib.build == "all":
-ifeq ($(SYSTEM),MINGW32)
-	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
-else
-	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-endif
-endif
-% endif
-% endif
-% endfor
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
-endif
-endif
+install-shared_c: shared_c strip-shared_c
+${install_shared("c")}
+
+install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c
+${install_shared("c++")}
 
 install-shared_csharp: shared_csharp strip-shared_csharp
-% for lib in libs:
-% if lib.language == "csharp":
-% if lib.build == "all":
+${install_shared("csharp")}
+
+install-plugins: $(PROTOC_PLUGINS)
 ifeq ($(SYSTEM),MINGW32)
-	$(E) "[INSTALL] Installing ${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/${lib.name}.$(SHARED_EXT) $(prefix)/lib/${lib.name}.$(SHARED_EXT)
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}-imp.a $(prefix)/lib/lib${lib.name}-imp.a
+	$(Q) false
 else
-	$(E) "[INSTALL] Installing lib${lib.name}.$(SHARED_EXT)"
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
-endif
-endif
-% endif
+	$(E) "[INSTALL] Installing grpc protoc plugins"
+% for tgt in targets:
+% if tgt.build == 'protoc':
+	$(Q) $(INSTALL) -d $(prefix)/bin
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/${tgt.name} $(prefix)/bin/${tgt.name}
 % endif
 % endfor
-ifneq ($(SYSTEM),MINGW32)
-ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig
 endif
+
+install-certs: etc/roots.pem
+	$(E) "[INSTALL] Installing root certificates"
+	$(Q) $(INSTALL) -d $(prefix)/share/grpc
+	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
+
+verify-install:
+ifeq ($(SYSTEM_OK),true)
+	@echo "Your system looks ready to go."
+	@echo
+else
+	@echo "Your system doesn't have protoc 3.0.0+ installed. While this"
+	@echo "won't prevent grpc from working, you won't be able to compile"
+	@echo "and run any meaningful code with it."
+	@echo
+	@echo
+	@echo "Please download and install protobuf 3.0.0+ from:"
+	@echo
+	@echo "   https://github.com/google/protobuf/releases"
+	@echo
+	@echo "Once you've done so, you can re-run this check by doing:"
+	@echo
+	@echo "   make verify-install"
 endif
 
 clean:
+	$(E) "[CLEAN]   Cleaning build directories."
 	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR)
 
 
@@ -987,6 +1006,9 @@ endif
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
     mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
+
+  if lib.language == 'c++':
+    common = common + ' $(LDLIBSXX) $(LDLIBS_PROTOBUF)'
 %>
 
 % if lib.build == "all":

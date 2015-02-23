@@ -37,6 +37,10 @@
 #include <grpc/support/slice.h>
 #include <openssl/rsa.h>
 
+/* --- Constants. --- */
+
+#define GRPC_JWT_OAUTH2_AUDIENCE "https://www.googleapis.com/oauth2/v3/token"
+
 /* --- auth_json_key parsing. --- */
 
 typedef struct {
@@ -61,14 +65,15 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key);
 /* --- json token encoding and signing. --- */
 
 /* Caller is responsible for calling gpr_free on the returned value. May return
-   NULL on invalid input. */
+   NULL on invalid input. The scope parameter may be NULL. */
 char *grpc_jwt_encode_and_sign(const grpc_auth_json_key *json_key,
-                               const char *scope, gpr_timespec token_lifetime);
+                               const char *audience,
+                               gpr_timespec token_lifetime, const char *scope);
 
 /* Override encode_and_sign function for testing. */
 typedef char *(*grpc_jwt_encode_and_sign_override)(
-    const grpc_auth_json_key *json_key, const char *scope,
-    gpr_timespec token_lifetime);
+    const grpc_auth_json_key *json_key, const char *audience,
+    gpr_timespec token_lifetime, const char *scope);
 
 /* Set a custom encode_and_sign override for testing. */
 void grpc_jwt_encode_and_sign_set_override(

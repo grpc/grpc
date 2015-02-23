@@ -60,6 +60,12 @@
   "AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-"  \
   "SHA256:AES256-SHA256"
 
+#ifndef INSTALL_PREFIX
+static const char *installed_roots_path = "/usr/share/grpc/roots.pem";
+#else
+static const char *installed_roots_path = INSTALL_PREFIX "/share/grpc/roots.pem";
+#endif
+
 /* -- Common methods. -- */
 
 grpc_security_status grpc_security_context_create_handshaker(
@@ -232,6 +238,7 @@ grpc_channel_security_context *grpc_fake_channel_security_context_create(
       gpr_malloc(sizeof(grpc_fake_channel_security_context));
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.is_client_side = 1;
+  c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.base.vtable = &fake_channel_vtable;
   GPR_ASSERT(check_request_metadata_creds(request_metadata_creds));
   c->base.request_metadata_creds = grpc_credentials_ref(request_metadata_creds);
@@ -244,6 +251,7 @@ grpc_security_context *grpc_fake_server_security_context_create(void) {
   grpc_security_context *c = gpr_malloc(sizeof(grpc_security_context));
   gpr_ref_init(&c->refcount, 1);
   c->vtable = &fake_server_vtable;
+  c->url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   return c;
 }
 
@@ -396,6 +404,7 @@ static grpc_security_context_vtable ssl_server_vtable = {
 static gpr_slice default_pem_root_certs;
 
 static void init_default_pem_root_certs(void) {
+  /* First try to load the roots from the environment. */
   char *default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
   if (default_root_certs_path == NULL) {
@@ -404,9 +413,14 @@ static void init_default_pem_root_certs(void) {
     default_pem_root_certs = gpr_load_file(default_root_certs_path, NULL);
     gpr_free(default_root_certs_path);
   }
+
+  /* Fall back to installed certs if needed. */
+  if (GPR_SLICE_IS_EMPTY(default_pem_root_certs)) {
+    default_pem_root_certs = gpr_load_file(installed_roots_path, NULL);
+  }
 }
 
-static size_t get_default_pem_roots(const unsigned char **pem_root_certs) {
+size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
   /* TODO(jboeuf@google.com): Maybe revisit the approach which consists in
      loading all the roots once for the lifetime of the process. */
   static gpr_once once = GPR_ONCE_INIT;
@@ -451,6 +465,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
   c->base.base.is_client_side = 1;
+  c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.request_metadata_creds = grpc_credentials_ref(request_metadata_creds);
   c->base.check_call_host = ssl_channel_check_call_host;
   if (target_name != NULL) {
@@ -460,7 +475,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
   if (config->pem_root_certs == NULL) {
-    pem_root_certs_size = get_default_pem_roots(&pem_root_certs);
+    pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
     if (pem_root_certs == NULL || pem_root_certs_size == 0) {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       goto error;
@@ -518,6 +533,7 @@ grpc_security_status grpc_ssl_server_security_context_create(
   memset(c, 0, sizeof(grpc_ssl_server_security_context));
 
   gpr_ref_init(&c->base.refcount, 1);
+  c->base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.vtable = &ssl_server_vtable;
   result = tsi_create_ssl_server_handshaker_factory(
       (const unsigned char **)config->pem_private_keys,

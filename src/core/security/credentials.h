@@ -50,6 +50,7 @@ typedef enum {
 
 #define GRPC_CREDENTIALS_TYPE_SSL "Ssl"
 #define GRPC_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
+#define GRPC_CREDENTIALS_TYPE_JWT "Jwt"
 #define GRPC_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CREDENTIALS_TYPE_COMPOSITE "Composite"
 #define GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY "FakeTransportSecurity"
@@ -71,6 +72,7 @@ typedef struct {
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c,
+                               const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
 } grpc_credentials_vtable;
@@ -86,6 +88,7 @@ void grpc_credentials_unref(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata_only(grpc_credentials *creds);
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
+                                           const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
 typedef struct {

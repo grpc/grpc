@@ -37,8 +37,8 @@ from grpc.early_adopter import interfaces
 
 class _InlineUnaryUnaryMethod(face_interfaces.InlineValueInValueOutMethod):
 
-  def __init__(self, unary_unary_rpc_method):
-    self._method = unary_unary_rpc_method
+  def __init__(self, unary_unary_server_rpc_method):
+    self._method = unary_unary_server_rpc_method
 
   def service(self, request, context):
     """See face_interfaces.InlineValueInValueOutMethod.service for spec."""
@@ -47,8 +47,8 @@ class _InlineUnaryUnaryMethod(face_interfaces.InlineValueInValueOutMethod):
 
 class _InlineUnaryStreamMethod(face_interfaces.InlineValueInStreamOutMethod):
 
-  def __init__(self, unary_stream_rpc_method):
-    self._method = unary_stream_rpc_method
+  def __init__(self, unary_stream_server_rpc_method):
+    self._method = unary_stream_server_rpc_method
 
   def service(self, request, context):
     """See face_interfaces.InlineValueInStreamOutMethod.service for spec."""
@@ -57,8 +57,8 @@ class _InlineUnaryStreamMethod(face_interfaces.InlineValueInStreamOutMethod):
 
 class _InlineStreamUnaryMethod(face_interfaces.InlineStreamInValueOutMethod):
 
-  def __init__(self, stream_unary_rpc_method):
-    self._method = stream_unary_rpc_method
+  def __init__(self, stream_unary_server_rpc_method):
+    self._method = stream_unary_server_rpc_method
 
   def service(self, request_iterator, context):
     """See face_interfaces.InlineStreamInValueOutMethod.service for spec."""
@@ -67,61 +67,99 @@ class _InlineStreamUnaryMethod(face_interfaces.InlineStreamInValueOutMethod):
 
 class _InlineStreamStreamMethod(face_interfaces.InlineStreamInStreamOutMethod):
 
-  def __init__(self, stream_stream_rpc_method):
-    self._method = stream_stream_rpc_method
+  def __init__(self, stream_stream_server_rpc_method):
+    self._method = stream_stream_server_rpc_method
 
   def service(self, request_iterator, context):
     """See face_interfaces.InlineStreamInStreamOutMethod.service for spec."""
     return self._method.service_stream_stream(request_iterator)
 
 
-class Breakdown(object):
+class ClientBreakdown(object):
+  """An intermediate representation of invocation-side views of RPC methods.
+
+  Attributes:
+    request_serializers: A dictionary from RPC method name to callable
+      behavior to be used serializing request values for the RPC.
+    response_deserializers: A dictionary from RPC method name to callable
+      behavior to be used deserializing response values for the RPC.
+  """
+  __metaclass__ = abc.ABCMeta
+
+
+class _EasyClientBreakdown(
+    ClientBreakdown,
+    collections.namedtuple(
+        '_EasyClientBreakdown',
+        ('request_serializers', 'response_deserializers'))):
+  pass
+
+
+class ServerBreakdown(object):
   """An intermediate representation of implementations of RPC methods.
 
   Attributes:
-    unary_unary_methods:
-    unary_stream_methods:
-    stream_unary_methods:
-    stream_stream_methods:
-    request_serializers:
-    request_deserializers:
-    response_serializers:
-    response_deserializers:
+    unary_unary_methods: A dictionary from RPC method name to callable
+      behavior implementing the RPC method for unary-unary RPC methods.
+    unary_stream_methods: A dictionary from RPC method name to callable
+      behavior implementing the RPC method for unary-stream RPC methods.
+    stream_unary_methods: A dictionary from RPC method name to callable
+      behavior implementing the RPC method for stream-unary RPC methods.
+    stream_stream_methods: A dictionary from RPC method name to callable
+      behavior implementing the RPC method for stream-stream RPC methods.
+    request_deserializers: A dictionary from RPC method name to callable
+      behavior to be used deserializing request values for the RPC.
+    response_serializers: A dictionary from RPC method name to callable
+      behavior to be used serializing response values for the RPC.
   """
   __metaclass__ = abc.ABCMeta
 
 
 
-class _EasyBreakdown(
-    Breakdown,
+class _EasyServerBreakdown(
+    ServerBreakdown,
     collections.namedtuple(
-        '_EasyBreakdown',
-        ['unary_unary_methods', 'unary_stream_methods', 'stream_unary_methods',
-         'stream_stream_methods', 'request_serializers',
-         'request_deserializers', 'response_serializers',
-         'response_deserializers'])):
+        '_EasyServerBreakdown',
+        ('unary_unary_methods', 'unary_stream_methods', 'stream_unary_methods',
+         'stream_stream_methods', 'request_deserializers',
+         'response_serializers'))):
   pass
 
 
-def break_down(methods):
-  """Breaks down RPC methods.
+def client_break_down(methods):
+  """Derives a ClientBreakdown from several interfaces.ClientRpcMethods.
 
   Args:
     methods: A dictionary from RPC mthod name to
-      interfaces.RpcMethod object describing the RPCs.
+      interfaces.ClientRpcMethod object describing the RPCs.
 
   Returns:
-    A Breakdown corresponding to the given methods.
+    A ClientBreakdown corresponding to the given methods.
+  """
+  request_serializers = {}
+  response_deserializers = {}
+  for name, method in methods.iteritems():
+    request_serializers[name] = method.serialize_request
+    response_deserializers[name] = method.deserialize_response
+  return _EasyClientBreakdown(request_serializers, response_deserializers)
+
+
+def server_break_down(methods):
+  """Derives a ServerBreakdown from several interfaces.ServerRpcMethods.
+
+  Args:
+    methods: A dictionary from RPC mthod name to
+      interfaces.ServerRpcMethod object describing the RPCs.
+
+  Returns:
+    A ServerBreakdown corresponding to the given methods.
   """
   unary_unary = {}
   unary_stream = {}
   stream_unary = {}
   stream_stream = {}
-  request_serializers = {}
   request_deserializers = {}
   response_serializers = {}
-  response_deserializers = {}
-
   for name, method in methods.iteritems():
     cardinality = method.cardinality()
     if cardinality is interfaces.Cardinality.UNARY_UNARY:
@@ -132,12 +170,9 @@ def break_down(methods):
       stream_unary[name] = _InlineStreamUnaryMethod(method)
     elif cardinality is interfaces.Cardinality.STREAM_STREAM:
       stream_stream[name] = _InlineStreamStreamMethod(method)
-    request_serializers[name] = method.serialize_request
     request_deserializers[name] = method.deserialize_request
     response_serializers[name] = method.serialize_response
-    response_deserializers[name] = method.deserialize_response
 
-  return _EasyBreakdown(
+  return _EasyServerBreakdown(
       unary_unary, unary_stream, stream_unary, stream_stream,
-      request_serializers, request_deserializers, response_serializers,
-      response_deserializers)
+      request_deserializers, response_serializers)

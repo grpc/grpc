@@ -49,84 +49,6 @@
 
 namespace grpc {
 
-Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               ServerCredentials* creds)
-    : started_(false),
-      shutdown_(false),
-      num_running_cb_(0),
-      thread_pool_(thread_pool),
-      thread_pool_owned_(thread_pool_owned),
-      secure_(creds != nullptr) {
-  if (creds) {
-    server_ =
-        grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
-  } else {
-    server_ = grpc_server_create(cq_.cq(), nullptr);
-  }
-}
-
-Server::Server() {
-  // Should not be called.
-  GPR_ASSERT(false);
-}
-
-Server::~Server() {
-  std::unique_lock<std::mutex> lock(mu_);
-  if (started_ && !shutdown_) {
-    lock.unlock();
-    Shutdown();
-  } else {
-    lock.unlock();
-  }
-  grpc_server_destroy(server_);
-  if (thread_pool_owned_) {
-    delete thread_pool_;
-  }
-}
-
-bool Server::RegisterService(RpcService* service) {
-  for (int i = 0; i < service->GetMethodCount(); ++i) {
-    RpcServiceMethod* method = service->GetMethod(i);
-    void* tag =
-        grpc_server_register_method(server_, method->name(), nullptr, cq_.cq());
-    if (!tag) {
-      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
-              method->name());
-      return false;
-    }
-    sync_methods_.emplace_back(method, tag);
-  }
-  return true;
-}
-
-bool Server::RegisterAsyncService(AsynchronousService* service) {
-  GPR_ASSERT(service->dispatch_impl_ == nullptr &&
-             "Can only register an asynchronous service against one server.");
-  service->dispatch_impl_ = this;
-  service->request_args_ = new void* [service->method_count_];
-  for (size_t i = 0; i < service->method_count_; ++i) {
-    void* tag =
-        grpc_server_register_method(server_, service->method_names_[i], nullptr,
-                                    service->completion_queue()->cq());
-    if (!tag) {
-      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
-              service->method_names_[i]);
-      return false;
-    }
-    service->request_args_[i] = tag;
-  }
-  return true;
-}
-
-int Server::AddPort(const grpc::string& addr) {
-  GPR_ASSERT(!started_);
-  if (secure_) {
-    return grpc_server_add_secure_http2_port(server_, addr.c_str());
-  } else {
-    return grpc_server_add_http2_port(server_, addr.c_str());
-  }
-}
-
 class Server::SyncRequest final : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
@@ -246,6 +168,84 @@ class Server::SyncRequest final : public CompletionQueueTag {
   grpc_byte_buffer* request_payload_;
   grpc_completion_queue* cq_;
 };
+
+Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
+               ServerCredentials* creds)
+    : started_(false),
+      shutdown_(false),
+      num_running_cb_(0),
+      thread_pool_(thread_pool),
+      thread_pool_owned_(thread_pool_owned),
+      secure_(creds != nullptr) {
+  if (creds) {
+    server_ =
+        grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
+  } else {
+    server_ = grpc_server_create(cq_.cq(), nullptr);
+  }
+}
+
+Server::Server() {
+  // Should not be called.
+  GPR_ASSERT(false);
+}
+
+Server::~Server() {
+  std::unique_lock<std::mutex> lock(mu_);
+  if (started_ && !shutdown_) {
+    lock.unlock();
+    Shutdown();
+  } else {
+    lock.unlock();
+  }
+  grpc_server_destroy(server_);
+  if (thread_pool_owned_) {
+    delete thread_pool_;
+  }
+}
+
+bool Server::RegisterService(RpcService* service) {
+  for (int i = 0; i < service->GetMethodCount(); ++i) {
+    RpcServiceMethod* method = service->GetMethod(i);
+    void* tag =
+        grpc_server_register_method(server_, method->name(), nullptr, cq_.cq());
+    if (!tag) {
+      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
+              method->name());
+      return false;
+    }
+    sync_methods_.emplace_back(method, tag);
+  }
+  return true;
+}
+
+bool Server::RegisterAsyncService(AsynchronousService* service) {
+  GPR_ASSERT(service->dispatch_impl_ == nullptr &&
+             "Can only register an asynchronous service against one server.");
+  service->dispatch_impl_ = this;
+  service->request_args_ = new void* [service->method_count_];
+  for (size_t i = 0; i < service->method_count_; ++i) {
+    void* tag =
+        grpc_server_register_method(server_, service->method_names_[i], nullptr,
+                                    service->completion_queue()->cq());
+    if (!tag) {
+      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
+              service->method_names_[i]);
+      return false;
+    }
+    service->request_args_[i] = tag;
+  }
+  return true;
+}
+
+int Server::AddPort(const grpc::string& addr) {
+  GPR_ASSERT(!started_);
+  if (secure_) {
+    return grpc_server_add_secure_http2_port(server_, addr.c_str());
+  } else {
+    return grpc_server_add_http2_port(server_, addr.c_str());
+  }
+}
 
 bool Server::Start() {
   GPR_ASSERT(!started_);

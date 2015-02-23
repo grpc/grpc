@@ -45,9 +45,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include "src/core/debug/trace.h"
 #include "src/core/transport/transport.h"
-
-/* #define GRPC_CHANNEL_STACK_TRACE 1 */
 
 typedef struct grpc_channel_element grpc_channel_element;
 typedef struct grpc_call_element grpc_call_element;
@@ -246,9 +245,7 @@ typedef struct {
 
 /* A call stack tracks a set of related filters for one call, and guarantees
    they live within a single malloc() allocation */
-typedef struct {
-  size_t count;
-} grpc_call_stack;
+typedef struct { size_t count; } grpc_call_stack;
 
 /* Get a channel element given a channel stack and its index */
 grpc_channel_element *grpc_channel_stack_element(grpc_channel_stack *stack,
@@ -301,12 +298,7 @@ void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
 void grpc_call_element_send_finish(grpc_call_element *cur_elem);
 
-#ifdef GRPC_CHANNEL_STACK_TRACE
-#define GRPC_CALL_LOG_OP(sev, elem, op) grpc_call_log_op(sev, elem, op)
-#else
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
-  do {                                  \
-  } while (0)
-#endif
+  if (grpc_trace_bits & GRPC_TRACE_CHANNEL) grpc_call_log_op(sev, elem, op)
 
 #endif /* __GRPC_INTERNAL_CHANNEL_CHANNEL_STACK_H__ */

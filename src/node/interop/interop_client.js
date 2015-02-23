@@ -31,12 +31,20 @@
  *
  */
 
+'use strict';
+
 var fs = require('fs');
 var path = require('path');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
+var GoogleAuth = require('googleauth');
 
 var assert = require('assert');
+
+var AUTH_SCOPE = 'https://www.googleapis.com/auth/xapi.zoo';
+var AUTH_SCOPE_RESPONSE = 'xapi.zoo';
+var AUTH_USER = ('155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk' +
+    '@developer.gserviceaccount.com');
 
 /**
  * Create a buffer filled with size zeroes
@@ -256,6 +264,45 @@ function cancelAfterFirstResponse(client, done) {
 }
 
 /**
+ * Run one of the authentication tests.
+ * @param {Client} client The client to test against
+ * @param {function} done Callback to call when the test is completed. Included
+ *     primarily for use with mocha
+ */
+function authTest(client, done) {
+  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+    assert.ifError(err);
+    if (credential.createScopedRequired()) {
+      credential = credential.createScoped(AUTH_SCOPE);
+    }
+    client.updateMetadata = grpc.getGoogleAuthDelegate(credential);
+    var arg = {
+      response_type: testProto.PayloadType.COMPRESSABLE,
+      response_size: 314159,
+      payload: {
+        body: zeroBuffer(271828)
+      },
+      fill_username: true,
+      fill_oauth_scope: true
+    };
+    var call = client.unaryCall(arg, function(err, resp) {
+      assert.ifError(err);
+      assert.strictEqual(resp.payload.type, testProto.PayloadType.COMPRESSABLE);
+      assert.strictEqual(resp.payload.body.limit - resp.payload.body.offset,
+                         314159);
+      assert.strictEqual(resp.username, AUTH_USER);
+      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+    });
+    call.on('status', function(status) {
+      assert.strictEqual(status.code, grpc.status.OK);
+      if (done) {
+        done();
+      }
+    });
+  });
+}
+
+/**
  * Map from test case names to test functions
  */
 var test_cases = {
@@ -266,13 +313,15 @@ var test_cases = {
   ping_pong: pingPong,
   empty_stream: emptyStream,
   cancel_after_begin: cancelAfterBegin,
-  cancel_after_first_response: cancelAfterFirstResponse
+  cancel_after_first_response: cancelAfterFirstResponse,
+  compute_engine_creds: authTest,
+  service_account_creds: authTest
 };
 
 /**
  * Execute a single test case.
  * @param {string} address The address of the server to connect to, in the
- *     format "hostname:port"
+ *     format 'hostname:port'
  * @param {string} host_overrirde The hostname of the server to use as an SSL
  *     override
  * @param {string} test_case The name of the test case to run
@@ -280,11 +329,16 @@ var test_cases = {
  * @param {function} done Callback to call when the test is completed. Included
  *     primarily for use with mocha
  */
-function runTest(address, host_override, test_case, tls, done) {
+function runTest(address, host_override, test_case, tls, test_ca, done) {
   // TODO(mlumish): enable TLS functionality
   var options = {};
   if (tls) {
-    var ca_path = path.join(__dirname, '../test/data/ca.pem');
+    var ca_path;
+    if (test_ca) {
+      ca_path = path.join(__dirname, '../test/data/ca.pem');
+    } else {
+      ca_path = process.env.SSL_CERT_FILE;
+    }
     var ca_data = fs.readFileSync(ca_path);
     var creds = grpc.Credentials.createSsl(ca_data);
     options.credentials = creds;
@@ -304,7 +358,10 @@ if (require.main === module) {
              'use_tls', 'use_test_ca']
   });
   runTest(argv.server_host + ':' + argv.server_port, argv.server_host_override,
-          argv.test_case, argv.use_tls === 'true');
+          argv.test_case, argv.use_tls === 'true', argv.use_test_ca === 'true',
+          function () {
+            console.log('OK:', argv.test_case);
+          });
 }
 
 /**

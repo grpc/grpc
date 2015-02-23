@@ -7,6 +7,39 @@ Copyright 2015 Google Inc.
 
 See grpc/INSTALL for installation instructions for various platforms.
 
+#Repository Structure
+
+This repository contains source code for gRPC libraries for multiple lanugages written on top
+of shared C core library [src/core] (src/core).
+
+   * C++ source code: [src/cpp] (src/cpp)
+   * Python source code: [src/python] (src/python)
+   * Ruby source code: [src/ruby] (src/ruby)
+   * NodeJS source code: [src/node] (src/node)
+   * PHP source code: [src/php] (src/php)
+   * C# source code: [src/csharp] (src/csharp)
+   * Objective-C source code: [src/objective-c] (src/objective-c)
+   
+Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository. 
+Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
+
+#Documentation
+
+You can find more detailed documentation and examples in the [grpc-common repository](http://github.com/grpc/grpc-common).
+
+#Current Status of libraries
+
+Libraries in different languages are in different state of development. We are seeking contributions for all of these libraries.
+
+   * shared C core library [src/core] (src/core) : Early adopter ready - Alpha.
+   * C++ Library: [src/cpp] (src/cpp) : Early adopter ready - Alpha.
+   * Python Library: [src/python] (src/python) : Early adopter ready - Alpha.
+   * Ruby Library: [src/ruby] (src/ruby) : Early adopter ready - Alpha.
+   * NodeJS Library: [src/node] (src/node) : Early adopter ready - Alpha.
+   * PHP Library: [src/php] (src/php) : Pre-Alpha.
+   * C# Library: [src/csharp] (src/csharp) : Pre-Alpha.
+   * Objective-C Library: [src/objective-c] (src/objective-c): Pre-Alpha.
+
 #Overview
 
 
@@ -59,7 +92,7 @@ messages are delivered in the order they were sent.
 
 #Protocol
 
-The gRPC protocol specifies the abstract requirements for communication between
+The [gRPC protocol](https://github.com/grpc/grpc-common/blob/master/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
 clients and servers. A concrete embedding over HTTP/2 completes the picture by
 fleshing out the details of each of the required operations.
 
