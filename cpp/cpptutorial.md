@@ -14,9 +14,7 @@ This isn't a comprehensive guide to using gRPC in C++: more reference documentat
 
 Our example is a simple route mapping application that lets clients get information about features on their route, create a summary of their route, and exchange route information such as traffic updates with the server and other clients.
 
-With gRPC we can define our service once in a .proto file and implement clients and servers in , which in turn - all the complexity of communication between different languages and environments is handled for you by gRPC. gRPC also 
-
-We also get all the advantages of working with protocol buffers
+With gRPC we can define our service once in a .proto file and implement clients and servers in any of gRPC's supported languages, which in turn can be run in environments ranging from servers inside Google to your own tablet - all the complexity of communication between different languages and environments is handled for you by gRPC. We also get all the advantages of working with protocol buffers, including efficient serialization, a simple IDL, and easy interface updating.
 
 [possibly insert more advantages here]
 
@@ -93,15 +91,32 @@ message Point {
 
 ## Generating client and server code
 
-Now we need to ...
+Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC C++ plugin.
+
+For simplicity, we've provided a [makefile](https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/Makefile) that runs `protoc` for you with the appropriate plugin, input, and output (if you want to run this yourself, make sure you've followed the [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first):
+
+```shell
+$ make route_guide.pb.cc
+```
+
+which actually runs:
+
+[actual command]
+
+Running this command generates the following files:
+- `route_guide.pb.h`
+- `route_guide.pb.cc`
+
+These contain
 
 
 ## Creating the server
 
-First let's look at implementing our R
+First let's look at how we create a `RouteGuide` server.
 
 There are two parts to making our `RouteGuide` service work:
-- 
+- Implementing the service interface generated from our service definition: doing the actual "work" of our service.
+- Running a gRPC server to listen for requests from clients and return the service responses
 
 
 ## Creating the client
