@@ -161,7 +161,7 @@ class End2endTest : public ::testing::Test {
 
   void ResetStub() {
     std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), ChannelArguments());
+        CreateChannelDeprecated(server_address_.str(), ChannelArguments());
     stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
@@ -382,7 +382,7 @@ TEST_F(End2endTest, BidiStream) {
 // The two stubs are created on the same channel.
 TEST_F(End2endTest, DiffPackageServices) {
   std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
+      CreateChannelDeprecated(server_address_.str(), ChannelArguments());
 
   EchoRequest request;
   EchoResponse response;
