@@ -1272,20 +1272,6 @@
       ]
     },
     {
-      "name": "interop_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/cpp/interop/interop_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "json_rewrite",
       "build": "test",
       "run": false,
@@ -1709,6 +1695,20 @@
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "interop_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/interop/interop_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
         "grpc",
         "gpr_test_util",
         "gpr"
