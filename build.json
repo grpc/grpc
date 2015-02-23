@@ -381,7 +381,6 @@
         "src/core/security/security_context.c",
         "src/core/security/server_secure_chttp2.c",
         "src/core/surface/secure_channel_create.c",
-        "src/core/surface/secure_server_create.c",
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
         "src/core/tsi/transport_security.c"

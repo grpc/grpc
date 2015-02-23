@@ -85,9 +85,9 @@ static void chttp2_init_server_secure_fullstack(
     grpc_server_destroy(f->server);
   }
   f->server =
-      grpc_secure_server_create(server_creds, f->server_cq, server_args);
+      grpc_server_create(f->server_cq, server_args);
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr, server_creds));
   grpc_server_credentials_release(server_creds);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
 }
 

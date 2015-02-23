@@ -33,6 +33,8 @@
 
 #include <grpc/grpc.h>
 
+#include <string.h>
+
 #include "src/core/channel/http_filter.h"
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/resolve_address.h"
@@ -66,37 +68,64 @@ static void on_secure_transport_setup_done(void *server,
   }
 }
 
-static void on_accept(void *server, grpc_endpoint *tcp) {
-  const grpc_channel_args *args = grpc_server_get_channel_args(server);
-  grpc_security_context *ctx = grpc_find_security_context_in_args(args);
-  GPR_ASSERT(ctx);
-  grpc_setup_secure_transport(ctx, tcp, on_secure_transport_setup_done, server);
+typedef struct {
+  grpc_tcp_server *tcp;
+  grpc_security_context *ctx;
+  grpc_server *server;
+} secured_port;
+
+static void on_accept(void *spp, grpc_endpoint *tcp) {
+  secured_port *sp = spp;
+  grpc_setup_secure_transport(sp->ctx, tcp, on_secure_transport_setup_done, sp->server);
 }
 
-/* Note: the following code is the same with server_chttp2.c */
-
 /* Server callback: start listening on our ports */
-static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets,
+static void start(grpc_server *server, void *spp, grpc_pollset **pollsets,
                   size_t pollset_count) {
-  grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start(tcp, pollsets, pollset_count, on_accept, server);
+  secured_port *sp = spp;
+  grpc_tcp_server_start(sp->tcp, pollsets, pollset_count, on_accept, sp);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void destroy(grpc_server *server, void *tcpp) {
-  grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_destroy(tcp);
+static void destroy(grpc_server *server, void *spp) {
+  secured_port *sp = spp;
+  grpc_tcp_server_destroy(sp->tcp);
+  grpc_security_context_unref(sp->ctx);
+  gpr_free(sp);
 }
 
-int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
+int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr, grpc_server_credentials *creds) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   size_t i;
   unsigned count = 0;
   int port_num = -1;
   int port_temp;
+  grpc_security_status status = GRPC_SECURITY_ERROR;
+  grpc_security_context *ctx = NULL;
+  secured_port *sp = NULL;
 
+  /* create security context */
+  if (creds == NULL) goto error;
+
+  if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
+    status = grpc_ssl_server_security_context_create(
+        grpc_ssl_server_credentials_get_config(creds), &ctx);
+  } else if (!strcmp(creds->type,
+                     GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY)) {
+    ctx = grpc_fake_server_security_context_create();
+    status = GRPC_SECURITY_OK;
+  }
+
+  if (status != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR,
+            "Unable to create secure server with credentials of type %s.",
+            creds->type);
+    goto error;
+  }
+
+  /* resolve address */
   resolved = grpc_blocking_resolve_address(addr, "https");
   if (!resolved) {
     goto error;
@@ -132,18 +161,29 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
   }
   grpc_resolved_addresses_destroy(resolved);
 
+  sp = gpr_malloc(sizeof(secured_port));
+  sp->tcp = tcp;
+  sp->ctx = ctx;
+  sp->server = server;
+
   /* Register with the server only upon success */
-  grpc_server_add_listener(server, tcp, start, destroy);
+  grpc_server_add_listener(server, sp, start, destroy);
 
   return port_num;
 
 /* Error path: cleanup and return */
 error:
+  if (ctx) {
+    grpc_security_context_unref(ctx);
+  }
   if (resolved) {
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
     grpc_tcp_server_destroy(tcp);
+  }
+  if (sp) {
+    gpr_free(sp);
   }
   return 0;
 }

@@ -43,9 +43,6 @@
     <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\secure_server_create.c">
-      <Filter>src\core\surface</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\tsi\fake_transport_security.c">
       <Filter>src\core\tsi</Filter>
     </ClCompile>

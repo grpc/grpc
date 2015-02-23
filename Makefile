@@ -2315,7 +2315,6 @@ LIBGRPC_SRC = \
     src/core/security/security_context.c \
     src/core/security/server_secure_chttp2.c \
     src/core/surface/secure_channel_create.c \
-    src/core/surface/secure_server_create.c \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
@@ -2456,7 +2455,6 @@ src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
 src/core/security/security_context.c: $(OPENSSL_DEP)
 src/core/security/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
-src/core/surface/secure_server_create.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
@@ -2614,7 +2612,6 @@ $(OBJDIR)/$(CONFIG)/src/core/security/secure_transport_setup.o:
 $(OBJDIR)/$(CONFIG)/src/core/security/security_context.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/server_secure_chttp2.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/secure_channel_create.o: 
-$(OBJDIR)/$(CONFIG)/src/core/surface/secure_server_create.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/fake_transport_security.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/ssl_transport_security.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/transport_security.o: 
