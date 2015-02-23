@@ -51,8 +51,10 @@ typedef struct grpc_credentials grpc_credentials;
    The creator of the credentials object is responsible for its release. */
 void grpc_credentials_release(grpc_credentials *creds);
 
-/* Creates default credentials. */
-grpc_credentials *grpc_default_credentials_create(void);
+/* Creates default credentials to connect to a google gRPC service.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak. */
+grpc_credentials *grpc_google_default_credentials_create(void);
 
 /* Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
@@ -88,13 +90,17 @@ grpc_credentials *grpc_ssl_credentials_create(
 grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
                                                     grpc_credentials *creds2);
 
-/* Creates a compute engine credentials object. */
+/* Creates a compute engine credentials object.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak. */
 grpc_credentials *grpc_compute_engine_credentials_create(void);
 
 extern const gpr_timespec grpc_max_auth_token_lifetime;
 
 /* Creates a service account credentials object. May return NULL if the input is
    invalid.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak.
    - json_key is the JSON key string containing the client's private key.
    - scope is a space-delimited list of the requested permissions.
    - token_lifetime is the lifetime of each token acquired through this service
@@ -128,11 +134,6 @@ grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
    channel). If this parameter is specified and the underlying is not an SSL
    channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
-
-/* Creates a default secure channel using the default credentials object using
-   the environment. */
-grpc_channel *grpc_default_secure_channel_create(const char *target,
-                                                 const grpc_channel_args *args);
 
 /* Creates a secure channel using the passed-in credentials. */
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,

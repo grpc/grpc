@@ -374,7 +374,10 @@
         "src/core/security/auth.c",
         "src/core/security/base64.c",
         "src/core/security/credentials.c",
+        "src/core/security/credentials_posix.c",
+        "src/core/security/credentials_win32.c",
         "src/core/security/factories.c",
+        "src/core/security/google_default_credentials.c",
         "src/core/security/json_token.c",
         "src/core/security/secure_endpoint.c",
         "src/core/security/secure_transport_setup.c",
@@ -1203,6 +1206,20 @@
       "language": "c",
       "src": [
         "test/core/security/json_token_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_print_google_default_creds_token",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "test/core/security/print_google_default_creds_token.c"
       ],
       "deps": [
         "grpc_test_util",

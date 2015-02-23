@@ -73,8 +73,8 @@ std::unique_ptr<Credentials> WrapCredentials(grpc_credentials* creds) {
 }
 }  // namespace
 
-std::unique_ptr<Credentials> DefaultCredentials() {
-  return WrapCredentials(grpc_default_credentials_create());
+std::unique_ptr<Credentials> GoogleDefaultCredentials() {
+  return WrapCredentials(grpc_google_default_credentials_create());
 }
 
 // Builds SSL Credentials given SSL specific options
@@ -113,7 +113,7 @@ std::unique_ptr<Credentials> IAMCredentials(
 }
 
 // Combines two credentials objects into a composite credentials.
-std::unique_ptr<Credentials> ComposeCredentials(
+std::unique_ptr<Credentials> CompositeCredentials(
     const std::unique_ptr<Credentials>& creds1,
     const std::unique_ptr<Credentials>& creds2) {
   // Note that we are not saving unique_ptrs to the two credentials

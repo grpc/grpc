@@ -49,7 +49,7 @@ class Credentials {
   virtual ~Credentials();
 
  protected:
-  friend std::unique_ptr<Credentials> ComposeCredentials(
+  friend std::unique_ptr<Credentials> CompositeCredentials(
     const std::unique_ptr<Credentials>& creds1,
     const std::unique_ptr<Credentials>& creds2);
 
@@ -86,7 +86,7 @@ struct SslCredentialsOptions {
 // fail on it.
 
 // Builds credentials with reasonable defaults.
-std::unique_ptr<Credentials> DefaultCredentials();
+std::unique_ptr<Credentials> GoogleDefaultCredentials();
 
 // Builds SSL Credentials given SSL specific options
 std::unique_ptr<Credentials> SslCredentials(
@@ -111,7 +111,7 @@ std::unique_ptr<Credentials> IAMCredentials(
     const grpc::string& authority_selector);
 
 // Combines two credentials objects into a composite credentials
-std::unique_ptr<Credentials> ComposeCredentials(
+std::unique_ptr<Credentials> CompositeCredentials(
     const std::unique_ptr<Credentials>& creds1,
     const std::unique_ptr<Credentials>& creds2);
 

@@ -72,7 +72,8 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     const grpc::string& connect_to =
         server.empty() ? override_hostname : server;
     if (creds.get()) {
-      channel_creds = ComposeCredentials(creds, channel_creds);
+      channel_creds =
+          CompositeCredentials(creds, channel_creds);
     }
     return CreateChannel(connect_to, channel_creds, channel_args);
   } else {
