@@ -1,10 +1,3 @@
-# Please pick your language to proceed:
-* [C++](https://github.com/grpc/grpc-common/tree/master/cpp)
-* [Java](https://github.com/grpc/grpc-common/tree/master/java)
-* [Python](https://github.com/grpc/grpc-common/tree/master/python)
-* [Go](https://github.com/grpc/grpc-common/tree/master/go)
-* [ruby](https://github.com/grpc/grpc-common/tree/master/ruby)
-* [Node.js](https://github.com/grpc/grpc-common/tree/master/node)
 
 # Getting started
 
@@ -13,6 +6,15 @@ platform-neutral remote procedure call (RPC) system developed at Google.
 
 This document introduces you to gRPC with a quick overview and a simple
 Hello World example. More documentation is coming soon!
+
+## Quick start
+You can find quick start guides for each language, including installation instructions and examples here:
+* [C++](https://github.com/grpc/grpc-common/tree/master/cpp)
+* [Java](https://github.com/grpc/grpc-common/tree/master/java)
+* [Python](https://github.com/grpc/grpc-common/tree/master/python)
+* [Go](https://github.com/grpc/grpc-common/tree/master/go)
+* [ruby](https://github.com/grpc/grpc-common/tree/master/ruby)
+* [Node.js](https://github.com/grpc/grpc-common/tree/master/node)
 
 ## What's in this repository?
 
