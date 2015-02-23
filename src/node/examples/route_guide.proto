@@ -29,7 +29,7 @@
 
 syntax = "proto3";
 
-option java_package = "ex.grpc";
+option java_package = "io.grpc.examples";
 
 package examples;
 
