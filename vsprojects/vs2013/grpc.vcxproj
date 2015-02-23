@@ -205,9 +205,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials_win32.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\default_credentials.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\security\factories.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\google_default_credentials.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
     </ClCompile>

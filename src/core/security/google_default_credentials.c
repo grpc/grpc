@@ -138,7 +138,7 @@ static grpc_credentials *create_jwt_creds_from_path(char *creds_path) {
   return result;
 }
 
-grpc_credentials *grpc_default_credentials_create(void) {
+grpc_credentials *grpc_google_default_credentials_create(void) {
   grpc_credentials *result = NULL;
   int serving_cached_credentials = 0;
   gpr_once_init(&g_once, init_default_credentials);
@@ -158,7 +158,7 @@ grpc_credentials *grpc_default_credentials_create(void) {
 
   /* Then the well-known file. */
   result = create_jwt_creds_from_path(
-      grpc_get_well_known_credentials_file_path());
+      grpc_get_well_known_google_credentials_file_path());
   if (result != NULL) goto end;
 
   /* At last try to see if we're on compute engine (do the detection only once

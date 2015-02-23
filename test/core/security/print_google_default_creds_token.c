@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   synchronizer sync;
   grpc_credentials *creds = NULL;
   char *service_url = "https://test.foo.google.com/Foo";
-  gpr_cmdline *cl = gpr_cmdline_create("print_default_creds_token");
+  gpr_cmdline *cl = gpr_cmdline_create("print_google_default_creds_token");
   gpr_cmdline_add_string(cl, "service_url",
                          "Service URL for the token request.",
                          &service_url);
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 
   grpc_init();
 
-  creds = grpc_default_credentials_create();
+  creds = grpc_google_default_credentials_create();
   if (creds == NULL) {
     fprintf(stderr, "\nCould not find default credentials.\n\n");
     result = 1;

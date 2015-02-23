@@ -481,7 +481,7 @@ grpc_create_jwt: $(BINDIR)/$(CONFIG)/grpc_create_jwt
 grpc_credentials_test: $(BINDIR)/$(CONFIG)/grpc_credentials_test
 grpc_fetch_oauth2: $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2
 grpc_json_token_test: $(BINDIR)/$(CONFIG)/grpc_json_token_test
-grpc_print_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_default_creds_token
+grpc_print_google_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 grpc_stream_op_test: $(BINDIR)/$(CONFIG)/grpc_stream_op_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
@@ -1764,7 +1764,7 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_pool_test || ( echo test thread_pool_test failed ; exit 1 )
 
 
-tools: privatelibs $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 $(BINDIR)/$(CONFIG)/grpc_print_default_creds_token
+tools: privatelibs $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_fetch_oauth2 $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 
 buildbenchmarks: privatelibs $(BINDIR)/$(CONFIG)/grpc_completion_queue_benchmark $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 
@@ -2286,8 +2286,8 @@ LIBGRPC_SRC = \
     src/core/security/credentials.c \
     src/core/security/credentials_posix.c \
     src/core/security/credentials_win32.c \
-    src/core/security/default_credentials.c \
     src/core/security/factories.c \
+    src/core/security/google_default_credentials.c \
     src/core/security/json_token.c \
     src/core/security/secure_endpoint.c \
     src/core/security/secure_transport_setup.c \
@@ -2430,8 +2430,8 @@ src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
 src/core/security/credentials_posix.c: $(OPENSSL_DEP)
 src/core/security/credentials_win32.c: $(OPENSSL_DEP)
-src/core/security/default_credentials.c: $(OPENSSL_DEP)
 src/core/security/factories.c: $(OPENSSL_DEP)
+src/core/security/google_default_credentials.c: $(OPENSSL_DEP)
 src/core/security/json_token.c: $(OPENSSL_DEP)
 src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
@@ -2591,8 +2591,8 @@ $(OBJDIR)/$(CONFIG)/src/core/security/base64.o:
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials_win32.o: 
-$(OBJDIR)/$(CONFIG)/src/core/security/default_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/factories.o: 
+$(OBJDIR)/$(CONFIG)/src/core/security/google_default_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/json_token.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_endpoint.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_transport_setup.o: 
@@ -6556,33 +6556,33 @@ endif
 endif
 
 
-GRPC_PRINT_DEFAULT_CREDS_TOKEN_SRC = \
-    test/core/security/print_default_creds_token.c \
+GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_SRC = \
+    test/core/security/print_google_default_creds_token.c \
 
-GRPC_PRINT_DEFAULT_CREDS_TOKEN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_PRINT_DEFAULT_CREDS_TOKEN_SRC))))
+GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_SRC))))
 
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL with ALPN.
 
-$(BINDIR)/$(CONFIG)/grpc_print_default_creds_token: openssl_dep_error
+$(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/grpc_print_default_creds_token: $(GRPC_PRINT_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token: $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_PRINT_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_print_default_creds_token
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/print_default_creds_token.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/print_google_default_creds_token.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_grpc_print_default_creds_token: $(GRPC_PRINT_DEFAULT_CREDS_TOKEN_OBJS:.o=.dep)
+deps_grpc_print_google_default_creds_token: $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPC_PRINT_DEFAULT_CREDS_TOKEN_OBJS:.o=.dep)
+-include $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS:.o=.dep)
 endif
 endif
 

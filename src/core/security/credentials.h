@@ -67,7 +67,7 @@ typedef enum {
 /* --- grpc_credentials. --- */
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
-char *grpc_get_well_known_credentials_file_path(void);
+char *grpc_get_well_known_google_credentials_file_path(void);
 
 typedef void (*grpc_credentials_metadata_cb)(void *user_data,
                                              grpc_mdelem **md_elems,

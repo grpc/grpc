@@ -28,10 +28,10 @@
     <ClCompile Include="..\..\src\core\security\credentials_win32.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\default_credentials.c">
+    <ClCompile Include="..\..\src\core\security\factories.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\factories.c">
+    <ClCompile Include="..\..\src\core\security\google_default_credentials.c">
       <Filter>src\core\security</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
