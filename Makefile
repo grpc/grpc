@@ -3022,6 +3022,7 @@ $(OBJDIR)/$(CONFIG)/src/core/transport/transport.o:
 
 LIBGRPC++_SRC = \
     src/cpp/client/secure_credentials.cc \
+    src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel.cc \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
@@ -3034,6 +3035,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
+    src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_context.cc \
@@ -3101,6 +3103,7 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
+src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/channel.cc: $(OPENSSL_DEP)
 src/cpp/client/channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/client/client_context.cc: $(OPENSSL_DEP)
@@ -3113,6 +3116,7 @@ src/cpp/common/call.cc: $(OPENSSL_DEP)
 src/cpp/common/completion_queue.cc: $(OPENSSL_DEP)
 src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
 src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
+src/cpp/server/insecure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/server/server.cc: $(OPENSSL_DEP)
 src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
 src/cpp/server/server_context.cc: $(OPENSSL_DEP)
@@ -3169,6 +3173,7 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/secure_credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/secure_server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/channel.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/channel_arguments.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/client_context.o: 
@@ -3181,6 +3186,7 @@ $(OBJDIR)/$(CONFIG)/src/cpp/common/call.o:
 $(OBJDIR)/$(CONFIG)/src/cpp/common/completion_queue.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/rpc_method.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/proto/proto_utils.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/insecure_server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_builder.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_context.o: 
@@ -3268,6 +3274,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
+    src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_context.cc \
@@ -3363,6 +3370,7 @@ $(OBJDIR)/$(CONFIG)/src/cpp/common/call.o:
 $(OBJDIR)/$(CONFIG)/src/cpp/common/completion_queue.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/rpc_method.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/proto/proto_utils.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/insecure_server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_builder.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_context.o: 

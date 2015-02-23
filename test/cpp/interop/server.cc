@@ -59,7 +59,6 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCredentials;
-using grpc::ServerCredentialsFactory;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
@@ -210,14 +209,14 @@ void RunServer() {
   SimpleResponse response;
 
   ServerBuilder builder;
-  builder.AddPort(server_address.str());
   builder.RegisterService(&service);
+  std::shared_ptr<ServerCredentials> creds = grpc::InsecureServerCredentials();
   if (FLAGS_enable_ssl) {
     SslServerCredentialsOptions ssl_opts = {
         "", {{test_server1_key, test_server1_cert}}};
-    std::shared_ptr<ServerCredentials> creds = ServerSslCredentials(ssl_opts);
-    builder.SetCredentials(creds);
+    creds = grpc::SslServerCredentials(ssl_opts);
   }
+  builder.AddPort(server_address.str(), creds);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!got_sigint) {

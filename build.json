@@ -54,6 +54,7 @@
         "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_context.cc",
@@ -133,7 +134,6 @@
         "src/core/surface/client.h",
         "src/core/surface/completion_queue.h",
         "src/core/surface/event_string.h",
-        "src/core/surface/lame_client.h",
         "src/core/surface/server.h",
         "src/core/surface/surface_trace.h",
         "src/core/transport/chttp2/bin_encoder.h",
@@ -437,7 +437,8 @@
       "build": "all",
       "language": "c++",
       "src": [
-        "src/cpp/client/secure_credentials.cc"
+        "src/cpp/client/secure_credentials.cc",
+        "src/cpp/server/secure_server_credentials.cc"
       ],
       "deps": [
         "gpr",

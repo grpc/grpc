@@ -578,9 +578,6 @@
     <ClInclude Include="..\..\src\core\surface\event_string.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\surface\lame_client.h">
-      <Filter>src\core\surface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\surface\server.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>

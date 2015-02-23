@@ -31,12 +31,22 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_LAME_CLIENT_H_
-#define __GRPC_INTERNAL_SURFACE_LAME_CLIENT_H_
+#include <grpc/grpc_security.h>
 
-#include <grpc/grpc.h>
+#include <grpc++/server_credentials.h>
 
-/* Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create(void);
+namespace grpc {
+namespace {
+class InsecureServerCredentialsImpl final : public ServerCredentials {
+ public:
+  int AddPortToServer(const grpc::string& addr, grpc_server* server) {
+    return grpc_server_add_http2_port(server, addr.c_str());
+  }
+};
+}  // namespace
 
-#endif /* __GRPC_INTERNAL_SURFACE_LAME_CLIENT_H_ */
+std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
+  return std::shared_ptr<ServerCredentials>(new InsecureServerCredentialsImpl());
+}
+
+}  // namespace grpc

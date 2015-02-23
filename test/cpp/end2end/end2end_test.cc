@@ -47,6 +47,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/core/util/port.h"
@@ -150,7 +151,7 @@ class End2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str());
+    builder.AddPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterService(&service_);
     builder.RegisterService(&dup_pkg_service_);
     builder.SetThreadPool(&thread_pool_);
