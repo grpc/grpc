@@ -42,10 +42,18 @@
 namespace grpc {
 class ChannelArguments;
 class ChannelInterface;
+class SecureCredentials;
 
 class Credentials {
  public:
   virtual ~Credentials();
+
+ protected:
+  friend std::unique_ptr<Credentials> ComposeCredentials(
+    const std::unique_ptr<Credentials>& creds1,
+    const std::unique_ptr<Credentials>& creds2);
+
+  virtual SecureCredentials* AsSecureCredentials() = 0;
 
  private:
   friend std::shared_ptr<ChannelInterface> CreateChannel(

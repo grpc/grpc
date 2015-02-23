@@ -42,7 +42,6 @@
 
 namespace grpc {
 
-namespace {
 class SecureCredentials final : public Credentials {
  public:
   explicit SecureCredentials(grpc_credentials* c_creds) : c_creds_(c_creds) {}
@@ -58,10 +57,15 @@ class SecureCredentials final : public Credentials {
         grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
   }
 
+  SecureCredentials* AsSecureCredentials() {
+    return this;
+  }
+
  private:
   grpc_credentials* const c_creds_;
 };
 
+namespace {
 std::unique_ptr<Credentials> WrapCredentials(grpc_credentials* creds) {
   return creds == nullptr
              ? nullptr
@@ -116,8 +120,8 @@ std::unique_ptr<Credentials> ComposeCredentials(
   // passed in here. This is OK because the underlying C objects (i.e.,
   // creds1 and creds2) into grpc_composite_credentials_create will see their
   // refcounts incremented.
-  SecureCredentials* s1 = dynamic_cast<SecureCredentials*>(creds1.get());
-  SecureCredentials* s2 = dynamic_cast<SecureCredentials*>(creds2.get());
+  SecureCredentials* s1 = creds1->AsSecureCredentials();
+  SecureCredentials* s2 = creds2->AsSecureCredentials();
   if (s1 && s2) {
     return WrapCredentials(grpc_composite_credentials_create(
         s1->GetRawCreds(), s2->GetRawCreds()));
