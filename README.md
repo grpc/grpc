@@ -6,6 +6,12 @@ platform-neutral remote procedure call (RPC) system developed at Google.
 This document introduces you to gRPC with a quick overview and a simple
 Hello World example. More documentation is coming soon!
 
+## What's in this repository?
+
+The `grpc-common` repository contains documentation, resources, and examples for all gRPC users
+
+You can find out about the gRPC source code repositories in [`grpc`](https://github.com/grpc/grpc).
+
 ## What is gRPC?
 
 In gRPC a *client* application can directly call
@@ -69,23 +75,18 @@ a single
 Hello World method.
 - Create a Java server that implements this interface.
 - Create a Java client that accesses the Java server.
-- Create a [probably need a different language now] client that accesses
+- Create a Go client that accesses
 the same Java server.
-- Update the service with more advanced features like RPC streaming.
+- Update the service with a streaming RPC.
 
 The complete code for the example is available in the `grpc-common` GitHub
-repository. You can
-work along with the example and hack on the code in the comfort of your own
-computer, giving you hands-on practice of really writing
-gRPC code. We use the Git versioning system for source code management:
+repository. We use the Git versioning system for source code management:
 however, you don't need to know anything about Git to follow along other
 than how to install and run a few git commands.
 
 This is an introductory example rather than a comprehensive tutorial, so
 don't worry if you're not a Go or
-Java developer - the concepts introduced here are similar for all languages,
-and complete tutorials and reference documentation for all gRPC
-languages are coming soon.
+Java developer - the concepts are similar for all languages, and you can find more implementations of our Hello World example in other languages in the language-specific folders in this repository. Complete tutorials and reference documentation for all gRPC languages are coming soon.
 
 <a name="setup"></a>
 ### Setup
@@ -170,7 +171,7 @@ types as protocol buffer message types. Both the client and the
 server use interface code generated from the service definition.
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](java/src/main/proto/helloworld.proto). The `Greeting`
+[helloworld.proto](protos/helloworld.proto). The `Greeting`
 service has one method, `hello`, that lets the server receive a single
 `HelloRequest`
 message from the remote client containing the user's name, then send back
@@ -223,13 +224,7 @@ classes. By default `protoc` just generates code for reading and writing
 protocol buffers, so you need to use plugins to add additional features
 to generated code. As we're creating Java code, we use the gRPC Java plugin.
 
-To build the plugin:
-
-```sh
-$ pushd external/grpc_java
-$ make java_plugin
-$ popd
-```
+To build the plugin, follow the instructions in the relevant repo: for Java, the instructions are in [`grpc-java1](https://github.com/grpc/grpc-java).
 
 To use it to generate the code:
 
@@ -439,6 +434,7 @@ and in another terminal window confirm that it receives a message.
 ```sh
 $ ./run_greeter_client.sh
 ```
+
 
 ### Adding another client
 
