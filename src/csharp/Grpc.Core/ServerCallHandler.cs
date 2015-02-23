@@ -111,6 +111,8 @@ namespace Grpc.Core
 
             var finishedTask = asyncCall.ServerSideStreamingRequestCallAsync(new NullObserver<byte[]>());
 
+            // TODO: this makes the call finish before all reads can be done which causes trouble
+            // in AsyncCall.HandleReadFinished callback. Revisit this.
             asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, "No such method.")).Wait();
 
             finishedTask.Wait();

@@ -33,28 +33,24 @@
 
 using System;
 
-namespace Grpc.Core
+namespace Grpc.Core.Utils
 {
-    public class RpcException : Exception
+    public static class ExceptionHelper
     {
-        private readonly Status status;
-
-        public RpcException(Status status)
-        {
-            this.status = status;
-        }
-
-        public RpcException(Status status, string message) : base(message)
-        {
-            this.status = status;
-        }
-
-        public Status Status
-        {
-            get
+        /// <summary>
+        /// If inner exceptions contain RpcException, rethrows it.
+        /// Otherwise, rethrows the original aggregate exception.
+        /// Always throws, the exception return type is here only to make the.
+        /// </summary>
+        public static Exception UnwrapRpcException(AggregateException ae) {
+            foreach (var e in ae.InnerExceptions)
             {
-                return status;
+                if (e is RpcException)
+                {
+                    throw e;
+                }
             }
+            throw ae;
         }
     }
 }

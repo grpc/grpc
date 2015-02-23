@@ -49,20 +49,6 @@ namespace Grpc.Core
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestSerializer, call.ResponseDeserializer);
             return asyncCall.UnaryCall(call.Channel, call.MethodName, req);
-
-            //TODO: implement this in real synchronous style.
-//            try {
-//                return AsyncUnaryCall(call, req, token).Result;
-//            } catch(AggregateException ae) {
-//                foreach (var e in ae.InnerExceptions)
-//                {
-//                    if (e is RpcException)
-//                    {
-//                        throw e;
-//                    }
-//                }
-//                throw;
-//            }
         }
 
         public static async Task<TResponse> AsyncUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)

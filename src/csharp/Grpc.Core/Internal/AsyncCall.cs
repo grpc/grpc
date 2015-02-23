@@ -38,6 +38,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -130,10 +131,15 @@ namespace Grpc.Core.Internal
                 }
                 call.BlockingUnary(cq, payload, unaryResponseHandler);
 
-                // task should be finished once BlockingUnary returns.
-                return unaryResponseTcs.Task.Result;
-
-                // TODO: unwrap aggregate exception...
+                try
+                {
+                    // Once the blocking call returns, the result should be available synchronously.
+                    return unaryResponseTcs.Task.Result;
+                }
+                catch (AggregateException ae)
+                {
+                    throw ExceptionHelper.UnwrapRpcException(ae);
+                }
             }
         }
 
