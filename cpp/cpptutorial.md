@@ -104,10 +104,12 @@ which actually runs:
 [actual command]
 
 Running this command generates the following files:
-- `route_guide.pb.h`
-- `route_guide.pb.cc`
+- `route_guide.pb.h`, the header which declares your generated classes
+- `route_guide.pb.cc`, which contains the implementation of your classes
 
-These contain
+These contain:
+- All the protocol buffer code to populate, serialize, and retrieve our request and response message types
+- A class called `RouteGuide` that contains both a remote interface type (or *stub*) for clients to call and an abstract interface for servers to implement, both with the methods defined in the `RouteGuide` service.
 
 
 ## Creating the server
