@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,10 +107,11 @@ class PublisherTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     ServerBuilder builder;
     builder.AddPort(server_address_.str());
-    builder.RegisterService(service_.service());
+    builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ = CreateChannel(server_address_.str(), ChannelArguments());
+    channel_ =
+        CreateChannelDeprecated(server_address_.str(), ChannelArguments());
 
     publisher_.reset(new grpc::examples::pubsub::Publisher(channel_));
   }
@@ -138,7 +139,7 @@ TEST_F(PublisherTest, TestPublisher) {
 
   std::vector<grpc::string> topics;
   EXPECT_TRUE(publisher_->ListTopics(kProjectId, &topics).IsOk());
-  EXPECT_EQ(topics.size(), 1);
+  EXPECT_EQ(topics.size(), static_cast<size_t>(1));
   EXPECT_EQ(topics[0], kTopic);
 }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,6 @@
 #include "src/core/httpcli/httpcli_security_context.h"
 #include "src/core/httpcli/parser.h"
 #include "src/core/security/security_context.h"
-#include "src/core/security/google_root_certs.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
@@ -182,9 +181,16 @@ static void on_connected(void *arg, grpc_endpoint *tcp) {
   req->ep = tcp;
   if (req->use_ssl) {
     grpc_channel_security_context *ctx = NULL;
+    const unsigned char *pem_root_certs = NULL;
+    size_t pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
+    if (pem_root_certs == NULL || pem_root_certs_size == 0) {
+      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      finish(req, 0);
+      return;
+    }
     GPR_ASSERT(grpc_httpcli_ssl_channel_security_context_create(
-                   grpc_google_root_certs, grpc_google_root_certs_size,
-                   req->host, &ctx) == GRPC_SECURITY_OK);
+                   pem_root_certs, pem_root_certs_size, req->host, &ctx) ==
+               GRPC_SECURITY_OK);
     grpc_setup_secure_transport(&ctx->base, tcp, on_secure_transport_setup_done,
                                 req);
     grpc_security_context_unref(&ctx->base);
@@ -210,6 +216,7 @@ static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   if (!addresses) {
     finish(req, 0);
+    return;
   }
   req->addresses = addresses;
   req->next_address = 0;

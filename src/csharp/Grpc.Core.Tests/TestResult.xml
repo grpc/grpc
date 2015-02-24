@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--This file represents the results of running a test suite-->
+<test-results name="/usr/local/google/home/jtattermusch/github/grpc/src/csharp/GrpcCoreTests/bin/Debug/GrpcCoreTests.dll" total="3" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2015-01-29" time="19:40:47">
+  <environment nunit-version="2.6.0.0" clr-version="4.0.30319.17020" os-version="Unix 3.13.0.43" platform="Unix" cwd="/usr/local/google/home/jtattermusch/github/grpc/src/csharp/GrpcCoreTests" machine-name="jtattermusch.mtv.corp.google.com" user="jtattermusch" user-domain="jtattermusch.mtv.corp.google.com" />
+  <culture-info current-culture="en-US" current-uiculture="en-US" />
+  <test-suite type="Assembly" name="/usr/local/google/home/jtattermusch/github/grpc/src/csharp/GrpcCoreTests/bin/Debug/GrpcCoreTests.dll" executed="True" result="Success" success="True" time="0.172" asserts="0">
+    <results>
+      <test-suite type="Namespace" name="Google" executed="True" result="Success" success="True" time="0.166" asserts="0">
+        <results>
+          <test-suite type="Namespace" name="GRPC" executed="True" result="Success" success="True" time="0.166" asserts="0">
+            <results>
+              <test-suite type="Namespace" name="Core" executed="True" result="Success" success="True" time="0.166" asserts="0">
+                <results>
+                  <test-suite type="Namespace" name="Tests" executed="True" result="Success" success="True" time="0.166" asserts="0">
+                    <results>
+                      <test-suite type="TestFixture" name="CallsTest" executed="True" result="Success" success="True" time="0.009" asserts="0">
+                        <results>
+                          <test-case name="Grpc.Core.Tests.CallsTest.Test1" executed="True" result="Success" success="True" time="0.004" asserts="0" />
+                        </results>
+                      </test-suite>
+                      <test-suite type="TestFixture" name="ClientServerTest" executed="True" result="Success" success="True" time="0.149" asserts="0">
+                        <results>
+                          <test-case name="Grpc.Core.Tests.ClientServerTest.EmptyCall" executed="True" result="Success" success="True" time="0.111" asserts="0" />
+                        </results>
+                      </test-suite>
+                      <test-suite type="TestFixture" name="ServerTest" executed="True" result="Success" success="True" time="0.001" asserts="0">
+                        <results>
+                          <test-case name="Grpc.Core.Tests.ServerTest.StartAndShutdownServer" executed="True" result="Success" success="True" time="0.001" asserts="0" />
+                        </results>
+                      </test-suite>
+                    </results>
+                  </test-suite>
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>

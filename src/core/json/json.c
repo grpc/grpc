@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,8 @@
 #include "src/core/json/json.h"
 
 grpc_json *grpc_json_create(grpc_json_type type) {
-  grpc_json *json = gpr_malloc(sizeof(grpc_json));
-  memset(json, 0, sizeof(grpc_json));
+  grpc_json *json = gpr_malloc(sizeof(*json));
+  memset(json, 0, sizeof(*json));
   json->type = type;
 
   return json;

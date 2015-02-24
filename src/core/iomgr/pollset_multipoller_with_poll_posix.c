@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -183,10 +183,10 @@ static int multipoll_with_poll_pollset_maybe_work(
       grpc_pollset_kick_consume(&pollset->kick_state);
     }
     for (i = 1; i < np; i++) {
-      if (h->pfds[i].revents & POLLIN) {
+      if (h->pfds[i].revents & (POLLIN | POLLHUP | POLLERR)) {
         grpc_fd_become_readable(h->watchers[i].fd, allow_synchronous_callback);
       }
-      if (h->pfds[i].revents & POLLOUT) {
+      if (h->pfds[i].revents & (POLLOUT | POLLHUP | POLLERR)) {
         grpc_fd_become_writable(h->watchers[i].fd, allow_synchronous_callback);
       }
     }

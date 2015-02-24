@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,12 +51,12 @@
 
    The routines may be implemented as macros.
 
-   // Atomic operations acton an intergral_type gpr_atm that is guaranteed to
+   // Atomic operations act on an intergral_type gpr_atm that is guaranteed to
    // be the same size as a pointer.
    typedef gpr_intptr gpr_atm;
 
    // A memory barrier, providing both acquire and release semantics, but not
-   // otherwise acting no memory.
+   // otherwise acting on memory.
    void gpr_atm_full_barrier(void);
 
    // Atomically return *p, with acquire semantics.

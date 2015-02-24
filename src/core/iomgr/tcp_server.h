@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,8 +46,9 @@ typedef void (*grpc_tcp_server_cb)(void *arg, grpc_endpoint *ep);
 grpc_tcp_server *grpc_tcp_server_create(void);
 
 /* Start listening to bound ports */
-void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset *pollset,
-                           grpc_tcp_server_cb cb, void *cb_arg);
+void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
+                           size_t pollset_count, grpc_tcp_server_cb cb,
+                           void *cb_arg);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.

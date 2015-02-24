@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,15 @@
  *
  */
 
+'use strict';
+
 var _ = require('underscore');
 
 var ProtoBuf = require('protobufjs');
 
-var surface_client = require('./src/surface_client.js');
+var client = require('./src/client.js');
 
-var surface_server = require('./src/surface_server.js');
+var server = require('./src/server.js');
 
 var grpc = require('bindings')('grpc');
 
@@ -54,7 +56,7 @@ function loadObject(value) {
     });
     return result;
   } else if (value.className === 'Service') {
-    return surface_client.makeClientConstructor(value);
+    return client.makeClientConstructor(value);
   } else if (value.className === 'Message' || value.className === 'Enum') {
     return value.build();
   } else {
@@ -74,6 +76,37 @@ function load(filename) {
 }
 
 /**
+ * Get a function that a client can use to update metadata with authentication
+ * information from a Google Auth credential object, which comes from the
+ * googleauth library.
+ * @param {Object} credential The credential object to use
+ * @return {function(Object, callback)} Metadata updater function
+ */
+function getGoogleAuthDelegate(credential) {
+  /**
+   * Update a metadata object with authentication information.
+   * @param {Object} metadata Metadata object
+   * @param {function(Error, Object)} callback
+   */
+  return function updateMetadata(metadata, callback) {
+    metadata = _.clone(metadata);
+    if (metadata.Authorization) {
+      metadata.Authorization = _.clone(metadata.Authorization);
+    } else {
+      metadata.Authorization = [];
+    }
+    credential.getAccessToken(function(err, token) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      metadata.Authorization.push('Bearer ' + token);
+      callback(null, metadata);
+    });
+  };
+}
+
+/**
  * See docs for loadObject
  */
 exports.loadObject = loadObject;
@@ -84,9 +117,9 @@ exports.loadObject = loadObject;
 exports.load = load;
 
 /**
- * See docs for surface_server.makeServerConstructor
+ * See docs for server.makeServerConstructor
  */
-exports.buildServer = surface_server.makeServerConstructor;
+exports.buildServer = server.makeServerConstructor;
 
 /**
  * Status name to code number mapping
@@ -106,3 +139,5 @@ exports.Credentials = grpc.Credentials;
  * ServerCredentials factories
  */
 exports.ServerCredentials = grpc.ServerCredentials;
+
+exports.getGoogleAuthDelegate = getGoogleAuthDelegate;

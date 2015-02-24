@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 #ifndef NET_GRPC_COMPILER_RUBY_GENERATOR_MAP_INL_H_
 #define NET_GRPC_COMPILER_RUBY_GENERATOR_MAP_INL_H_
 
+#include <iostream>
 #include <initializer_list>
 #include <map>
 #include <ostream>  // NOLINT
@@ -51,8 +52,8 @@ namespace grpc_ruby_generator {
 inline std::map<std::string, std::string> ListToDict(
     const initializer_list<std::string> &values) {
   if (values.size() % 2 != 0) {
-    // MOE: insert     std::cerr << "Not every 'key' has a value in `values`."
-    // << std::endl;
+    std::cerr << "Not every 'key' has a value in `values`."
+              << std::endl;
   }
   std::map<std::string, std::string> value_map;
   auto value_iter = values.begin();

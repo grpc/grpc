@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,16 +27,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Google
-  module RPC
-    module Core
-      # Event is a class defined in the c extension
-      #
-      # Here, we add an inspect method.
-      class Event
-        def inspect
-          "<#{self.class}: type:#{type}, tag:#{tag} result:#{result}>"
-        end
+require 'grpc'
+
+# GRPC contains the General RPC module.
+module GRPC
+  module Core
+    # Event is a class defined in the c extension
+    #
+    # Here, we add an inspect method.
+    class Event
+      def inspect
+        "<#{self.class}: type:#{type}, tag:#{tag} result:#{result}>"
       end
     end
   end

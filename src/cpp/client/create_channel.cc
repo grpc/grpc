@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,8 @@
 namespace grpc {
 class ChannelArguments;
 
-std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string &target,
-                                                const ChannelArguments &args) {
+std::shared_ptr<ChannelInterface> CreateChannelDeprecated(
+    const grpc::string &target, const ChannelArguments &args) {
   return std::shared_ptr<ChannelInterface>(new Channel(target, args));
 }
 

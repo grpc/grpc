@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,7 @@ typedef enum {
 
 #define GRPC_CREDENTIALS_TYPE_SSL "Ssl"
 #define GRPC_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
+#define GRPC_CREDENTIALS_TYPE_JWT "Jwt"
 #define GRPC_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CREDENTIALS_TYPE_COMPOSITE "Composite"
 #define GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY "FakeTransportSecurity"
@@ -59,7 +60,14 @@ typedef enum {
   "x-goog-iam-authorization-token"
 #define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
 
+#define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
+#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
+  "application_default_credentials.json"
+
 /* --- grpc_credentials. --- */
+
+/* It is the caller's responsibility to gpr_free the result if not NULL. */
+char *grpc_get_well_known_google_credentials_file_path(void);
 
 typedef void (*grpc_credentials_metadata_cb)(void *user_data,
                                              grpc_mdelem **md_elems,
@@ -71,6 +79,7 @@ typedef struct {
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c,
+                               const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
 } grpc_credentials_vtable;
@@ -86,6 +95,7 @@ void grpc_credentials_unref(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata_only(grpc_credentials *creds);
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
+                                           const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
 typedef struct {

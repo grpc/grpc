@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,7 @@ static testing_pair testing_pairs[] = {
   /* Testing nested empty containers. */
   { " [ [ ] , { } , [ ] ] ", "[[],{},[]]", },
   /* Testing escapes and control chars in key strings. */
-  { " { \"\\n\\\\a , b\": 1, \"\": 0 } ", "{\"\\n\\\\a , b\":1,\"\":0}" },
+  { " { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ", "{\"\\u007f\\n\\\\a , b\":1,\"\":0}" },
   /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
   { "\"abc\xf0\x9d\x24\"", "\"abc\"" },
   { "\"\xff\"", "\"\"" },

@@ -1,5 +1,35 @@
 // This file will be moved to a new location.
 
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 // Specification of the Pubsub API.
 
 syntax = "proto2";
@@ -127,9 +157,7 @@ package tech.pubsub;
 //
 // Consuming messages via push:
 //
-//  TODO(eschapira): Add HTTP push example.
-//
-//  The port 'machinename:8888' must be bound to a stubby server that implements
+//  The port 'machinename:8888' must be bound to a server that implements
 //  the PushEndpointService with the following method:
 //
 //   int HandlePubsubEvent(PubsubEvent event) {
@@ -222,8 +250,6 @@ service PublisherService {
 
   // Adds a message to the topic.  Returns NOT_FOUND if the topic does not
   // exist.
-  // (-- For different error code values returned via Stubby, see
-  // util/task/codes.proto. --)
   rpc Publish(PublishRequest) returns (proto2.Empty) {
   }
 
@@ -262,7 +288,6 @@ message PubsubMessage {
 
   // Optional list of labels for this message. Keys in this collection must
   // be unique.
-  //(-- TODO(eschapira): Define how key namespace may be scoped to the topic.--)
   repeated tech.label.Label label = 2;
 
   // ID of this message assigned by the server at publication time. Guaranteed
@@ -437,7 +462,7 @@ message Subscription {
   // If <code>query</code> is non-empty, only messages on the subscriber's
   // topic whose labels match the query will be returned. Otherwise all
   // messages on the topic will be returned.
-  // (-- The query syntax is described in tech/label/proto/label_query.proto --)
+  // (-- The query syntax is described in label_query.proto --)
   optional string query = 3;
 
   // The subscriber may specify requirements for truncating unacknowledged

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,7 +90,7 @@ void gpr_default_log(gpr_log_func_args *args) {
     strcpy(time_buffer, "error:strftime");
   }
 
-  fprintf(stderr, "%s%s.%09u %5u %s:%d: %s\n",
+  fprintf(stderr, "%s%s.%09u %5u %s:%d] %s\n",
           gpr_log_severity_string(args->severity), time_buffer,
           (int)(now.tv_nsec), GetCurrentThreadId(),
           args->file, args->line, args->message);

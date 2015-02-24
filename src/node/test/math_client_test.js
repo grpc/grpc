@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
  *
  */
 
+'use strict';
+
 var assert = require('assert');
 
 var grpc = require('..');
@@ -59,13 +61,10 @@ describe('Math client', function() {
   });
   it('should handle a single request', function(done) {
     var arg = {dividend: 7, divisor: 4};
-    var call = math_client.div(arg, function handleDivResult(err, value) {
+    math_client.div(arg, function handleDivResult(err, value) {
       assert.ifError(err);
       assert.equal(value.quotient, 1);
       assert.equal(value.remainder, 3);
-    });
-    call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
       done();
     });
   });

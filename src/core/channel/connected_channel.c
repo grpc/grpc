@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -467,16 +467,10 @@ static void transport_goaway(void *user_data, grpc_transport *transport,
   /* transport got goaway ==> call up and handle it */
   grpc_channel_element *elem = user_data;
   channel_data *chand = elem->channel_data;
-  char *msg;
   grpc_channel_op op;
 
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
   GPR_ASSERT(chand->transport == transport);
-
-  msg = gpr_hexdump((const char *)GPR_SLICE_START_PTR(debug),
-                    GPR_SLICE_LENGTH(debug), GPR_HEXDUMP_PLAINTEXT);
-  gpr_log(GPR_DEBUG, "got goaway: status=%d, message=%s", status, msg);
-  gpr_free(msg);
 
   op.type = GRPC_TRANSPORT_GOAWAY;
   op.dir = GRPC_CALL_UP;

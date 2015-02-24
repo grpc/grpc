@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,6 +97,7 @@ typedef struct {
   gpr_mu mu;                /* protect done and done_cv */
   gpr_cv done_cv;           /* signaled when a server finishes serving */
   int done;                 /* set to 1 when a server finishes serving */
+  grpc_iomgr_closure listen_closure;
 } server;
 
 static void server_init(server *sv) {
@@ -112,6 +113,7 @@ typedef struct {
   server *sv;              /* not owned by a single session */
   grpc_fd *em_fd;          /* fd to read upload bytes */
   char read_buf[BUF_SIZE]; /* buffer to store upload bytes */
+  grpc_iomgr_closure session_read_closure;
 } session;
 
 /* Called when an upload session can be safely shutdown.
@@ -162,7 +164,7 @@ static void session_read_cb(void *arg, /*session*/
          TODO(chenw): in multi-threaded version, callback and polling can be
          run in different threads. polling may catch a persist read edge event
          before notify_on_read is called.  */
-      grpc_fd_notify_on_read(se->em_fd, session_read_cb, se);
+      grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
       gpr_log(GPR_ERROR, "Unhandled read error %s", strerror(errno));
       abort();
@@ -207,9 +209,11 @@ static void listen_cb(void *arg, /*=sv_arg*/
   se = gpr_malloc(sizeof(*se));
   se->sv = sv;
   se->em_fd = grpc_fd_create(fd);
-  grpc_fd_notify_on_read(se->em_fd, session_read_cb, se);
+  se->session_read_closure.cb = session_read_cb;
+  se->session_read_closure.cb_arg = se;
+  grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
 
-  grpc_fd_notify_on_read(listen_em_fd, listen_cb, sv);
+  grpc_fd_notify_on_read(listen_em_fd, &sv->listen_closure);
 }
 
 /* Max number of connections pending to be accepted by listen(). */
@@ -234,7 +238,9 @@ static int server_start(server *sv) {
 
   sv->em_fd = grpc_fd_create(fd);
   /* Register to be interested in reading from listen_fd. */
-  grpc_fd_notify_on_read(sv->em_fd, listen_cb, sv);
+  sv->listen_closure.cb = listen_cb;
+  sv->listen_closure.cb_arg = sv;
+  grpc_fd_notify_on_read(sv->em_fd, &sv->listen_closure);
 
   return port;
 }
@@ -268,6 +274,7 @@ typedef struct {
   gpr_mu mu;      /* protect done and done_cv */
   gpr_cv done_cv; /* signaled when a client finishes sending */
   int done;       /* set to 1 when a client finishes sending */
+  grpc_iomgr_closure write_closure;
 } client;
 
 static void client_init(client *cl) {
@@ -309,7 +316,9 @@ static void client_session_write(void *arg, /*client*/
   if (errno == EAGAIN) {
     gpr_mu_lock(&cl->mu);
     if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-      grpc_fd_notify_on_write(cl->em_fd, client_session_write, cl);
+      cl->write_closure.cb = client_session_write;
+      cl->write_closure.cb_arg = cl;
+      grpc_fd_notify_on_write(cl->em_fd, &cl->write_closure);
       cl->client_write_cnt++;
     } else {
       client_session_shutdown_cb(arg, 1);
@@ -421,6 +430,13 @@ static void test_grpc_fd_change(void) {
   int sv[2];
   char data;
   int result;
+  grpc_iomgr_closure first_closure;
+  grpc_iomgr_closure second_closure;
+
+  first_closure.cb = first_read_callback;
+  first_closure.cb_arg = &a;
+  second_closure.cb = second_read_callback;
+  second_closure.cb_arg = &b;
 
   init_change_data(&a);
   init_change_data(&b);
@@ -434,7 +450,7 @@ static void test_grpc_fd_change(void) {
   em_fd = grpc_fd_create(sv[0]);
 
   /* Register the first callback, then make its FD readable */
-  grpc_fd_notify_on_read(em_fd, first_read_callback, &a);
+  grpc_fd_notify_on_read(em_fd, &first_closure);
   data = 0;
   result = write(sv[1], &data, 1);
   GPR_ASSERT(result == 1);
@@ -453,7 +469,7 @@ static void test_grpc_fd_change(void) {
 
   /* Now register a second callback with distinct change data, and do the same
      thing again. */
-  grpc_fd_notify_on_read(em_fd, second_read_callback, &b);
+  grpc_fd_notify_on_read(em_fd, &second_closure);
   data = 0;
   result = write(sv[1], &data, 1);
   GPR_ASSERT(result == 1);

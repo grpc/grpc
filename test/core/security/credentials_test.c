@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,11 +89,16 @@ static const char test_user_data[] = "user data";
 
 static const char test_scope[] = "perm1 perm2";
 
-static const char test_signed_jwt[] = "signed jwt";
+static const char test_signed_jwt[] =
+    "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImY0OTRkN2M1YWU2MGRmOTcyNmM4YW"
+    "U0MDcyZTViYTdmZDkwODg2YzcifQ";
 
 static const char expected_service_account_http_body_prefix[] =
     "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&"
     "assertion=";
+
+static const char test_service_url[] = "https://foo.com/foo.v1";
+static const char other_test_service_url[] = "https://bar.com/bar.v1";
 
 static char *test_json_key_str(void) {
   size_t result_len = strlen(test_json_key_str_part1) +
@@ -138,7 +143,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   GPR_ASSERT(!strcmp(grpc_mdstr_as_c_string(token_elem->value),
                      "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"));
   grpc_mdelem_unref(token_elem);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
@@ -150,7 +155,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
@@ -161,7 +166,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
@@ -176,7 +181,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
@@ -190,7 +195,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
@@ -205,7 +210,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
@@ -220,7 +225,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, ctx, &token_elem, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
-  grpc_mdctx_orphan(ctx);
+  grpc_mdctx_unref(ctx);
 }
 
 static void check_metadata(expected_md *expected, grpc_mdelem **md_elems,
@@ -259,7 +264,8 @@ static void test_iam_creds(void) {
       test_iam_authorization_token, test_iam_authority_selector);
   GPR_ASSERT(grpc_credentials_has_request_metadata(creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(creds));
-  grpc_credentials_get_request_metadata(creds, check_iam_metadata, creds);
+  grpc_credentials_get_request_metadata(creds, test_service_url,
+                                        check_iam_metadata, creds);
 }
 
 static void check_ssl_oauth2_composite_metadata(
@@ -293,8 +299,9 @@ static void test_ssl_oauth2_composite_creds(void) {
       !strcmp(creds_array->creds_array[0]->type, GRPC_CREDENTIALS_TYPE_SSL));
   GPR_ASSERT(
       !strcmp(creds_array->creds_array[1]->type, GRPC_CREDENTIALS_TYPE_OAUTH2));
-  grpc_credentials_get_request_metadata(
-      composite_creds, check_ssl_oauth2_composite_metadata, composite_creds);
+  grpc_credentials_get_request_metadata(composite_creds, test_service_url,
+                                        check_ssl_oauth2_composite_metadata,
+                                        composite_creds);
 }
 
 static void check_ssl_oauth2_iam_composite_metadata(
@@ -338,7 +345,7 @@ static void test_ssl_oauth2_iam_composite_creds(void) {
       !strcmp(creds_array->creds_array[1]->type, GRPC_CREDENTIALS_TYPE_OAUTH2));
   GPR_ASSERT(
       !strcmp(creds_array->creds_array[2]->type, GRPC_CREDENTIALS_TYPE_IAM));
-  grpc_credentials_get_request_metadata(composite_creds,
+  grpc_credentials_get_request_metadata(composite_creds, test_service_url,
                                         check_ssl_oauth2_iam_composite_metadata,
                                         composite_creds);
 }
@@ -420,14 +427,14 @@ static void test_compute_engine_creds_success(void) {
   /* First request: http get should be called. */
   grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
                             httpcli_post_should_not_be_called);
-  grpc_credentials_get_request_metadata(compute_engine_creds,
+  grpc_credentials_get_request_metadata(compute_engine_creds, test_service_url,
                                         on_oauth2_creds_get_metadata_success,
                                         (void *)test_user_data);
 
   /* Second request: the cached token should be served directly. */
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
-  grpc_credentials_get_request_metadata(compute_engine_creds,
+  grpc_credentials_get_request_metadata(compute_engine_creds, test_service_url,
                                         on_oauth2_creds_get_metadata_success,
                                         (void *)test_user_data);
 
@@ -442,7 +449,7 @@ static void test_compute_engine_creds_failure(void) {
                             httpcli_post_should_not_be_called);
   GPR_ASSERT(grpc_credentials_has_request_metadata(compute_engine_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(compute_engine_creds));
-  grpc_credentials_get_request_metadata(compute_engine_creds,
+  grpc_credentials_get_request_metadata(compute_engine_creds, test_service_url,
                                         on_oauth2_creds_get_metadata_failure,
                                         (void *)test_user_data);
   grpc_credentials_unref(compute_engine_creds);
@@ -468,27 +475,29 @@ static void validate_jwt_encode_and_sign_params(
              !strcmp(json_key->client_email,
                      "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                      "gserviceaccount.com"));
-  GPR_ASSERT(!strcmp(scope, test_scope));
+  if (scope != NULL) GPR_ASSERT(!strcmp(scope, test_scope));
   GPR_ASSERT(!gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime));
 }
 
 static char *encode_and_sign_jwt_success(const grpc_auth_json_key *json_key,
-                                         const char *scope,
-                                         gpr_timespec token_lifetime) {
+                                         const char *audience,
+                                         gpr_timespec token_lifetime,
+                                         const char *scope) {
   validate_jwt_encode_and_sign_params(json_key, scope, token_lifetime);
   return gpr_strdup(test_signed_jwt);
 }
 
 static char *encode_and_sign_jwt_failure(const grpc_auth_json_key *json_key,
-                                         const char *scope,
-                                         gpr_timespec token_lifetime) {
+                                         const char *audience,
+                                         gpr_timespec token_lifetime,
+                                         const char *scope) {
   validate_jwt_encode_and_sign_params(json_key, scope, token_lifetime);
   return NULL;
 }
 
 static char *encode_and_sign_jwt_should_not_be_called(
-    const grpc_auth_json_key *json_key, const char *scope,
-    gpr_timespec token_lifetime) {
+    const grpc_auth_json_key *json_key, const char *audience,
+    gpr_timespec token_lifetime, const char *scope) {
   GPR_ASSERT("grpc_jwt_encode_and_sign should not be called" == NULL);
 }
 
@@ -533,7 +542,7 @@ static int service_account_httpcli_post_failure(
   return 1;
 }
 
-static void test_service_accounts_creds_success(void) {
+static void test_service_account_creds_success(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *service_account_creds =
       grpc_service_account_credentials_create(json_key_string, test_scope,
@@ -545,7 +554,7 @@ static void test_service_accounts_creds_success(void) {
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             service_account_httpcli_post_success);
-  grpc_credentials_get_request_metadata(service_account_creds,
+  grpc_credentials_get_request_metadata(service_account_creds, test_service_url,
                                         on_oauth2_creds_get_metadata_success,
                                         (void *)test_user_data);
 
@@ -554,7 +563,7 @@ static void test_service_accounts_creds_success(void) {
       encode_and_sign_jwt_should_not_be_called);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
-  grpc_credentials_get_request_metadata(service_account_creds,
+  grpc_credentials_get_request_metadata(service_account_creds, test_service_url,
                                         on_oauth2_creds_get_metadata_success,
                                         (void *)test_user_data);
 
@@ -564,7 +573,7 @@ static void test_service_accounts_creds_success(void) {
   grpc_httpcli_set_override(NULL, NULL);
 }
 
-static void test_service_accounts_creds_http_failure(void) {
+static void test_service_account_creds_http_failure(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *service_account_creds =
       grpc_service_account_credentials_create(json_key_string, test_scope,
@@ -575,7 +584,7 @@ static void test_service_accounts_creds_http_failure(void) {
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             service_account_httpcli_post_failure);
-  grpc_credentials_get_request_metadata(service_account_creds,
+  grpc_credentials_get_request_metadata(service_account_creds, test_service_url,
                                         on_oauth2_creds_get_metadata_failure,
                                         (void *)test_user_data);
 
@@ -584,7 +593,7 @@ static void test_service_accounts_creds_http_failure(void) {
   grpc_httpcli_set_override(NULL, NULL);
 }
 
-static void test_service_accounts_creds_signing_failure(void) {
+static void test_service_account_creds_signing_failure(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *service_account_creds =
       grpc_service_account_credentials_create(json_key_string, test_scope,
@@ -595,13 +604,88 @@ static void test_service_accounts_creds_signing_failure(void) {
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_failure);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
-  grpc_credentials_get_request_metadata(service_account_creds,
+  grpc_credentials_get_request_metadata(service_account_creds, test_service_url,
                                         on_oauth2_creds_get_metadata_failure,
                                         (void *)test_user_data);
 
   gpr_free(json_key_string);
   grpc_credentials_unref(service_account_creds);
   grpc_httpcli_set_override(NULL, NULL);
+  grpc_jwt_encode_and_sign_set_override(NULL);
+}
+
+static void on_jwt_creds_get_metadata_success(
+    void *user_data, grpc_mdelem **md_elems, size_t num_md,
+    grpc_credentials_status status) {
+  char *expected_md_value;
+  gpr_asprintf(&expected_md_value, "Bearer %s", test_signed_jwt);
+  GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
+  GPR_ASSERT(num_md == 1);
+  GPR_ASSERT(
+      !strcmp(grpc_mdstr_as_c_string(md_elems[0]->key), "Authorization"));
+  GPR_ASSERT(
+      !strcmp(grpc_mdstr_as_c_string(md_elems[0]->value), expected_md_value));
+  GPR_ASSERT(user_data != NULL);
+  GPR_ASSERT(!strcmp((const char *)user_data, test_user_data));
+  gpr_free(expected_md_value);
+}
+
+static void on_jwt_creds_get_metadata_failure(
+    void *user_data, grpc_mdelem **md_elems, size_t num_md,
+    grpc_credentials_status status) {
+  GPR_ASSERT(status == GRPC_CREDENTIALS_ERROR);
+  GPR_ASSERT(num_md == 0);
+  GPR_ASSERT(user_data != NULL);
+  GPR_ASSERT(!strcmp((const char *)user_data, test_user_data));
+}
+
+static void test_jwt_creds_success(void) {
+  char *json_key_string = test_json_key_str();
+  grpc_credentials *jwt_creds = grpc_jwt_credentials_create(
+      json_key_string, grpc_max_auth_token_lifetime);
+  GPR_ASSERT(grpc_credentials_has_request_metadata(jwt_creds));
+  GPR_ASSERT(grpc_credentials_has_request_metadata_only(jwt_creds));
+
+  /* First request: jwt_encode_and_sign should be called. */
+  grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
+  grpc_credentials_get_request_metadata(jwt_creds, test_service_url,
+                                        on_jwt_creds_get_metadata_success,
+                                        (void *)test_user_data);
+
+  /* Second request: the cached token should be served directly. */
+  grpc_jwt_encode_and_sign_set_override(
+      encode_and_sign_jwt_should_not_be_called);
+  grpc_credentials_get_request_metadata(jwt_creds, test_service_url,
+                                        on_jwt_creds_get_metadata_success,
+                                        (void *)test_user_data);
+
+  /* Third request: Different service url so jwt_encode_and_sign should be
+     called again (no caching). */
+  grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
+  grpc_credentials_get_request_metadata(jwt_creds, other_test_service_url,
+                                        on_jwt_creds_get_metadata_success,
+                                        (void *)test_user_data);
+
+  gpr_free(json_key_string);
+  grpc_credentials_unref(jwt_creds);
+  grpc_jwt_encode_and_sign_set_override(NULL);
+}
+
+static void test_jwt_creds_signing_failure(void) {
+  char *json_key_string = test_json_key_str();
+  grpc_credentials *jwt_creds = grpc_jwt_credentials_create(
+      json_key_string, grpc_max_auth_token_lifetime);
+  GPR_ASSERT(grpc_credentials_has_request_metadata(jwt_creds));
+  GPR_ASSERT(grpc_credentials_has_request_metadata_only(jwt_creds));
+
+  grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_failure);
+  grpc_credentials_get_request_metadata(jwt_creds, test_service_url,
+                                        on_jwt_creds_get_metadata_failure,
+                                        (void *)test_user_data);
+
+  gpr_free(json_key_string);
+  grpc_credentials_unref(jwt_creds);
+  grpc_jwt_encode_and_sign_set_override(NULL);
 }
 
 int main(int argc, char **argv) {
@@ -618,8 +702,10 @@ int main(int argc, char **argv) {
   test_ssl_oauth2_iam_composite_creds();
   test_compute_engine_creds_success();
   test_compute_engine_creds_failure();
-  test_service_accounts_creds_success();
-  test_service_accounts_creds_http_failure();
-  test_service_accounts_creds_signing_failure();
+  test_service_account_creds_success();
+  test_service_account_creds_http_failure();
+  test_service_account_creds_signing_failure();
+  test_jwt_creds_success();
+  test_jwt_creds_signing_failure();
   return 0;
 }

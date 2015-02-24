@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,6 @@
 
 #include <grpc/support/sync_generic.h>
 
-/* Posix variant of gpr_sync_platform.h */
 #include <pthread.h>
 
 typedef pthread_mutex_t gpr_mu;

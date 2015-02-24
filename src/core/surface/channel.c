@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "src/core/iomgr/iomgr.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/client.h"
 #include <grpc/support/alloc.h>
@@ -138,15 +139,20 @@ void grpc_channel_internal_ref(grpc_channel *channel) {
   gpr_ref(&channel->refs);
 }
 
+static void destroy_channel(void *p, int ok) {
+  grpc_channel *channel = p;
+  grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
+  grpc_mdstr_unref(channel->grpc_status_string);
+  grpc_mdstr_unref(channel->grpc_message_string);
+  grpc_mdstr_unref(channel->path_string);
+  grpc_mdstr_unref(channel->authority_string);
+  grpc_mdctx_unref(channel->metadata_context);
+  gpr_free(channel);
+}
+
 void grpc_channel_internal_unref(grpc_channel *channel) {
   if (gpr_unref(&channel->refs)) {
-    grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
-    grpc_mdstr_unref(channel->grpc_status_string);
-    grpc_mdstr_unref(channel->grpc_message_string);
-    grpc_mdstr_unref(channel->path_string);
-    grpc_mdstr_unref(channel->authority_string);
-    grpc_mdctx_orphan(channel->metadata_context);
-    gpr_free(channel);
+    grpc_iomgr_add_callback(destroy_channel, channel);
   }
 }
 

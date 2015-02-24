@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,7 @@
 typedef struct {
   grpc_iomgr_cb_func cb;
   void *cb_arg;
-  int success;
-  gpr_atm state;
-} grpc_fd_state;
+} grpc_iomgr_closure;
 
 typedef struct grpc_fd grpc_fd;
 
@@ -71,8 +69,8 @@ struct grpc_fd {
   gpr_mu watcher_mu;
   grpc_fd_watcher watcher_root;
 
-  grpc_fd_state readst;
-  grpc_fd_state writest;
+  gpr_atm readst;
+  gpr_atm writest;
 
   grpc_iomgr_cb_func on_done;
   void *on_done_user_data;
@@ -126,12 +124,10 @@ void grpc_fd_shutdown(grpc_fd *fd);
    underlying platform. This means that users must drain fd in read_cb before
    calling notify_on_read again. Users are also expected to handle spurious
    events, i.e read_cb is called while nothing can be readable from fd  */
-void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_cb_func read_cb,
-                            void *read_cb_arg);
+void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure);
 
 /* Exactly the same semantics as above, except based on writable events.  */
-void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_cb_func write_cb,
-                             void *write_cb_arg);
+void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_closure *closure);
 
 /* Notification from the poller to an fd that it has become readable or
    writable.

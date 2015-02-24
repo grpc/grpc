@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,9 +63,9 @@ static void backup_poller(void *p) {
   gpr_mu_lock(&g_backup_pollset.mu);
   while (g_shutdown_backup_poller == 0) {
     gpr_timespec next_poll = gpr_time_add(last_poll, delta);
-    grpc_pollset_work(&g_backup_pollset, next_poll);
+    grpc_pollset_work(&g_backup_pollset, gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
     gpr_mu_unlock(&g_backup_pollset.mu);
-    gpr_sleep_until(next_poll);
+    /*gpr_sleep_until(next_poll);*/
     gpr_mu_lock(&g_backup_pollset.mu);
     last_poll = next_poll;
   }
@@ -214,6 +214,7 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
      * unary poller */
     grpc_fd_unref(fds[0]);
     pollset->data.ptr = fd;
+    grpc_fd_ref(fd);
   }
 }
 
@@ -276,10 +277,10 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
     if (pfd[0].revents & POLLIN) {
       grpc_pollset_kick_consume(&pollset->kick_state);
     }
-    if (pfd[1].revents & POLLIN) {
+    if (pfd[1].revents & (POLLIN | POLLHUP | POLLERR)) {
       grpc_fd_become_readable(fd, allow_synchronous_callback);
     }
-    if (pfd[1].revents & POLLOUT) {
+    if (pfd[1].revents & (POLLOUT | POLLHUP | POLLERR)) {
       grpc_fd_become_writable(fd, allow_synchronous_callback);
     }
   }

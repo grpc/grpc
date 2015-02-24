@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,15 +35,88 @@
 #define __GRPCPP_SERVER_CONTEXT_H_
 
 #include <chrono>
+#include <map>
+
+#include "config.h"
+
+struct gpr_timespec;
+struct grpc_metadata;
+struct grpc_call;
 
 namespace grpc {
 
-// Interface of server side rpc context.
-class ServerContext {
- public:
-  virtual ~ServerContext() {}
+template <class W, class R>
+class ServerAsyncReader;
+template <class W>
+class ServerAsyncWriter;
+template <class W>
+class ServerAsyncResponseWriter;
+template <class R, class W>
+class ServerAsyncReaderWriter;
+template <class R>
+class ServerReader;
+template <class W>
+class ServerWriter;
+template <class R, class W>
+class ServerReaderWriter;
 
-  virtual std::chrono::system_clock::time_point absolute_deadline() const = 0;
+class Call;
+class CallOpBuffer;
+class CompletionQueue;
+class Server;
+
+// Interface of server side rpc context.
+class ServerContext final {
+ public:
+  ServerContext();  // for async calls
+  ~ServerContext();
+
+  std::chrono::system_clock::time_point absolute_deadline() {
+    return deadline_;
+  }
+
+  void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
+  void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
+
+  bool IsCancelled();
+
+  const std::multimap<grpc::string, grpc::string>& client_metadata() {
+    return client_metadata_;
+  }
+
+ private:
+  friend class ::grpc::Server;
+  template <class W, class R>
+  friend class ::grpc::ServerAsyncReader;
+  template <class W>
+  friend class ::grpc::ServerAsyncWriter;
+  template <class W>
+  friend class ::grpc::ServerAsyncResponseWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerAsyncReaderWriter;
+  template <class R>
+  friend class ::grpc::ServerReader;
+  template <class W>
+  friend class ::grpc::ServerWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerReaderWriter;
+
+  class CompletionOp;
+
+  void BeginCompletionOp(Call* call);
+
+  ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
+                size_t metadata_count);
+
+  CompletionOp* completion_op_ = nullptr;
+
+  std::chrono::system_clock::time_point deadline_;
+  grpc_call* call_ = nullptr;
+  CompletionQueue* cq_ = nullptr;
+  bool sent_initial_metadata_ = false;
+  std::multimap<grpc::string, grpc::string> client_metadata_;
+  std::multimap<grpc::string, grpc::string> initial_metadata_;
+  std::multimap<grpc::string, grpc::string> trailing_metadata_;
 };
 
 }  // namespace grpc

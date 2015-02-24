@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,12 +43,13 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/iomgr/tcp_windows.h"
-#include "src/core/iomgr/socket_windows.h"
-#include "src/core/iomgr/alarm.h"
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/socket_windows.h"
 
 typedef struct {
   void(*cb)(void *arg, grpc_endpoint *tcp);

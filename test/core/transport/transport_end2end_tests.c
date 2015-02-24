@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -927,7 +927,7 @@ void grpc_transport_end2end_tests(grpc_transport_test_config *config) {
     test_request_with_flow_ctl_cb(config, interesting_message_lengths[i]);
   }
 
-  grpc_mdctx_orphan(g_metadata_context);
+  grpc_mdctx_unref(g_metadata_context);
 
   gpr_log(GPR_INFO, "tests completed ok");
 }

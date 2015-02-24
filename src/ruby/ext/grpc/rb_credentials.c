@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -245,9 +245,9 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
 /* rb_cCredentials is the ruby class that proxies grpc_credentials. */
 VALUE rb_cCredentials = Qnil;
 
-void Init_google_rpc_credentials() {
+void Init_grpc_credentials() {
   rb_cCredentials =
-      rb_define_class_under(rb_mGoogleRpcCore, "Credentials", rb_cObject);
+      rb_define_class_under(rb_mGrpcCore, "Credentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cCredentials, grpc_rb_credentials_alloc);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,19 +30,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-/* Posix code for gpr fdopen and mkstemp support. */
-
-#if !defined _POSIX_C_SOURCE || _POSIX_C_SOURCE < 200112L
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200112L
-#endif
-
-/* Don't know why I have to do this for mkstemp, looks like _POSIX_C_SOURCE
-   should be enough... */
-#ifndef _BSD_SOURCE
-#define _BSD_SOURCE
-#endif
 
 #include <grpc/support/port_platform.h>
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,11 +75,11 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
         server.empty() ? override_hostname : server;
     if (creds.get()) {
       channel_creds =
-          CredentialsFactory::ComposeCredentials(creds, channel_creds);
+          CredentialsFactory::CompositeCredentials(creds, channel_creds);
     }
     return CreateChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannel(server, channel_args);
+    return CreateChannelDeprecated(server, channel_args);
   }
 }
 

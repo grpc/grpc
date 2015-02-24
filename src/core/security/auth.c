@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@
 typedef struct {
   grpc_credentials *creds;
   grpc_mdstr *host;
+  grpc_mdstr *method;
   grpc_call_op op;
 } call_data;
 
@@ -56,6 +57,7 @@ typedef struct {
   grpc_channel_security_context *security_context;
   grpc_mdctx *md_ctx;
   grpc_mdstr *authority_string;
+  grpc_mdstr *path_string;
   grpc_mdstr *error_msg_key;
 } channel_data;
 
@@ -89,6 +91,26 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
   grpc_call_next_op(elem, &((call_data *)elem->call_data)->op);
 }
 
+static char *build_service_url(const char *url_scheme, call_data *calld) {
+  char *service_url;
+  char *service = gpr_strdup(grpc_mdstr_as_c_string(calld->method));
+  char *last_slash = strrchr(service, '/');
+  if (last_slash == NULL) {
+    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
+    service[0] = '\0';
+  } else if (last_slash == service) {
+    /* No service part in fully qualified method name: will just be "/". */
+    service[1] = '\0';
+  } else {
+    *last_slash = '\0';
+  }
+  if (url_scheme == NULL) url_scheme = "";
+  gpr_asprintf(&service_url, "%s://%s%s", url_scheme,
+               grpc_mdstr_as_c_string(calld->host), service);
+  gpr_free(service);
+  return service_url;
+}
+
 static void send_security_metadata(grpc_call_element *elem, grpc_call_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -106,9 +128,12 @@ static void send_security_metadata(grpc_call_element *elem, grpc_call_op *op) {
   }
   if (channel_creds != NULL &&
       grpc_credentials_has_request_metadata(channel_creds)) {
+    char *service_url =
+        build_service_url(channeld->security_context->base.url_scheme, calld);
     calld->op = *op; /* Copy op (originates from the caller's stack). */
-    grpc_credentials_get_request_metadata(channel_creds,
+    grpc_credentials_get_request_metadata(channel_creds, service_url,
                                           on_credentials_metadata, elem);
+    gpr_free(service_url);
   } else {
     grpc_call_next_op(elem, op);
   }
@@ -146,6 +171,9 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       if (op->data.metadata->key == channeld->authority_string) {
         if (calld->host != NULL) grpc_mdstr_unref(calld->host);
         calld->host = grpc_mdstr_ref(op->data.metadata->value);
+      } else if (op->data.metadata->key == channeld->path_string) {
+        if (calld->method != NULL) grpc_mdstr_unref(calld->method);
+        calld->method = grpc_mdstr_ref(op->data.metadata->value);
       }
       grpc_call_next_op(elem, op);
       break;
@@ -194,6 +222,7 @@ static void init_call_elem(grpc_call_element *elem,
   call_data *calld = elem->call_data;
   calld->creds = NULL;
   calld->host = NULL;
+  calld->method = NULL;
 }
 
 /* Destructor for call_data */
@@ -204,6 +233,9 @@ static void destroy_call_elem(grpc_call_element *elem) {
   }
   if (calld->host != NULL) {
     grpc_mdstr_unref(calld->host);
+  }
+  if (calld->method != NULL) {
+    grpc_mdstr_unref(calld->method);
   }
 }
 
@@ -230,6 +262,7 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->md_ctx = metadata_context;
   channeld->authority_string =
       grpc_mdstr_from_string(channeld->md_ctx, ":authority");
+  channeld->path_string = grpc_mdstr_from_string(channeld->md_ctx, ":path");
   channeld->error_msg_key =
       grpc_mdstr_from_string(channeld->md_ctx, "grpc-message");
 }
@@ -245,6 +278,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   }
   if (channeld->error_msg_key != NULL) {
     grpc_mdstr_unref(channeld->error_msg_key);
+  }
+  if (channeld->path_string != NULL) {
+    grpc_mdstr_unref(channeld->path_string);
   }
 }
 

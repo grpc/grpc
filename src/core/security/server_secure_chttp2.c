@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,9 +76,10 @@ static void on_accept(void *server, grpc_endpoint *tcp) {
 /* Note: the following code is the same with server_chttp2.c */
 
 /* Server callback: start listening on our ports */
-static void start(grpc_server *server, void *tcpp, grpc_pollset *pollset) {
+static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets,
+                  size_t pollset_count) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start(tcp, pollset, on_accept, server);
+  grpc_tcp_server_start(tcp, pollsets, pollset_count, on_accept, server);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further

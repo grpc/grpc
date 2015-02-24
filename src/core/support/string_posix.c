@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,6 @@
  *
  */
 
-/* Posix code for gpr snprintf support. */
-
-#if !defined _POSIX_C_SOURCE || _POSIX_C_SOURCE < 200112L
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200112L
-#endif
-
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_STRING
@@ -58,7 +51,7 @@ int gpr_asprintf(char **strp, const char *format, ...) {
   va_start(args, format);
   ret = vsnprintf(buf, sizeof(buf), format, args);
   va_end(args);
-  if (!(0 <= ret)) {
+  if (ret < 0) {
     *strp = NULL;
     return -1;
   }

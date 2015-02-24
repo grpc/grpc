@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,7 @@ static void ts_to_s(gpr_timespec t,
                     void *arg) {
   if (t.tv_sec < 0 && t.tv_nsec != 0) {
     t.tv_sec++;
-    t.tv_nsec = 1000000000 - t.tv_nsec;
+    t.tv_nsec = GPR_NS_PER_SEC - t.tv_nsec;
   }
   i_to_s(t.tv_sec, 10, 0, writer, arg);
   (*writer)(arg, ".", 1);
@@ -127,15 +127,15 @@ static void test_values(void) {
   /* Test possible overflow in conversion of -ve values. */
   x = gpr_time_from_micros(-(LONG_MAX - 999997));
   GPR_ASSERT(x.tv_sec < 0);
-  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < 1000000000);
+  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
   x = gpr_time_from_nanos(-(LONG_MAX - 999999997));
   GPR_ASSERT(x.tv_sec < 0);
-  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < 1000000000);
+  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
   x = gpr_time_from_millis(-(LONG_MAX - 997));
   GPR_ASSERT(x.tv_sec < 0);
-  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < 1000000000);
+  GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
   /* Test general -ve values. */
   for (i = -1; i > -1000 * 1000 * 1000; i *= 7) {

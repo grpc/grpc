@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,7 +93,7 @@ static void json_reader_set_null(grpc_json_reader* reader) {
 /* Call this function to initialize the reader structure. */
 void grpc_json_reader_init(grpc_json_reader* reader,
                            grpc_json_reader_vtable* vtable, void* userdata) {
-  memset(reader, 0, sizeof(grpc_json_reader));
+  memset(reader, 0, sizeof(*reader));
   reader->vtable = vtable;
   reader->userdata = userdata;
   json_reader_string_clear(reader);

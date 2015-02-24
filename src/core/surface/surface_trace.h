@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,21 +34,14 @@
 #ifndef __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
 #define __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
 
+#include "src/core/debug/trace.h"
 #include <grpc/support/log.h>
 
-/* #define GRPC_ENABLE_SURFACE_TRACE 1 */
-
-#ifdef GRPC_ENABLE_SURFACE_TRACE
 #define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  do {                                                  \
+  if (grpc_trace_bits & GRPC_TRACE_SURFACE) {           \
     char *_ev = grpc_event_string(event);               \
     gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
     gpr_free(_ev);                                      \
-  } while (0)
-#else
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event) \
-  do {                                               \
-  } while (0)
-#endif
+  }
 
 #endif /* __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__ */

@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,3 @@ require 'grpc/generic/active_call'
 require 'grpc/generic/client_stub'
 require 'grpc/generic/service'
 require 'grpc/generic/rpc_server'
-
-# alias GRPC
-GRPC = Google::RPC

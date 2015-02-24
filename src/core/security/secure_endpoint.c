@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/debug/trace.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -95,16 +96,16 @@ static void flush_read_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
 
 static void call_read_cb(secure_endpoint *ep, gpr_slice *slices, size_t nslices,
                          grpc_endpoint_cb_status error) {
-#ifdef GRPC_TRACE_SECURE_TRANSPORT
-  size_t i;
-  for (i = 0; i < nslices; i++) {
-    char *data =
-        gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                    GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
-    gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
-    gpr_free(data);
+  if (grpc_trace_bits & GRPC_TRACE_SECURE_ENDPOINT) {
+    size_t i;
+    for (i = 0; i < nslices; i++) {
+      char *data =
+          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
+                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
+      gpr_free(data);
+    }
   }
-#endif
   ep->read_cb(ep->read_user_data, slices, nslices, error);
   secure_endpoint_unref(ep);
 }
@@ -230,15 +231,15 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
   grpc_endpoint_write_status status;
   GPR_ASSERT(ep->output_buffer.count == 0);
 
-#ifdef GRPC_TRACE_SECURE_TRANSPORT
-  for (i = 0; i < nslices; i++) {
-    char *data =
-        gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
-                    GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
-    gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
-    gpr_free(data);
+  if (grpc_trace_bits & GRPC_TRACE_SECURE_ENDPOINT) {
+    for (i = 0; i < nslices; i++) {
+      char *data =
+          gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
+                      GPR_SLICE_LENGTH(slices[i]), GPR_HEXDUMP_PLAINTEXT);
+      gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
+      gpr_free(data);
+    }
   }
-#endif
 
   for (i = 0; i < nslices; i++) {
     gpr_slice plain = slices[i];
