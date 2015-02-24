@@ -78,22 +78,37 @@ message Latencies {
   required double l_999 = 4;
 }
 
-message StartArgs {
-  required string server_host = 1;
-  required int32 server_port = 2;
-  optional bool enable_ssl = 3 [default = false];
-  optional int32 client_threads = 4 [default = 1];
-  optional int32 client_channels = 5 [default = -1];
-  optional int32 num_rpcs = 6 [default = 1];
-  optional int32 payload_size = 7 [default = 1];
+message ClientArgs {
+  required string server_target = 1;
+  required bool enable_ssl = 3;
+  required int32 client_threads = 4;
+  // We have a configurable number of channels for sending RPCs.
+  // RPCs are sent round-robin on the available channels by the
+  // various threads. Interesting cases are 1 global channel or
+  // 1 per-thread channel, but we can support any number.
+  // The channels are assigned round-robin on an RPC by RPC basis
+  // rather than just at initialization time in order to also measure the
+  // impact of cache thrashing caused by channel changes. This is an issue
+  // if you are not in one of the above "interesting cases"
+  required int32 client_channels = 5;
+  required int32 num_rpcs = 6;
+  required int32 payload_size = 7;
 }
 
-message StartResult {
+message ClientResult {
   required Latencies latencies = 1;
   required int32 num_rpcs = 2;
   required double time_elapsed = 3;
   required double time_user = 4;
   required double time_system = 5;
+}
+
+message ServerArgs {
+  required int32 threads = 1;
+}
+
+message ServerStatus {
+  optional ServerStats stats = 1;
 }
 
 message SimpleRequest {
@@ -153,9 +168,6 @@ message StreamingOutputCallResponse {
 }
 
 service TestService {
-  // Start test with specified workload
-  rpc StartTest(StartArgs) returns (Latencies);
-
   // Collect stats from server, ignore request content
   rpc CollectServerStats(StatsRequest) returns (ServerStats);
 
@@ -185,4 +197,14 @@ service TestService {
   // first request.
   rpc HalfDuplexCall(stream StreamingOutputCallRequest)
       returns (stream StreamingOutputCallResponse);
+}
+
+service QpsClient {
+  // Start test with specified workload
+  rpc RunTest(ClientArgs) returns (ClientResult);
+}
+
+service QpsServer {
+  // Start test with specified workload
+  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
 }
