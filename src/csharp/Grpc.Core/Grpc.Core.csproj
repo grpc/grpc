@@ -66,5 +66,10 @@
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\..\vsprojects\vs2013\Debug\grpc_csharp_ext.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
