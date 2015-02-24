@@ -101,7 +101,9 @@ $ make route_guide.pb.cc
 
 which actually runs:
 
-[actual command]
+```shell
+$ protoc -I ../../protos --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ../../protos/route_guide.proto
+```
 
 Running this command generates the following files:
 - `route_guide.pb.h`, the header which declares your generated classes
