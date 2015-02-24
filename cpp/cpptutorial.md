@@ -49,7 +49,7 @@ Then you define `rpc` methods inside your service definition, specifying their r
 
 - A *simple RPC* where the client sends a request to the server using the stub and waits for a response to come back, just like a normal function call.
 ```
- // Obtains the feature at a given position.
+   // Obtains the feature at a given position.
    rpc GetFeature(Point) returns (Feature) {}
 ```
 
@@ -125,7 +125,7 @@ There are two parts to making our `RouteGuide` service do its job:
 - Implementing the service interface generated from our service definition: doing the actual "work" of our service.
 - Running a gRPC server to listen for requests from clients and return the service responses.
 
-You can find our example `RouteGuide` server in [grpc-common/cpp/route_guide/route_guide_server.cc]((https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/route_guide_server.cc). Let's take a closer look at how it works.
+You can find our example `RouteGuide` server in [grpc-common/cpp/route_guide/route_guide_server.cc](https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/route_guide_server.cc). Let's take a closer look at how it works.
 
 ### Implementing RouteGuide
 
