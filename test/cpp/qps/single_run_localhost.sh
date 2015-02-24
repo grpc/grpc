@@ -18,8 +18,8 @@ CLIENT_PID=$!
 # wait for startup
 sleep 2
 
-QPS_SERVERS=localhost:10000
-QPS_CLIENTS=localhost:10001
+export QPS_SERVERS=localhost:10000
+export QPS_CLIENTS=localhost:10001
 
 bins/opt/qps_driver $*
 

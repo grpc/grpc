@@ -32,7 +32,38 @@
  */
 
 #include "test/cpp/qps/driver.h"
+#include "src/core/support/env.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-void RunScenario(const grpc::testing::ClientArgs& client_args, int num_clients,
+using std::vector;
+using grpc::string;
+
+static vector<string> get_hosts(const string& name) {
+  char* env = gpr_getenv(name.c_str());
+  if (!env) return vector<string>();
+
+  vector<string> out;
+  char* p = env;
+  for (;;) {
+  	char* comma = strchr(p, ',');
+  	if (comma) {
+  	  out.emplace_back(p, comma);
+  	  p = comma + 1;
+  	} else {
+  	  out.emplace_back(p);
+  	  gpr_free(env);
+  	  return out;
+  	}
+  }
+}
+
+void RunScenario(const grpc::testing::ClientArgs& client_args, size_t num_clients,
                  const grpc::testing::ServerArgs& server_args,
-                 int num_servers) {}
+                 size_t num_servers) {
+  auto clients = get_hosts("QPS_CLIENTS");
+  auto servers = get_hosts("QPS_SERVERS");
+
+  GPR_ASSERT(clients.size() >= num_clients);
+  GPR_ASSERT(servers.size() >= num_servers);
+}

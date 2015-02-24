@@ -36,7 +36,7 @@
 
 #include "test/cpp/qps/qpstest.pb.h"
 
-void RunScenario(const grpc::testing::ClientArgs& client_args, int num_clients,
-                 const grpc::testing::ServerArgs& server_args, int num_servers);
+void RunScenario(const grpc::testing::ClientArgs& client_args, size_t num_clients,
+                 const grpc::testing::ServerArgs& server_args, size_t num_servers);
 
 #endif
