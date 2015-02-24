@@ -134,7 +134,7 @@ class RouteGuideImpl final : public RouteGuide::Service {
 ...
 }
 ```
-In this case we're implementing the *synchronous* version of `RouteGuide`, where... It's also possible to implement an asynchronous interface, `RouteGuide::AsyncService`...
+In this case we're implementing the *synchronous* version of `RouteGuide`, which provides our default gRPC server behaviour. It's also possible to implement an asynchronous interface, `RouteGuide::AsyncService`, which allows you to further customize your server's threading behaviour, though we won't look at this in this tutorial.
 
 `RouteGuideImpl` implements all our service methods. Let's look at the simplest type first, `GetFeature`, which just gets a `Point` from the client and returns the corresponding feature information from its database in a `Feature`.
 
@@ -261,6 +261,8 @@ Now we can use the channel to create our stub using the `NewStub` method provide
 
 ### Calling service methods
 
+Now let's look at how we call our service methods. Note that in this tutorial we're calling the *blocking/synchronous* versions of each method: this means that the RPC call waits for the server to respond, and will either return a response or raise an exception.
+
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local method.
 
 ```cpp
@@ -278,7 +280,7 @@ Calling the simple RPC `GetFeature` is nearly as straightforward as calling a lo
   }
 ```
 
-As you can see, you create and populate a request protocol buffer object (in our case `Point`), and create a response protocol buffer object for the server to fill in. You also create a `ClientContext` object for your call. Finally, you call the method on the stub, passing it the context, request, and response. If the method returns `OK`, then you can read your response information from the server from your response object.
+As you can see, we create and populate a request protocol buffer object (in our case `Point`), and create a response protocol buffer object for the server to fill in. We also create a `ClientContext` object for our call - you can optionally set RPC configuration values on this object, such as deadlines, though for now we'll use the default settings. Note that you cannot reuse this object between calls. Finally, we call the method on the stub, passing it the context, request, and response. If the method returns `OK`, then we can read the response information from the server from our response object.
 
 ```cpp
       std::cout << "Found feature called " << feature->name()  << " at "
@@ -286,8 +288,62 @@ As you can see, you create and populate a request protocol buffer object (in our
                 << feature->location().longitude()/kCoordFactor_ << std::endl;
 ```
 
-Now let's look at our streaming methods. If you've already read [Creating the server](#server) some of this may look very familiar - streaming RPCs are implemented in a similar way on both sides.
+Now let's look at our streaming methods. If you've already read [Creating the server](#server) some of this may look very familiar - streaming RPCs are implemented in a similar way on both sides. Here's where we call the server-side streaming method `ListFeatures`, which returns a stream of geographical `Feature`s:
 
+```cpp
+    std::unique_ptr<ClientReader<Feature> > reader(
+        stub_->ListFeatures(&context, rect));
+    while (reader->Read(&feature)) {
+      std::cout << "Found feature called "
+                << feature.name() << " at "
+                << feature.location().latitude()/kCoordFactor_ << ", "
+                << feature.location().latitude()/kCoordFactor_ << std::endl;
+    }
+    Status status = reader->Finish();
+```
+
+Instead of passing the method a context, request, and response, we pass it a context and request and get a `ClientReader` object back. The client can use the `ClientReader` to read the server's responses. We use the `ClientReader`s `Read()` method to repeatedly read in the server's responses to a response protocol buffer object (in this case a `Feature`) until there are no more messages: the client needs to check the return value of `Read()` after each call. If `true`, the stream is still good and it can continue reading; if `false` the message stream has ended. Finally, we call `Finish()` on the stream to complete the call and get our RPC status.
+
+The client-side streaming method `RecordRoute` is similar, except there we pass the method a context and response object and get back a `ClientWriter`.
+
+```cpp
+    std::unique_ptr<ClientWriter<Point> > writer(
+        stub_->RecordRoute(&context, &stats));
+    for (int i = 0; i < kPoints; i++) {
+      const Feature& f = feature_list_[feature_distribution(generator)];
+      std::cout << "Visiting point "
+                << f.location().latitude()/kCoordFactor_ << ", "
+                << f.location().longitude()/kCoordFactor_ << std::endl;
+      if (!writer->Write(f.location())) {
+        // Broken stream.
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(
+          delay_distribution(generator)));
+    }
+    writer->WritesDone();
+    Status status = writer->Finish();
+    if (status.IsOk()) {
+      std::cout << "Finished trip with " << stats.point_count() << " points\n"
+                << "Passed " << stats.feature_count() << " features\n"
+                << "Travelled " << stats.distance() << " meters\n"
+                << "It took " << stats.elapsed_time() << " seconds"
+                << std::endl;
+    } else {
+      std::cout << "RecordRoute rpc failed." << std::endl;
+    }
+```
+
+Once we've finished writing our client's requests to the stream using `Write()`, we need to call `WritesDone()` on the stream to let gRPC know that we've finished writing, then `Finish()` to complete the call and get our RPC status. If the status is `OK`, our response object that we initially passed to `RecordRoute()` will be populated with the server's response.
+
+Finally, let's look at our bidirectional streaming RPC `RouteChat()`. In this case, we just pass a context to the method and get back a `ClientReaderWriter`, which we can use to both write and read messages.
+
+```cpp
+    std::shared_ptr<ClientReaderWriter<RouteNote, RouteNote> > stream(
+        stub_->RouteChat(&context));
+```
+
+The syntax for reading and writing here is exactly the same as for our client-streaming and server-streaming methods. Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
 
 ## Try it out!
 
