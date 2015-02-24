@@ -37,6 +37,7 @@ import abc
 # module.
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
 from grpc.framework.common import style  # pylint: disable=unused-import
+from grpc.framework.foundation import activated
 from grpc.framework.foundation import stream  # pylint: disable=unused-import
 
 
@@ -89,3 +90,25 @@ class MethodImplementation(object):
       style.Service.EVENT.
   """
   __metaclass__ = abc.ABCMeta
+
+
+class Server(activated.Activated):
+  """The server interface.
+
+  Aside from being able to be activated and deactivated, objects of this type
+  are able to report the port on which they are servicing RPCs.
+  """
+  __metaclass__ = abc.ABCMeta
+
+  # TODO(issue 726): This is an abstraction violation; not every Server is
+  # necessarily serving over a network at all.
+  @abc.abstractmethod
+  def port(self):
+    """Identifies the port on which this Server is servicing RPCs.
+
+    This method may only be called while the server is active.
+
+    Returns:
+      The number of the port on which this Server is servicing RPCs.
+    """
+    raise NotImplementedError()

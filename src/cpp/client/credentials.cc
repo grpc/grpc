@@ -45,8 +45,8 @@ Credentials::Credentials(grpc_credentials *c_creds) : creds_(c_creds) {}
 Credentials::~Credentials() { grpc_credentials_release(creds_); }
 grpc_credentials *Credentials::GetRawCreds() { return creds_; }
 
-std::unique_ptr<Credentials> CredentialsFactory::DefaultCredentials() {
-  grpc_credentials *c_creds = grpc_default_credentials_create();
+std::unique_ptr<Credentials> CredentialsFactory::GoogleDefaultCredentials() {
+  grpc_credentials *c_creds = grpc_google_default_credentials_create();
   std::unique_ptr<Credentials> cpp_creds(new Credentials(c_creds));
   return cpp_creds;
 }
@@ -86,6 +86,18 @@ std::unique_ptr<Credentials> CredentialsFactory::ServiceAccountCredentials(
   return cpp_creds;
 }
 
+// Builds JWT credentials.
+std::unique_ptr<Credentials> CredentialsFactory::JWTCredentials(
+    const grpc::string &json_key, std::chrono::seconds token_lifetime) {
+  gpr_timespec lifetime = gpr_time_from_seconds(
+      token_lifetime.count() > 0 ? token_lifetime.count() : 0);
+  grpc_credentials *c_creds =
+      grpc_jwt_credentials_create(json_key.c_str(), lifetime);
+  std::unique_ptr<Credentials> cpp_creds(
+      c_creds == nullptr ? nullptr : new Credentials(c_creds));
+  return cpp_creds;
+}
+
 // Builds IAM credentials.
 std::unique_ptr<Credentials> CredentialsFactory::IAMCredentials(
     const grpc::string &authorization_token,
@@ -98,7 +110,7 @@ std::unique_ptr<Credentials> CredentialsFactory::IAMCredentials(
 }
 
 // Combines two credentials objects into a composite credentials.
-std::unique_ptr<Credentials> CredentialsFactory::ComposeCredentials(
+std::unique_ptr<Credentials> CredentialsFactory::CompositeCredentials(
     const std::unique_ptr<Credentials> &creds1,
     const std::unique_ptr<Credentials> &creds2) {
   // Note that we are not saving unique_ptrs to the two credentials

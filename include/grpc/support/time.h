@@ -76,7 +76,7 @@ gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
 gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
-/* Return a timespec representing a given number of microseconds.  LONG_MIN is
+/* Return a timespec representing a given number of time units. LONG_MIN is
    interpreted as gpr_inf_past, and LONG_MAX as gpr_inf_future.  */
 gpr_timespec gpr_time_from_micros(long x);
 gpr_timespec gpr_time_from_nanos(long x);

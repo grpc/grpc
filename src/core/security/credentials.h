@@ -60,7 +60,14 @@ typedef enum {
   "x-goog-iam-authorization-token"
 #define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
 
+#define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
+#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
+  "application_default_credentials.json"
+
 /* --- grpc_credentials. --- */
+
+/* It is the caller's responsibility to gpr_free the result if not NULL. */
+char *grpc_get_well_known_google_credentials_file_path(void);
 
 typedef void (*grpc_credentials_metadata_cb)(void *user_data,
                                              grpc_mdelem **md_elems,

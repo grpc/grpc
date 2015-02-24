@@ -31,21 +31,30 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_SYNC_WIN32_H__
-#define __GRPC_SUPPORT_SYNC_WIN32_H__
+#include <grpc/support/port_platform.h>
 
-#include <grpc/support/sync_generic.h>
+#ifdef GPR_WIN32
 
-#include <windows.h>
+#include "src/core/security/credentials.h"
 
-typedef struct {
-  CRITICAL_SECTION cs; /* Not an SRWLock until Vista is unsupported */
-  int locked;
-} gpr_mu;
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-typedef CONDITION_VARIABLE gpr_cv;
+#include "src/core/support/env.h"
+#include "src/core/support/string.h"
 
-typedef INIT_ONCE gpr_once;
-#define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
+char *grpc_get_well_known_google_credentials_file_path(void) {
+  char *result = NULL;
+  char *appdata_path = gpr_getenv("APPDATA");
+  if (appdata_path == NULL) {
+    gpr_log(GPR_ERROR, "Could not get APPDATA environment variable.");
+    return NULL;
+  }
+  gpr_asprintf(&result, "%s/%s/%s", appdata_path,
+               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
+               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
+  gpr_free(appdata_path);
+  return result;
+}
 
-#endif /* __GRPC_SUPPORT_SYNC_WIN32_H__ */
+#endif /* GPR_WIN32 */

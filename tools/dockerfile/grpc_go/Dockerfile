@@ -48,6 +48,9 @@ RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
 # Get the source from GitHub
 RUN go get google.golang.org/grpc
 
+# Add a service_account directory containing the auth creds file
+ADD service_account service_account
+
 # Build the interop client and server
 RUN cd src/google.golang.org/grpc/interop/client && go install
 RUN cd src/google.golang.org/grpc/interop/server && go install
