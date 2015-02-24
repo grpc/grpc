@@ -35,7 +35,7 @@ $ make helloworld.pb.cc
 Which internally invokes the proto-compiler as:
 
 ```sh
-$protoc -I ../../protos/ --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=grpc_cpp_plugin helloworld.proto
+$ protoc -I ../../protos/ --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=grpc_cpp_plugin ../../protos/helloworld.proto
 ```
 
 ### Client and server implementations
@@ -45,8 +45,19 @@ The client implementation is at [greeter_client.cc](https://github.com/grpc/grpc
 The server implementation is at [greeter_server.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_server.cc).
 
 ### Try it!
-
-###TODO: instructions to run server and client
+Build client and server:
+```sh
+$ make
+```
+Run the server, which will listen on port 50051:
+```sh
+$ ./greeter_server
+```
+Run the client (in a different terminal):
+```sh
+$ ./greeter_client
+```
+If things go smoothly, you will see the "Greeter received: Hello world" in the client side output.
 
 ## Tutorial
 
