@@ -1076,7 +1076,3 @@ grpc_credentials *grpc_iam_credentials_create(const char *token,
       c->md_ctx, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, authority_selector);
   return &c->base;
 }
-
-/* -- Default credentials TODO(jboeuf). -- */
-
-grpc_credentials *grpc_default_credentials_create(void) { return NULL; }

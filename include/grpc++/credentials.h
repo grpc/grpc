@@ -86,17 +86,23 @@ struct SslCredentialsOptions {
 // fail on it.
 class CredentialsFactory {
  public:
-  // Builds credentials with reasonable defaults.
-  static std::unique_ptr<Credentials> DefaultCredentials();
+  // Builds google credentials with reasonable defaults.
+  // WARNING: Do NOT use this credentials to connect to a non-google service as
+  // this could result in an oauth2 token leak.
+  static std::unique_ptr<Credentials> GoogleDefaultCredentials();
 
   // Builds SSL Credentials given SSL specific options
   static std::unique_ptr<Credentials> SslCredentials(
       const SslCredentialsOptions& options);
 
   // Builds credentials for use when running in GCE
+  // WARNING: Do NOT use this credentials to connect to a non-google service as
+  // this could result in an oauth2 token leak.
   static std::unique_ptr<Credentials> ComputeEngineCredentials();
 
   // Builds service account credentials.
+  // WARNING: Do NOT use this credentials to connect to a non-google service as
+  // this could result in an oauth2 token leak.
   // json_key is the JSON key string containing the client's private key.
   // scope is a space-delimited list of the requested permissions.
   // token_lifetime is the lifetime of each token acquired through this service
@@ -106,13 +112,21 @@ class CredentialsFactory {
       const grpc::string& json_key, const grpc::string& scope,
       std::chrono::seconds token_lifetime);
 
+  // Builds JWT credentials.
+  // json_key is the JSON key string containing the client's private key.
+  // token_lifetime is the lifetime of each Json Web Token (JWT) created with
+  // this credentials.  It should not exceed grpc_max_auth_token_lifetime or
+  // will be cropped to this value.
+  static std::unique_ptr<Credentials> JWTCredentials(
+      const grpc::string& json_key, std::chrono::seconds token_lifetime);
+
   // Builds IAM credentials.
   static std::unique_ptr<Credentials> IAMCredentials(
       const grpc::string& authorization_token,
       const grpc::string& authority_selector);
 
   // Combines two credentials objects into a composite credentials
-  static std::unique_ptr<Credentials> ComposeCredentials(
+  static std::unique_ptr<Credentials> CompositeCredentials(
       const std::unique_ptr<Credentials>& creds1,
       const std::unique_ptr<Credentials>& creds2);
 };

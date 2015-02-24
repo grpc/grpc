@@ -641,9 +641,3 @@ grpc_channel *grpc_secure_channel_create_with_factories(
           creds->type);
   return grpc_lame_client_channel_create();
 }
-
-grpc_channel *grpc_default_secure_channel_create(
-    const char *target, const grpc_channel_args *args) {
-  return grpc_secure_channel_create(grpc_default_credentials_create(), target,
-                                    args);
-}

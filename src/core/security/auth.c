@@ -234,6 +234,9 @@ static void destroy_call_elem(grpc_call_element *elem) {
   if (calld->host != NULL) {
     grpc_mdstr_unref(calld->host);
   }
+  if (calld->method != NULL) {
+    grpc_mdstr_unref(calld->method);
+  }
 }
 
 /* Constructor for channel_data */
@@ -275,6 +278,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   }
   if (channeld->error_msg_key != NULL) {
     grpc_mdstr_unref(channeld->error_msg_key);
+  }
+  if (channeld->path_string != NULL) {
+    grpc_mdstr_unref(channeld->path_string);
   }
 }
 

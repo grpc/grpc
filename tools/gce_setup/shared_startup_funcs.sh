@@ -364,7 +364,7 @@ grpc_docker_launch_registry() {
 grpc_docker_pull_known() {
   local addr=$1
   [[ -n $addr ]] || addr="0.0.0.0:5000"
-  local known="base cxx php_base php ruby_base ruby java_base java go node_base node"
+  local known="base cxx php_base php ruby_base ruby java_base java go node_base node python_base python"
   echo "... pulling docker images for '$known'"
   for i in $known
   do
@@ -408,6 +408,7 @@ grpc_dockerfile_install() {
   }
   [[ $image_label == "grpc/go" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'go_ssh_key' || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
   [[ $image_label == "grpc/java_base" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'java_base_ssh_key' || return 1;
@@ -421,6 +422,10 @@ grpc_dockerfile_install() {
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
   [[ $image_label == "grpc/cxx" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
+  [[ $image_label == "grpc/python" ]] && {
     grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
