@@ -49,7 +49,7 @@ Build client and server:
 ```sh
 $ make
 ```
-Run the server:
+Run the server, which will listen on port 50051:
 ```sh
 $ ./greeter_server
 ```
