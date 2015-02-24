@@ -27,6 +27,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+'use strict';
+
 var async = require('async');
 var fs = require('fs');
 var parseArgs = require('minimist');
@@ -110,7 +112,9 @@ function runRecordRoute(callback) {
     string: 'db_path'
   });
   fs.readFile(path.resolve(argv.db_path), function(err, data) {
-    if (err) callback(err);
+    if (err) {
+      callback(err);
+    }
     var feature_list = JSON.parse(data);
 
     var num_points = 10;

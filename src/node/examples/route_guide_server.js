@@ -27,6 +27,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+'use strict';
+
 var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
@@ -163,7 +165,7 @@ function recordRoute(call, callback) {
     }
     /* For each point after the first, add the incremental distance from the
      * previous point to the total distance value */
-    if (previous != null) {
+    if (previous !== null) {
       distance += getDistance(previous, point);
     }
     previous = point;
@@ -173,7 +175,7 @@ function recordRoute(call, callback) {
       point_count: point_count,
       feature_count: feature_count,
       // Cast the distance to an integer
-      distance: distance|0,
+      distance: Math.floor(distance),
       // End the timer
       elapsed_time: process.hrtime(start_time)[0]
     });
@@ -240,7 +242,9 @@ if (require.main === module) {
     string: 'db_path'
   });
   fs.readFile(path.resolve(argv.db_path), function(err, data) {
-    if (err) throw err;
+    if (err) {
+      throw err;
+    }
     feature_list = JSON.parse(data);
     routeServer.listen();
   });
