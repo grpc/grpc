@@ -6,7 +6,7 @@ PREREQUISITES
 
 - [Java 8](http://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
 
-- [Maven 2.3](http://maven.apache.org/users/index.html).
+- [Maven 3.2](http://maven.apache.org/users/index.html).
   - this is needed to install Netty5, a dependency of gRPC, and to build this sample
 
 - [Latest version of google-protobuf](https://github.com/google/protobuf/tree/master/java)
