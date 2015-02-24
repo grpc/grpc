@@ -15,6 +15,9 @@ SERVER_PID=$!
 bins/opt/qps_client -driver_port 10001 &
 CLIENT_PID=$!
 
+# wait for startup
+sleep 2
+
 QPS_SERVERS=localhost:10000
 QPS_CLIENTS=localhost:10001
 
