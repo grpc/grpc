@@ -389,10 +389,15 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   }
 }
 
-void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
-  GPR_ASSERT(cc->queue == NULL);
+static void on_pollset_destroy_done(void *arg) {
+  grpc_completion_queue *cc = arg;
   grpc_pollset_destroy(&cc->pollset);
   gpr_free(cc);
+}
+
+void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
+  GPR_ASSERT(cc->queue == NULL);
+  grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
 }
 
 void grpc_event_finish(grpc_event *base) {

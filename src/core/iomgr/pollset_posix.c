@@ -55,6 +55,7 @@
 static grpc_pollset g_backup_pollset;
 static int g_shutdown_backup_poller;
 static gpr_event g_backup_poller_done;
+static gpr_event g_backup_pollset_shutdown_done;
 
 static void backup_poller(void *p) {
   gpr_timespec delta = gpr_time_from_millis(100);
@@ -104,7 +105,12 @@ void grpc_pollset_global_init(void) {
   /* start the backup poller thread */
   g_shutdown_backup_poller = 0;
   gpr_event_init(&g_backup_poller_done);
+  gpr_event_init(&g_backup_pollset_shutdown_done);
   gpr_thd_new(&id, backup_poller, NULL, NULL);
+}
+
+static void on_backup_pollset_shutdown_done(void *arg) {
+  gpr_event_set(&g_backup_pollset_shutdown_done, (void *)1);
 }
 
 void grpc_pollset_global_shutdown(void) {
@@ -113,6 +119,10 @@ void grpc_pollset_global_shutdown(void) {
   g_shutdown_backup_poller = 1;
   gpr_mu_unlock(&g_backup_pollset.mu);
   gpr_event_wait(&g_backup_poller_done, gpr_inf_future);
+
+  grpc_pollset_shutdown(&g_backup_pollset, on_backup_pollset_shutdown_done,
+                        NULL);
+  gpr_event_wait(&g_backup_pollset_shutdown_done, gpr_inf_future);
 
   /* destroy the backup pollset */
   grpc_pollset_destroy(&g_backup_pollset);
@@ -130,6 +140,8 @@ void grpc_pollset_init(grpc_pollset *pollset) {
   gpr_mu_init(&pollset->mu);
   gpr_cv_init(&pollset->cv);
   grpc_pollset_kick_init(&pollset->kick_state);
+  pollset->in_flight_cbs = 0;
+  pollset->shutting_down = 0;
   become_empty_pollset(pollset);
 }
 
@@ -163,7 +175,24 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
   return pollset->vtable->maybe_work(pollset, deadline, now, 1);
 }
 
+void grpc_pollset_shutdown(grpc_pollset *pollset,
+                           void (*shutdown_done)(void *arg),
+                           void *shutdown_done_arg) {
+  int in_flight_cbs;
+  gpr_mu_lock(&pollset->mu);
+  pollset->shutting_down = 1;
+  in_flight_cbs = pollset->in_flight_cbs;
+  pollset->shutdown_done_cb = shutdown_done;
+  pollset->shutdown_done_arg = shutdown_done_arg;
+  gpr_mu_unlock(&pollset->mu);
+  if (in_flight_cbs == 0) {
+    shutdown_done(shutdown_done_arg);
+  }
+}
+
 void grpc_pollset_destroy(grpc_pollset *pollset) {
+  GPR_ASSERT(pollset->shutting_down);
+  GPR_ASSERT(pollset->in_flight_cbs == 0);
   pollset->vtable->destroy(pollset);
   grpc_pollset_kick_destroy(&pollset->kick_state);
   gpr_mu_destroy(&pollset->mu);
@@ -213,12 +242,21 @@ static void unary_poll_do_promote(void *args, int success) {
   const grpc_pollset_vtable *original_vtable = up_args->original_vtable;
   grpc_pollset *pollset = up_args->pollset;
   grpc_fd *fd = up_args->fd;
-  grpc_fd *fds[2];
+  int do_shutdown_cb = 0;
   gpr_free(up_args);
+
+  /*
+   * This is quite tricky. There are a number of cases to keep in mind here:
+   * 1. fd may have been orphaned
+   * 2. The pollset may no longer be a unary poller (and we can't let case #1
+   * leak to other pollset types!)
+   * 3. pollset's fd (which may have changed) may have been orphaned
+   * 4. The pollset may be shutting down.
+   */
 
   gpr_mu_lock(&pollset->mu);
   /* First we need to ensure that nobody is polling concurrently */
-  while (pollset->counter != 0 && pollset->vtable == original_vtable) {
+  while (pollset->counter != 0) {
     grpc_pollset_kick(pollset);
     gpr_cv_wait(&pollset->cv, &pollset->mu, gpr_inf_future);
   }
@@ -227,30 +265,43 @@ static void unary_poll_do_promote(void *args, int success) {
   /* TODO(klempner): If we're not careful this could cause infinite recursion.
    * That's not a problem for now because empty_pollset has a trivial poller
    * and we don't have any mechanism to unbecome multipoller. */
-  if (pollset->vtable != original_vtable) {
+  pollset->in_flight_cbs--;
+  if (pollset->shutting_down) {
+    gpr_log(GPR_INFO, "Shutting down");
+    /* We don't care about this pollset anymore. */
+    if (pollset->in_flight_cbs == 0) {
+      do_shutdown_cb = 1;
+    }
+  } else if (grpc_fd_is_orphaned(fd)) {
+    /* Don't try to add it to anything, we'll drop our ref on it below */
+  } else if (pollset->vtable != original_vtable) {
+    gpr_log(GPR_INFO, "Not original vtable");
     pollset->vtable->add_fd(pollset, fd);
-    gpr_cv_broadcast(&pollset->cv);
-    gpr_mu_unlock(&pollset->mu);
-    return;
-  }
+  } else if (fd != pollset->data.ptr) {
+    grpc_fd *fds[2];
+    fds[0] = pollset->data.ptr;
+    fds[1] = fd;
 
-  if (fd == pollset->data.ptr) return;
-  fds[0] = pollset->data.ptr;
-  fds[1] = fd;
-
-  if (!grpc_fd_is_orphaned(fds[0])) {
-    grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
-    grpc_fd_unref(fds[0]);
-  } else {
-    /* old fd is orphaned and we haven't cleaned it up until now, so remain a
-     * unary poller */
-    grpc_fd_unref(fds[0]);
-    pollset->data.ptr = fd;
-    grpc_fd_ref(fd);
+    if (!grpc_fd_is_orphaned(fds[0])) {
+      grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
+      grpc_fd_unref(fds[0]);
+    } else {
+      /* old fd is orphaned and we haven't cleaned it up until now, so remain a
+       * unary poller */
+      /* Note that it is possible that fds[1] is also orphaned at this point.
+       * That's okay, we'll correct it at the next add or poll. */
+      grpc_fd_unref(fds[0]);
+      pollset->data.ptr = fd;
+      grpc_fd_ref(fd);
+    }
   }
 
   gpr_cv_broadcast(&pollset->cv);
   gpr_mu_unlock(&pollset->mu);
+
+  if (do_shutdown_cb) {
+    pollset->shutdown_done_cb(pollset->shutdown_done_arg);
+  }
 
   /* Matching ref in unary_poll_pollset_add_fd */
   grpc_fd_unref(fd);
@@ -260,18 +311,31 @@ static void unary_poll_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   grpc_unary_promote_args *up_args;
   if (fd == pollset->data.ptr) return;
 
-  if (grpc_fd_is_orphaned(pollset->data.ptr)) {
-    /* old fd is orphaned and we haven't cleaned it up until now, so remain a
-     * unary poller */
-    grpc_fd_unref(pollset->data.ptr);
-    pollset->data.ptr = fd;
-    grpc_fd_ref(fd);
+  if (!pollset->counter) {
+    /* Fast path -- no in flight cbs */
+    /* TODO(klempner): Comment this out and fix any test failures or establish
+     * they are due to timing issues */
+    grpc_fd *fds[2];
+    fds[0] = pollset->data.ptr;
+    fds[1] = fd;
+
+    if (!grpc_fd_is_orphaned(fds[0])) {
+      grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds));
+      grpc_fd_unref(fds[0]);
+    } else {
+      /* old fd is orphaned and we haven't cleaned it up until now, so remain a
+       * unary poller */
+      grpc_fd_unref(fds[0]);
+      pollset->data.ptr = fd;
+      grpc_fd_ref(fd);
+    }
     return;
   }
 
   /* Now we need to promote. This needs to happen when we're not polling. Since
    * this may be called from poll, the wait needs to happen asynchronously. */
   grpc_fd_ref(fd);
+  pollset->in_flight_cbs++;
   up_args = gpr_malloc(sizeof(*up_args));
   up_args->pollset = pollset;
   up_args->fd = fd;
@@ -299,6 +363,10 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   int r;
 
   if (pollset->counter) {
+    return 0;
+  }
+  if (pollset->in_flight_cbs) {
+    /* Give do_promote priority so we don't starve it out */
     return 0;
   }
   fd = pollset->data.ptr;
