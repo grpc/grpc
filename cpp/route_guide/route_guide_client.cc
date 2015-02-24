@@ -135,7 +135,9 @@ class RouteGuideClient {
     RouteSummary stats;
     ClientContext context;
     const int kPoints = 10;
-    std::default_random_engine generator;
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+
+    std::default_random_engine generator(seed);
     std::uniform_int_distribution<int> feature_distribution(
         0, feature_list_.size() - 1);
     std::uniform_int_distribution<int> delay_distribution(
@@ -239,7 +241,7 @@ int main(int argc, char** argv) {
 
   std::string db = examples::GetDbFileContent(argc, argv);
   RouteGuideClient guide(
-      grpc::CreateChannel("localhost:50051", ChannelArguments()),
+      grpc::CreateChannelDeprecated("localhost:50051", ChannelArguments()),
       db);
 
   std::cout << "-------------- GetFeature --------------" << std::endl;
