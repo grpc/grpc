@@ -239,6 +239,7 @@ class RouteGuideClient {
 int main(int argc, char** argv) {
   grpc_init();
 
+  // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = examples::GetDbFileContent(argc, argv);
   RouteGuideClient guide(
       grpc::CreateChannelDeprecated("localhost:50051", ChannelArguments()),

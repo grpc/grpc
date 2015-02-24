@@ -199,6 +199,7 @@ void RunServer(const std::string& db_path) {
 int main(int argc, char** argv) {
   grpc_init();
 
+  // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = examples::GetDbFileContent(argc, argv);
   RunServer(db);
 

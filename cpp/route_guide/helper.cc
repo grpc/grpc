@@ -55,6 +55,8 @@ std::string GetDbFileContent(int argc, char** argv) {
         db_path = argv_1.substr(start_position + 1);
       }
     }
+  } else {
+    db_path = "route_guide_db.json";
   }
   std::ifstream db_file(db_path);
   if (!db_file.is_open()) {
