@@ -544,6 +544,8 @@ namespace Grpc.Core.Internal
                     }
                     observer = readObserver;
                     status = finishedStatus;
+
+                    ReleaseResourcesIfPossible();
                 }
 
                 // TODO: wrap deserialization...
