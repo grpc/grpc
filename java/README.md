@@ -9,11 +9,6 @@ PREREQUISITES
 - [Maven 3.2 or later](http://maven.apache.org/download.cgi).
   - this is needed to install Netty5, a dependency of gRPC, and to build this sample
 
-- [Latest version of google-protobuf](https://github.com/google/protobuf/tree/master/java)
-  - to generate java code from proto files
-  - to install the base Java proto3 library
-
-
 INSTALL
 -------
 
