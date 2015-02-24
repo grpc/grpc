@@ -69,7 +69,7 @@
   <Choose>
     <!-- Under Windows, automatically copy the C core library to output dir.
          Under Monodevelop it's not supported so it has no effect. -->
-    <When Condition=" '$(Platform)' == 'x86' ">
+    <When Condition=" '$(Platform)' == 'AnyCPU' ">
       <ItemGroup>
         <Content Include="..\..\..\vsprojects\vs2013\Debug\grpc_csharp_ext.dll">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
