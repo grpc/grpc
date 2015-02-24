@@ -2081,7 +2081,7 @@ install-certs: etc/roots.pem
 	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
 
 verify-install:
-ifeq ($(SYSTEM_OK),true)
+ifeq ($(INSTALL_OK),true)
 	@echo "Your system looks ready to go."
 	@echo
 else
