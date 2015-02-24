@@ -27,6 +27,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+'use strict';
+
 var async = require('async');
 var fs = require('fs');
 var GoogleAuth = require('googleauth');
@@ -270,7 +272,9 @@ function main(callback) {
 
 if (require.main === module) {
   main(function(err) {
-    if (err) throw err;
+    if (err) {
+      throw err;
+    }
   });
 }
 
