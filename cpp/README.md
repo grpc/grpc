@@ -53,10 +53,11 @@ Run the server:
 ```sh
 $ ./greeter_server
 ```
-Run the client:
+Run the client (in a different terminal):
 ```sh
 $ ./greeter_client
 ```
+If things go smoothly, you will see the "Greeter received: Hello world" in the client side output.
 
 ## Tutorial
 
