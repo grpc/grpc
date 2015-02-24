@@ -31,8 +31,6 @@
  *
  */
 
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <sys/signal.h>
 #include <thread>
 
@@ -48,6 +46,7 @@
 #include "src/cpp/server/thread_pool.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/timer.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -84,10 +83,6 @@ static bool got_sigint = false;
 
 static void sigint_handler(int x) { got_sigint = 1; }
 
-static double time_double(struct timeval* tv) {
-  return tv->tv_sec + 1e-6 * tv->tv_usec;
-}
-
 static bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
   // TODO(yangg): Support UNCOMPRESSABLE payload.
@@ -104,19 +99,8 @@ namespace {
 
 class TestServiceImpl final : public TestService::Service {
  public:
-  Status CollectServerStats(ServerContext* context, const StatsRequest*,
-                            ServerStats* response) {
-    struct rusage usage;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    getrusage(RUSAGE_SELF, &usage);
-    response->set_time_now(time_double(&tv));
-    response->set_time_user(time_double(&usage.ru_utime));
-    response->set_time_system(time_double(&usage.ru_stime));
-    return Status::OK;
-  }
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
-                   SimpleResponse* response) {
+                   SimpleResponse* response) override {
     if (request->has_response_size() && request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
@@ -133,48 +117,47 @@ class ServerImpl : public QpsServer::Service {
  public:
   Status RunServer(ServerContext* ctx, ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
     ServerArgs args;
-    std::unique_ptr<ServerStats> last_stats;
     if (!stream->Read(&args)) return Status::OK;
 
-    bool done = false;
-    while (!done) {
-      std::lock_guard<std::mutex> lock(server_mu_);
+    std::lock_guard<std::mutex> lock(server_mu_);
 
-      char* server_address = NULL;
-      gpr_join_host_port(&server_address, "::", FLAGS_port);
+    char* server_address = NULL;
+    gpr_join_host_port(&server_address, "::", FLAGS_port);
 
-      TestServiceImpl service;
+    TestServiceImpl service;
 
-      ServerBuilder builder;
-      builder.AddPort(server_address);
-      builder.RegisterService(&service);
+    ServerBuilder builder;
+    builder.AddPort(server_address);
+    builder.RegisterService(&service);
 
-      gpr_free(server_address);
+    std::unique_ptr<ThreadPool> pool(new ThreadPool(args.config().threads()));
+    builder.SetThreadPool(pool.get());
 
-      std::unique_ptr<ThreadPool> pool(new ThreadPool(args.threads()));
-      builder.SetThreadPool(pool.get());
+    auto server = builder.BuildAndStart();
+    gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
 
-      auto server = builder.BuildAndStart();
-      gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
+    gpr_free(server_address);
 
-      ServerStatus last_status;
-      if (last_stats.get()) {
-        *last_status.mutable_stats() = *last_stats;
-      }
-      if (!stream->Write(last_status)) return Status(grpc::UNKNOWN);
+    ServerStatus status;
+    status.set_port(FLAGS_port);
+    if (!stream->Write(status)) return Status(grpc::UNKNOWN);
 
-      grpc_profiler_start("qps_server.prof");
+    grpc_profiler_start("qps_server.prof");
+    Timer timer;
 
-      done = stream->Read(&args);
-
-      grpc_profiler_stop();
+    if (stream->Read(&args)) {
+      gpr_log(GPR_ERROR, "Got a server request, but not expecting one");
+      return Status(grpc::UNKNOWN);
     }
 
-    ServerStatus last_status;
-    if (last_stats.get()) {
-      *last_status.mutable_stats() = *last_stats;
-    }
-    stream->Write(last_status);
+    auto timer_result = timer.Mark();
+    grpc_profiler_stop();
+
+    auto* stats = status.mutable_stats();
+    stats->set_time_elapsed(timer_result.wall);
+    stats->set_time_system(timer_result.system);
+    stats->set_time_user(timer_result.user);
+    stream->Write(status);
     return Status::OK;
   }
 

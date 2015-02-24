@@ -51,17 +51,14 @@ message StatsRequest {
 }
 
 message ServerStats {
-  // wall clock time for timestamp
-  required double time_now = 1;
+  // wall clock time
+  required double time_elapsed = 1;
 
   // user time used by the server process and threads
   required double time_user = 2;
 
   // server time used by the server process and all threads
   required double time_system = 3;
-
-  // RPC count so far
-  optional int32 num_rpcs = 4;
 }
 
 message Payload {
@@ -78,10 +75,9 @@ message Latencies {
   required double l_999 = 4;
 }
 
-message ClientArgs {
-  required string server_target = 1;
-  required bool enable_ssl = 3;
-  required int32 client_threads = 4;
+message ClientConfig {
+  required bool enable_ssl = 1;
+  required int32 client_threads = 2;
   // We have a configurable number of channels for sending RPCs.
   // RPCs are sent round-robin on the available channels by the
   // various threads. Interesting cases are 1 global channel or
@@ -90,9 +86,14 @@ message ClientArgs {
   // rather than just at initialization time in order to also measure the
   // impact of cache thrashing caused by channel changes. This is an issue
   // if you are not in one of the above "interesting cases"
-  required int32 client_channels = 5;
-  required int32 num_rpcs = 6;
-  required int32 payload_size = 7;
+  required int32 client_channels = 3;
+  required int32 num_rpcs = 4;
+  required int32 payload_size = 5;
+}
+
+message ClientArgs {
+  repeated string server_targets = 1;
+  required ClientConfig config = 2;
 }
 
 message ClientResult {
@@ -103,12 +104,18 @@ message ClientResult {
   required double time_system = 5;
 }
 
-message ServerArgs {
+message ServerConfig {
   required int32 threads = 1;
+  required bool enable_ssl = 2;
+}
+
+message ServerArgs {
+  required ServerConfig config = 1;
 }
 
 message ServerStatus {
   optional ServerStats stats = 1;
+  required int32 port = 2;
 }
 
 message SimpleRequest {
@@ -168,9 +175,6 @@ message StreamingOutputCallResponse {
 }
 
 service TestService {
-  // Collect stats from server, ignore request content
-  rpc CollectServerStats(StatsRequest) returns (ServerStats);
-
   // One request followed by one response.
   // The server returns the client payload as-is.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);

@@ -31,53 +31,35 @@
  *
  */
 
-#include <gflags/gflags.h>
+#include "test/cpp/qps/timer.h"
 
-#include "test/cpp/qps/driver.h"
+#include <sys/time.h>
+#include <sys/resource.h>
 
-DEFINE_int32(num_clients, 1, "Number of client binaries");
-DEFINE_int32(num_servers, 1, "Number of server binaries");
+Timer::Timer() : start_(Sample()) {}
 
-// Common config
-DEFINE_bool(enable_ssl, false, "Use SSL");
-
-// Server config
-DEFINE_int32(server_threads, 1, "Number of server threads");
-
-// Client config
-DEFINE_int32(client_threads, 1, "Number of client threads");
-DEFINE_int32(client_channels, 1, "Number of client channels");
-DEFINE_int32(num_rpcs, 10000, "Number of rpcs per client thread");
-DEFINE_int32(payload_size, 1, "Payload size");
-
-using grpc::testing::ClientConfig;
-using grpc::testing::ServerConfig;
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
-using namespace google;
-using namespace gflags;
-
-int main(int argc, char **argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
-
-  ClientConfig client_config;
-  client_config.set_enable_ssl(FLAGS_enable_ssl);
-  client_config.set_client_threads(FLAGS_client_threads);
-  client_config.set_client_channels(FLAGS_client_channels);
-  client_config.set_num_rpcs(FLAGS_num_rpcs);
-  client_config.set_payload_size(FLAGS_payload_size);
-
-  ServerConfig server_config;
-  server_config.set_threads(FLAGS_server_threads);
-  server_config.set_enable_ssl(FLAGS_enable_ssl);
-
-  RunScenario(client_config, FLAGS_num_clients, server_config, FLAGS_num_servers);
-
-  grpc_shutdown();
-  return 0;
+static double time_double(struct timeval* tv) {
+  return tv->tv_sec + 1e-6 * tv->tv_usec;
 }
 
+Timer::Result Timer::Sample() {
+  struct rusage usage;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  getrusage(RUSAGE_SELF, &usage);
+
+  Result r;
+  r.wall = time_double(&tv);
+  r.user = time_double(&usage.ru_utime);
+  r.system = time_double(&usage.ru_stime);
+  return r;
+}
+
+Timer::Result Timer::Mark() {
+  Result s = Sample();
+  Result r;
+  r.wall = s.wall - start_.wall;
+  r.user = s.user - start_.user;
+  r.system = s.system - start_.system;
+  return r;
+}

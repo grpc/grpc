@@ -31,53 +31,25 @@
  *
  */
 
-#include <gflags/gflags.h>
+#ifndef TEST_QPS_TIMER_H
+#define TEST_QPS_TIMER_H
 
-#include "test/cpp/qps/driver.h"
+class Timer {
+ public:
+  Timer();
 
-DEFINE_int32(num_clients, 1, "Number of client binaries");
-DEFINE_int32(num_servers, 1, "Number of server binaries");
+  struct Result {
+  	double wall;
+  	double user;
+  	double system;
+  };
 
-// Common config
-DEFINE_bool(enable_ssl, false, "Use SSL");
+  Result Mark();
 
-// Server config
-DEFINE_int32(server_threads, 1, "Number of server threads");
+ private:
+  static Result Sample();
 
-// Client config
-DEFINE_int32(client_threads, 1, "Number of client threads");
-DEFINE_int32(client_channels, 1, "Number of client channels");
-DEFINE_int32(num_rpcs, 10000, "Number of rpcs per client thread");
-DEFINE_int32(payload_size, 1, "Payload size");
+  const Result start_;
+};
 
-using grpc::testing::ClientConfig;
-using grpc::testing::ServerConfig;
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
-using namespace google;
-using namespace gflags;
-
-int main(int argc, char **argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
-
-  ClientConfig client_config;
-  client_config.set_enable_ssl(FLAGS_enable_ssl);
-  client_config.set_client_threads(FLAGS_client_threads);
-  client_config.set_client_channels(FLAGS_client_channels);
-  client_config.set_num_rpcs(FLAGS_num_rpcs);
-  client_config.set_payload_size(FLAGS_payload_size);
-
-  ServerConfig server_config;
-  server_config.set_threads(FLAGS_server_threads);
-  server_config.set_enable_ssl(FLAGS_enable_ssl);
-
-  RunScenario(client_config, FLAGS_num_clients, server_config, FLAGS_num_servers);
-
-  grpc_shutdown();
-  return 0;
-}
-
+#endif // TEST_QPS_TIMER_H
