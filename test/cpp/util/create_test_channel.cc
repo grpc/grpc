@@ -79,7 +79,7 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     }
     return CreateChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannel(server, channel_args);
+    return CreateChannelDeprecated(server, channel_args);
   }
 }
 
