@@ -65,6 +65,9 @@ namespace Grpc.Core.Tests
             GrpcEnvironment.Shutdown();
         }
 
+        /// <summary>
+        /// (~1.26us .NET Windows)
+        /// </summary>
         [Test]
         public void CompletionQueueCreateDestroyBenchmark()
         {
@@ -80,7 +83,8 @@ namespace Grpc.Core.Tests
 
         /// <summary>
         /// Approximate results:
-        /// (mono ~80ns)
+        /// (~80ns Mono Linux)
+        /// (~110ns .NET Windows)
         /// </summary>
         [Test]
         public void NativeCallbackBenchmark()
@@ -100,7 +104,8 @@ namespace Grpc.Core.Tests
         /// <summary>
         /// Creating a new native-to-managed callback has significant overhead
         /// compared to using an existing one. We need to be aware of this.
-        /// (~50us on mono)
+        /// (~50us on Mono Linux!!!)
+        /// (~1.1us on .NET Windows)
         /// </summary>
         [Test]
         public void NewNativeCallbackBenchmark()
@@ -117,6 +122,7 @@ namespace Grpc.Core.Tests
 
         /// <summary>
         /// Tests overhead of a simple PInvoke call.
+        /// (~46ns .NET Windows)
         /// </summary>
         [Test]
         public void NopPInvokeBenchmark()
