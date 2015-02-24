@@ -236,7 +236,7 @@ _[is there no equivalent of the Stubby4 wait() method, ie do you have to do the 
 <a name="client"></a>
 ## Creating the client
 
-In this section, we'll look at creating a C++ client for our `RouteGuide` service. You can see our complete example client code in [grpc-common/cpp/route_guide/route_guide_client.cc]((https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/route_guide_client.cc).
+In this section, we'll look at creating a C++ client for our `RouteGuide` service. You can see our complete example client code in [grpc-common/cpp/route_guide/route_guide_client.cc](https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/route_guide_client.cc).
 
 ### Creating a stub
 
