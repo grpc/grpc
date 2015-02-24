@@ -30,7 +30,7 @@ Then change your current directory to `grpc-common/cpp/route_guide`:
 $ cd grpc-common/cpp/route_guide
 ```
 
-Although we've provided the complete example so you don't need to generate the gRPC code yourself, if you want to try generating your own server and client interface code you can follow the setup instructions for the C++ gRPC libraries in [grpc/grpc/INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL).
+Although we've provided the complete example so you don't need to generate the gRPC code yourself, if you want to try generating your own server and client interface code you can follow the setup instructions in [the C++ quick start guide](https://github.com/grpc/grpc-common/tree/master/cpp).
 
 
 ## Defining the service
@@ -93,7 +93,7 @@ message Point {
 
 Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC C++ plugin.
 
-For simplicity, we've provided a [makefile](https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/Makefile) that runs `protoc` for you with the appropriate plugin, input, and output (if you want to run this yourself, make sure you've followed the [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first):
+For simplicity, we've provided a [makefile](https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/Makefile) that runs `protoc` for you with the appropriate plugin, input, and output (if you want to run this yourself, make sure you've installed protoc and followed the gRPC code [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first):
 
 ```shell
 $ make route_guide.pb.cc
@@ -109,22 +109,189 @@ Running this command generates the following files:
 
 These contain:
 - All the protocol buffer code to populate, serialize, and retrieve our request and response message types
-- A class called `RouteGuide` that contains both a remote interface type (or *stub*) for clients to call and an abstract interface for servers to implement, both with the methods defined in the `RouteGuide` service.
+- A class called `RouteGuide` that contains
+   - a remote interface type (or *stub*) for clients to call with the methods defined in the `RouteGuide` service.
+   - two abstract interfaces for servers to implement, also with the methods defined in the `RouteGuide` service.
 
 
+<a name="server"></a>
 ## Creating the server
 
-First let's look at how we create a `RouteGuide` server.
+First let's look at how we create a `RouteGuide` server. If you're only interested in creating gRPC clients, you can skip this section and go straight to [Creating the client](#client) (though you might find it interesting anyway!).
 
-There are two parts to making our `RouteGuide` service work:
+There are two parts to making our `RouteGuide` service do its job:
 - Implementing the service interface generated from our service definition: doing the actual "work" of our service.
-- Running a gRPC server to listen for requests from clients and return the service responses
+- Running a gRPC server to listen for requests from clients and return the service responses.
 
+You can find our example `RouteGuide` server in [grpc-common/cpp/route_guide/route_guide_server.cc]((https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/route_guide_server.cc). Let's take a closer look at how it works.
 
+### Implementing RouteGuide
+
+As you can see, our server has a `RouteGuideImpl` class that implements the generated `RouteGuide::Service` interface:
+
+```cpp
+class RouteGuideImpl final : public RouteGuide::Service {
+...
+}
+```
+In this case we're implementing the *synchronous* version of `RouteGuide`, where... It's also possible to implement an asynchronous interface, `RouteGuide::AsyncService`...
+
+`RouteGuideImpl` implements all our service methods. Let's look at the simplest type first, `GetFeature`, which just gets a `Point` from the client and returns the corresponding feature information from its database in a `Feature`.
+
+```cpp
+  Status GetFeature(ServerContext* context, const Point* point,
+                    Feature* feature) override {
+    feature->set_name(GetFeatureName(*point, feature_list_));
+    feature->mutable_location()->CopyFrom(*point);
+    return Status::OK;
+  }
+```
+
+The method is passed a context object for the RPC, the client's `Point` protocol buffer request, and a `Feature` protocol buffer to fill in with the response information. In the method we populate the `Feature` with the appropriate information, and then `return` with an `OK` status to tell gRPC that we've finished dealing with the RPC and that the `Feature` can be returned to the client.
+
+Now let's look at something a bit more complicated - a streaming RPC. `ListFeatures` is a server-side streaming RPC, so we need to send back multiple `Feature`s to our client.
+
+```cpp
+  Status ListFeatures(ServerContext* context, const Rectangle* rectangle,
+                      ServerWriter<Feature>* writer) override {
+    auto lo = rectangle->lo();
+    auto hi = rectangle->hi();
+    long left = std::min(lo.longitude(), hi.longitude());
+    long right = std::max(lo.longitude(), hi.longitude());
+    long top = std::max(lo.latitude(), hi.latitude());
+    long bottom = std::min(lo.latitude(), hi.latitude());
+    for (const Feature& f : feature_list_) {
+      if (f.location().longitude() >= left &&
+          f.location().longitude() <= right &&
+          f.location().latitude() >= bottom &&
+          f.location().latitude() <= top) {
+        writer->Write(f);
+      }
+    }
+    return Status::OK;
+  }
+```
+
+As you can see, instead of getting simple request and response objects in our method parameters, this time we get a request object (the `Rectangle` in which our client wants to find `Feature`s) and a special `ServerWriter` object. In the method, we populate as many `Feature` objects as we need to return, writing them to the `ServerWriter` using its `Write()` method. Finally, as in our simple RPC, we `return Status::OK` to tell gRPC that we've finished writing responses.
+
+If you look at the client-side streaming method `RecordRoute` you'll see it's quite similar, except this time we get a `ServerReader` instead of a request object and a single response. We use the `ServerReader`s `Read()` method to repeatedly read in our client's requests to a request object (in this case a `Point`) until there are no more messages: the server needs to check the return value of `Read()` after each call. If `true`, the stream is still good and it can continue reading; if `false` the message stream has ended.
+
+```cpp
+while (stream->Read(&point)) {
+  ...//process client input
+}
+```
+Finally, let's look at our bidirectional streaming RPC `RouteChat()`.
+
+```cpp
+  Status RouteChat(ServerContext* context,
+                   ServerReaderWriter<RouteNote, RouteNote>* stream) override {
+    std::vector<RouteNote> received_notes;
+    RouteNote note;
+    while (stream->Read(&note)) {
+      for (const RouteNote& n : received_notes) {
+        if (n.location().latitude() == note.location().latitude() &&
+            n.location().longitude() == note.location().longitude()) {
+          stream->Write(n);
+        }
+      }
+      received_notes.push_back(note);
+    }
+
+    return Status::OK;
+  }
+```
+
+This time we get a `ServerReaderWriter` that can be used to read *and* write messages. The syntax for reading and writing here is exactly the same as for our client-streaming and server-streaming methods. Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
+
+### Starting the server
+
+Once we've implemented all our methods, we also need to start up a gRPC server so that clients can actually use our service. The following snippet shows how we do this for our `RouteGuide` service:
+
+```cpp
+void RunServer(const std::string& db_path) {
+  std::string server_address("0.0.0.0:50051");
+  RouteGuideImpl service(db_path);
+
+  ServerBuilder builder;
+  builder.AddPort(server_address);
+  builder.RegisterService(&service);
+  std::unique_ptr<Server> server(builder.BuildAndStart());
+  std::cout << "Server listening on " << server_address << std::endl;
+  while (true) {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+  }
+}
+```
+As you can see, we build and start our server using a `ServerBuilder`. To do this, we:
+
+1. Create an instance of our service implementation class `RouteGuideImpl`.
+2. Create an instance of the factory `ServerBuilder` class.
+3. Specify the address and port we want to use to listen for client requests using the builder's `AddPort()` method.
+4. Register our service implementation with the builder.
+5. Call `BuildAndStart()` on the builder to create and start an RPC server for our service.
+
+_[is there no equivalent of the Stubby4 wait() method, ie do you have to do the while(true) loop to keep the server running?]_
+
+<a name="client"></a>
 ## Creating the client
 
+In this section, we'll look at creating a C++ client for our `RouteGuide` service. You can see our complete example client code in [grpc-common/cpp/route_guide/route_guide_client.cc]((https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/route_guide_client.cc).
+
+### Creating a stub
+
+To call service methods, we first need to create a *stub*.
+
+First we need to create a gRPC *channel* for our stub, specifying the server address and port we want to connect to and any special channel arguments - in our case we'll use the default `ChannelArguments`:
+
+```cpp
+grpc::CreateChannelDeprecated("localhost:50051", ChannelArguments());
+```
+
+Now we can use the channel to create our stub using the `NewStub` method provided in the `RouteGuide` class we generated from our .proto.
+
+```cpp
+ public:
+  RouteGuideClient(std::shared_ptr<ChannelInterface> channel,
+                   const std::string& db)
+      : stub_(RouteGuide::NewStub(channel)) {
+    ...
+  }
+```
+
+### Calling service methods
+
+Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local method.
+
+```cpp
+  Point point;
+  Feature feature;
+  point = MakePoint(409146138, -746188906);
+  GetOneFeature(point, &feature);
+
+...
+
+  bool GetOneFeature(const Point& point, Feature* feature) {
+    ClientContext context;
+    Status status = stub_->GetFeature(&context, point, feature);
+    ...
+  }
+```
+
+As you can see, you create and populate a request protocol buffer object (in our case `Point`), and create a response protocol buffer object for the server to fill in. You also create a `ClientContext` object for your call. Finally, you call the method on the stub, passing it the context, request, and response. If the method returns `OK`, then you can read your response information from the server from your response object.
+
+```cpp
+      std::cout << "Found feature called " << feature->name()  << " at "
+                << feature->location().latitude()/kCoordFactor_ << ", "
+                << feature->location().longitude()/kCoordFactor_ << std::endl;
+```
+
+Now let's look at our streaming methods. If you've already read [Creating the server](#server) some of this may look very familiar - streaming RPCs are implemented in a similar way on both sides.
 
 
+## Try it out!
+
+_[need build and run instructions here]_
 
 
 
