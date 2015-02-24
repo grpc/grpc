@@ -41,7 +41,7 @@
    Should be a prime. */
 enum { event_sync_partitions = 31 };
 
-/* Event are partitioned by address to avoid lock contention. */
+/* Events are partitioned by address to avoid lock contention. */
 static struct sync_array_s {
   gpr_mu mu;
   gpr_cv cv;
@@ -71,10 +71,10 @@ void gpr_event_set(gpr_event *ev, void *value) {
   struct sync_array_s *s = hash(ev);
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(gpr_atm_acq_load(&ev->state) == 0);
-  GPR_ASSERT(value != NULL);
   gpr_atm_rel_store(&ev->state, (gpr_atm)value);
   gpr_cv_broadcast(&s->cv);
   gpr_mu_unlock(&s->mu);
+  GPR_ASSERT(value != NULL);
 }
 
 void *gpr_event_get(gpr_event *ev) {
