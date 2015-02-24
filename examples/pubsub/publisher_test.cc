@@ -110,7 +110,8 @@ class PublisherTest : public ::testing::Test {
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ = CreateChannel(server_address_.str(), ChannelArguments());
+    channel_ =
+        CreateChannelDeprecated(server_address_.str(), ChannelArguments());
 
     publisher_.reset(new grpc::examples::pubsub::Publisher(channel_));
   }
