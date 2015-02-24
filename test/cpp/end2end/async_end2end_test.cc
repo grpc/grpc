@@ -105,7 +105,7 @@ class AsyncEnd2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<ChannelInterface> channel = CreateChannel(
         server_address_.str(), InsecureCredentials(), ChannelArguments());
-    stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
+    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
   void server_ok(int i) { verify_ok(&srv_cq_, i, true); }

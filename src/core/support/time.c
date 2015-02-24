@@ -85,12 +85,12 @@ gpr_timespec gpr_time_from_nanos(long ns) {
   } else if (ns == LONG_MIN) {
     result = gpr_inf_past;
   } else if (ns >= 0) {
-    result.tv_sec = ns / 1000000000;
-    result.tv_nsec = ns - result.tv_sec * 1000000000;
+    result.tv_sec = ns / GPR_NS_PER_SEC;
+    result.tv_nsec = ns - result.tv_sec * GPR_NS_PER_SEC;
   } else {
     /* Calculation carefully formulated to avoid any possible under/overflow. */
-    result.tv_sec = (-(999999999 - (ns + 1000000000)) / 1000000000) - 1;
-    result.tv_nsec = ns - result.tv_sec * 1000000000;
+    result.tv_sec = (-(999999999 - (ns + GPR_NS_PER_SEC)) / GPR_NS_PER_SEC) - 1;
+    result.tv_nsec = ns - result.tv_sec * GPR_NS_PER_SEC;
   }
   return result;
 }
@@ -172,8 +172,8 @@ gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
   gpr_timespec sum;
   int inc = 0;
   sum.tv_nsec = a.tv_nsec + b.tv_nsec;
-  if (sum.tv_nsec >= 1000000000) {
-    sum.tv_nsec -= 1000000000;
+  if (sum.tv_nsec >= GPR_NS_PER_SEC) {
+    sum.tv_nsec -= GPR_NS_PER_SEC;
     inc++;
   }
   if (a.tv_sec == TYPE_MAX(time_t) || a.tv_sec == TYPE_MIN(time_t)) {
@@ -200,7 +200,7 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
   int dec = 0;
   diff.tv_nsec = a.tv_nsec - b.tv_nsec;
   if (diff.tv_nsec < 0) {
-    diff.tv_nsec += 1000000000;
+    diff.tv_nsec += GPR_NS_PER_SEC;
     dec++;
   }
   if (a.tv_sec == TYPE_MAX(time_t) || a.tv_sec == TYPE_MIN(time_t)) {

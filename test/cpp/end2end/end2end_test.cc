@@ -163,7 +163,7 @@ class End2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<ChannelInterface> channel = CreateChannel(
         server_address_.str(), InsecureCredentials(), ChannelArguments());
-    stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
+    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
@@ -293,15 +293,13 @@ TEST_F(End2endTest, RequestStreamOneRequest) {
   EchoResponse response;
   ClientContext context;
 
-  ClientWriter<EchoRequest>* stream = stub_->RequestStream(&context, &response);
+  auto stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   stream->WritesDone();
   Status s = stream->Finish();
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 TEST_F(End2endTest, RequestStreamTwoRequests) {
@@ -310,7 +308,7 @@ TEST_F(End2endTest, RequestStreamTwoRequests) {
   EchoResponse response;
   ClientContext context;
 
-  ClientWriter<EchoRequest>* stream = stub_->RequestStream(&context, &response);
+  auto stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->Write(request));
@@ -318,8 +316,6 @@ TEST_F(End2endTest, RequestStreamTwoRequests) {
   Status s = stream->Finish();
   EXPECT_EQ(response.message(), "hellohello");
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 TEST_F(End2endTest, ResponseStream) {
@@ -329,7 +325,7 @@ TEST_F(End2endTest, ResponseStream) {
   ClientContext context;
   request.set_message("hello");
 
-  ClientReader<EchoResponse>* stream = stub_->ResponseStream(&context, request);
+  auto stream = stub_->ResponseStream(&context, request);
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message() + "0");
   EXPECT_TRUE(stream->Read(&response));
@@ -340,8 +336,6 @@ TEST_F(End2endTest, ResponseStream) {
 
   Status s = stream->Finish();
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 TEST_F(End2endTest, BidiStream) {
@@ -351,8 +345,7 @@ TEST_F(End2endTest, BidiStream) {
   ClientContext context;
   grpc::string msg("hello");
 
-  ClientReaderWriter<EchoRequest, EchoResponse>* stream =
-      stub_->BidiStream(&context);
+  auto stream = stub_->BidiStream(&context);
 
   request.set_message(msg + "0");
   EXPECT_TRUE(stream->Write(request));
@@ -374,8 +367,6 @@ TEST_F(End2endTest, BidiStream) {
 
   Status s = stream->Finish();
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 // Talk to the two services with the same name but different package names.
@@ -425,14 +416,11 @@ TEST_F(End2endTest, BadCredentials) {
   EXPECT_EQ("Rpc sent on a lame channel.", s.details());
 
   ClientContext context2;
-  ClientReaderWriter<EchoRequest, EchoResponse>* stream =
-      stub->BidiStream(&context2);
+  auto stream = stub->BidiStream(&context2);
   s = stream->Finish();
   EXPECT_FALSE(s.IsOk());
   EXPECT_EQ(StatusCode::UNKNOWN, s.code());
   EXPECT_EQ("Rpc sent on a lame channel.", s.details());
-
-  delete stream;
 }
 
 }  // namespace testing

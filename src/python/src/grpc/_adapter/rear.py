@@ -382,6 +382,8 @@ class _ActivatedRearLink(ticket_interfaces.RearLink, activated.Activated):
   def join_fore_link(self, fore_link):
     with self._lock:
       self._fore_link = null.NULL_FORE_LINK if fore_link is None else fore_link
+      if self._rear_link is not None:
+        self._rear_link.join_fore_link(self._fore_link)
 
   def _start(self):
     with self._lock:

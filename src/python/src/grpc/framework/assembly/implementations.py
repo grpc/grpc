@@ -195,7 +195,7 @@ def _servicer(implementations, pool):
       event_stream_in_stream_out_methods=event_stream_in_stream_out_methods)
 
 
-class _ServiceAssembly(activated.Activated):
+class _ServiceAssembly(interfaces.Server):
 
   def __init__(self, implementations, fore_link):
     self._implementations = implementations
@@ -236,6 +236,10 @@ class _ServiceAssembly(activated.Activated):
 
   def stop(self):
     self._stop()
+
+  def port(self):
+    with self._lock:
+      return self._fore_link.port()
 
 
 def assemble_face_stub(activated_rear_link):
@@ -300,6 +304,6 @@ def assemble_service(implementations, activated_fore_link):
       when passed to this method.
 
   Returns:
-    An activated.Activated value encapsulating RPC service.
+    An interfaces.Server encapsulating RPC service.
   """
   return _ServiceAssembly(implementations, activated_fore_link)

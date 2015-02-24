@@ -206,7 +206,7 @@ void *gpr_event_cancellable_wait(gpr_event *ev, gpr_timespec abs_deadline,
 
 /* --- Reference counting ---
 
-   These calls act on the type gpr_refcount.  It requires no desctruction.  */
+   These calls act on the type gpr_refcount.  It requires no destruction.  */
 
 /* Initialize *r to value n.  */
 void gpr_ref_init(gpr_refcount *r, int n);
