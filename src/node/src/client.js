@@ -245,7 +245,9 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
           return;
         }
         if (response.status.code !== grpc.status.OK) {
-          callback(response.status);
+          var error = new Error(response.status.details);
+          error.code = response.status.code;
+          callback(error);
           return;
         }
         emitter.emit('status', response.status);
@@ -314,7 +316,9 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
           return;
         }
         if (response.status.code !== grpc.status.OK) {
-          callback(response.status);
+          var error = new Error(response.status.details);
+          error.code = response.status.code;
+          callback(error);
           return;
         }
         stream.emit('status', response.status);
