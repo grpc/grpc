@@ -78,6 +78,9 @@ LICENSE_FMT = {
   '.proto': '// %s',
   '.js': ' * %s',
   '.cs': '// %s',
+  '.mak': '# %s',
+  'Makefile': '# %s',
+  'Dockerfile': '# %s',
 }
 
 # pregenerate the actual text that we should have
@@ -99,11 +102,16 @@ def log(cond, why, filename):
 for filename in subprocess.check_output('git ls-tree -r --name-only -r HEAD',
                                         shell=True).splitlines():
   ext = os.path.splitext(filename)[1]
-  if ext not in LICENSE_TEXT:
+  base = os.path.basename(filename)
+  if ext in LICENSE_TEXT: 
+    license = LICENSE_TEXT[ext]
+    old_license = OLD_LICENSE_TEXT[ext]
+  elif base in LICENSE_TEXT:
+    license = LICENSE_TEXT[base]
+    old_license = OLD_LICENSE_TEXT[base]
+  else:
     log(args.skips, 'skip', filename)
     continue
-  license = LICENSE_TEXT[ext]
-  old_license = OLD_LICENSE_TEXT[ext]
   with open(filename) as f:
     text = '\n'.join(line.rstrip() for line in f.read().splitlines())
   if license in text:

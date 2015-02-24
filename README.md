@@ -92,7 +92,7 @@ messages are delivered in the order they were sent.
 
 #Protocol
 
-The gRPC protocol specifies the abstract requirements for communication between
+The [gRPC protocol](https://github.com/grpc/grpc-common/blob/master/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
 clients and servers. A concrete embedding over HTTP/2 completes the picture by
 fleshing out the details of each of the required operations.
 

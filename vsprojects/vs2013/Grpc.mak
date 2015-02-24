@@ -1,3 +1,31 @@
+# Copyright 2015, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # NMake file to build secondary gRPC targets on Windows.
 # Use grpc.sln to solution to build the gRPC libraries.
 
@@ -449,6 +477,14 @@ grpc_json_token_test.exe: grpc_test_util
 grpc_json_token_test: grpc_json_token_test.exe
 	echo Running grpc_json_token_test
 	$(OUT_DIR)\grpc_json_token_test.exe
+
+grpc_print_google_default_creds_token.exe: grpc_test_util
+	echo Building grpc_print_google_default_creds_token
+	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ ..\..\test\core\security\print_google_default_creds_token.c 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\grpc_print_google_default_creds_token.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\print_google_default_creds_token.obj 
+grpc_print_google_default_creds_token: grpc_print_google_default_creds_token.exe
+	echo Running grpc_print_google_default_creds_token
+	$(OUT_DIR)\grpc_print_google_default_creds_token.exe
 
 grpc_stream_op_test.exe: grpc_test_util
 	echo Building grpc_stream_op_test

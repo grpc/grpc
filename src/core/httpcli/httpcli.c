@@ -216,6 +216,7 @@ static void on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   gpr_log(GPR_DEBUG, "%s", __FUNCTION__);
   if (!addresses) {
     finish(req, 0);
+    return;
   }
   req->addresses = addresses;
   req->next_address = 0;
