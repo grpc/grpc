@@ -71,15 +71,8 @@ repo](https://github.com/google/protobuf/releases), as well as a Go language
 generator from [the golang/protobuf Github repo](https://github.com/golang/protobuf), with more languages in development. Full documentation for proto3 is currently in development, but you can see
 the major differences from the current default version in the [release notes](https://github.com/google/protobuf/releases).
 
-In general, we recommend that you use proto3 with gRPC as it lets you use the
-full range of gRPC-supported languages, as well as avoiding compatibility
-issues with proto2 clients talking to proto3 servers and vice versa. You
-can find out more about these potential issues in [where should we put this
-info? It's important but not really part of an overview]. If you need to
-continue using proto2 for Java, C++, or Python but want
-to try gRPC, you can see an example using a proto2 gRPC client and server
-[wherever we put it].
-
+In general, while you *can* use proto2 (the current default protocol buffers version), we recommend that you use proto3 with gRPC as it lets you use the full range of gRPC-supported languages, as well as avoiding compatibility
+issues with proto2 clients talking to proto3 servers and vice versa.
 
 <a name="hello"></a>
 ## Hello gRPC!
