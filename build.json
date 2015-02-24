@@ -469,6 +469,15 @@
       ]
     },
     {
+      "name": "qps",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qpstest.proto",
+        "test/cpp/qps/driver.cc"
+      ]
+    },
+    {
       "name": "grpc_csharp_ext",
       "build": "all",
       "language": "csharp",
@@ -1772,10 +1781,28 @@
       "run": false,
       "language": "c++",
       "src": [
-        "test/cpp/qps/qpstest.proto",
         "test/cpp/qps/client.cc"
       ],
       "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "qps_driver",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_driver.cc"
+      ],
+      "deps": [
+        "qps",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1790,10 +1817,10 @@
       "run": false,
       "language": "c++",
       "src": [
-        "test/cpp/qps/qpstest.proto",
         "test/cpp/qps/server.cc"
       ],
       "deps": [
+        "qps",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
