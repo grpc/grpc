@@ -35,9 +35,10 @@
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/alloc.h>
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
+#include <grpc/support/thd.h>
+#include <grpc/grpc.h>
 
 #include <string.h>
 
@@ -579,6 +580,27 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
       &(ctx->server_rpc_new.request_metadata), cq, ctx);
 }
 
+/* Logging */
+
+typedef void(GPR_CALLTYPE *grpcsharp_log_func)(const char *file,
+	                                           gpr_int32 line,
+											   gpr_uint64 thd_id,
+	                                           const char *severity_string,
+											   const char *msg);
+static grpcsharp_log_func log_func = NULL;
+
+/* Redirects gpr_log to log_func callback */
+static void grpcsharp_log_handler(gpr_log_func_args *args) {
+	log_func(args->file, args->line, gpr_thd_currentid(),
+		     gpr_log_severity_string(args->severity), args->message);
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_redirect_log(grpcsharp_log_func func) {
+	GPR_ASSERT(func);
+	log_func = func;
+	gpr_set_log_function(grpcsharp_log_handler);
+}
 
 /* For testing */
 GPR_EXPORT void GPR_CALLTYPE
