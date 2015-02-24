@@ -263,6 +263,8 @@ Now we can use the channel to create our stub using the `NewStub` method provide
 
 Now let's look at how we call our service methods. Note that in this tutorial we're calling the *blocking/synchronous* versions of each method: this means that the RPC call waits for the server to respond, and will either return a response or raise an exception.
 
+#### Simple RPC
+
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local method.
 
 ```cpp
@@ -287,6 +289,8 @@ As you can see, we create and populate a request protocol buffer object (in our 
                 << feature->location().latitude()/kCoordFactor_ << ", "
                 << feature->location().longitude()/kCoordFactor_ << std::endl;
 ```
+
+#### Streaming RPCs
 
 Now let's look at our streaming methods. If you've already read [Creating the server](#server) some of this may look very familiar - streaming RPCs are implemented in a similar way on both sides. Here's where we call the server-side streaming method `ListFeatures`, which returns a stream of geographical `Feature`s:
 
