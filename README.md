@@ -320,9 +320,8 @@ As you can see, the class `GreeterImpl` implements the interface
   }
 ```
 - `hello` takes two parameters:
-
-    -`Helloworld.HelloRequest`: the request
-    -`StreamObserver<Helloworld.HelloReply>`: a response observer, which is
+    - `Helloworld.HelloRequest`: the request
+    - `StreamObserver<Helloworld.HelloReply>`: a response observer, which is
     a special interface for the server to call with its response
 
 To return our response to the client and complete the call:
