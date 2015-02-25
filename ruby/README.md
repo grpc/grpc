@@ -11,7 +11,7 @@ INSTALL
 
 - Clone this repository.
 - Follow the instructions in [INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL) to install the gRPC C core.
-- *Temporary* Install the full gRPC distribution from source on your local machine and update path: in [Gemfile] to refer src/ruby within it.
+- *Temporary* Install the full gRPC distribution from source on your local machine and update path: in [Gemfile](https://github.com/grpc/grpc-common/blob/master/ruby/Gemfile) to refer src/ruby within it.
   - this is necessary until the gRPC ruby gem is published
 - Use bundler to install
 ```sh
