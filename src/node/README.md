@@ -4,6 +4,10 @@
 
 Alpha : Ready for early adopters
 
+## Prerequisites
+
+This requires `node` to be installed. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
+
 ## Installation
 
 First, clone this repository (NPM package coming soon). Then follow the instructions in the `INSTALL` file in the root of the repository to install the C core library that this package depends on.
