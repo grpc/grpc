@@ -13,8 +13,8 @@ Python 2.7, virtualenv, pip, libprotobuf-dev, and libprotoc-dev.
 Building from source
 ----------------------
 
-- Build the GRPC core
-E.g, from the root of the grpc [git repo](https://github.com/google/grpc)
+- Build the GRPC core from the root of the
+  [gRPC git repo](https://github.com/grpc/grpc)
 ```
 $ make shared_c static_c
 ```
