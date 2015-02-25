@@ -232,6 +232,7 @@ class TestCache(object):
 
   def finished(self, cmdline, bin_hash):
     self._last_successful_run[cmdline] = bin_hash
+    self.save()
 
   def dump(self):
     return [{'cmdline': k, 'hash': v}
@@ -286,7 +287,6 @@ if forever:
                      'All tests are now passing properly',
                      do_newline=True)
     jobset.message('IDLE', 'No change detected')
-    test_cache.save()
     while not have_files_changed():
       time.sleep(1)
 else:
@@ -297,5 +297,4 @@ else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
-  test_cache.save()
   sys.exit(result)
