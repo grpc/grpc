@@ -19,9 +19,6 @@ SERVER_PID=$!
 bins/$config/qps_client -driver_port 10001 &
 CLIENT_PID=$!
 
-# wait for startup
-sleep 2
-
 export QPS_SERVERS=localhost:10000
 export QPS_CLIENTS=localhost:10001
 

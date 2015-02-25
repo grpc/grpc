@@ -185,10 +185,10 @@ static void RunServer() {
 }
 
 int main(int argc, char** argv) {
+  signal(SIGINT, sigint_handler);
+
   grpc_init();
   ParseCommandLineFlags(&argc, &argv, true);
-
-  signal(SIGINT, sigint_handler);
 
   GPR_ASSERT(FLAGS_port != 0);
   RunServer();
