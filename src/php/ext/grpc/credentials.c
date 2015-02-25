@@ -94,7 +94,7 @@ zval *grpc_php_wrap_credentials(grpc_credentials *wrapped) {
  * @return Credentials The new default credentials object
  */
 PHP_METHOD(Credentials, createDefault) {
-  grpc_credentials *creds = grpc_default_credentials_create();
+  grpc_credentials *creds = grpc_google_default_credentials_create();
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
