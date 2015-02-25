@@ -28,7 +28,7 @@ Then change your current directory to `grpc-common/cpp/route_guide`:
 $ cd grpc-common/cpp/route_guide
 ```
 
-Although we've provided the complete example so you don't need to generate the gRPC code yourself, if you want to try generating your own server and client interface code you can follow the setup instructions in [the C++ quick start guide](https://github.com/grpc/grpc-common/tree/master/cpp).
+You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the C++ quick start guide](https://github.com/grpc/grpc-common/tree/master/cpp).
 
 
 ## Defining the service
@@ -103,7 +103,7 @@ which actually runs:
 $ protoc -I ../../protos --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ../../protos/route_guide.proto
 ```
 
-Running this command generates the following files:
+Running this command generates the following files in your current directory:
 - `route_guide.pb.h`, the header which declares your generated classes
 - `route_guide.pb.cc`, which contains the implementation of your classes
 
