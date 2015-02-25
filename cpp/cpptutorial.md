@@ -220,9 +220,7 @@ void RunServer(const std::string& db_path) {
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-  while (true) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-  }
+  server->Wait();
 }
 ```
 As you can see, we build and start our server using a `ServerBuilder`. To do this, we:
@@ -232,8 +230,7 @@ As you can see, we build and start our server using a `ServerBuilder`. To do thi
 3. Specify the address and port we want to use to listen for client requests using the builder's `AddPort()` method.
 4. Register our service implementation with the builder.
 5. Call `BuildAndStart()` on the builder to create and start an RPC server for our service.
-
-_[is there no equivalent of the Stubby4 wait() method, ie do you have to do the while(true) loop to keep the server running?]_
+5. Call `Wait()` on the server to do a blocking wait until process is killed or `Shutdown()` is called.
 
 <a name="client"></a>
 ## Creating the client
