@@ -54,7 +54,7 @@ passed to the factory method.
 gRPC applications can use a simple API to create a credential that works in various deployment scenarios.
 
 ```
-std::unique_ptr<Credentials> creds = CredentialsFactory::DefaultGoogleCredentials();
+std::unique_ptr<Credentials> creds = CredentialsFactory::GoogleDefaultCredentials();
 // Create a channel, stub and make RPC calls (same as in the previous example)
 std::shared_ptr<ChannelInterface> channel = CreateChannel(server_name, creds, channel_args);
 std::unique_ptr<Greeter::Stub> stub(Greeter::NewStub(channel));
