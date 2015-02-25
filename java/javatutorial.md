@@ -96,7 +96,7 @@ message Point {
 
 ## Generating client and server code
 
-Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC Java plugin.
+Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC Java plugin. Note that you need to use [version 3](https://github.com/google/protobuf/releases) of `protoc` in order to use the plugin.
 
 For simplicity, we've provided a [Gradle build file](https://github.com/grpc/grpc-java/blob/master/examples/build.gradle) that runs `protoc` for you with the appropriate plugin, input, and output (if you want to run this yourself, make sure you've installed protoc and followed the gRPC code [installation instructions](https://github.com/grpc/grpc-java) first):
 
@@ -357,7 +357,7 @@ Now let's look at how we call our service methods.
 
 ## Try it out!
 
-Follow the instructions in the example directory [README](https://github.com/grpc/grpc-java/blob/master/examples/README.md) to build and run the client and server
+Follow the instructions in the example directory [README](https://github.com/grpc/grpc-java/blob/master/examples/README.md) to build and run the client and server.
 
 
 
