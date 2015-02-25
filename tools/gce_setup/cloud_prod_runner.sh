@@ -32,12 +32,25 @@
 main() {
   source grpc_docker.sh
   test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming service_account_creds compute_engine_creds)
+  auth_test_cases=(service_account_creds compute_engine_creds)
   clients=(cxx java go ruby node)
   for test_case in "${test_cases[@]}"
   do
     for client in "${clients[@]}"
     do
       if grpc_cloud_prod_test $test_case grpc-docker-testclients $client
+      then
+        echo "$test_case $client $server passed" >> /tmp/cloud_prod_result.txt
+      else
+        echo "$test_case $client $server failed" >> /tmp/cloud_prod_result.txt
+      fi
+    done
+  done
+  for test_case in "${auth_test_cases[@]}"
+  do
+    for client in "${clients[@]}"
+    do
+      if grpc_cloud_prod_auth_test $test_case grpc-docker-testclients $client
       then
         echo "$test_case $client $server passed" >> /tmp/cloud_prod_result.txt
       else

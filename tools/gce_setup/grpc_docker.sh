@@ -350,7 +350,7 @@ grpc_interop_test_flags() {
     echo "$FUNCNAME: missing arg: test_case" 1>&2
     return 1
   }
-  echo "--server_host=$server_ip --server_port=$port --test_case=$test_case"
+  echo "--server_host_override=foo.test.google.fr --server_host=$server_ip --server_port=$port --test_case=$test_case"
 }
 
 # checks the positional args and assigns them to variables visible in the caller
@@ -673,7 +673,7 @@ _grpc_launch_servers_args() {
   [[ -n $1 ]] && {
     servers="$@"
   } || {
-    servers="cxx java go node ruby"
+    servers="cxx java go node ruby python"
     echo "$FUNCNAME: no servers specified, will launch defaults '$servers'"
   }
 }
@@ -795,16 +795,7 @@ grpc_interop_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
-  PID=$!
-  sleep 10
-  echo "pid is $PID"
-  if ps -p $PID
-  then
-    kill $PID
-    return 1
-  fi
-
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" 
 }
 
 # Runs a test command on a docker instance.
@@ -850,16 +841,7 @@ grpc_cloud_prod_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
-  PID=$!
-  sleep 10
-  echo "pid is $PID"
-  if ps -p $PID
-  then
-    kill $PID
-    return 1
-  fi
-
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
 }
 
 # Runs a test command on a docker instance.
