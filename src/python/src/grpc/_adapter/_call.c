@@ -161,7 +161,7 @@ static const PyObject *pygrpc_call_accept(Call *self, PyObject *args) {
 }
 
 static const PyObject *pygrpc_call_premetadata(Call *self) {
-  /* TODO(b/18702680): Actually support metadata. */
+  /* TODO(nathaniel): Metadata support. */
   return pygrpc_translate_call_error(
       grpc_call_server_end_initial_metadata_old(self->c_call, 0));
 }
