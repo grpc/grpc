@@ -343,6 +343,18 @@ grpcsharp_call_start_unary(grpc_call *call, callback_funcptr callback,
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
 
+/* Synchronous unary call */
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_call_blocking_unary(grpc_call *call, grpc_completion_queue *dedicated_cq, callback_funcptr callback,
+                           const char *send_buffer, size_t send_buffer_len) {
+  GPR_ASSERT(grpcsharp_call_start_unary(call, callback, send_buffer, send_buffer_len) == GRPC_CALL_OK);
+
+  /* TODO: we would like to use pluck, but we don't know the tag */
+  GPR_ASSERT(grpcsharp_completion_queue_next_with_callback(dedicated_cq) == GRPC_OP_COMPLETE);
+  grpc_completion_queue_shutdown(dedicated_cq);
+  GPR_ASSERT(grpcsharp_completion_queue_next_with_callback(dedicated_cq) == GRPC_QUEUE_SHUTDOWN);
+}
+
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_start_client_streaming(grpc_call *call,
                                       callback_funcptr callback) {
@@ -565,4 +577,17 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
   return grpc_server_request_call(
       server, &(ctx->server_rpc_new.call), &(ctx->server_rpc_new.call_details),
       &(ctx->server_rpc_new.request_metadata), cq, ctx);
+}
+
+
+/* For testing */
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_test_callback(callback_funcptr callback) {
+  callback(GRPC_OP_OK, NULL);
+}
+
+/* For testing */
+GPR_EXPORT void *GPR_CALLTYPE
+grpcsharp_test_nop(void *ptr) {
+  return ptr;
 }

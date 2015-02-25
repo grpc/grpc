@@ -32,43 +32,37 @@
 #endregion
 
 using System;
-using System.Threading;
-using Grpc.Core;
-using NUnit.Framework;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core.Utils
 {
-    public class GrpcEnvironmentTest
+    public static class BenchmarkUtil
     {
-        [Test]
-        public void InitializeAndShutdownGrpcEnvironment()
+        /// <summary>
+        /// Runs a simple benchmark preceded by warmup phase.
+        /// </summary>
+        public static void RunBenchmark(int warmupIterations, int benchmarkIterations, Action action)
         {
-            GrpcEnvironment.Initialize();
-            Assert.IsNotNull(GrpcEnvironment.ThreadPool.CompletionQueue);
-            GrpcEnvironment.Shutdown();
-        }
+            Console.WriteLine("Warmup iterations: " + warmupIterations);
+            for (int i = 0; i < warmupIterations; i++)
+            {
+                action();
+            }
 
-        [Test]
-        public void SubsequentInvocations()
-        {
-            GrpcEnvironment.Initialize();
-            GrpcEnvironment.Initialize();
-            GrpcEnvironment.Shutdown();
-            GrpcEnvironment.Shutdown();
-        }
-
-        [Test]
-        public void InitializeAfterShutdown()
-        {
-            GrpcEnvironment.Initialize();
-            var tp1 = GrpcEnvironment.ThreadPool;
-            GrpcEnvironment.Shutdown();
-
-            GrpcEnvironment.Initialize();
-            var tp2 = GrpcEnvironment.ThreadPool;
-            GrpcEnvironment.Shutdown();
-
-            Assert.IsFalse(Object.ReferenceEquals(tp1, tp2));
+            Console.WriteLine("Benchmark iterations: " + benchmarkIterations);
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            for (int i = 0; i < benchmarkIterations; i++)
+            {
+                action();
+            }
+            stopwatch.Stop();
+            Console.WriteLine("Elapsed time: " + stopwatch.ElapsedMilliseconds + "ms");
+            Console.WriteLine("Ops per second: " + (int) ((double) benchmarkIterations  * 1000 / stopwatch.ElapsedMilliseconds));
         }
     }
 }
+
