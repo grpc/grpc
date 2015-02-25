@@ -1094,8 +1094,9 @@ static int does_entry_match_name(const char* entry, size_t entry_length,
     return 0;
   }
   name_subdomain = strchr(name, '.');
+  if (name_subdomain == NULL) return 0;
   name_subdomain_length = strlen(name_subdomain);
-  if (name_subdomain == NULL || name_subdomain_length < 2) return 0;
+  if (name_subdomain_length < 2) return 0;
   name_subdomain++; /* Starts after the dot. */
   name_subdomain_length--;
   entry += 2;       /* Remove *. */
