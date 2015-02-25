@@ -1,7 +1,7 @@
 GRPC Python
 =========
 
-The Python facility of GRPC.
+The Python facility of gRPC.
 
 
 Prerequisites
