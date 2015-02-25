@@ -1,4 +1,4 @@
-GRPC Python
+gRPC Python
 =========
 
 The Python facility of gRPC.
