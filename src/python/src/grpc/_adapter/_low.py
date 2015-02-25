@@ -52,5 +52,6 @@ Call = _c.Call
 Channel = _c.Channel
 CompletionQueue = _c.CompletionQueue
 Server = _c.Server
+ClientCredentials = _c.ClientCredentials
 ServerCredentials = _c.ServerCredentials
 # pylint: enable=invalid-name

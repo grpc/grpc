@@ -38,6 +38,7 @@ _EXTENSION_SOURCES = (
     'grpc/_adapter/_completion_queue.c',
     'grpc/_adapter/_error.c',
     'grpc/_adapter/_server.c',
+    'grpc/_adapter/_client_credentials.c',
     'grpc/_adapter/_server_credentials.c',
 )
 
