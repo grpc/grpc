@@ -113,11 +113,12 @@ int grpc_pick_unused_port(void) {
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int try = 0;
+  int try
+    = 0;
 
   for (;;) {
-    int port =
-        try < NUM_RANDOM_PORTS_TO_PICK ? rand() % (65536 - 30000) + 30000 : 0;
+    int port = try
+      < NUM_RANDOM_PORTS_TO_PICK ? rand() % (65536 - 30000) + 30000 : 0;
     if (!is_port_available(&port, is_tcp)) {
       continue;
     }

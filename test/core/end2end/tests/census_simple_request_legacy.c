@@ -46,7 +46,7 @@
 #include "test/core/end2end/cq_verifier.h"
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,

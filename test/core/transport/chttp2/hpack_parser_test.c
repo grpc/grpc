@@ -42,9 +42,7 @@
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
-typedef struct {
-  va_list args;
-} test_checker;
+typedef struct { va_list args; } test_checker;
 
 static void onhdr(void *ud, grpc_mdelem *md) {
   const char *ekey, *evalue;

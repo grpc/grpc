@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -134,7 +134,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   meta.key = "key";
   meta.value = gpr_malloc(large_size + 1);
   memset((char *)meta.value, 'a', large_size);
-  ((char*)meta.value)[large_size] = 0;
+  ((char *)meta.value)[large_size] = 0;
   meta.value_length = large_size;
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -166,8 +166,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq,
-                                                      tag(101)));
+                                                      f.server_cq, tag(101)));
   cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 

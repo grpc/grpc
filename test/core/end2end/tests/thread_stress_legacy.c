@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/thd.h>
+#include "test/core/util/test_config.h"
 
 #define SERVER_THREADS 16
 #define CLIENT_THREADS 16
@@ -53,7 +54,7 @@ static gpr_mu g_mu;
 static int g_active_requests;
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -280,11 +281,11 @@ static void run_test(grpc_end2end_test_config config, int requests_in_flight) {
   /* kick off threads */
   for (i = 0; i < CLIENT_THREADS; i++) {
     gpr_event_init(&g_client_done[i]);
-    gpr_thd_new(&thd_id, client_thread, (void *)(gpr_intptr)i, NULL);
+    gpr_thd_new(&thd_id, client_thread, (void *)(gpr_intptr) i, NULL);
   }
   for (i = 0; i < SERVER_THREADS; i++) {
     gpr_event_init(&g_server_done[i]);
-    gpr_thd_new(&thd_id, server_thread, (void *)(gpr_intptr)i, NULL);
+    gpr_thd_new(&thd_id, server_thread, (void *)(gpr_intptr) i, NULL);
   }
 
   /* start requests */

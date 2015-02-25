@@ -45,7 +45,7 @@
 static void *tag(gpr_intptr i) { return (void *)i; }
 
 static gpr_timespec ms_from_now(int ms) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_MS * ms));
+  return GRPC_TIMEOUT_MILLIS_TO_DEADLINE(ms);
 }
 
 static void drain_cq(grpc_completion_queue *cq) {

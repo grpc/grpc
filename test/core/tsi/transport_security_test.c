@@ -189,9 +189,9 @@ typedef struct name_list {
 } name_list;
 
 typedef struct {
-   size_t name_count;
-   char *buffer;
-   name_list *names;
+  size_t name_count;
+  char *buffer;
+  name_list *names;
 } parsed_dns_names;
 
 name_list *name_list_add(const char *n) {
