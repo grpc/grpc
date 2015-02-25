@@ -158,7 +158,12 @@ tsi_result tsi_ssl_handshaker_factory_create_handshaker(
    while handshakers created with this factory are still in use.  */
 void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory* self);
 
-/* Util that checks that an ssl peer matches a specific name. */
+/* Util that checks that an ssl peer matches a specific name.
+   Still TODO(jboeuf):
+   - handle mixed case.
+   - handle %encoded chars.
+   - handle public suffix wildchar more strictly (e.g. *.co.uk)
+   - handle IP addresses in SAN. */
 int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
 
 #ifdef __cplusplus

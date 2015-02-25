@@ -266,6 +266,10 @@
     "name": "transport_metadata_test"
   }, 
   {
+    "language": "c", 
+    "name": "transport_security_test"
+  }, 
+  {
     "language": "c++", 
     "name": "async_end2end_test"
   }, 

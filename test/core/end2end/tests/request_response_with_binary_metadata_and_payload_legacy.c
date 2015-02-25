@@ -137,7 +137,7 @@ static void test_request_response_with_metadata_and_payload(
   gpr_slice_unref(request_payload_slice);
   gpr_slice_unref(response_payload_slice);
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.com",
+  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.fr",
                                    deadline);
   GPR_ASSERT(c);
 
@@ -157,7 +157,7 @@ static void test_request_response_with_metadata_and_payload(
   cq_verify(v_client);
 
   cq_expect_server_rpc_new(
-      v_server, &s, tag(100), "/foo", "foo.test.google.com", deadline, "key1-bin",
+      v_server, &s, tag(100), "/foo", "foo.test.google.fr", deadline, "key1-bin",
       "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", "key2-bin",
       "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d", NULL);
   cq_verify(v_server);
