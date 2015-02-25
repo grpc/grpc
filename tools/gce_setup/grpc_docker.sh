@@ -976,7 +976,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_ruby_cmd() {
   local gfe_flags=$(_grpc_prod_gfe_flags)
   local added_gfe_flags=$(_grpc_gce_test_flags)
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
-  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flag $@'"
+  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flags $@'"
   echo $the_cmd
 }
 
