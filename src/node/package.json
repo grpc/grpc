@@ -3,8 +3,8 @@
   "version": "0.2.0",
   "description": "gRPC Library for Node",
   "scripts": {
-    "lint": "nodejs ./node_modules/jshint/bin/jshint src test examples interop index.js",
-    "test": "nodejs ./node_modules/mocha/bin/mocha && npm run-script lint"
+    "lint": "node ./node_modules/jshint/bin/jshint src test examples interop index.js",
+    "test": "node ./node_modules/mocha/bin/mocha && npm run-script lint"
   },
   "dependencies": {
     "bindings": "^1.2.1",
