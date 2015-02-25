@@ -86,3 +86,34 @@ the server to retrieve this piece of metadata. The generation of the token
 on the client side and its verification at the server can be done separately.
 
 A deeper integration can be achieved by plugging in a gRPC credentials implementation for any custom authentication mechanism that needs to attach per-request tokens. gRPC internals also allow switching out SSL/TLS with other encryption mechanisms. 
+
+These authentication mechanisms will be available in all gRPC's supported languages.
+The following sections demonstrate how authentication and authorization features described above appear in each language
+
+####SSL/TLS for server authentication and encryption (Ruby)
+```ruby
+# Base case - No encryption
+stub = Helloworld::Greeter::Stub.new('localhost:50051')
+...
+
+# With server authentication SSL/TLS
+creds = GRPC::Core::Credentials.new(load_certs)  # load_certs typically loads a CA roots file
+stub = Helloworld::Greeter::Stub.new('localhost:50051', creds: creds)
+```
+
+###Authenticating with Google (Ruby)
+```ruby
+# Base case - No encryption/authorization
+stub = Helloworld::Greeter::Stub.new('localhost:50051')
+...
+
+# Authenticating with Google
+require 'googleauth'  # from [googleauth](http://www.rubydoc.info/gems/googleauth/0.1.0)
+...
+creds = GRPC::Core::Credentials.new(load_certs)  # load_certs typically loads a CA roots file
+scope = 'https://www.googleapis.com/auth/grpc-testing'
+authorization = Google::Auth.get_application_default(scope)
+stub = Helloworld::Greeter::Stub.new('localhost:50051',
+                                     creds: creds,
+                                     update_metadata: authorization.updater_proc)
+```
