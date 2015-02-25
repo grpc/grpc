@@ -49,7 +49,7 @@ enum PayloadType {
 // A block of data, to simply increase gRPC message size.
 message Payload {
   // The type of data in body.
-  optional PayloadType type = 1;
+  optional PayloadType type = 1 [default = COMPRESSABLE];
   // Primary contents of payload.
   optional bytes body = 2;
 }
@@ -58,7 +58,7 @@ message Payload {
 message SimpleRequest {
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, server randomly chooses one from other formats.
-  optional PayloadType response_type = 1;
+  optional PayloadType response_type = 1 [default = COMPRESSABLE];
 
   // Desired payload size in the response from the server.
   // If response_type is COMPRESSABLE, this denotes the size before compression.
@@ -116,7 +116,7 @@ message StreamingOutputCallRequest {
   // If response_type is RANDOM, the payload from each response in the stream
   // might be of different types. This is to simulate a mixed type of payload
   // stream.
-  optional PayloadType response_type = 1;
+  optional PayloadType response_type = 1 [default = COMPRESSABLE];
 
   // Configuration for each expected response message.
   repeated ResponseParameters response_parameters = 2;

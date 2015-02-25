@@ -48,7 +48,6 @@ static int zlib_body(z_stream *zs, gpr_slice_buffer *input,
   int r;
   int flush;
   size_t i;
-  size_t output_bytes = 0;
   gpr_slice outbuf = gpr_slice_malloc(OUTPUT_BLOCK_SIZE);
 
   zs->avail_out = GPR_SLICE_LENGTH(outbuf);
@@ -60,7 +59,6 @@ static int zlib_body(z_stream *zs, gpr_slice_buffer *input,
     zs->next_in = GPR_SLICE_START_PTR(input->slices[i]);
     do {
       if (zs->avail_out == 0) {
-        output_bytes += GPR_SLICE_LENGTH(outbuf);
         gpr_slice_buffer_add_indexed(output, outbuf);
         outbuf = gpr_slice_malloc(OUTPUT_BLOCK_SIZE);
         zs->avail_out = GPR_SLICE_LENGTH(outbuf);
@@ -80,7 +78,6 @@ static int zlib_body(z_stream *zs, gpr_slice_buffer *input,
 
   GPR_ASSERT(outbuf.refcount);
   outbuf.data.refcounted.length -= zs->avail_out;
-  output_bytes += GPR_SLICE_LENGTH(outbuf);
   gpr_slice_buffer_add_indexed(output, outbuf);
 
   return 1;

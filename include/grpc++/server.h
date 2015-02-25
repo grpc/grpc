@@ -69,6 +69,11 @@ class Server final : private CallHook,
   // Shutdown the server, block until all rpc processing finishes.
   void Shutdown();
 
+  // Block waiting for all work to complete (the server must either
+  // be shutting down or some other thread must call Shutdown for this
+  // function to ever return)
+  void Wait();
+
  private:
   friend class ServerBuilder;
 

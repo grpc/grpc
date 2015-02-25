@@ -248,18 +248,23 @@ bool Server::Start() {
 }
 
 void Server::Shutdown() {
-  {
-    std::unique_lock<std::mutex> lock(mu_);
-    if (started_ && !shutdown_) {
-      shutdown_ = true;
-      grpc_server_shutdown(server_);
-      cq_.Shutdown();
+  std::unique_lock<std::mutex> lock(mu_);
+  if (started_ && !shutdown_) {
+    shutdown_ = true;
+    grpc_server_shutdown(server_);
+    cq_.Shutdown();
 
-      // Wait for running callbacks to finish.
-      while (num_running_cb_ != 0) {
-        callback_cv_.wait(lock);
-      }
+    // Wait for running callbacks to finish.
+    while (num_running_cb_ != 0) {
+      callback_cv_.wait(lock);
     }
+  }
+}
+
+void Server::Wait() {
+  std::unique_lock<std::mutex> lock(mu_);
+  while (num_running_cb_ != 0) {
+    callback_cv_.wait(lock);
   }
 }
 

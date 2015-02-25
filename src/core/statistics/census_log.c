@@ -475,11 +475,11 @@ void census_log_initialize(size_t size_in_mb, int discard_old_records) {
   g_log.block_being_read = NULL;
   gpr_atm_rel_store(&g_log.is_full, 0);
   g_log.core_local_blocks = (cl_core_local_block*)gpr_malloc_aligned(
-      g_log.num_cores * sizeof(cl_core_local_block), GPR_CACHELINE_SIZE);
+      g_log.num_cores * sizeof(cl_core_local_block), GPR_CACHELINE_SIZE_LOG);
   memset(g_log.core_local_blocks, 0,
          g_log.num_cores * sizeof(cl_core_local_block));
   g_log.blocks = (cl_block*)gpr_malloc_aligned(
-      g_log.num_blocks * sizeof(cl_block), GPR_CACHELINE_SIZE);
+      g_log.num_blocks * sizeof(cl_block), GPR_CACHELINE_SIZE_LOG);
   memset(g_log.blocks, 0, g_log.num_blocks * sizeof(cl_block));
   g_log.buffer = gpr_malloc(g_log.num_blocks * CENSUS_LOG_MAX_RECORD_SIZE);
   memset(g_log.buffer, 0, g_log.num_blocks * CENSUS_LOG_MAX_RECORD_SIZE);
