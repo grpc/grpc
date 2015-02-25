@@ -77,13 +77,11 @@ int main(int argc, char** argv) {
 
   std::ostringstream ss;
 
-  std::unique_ptr<grpc::Credentials> creds;
-
   ss << FLAGS_server_host << ":" << FLAGS_server_port;
   std::unique_ptr<grpc::Credentials> creds =
       grpc::CredentialsFactory::GoogleDefaultCredentials();
   std::shared_ptr<grpc::ChannelInterface> channel =
-      grpc::CreateChannel(target, creds, grpc::ChannelArguments());
+      grpc::CreateChannel(ss.str(), creds, grpc::ChannelArguments());
 
   grpc::examples::pubsub::Publisher publisher(channel);
   grpc::examples::pubsub::Subscriber subscriber(channel);
