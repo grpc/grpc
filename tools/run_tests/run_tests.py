@@ -36,6 +36,7 @@ import itertools
 import json
 import multiprocessing
 import os
+import re
 import sys
 import time
 
@@ -168,6 +169,7 @@ argp.add_argument('-c', '--config',
                   nargs='+',
                   default=_DEFAULT)
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
+argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('-j', '--jobs', default=1000, type=int)
 argp.add_argument('-f', '--forever',
                   default=False,
@@ -205,7 +207,8 @@ one_run = set(
     spec
     for config in run_configs
     for language in args.language
-    for spec in _LANGUAGES[language].test_specs(config))
+    for spec in _LANGUAGES[language].test_specs(config)
+    if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test
 forever = args.forever

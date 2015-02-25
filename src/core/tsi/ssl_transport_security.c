@@ -1150,6 +1150,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Building alpn list failed with error %s.",
                 tsi_result_to_string(result));
+        free(alpn_protocol_list);
         break;
       }
       ssl_failed = SSL_CTX_set_alpn_protos(ssl_context, alpn_protocol_list,

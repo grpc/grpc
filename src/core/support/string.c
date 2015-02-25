@@ -91,7 +91,6 @@ char *gpr_hexdump(const char *buf, size_t len, gpr_uint32 flags) {
   }
 
   if (flags & GPR_HEXDUMP_PLAINTEXT) {
-    cur = beg;
     if (len) hexout_append(&out, ' ');
     hexout_append(&out, '\'');
     for (cur = beg; cur != end; ++cur) {

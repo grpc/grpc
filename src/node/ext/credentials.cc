@@ -130,7 +130,7 @@ NAN_METHOD(Credentials::New) {
 
 NAN_METHOD(Credentials::CreateDefault) {
   NanScope();
-  NanReturnValue(WrapStruct(grpc_default_credentials_create()));
+  NanReturnValue(WrapStruct(grpc_google_default_credentials_create()));
 }
 
 NAN_METHOD(Credentials::CreateSsl) {
