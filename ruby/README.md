@@ -6,6 +6,16 @@ PREREQUISITES
 
 This requires Ruby 2.1, as the gRPC API surface uses keyword args.
 
+If you don't have that installed locally, you can use [RVM](https://www.rvm.io/) to use Ruby 2.1 for testing without upgrading the version of Ruby on your whole system.
+```sh
+$ command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+$ \curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-2.1
+$
+$ # follow the instructions to ensure that your're using the latest stable version of Ruby
+$ # and that the rvm command is installed
+```
+- Make sure your run `source $HOME/.rvm/scripts/rvm` as instructed to complete the set up of RVM
+
 INSTALL
 -------
 
