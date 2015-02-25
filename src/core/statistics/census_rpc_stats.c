@@ -222,7 +222,6 @@ void census_get_server_stats(census_aggregated_rpc_stats* data) {
 }
 
 void census_stats_store_init(void) {
-  gpr_log(GPR_INFO, "Initialize census stats store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);
   if (g_client_stats_store == NULL && g_server_stats_store == NULL) {
@@ -235,7 +234,6 @@ void census_stats_store_init(void) {
 }
 
 void census_stats_store_shutdown(void) {
-  gpr_log(GPR_INFO, "Shutdown census stats store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);
   if (g_client_stats_store != NULL) {
