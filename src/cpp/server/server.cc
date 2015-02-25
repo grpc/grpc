@@ -278,6 +278,13 @@ void Server::Shutdown() {
   }
 }
 
+void Server::Wait() {
+  std::unique_lock<std::mutex> lock(mu_);
+  while (num_running_cb_ != 0) {
+    callback_cv_.wait(lock);
+  }
+}
+
 void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = MAX_OPS;

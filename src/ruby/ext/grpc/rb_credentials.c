@@ -125,7 +125,7 @@ static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
     Creates the default credential instances. */
 static VALUE grpc_rb_default_credentials_create(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
-  wrapper->wrapped = grpc_default_credentials_create();
+  wrapper->wrapped = grpc_google_default_credentials_create();
   if (wrapper->wrapped == NULL) {
     rb_raise(rb_eRuntimeError,
              "could not create default credentials, not sure why");

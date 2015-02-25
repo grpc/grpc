@@ -257,7 +257,7 @@ HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 endif
 
-HAS_PROTOC = $(shell $(PROTOC_CMD) && echo true || echo false)
+HAS_PROTOC = $(shell $(PROTOC_CMD) > /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
 HAS_VALID_PROTOC = $(shell $(PROTOC_CHECK_CMD) 2> /dev/null && echo true || echo false)
 else
@@ -2082,7 +2082,7 @@ install-certs: etc/roots.pem
 	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
 
 verify-install:
-ifeq ($(SYSTEM_OK),true)
+ifeq ($(INSTALL_OK),true)
 	@echo "Your system looks ready to go."
 	@echo
 else

@@ -93,11 +93,13 @@ static __inline gpr_atm gpr_atm_no_barrier_fetch_add(gpr_atm *p,
 static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta) {
   /* Use a CAS operation to get pointer-sized fetch and add */
   gpr_atm old;
+#ifdef GPR_ARCH_64
   do {
     old = *p;
-#ifdef GPR_ARCH_64
   } while (old != (gpr_atm)InterlockedCompareExchange64(p, old + delta, old));
 #else
+  do {
+    old = *p;
   } while (old != (gpr_atm)InterlockedCompareExchange(p, old + delta, old));
 #endif
   return old;
