@@ -35,7 +35,7 @@
 
 var async = require('async');
 var fs = require('fs');
-var GoogleAuth = require('googleauth');
+var GoogleAuth = require('google-auth-library');
 var parseArgs = require('minimist');
 var strftime = require('strftime');
 var _ = require('underscore');
