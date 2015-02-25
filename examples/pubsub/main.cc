@@ -41,6 +41,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
+#include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
@@ -72,7 +73,7 @@ const char kMessageData[] = "Test Data";
 std::shared_ptr<grpc::ChannelInterface> CreateChannel(
     const std::string& target) {
   std::unique_ptr<grpc::Credentials> creds =
-      CredentialsFactory::GoogleDefaultCredentials();
+      grpc::CredentialsFactory::GoogleDefaultCredentials();
   return grpc::CreateChannel(target, creds, grpc::ChannelArguments());
 }
 
@@ -86,7 +87,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<grpc::Credentials> creds;
 
   ss << FLAGS_server_host << ":" << FLAGS_server_port;
-  std::shared_ptr<grpc::ChannelInterface> channel = CreateChannel();
+  std::shared_ptr<grpc::ChannelInterface> channel = CreateChannel(ss.str());
 
   grpc::examples::pubsub::Publisher publisher(channel);
   grpc::examples::pubsub::Subscriber subscriber(channel);
