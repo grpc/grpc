@@ -1,6 +1,10 @@
 gRPC in 3 minutes (Java)
 ========================
 
+BACKGROUND
+-------------
+For this sample, we've already generated the server and client stubs from [helloworld.proto](https://github.com/grpc/grpc-common/blob/master/protos/helloworld.proto). 
+
 PREREQUISITES
 -------------
 
