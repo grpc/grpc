@@ -180,7 +180,9 @@ static void ssl_info_callback(const SSL* ssl, int where, int ret) {
   ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE, "HANDSHAKE DONE");
 }
 
-/* Returns 1 if name looks like an IP address, 0 otherwise. */
+/* Returns 1 if name looks like an IP address, 0 otherwise.
+   This is a very rough heuristic as it does not handle IPV6 or things like:
+   0300.0250.00.01, 0xC0.0Xa8.0x0.0x1, 000030052000001, 0xc0.052000001 */
 static int looks_like_ip_address(const char *name) {
   size_t i;
   size_t dot_count = 0;
@@ -1078,10 +1080,10 @@ static int does_entry_match_name(const char* entry, size_t entry_length,
   }
   if (entry[entry_length - 1] == '.') {
     entry_length--;
+    if (entry_length == 0) return 0;
   }
 
-  if ((entry_length > 0) && (name_length == entry_length) &&
-      !strncmp(name, entry, entry_length)) {
+  if ((name_length == entry_length) && !strncmp(name, entry, entry_length)) {
     return 1; /* Perfect match. */
   }
   if (entry[0] != '*') return 0;
@@ -1092,11 +1094,12 @@ static int does_entry_match_name(const char* entry, size_t entry_length,
     return 0;
   }
   name_subdomain = strchr(name, '.');
-  if (name_subdomain == NULL || strlen(name_subdomain) < 2) return 0;
+  name_subdomain_length = strlen(name_subdomain);
+  if (name_subdomain == NULL || name_subdomain_length < 2) return 0;
   name_subdomain++; /* Starts after the dot. */
+  name_subdomain_length--;
   entry += 2;       /* Remove *. */
   entry_length -= 2;
-  name_subdomain_length = strlen(name_subdomain);
   dot = strchr(name_subdomain, '.');
   if ((dot == NULL) || (dot == &name_subdomain[name_subdomain_length - 1])) {
     gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s", name_subdomain);
