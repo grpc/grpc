@@ -123,7 +123,6 @@ Then execute the following for all the needed build dependencies
   $ cd mybuild
   $ cmake ../gtest-svn
   $ make
-  $ make gtest.a gtest_main.a
   $ sudo cp libgtest.a libgtest_main.a /opt/local/lib
   $ sudo mkdir /opt/local/include/gtest
   $ sudo cp -pr ../gtest-svn/include/gtest /opt/local/include/gtest 
