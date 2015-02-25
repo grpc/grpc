@@ -34,47 +34,47 @@ from grpc.early_adopter import utilities
 from interop import empty_pb2
 from interop import messages_pb2
 
-def _empty_call(request):
+def _empty_call(request, unused_context):
   return empty_pb2.Empty()
 
-_CLIENT_EMPTY_CALL = utilities.unary_unary_client_rpc_method(
+_CLIENT_EMPTY_CALL = utilities.unary_unary_invocation_description(
     empty_pb2.Empty.SerializeToString, empty_pb2.Empty.FromString)
-_SERVER_EMPTY_CALL = utilities.unary_unary_server_rpc_method(
+_SERVER_EMPTY_CALL = utilities.unary_unary_service_description(
     _empty_call, empty_pb2.Empty.FromString,
     empty_pb2.Empty.SerializeToString)
 
 
-def _unary_call(request):
+def _unary_call(request, unused_context):
   return messages_pb2.SimpleResponse(
       payload=messages_pb2.Payload(
           type=messages_pb2.COMPRESSABLE,
           body=b'\x00' * request.response_size))
 
-_CLIENT_UNARY_CALL = utilities.unary_unary_client_rpc_method(
+_CLIENT_UNARY_CALL = utilities.unary_unary_invocation_description(
     messages_pb2.SimpleRequest.SerializeToString,
     messages_pb2.SimpleResponse.FromString)
-_SERVER_UNARY_CALL = utilities.unary_unary_server_rpc_method(
+_SERVER_UNARY_CALL = utilities.unary_unary_service_description(
     _unary_call, messages_pb2.SimpleRequest.FromString,
     messages_pb2.SimpleResponse.SerializeToString)
 
 
-def _streaming_output_call(request):
+def _streaming_output_call(request, unused_context):
   for response_parameters in request.response_parameters:
     yield messages_pb2.StreamingOutputCallResponse(
         payload=messages_pb2.Payload(
             type=request.response_type,
             body=b'\x00' * response_parameters.size))
 
-_CLIENT_STREAMING_OUTPUT_CALL = utilities.unary_stream_client_rpc_method(
+_CLIENT_STREAMING_OUTPUT_CALL = utilities.unary_stream_invocation_description(
     messages_pb2.StreamingOutputCallRequest.SerializeToString,
     messages_pb2.StreamingOutputCallResponse.FromString)
-_SERVER_STREAMING_OUTPUT_CALL = utilities.unary_stream_server_rpc_method(
+_SERVER_STREAMING_OUTPUT_CALL = utilities.unary_stream_service_description(
     _streaming_output_call,
     messages_pb2.StreamingOutputCallRequest.FromString,
     messages_pb2.StreamingOutputCallResponse.SerializeToString)
 
 
-def _streaming_input_call(request_iterator):
+def _streaming_input_call(request_iterator, unused_context):
   aggregate_size = 0
   for request in request_iterator:
     if request.payload and request.payload.body:
@@ -82,35 +82,35 @@ def _streaming_input_call(request_iterator):
   return messages_pb2.StreamingInputCallResponse(
       aggregated_payload_size=aggregate_size)
 
-_CLIENT_STREAMING_INPUT_CALL = utilities.stream_unary_client_rpc_method(
+_CLIENT_STREAMING_INPUT_CALL = utilities.stream_unary_invocation_description(
     messages_pb2.StreamingInputCallRequest.SerializeToString,
     messages_pb2.StreamingInputCallResponse.FromString)
-_SERVER_STREAMING_INPUT_CALL = utilities.stream_unary_server_rpc_method(
+_SERVER_STREAMING_INPUT_CALL = utilities.stream_unary_service_description(
     _streaming_input_call,
     messages_pb2.StreamingInputCallRequest.FromString,
     messages_pb2.StreamingInputCallResponse.SerializeToString)
 
 
-def _full_duplex_call(request_iterator):
+def _full_duplex_call(request_iterator, unused_context):
   for request in request_iterator:
     yield messages_pb2.StreamingOutputCallResponse(
         payload=messages_pb2.Payload(
             type=request.payload.type,
             body=b'\x00' * request.response_parameters[0].size))
 
-_CLIENT_FULL_DUPLEX_CALL = utilities.stream_stream_client_rpc_method(
+_CLIENT_FULL_DUPLEX_CALL = utilities.stream_stream_invocation_description(
     messages_pb2.StreamingOutputCallRequest.SerializeToString,
     messages_pb2.StreamingOutputCallResponse.FromString)
-_SERVER_FULL_DUPLEX_CALL = utilities.stream_stream_server_rpc_method(
+_SERVER_FULL_DUPLEX_CALL = utilities.stream_stream_service_description(
     _full_duplex_call,
     messages_pb2.StreamingOutputCallRequest.FromString,
     messages_pb2.StreamingOutputCallResponse.SerializeToString)
 
 # NOTE(nathaniel): Apparently this is the same as the full-duplex call?
-_CLIENT_HALF_DUPLEX_CALL = utilities.stream_stream_client_rpc_method(
+_CLIENT_HALF_DUPLEX_CALL = utilities.stream_stream_invocation_description(
     messages_pb2.StreamingOutputCallRequest.SerializeToString,
     messages_pb2.StreamingOutputCallResponse.FromString)
-_SERVER_HALF_DUPLEX_CALL = utilities.stream_stream_server_rpc_method(
+_SERVER_HALF_DUPLEX_CALL = utilities.stream_stream_service_description(
     _full_duplex_call,
     messages_pb2.StreamingOutputCallRequest.FromString,
     messages_pb2.StreamingOutputCallResponse.SerializeToString)

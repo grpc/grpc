@@ -31,15 +31,12 @@
 
 import threading
 
-from grpc._adapter import fore
-from grpc.framework.base.packets import implementations as _tickets_implementations
-from grpc.framework.face import implementations as _face_implementations
-from grpc.framework.foundation import logging_pool
-from grpc.early_adopter import _face_utilities
+from grpc._adapter import fore as _fore
+from grpc._adapter import rear as _rear
+from grpc.early_adopter import _assembly_utilities
+from grpc.early_adopter import _reexport
 from grpc.early_adopter import interfaces
-
-_MEGA_TIMEOUT = 60 * 60 * 24
-_THREAD_POOL_SIZE = 80
+from grpc.framework.assembly import implementations as _assembly_implementations
 
 
 class _Server(interfaces.Server):
@@ -48,53 +45,109 @@ class _Server(interfaces.Server):
     self._lock = threading.Lock()
     self._breakdown = breakdown
     self._port = port
-    self._private_key = private_key
-    self._certificate_chain = certificate_chain
+    if private_key is None or certificate_chain is None:
+      self._key_chain_pairs = ()
+    else:
+      self._key_chain_pairs = ((private_key, certificate_chain),)
 
-    self._pool = None
     self._fore_link = None
-    self._back = None
+    self._server = None
 
-  def start(self):
-    """See interfaces.Server.start for specification."""
+  def _start(self):
     with self._lock:
-      if self._pool is None:
-        self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
-        servicer = _face_implementations.servicer(
-            self._pool,
-            inline_value_in_value_out_methods=self._breakdown.unary_unary_methods,
-            inline_value_in_stream_out_methods=self._breakdown.unary_stream_methods,
-            inline_stream_in_value_out_methods=self._breakdown.stream_unary_methods,
-            inline_stream_in_stream_out_methods=self._breakdown.stream_stream_methods)
-        self._fore_link = fore.ForeLink(
-            self._pool, self._breakdown.request_deserializers,
-            self._breakdown.response_serializers, None,
-            ((self._private_key, self._certificate_chain),), port=self._port)
-        self._fore_link.start()
-        port = self._fore_link.port()
-        self._back = _tickets_implementations.back(
-            servicer, self._pool, self._pool, self._pool, _MEGA_TIMEOUT,
-            _MEGA_TIMEOUT)
-        self._fore_link.join_rear_link(self._back)
-        self._back.join_fore_link(self._fore_link)
-        return port
+      if self._server is None:
+        self._fore_link = _fore.activated_fore_link(
+            self._port, self._breakdown.request_deserializers,
+            self._breakdown.response_serializers, None, self._key_chain_pairs)
+
+        self._server = _assembly_implementations.assemble_service(
+            self._breakdown.implementations, self._fore_link)
+        self._server.start()
       else:
         raise ValueError('Server currently running!')
 
-  def stop(self):
-    """See interfaces.Server.stop for specification."""
+  def _stop(self):
     with self._lock:
-      if self._pool is None:
+      if self._server is None:
         raise ValueError('Server not running!')
       else:
-        self._fore_link.stop()
-        self._pool.shutdown(wait=True)
-        self._pool = None
+        self._server.stop()
+        self._server = None
+        self._fore_link = None
+
+  def __enter__(self):
+    self._start()
+    return self
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    self._stop()
+    return False
+
+  def start(self):
+    self._start()
+
+  def stop(self):
+    self._stop()
+
+  def port(self):
+    with self._lock:
+      return self._fore_link.port()
+
+def _build_stub(
+    methods, host, port, root_certificates, private_key, certificate_chain):
+  breakdown = _assembly_utilities.break_down_invocation(methods)
+  # TODO(nathaniel): pass security values.
+  activated_rear_link = _rear.activated_rear_link(
+      host, port, breakdown.request_serializers,
+      breakdown.response_deserializers)
+  assembly_stub = _assembly_implementations.assemble_dynamic_inline_stub(
+      breakdown.implementations, activated_rear_link)
+  return _reexport.stub(assembly_stub, breakdown.cardinalities)
 
 
 def _build_server(methods, port, private_key, certificate_chain):
-  breakdown = _face_utilities.server_break_down(methods)
+  breakdown = _assembly_utilities.break_down_service(methods)
   return _Server(breakdown, port, private_key, certificate_chain)
+
+
+def insecure_stub(methods, host, port):
+  """Constructs an insecure interfaces.Stub.
+
+  Args:
+    methods: A dictionary from RPC method name to
+      interfaces.RpcMethodInvocationDescription describing the RPCs to be
+      supported by the created stub.
+    host: The host to which to connect for RPC service.
+    port: The port to which to connect for RPC service.
+
+  Returns:
+    An interfaces.Stub affording RPC invocation.
+  """
+  return _build_stub(methods, host, port, None, None, None)
+
+
+def secure_stub(
+    methods, host, port, root_certificates, private_key, certificate_chain):
+  """Constructs an insecure interfaces.Stub.
+
+  Args:
+    methods: A dictionary from RPC method name to
+      interfaces.RpcMethodInvocationDescription describing the RPCs to be
+      supported by the created stub.
+    host: The host to which to connect for RPC service.
+    port: The port to which to connect for RPC service.
+    root_certificates: The PEM-encoded root certificates or None to ask for
+      them to be retrieved from a default location.
+    private_key: The PEM-encoded private key to use or None if no private key
+      should be used.
+    certificate_chain: The PEM-encoded certificate chain to use or None if no
+      certificate chain should be used.
+
+  Returns:
+    An interfaces.Stub affording RPC invocation.
+  """
+  return _build_stub(
+      methods, host, port, root_certificates, private_key, certificate_chain)
 
 
 def insecure_server(methods, port):
@@ -102,9 +155,10 @@ def insecure_server(methods, port):
 
   Args:
     methods: A dictionary from RPC method name to
-      interfaces.ServerRpcMethod object describing the RPCs to
+      interfaces.RpcMethodServiceDescription describing the RPCs to
       be serviced by the created server.
-    port: The port on which to serve.
+    port: The desired port on which to serve or zero to ask for a port to
+      be automatically selected.
 
   Returns:
     An interfaces.Server that will run with no security and
@@ -118,9 +172,10 @@ def secure_server(methods, port, private_key, certificate_chain):
 
   Args:
     methods: A dictionary from RPC method name to
-      interfaces.ServerRpcMethod object describing the RPCs to
+      interfaces.RpcMethodServiceDescription describing the RPCs to
       be serviced by the created server.
-    port: The port on which to serve.
+    port: The port on which to serve or zero to ask for a port to be
+      automatically selected.
     private_key: A pem-encoded private key.
     certificate_chain: A pem-encoded certificate chain.
 

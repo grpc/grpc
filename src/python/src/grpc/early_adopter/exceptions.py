@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,30 +27,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Exceptions raised by GRPC.
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+Only GRPC should instantiate and raise these exceptions.
+"""
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/opt
-source python2.7_virtual_environment/bin/activate
-# TODO(issue 215): Properly itemize these in run_tests.py so that they can be parallelized.
-python2.7 -B test/compiler/python_plugin_test.py
-python2.7 -B -m grpc._adapter._blocking_invocation_inline_service_test
-python2.7 -B -m grpc._adapter._c_test
-python2.7 -B -m grpc._adapter._event_invocation_synchronous_event_service_test
-python2.7 -B -m grpc._adapter._future_invocation_asynchronous_event_service_test
-python2.7 -B -m grpc._adapter._links_test
-python2.7 -B -m grpc._adapter._lonely_rear_link_test
-python2.7 -B -m grpc._adapter._low_test
-python2.7 -B -m grpc.early_adopter.implementations_test
-python2.7 -B -m grpc.framework.assembly.implementations_test
-python2.7 -B -m grpc.framework.base.packets.implementations_test
-python2.7 -B -m grpc.framework.face.blocking_invocation_inline_service_test
-python2.7 -B -m grpc.framework.face.event_invocation_synchronous_event_service_test
-python2.7 -B -m grpc.framework.face.future_invocation_asynchronous_event_service_test
-python2.7 -B -m grpc.framework.foundation._later_test
-python2.7 -B -m grpc.framework.foundation._logging_pool_test
-# TODO(nathaniel): Get tests working under 3.4 (requires 3.X-friendly protobuf)
-# python3.4 -B -m unittest discover -s src/python -p '*.py'
+import abc
+
+
+class RpcError(Exception):
+  """Common super type for all exceptions raised by GRPC."""
+  __metaclass__ = abc.ABCMeta
+
+
+class CancellationError(RpcError):
+  """Indicates that an RPC has been cancelled."""
+
+
+class ExpirationError(RpcError):
+  """Indicates that an RPC has expired ("timed out")."""
