@@ -1,3 +1,6 @@
+Experimental example code, likely to change.
+Users should not attempt to run this code till this warning is removed.
+
 C++ Client implementation for Cloud Pub/Sub service
 (https://developers.google.com/apis-explorer/#p/pubsub/v1beta1/).
 
@@ -12,19 +15,7 @@ be created with scope "https://www.googleapis.com/auth/cloud-platform" as below:
 gcloud compute instances create instance-name 
     --image debian-7 --scopes https://www.googleapis.com/auth/cloud-platform
 
-Google TLS cert is required to run the client, which can be downloaded from
-Chrome browser.  
-   
-To run the client from GCE:
-make pubsub_client
-GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="Google TLS cert" bins/opt/pubsub_client
-     --project_id="your project id"
-    
-A service account credential is required to run the client from other
-environments, which can be generated as a JSON key file from
-https://console.developers.google.com/project/. To run the client with a service 
-account credential:
 
-GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="Google TLS cert" bins/opt/pubsub_client
-    --project_id="your project id"
-    --service_account_key_file="absolute path to the JSON key file"
+To run the client:
+make pubsub_client
+bins/opt/pubsub_client --project_id="your project id"

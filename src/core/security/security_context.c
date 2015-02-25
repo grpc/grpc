@@ -338,6 +338,24 @@ static grpc_security_status ssl_server_create_handshaker(
   return ssl_create_handshaker(c->handshaker_factory, 0, NULL, handshaker);
 }
 
+static int ssl_host_matches_name(const tsi_peer *peer,
+                                 const char *peer_name) {
+  char *allocated_name = NULL;
+  int r;
+
+  if (strchr(peer_name, ':') != NULL) {
+    char *ignored_port;
+    gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
+    gpr_free(ignored_port);
+    peer_name = allocated_name;
+    if (!peer_name) return 0;
+  }
+  
+  r = tsi_ssl_peer_matches_name(peer, peer_name);
+  gpr_free(allocated_name);
+  return r;
+}
+
 static grpc_security_status ssl_check_peer(const char *peer_name,
                                            const tsi_peer *peer) {
   /* Check the ALPN. */
@@ -359,10 +377,11 @@ static grpc_security_status ssl_check_peer(const char *peer_name,
 
   /* Check the peer name if specified. */
   if (peer_name != NULL &&
-      !tsi_ssl_peer_matches_name(peer, peer_name)) {
+      !ssl_host_matches_name(peer, peer_name)) {
     gpr_log(GPR_ERROR, "Peer name %s is not in peer certificate", peer_name);
     return GRPC_SECURITY_ERROR;
   }
+
   return GRPC_SECURITY_OK;
 }
 
@@ -398,7 +417,7 @@ static grpc_security_status ssl_channel_check_call_host(
   grpc_ssl_channel_security_context *c =
       (grpc_ssl_channel_security_context *)ctx;
 
-  if (tsi_ssl_peer_matches_name(&c->peer, host)) return GRPC_SECURITY_OK;
+  if (ssl_host_matches_name(&c->peer, host)) return GRPC_SECURITY_OK;
 
   /* If the target name was overridden, then the original target_name was
      'checked' transitively during the previous peer check at the end of the

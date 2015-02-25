@@ -245,8 +245,8 @@ bool PrintServerFactory(const ServiceDescriptor* service, Printer* out) {
       if (!GetModuleAndMessagePath(input_type, &module_and_message)) {
         return false;
       }
-      method_to_module_and_message.emplace(
-          meth->name(), module_and_message);
+      method_to_module_and_message.insert(
+          make_pair(meth->name(), module_and_message));
     }
     out->Print("}\n");
     // Ensure that we've imported all of the relevant messages.
@@ -306,8 +306,8 @@ bool PrintStubFactory(const ServiceDescriptor* service, Printer* out) {
       if (!GetModuleAndMessagePath(output_type, &module_and_message)) {
         return false;
       }
-      method_to_module_and_message.emplace(
-          meth->name(), module_and_message);
+      method_to_module_and_message.insert(
+          make_pair(meth->name(), module_and_message));
     }
     out->Print("}\n");
     // Ensure that we've imported all of the relevant messages.
