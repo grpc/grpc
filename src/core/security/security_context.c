@@ -44,7 +44,9 @@
 #include "src/core/support/string.h"
 #include "src/core/surface/lame_client.h"
 #include "src/core/transport/chttp2/alpn.h"
+
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 #include "src/core/tsi/fake_transport_security.h"
@@ -443,6 +445,7 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   size_t i;
   const unsigned char *pem_root_certs;
   size_t pem_root_certs_size;
+  char *port;
 
   for (i = 0; i < num_alpn_protocols; i++) {
     alpn_protocol_strings[i] =
@@ -468,9 +471,8 @@ grpc_security_status grpc_ssl_channel_security_context_create(
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.request_metadata_creds = grpc_credentials_ref(request_metadata_creds);
   c->base.check_call_host = ssl_channel_check_call_host;
-  if (target_name != NULL) {
-    c->target_name = gpr_strdup(target_name);
-  }
+  gpr_split_host_port(target_name, &c->target_name, &port);
+  gpr_free(port);
   if (overridden_target_name != NULL) {
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
