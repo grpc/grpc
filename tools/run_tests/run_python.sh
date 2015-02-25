@@ -37,7 +37,8 @@ root=`pwd`
 export LD_LIBRARY_PATH=$root/libs/opt
 source python2.7_virtual_environment/bin/activate
 # TODO(issue 215): Properly itemize these in run_tests.py so that they can be parallelized.
-python2.7 -B test/compiler/python_plugin_test.py
+# TODO(atash): Enable dynamic unused port discovery for this test.
+python2.7 -B test/compiler/python_plugin_test.py --build_mode=opt --port=40987
 python2.7 -B -m grpc._adapter._blocking_invocation_inline_service_test
 python2.7 -B -m grpc._adapter._c_test
 python2.7 -B -m grpc._adapter._event_invocation_synchronous_event_service_test
