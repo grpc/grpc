@@ -48,17 +48,11 @@
 
 #include "examples/pubsub/publisher.h"
 #include "examples/pubsub/subscriber.h"
-#include "test/cpp/util/create_test_channel.h"
 
 DEFINE_int32(server_port, 443, "Server port.");
 DEFINE_string(server_host,
               "pubsub-staging.googleapis.com", "Server host to connect to");
 DEFINE_string(project_id, "", "GCE project id such as stoked-keyword-656");
-DEFINE_string(service_account_key_file, "",
-              "Path to service account json key file.");
-DEFINE_string(oauth_scope,
-              "https://www.googleapis.com/auth/cloud-platform",
-              "Scope for OAuth tokens.");
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
@@ -75,15 +69,11 @@ const char kMessageData[] = "Test Data";
 
 }  // namespace
 
-grpc::string GetServiceAccountJsonKey() {
-  grpc::string json_key;
-  if (json_key.empty()) {
-    std::ifstream json_key_file(FLAGS_service_account_key_file);
-    std::stringstream key_stream;
-    key_stream << json_key_file.rdbuf();
-    json_key = key_stream.str();
-  }
-  return json_key;
+std::shared_ptr<grpc::ChannelInterface> CreateChannel(
+    const std::string& target) {
+  std::unique_ptr<grpc::Credentials> creds =
+      CredentialsFactory::GoogleDefaultCredentials();
+  return grpc::CreateChannel(target, creds, grpc::ChannelArguments());
 }
 
 int main(int argc, char** argv) {
@@ -94,22 +84,9 @@ int main(int argc, char** argv) {
   std::ostringstream ss;
 
   std::unique_ptr<grpc::Credentials> creds;
-  if (FLAGS_service_account_key_file != "") {
-    grpc::string json_key = GetServiceAccountJsonKey();
-    creds = grpc::CredentialsFactory::ServiceAccountCredentials(
-        json_key, FLAGS_oauth_scope, std::chrono::hours(1));
-  } else {
-    creds = grpc::CredentialsFactory::ComputeEngineCredentials();
-  }
 
   ss << FLAGS_server_host << ":" << FLAGS_server_port;
-  std::shared_ptr<grpc::ChannelInterface> channel(
-      grpc::CreateTestChannel(
-          ss.str(),
-          FLAGS_server_host,
-          true,                // enable SSL
-          true,                // use prod roots
-          creds));
+  std::shared_ptr<grpc::ChannelInterface> channel = CreateChannel();
 
   grpc::examples::pubsub::Publisher publisher(channel);
   grpc::examples::pubsub::Subscriber subscriber(channel);
