@@ -3,8 +3,7 @@
 This tutorial provides a basic Node.js programmer's introduction to working with gRPC. By walking through this example you'll learn how to:
 
 - Define a service in a .proto file.
-- Generate server and client code using the protocol buffer compiler.
-- Use the C++ gRPC API to write a simple client and server for your service.
+- Use the Node.js gRPC API to write a simple client and server for your service.
 
 It assumes that you have read the [Getting started](https://github.com/grpc/grpc-common) guide and are familiar with [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview). Note that the example in this tutorial uses the proto3 version of the protocol buffers language, which is currently in alpha release: you can see the [release notes](https://github.com/google/protobuf/releases) for the new version in the protocol buffers Github repository.
 
@@ -87,32 +86,20 @@ message Point {
 ```
 
 
-## Generating client and server code
+## Loading service descriptors from proto files
 
-Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC C++ plugin.
+The Node.js library dynamically generates service descriptors and client stub definitions from `.proto` files loaded at runtime.
 
-For simplicity, we've provided a [makefile](https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/Makefile) that runs `protoc` for you with the appropriate plugin, input, and output (if you want to run this yourself, make sure you've installed protoc and followed the gRPC code [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first):
+To load a `.proto` file, simply `require` the gRPC library, then use its `load()` method to load the proto file:
 
-```shell
-$ make route_guide.pb.cc
+```node
+var grpc = require('grpc');
+var protoDescriptor = grpc.load(__dirname + '/route_guide.proto');
+// The protoDescriptor object has the full package hierarchy
+var example = protoDescriptor.examples;
 ```
 
-which actually runs:
-
-```shell
-$ protoc -I ../../protos --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ../../protos/route_guide.proto
-```
-
-Running this command generates the following files in your current directory:
-- `route_guide.pb.h`, the header which declares your generated classes
-- `route_guide.pb.cc`, which contains the implementation of your classes
-
-These contain:
-- All the protocol buffer code to populate, serialize, and retrieve our request and response message types
-- A class called `RouteGuide` that contains
-   - a remote interface type (or *stub*) for clients to call with the methods defined in the `RouteGuide` service.
-   - two abstract interfaces for servers to implement, also with the methods defined in the `RouteGuide` service.
-
+Then, the stub constructor is in the examples namespace (`protoDescriptor.examples.RouteGuide`) and the service descriptor (which is used to create a server) is a property of the stub (`protoDescriptor.examples.RouteGuide.service`);
 
 <a name="server"></a>
 ## Creating the server
@@ -298,7 +285,7 @@ As you can see, we create and populate a request object. Finally, we call the me
 
 Now let's look at our streaming methods. If you've already read [Creating the server](#server) some of this may look very familiar - streaming RPCs are implemented in a similar way on both sides. Here's where we call the server-side streaming method `ListFeatures`, which returns a stream of geographical `Feature`s:
 
-```cpp
+```node
 var call = client.listFeatures(rectangle);
   call.on('data', function(feature) {
       console.log('Found feature called "' + feature.name + '" at ' +
@@ -317,7 +304,7 @@ Instead of passing the method a request and callback, we pass it a request and g
 
 The client-side streaming method `RecordRoute` is similar, except there we pass the method a callback and get back a `Writable`.
 
-```cpp
+```node
     var call = client.recordRoute(function(error, stats) {
       if (error) {
         callback(error);
@@ -353,7 +340,7 @@ Once we've finished writing our client's requests to the stream using `write()`,
 
 Finally, let's look at our bidirectional streaming RPC `routeChat()`. In this case, we just pass a context to the method and get back a `Duplex` stream object, which we can use to both write and read messages.
 
-```cpp
+```node
 var call = client.routeChat();
 ```
 
