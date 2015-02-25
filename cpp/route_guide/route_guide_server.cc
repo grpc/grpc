@@ -37,7 +37,6 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <thread>
 
 #include <grpc/grpc.h>
 #include <grpc++/server.h>
@@ -191,9 +190,7 @@ void RunServer(const std::string& db_path) {
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-  while (true) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-  }
+  server->Wait();
 }
 
 int main(int argc, char** argv) {
