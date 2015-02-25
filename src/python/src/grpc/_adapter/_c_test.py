@@ -136,6 +136,29 @@ class _CTest(unittest.TestCase):
 
     _c.shut_down()
 
+  def test_client_credentials(self):
+    root_certificates = b'Trust starts here. Really.'
+    private_key = b'This is a really bad private key, yo.'
+    certificate_chain = b'Trust me! Do I not look trustworty?'
+
+    _c.init()
+
+    client_credentials = _c.ClientCredentials(
+        None, None, None)
+    self.assertIsNotNone(client_credentials)
+    client_credentials = _c.ClientCredentials(
+        root_certificates, None, None)
+    self.assertIsNotNone(client_credentials)
+    client_credentials = _c.ClientCredentials(
+        None, private_key, certificate_chain)
+    self.assertIsNotNone(client_credentials)
+    client_credentials = _c.ClientCredentials(
+        root_certificates, private_key, certificate_chain)
+    self.assertIsNotNone(client_credentials)
+    del client_credentials
+
+    _c.shut_down()
+
   def test_server_credentials(self):
     root_certificates = b'Trust starts here. Really.'
     first_private_key = b'This is a really bad private key, yo.'

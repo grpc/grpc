@@ -31,56 +31,18 @@
  *
  */
 
+#ifndef _ADAPTER__CLIENT_CREDENTIALS_H_
+#define _ADAPTER__CLIENT_CREDENTIALS_H_
+
 #include <Python.h>
-#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
-#include "grpc/_adapter/_completion_queue.h"
-#include "grpc/_adapter/_channel.h"
-#include "grpc/_adapter/_call.h"
-#include "grpc/_adapter/_server.h"
-#include "grpc/_adapter/_client_credentials.h"
-#include "grpc/_adapter/_server_credentials.h"
+typedef struct {
+  PyObject_HEAD grpc_credentials *c_client_credentials;
+} ClientCredentials;
 
-static PyObject *init(PyObject *self) {
-  grpc_init();
-  Py_RETURN_NONE;
-}
+PyTypeObject pygrpc_ClientCredentialsType;
 
-static PyObject *shutdown(PyObject *self) {
-  grpc_shutdown();
-  Py_RETURN_NONE;
-}
+int pygrpc_add_client_credentials(PyObject *module);
 
-static PyMethodDef _c_methods[] = {
-    {"init", (PyCFunction)init, METH_NOARGS,
-     "Initialize the module's static state."},
-    {"shut_down", (PyCFunction)shutdown, METH_NOARGS,
-     "Shut down the module's static state."},
-    {NULL},
-};
-
-PyMODINIT_FUNC init_c(void) {
-  PyObject *module;
-
-  module = Py_InitModule3("_c", _c_methods,
-                          "Wrappings of C structures and functions.");
-
-  if (pygrpc_add_completion_queue(module) == -1) {
-    return;
-  }
-  if (pygrpc_add_channel(module) == -1) {
-    return;
-  }
-  if (pygrpc_add_call(module) == -1) {
-    return;
-  }
-  if (pygrpc_add_server(module) == -1) {
-    return;
-  }
-  if (pygrpc_add_client_credentials(module) == -1) {
-    return;
-  }
-  if (pygrpc_add_server_credentials(module) == -1) {
-    return;
-  }
-}
+#endif /* _ADAPTER__CLIENT_CREDENTIALS_H_ */
