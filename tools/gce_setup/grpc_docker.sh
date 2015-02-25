@@ -945,7 +945,7 @@ grpc_cloud_prod_auth_service_account_creds_gen_go_cmd() {
   local test_script="cd src/google.golang.org/grpc/interop/client"
   local test_script+=" && go run client.go --use_tls=true"
   local gfe_flags="  --tls_ca_file=\"\" --tls_server_name=\"\" --server_port=443 --server_host=grpc-test.sandbox.google.com"
-  local added_gfe_flags=$(_grpc_svc_acc_test_flags) 
+  local added_gfe_flags=$(_grpc_svc_acc_test_flags)
   local the_cmd="$cmd_prefix '$test_script $gfe_flags $added_gfe_flags $@'"
   echo $the_cmd
 }
@@ -960,7 +960,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_go_cmd() {
   local test_script="cd src/google.golang.org/grpc/interop/client"
   local test_script+=" && go run client.go --use_tls=true"
   local gfe_flags="  --tls_ca_file=\"\" --tls_server_name=\"\" --server_port=443 --server_host=grpc-test.sandbox.google.com"
-  local added_gfe_flags=$(_grpc_gce_test_flags) 
+  local added_gfe_flags=$(_grpc_gce_test_flags)
   local the_cmd="$cmd_prefix '$test_script $gfe_flags $added_gfe_flags $@'"
   echo $the_cmd
 }
@@ -1085,7 +1085,8 @@ grpc_interop_gen_node_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_gen_node_cmd() {
-  local cmd_prefix="sudo docker run grpc/node";
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/node";
   local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags);
   local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
@@ -1098,12 +1099,12 @@ grpc_cloud_prod_gen_node_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_auth_service_account_creds_gen_node_cmd() {
-  local cmd_prefix="sudo docker run grpc/node";
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  env_flag+="-e GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json "
+  local cmd_prefix="sudo docker run $env_flag grpc/node";
   local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags);
-  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
-  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
-  local the_cmd="$env_prefix $cmd_prefix $test_script $gfe_flags $@";
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
 }
 
