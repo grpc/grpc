@@ -181,6 +181,7 @@ namespace Grpc.Core.Internal
             {
                 started = true;
                 halfcloseRequested = true;
+                halfclosed = true;  // halfclose not confirmed yet, but it will be once finishedHandler is called.
         
                 this.readObserver = readObserver;
 
