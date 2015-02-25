@@ -101,7 +101,7 @@ Next we need to generate the gRPC client and server interfaces from our .proto s
 For simplicity, we've provided a [Gradle build file](https://github.com/grpc/grpc-java/blob/master/examples/build.gradle) that runs `protoc` for you with the appropriate plugin, input, and output (if you want to run this yourself, make sure you've installed protoc and followed the gRPC code [installation instructions](https://github.com/grpc/grpc-java) first):
 
 ```shell
-gradle build
+../gradlew build
 ```
 
 which actually runs:
