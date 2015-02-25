@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "description": "gRPC Library for Node",
   "scripts": {
     "lint": "node ./node_modules/jshint/bin/jshint src test examples interop index.js",
