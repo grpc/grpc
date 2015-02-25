@@ -70,13 +70,6 @@ const char kMessageData[] = "Test Data";
 
 }  // namespace
 
-std::shared_ptr<grpc::ChannelInterface> CreateChannel(
-    const std::string& target) {
-  std::unique_ptr<grpc::Credentials> creds =
-      grpc::CredentialsFactory::GoogleDefaultCredentials();
-  return grpc::CreateChannel(target, creds, grpc::ChannelArguments());
-}
-
 int main(int argc, char** argv) {
   grpc_init();
   ParseCommandLineFlags(&argc, &argv, true);
@@ -87,7 +80,10 @@ int main(int argc, char** argv) {
   std::unique_ptr<grpc::Credentials> creds;
 
   ss << FLAGS_server_host << ":" << FLAGS_server_port;
-  std::shared_ptr<grpc::ChannelInterface> channel = CreateChannel(ss.str());
+  std::unique_ptr<grpc::Credentials> creds =
+      grpc::CredentialsFactory::GoogleDefaultCredentials();
+  std::shared_ptr<grpc::ChannelInterface> channel =
+      grpc::CreateChannel(target, creds, grpc::ChannelArguments());
 
   grpc::examples::pubsub::Publisher publisher(channel);
   grpc::examples::pubsub::Subscriber subscriber(channel);
