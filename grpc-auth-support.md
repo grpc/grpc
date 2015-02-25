@@ -64,10 +64,7 @@ grpc::Status s = stub->sayHello(&context, *request, response);
 This credential works for applications using Service Accounts as well as for 
 applications running in Google Compute Engine (GCE). In the former case, the
 service account’s private keys are loaded from the file named in the environment
-variable `GOOGLE_APPLICATION_CREDENTIALS`. If that environment variable is not
-set, the library attempts to load the keys from the file located at 
-`<home>/.config/gcloud/application_default_credentials.json` where `<home>` is
-the relative path specified in the environment variable `HOME`. Once loaded, the
+variable `GOOGLE_APPLICATION_CREDENTIALS`. The
 keys are used to generate bearer tokens that are attached to each outgoing RPC 
 on the corresponding channel.
 
