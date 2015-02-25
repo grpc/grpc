@@ -590,8 +590,8 @@ static const char* Greeter_method_names[] = {
   "/helloworld.Greeter/SayHello",
 };
 
-Greeter::Stub* Greeter::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel) {
-  Greeter::Stub* stub = new Greeter::Stub();
+std::unique_ptr< Greeter::Stub> Greeter::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel) {
+  std::unique_ptr< Greeter::Stub> stub(new Greeter::Stub());
   stub->set_channel(channel);
   return stub;
 };
@@ -600,8 +600,8 @@ Greeter::Stub* Greeter::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>
   return ::grpc::BlockingUnaryCall(channel(),::grpc::RpcMethod(Greeter_method_names[0]), context, request, response);
 }
 
-::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>* Greeter::Stub::SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
-  return new ::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>(channel(), cq, ::grpc::RpcMethod(Greeter_method_names[0]), context, request, tag);
+std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>> Greeter::Stub::SayHello(::grpc::ClientContext* context, const ::helloworld::HelloRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+  return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>>(new ::grpc::ClientAsyncResponseReader< ::helloworld::HelloReply>(channel(), cq, ::grpc::RpcMethod(Greeter_method_names[0]), context, request, tag));
 }
 
 Greeter::AsyncService::AsyncService(::grpc::CompletionQueue* cq) : ::grpc::AsynchronousService(cq, Greeter_method_names, 1) {}

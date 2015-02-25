@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
   grpc_init();
 
   GreeterClient greeter(
-      grpc::CreateChannel("localhost:50051", ChannelArguments()));
+      grpc::CreateChannelDeprecated("localhost:50051", ChannelArguments()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
