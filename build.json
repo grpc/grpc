@@ -1580,6 +1580,20 @@
       ]
     },
     {
+      "name": "transport_security_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/tsi/transport_security_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "async_end2end_test",
       "build": "test",
       "language": "c++",

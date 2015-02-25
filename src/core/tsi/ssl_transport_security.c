@@ -180,6 +180,28 @@ static void ssl_info_callback(const SSL* ssl, int where, int ret) {
   ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE, "HANDSHAKE DONE");
 }
 
+/* Returns 1 if name looks like an IP address, 0 otherwise. */
+static int looks_like_ip_address(const char *name) {
+  size_t i;
+  size_t dot_count = 0;
+  size_t num_size = 0;
+  for (i = 0; i < strlen(name); i++) {
+    if (name[i] >= '0' && name[i] <= '9') {
+      if (num_size > 3) return 0;
+      num_size++;
+    } else if (name[i] == '.') {
+      if (dot_count > 3 || num_size == 0) return 0;
+      dot_count++;
+      num_size = 0;
+    } else {
+      return 0;
+    }
+  }
+  if (dot_count < 3 || num_size == 0) return 0;
+  return 1;
+}
+
+
 /* Gets the subject CN from an X509 cert. */
 static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
                                            size_t* utf8_size) {
@@ -226,10 +248,18 @@ static tsi_result peer_property_from_x509_common_name(
   size_t common_name_size;
   tsi_result result =
       ssl_get_x509_common_name(cert, &common_name, &common_name_size);
-  if (result != TSI_OK) return result;
+  if (result != TSI_OK) {
+    if (result == TSI_NOT_FOUND) {
+      common_name = NULL;
+      common_name_size = 0;
+    } else {
+      return result;
+    }
+  }
   result = tsi_construct_string_peer_property(
-      TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, (const char*)common_name,
-      common_name_size, property);
+      TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY,
+      common_name == NULL ? "" : (const char*)common_name, common_name_size,
+      property);
   OPENSSL_free(common_name);
   return result;
 }
@@ -1036,9 +1066,22 @@ static void ssl_server_handshaker_factory_destroy(
 
 static int does_entry_match_name(const char* entry, size_t entry_length,
                                  const char* name) {
+  const char *dot;
   const char* name_subdomain = NULL;
+  size_t name_length = strlen(name);
+  size_t name_subdomain_length;
   if (entry_length == 0) return 0;
-  if (!strncmp(name, entry, entry_length) && (strlen(name) == entry_length)) {
+
+  /* Take care of '.' terminations. */
+  if (name[name_length - 1] == '.') {
+    name_length--;
+  }
+  if (entry[entry_length - 1] == '.') {
+    entry_length--;
+  }
+
+  if ((entry_length > 0) && (name_length == entry_length) &&
+      !strncmp(name, entry, entry_length)) {
     return 1; /* Perfect match. */
   }
   if (entry[0] != '*') return 0;
@@ -1053,14 +1096,23 @@ static int does_entry_match_name(const char* entry, size_t entry_length,
   name_subdomain++; /* Starts after the dot. */
   entry += 2;       /* Remove *. */
   entry_length -= 2;
-  return (!strncmp(entry, name_subdomain, entry_length) &&
-          (strlen(name_subdomain) == entry_length));
+  name_subdomain_length = strlen(name_subdomain);
+  dot = strchr(name_subdomain, '.');
+  if ((dot == NULL) || (dot == &name_subdomain[name_subdomain_length - 1])) {
+    gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s", name_subdomain);
+    return 0;
+  }
+  if (name_subdomain[name_subdomain_length - 1] == '.') {
+    name_subdomain_length--;
+  }
+  return ((entry_length > 0) && (name_subdomain_length == entry_length) &&
+          !strncmp(entry, name_subdomain, entry_length));
 }
 
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl, int* ap,
                                                              void* arg) {
   tsi_ssl_server_handshaker_factory* impl =
-      (tsi_ssl_server_handshaker_factory*)arg;
+     (tsi_ssl_server_handshaker_factory*)arg;
   size_t i = 0;
   const char* servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername == NULL || strlen(servername) == 0) {
@@ -1283,9 +1335,13 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
 int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name) {
   size_t i = 0;
   size_t san_count = 0;
+  const tsi_peer_property* property = NULL;
+
+  /* For now reject what looks like an IP address. */
+  if (looks_like_ip_address(name)) return 0;
 
   /* Check the SAN first. */
-  const tsi_peer_property* property = tsi_peer_get_property_by_name(
+  property = tsi_peer_get_property_by_name(
       peer, TSI_X509_SUBJECT_ALTERNATIVE_NAMES_PEER_PROPERTY);
   if (property == NULL || property->type != TSI_PEER_PROPERTY_TYPE_LIST) {
     gpr_log(GPR_ERROR, "Invalid x509 subject alternative names property.");
