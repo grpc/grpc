@@ -154,7 +154,6 @@ void census_tracing_end_op(census_op_id op_id) {
 }
 
 void census_tracing_init(void) {
-  gpr_log(GPR_INFO, "Initialize census trace store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);
   if (g_trace_store == NULL) {
@@ -167,7 +166,6 @@ void census_tracing_init(void) {
 }
 
 void census_tracing_shutdown(void) {
-  gpr_log(GPR_INFO, "Shutdown census trace store.");
   gpr_mu_lock(&g_mu);
   if (g_trace_store != NULL) {
     census_ht_destroy(g_trace_store);
