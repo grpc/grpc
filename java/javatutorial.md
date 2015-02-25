@@ -250,7 +250,7 @@ As you can see, like the previous method types our method gets a `StreamObserver
 
 In the method body we instantiate an anonymous `StreamObserver` to return, in which we:
 - Override the `onValue()` method to get features and other information each time the client writes a `Point` to the message stream.
-- Override the `onCompleted()' method (called when the *client* has finished writing messages) to populate and build our `RouteSummary`. We then call our method's own response observer's `onValue()` with our `RouteSummary`, and then call its `onCompleted()` method to finish the call from the server side.
+- Override the `onCompleted()` method (called when the *client* has finished writing messages) to populate and build our `RouteSummary`. We then call our method's own response observer's `onValue()` with our `RouteSummary`, and then call its `onCompleted()` method to finish the call from the server side.
 
 Finally, let's look at our bidirectional streaming RPC `RouteChat()`.
 
