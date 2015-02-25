@@ -959,9 +959,10 @@ grpc_cloud_prod_auth_service_account_creds_gen_ruby_cmd() {
   local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
   local test_script+=" --use_tls"
   local gfe_flags=$(_grpc_prod_gfe_flags)
-  local added_gfe_flags=$(_grpc_svc_acc_test_flags)
+  local added_gfe_flags=$(_grpc_default_creds_test_flags)
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
-  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flag $@'"
+  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
+  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flags $@'"
   echo $the_cmd
 }
 
@@ -977,7 +978,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_ruby_cmd() {
   local gfe_flags=$(_grpc_prod_gfe_flags)
   local added_gfe_flags=$(_grpc_gce_test_flags)
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
-  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flag $@'"
+  local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flags $@'"
   echo $the_cmd
 }
 
@@ -1154,6 +1155,11 @@ _grpc_prod_gfe_flags() {
 # outputs the flags passed to the service account auth tests
 _grpc_svc_acc_test_flags() {
   echo " --service_account_key_file=/service_account/stubbyCloudTestingTest-7dd63462c60c.json --oauth_scope=https://www.googleapis.com/auth/xapi.zoo"
+}
+
+# default credentials test flag
+_grpc_default_creds_test_flags() {
+  echo " --oauth_scope=https://www.googleapis.com/auth/xapi.zoo"
 }
 
 # outputs the flags passed to the gcloud auth tests

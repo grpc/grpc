@@ -114,7 +114,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   config.init_client(f, client_args);
 
   c = grpc_channel_create_call(f->client, f->client_cq, "/foo",
-                               "foo.test.google.com", deadline);
+                               "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -172,7 +172,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.com"));
+  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(was_cancelled == 0);
 
   gpr_free(details);

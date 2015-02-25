@@ -41,6 +41,7 @@
     <Compile Include="ServerTest.cs" />
     <Compile Include="GrpcEnvironmentTest.cs" />
     <Compile Include="TimespecTest.cs" />
+    <Compile Include="PInvokeTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

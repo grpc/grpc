@@ -55,6 +55,10 @@ typedef struct grpc_pollset {
   gpr_cv cv;
   grpc_pollset_kick_state kick_state;
   int counter;
+  int in_flight_cbs;
+  int shutting_down;
+  void (*shutdown_done_cb)(void *arg);
+  void *shutdown_done_arg;
   union {
     int fd;
     void *ptr;

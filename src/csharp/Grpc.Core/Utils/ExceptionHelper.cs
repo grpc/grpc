@@ -32,43 +32,26 @@
 #endregion
 
 using System;
-using System.Threading;
-using Grpc.Core;
-using NUnit.Framework;
 
-namespace Grpc.Core.Tests
+namespace Grpc.Core.Utils
 {
-    public class GrpcEnvironmentTest
+    public static class ExceptionHelper
     {
-        [Test]
-        public void InitializeAndShutdownGrpcEnvironment()
-        {
-            GrpcEnvironment.Initialize();
-            Assert.IsNotNull(GrpcEnvironment.ThreadPool.CompletionQueue);
-            GrpcEnvironment.Shutdown();
-        }
-
-        [Test]
-        public void SubsequentInvocations()
-        {
-            GrpcEnvironment.Initialize();
-            GrpcEnvironment.Initialize();
-            GrpcEnvironment.Shutdown();
-            GrpcEnvironment.Shutdown();
-        }
-
-        [Test]
-        public void InitializeAfterShutdown()
-        {
-            GrpcEnvironment.Initialize();
-            var tp1 = GrpcEnvironment.ThreadPool;
-            GrpcEnvironment.Shutdown();
-
-            GrpcEnvironment.Initialize();
-            var tp2 = GrpcEnvironment.ThreadPool;
-            GrpcEnvironment.Shutdown();
-
-            Assert.IsFalse(Object.ReferenceEquals(tp1, tp2));
+        /// <summary>
+        /// If inner exceptions contain RpcException, rethrows it.
+        /// Otherwise, rethrows the original aggregate exception.
+        /// Always throws, the exception return type is here only to make the.
+        /// </summary>
+        public static Exception UnwrapRpcException(AggregateException ae) {
+            foreach (var e in ae.InnerExceptions)
+            {
+                if (e is RpcException)
+                {
+                    throw e;
+                }
+            }
+            throw ae;
         }
     }
 }
+

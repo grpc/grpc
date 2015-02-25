@@ -122,7 +122,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.com",
+  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.fr",
                                    deadline);
   GPR_ASSERT(c);
 
@@ -138,7 +138,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
      request (as this request is very large) */
   cq_verify_empty(v_client);
 
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.com",
+  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.fr",
                            deadline, NULL);
   cq_verify(v_server);
 

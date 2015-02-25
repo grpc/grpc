@@ -46,6 +46,12 @@ void grpc_pollset_init(grpc_pollset *pollset) {
   gpr_cv_init(&pollset->cv);
 }
 
+void grpc_pollset_shutdown(grpc_pollset *pollset,
+                           void (*shutdown_done)(void *arg),
+                           void *shutdown_done_arg) {
+  shutdown_done(shutdown_done_arg);
+}
+
 void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
   gpr_cv_destroy(&pollset->cv);
