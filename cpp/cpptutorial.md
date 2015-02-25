@@ -350,7 +350,16 @@ The syntax for reading and writing here is exactly the same as for our client-st
 
 ## Try it out!
 
-_[need build and run instructions here]_
-
-
+Build client and server:
+```shell
+$ make
+```
+Run the server, which will listen on port 50051:
+```shell
+$ ./route_guide_server
+```
+Run the client (in a different terminal):
+```shell
+$ ./route_guide_client
+```
 
