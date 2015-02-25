@@ -308,7 +308,7 @@ static void push_setting(transport *t, grpc_chttp2_setting_id id,
                          gpr_uint32 value);
 
 static int prepare_callbacks(transport *t);
-static void run_callbacks(transport *t);
+static void run_callbacks(transport *t, const grpc_transport_callbacks *cb);
 
 static int prepare_write(transport *t);
 static void perform_write(transport *t, grpc_endpoint *ep);
@@ -713,6 +713,7 @@ static void unlock(transport *t) {
   pending_goaway *goaways = NULL;
   grpc_endpoint *ep = t->ep;
   grpc_stream_op_buffer nuke_now;
+  const grpc_transport_callbacks *cb = t->cb;
 
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
@@ -732,7 +733,7 @@ static void unlock(transport *t) {
   }
 
   /* gather any callbacks that need to be made */
-  if (!t->calling_back && t->cb) {
+  if (!t->calling_back && cb) {
     perform_callbacks = prepare_callbacks(t);
     if (perform_callbacks) {
       t->calling_back = 1;
@@ -740,6 +741,7 @@ static void unlock(transport *t) {
     if (t->error_state == ERROR_STATE_SEEN) {
       call_closed = 1;
       t->calling_back = 1;
+      t->cb = NULL;  /* no more callbacks */
       t->error_state = ERROR_STATE_NOTIFIED;
     }
     if (t->num_pending_goaways) {
@@ -761,16 +763,16 @@ static void unlock(transport *t) {
 
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
-    t->cb->goaway(t->cb_user_data, &t->base, goaways[i].status,
-                  goaways[i].debug);
+    cb->goaway(t->cb_user_data, &t->base, goaways[i].status,
+               goaways[i].debug);
   }
 
   if (perform_callbacks) {
-    run_callbacks(t);
+    run_callbacks(t, cb);
   }
 
   if (call_closed) {
-    t->cb->closed(t->cb_user_data, &t->base);
+    cb->closed(t->cb_user_data, &t->base);
   }
 
   /* write some bytes if necessary */
@@ -1753,13 +1755,13 @@ static int prepare_callbacks(transport *t) {
   return n;
 }
 
-static void run_callbacks(transport *t) {
+static void run_callbacks(transport *t, const grpc_transport_callbacks *cb) {
   stream *s;
   while ((s = stream_list_remove_head(t, EXECUTING_CALLBACKS))) {
     size_t nops = s->callback_sopb.nops;
     s->callback_sopb.nops = 0;
-    t->cb->recv_batch(t->cb_user_data, &t->base, (grpc_stream *)s,
-                      s->callback_sopb.ops, nops, s->callback_state);
+    cb->recv_batch(t->cb_user_data, &t->base, (grpc_stream *)s,
+                   s->callback_sopb.ops, nops, s->callback_state);
   }
 }
 
