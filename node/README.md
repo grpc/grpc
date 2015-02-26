@@ -10,37 +10,37 @@ INSTALL
 -------
 
  - Clone this repository
- 
+
    ```sh
    $ git clone https://github.com/grpc/grpc-common.git
    ```
  - Follow the instructions in [INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL) to install the gRPC C core.
- - Install 
+ - Install this package's dependencies
 
    ```sh
    $ cd grpc-common/node
-   $ npm install 
-   # If node is not found, you'll need to clone the grpc repository (if you haven't already)
+   $ npm install
+   # If grpc is not found, you'll need to install it from the grpc repository
    $ git clone https://github.com/grpc/grpc.git
-   $ npm install ~/grpc/src/node
+   $ npm install path/to/grpc/src/node
    ```
- 
 
-Try it! 
+
+Try it!
 -------
 
  - Run the server
 
    ```sh
-   $ # from this directory
-   $ nodejs ./greeter_server.js &
+   $ # from this directory (grpc_common/node).
+   $ node ./greeter_server.js &
    ```
 
  - Run the client
 
    ```sh
    $ # from this directory
-   $ nodejs ./greeter_client.js
+   $ node ./greeter_client.js
    ```
 
 Note
