@@ -13,7 +13,7 @@ You can find quick start guides for each language, including installation instru
 * [C++](https://github.com/grpc/grpc-common/tree/master/cpp)
 * [Java](https://github.com/grpc/grpc-common/tree/master/java)
 * [Go](https://github.com/grpc/grpc-common/tree/master/go)
-* [ruby](https://github.com/grpc/grpc-common/tree/master/ruby)
+* [Ruby](https://github.com/grpc/grpc-common/tree/master/ruby)
 * [Node.js](https://github.com/grpc/grpc-common/tree/master/node)
 * [Android Java](https://github.com/grpc/grpc-common/tree/master/java/android)
 * [Python](https://github.com/grpc/grpc-common/tree/master/python/helloworld)
@@ -441,4 +441,7 @@ it's written in a different language.
 ```
 $ greeter_client
 ```
+## Read more!
 
+- You can find links to language-specific tutorials, examples, and other docs in each language's [quick start](#quickstart).
+- [gRPC Authentication Support]() introduces authentication support in gRPC with supported mechanisms and examples.
