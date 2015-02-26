@@ -199,7 +199,7 @@ As you can see, we build and start our server using a `GRPC::RpcServer`. To do t
 <a name="client"></a>
 ## Creating the client
 
-In this section, we'll look at creating a Rubyclient for our `RouteGuide` service. You can see our complete example client code in [grpc-common/ruby/route_guide/route_guide_client.rb](https://github.com/grpc/grpc-common/blob/master/ruby/route_guide/route_guide_client.rb).
+In this section, we'll look at creating a Ruby client for our `RouteGuide` service. You can see our complete example client code in [grpc-common/ruby/route_guide/route_guide_client.rb](https://github.com/grpc/grpc-common/blob/master/ruby/route_guide/route_guide_client.rb).
 
 ### Creating a stub
 
