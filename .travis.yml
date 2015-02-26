@@ -1,4 +1,4 @@
 language: cpp
-script: make static_c
+script: ./tools/run_tests/run_tests.py -lc -t -j2
 notifications:
   email: false
