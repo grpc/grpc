@@ -14,17 +14,21 @@ INSTALL
    ```sh
    $ git clone https://github.com/grpc/grpc-common.git
    ```
- - Follow the instructions in [INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL) to install the gRPC C core.
+
+ - Download the grpc debian packages from the [latest grpc release](https://github.com/grpc/grpc/releases) and install them.
+   - Later, it will possible to install them directly using `apt-get install`
+   ```sh
+   $ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc_0.5.0_amd64.deb
+   $ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc-dev_0.5.0_amd64.deb
+   $ sudo dpkg -i libgrpc_0.5.0_amd64.deb libgrpc-dev_0.5.0_amd64.deb
+   ```
+
  - Install this package's dependencies
 
    ```sh
    $ cd grpc-common/node
    $ npm install
-   # If grpc is not found, you'll need to install it from the grpc repository
-   $ git clone https://github.com/grpc/grpc.git
-   $ npm install path/to/grpc/src/node
    ```
-
 
 TRY IT!
 -------

@@ -25,16 +25,20 @@ INSTALL
 -------
 
 - Clone this repository.
-- Follow the instructions in [INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL) to install the gRPC C core.
-- *Temporary* 
-  - Install the full gRPC distribution from source on your local machine
-  - Build gRPC Ruby as described in [installing from source](https://github.com/grpc/grpc/blob/master/src/ruby/README.md#installing-from-source)
-  - update `path:` in [Gemfile](https://github.com/grpc/grpc-common/blob/master/ruby/Gemfile) to refer to src/ruby within the gRPC directory
-  - N.B: these steps are necessary until the gRPC ruby gem is published
-- Use bundler to install
+
+- Download the grpc debian packages from the [latest grpc release](https://github.com/grpc/grpc/releases) and install them.
+  - Later, it will possible to install them directly using `apt-get install`
+```sh
+$ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc_0.5.0_amd64.deb
+$ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc-dev_0.5.0_amd64.deb
+$ sudo dpkg -i libgrpc_0.5.0_amd64.deb libgrpc-dev_0.5.0_amd64.deb
+```
+
+- Use bundler to install the example package's dependencies
 ```sh
 $ # from this directory
-$ gem install bundler && bundle install
+$ gem install bundler # if you don't already have bundler available
+$ bundle install
 ```
 
 Try it! 
