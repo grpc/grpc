@@ -40,7 +40,7 @@ parameters and return types. On the server side, the server implements this
 interface and runs a gRPC server to handle client calls. On the client side,
 the client has a *stub* that provides exactly the same methods as the server.
 
-##TODO: diagram?
+<!--TODO: diagram-->
 
 gRPC clients and servers can run and talk to each other in a variety of
 environments - from servers inside Google to your own desktop - and can
