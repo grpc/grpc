@@ -17,7 +17,6 @@ INSTALL
 -------
 1 Clone the gRPC Java git repo
 ```sh
-$ cd $grpc_java_dir$
 $ git clone https://github.com/grpc/grpc-java
 ```
 
@@ -42,7 +41,7 @@ $ git clone https://github.com/grpc/grpc-common
 
 ```
 - Replace the generated HelloworldActivity.java and activity_helloworld.xml with the two files in this repo
-- Copy GreeterGrpc.java and Helloworld.java under $working_dir$/app/src/main/java/io/grpc/examples/
+- Copy GreeterGrpc.java and Helloworld.java under your_app_dir/app/src/main/java/io/grpc/examples/
 - In your AndroidManifest.xml, make sure you have
 ```sh
 <uses-permission android:name="android.permission.INTERNET" />
@@ -50,18 +49,18 @@ $ git clone https://github.com/grpc/grpc-common
 added outside your appplication tag
 
 5 Add dependencies. gRPC Java on Android depends on grpc-java, protobuf nano, okhttp
-- Copy grpc-java .jar files to $working_dir$/app/libs/:
-  - $grpc-java-dir$/core/build/libs/*.jar
-  - $grpc-java-dir$/stub/build/libs/*.jar
-  - $grpc-java-dir$/nano/build/libs/*.jar
-  - $grpc-java-dir$/okhttp/build/libs/*.jar
-- Copy or download other dependencies to $working_dir$/app/libs/:
-  - protobuf nano:
-```sh
-$ cp ~/.m2/repository/com/google/protobuf/nano/protobuf-javanano/2.6.2-pre/protobuf-javanano-2.6.2-pre.jar $working_dir$/app/libs/
-```
+- Copy grpc-java .jar files to your_app_dir/app/libs/:
+  - grpc-java/core/build/libs/*.jar
+  - grpc-java/stub/build/libs/*.jar
+  - grpc-java/nano/build/libs/*.jar
+  - grpc-java/okhttp/build/libs/*.jar
+- Copy or download other dependencies to your_app_dir/app/libs/:
   - [Guava 18](http://search.maven.org/remotecontent?filepath=com/google/guava/guava/18.0/guava-18.0.jar)
   - [okhttp 2.2.0](http://repo1.maven.org/maven2/com/squareup/okhttp/okhttp/2.2.0/okhttp-2.2.0.jar)
+  - protobuf nano:
+```sh
+$ cp ~/.m2/repository/com/google/protobuf/nano/protobuf-javanano/2.6.2-pre/protobuf-javanano-2.6.2-pre.jar your_app_dir/app/libs/
+```
 - Make sure your app/build.gradle contains:
 ```sh
 dependencies {
