@@ -50,7 +50,8 @@ class LonelyRearLinkTest(unittest.TestCase):
     self.pool.shutdown(wait=True)
 
   def testUpAndDown(self):
-    rear_link = rear.RearLink('nonexistent', 54321, self.pool, {}, {})
+    rear_link = rear.RearLink(
+        'nonexistent', 54321, self.pool, {}, {}, False, None, None, None)
 
     rear_link.start()
     rear_link.stop()
@@ -63,7 +64,7 @@ class LonelyRearLinkTest(unittest.TestCase):
 
     rear_link = rear.RearLink(
         'nonexistent', 54321, self.pool, {test_method: None},
-        {test_method: None})
+        {test_method: None}, False, None, None, None)
     rear_link.join_fore_link(fore_link)
     rear_link.start()
 
