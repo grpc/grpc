@@ -14,14 +14,14 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import io.grpc.ChannelImpl;
-import ex.grpc.GreeterGrpc;
-import ex.grpc.Helloworld.HelloRequest;
-import ex.grpc.Helloworld.HelloReply;
+import io.grpc.examples.GreeterGrpc;
+import io.grpc.examples.Helloworld.HelloRequest;
+import io.grpc.examples.Helloworld.HelloReply;
 import io.grpc.transport.okhttp.OkHttpChannelBuilder;
 
 import java.util.concurrent.TimeUnit;
 
-public class Helloworld extends ActionBarActivity {
+public class HelloworldActivity extends ActionBarActivity {
     private Button mSendButton;
     private EditText mHostEdit;
     private EditText mPortEdit;
