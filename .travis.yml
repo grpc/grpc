@@ -3,6 +3,8 @@ before_install:
   - sudo add-apt-repository ppa:yjwong/gflags -y
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev
-script: ./tools/run_tests/run_tests.py -l c c++ -t -j2
+script: 
+  - ./tools/run_tests/run_tests.py -l c c++ -t -j2
+  - ./tools/run_tests/run_tests.py -lpython -t -j1
 notifications:
   email: false
