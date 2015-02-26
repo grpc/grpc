@@ -126,8 +126,8 @@ var stub = new helloworld.Greeter('localhost:50051');
 // Authenticating with Google
 var GoogleAuth = require('google-auth-library'); // from https://www.npmjs.com/package/google-auth-library
 ...
-creds = grpc.Credentials.createSsl(load_certs); // load_certs typically loads a CA roots file
-scope = 'https://www.googleapis.com/auth/grpc-testing';
+var creds = grpc.Credentials.createSsl(load_certs); // load_certs typically loads a CA roots file
+var scope = 'https://www.googleapis.com/auth/grpc-testing';
 (new GoogleAuth()).getApplicationDefault(function(err, auth) {
   if (auth.createScopeRequired()) {
     auth = auth.createScoped(scope);
