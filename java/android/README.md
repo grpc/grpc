@@ -59,7 +59,8 @@ $ cp grpc-java/okhttp/build/libs/*.jar your_app_dir/app/libs/
 - Copy or download other dependencies to your_app_dir/app/libs/
   - [Guava 18](http://search.maven.org/remotecontent?filepath=com/google/guava/guava/18.0/guava-18.0.jar)
   - [okhttp 2.2.0](http://repo1.maven.org/maven2/com/squareup/okhttp/okhttp/2.2.0/okhttp-2.2.0.jar)
-  - [okio](https://github.com/square/okio)
+  - [okio](http://search.maven.org/remotecontent?filepath=com/squareup/okio/okio/1.2.0/okio-1.2.0.jar)
+  - [jsr305](http://search.maven.org/remotecontent?filepath=com/google/code/findbugs/jsr305/3.0.0/jsr305-3.0.0.jar)
   - protobuf nano:
 ```sh
 $ cp ~/.m2/repository/com/google/protobuf/nano/protobuf-javanano/3.0.0-alpha-2/protobuf-javanano-3.0.0-alpha-2.jar your_app_dir/app/libs/
