@@ -33,7 +33,8 @@
 deb_dest="deb_out"
 mkdir -p $deb_dest
 
-version='0.8.0.0'
+version='0.5.0.0'
+pkg_version='0.5.0'
 
 if [ -f /.dockerinit ]; then
   # We're in Docker where uname -p returns "unknown".
@@ -97,7 +98,7 @@ do
   # Build the debian package
   fakeroot dpkg-deb --build $tmp_dir/$pkg_name || { echo "dpkg-deb failed"; exit 1; }
 
-  deb_path=$deb_dest/${pkg_name}_amd64.deb
+  deb_path=$deb_dest/${pkg_name}_${pkg_version}_amd64.deb
 
   # Copy the .deb file to destination dir
   cp $tmp_dir/$pkg_name.deb $deb_path
