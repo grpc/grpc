@@ -111,7 +111,7 @@ static void mimic_trace_op_sequences(void* arg) {
     id = census_tracing_start_op();
     census_add_method_tag(id, method_name);
     /* pretend doing 1us work. */
-    gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_micros(1)));
+    gpr_sleep_until(GRPC_TIMEOUT_MICROS_TO_DEADLINE(1));
     census_tracing_end_op(id);
   }
   gpr_log(GPR_INFO, "End trace op sequence thread.");

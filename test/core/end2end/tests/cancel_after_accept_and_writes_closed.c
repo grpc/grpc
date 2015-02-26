@@ -62,7 +62,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -121,8 +121,8 @@ static void test_cancel_after_accept_and_writes_closed(
              grpc_call_invoke_old(c, f.client_cq, tag(2), tag(3), 0));
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo",
-                           "foo.test.google.fr", deadline, NULL);
+  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.fr",
+                           deadline, NULL);
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK ==

@@ -39,7 +39,7 @@
 #include "test/core/util/test_config.h"
 
 static gpr_timespec test_deadline(void) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(100000000));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100);
 }
 
 static void must_succeed(void* evp, grpc_resolved_addresses* p) {
@@ -83,8 +83,9 @@ static void test_ipv6_with_port(void) {
 }
 
 static void test_ipv6_without_port(void) {
-  const char* const kCases[] = {"2001:db8::1", "2001:db8::1.2.3.4",
-                                "[2001:db8::1]", };
+  const char* const kCases[] = {
+      "2001:db8::1", "2001:db8::1.2.3.4", "[2001:db8::1]",
+  };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     gpr_event ev;
@@ -95,7 +96,9 @@ static void test_ipv6_without_port(void) {
 }
 
 static void test_invalid_ip_addresses(void) {
-  const char* const kCases[] = {"293.283.1238.3:1", "[2001:db8::11111]:1", };
+  const char* const kCases[] = {
+      "293.283.1238.3:1", "[2001:db8::11111]:1",
+  };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     gpr_event ev;
@@ -106,8 +109,9 @@ static void test_invalid_ip_addresses(void) {
 }
 
 static void test_unparseable_hostports(void) {
-  const char* const kCases[] = {"[",         "[::1",        "[::1]bad",
-                                "[1.2.3.4]", "[localhost]", "[localhost]:1", };
+  const char* const kCases[] = {
+      "[", "[::1", "[::1]bad", "[1.2.3.4]", "[localhost]", "[localhost]:1",
+  };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     gpr_event ev;
