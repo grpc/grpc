@@ -44,7 +44,7 @@ the client has a *stub* that provides exactly the same methods as the server.
 
 gRPC clients and servers can run and talk to each other in a variety of
 environments - from servers inside Google to your own desktop - and can
-be written in any of gRPC's [supported languages](link to list). So, for
+be written in any of gRPC's [supported languages](#quickstart). So, for
 example, you can easily create a gRPC server in Java with clients in Go,
 Python, or Ruby. In addition, the latest Google APIs will have gRPC versions
 of their interfaces, letting you easily build Google functionality into
