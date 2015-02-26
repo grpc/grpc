@@ -29,29 +29,17 @@
 
 """The Python implementation of the gRPC route guide server."""
 
-import json
 import time
 import math
 
 import route_guide_pb2
+import route_guide_resources
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-def read_route_guide_db():
-  """Reads the route guide"""
-  feature_list = []
-  with open("route_guide_db.json") as route_guide_db_file:
-    for item in json.load(route_guide_db_file):
-      feature = route_guide_pb2.Feature(name=item["name"])
-      feature.location.longitude = item["location"]["longitude"]
-      feature.location.latitude = item["location"]["latitude"]
-      feature_list.append(feature)
-  return feature_list
-
-
 def get_feature(feature_db, point):
-  """Returns feature at given location or None"""
+  """Returns Feature at given location or None."""
   for feature in feature_db:
     if feature.location == point:
       return feature
@@ -59,7 +47,7 @@ def get_feature(feature_db, point):
 
 
 def get_distance(start, end):
-  """Distance between two points"""
+  """Distance between two points."""
   coord_factor = 10000000.0
   lat_1 = start.latitude / coord_factor
   lat_2 = end.latitude / coord_factor
@@ -70,8 +58,10 @@ def get_distance(start, end):
   delta_lat_rad = math.radians(lat_2 - lat_1)
   delta_lon_rad = math.radians(lon_2 - lon_1)
 
-  a = pow(math.sin(delta_lat_rad / 2), 2) + math.cos(lat_rad_1) * math.cos(lat_rad_2) * pow(math.sin(delta_lon_rad / 2), 2)
-  c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+  a = (pow(math.sin(delta_lat_rad / 2), 2) +
+       (math.cos(lat_rad_1) * math.cos(lat_rad_2) *
+        pow(math.sin(delta_lon_rad / 2), 2)))
+  c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
   R = 6371000; # metres
   return R * c;
 
@@ -79,14 +69,15 @@ class RouteGuideServicer(route_guide_pb2.EarlyAdopterRouteGuideServicer):
   """Provides methods that implement functionality of route guide server."""
 
   def __init__(self):
-    self.db = read_route_guide_db()
+    self.db = route_guide_resources.read_route_guide_database()
 
   def GetFeature(self, request, context):
     feature = get_feature(self.db, request)
     if not feature:
-      feature = route_guide_pb2.Feature(name="")
-      feature.location.longitude = request.longitude
-      feature.location.latitude = request.latitude
+      feature = route_guide_pb2.Feature(
+          name="",
+          location=route_guide_pb2.Point(
+              latitude=request.latitude, longitude=request.longitude))
     return feature
 
   def ListFeatures(self, request, context):
