@@ -47,3 +47,8 @@ $ bundle exec ./greeter_server.rb &
 $ # from this directory
 $ bundle exec ./greeter_client.rb
 ```
+
+Tutorial
+--------
+
+You can find a more detailed tutorial in [gRPC Basics: Ruby](https://github.com/grpc/grpc-common/blob/master/ruby/route_guide/README.md)
