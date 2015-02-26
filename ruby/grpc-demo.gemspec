@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 Gem::Specification.new do |s|
-  s.name          = 'grpc-greeter'
+  s.name          = 'grpc-demo'
   s.version       = '0.1.0'
   s.authors       = ['gRPC Authors']
   s.email         = 'temiola@google.com'
@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.description   = 'Simple demo of using gRPC from Ruby'
 
   s.files         = `git ls-files -- ruby/*`.split("\n")
-  s.executables   = `git ls-files -- ruby/greeter*.rb`.split("\n").map do |f|
+  s.executables   = `git ls-files -- ruby/greeter*.rb ruby/route_guide/*.rb`.split("\n").map do |f|
     File.basename(f)
   end
   s.require_paths = ['lib']
