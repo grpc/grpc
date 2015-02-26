@@ -31,24 +31,25 @@
  *
  */
 
-#include "test/core/util/grpc_profiler.h"
+#ifndef TEST_QPS_TIMER_H
+#define TEST_QPS_TIMER_H
 
-#if GRPC_HAVE_PERFTOOLS
-#include <gperftools/profiler.h>
+class Timer {
+ public:
+  Timer();
 
-void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
+  struct Result {
+  	double wall;
+  	double user;
+  	double system;
+  };
 
-void grpc_profiler_stop() { ProfilerStop(); }
-#else
-#include <grpc/support/log.h>
+  Result Mark();
 
-void grpc_profiler_start(const char *filename) {
-  gpr_log(GPR_DEBUG,
-          "You do not have google-perftools installed, profiling is disabled [for %s]", filename);
-  gpr_log(GPR_DEBUG,
-          "To install on ubuntu: sudo apt-get install google-perftools "
-          "libgoogle-perftools-dev");
-}
+ private:
+  static Result Sample();
 
-void grpc_profiler_stop(void) {}
-#endif
+  const Result start_;
+};
+
+#endif // TEST_QPS_TIMER_H

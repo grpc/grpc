@@ -33,48 +33,40 @@
 
 #include <cassert>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
 #include <sstream>
 
+#include <sys/signal.h>
+
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
+#include <grpc/support/host_port.h>
 #include <gflags/gflags.h>
 #include <grpc++/client_context.h>
 #include <grpc++/status.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/timer.h"
 
-DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
-DEFINE_int32(server_port, 0, "Server port.");
-DEFINE_string(server_host, "127.0.0.1", "Server host.");
-DEFINE_int32(client_threads, 4, "Number of client threads.");
-
-// We have a configurable number of channels for sending RPCs.
-// RPCs are sent round-robin on the available channels by the
-// various threads. Interesting cases are 1 global channel or
-// 1 per-thread channel, but we can support any number.
-// The channels are assigned round-robin on an RPC by RPC basis
-// rather than just at initialization time in order to also measure the
-// impact of cache thrashing caused by channel changes. This is an issue
-// if you are not in one of the above "interesting cases"
-DEFINE_int32(client_channels, 4, "Number of client channels.");
-
-DEFINE_int32(num_rpcs, 1000, "Number of RPCs per thread.");
-DEFINE_int32(payload_size, 1, "Payload size in bytes");
-
-// Alternatively, specify parameters for test as a workload so that multiple
-// tests are initiated back-to-back. This is convenient for keeping a borg
-// allocation consistent. This is a space-separated list of
-// [threads channels num_rpcs payload_size ]*
-DEFINE_string(workload, "", "Workload parameters");
+DEFINE_int32(driver_port, 0, "Client driver port.");
 
 using grpc::ChannelInterface;
 using grpc::CreateTestChannel;
-using grpc::testing::ServerStats;
+using grpc::ServerBuilder;
+using grpc::ServerContext;
+using grpc::Status;
+using grpc::testing::ClientArgs;
+using grpc::testing::ClientConfig;
+using grpc::testing::ClientResult;
+using grpc::testing::QpsClient;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
 using grpc::testing::StatsRequest;
@@ -92,26 +84,27 @@ static double now() {
   return 1e9 * tv.tv_sec + tv.tv_nsec;
 }
 
-void RunTest(const int client_threads, const int client_channels,
-             const int num_rpcs, const int payload_size) {
+static bool got_sigint = false;
+
+static void sigint_handler(int x) { got_sigint = 1; }
+
+ClientResult RunTest(const ClientArgs& args) {
+  const auto& config = args.config();
+
   gpr_log(GPR_INFO,
           "QPS test with parameters\n"
           "enable_ssl = %d\n"
           "client_channels = %d\n"
           "client_threads = %d\n"
           "num_rpcs = %d\n"
-          "payload_size = %d\n"
-          "server_host:server_port = %s:%d\n\n",
-          FLAGS_enable_ssl, client_channels, client_threads, num_rpcs,
-          payload_size, FLAGS_server_host.c_str(), FLAGS_server_port);
-
-  std::ostringstream oss;
-  oss << FLAGS_server_host << ":" << FLAGS_server_port;
+          "payload_size = %d\n",
+          config.enable_ssl(), config.client_channels(), config.client_threads(), config.num_rpcs(),
+          config.payload_size());
 
   class ClientChannelInfo {
    public:
-    explicit ClientChannelInfo(const grpc::string &server)
-        : channel_(CreateTestChannel(server, FLAGS_enable_ssl)),
+    explicit ClientChannelInfo(const grpc::string& target, const ClientConfig& config)
+        : channel_(CreateTestChannel(target, config.enable_ssl())),
           stub_(TestService::NewStub(channel_)) {}
     ChannelInterface *get_channel() { return channel_.get(); }
     TestService::Stub *get_stub() { return stub_.get(); }
@@ -122,38 +115,33 @@ void RunTest(const int client_threads, const int client_channels,
   };
 
   std::vector<ClientChannelInfo> channels;
-  for (int i = 0; i < client_channels; i++) {
-    channels.push_back(ClientChannelInfo(oss.str()));
+  for (int i = 0; i < config.client_channels(); i++) {
+    channels.push_back(ClientChannelInfo(args.server_targets(i % args.server_targets_size()), config));
   }
 
   std::vector<std::thread> threads;  // Will add threads when ready to execute
-  std::vector< ::gpr_histogram *> thread_stats(client_threads);
+  std::vector< ::gpr_histogram *> thread_stats(config.client_threads());
 
-  TestService::Stub *stub_stats = channels[0].get_stub();
   grpc::ClientContext context_stats_begin;
-  StatsRequest stats_request;
-  ServerStats server_stats_begin;
-  stats_request.set_test_num(0);
-  grpc::Status status_beg = stub_stats->CollectServerStats(
-      &context_stats_begin, stats_request, &server_stats_begin);
 
   grpc_profiler_start("qps_client.prof");
 
-  for (int i = 0; i < client_threads; i++) {
+  Timer timer;
+
+  for (int i = 0; i < config.client_threads(); i++) {
     gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);
     GPR_ASSERT(hist != NULL);
     thread_stats[i] = hist;
 
     threads.push_back(
-        std::thread([hist, client_threads, client_channels, num_rpcs,
-                     payload_size, &channels](int channel_num) {
+        std::thread([hist, config, &channels](int channel_num) {
                       SimpleRequest request;
                       SimpleResponse response;
                       request.set_response_type(
                           grpc::testing::PayloadType::COMPRESSABLE);
-                      request.set_response_size(payload_size);
+                      request.set_response_size(config.payload_size());
 
-                      for (int j = 0; j < num_rpcs; j++) {
+                      for (int j = 0; j < config.num_rpcs(); j++) {
                         TestService::Stub *stub =
                             channels[channel_num].get_stub();
                         double start = now();
@@ -166,26 +154,29 @@ void RunTest(const int client_threads, const int client_channels,
                                    (response.payload().type() ==
                                     grpc::testing::PayloadType::COMPRESSABLE) &&
                                    (response.payload().body().length() ==
-                                    static_cast<size_t>(payload_size)));
+                                    static_cast<size_t>(config.payload_size())));
 
                         // Now do runtime round-robin assignment of the next
                         // channel number
-                        channel_num += client_threads;
-                        channel_num %= client_channels;
+                        channel_num += config.client_threads();
+                        channel_num %= config.client_channels();
                       }
                     },
-                    i % client_channels));
+                    i % config.client_channels()));
   }
 
-  gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);
-  GPR_ASSERT(hist != NULL);
   for (auto &t : threads) {
     t.join();
   }
 
+  auto timer_result = timer.Mark();
+
   grpc_profiler_stop();
 
-  for (int i = 0; i < client_threads; i++) {
+  gpr_histogram *hist = gpr_histogram_create(0.01, 60e9);
+  GPR_ASSERT(hist != NULL);
+
+  for (int i = 0; i < config.client_threads(); i++) {
     gpr_histogram *h = thread_stats[i];
     gpr_log(GPR_INFO, "latency at thread %d (50/90/95/99/99.9): %f/%f/%f/%f/%f",
             i, gpr_histogram_percentile(h, 50), gpr_histogram_percentile(h, 90),
@@ -195,57 +186,59 @@ void RunTest(const int client_threads, const int client_channels,
     gpr_histogram_destroy(h);
   }
 
-  gpr_log(
-      GPR_INFO,
-      "latency across %d threads with %d channels and %d payload "
-      "(50/90/95/99/99.9): %f / %f / %f / %f / %f",
-      client_threads, client_channels, payload_size,
-      gpr_histogram_percentile(hist, 50), gpr_histogram_percentile(hist, 90),
-      gpr_histogram_percentile(hist, 95), gpr_histogram_percentile(hist, 99),
-      gpr_histogram_percentile(hist, 99.9));
+  ClientResult result;
+  auto* latencies = result.mutable_latencies();
+  latencies->set_l_50(gpr_histogram_percentile(hist, 50));
+  latencies->set_l_90(gpr_histogram_percentile(hist, 90));
+  latencies->set_l_99(gpr_histogram_percentile(hist, 99));
+  latencies->set_l_999(gpr_histogram_percentile(hist, 99.9));
+  result.set_num_rpcs(config.client_threads() * config.num_rpcs());
+  result.set_time_elapsed(timer_result.wall);
+  result.set_time_system(timer_result.system);
+  result.set_time_user(timer_result.user);
+
   gpr_histogram_destroy(hist);
 
-  grpc::ClientContext context_stats_end;
-  ServerStats server_stats_end;
-  grpc::Status status_end = stub_stats->CollectServerStats(
-      &context_stats_end, stats_request, &server_stats_end);
+  return result;
+}
 
-  double elapsed = server_stats_end.time_now() - server_stats_begin.time_now();
-  int total_rpcs = client_threads * num_rpcs;
-  double utime = server_stats_end.time_user() - server_stats_begin.time_user();
-  double stime =
-      server_stats_end.time_system() - server_stats_begin.time_system();
-  gpr_log(GPR_INFO,
-          "Elapsed time: %.3f\n"
-          "RPC Count: %d\n"
-          "QPS: %.3f\n"
-          "System time: %.3f\n"
-          "User time: %.3f\n"
-          "Resource usage: %.1f%%\n",
-          elapsed, total_rpcs, total_rpcs / elapsed, stime, utime,
-          (stime + utime) / elapsed * 100.0);
+class ClientImpl final : public QpsClient::Service {
+ public:
+  Status RunTest(ServerContext* ctx, const ClientArgs* args, ClientResult* result) override {
+    *result = ::RunTest(*args);
+    return Status::OK;
+  }
+
+ private:
+  std::mutex client_mu_;
+};
+
+static void RunServer() {
+  char* server_address = NULL;
+  gpr_join_host_port(&server_address, "::", FLAGS_driver_port);
+
+  ClientImpl service;
+
+  ServerBuilder builder;
+  builder.AddPort(server_address);
+  builder.RegisterService(&service);
+
+  gpr_free(server_address);
+
+  auto server = builder.BuildAndStart();
+
+  while (!got_sigint) {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+  }
 }
 
 int main(int argc, char **argv) {
+  signal(SIGINT, sigint_handler);
+
   grpc_init();
   ParseCommandLineFlags(&argc, &argv, true);
 
-  GPR_ASSERT(FLAGS_server_port);
-
-  if (FLAGS_workload.length() == 0) {
-    RunTest(FLAGS_client_threads, FLAGS_client_channels, FLAGS_num_rpcs,
-            FLAGS_payload_size);
-  } else {
-    std::istringstream workload(FLAGS_workload);
-    int client_threads, client_channels, num_rpcs, payload_size;
-    workload >> client_threads;
-    while (!workload.eof()) {
-      workload >> client_channels >> num_rpcs >> payload_size;
-      RunTest(client_threads, client_channels, num_rpcs, payload_size);
-      workload >> client_threads;
-    }
-    gpr_log(GPR_INFO, "Done with specified workload.");
-  }
+  RunServer();
 
   grpc_shutdown();
   return 0;

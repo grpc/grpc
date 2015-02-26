@@ -31,24 +31,12 @@
  *
  */
 
-#include "test/core/util/grpc_profiler.h"
+#ifndef TEST_QPS_DRIVER_H
+#define TEST_QPS_DRIVER_H
 
-#if GRPC_HAVE_PERFTOOLS
-#include <gperftools/profiler.h>
+#include "test/cpp/qps/qpstest.pb.h"
 
-void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
+void RunScenario(const grpc::testing::ClientConfig& client_config, size_t num_clients,
+                 const grpc::testing::ServerConfig& server_config, size_t num_servers);
 
-void grpc_profiler_stop() { ProfilerStop(); }
-#else
-#include <grpc/support/log.h>
-
-void grpc_profiler_start(const char *filename) {
-  gpr_log(GPR_DEBUG,
-          "You do not have google-perftools installed, profiling is disabled [for %s]", filename);
-  gpr_log(GPR_DEBUG,
-          "To install on ubuntu: sudo apt-get install google-perftools "
-          "libgoogle-perftools-dev");
-}
-
-void grpc_profiler_stop(void) {}
 #endif
