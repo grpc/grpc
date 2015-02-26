@@ -61,8 +61,8 @@ class ServerCredentials;
 class ThreadPoolInterface;
 
 // Currently it only supports handling rpcs in a single thread.
-class Server final : private CallHook,
-                     private AsynchronousService::DispatchImpl {
+class Server GRPC_FINAL : private CallHook,
+                          private AsynchronousService::DispatchImpl {
  public:
   ~Server();
 
@@ -97,7 +97,7 @@ class Server final : private CallHook,
   void RunRpc();
   void ScheduleCallback();
 
-  void PerformOpsOnCall(CallOpBuffer* ops, Call* call) override;
+  void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;
 
   // DispatchImpl
   void RequestAsyncCall(void* registered_method, ServerContext* context,
