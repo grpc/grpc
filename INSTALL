@@ -12,8 +12,10 @@ wiki pages:
  $ git clone https://github.com/grpc/grpc.git
  $ git submodule update --init
 
-  $ make 
-  $ sudo make install
+ $ cd grpc
+ 
+ $ make 
+ $ sudo make install
 
 You don't need anything else than GNU Make, gcc and autotools. Under a Debian
 or Ubuntu system, this should boil down to the following packages:
