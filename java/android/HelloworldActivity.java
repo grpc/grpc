@@ -1,4 +1,4 @@
-package io.grpc.helloworld;
+package io.grpc.helloworldexample;
 
 import android.content.Context;
 import android.support.v7.app.ActionBarActivity;
@@ -84,6 +84,7 @@ public class Helloworld extends ActionBarActivity {
             try {
                 mChannel.shutdown().awaitTerminated(1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
             mResultText.setText(result);
             mSendButton.setEnabled(true);
