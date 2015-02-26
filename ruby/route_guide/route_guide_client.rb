@@ -152,10 +152,9 @@ def main
   run_list_features(stub)
   run_route_chat(stub)
   if ARGV.length == 0
-    p 'no feature database; skipping record_route and route_chat'
+    p 'no feature database; skipping record_route'
     exit
   end
-
   raw_data = []
   File.open(ARGV[0]) do |f|
     raw_data = MultiJson.load(f.read)
