@@ -49,5 +49,5 @@ OPTIONAL - Rebuilding the generated code
 $ go get -a github.com/golang/protobuf/protoc-gen-go
 $
 $ # from this dir; invoke protoc
-$ protoc -I ../protos ../protos/helloworld.proto --go_out=plugins=grpc:.
+$ protoc -I ../protos ../protos/helloworld.proto --go_out=plugins=grpc:helloworld
 ```
