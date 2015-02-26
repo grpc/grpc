@@ -4,7 +4,7 @@
 source 'https://rubygems.org/'
 
 # Update this to reflect the local installation of gRPC.
-gem 'grpc', path: '/usr/local/google/repos/grpc/src/ruby'
+gem 'grpc', path: '~/grpc/src/ruby'
 
 # TODO: fix this if/when the gRPC repo structure changes.
 #
