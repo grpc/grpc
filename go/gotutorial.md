@@ -183,24 +183,6 @@ func (s *routeGuideServer) ListFeatures(rect *pb.Rectangle, stream pb.RouteGuide
 	}
 	return nil
 }
-  Status ListFeatures(ServerContext* context, const Rectangle* rectangle,
-                      ServerWriter<Feature>* writer) override {
-    auto lo = rectangle->lo();
-    auto hi = rectangle->hi();
-    long left = std::min(lo.longitude(), hi.longitude());
-    long right = std::max(lo.longitude(), hi.longitude());
-    long top = std::max(lo.latitude(), hi.latitude());
-    long bottom = std::min(lo.latitude(), hi.latitude());
-    for (const Feature& f : feature_list_) {
-      if (f.location().longitude() >= left &&
-          f.location().longitude() <= right &&
-          f.location().latitude() >= bottom &&
-          f.location().latitude() <= top) {
-        writer->Write(f);
-      }
-    }
-    return Status::OK;
-  }
 ```
 
 As you can see, instead of getting simple request and response objects in our method parameters, this time we get a request object (the `Rectangle` in which our client wants to find `Feature`s) and a special `RouteGuide_ListFeaturesServer` object. In the method, we populate as many `Feature` objects as we need to return, writing them to the `RouteGuide_ListFeaturesServer` using its `Send()` method. Finally, as in our simple RPC, we return a `nil` error to tell gRPC that we've finished writing responses. Should there be any error happened in this call, we return a non-`nil` error and the gRPC layer will translate it into an appropriate RPC status to be sent on the wire.
