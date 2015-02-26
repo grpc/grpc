@@ -35,18 +35,28 @@
 
 #include <Python.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
+#include "grpc/_adapter/_client_credentials.h"
 
 static int pygrpc_channel_init(Channel *self, PyObject *args, PyObject *kwds) {
   const char *hostport;
-  static char *kwlist[] = {"hostport", NULL};
+  PyObject *client_credentials;
+  static char *kwlist[] = {"hostport", "client_credentials", NULL};
 
-  if (!(PyArg_ParseTupleAndKeywords(args, kwds, "s:Channel", kwlist,
-                                    &hostport))) {
+  if (!(PyArg_ParseTupleAndKeywords(args, kwds, "sO:Channel", kwlist,
+                                    &hostport, &client_credentials))) {
     return -1;
   }
-
-  self->c_channel = grpc_channel_create(hostport, NULL);
-  return 0;
+  if (client_credentials == Py_None) {
+    self->c_channel = grpc_channel_create(hostport, NULL);
+    return 0;
+  } else {
+    self->c_channel = grpc_secure_channel_create(
+        ((ClientCredentials *)client_credentials)->c_client_credentials,
+        hostport, NULL);
+    return 0;
+  }
 }
 
 static void pygrpc_channel_dealloc(Channel *self) {

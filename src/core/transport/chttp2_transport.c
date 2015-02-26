@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/debug/trace.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/frame_data.h"
 #include "src/core/transport/chttp2/frame_goaway.h"
@@ -65,6 +66,12 @@
 
 typedef struct transport transport;
 typedef struct stream stream;
+
+#define IF_TRACING(stmt)                    \
+  if (!(grpc_trace_bits & GRPC_TRACE_HTTP)) \
+    ;                                       \
+  else                                      \
+  stmt
 
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
@@ -301,7 +308,7 @@ static void push_setting(transport *t, grpc_chttp2_setting_id id,
                          gpr_uint32 value);
 
 static int prepare_callbacks(transport *t);
-static void run_callbacks(transport *t);
+static void run_callbacks(transport *t, const grpc_transport_callbacks *cb);
 
 static int prepare_write(transport *t);
 static void perform_write(transport *t, grpc_endpoint *ep);
@@ -552,7 +559,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     lock(t);
     s->id = 0;
   } else {
-    s->id = (gpr_uint32)(gpr_uintptr)server_data;
+    s->id = (gpr_uint32)(gpr_uintptr) server_data;
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
@@ -706,6 +713,7 @@ static void unlock(transport *t) {
   pending_goaway *goaways = NULL;
   grpc_endpoint *ep = t->ep;
   grpc_stream_op_buffer nuke_now;
+  const grpc_transport_callbacks *cb = t->cb;
 
   grpc_sopb_init(&nuke_now);
   if (t->nuke_later_sopb.nops) {
@@ -725,7 +733,7 @@ static void unlock(transport *t) {
   }
 
   /* gather any callbacks that need to be made */
-  if (!t->calling_back && t->cb) {
+  if (!t->calling_back && cb) {
     perform_callbacks = prepare_callbacks(t);
     if (perform_callbacks) {
       t->calling_back = 1;
@@ -733,6 +741,7 @@ static void unlock(transport *t) {
     if (t->error_state == ERROR_STATE_SEEN) {
       call_closed = 1;
       t->calling_back = 1;
+      t->cb = NULL;  /* no more callbacks */
       t->error_state = ERROR_STATE_NOTIFIED;
     }
     if (t->num_pending_goaways) {
@@ -754,16 +763,16 @@ static void unlock(transport *t) {
 
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
-    t->cb->goaway(t->cb_user_data, &t->base, goaways[i].status,
-                  goaways[i].debug);
+    cb->goaway(t->cb_user_data, &t->base, goaways[i].status,
+               goaways[i].debug);
   }
 
   if (perform_callbacks) {
-    run_callbacks(t);
+    run_callbacks(t, cb);
   }
 
   if (call_closed) {
-    t->cb->closed(t->cb_user_data, &t->base);
+    cb->closed(t->cb_user_data, &t->base);
   }
 
   /* write some bytes if necessary */
@@ -1206,6 +1215,11 @@ static void on_header(void *tp, grpc_mdelem *md) {
   stream *s = t->incoming_stream;
 
   GPR_ASSERT(s);
+
+  IF_TRACING(gpr_log(GPR_INFO, "HTTP:%d:HDR: %s: %s", s->id,
+                     grpc_mdstr_as_c_string(md->key),
+                     grpc_mdstr_as_c_string(md->value)));
+
   stream_list_join(t, s, PENDING_CALLBACKS);
   if (md->key == t->str_grpc_timeout) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
@@ -1269,7 +1283,7 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
     t->incoming_stream = NULL;
     /* if stream is accepted, we set incoming_stream in init_stream */
     t->cb->accept_stream(t->cb_user_data, &t->base,
-                         (void *)(gpr_uintptr)t->incoming_stream_id);
+                         (void *)(gpr_uintptr) t->incoming_stream_id);
     s = t->incoming_stream;
     if (!s) {
       gpr_log(GPR_ERROR, "stream not accepted");
@@ -1534,8 +1548,8 @@ static int process_read(transport *t, gpr_slice slice) {
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   CLIENT_CONNECT_STRING[t->deframe_state],
-                  (int)(gpr_uint8)CLIENT_CONNECT_STRING[t->deframe_state], *cur,
-                  (int)*cur, t->deframe_state);
+                  (int)(gpr_uint8) CLIENT_CONNECT_STRING[t->deframe_state],
+                  *cur, (int)*cur, t->deframe_state);
           drop_connection(t);
           return 0;
         }
@@ -1741,13 +1755,13 @@ static int prepare_callbacks(transport *t) {
   return n;
 }
 
-static void run_callbacks(transport *t) {
+static void run_callbacks(transport *t, const grpc_transport_callbacks *cb) {
   stream *s;
   while ((s = stream_list_remove_head(t, EXECUTING_CALLBACKS))) {
     size_t nops = s->callback_sopb.nops;
     s->callback_sopb.nops = 0;
-    t->cb->recv_batch(t->cb_user_data, &t->base, (grpc_stream *)s,
-                      s->callback_sopb.ops, nops, s->callback_state);
+    cb->recv_batch(t->cb_user_data, &t->base, (grpc_stream *)s,
+                   s->callback_sopb.ops, nops, s->callback_state);
   }
 }
 
@@ -1765,9 +1779,9 @@ static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
  */
 
 static const grpc_transport_vtable vtable = {
-    sizeof(stream), init_stream, send_batch, set_allow_window_updates,
-    add_to_pollset, destroy_stream, abort_stream, goaway, close_transport,
-    send_ping, destroy_transport};
+    sizeof(stream),  init_stream,    send_batch,       set_allow_window_updates,
+    add_to_pollset,  destroy_stream, abort_stream,     goaway,
+    close_transport, send_ping,      destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,

@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include "src/core/debug/trace.h"
 #include "src/core/transport/chttp2/frame.h"
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -53,7 +54,8 @@ const grpc_chttp2_setting_parameters
         {"MAX_FRAME_SIZE", 16384, 16384, 16777215,
          GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE},
         {"MAX_HEADER_LIST_SIZE", 0xffffffffu, 0, 0xffffffffu,
-         GRPC_CHTTP2_CLAMP_INVALID_VALUE}, };
+         GRPC_CHTTP2_CLAMP_INVALID_VALUE},
+};
 
 static gpr_uint8 *fill_header(gpr_uint8 *out, gpr_uint32 length,
                               gpr_uint8 flags) {
@@ -155,7 +157,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           }
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->id = ((gpr_uint16) * cur) << 8;
+        parser->id = ((gpr_uint16)*cur) << 8;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_ID1:
@@ -171,7 +173,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           parser->state = GRPC_CHTTP2_SPS_VAL0;
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->value = ((gpr_uint32) * cur) << 24;
+        parser->value = ((gpr_uint32)*cur) << 24;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL1:
@@ -179,7 +181,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           parser->state = GRPC_CHTTP2_SPS_VAL1;
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->value |= ((gpr_uint32) * cur) << 16;
+        parser->value |= ((gpr_uint32)*cur) << 16;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL2:
@@ -187,7 +189,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
           parser->state = GRPC_CHTTP2_SPS_VAL2;
           return GRPC_CHTTP2_PARSE_OK;
         }
-        parser->value |= ((gpr_uint32) * cur) << 8;
+        parser->value |= ((gpr_uint32)*cur) << 8;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL3:
@@ -216,8 +218,10 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
             }
           }
           parser->incoming_settings[parser->id] = parser->value;
-          gpr_log(GPR_DEBUG, "CHTTP2: got setting %d = %d", parser->id,
-                  parser->value);
+          if (grpc_trace_bits & GRPC_TRACE_HTTP) {
+            gpr_log(GPR_DEBUG, "CHTTP2: got setting %d = %d", parser->id,
+                    parser->value);
+          }
         } else {
           gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",
                   parser->id, parser->value);

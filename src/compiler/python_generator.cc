@@ -33,9 +33,11 @@
 
 #include <cassert>
 #include <cctype>
+#include <cstring>
 #include <map>
 #include <ostream>
 #include <sstream>
+#include <vector>
 
 #include "src/compiler/python_generator.h"
 #include <google/protobuf/io/printer.h>
@@ -43,14 +45,19 @@
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor.h>
 
+using google::protobuf::Descriptor;
 using google::protobuf::FileDescriptor;
 using google::protobuf::ServiceDescriptor;
 using google::protobuf::MethodDescriptor;
 using google::protobuf::io::Printer;
 using google::protobuf::io::StringOutputStream;
 using std::initializer_list;
+using std::make_pair;
 using std::map;
+using std::pair;
 using std::string;
+using std::strlen;
+using std::vector;
 
 namespace grpc_python_generator {
 namespace {
@@ -99,62 +106,81 @@ class IndentScope {
 // END FORMATTING BOILERPLATE //
 ////////////////////////////////
 
-void PrintService(const ServiceDescriptor* service,
-                  Printer* out) {
-  string doc = "<fill me in later!>";
-  map<string, string> dict = ListToDict({
-        "Service", service->name(),
-        "Documentation", doc,
-      });
-  out->Print(dict, "class $Service$Service(object):\n");
-  {
-    IndentScope raii_class_indent(out);
-    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
-    out->Print("def __init__(self):\n");
-    {
-      IndentScope raii_method_indent(out);
-      out->Print("pass\n");
-    }
-  }
-}
-
-void PrintServicer(const ServiceDescriptor* service,
+bool PrintServicer(const ServiceDescriptor* service,
                    Printer* out) {
   string doc = "<fill me in later!>";
   map<string, string> dict = ListToDict({
         "Service", service->name(),
         "Documentation", doc,
       });
-  out->Print(dict, "class $Service$Servicer(object):\n");
+  out->Print(dict, "class EarlyAdopter$Service$Servicer(object):\n");
   {
     IndentScope raii_class_indent(out);
     out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
+    out->Print("__metaclass__ = abc.ABCMeta\n");
     for (int i = 0; i < service->method_count(); ++i) {
       auto meth = service->method(i);
-      out->Print("def $Method$(self, arg):\n", "Method", meth->name());
+      string arg_name = meth->client_streaming() ?
+          "request_iterator" : "request";
+      out->Print("@abc.abstractmethod\n");
+      out->Print("def $Method$(self, $ArgName$):\n",
+                 "Method", meth->name(), "ArgName", arg_name);
       {
         IndentScope raii_method_indent(out);
         out->Print("raise NotImplementedError()\n");
       }
     }
   }
+  return true;
 }
 
-void PrintStub(const ServiceDescriptor* service,
+bool PrintServer(const ServiceDescriptor* service, Printer* out) {
+  string doc = "<fill me in later!>";
+  map<string, string> dict = ListToDict({
+        "Service", service->name(),
+        "Documentation", doc,
+      });
+  out->Print(dict, "class EarlyAdopter$Service$Server(object):\n");
+  {
+    IndentScope raii_class_indent(out);
+    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
+    out->Print("__metaclass__ = abc.ABCMeta\n");
+    out->Print("@abc.abstractmethod\n");
+    out->Print("def start(self):\n");
+    {
+      IndentScope raii_method_indent(out);
+      out->Print("raise NotImplementedError()\n");
+    }
+
+    out->Print("@abc.abstractmethod\n");
+    out->Print("def stop(self):\n");
+    {
+      IndentScope raii_method_indent(out);
+      out->Print("raise NotImplementedError()\n");
+    }
+  }
+  return true;
+}
+
+bool PrintStub(const ServiceDescriptor* service,
                Printer* out) {
   string doc = "<fill me in later!>";
   map<string, string> dict = ListToDict({
         "Service", service->name(),
         "Documentation", doc,
       });
-  out->Print(dict, "class $Service$Stub(object):\n");
+  out->Print(dict, "class EarlyAdopter$Service$Stub(object):\n");
   {
     IndentScope raii_class_indent(out);
     out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
+    out->Print("__metaclass__ = abc.ABCMeta\n");
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* meth = service->method(i);
-      auto methdict = ListToDict({"Method", meth->name()});
-      out->Print(methdict, "def $Method$(self, arg):\n");
+      string arg_name = meth->client_streaming() ?
+          "request_iterator" : "request";
+      auto methdict = ListToDict({"Method", meth->name(), "ArgName", arg_name});
+      out->Print("@abc.abstractmethod\n");
+      out->Print(methdict, "def $Method$(self, $ArgName$):\n");
       {
         IndentScope raii_method_indent(out);
         out->Print("raise NotImplementedError()\n");
@@ -162,169 +188,190 @@ void PrintStub(const ServiceDescriptor* service,
       out->Print(methdict, "$Method$.async = None\n");
     }
   }
+  return true;
 }
 
-void PrintStubImpl(const ServiceDescriptor* service,
-                   Printer* out) {
-  map<string, string> dict = ListToDict({
-        "Service", service->name(),
-      });
-  out->Print(dict, "class _$Service$Stub($Service$Stub):\n");
-  {
-    IndentScope raii_class_indent(out);
-    out->Print("def __init__(self, face_stub, default_timeout):\n");
-    {
-      IndentScope raii_method_indent(out);
-      out->Print("self._face_stub = face_stub\n"
-                 "self._default_timeout = default_timeout\n"
-                 "stub_self = self\n");
-
-      for (int i = 0; i < service->method_count(); ++i) {
-        const MethodDescriptor* meth = service->method(i);
-        bool server_streaming = meth->server_streaming();
-        bool client_streaming = meth->client_streaming();
-        std::string blocking_call, future_call;
-        if (server_streaming) {
-          if (client_streaming) {
-            blocking_call = "stub_self._face_stub.inline_stream_in_stream_out";
-            future_call = blocking_call;
-          } else {
-            blocking_call = "stub_self._face_stub.inline_value_in_stream_out";
-            future_call = blocking_call;
-          }
-        } else {
-          if (client_streaming) {
-            blocking_call = "stub_self._face_stub.blocking_stream_in_value_out";
-            future_call = "stub_self._face_stub.future_stream_in_value_out";
-          } else {
-            blocking_call = "stub_self._face_stub.blocking_value_in_value_out";
-            future_call = "stub_self._face_stub.future_value_in_value_out";
-          }
-        }
-        // TODO(atash): use the solution described at
-        // http://stackoverflow.com/a/2982 to bind 'async' attribute
-        // functions to def'd functions instead of using callable attributes.
-        auto methdict = ListToDict({
-          "Method", meth->name(),
-          "BlockingCall", blocking_call,
-          "FutureCall", future_call
-        });
-        out->Print(methdict, "class $Method$(object):\n");
-        {
-          IndentScope raii_callable_indent(out);
-          out->Print("def __call__(self, arg):\n");
-          {
-            IndentScope raii_callable_call_indent(out);
-            out->Print(methdict,
-                       "return $BlockingCall$(\"$Method$\", arg, "
-                       "stub_self._default_timeout)\n");
-          }
-          out->Print("def async(self, arg):\n");
-          {
-            IndentScope raii_callable_async_indent(out);
-            out->Print(methdict,
-                       "return $FutureCall$(\"$Method$\", arg, "
-                       "stub_self._default_timeout)\n");
-          }
-        }
-        out->Print(methdict, "self.$Method$ = $Method$()\n");
-      }
-    }
+bool GetModuleAndMessagePath(const Descriptor* type,
+                             pair<string, string>* out) {
+  const Descriptor* path_elem_type = type;
+  vector<const Descriptor*> message_path;
+  do {
+    message_path.push_back(path_elem_type);
+    path_elem_type = path_elem_type->containing_type();
+  } while (path_elem_type != nullptr);
+  string file_name = type->file()->name();
+  string module_name;
+  static const int proto_suffix_length = strlen(".proto");
+  if (!(file_name.size() > static_cast<size_t>(proto_suffix_length) &&
+        file_name.find_last_of(".proto") == file_name.size() - 1)) {
+    return false;
   }
+  module_name = file_name.substr(
+      0, file_name.size() - proto_suffix_length) + "_pb2";
+  string package = type->file()->package();
+  string module = (package.empty() ? "" : package + ".") +
+      module_name;
+  string message_type;
+  for (auto path_iter = message_path.rbegin();
+       path_iter != message_path.rend(); ++path_iter) {
+    message_type += (*path_iter)->name() + ".";
+  }
+  message_type.pop_back();
+  *out = make_pair(module, message_type);
+  return true;
 }
 
-void PrintStubGenerators(const ServiceDescriptor* service, Printer* out) {
-  map<string, string> dict = ListToDict({
-        "Service", service->name(),
-      });
-  // Write out a generator of linked pairs of Server/Stub
-  out->Print(dict, "def mock_$Service$(servicer, default_timeout):\n");
+bool PrintServerFactory(const ServiceDescriptor* service, Printer* out) {
+  out->Print("def early_adopter_create_$Service$_server(servicer, port, "
+             "root_certificates, key_chain_pairs):\n",
+             "Service", service->name());
   {
-    IndentScope raii_mock_indent(out);
-    out->Print("value_in_value_out = {}\n"
-               "value_in_stream_out = {}\n"
-               "stream_in_value_out = {}\n"
-               "stream_in_stream_out = {}\n");
+    IndentScope raii_create_server_indent(out);
+    map<string, pair<string, string>> method_to_module_and_message;
+    out->Print("method_implementations = {\n");
     for (int i = 0; i < service->method_count(); ++i) {
+      IndentScope raii_implementations_indent(out);
       const MethodDescriptor* meth = service->method(i);
-      std::string super_interface, meth_dict;
-      bool server_streaming = meth->server_streaming();
-      bool client_streaming = meth->client_streaming();
-      if (server_streaming) {
-        if (client_streaming) {
-          super_interface = "InlineStreamInStreamOutMethod";
-          meth_dict = "stream_in_stream_out";
-        } else {
-          super_interface = "InlineValueInStreamOutMethod";
-          meth_dict = "value_in_stream_out";
-        }
-      } else {
-        if (client_streaming) {
-          super_interface = "InlineStreamInValueOutMethod";
-          meth_dict = "stream_in_value_out";
-        } else {
-          super_interface = "InlineValueInValueOutMethod";
-          meth_dict = "value_in_value_out";
-        }
+      string meth_type =
+          string(meth->client_streaming() ? "stream" : "unary") +
+          string(meth->server_streaming() ? "_stream" : "_unary") + "_inline";
+      out->Print("\"$Method$\": utilities.$Type$(servicer.$Method$),\n",
+                 "Method", meth->name(),
+                 "Type", meth_type);
+      // Maintain information on the input type of the service method for later
+      // use in constructing the service assembly's activated fore link.
+      const Descriptor* input_type = meth->input_type();
+      pair<string, string> module_and_message;
+      if (!GetModuleAndMessagePath(input_type, &module_and_message)) {
+        return false;
       }
-      map<string, string> methdict = ListToDict({
-            "Method", meth->name(),
-            "SuperInterface", super_interface,
-            "MethodDict", meth_dict
-          });
-      out->Print(
-          methdict, "class $Method$(_face_interfaces.$SuperInterface$):\n");
-      {
-        IndentScope raii_inline_class_indent(out);
-        out->Print("def service(self, request, context):\n");
-        {
-          IndentScope raii_inline_class_fn_indent(out);
-          out->Print(methdict, "return servicer.$Method$(request)\n");
-        }
-      }
-      out->Print(methdict, "$MethodDict$['$Method$'] = $Method$()\n");
+      method_to_module_and_message.insert(
+          make_pair(meth->name(), module_and_message));
     }
-    out->Print(
-         "face_linked_pair = _face_testing.server_and_stub(default_timeout,"
-         "inline_value_in_value_out_methods=value_in_value_out,"
-         "inline_value_in_stream_out_methods=value_in_stream_out,"
-         "inline_stream_in_value_out_methods=stream_in_value_out,"
-         "inline_stream_in_stream_out_methods=stream_in_stream_out)\n");
-    out->Print("class LinkedPair(object):\n");
-    {
-      IndentScope raii_linked_pair(out);
-      out->Print("def __init__(self, server, stub):\n");
-      {
-        IndentScope raii_linked_pair_init(out);
-        out->Print("self.server = server\n"
-                   "self.stub = stub\n");
-      }
+    out->Print("}\n");
+    // Ensure that we've imported all of the relevant messages.
+    for (auto& meth_vals : method_to_module_and_message) {
+      out->Print("import $Module$\n",
+                 "Module", meth_vals.second.first);
     }
-    out->Print(
-        dict,
-        "stub = _$Service$Stub(face_linked_pair.stub, default_timeout)\n");
-    out->Print("return LinkedPair(None, stub)\n");
+    out->Print("request_deserializers = {\n");
+    for (auto& meth_vals : method_to_module_and_message) {
+      IndentScope raii_serializers_indent(out);
+      string full_input_type_path = meth_vals.second.first + "." +
+          meth_vals.second.second;
+      out->Print("\"$Method$\": $Type$.FromString,\n",
+                 "Method", meth_vals.first,
+                 "Type", full_input_type_path);
+    }
+    out->Print("}\n");
+    out->Print("response_serializers = {\n");
+    for (auto& meth_vals : method_to_module_and_message) {
+      IndentScope raii_serializers_indent(out);
+      out->Print("\"$Method$\": lambda x: x.SerializeToString(),\n",
+                 "Method", meth_vals.first);
+    }
+    out->Print("}\n");
+    out->Print("link = fore.activated_fore_link(port, request_deserializers, "
+               "response_serializers, root_certificates, key_chain_pairs)\n");
+    out->Print("return implementations.assemble_service("
+               "method_implementations, link)\n");
   }
+  return true;
+}
+
+bool PrintStubFactory(const ServiceDescriptor* service, Printer* out) {
+  map<string, string> dict = ListToDict({
+        "Service", service->name(),
+      });
+  out->Print(dict, "def early_adopter_create_$Service$_stub(host, port):\n");
+  {
+    IndentScope raii_create_server_indent(out);
+    map<string, pair<string, string>> method_to_module_and_message;
+    out->Print("method_implementations = {\n");
+    for (int i = 0; i < service->method_count(); ++i) {
+      IndentScope raii_implementations_indent(out);
+      const MethodDescriptor* meth = service->method(i);
+      string meth_type =
+          string(meth->client_streaming() ? "stream" : "unary") +
+          string(meth->server_streaming() ? "_stream" : "_unary") + "_inline";
+      // TODO(atash): once the expected input to assemble_dynamic_inline_stub is
+      // cleaned up, change this to the expected argument's dictionary values.
+      out->Print("\"$Method$\": utilities.$Type$(None),\n",
+                 "Method", meth->name(),
+                 "Type", meth_type);
+      // Maintain information on the input type of the service method for later
+      // use in constructing the service assembly's activated fore link.
+      const Descriptor* output_type = meth->output_type();
+      pair<string, string> module_and_message;
+      if (!GetModuleAndMessagePath(output_type, &module_and_message)) {
+        return false;
+      }
+      method_to_module_and_message.insert(
+          make_pair(meth->name(), module_and_message));
+    }
+    out->Print("}\n");
+    // Ensure that we've imported all of the relevant messages.
+    for (auto& meth_vals : method_to_module_and_message) {
+      out->Print("import $Module$\n",
+                 "Module", meth_vals.second.first);
+    }
+    out->Print("response_deserializers = {\n");
+    for (auto& meth_vals : method_to_module_and_message) {
+      IndentScope raii_serializers_indent(out);
+      string full_output_type_path = meth_vals.second.first + "." +
+          meth_vals.second.second;
+      out->Print("\"$Method$\": $Type$.FromString,\n",
+                 "Method", meth_vals.first,
+                 "Type", full_output_type_path);
+    }
+    out->Print("}\n");
+    out->Print("request_serializers = {\n");
+    for (auto& meth_vals : method_to_module_and_message) {
+      IndentScope raii_serializers_indent(out);
+      out->Print("\"$Method$\": lambda x: x.SerializeToString(),\n",
+                 "Method", meth_vals.first);
+    }
+    out->Print("}\n");
+    out->Print("link = rear.activated_rear_link("
+               "host, port, request_serializers, response_deserializers)\n");
+    out->Print("return implementations.assemble_dynamic_inline_stub("
+               "method_implementations, link)\n");
+  }
+  return true;
+}
+
+bool PrintPreamble(const FileDescriptor* file, Printer* out) {
+  out->Print("import abc\n");
+  out->Print("from grpc._adapter import fore\n");
+  out->Print("from grpc._adapter import rear\n");
+  out->Print("from grpc.framework.assembly import implementations\n");
+  out->Print("from grpc.framework.assembly import utilities\n");
+  return true;
 }
 
 }  // namespace
 
-string GetServices(const FileDescriptor* file) {
+pair<bool, string> GetServices(const FileDescriptor* file) {
   string output;
-  StringOutputStream output_stream(&output);
-  Printer out(&output_stream, '$');
-  out.Print("from grpc.framework.face import demonstration as _face_testing\n");
-  out.Print("from grpc.framework.face import interfaces as _face_interfaces\n");
-
-  for (int i = 0; i < file->service_count(); ++i) {
-    auto service = file->service(i);
-    PrintService(service, &out);
-    PrintServicer(service, &out);
-    PrintStub(service, &out);
-    PrintStubImpl(service, &out);
-    PrintStubGenerators(service, &out);
+  {
+    // Scope the output stream so it closes and finalizes output to the string.
+    StringOutputStream output_stream(&output);
+    Printer out(&output_stream, '$');
+    if (!PrintPreamble(file, &out)) {
+      return make_pair(false, "");
+    }
+    for (int i = 0; i < file->service_count(); ++i) {
+      auto service = file->service(i);
+      if (!(PrintServicer(service, &out) &&
+            PrintServer(service, &out) &&
+            PrintStub(service, &out) &&
+            PrintServerFactory(service, &out) &&
+            PrintStubFactory(service, &out))) {
+        return make_pair(false, "");
+      }
+    }
   }
-  return output;
+  return make_pair(true, std::move(output));
 }
 
 }  // namespace grpc_python_generator

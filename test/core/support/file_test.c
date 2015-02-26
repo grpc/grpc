@@ -148,7 +148,6 @@ static void test_load_big_file(void) {
   gpr_slice_unref(slice);
 }
 
-
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_load_empty_file();

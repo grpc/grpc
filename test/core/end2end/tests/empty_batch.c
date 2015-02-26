@@ -63,7 +63,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -111,7 +111,7 @@ static void empty_batch_body(grpc_end2end_test_fixture f) {
   grpc_op *op = NULL;
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
-                               "foo.test.google.com", deadline);
+                               "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, op, 0, tag(1)));

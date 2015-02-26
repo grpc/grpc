@@ -38,6 +38,7 @@
 #include "src/core/iomgr/fd_posix.h"
 
 #include <assert.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
@@ -113,6 +114,7 @@ static void ref_by(grpc_fd *fd, int n) {
 static void unref_by(grpc_fd *fd, int n) {
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
+    close(fd->fd);
     grpc_iomgr_add_callback(fd->on_done, fd->on_done_user_data);
     freelist_fd(fd);
     grpc_iomgr_unref();
@@ -158,9 +160,9 @@ static void wake_watchers(grpc_fd *fd) {
 void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data) {
   fd->on_done = on_done ? on_done : do_nothing;
   fd->on_done_user_data = user_data;
+  shutdown(fd->fd, SHUT_RDWR);
   ref_by(fd, 1); /* remove active status, but keep referenced */
   wake_watchers(fd);
-  close(fd->fd);
   unref_by(fd, 2); /* drop the reference */
 }
 

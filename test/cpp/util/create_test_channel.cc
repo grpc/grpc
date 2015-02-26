@@ -93,7 +93,7 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
 // Shortcut for end2end and interop tests.
 std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
                                                     bool enable_ssl) {
-  return CreateTestChannel(server, "foo.test.google.com", enable_ssl, false);
+  return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
 }
 
 }  // namespace grpc

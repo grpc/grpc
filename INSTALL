@@ -9,15 +9,16 @@ wiki pages:
 * If you are in a hurry *
 *************************
 
-A typical unix installation won't require any more steps than running:
-
-  $ make
-  # make install
+ $ git clone https://github.com/grpc/grpc.git
+ $ cd grpc
+ $ git submodule update --init
+ $ make 
+ $ sudo make install
 
 You don't need anything else than GNU Make, gcc and autotools. Under a Debian
 or Ubuntu system, this should boil down to the following packages:
 
-  # apt-get install build-essential autoconf libtool
+  $ apt-get install build-essential autoconf libtool
 
 Building the python wrapper requires the following:
 

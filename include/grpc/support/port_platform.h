@@ -147,16 +147,18 @@
 #include <stdint.h>
 
 /* Cache line alignment */
-#ifndef GPR_CACHELINE_SIZE
+#ifndef GPR_CACHELINE_SIZE_LOG
 #if defined(__i386__) || defined(__x86_64__)
-#define GPR_CACHELINE_SIZE 64
+#define GPR_CACHELINE_SIZE_LOG 6
 #endif
-#ifndef GPR_CACHELINE_SIZE
+#ifndef GPR_CACHELINE_SIZE_LOG
 /* A reasonable default guess. Note that overestimates tend to waste more
    space, while underestimates tend to waste more time. */
-#define GPR_CACHELINE_SIZE 64
-#endif /* GPR_CACHELINE_SIZE */
-#endif /* GPR_CACHELINE_SIZE */
+#define GPR_CACHELINE_SIZE_LOG 6
+#endif /* GPR_CACHELINE_SIZE_LOG */
+#endif /* GPR_CACHELINE_SIZE_LOG */
+
+#define GPR_CACHELINE_SIZE (1 << GPR_CACHELINE_SIZE_LOG)
 
 /* scrub GCC_ATOMIC if it's not available on this compiler */
 #if defined(GPR_GCC_ATOMIC) && !defined(__ATOMIC_RELAXED)

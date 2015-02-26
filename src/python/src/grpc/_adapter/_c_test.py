@@ -70,7 +70,7 @@ class _CTest(unittest.TestCase):
   def testChannel(self):
     _c.init()
 
-    channel = _c.Channel('test host:12345')
+    channel = _c.Channel('test host:12345', None)
     del channel
 
     _c.shut_down()
@@ -81,7 +81,7 @@ class _CTest(unittest.TestCase):
 
     _c.init()
 
-    channel = _c.Channel('%s:%d' % (host, 12345))
+    channel = _c.Channel('%s:%d' % (host, 12345), None)
     call = _c.Call(channel, method, host, time.time() + _TIMEOUT)
     del call
     del channel
@@ -133,6 +133,29 @@ class _CTest(unittest.TestCase):
     thread.join()
     del server
     del completion_queue
+
+    _c.shut_down()
+
+  def test_client_credentials(self):
+    root_certificates = b'Trust starts here. Really.'
+    private_key = b'This is a really bad private key, yo.'
+    certificate_chain = b'Trust me! Do I not look trustworty?'
+
+    _c.init()
+
+    client_credentials = _c.ClientCredentials(
+        None, None, None)
+    self.assertIsNotNone(client_credentials)
+    client_credentials = _c.ClientCredentials(
+        root_certificates, None, None)
+    self.assertIsNotNone(client_credentials)
+    client_credentials = _c.ClientCredentials(
+        None, private_key, certificate_chain)
+    self.assertIsNotNone(client_credentials)
+    client_credentials = _c.ClientCredentials(
+        root_certificates, private_key, certificate_chain)
+    self.assertIsNotNone(client_credentials)
+    del client_credentials
 
     _c.shut_down()
 

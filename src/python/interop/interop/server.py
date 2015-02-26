@@ -31,17 +31,14 @@
 
 import argparse
 import logging
-import pkg_resources
 import time
 
 from grpc.early_adopter import implementations
 
 from interop import methods
+from interop import resources
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
-_PRIVATE_KEY_RESOURCE_PATH = 'credentials/server1.key'
-_CERTIFICATE_CHAIN_RESOURCE_PATH = 'credentials/server1.pem'
 
 
 def serve():
@@ -54,10 +51,8 @@ def serve():
   args = parser.parse_args()
 
   if args.use_tls:
-    private_key = pkg_resources.resource_string(
-        __name__, _PRIVATE_KEY_RESOURCE_PATH)
-    certificate_chain = pkg_resources.resource_string(
-        __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
+    private_key = resources.private_key()
+    certificate_chain = resources.certificate_chain()
     server = implementations.secure_server(
         methods.SERVER_METHODS, args.port, private_key, certificate_chain)
   else:

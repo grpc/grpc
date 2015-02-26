@@ -43,7 +43,7 @@
 static gpr_event g_done;
 
 static gpr_timespec n_seconds_time(int seconds) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(seconds * 1000000));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(seconds);
 }
 
 static void on_finish(void *arg, const grpc_httpcli_response *response) {

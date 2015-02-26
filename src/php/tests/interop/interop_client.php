@@ -215,7 +215,7 @@ $stub = new grpc\testing\TestServiceClient(
     new Grpc\BaseStub(
         $server_address,
         [
-            'grpc.ssl_target_name_override' => 'foo.test.google.com',
+            'grpc.ssl_target_name_override' => 'foo.test.google.fr',
             'credentials' => $credentials
          ]));
 

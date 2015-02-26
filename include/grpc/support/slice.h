@@ -165,7 +165,9 @@ gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split);
 
 gpr_slice gpr_empty_slice(void);
 
-/* Returns <0 if a < b, ==0 if a == b, >0 if a > b */
+/* Returns <0 if a < b, ==0 if a == b, >0 if a > b
+   The order is arbitrary, and is not guaranteed to be stable across different
+   versions of the API. */
 int gpr_slice_cmp(gpr_slice a, gpr_slice b);
 int gpr_slice_str_cmp(gpr_slice a, const char *b);
 
