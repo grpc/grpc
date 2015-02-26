@@ -27,47 +27,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""The Python implementation of the GRPC interoperability test server."""
+"""Constants and functions for data used in interoperability testing."""
 
-import argparse
-import logging
-import time
+import os
 
-from grpc.early_adopter import implementations
+import pkg_resources
 
-from interop import methods
-from interop import resources
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+_ROOT_CERTIFICATES_RESOURCE_PATH = 'credentials/ca.pem'
+_PRIVATE_KEY_RESOURCE_PATH = 'credentials/server1.key'
+_CERTIFICATE_CHAIN_RESOURCE_PATH = 'credentials/server1.pem'
 
 
-def serve():
-  parser = argparse.ArgumentParser()
-  parser.add_argument(
-      '--port', help='the port on which to serve', type=int)
-  parser.add_argument(
-      '--use_tls', help='require a secure connection', dest='use_tls',
-      action='store_true')
-  args = parser.parse_args()
+def test_root_certificates():
+  return pkg_resources.resource_string(
+      __name__, _ROOT_CERTIFICATES_RESOURCE_PATH)
 
-  if args.use_tls:
-    private_key = resources.private_key()
-    certificate_chain = resources.certificate_chain()
-    server = implementations.secure_server(
-        methods.SERVER_METHODS, args.port, private_key, certificate_chain)
-  else:
-    server = implementations.insecure_server(
-        methods.SERVER_METHODS, args.port)
 
-  server.start()
-  logging.info('Server serving.')
-  try:
-    while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
-  except BaseException as e:
-    logging.info('Caught exception "%s"; stopping server...', e)
-    server.stop()
-    logging.info('Server stopped; exiting.')
+def prod_root_certificates():
+  return open(os.environ['SSL_CERT_FILE'], mode='rb').read()
 
-if __name__ == '__main__':
-  serve()
+
+def private_key():
+  return pkg_resources.resource_string(__name__, _PRIVATE_KEY_RESOURCE_PATH)
+
+
+def certificate_chain():
+  return pkg_resources.resource_string(
+      __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
