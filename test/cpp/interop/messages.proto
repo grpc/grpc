@@ -87,6 +87,10 @@ message SimpleResponse {
   optional string oauth_scope = 3;
 }
 
+message SimpleContext {
+  optional string value = 1;
+}
+
 // Client-streaming request.
 message StreamingInputCallRequest {
   // Optional input payload sent along with the request.
