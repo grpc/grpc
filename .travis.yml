@@ -1,4 +1,4 @@
 language: cpp
-script: ./tools/run_tests/run_tests.py -lc node -t -j2
+script: ./tools/run_tests/run_tests.py -l c node -t -j2
 notifications:
   email: false
