@@ -66,7 +66,7 @@ func NewGreeterClient(cc *grpc.ClientConn) GreeterClient {
 
 func (c *greeterClient) SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
 	out := new(HelloReply)
-	err := grpc.Invoke(ctx, "/helloworld.Greeter/sayHello", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/helloworld.Greeter/SayHello", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ var _Greeter_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*GreeterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "sayHello",
+			MethodName: "SayHello",
 			Handler:    _Greeter_SayHello_Handler,
 		},
 	},
