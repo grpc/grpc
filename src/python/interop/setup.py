@@ -40,7 +40,9 @@ _PACKAGE_DIRECTORIES = {
 }
 
 _PACKAGE_DATA = {
-    'interop': ['credentials/server1.key', 'credentials/server1.pem',]
+    'interop': [
+        'credentials/ca.pem', 'credentials/server1.key',
+        'credentials/server1.pem',]
 }
 
 _INSTALL_REQUIRES = ['grpc-2015>=0.0.1']

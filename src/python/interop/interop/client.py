@@ -27,11 +27,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""The Python implementation of the GRPC interoperability test server."""
+"""The Python implementation of the GRPC interoperability test client."""
 
 import argparse
-import logging
-import time
 
 from grpc.early_adopter import implementations
 
@@ -41,33 +39,48 @@ from interop import resources
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-def serve():
+def _args():
   parser = argparse.ArgumentParser()
   parser.add_argument(
-      '--port', help='the port on which to serve', type=int)
+      '--server_host', help='the host to which to connect', type=str)
+  parser.add_argument(
+      '--server_host_override',
+      help='the server host to which to claim to connect', type=str)
+  parser.add_argument(
+      '--server_port', help='the port to which to connect', type=int)
+  parser.add_argument(
+      '--test_case', help='the test case to execute', type=str)
   parser.add_argument(
       '--use_tls', help='require a secure connection', dest='use_tls',
       action='store_true')
-  args = parser.parse_args()
+  parser.add_argument(
+      '--use_test_ca', help='replace platform root CAs with ca.pem',
+      action='store_true')
+  return parser.parse_args()
 
+
+def _stub(args):
   if args.use_tls:
-    private_key = resources.private_key()
-    certificate_chain = resources.certificate_chain()
-    server = implementations.secure_server(
-        methods.SERVER_METHODS, args.port, private_key, certificate_chain)
-  else:
-    server = implementations.insecure_server(
-        methods.SERVER_METHODS, args.port)
+    if args.use_test_ca:
+      root_certificates = resources.test_root_certificates()
+    else:
+      root_certificates = resources.prod_root_certificates()
+    # TODO(nathaniel): server host override.
 
-  server.start()
-  logging.info('Server serving.')
-  try:
-    while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
-  except BaseException as e:
-    logging.info('Caught exception "%s"; stopping server...', e)
-    server.stop()
-    logging.info('Server stopped; exiting.')
+    stub = implementations.secure_stub(
+        methods.CLIENT_METHODS, args.server_host, args.server_port,
+        root_certificates, None, None)
+  else:
+    stub = implementations.insecure_stub(
+        methods.CLIENT_METHODS, args.server_host, args.server_port)
+  return stub
+
+
+def _test_interoperability():
+  args = _args()
+  stub = _stub(args)
+  methods.test_interoperability(args.test_case, stub)
+
 
 if __name__ == '__main__':
-  serve()
+  _test_interoperability()
