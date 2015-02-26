@@ -223,19 +223,16 @@ has all the protocol buffer code to populate, serialize, and retrieve our
 
     ```java
   public static interface Greeter {
-
-    public void SayHello(ex.grpc.Helloworld.HelloRequest request,
-        com.google.net.stubby.stub.StreamObserver<ex.grpc.Helloworld.HelloReply>
-        responseObserver);
+      public void sayHello(io.grpc.examples.Helloworld.HelloRequest request,
+          io.grpc.stub.StreamObserver<io.grpc.examples.Helloworld.HelloReply> responseObserver);
   }
     ```
 
     - _stub_ classes that clients can use to talk to a `Greeter` server. As you can see, they also implement the `Greeter` interface.
 
   ```java
-public static class GreeterStub extends
-      com.google.net.stubby.stub.AbstractStub<GreeterStub,
-      GreeterServiceDescriptor>
+  public static class GreeterStub extends
+      io.grpc.stub.AbstractStub<GreeterStub, GreeterServiceDescriptor>
       implements Greeter {
    ...
   }
