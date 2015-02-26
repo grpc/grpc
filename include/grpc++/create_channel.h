@@ -43,11 +43,6 @@ namespace grpc {
 class ChannelArguments;
 class ChannelInterface;
 
-// Deprecation warning: This function will soon be deleted
-// (See pull request #711)
-std::shared_ptr<ChannelInterface> CreateChannelDeprecated(
-    const grpc::string& target, const ChannelArguments& args);
-
 // If creds does not hold an object or is invalid, a lame channel is returned.
 std::shared_ptr<ChannelInterface> CreateChannel(
     const grpc::string& target, const std::unique_ptr<Credentials>& creds,

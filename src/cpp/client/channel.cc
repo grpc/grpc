@@ -54,43 +54,23 @@
 
 namespace grpc {
 
-Channel::Channel(const grpc::string &target, const ChannelArguments &args)
-    : target_(target) {
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
-  c_channel_ = grpc_channel_create(
-      target_.c_str(), channel_args.num_args > 0 ? &channel_args : nullptr);
-}
-
-Channel::Channel(const grpc::string &target,
-                 const std::unique_ptr<Credentials> &creds,
-                 const ChannelArguments &args)
-    : target_(args.GetSslTargetNameOverride().empty()
-                  ? target
-                  : args.GetSslTargetNameOverride()) {
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
-  grpc_credentials *c_creds = creds ? creds->GetRawCreds() : nullptr;
-  c_channel_ = grpc_secure_channel_create(
-      c_creds, target.c_str(),
-      channel_args.num_args > 0 ? &channel_args : nullptr);
-}
+Channel::Channel(const grpc::string& target, grpc_channel* channel)
+    : target_(target), c_channel_(channel) {}
 
 Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
-Call Channel::CreateCall(const RpcMethod &method, ClientContext *context,
-                         CompletionQueue *cq) {
-  auto c_call =
-      grpc_channel_create_call(
-          c_channel_, cq->cq(), method.name(),
-          context->authority().empty() ? target_.c_str()
-                                       : context->authority().c_str(),
-          context->RawDeadline());
+Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
+                         CompletionQueue* cq) {
+  auto c_call = grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
+                                         context->authority().empty()
+                                             ? target_.c_str()
+                                             : context->authority().c_str(),
+                                         context->RawDeadline());
   context->set_call(c_call);
   return Call(c_call, this, cq);
 }
 
-void Channel::PerformOpsOnCall(CallOpBuffer *buf, Call *call) {
+void Channel::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = MAX_OPS;
   grpc_op ops[MAX_OPS];

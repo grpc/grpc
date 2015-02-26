@@ -62,6 +62,9 @@ class ChannelArguments {
   void SetInt(const grpc::string& key, int value);
   void SetString(const grpc::string& key, const grpc::string& value);
 
+  // Populates given channel_args with args_, does not take ownership.
+  void SetChannelArgs(grpc_channel_args* channel_args) const;
+
  private:
   friend class Channel;
   friend class testing::ChannelArgumentsTest;
@@ -72,9 +75,6 @@ class ChannelArguments {
 
   // Returns empty string when it is not set.
   grpc::string GetSslTargetNameOverride() const;
-
-  // Populates given channel_args with args_, does not take ownership.
-  void SetChannelArgs(grpc_channel_args* channel_args) const;
 
   std::vector<grpc_arg> args_;
   std::list<grpc::string> strings_;

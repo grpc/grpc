@@ -968,13 +968,13 @@ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 % if lib.get('baselib', False):
 % if lib.get('secure', True):
-	$(Q) rm -rf tmp-merge
-	$(Q) mkdir tmp-merge
-	$(Q) ( cd tmp-merge ; $(AR) x ../$(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
-	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; <%text>ar x ../$${l}</%text> ) ; done
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge/__.SYMDEF*
-	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge/*
-	$(Q) rm -rf tmp-merge
+	$(Q) rm -rf tmp-merge-${lib.name}
+	$(Q) mkdir tmp-merge-${lib.name}
+	$(Q) ( cd tmp-merge-${lib.name} ; $(AR) x ../$(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge-${lib.name} ; <%text>ar x ../$${l}</%text> ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge-${lib.name}/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge-${lib.name}/*
+	$(Q) rm -rf tmp-merge-${lib.name}
 % endif
 % endif
 ifeq ($(SYSTEM),Darwin)
