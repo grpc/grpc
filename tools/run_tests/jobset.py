@@ -169,8 +169,7 @@ class Job(object):
     self._state = _RUNNING
     self._newline_on_success = newline_on_success
     self._travis = travis
-    if not travis:
-      message('START', spec.shortname)
+    message('START', spec.shortname, do_newline=self._travis)
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
@@ -290,7 +289,11 @@ def run(cmdlines,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis,
               cache if cache is not None else NoCache())
-  for cmdline in shuffle_iteratable(cmdlines):
+  if not travis:
+    cmdlines = shuffle_iteratable(cmdlines)
+  else:
+    cmdlines = sorted(cmdlines)
+  for cmdline in cmdlines:
     if not js.start(cmdline):
       break
   return js.finish()
