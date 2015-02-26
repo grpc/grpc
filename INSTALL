@@ -12,7 +12,7 @@ wiki pages:
  $ git clone https://github.com/grpc/grpc.git
  $ git submodule update --init
 
- $cd grpc
+ $ cd grpc
  
  $ make 
  $ sudo make install
