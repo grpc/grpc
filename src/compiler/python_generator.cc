@@ -31,6 +31,7 @@
  *
  */
 
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cstring>
@@ -44,17 +45,22 @@
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor.h>
+#include <google/protobuf/stubs/strutil.h>
 
 using google::protobuf::Descriptor;
 using google::protobuf::FileDescriptor;
-using google::protobuf::ServiceDescriptor;
+using google::protobuf::HasSuffixString;
 using google::protobuf::MethodDescriptor;
+using google::protobuf::ServiceDescriptor;
+using google::protobuf::StripString;
+using google::protobuf::StripSuffixString;
 using google::protobuf::io::Printer;
 using google::protobuf::io::StringOutputStream;
 using std::initializer_list;
 using std::make_pair;
 using std::map;
 using std::pair;
+using std::replace;
 using std::string;
 using std::strlen;
 using std::vector;
@@ -123,7 +129,7 @@ bool PrintServicer(const ServiceDescriptor* service,
       string arg_name = meth->client_streaming() ?
           "request_iterator" : "request";
       out->Print("@abc.abstractmethod\n");
-      out->Print("def $Method$(self, $ArgName$):\n",
+      out->Print("def $Method$(self, $ArgName$, context):\n",
                  "Method", meth->name(), "ArgName", arg_name);
       {
         IndentScope raii_method_indent(out);
@@ -191,6 +197,21 @@ bool PrintStub(const ServiceDescriptor* service,
   return true;
 }
 
+// TODO(protobuf team): See TODO for `ModuleName`.
+string StripProto(const string& filename) {
+  const char* suffix = HasSuffixString(filename, ".protodevel")
+      ? ".protodevel" : ".proto";
+  return StripSuffixString(filename, suffix);
+}
+// TODO(protobuf team): Export `ModuleName` from protobuf's
+// `src/google/protobuf/compiler/python/python_generator.cc` file.
+string ModuleName(const string& filename) {
+  string basename = StripProto(filename);
+  StripString(&basename, "-", '_');
+  StripString(&basename, "/", '.');
+  return basename + "_pb2";
+}
+
 bool GetModuleAndMessagePath(const Descriptor* type,
                              pair<string, string>* out) {
   const Descriptor* path_elem_type = type;
@@ -200,17 +221,12 @@ bool GetModuleAndMessagePath(const Descriptor* type,
     path_elem_type = path_elem_type->containing_type();
   } while (path_elem_type != nullptr);
   string file_name = type->file()->name();
-  string module_name;
   static const int proto_suffix_length = strlen(".proto");
   if (!(file_name.size() > static_cast<size_t>(proto_suffix_length) &&
         file_name.find_last_of(".proto") == file_name.size() - 1)) {
     return false;
   }
-  module_name = file_name.substr(
-      0, file_name.size() - proto_suffix_length) + "_pb2";
-  string package = type->file()->package();
-  string module = (package.empty() ? "" : package + ".") +
-      module_name;
+  string module = ModuleName(file_name);
   string message_type;
   for (auto path_iter = message_path.rbegin();
        path_iter != message_path.rend(); ++path_iter) {
