@@ -1,8 +1,9 @@
 #gRPC Authentication support
 
-gRPC is designed to plug-in a number of authentication mechanisms. We provide an overview
-of the various auth mechanisms supported, discuss the API and demonstrate usage through
-code examples, and conclude with a discussion of extensibility.
+gRPC is designed to plug-in a number of authentication mechanisms. This document provides a quick overview 
+of the various auth mechanisms supported, discusses the API with some examples, and concludes with a discussion of extensibility. More documentation and examples are coming soon!
+
+## Supported auth mechanisms
 
 ###SSL/TLS
 gRPC has SSL/TLS integration and promotes the use of SSL/TLS to authenticate the server,
@@ -17,7 +18,7 @@ RPCs being made at a client. Additional support for acquiring Access Tokens whil
 accessing Google APIs through gRPC is provided for certain auth flows, demonstrated
 through code examples below.
 
-###API
+## API
 To reduce complexity and minimize API clutter, gRPC works with a unified concept of
 a Credentials object. Users construct gRPC credentials using corresponding bootstrap
 credentials (e.g., SSL client certs or Service Account Keys), and use the
@@ -26,9 +27,7 @@ credential supplied, the channel uses the credentials during the initial SSL/TLS
 handshake with the server, or uses  the credential to generate and attach Access
 Tokens to each request being made on the channel.
 
-###Code Examples
-
-####SSL/TLS for server authentication and encryption
+###SSL/TLS for server authentication and encryption
 This is the simplest authentication scenario, where a client just wants to
 authenticate the server and encrypt all data.
 
@@ -62,7 +61,7 @@ grpc::Status s = stub->sayHello(&context, *request, response);
 ```
 
 This credential works for applications using Service Accounts as well as for
-applications running in Google Compute Engine (GCE). In the former case, the
+applications running in [Google Compute Engine (GCE)](https://cloud.google.com/compute/). In the former case, the
 service account’s private keys are loaded from the file named in the environment
 variable `GOOGLE_APPLICATION_CREDENTIALS`. The
 keys are used to generate bearer tokens that are attached to each outgoing RPC
@@ -86,10 +85,12 @@ on the client side and its verification at the server can be done separately.
 
 A deeper integration can be achieved by plugging in a gRPC credentials implementation for any custom authentication mechanism that needs to attach per-request tokens. gRPC internals also allow switching out SSL/TLS with other encryption mechanisms.
 
-These authentication mechanisms will be available in all gRPC's supported languages.
-The following sections demonstrate how authentication and authorization features described above appear in each language
+## Examples
 
-####SSL/TLS for server authentication and encryption (Ruby)
+These authentication mechanisms will be available in all gRPC's supported languages.
+The following sections demonstrate how authentication and authorization features described above appear in each language: more languages are coming soon.
+
+###SSL/TLS for server authentication and encryption (Ruby)
 ```ruby
 # Base case - No encryption
 stub = Helloworld::Greeter::Stub.new('localhost:50051')
