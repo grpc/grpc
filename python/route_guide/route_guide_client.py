@@ -29,25 +29,13 @@
 
 """The Python implementation of the gRPC route guide client."""
 
-import route_guide_pb2
-
-import json
 import random
 import time
 
+import route_guide_pb2
+import route_guide_resources
+
 _TIMEOUT_SECONDS = 30
-
-
-def read_route_guide_db():
-  """Reads the route guide"""
-  feature_list = []
-  with open("route_guide_db.json") as route_guide_db_file:
-    for item in json.load(route_guide_db_file):
-      feature = route_guide_pb2.Feature(name=item["name"])
-      feature.location.longitude = item["location"]["longitude"]
-      feature.location.latitude = item["location"]["latitude"]
-      feature_list.append(feature)
-  return feature_list
 
 
 def make_route_note(message, latitude, longitude):
@@ -89,7 +77,7 @@ def guide_list_features(stub):
 
 
 def generate_route(feature_list):
-  for index in range(0, 10):
+  for _ in range(0, 10):
     random_feature = feature_list[random.randint(0, len(feature_list) - 1)]
     print "Visiting point %s" % random_feature.location
     yield random_feature.location
@@ -97,7 +85,7 @@ def generate_route(feature_list):
 
 
 def guide_record_route(stub):
-  feature_list = read_route_guide_db()
+  feature_list = route_guide_resources.read_route_guide_database()
 
   route_iter = generate_route(feature_list)
   route_summary = stub.RecordRoute(route_iter, _TIMEOUT_SECONDS)
@@ -109,11 +97,11 @@ def guide_record_route(stub):
 
 def generate_messages():
   messages = [
-              make_route_note("First message", 0, 0),
-              make_route_note("Second message", 0, 1),
-              make_route_note("Third message", 1, 0),
-              make_route_note("Fourth message", 0, 0),
-              make_route_note("Fifth message", 1, 0),
+      make_route_note("First message", 0, 0),
+      make_route_note("Second message", 0, 1),
+      make_route_note("Third message", 1, 0),
+      make_route_note("Fourth message", 0, 0),
+      make_route_note("Fifth message", 1, 0),
   ]
   for msg in messages:
     print "Sending %s at %s" % (msg.message, msg.location)
