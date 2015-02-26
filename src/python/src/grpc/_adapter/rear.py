@@ -92,7 +92,8 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
   """An invocation-side bridge between RPC Framework and the C-ish _low code."""
 
   def __init__(
-      self, host, port, pool, request_serializers, response_deserializers):
+      self, host, port, pool, request_serializers, response_deserializers,
+      secure, root_certificates, private_key, certificate_chain):
     """Constructor.
 
     Args:
@@ -103,6 +104,13 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
         serializer behaviors.
       response_deserializers: A dict from RPC method names to response object
         deserializer behaviors.
+      secure: A boolean indicating whether or not to use a secure connection.
+      root_certificates: The PEM-encoded root certificates or None to ask for
+        them to be retrieved from a default location.
+      private_key: The PEM-encoded private key to use or None if no private
+        key should be used.
+      certificate_chain: The PEM-encoded certificate chain to use or None if
+        no certificate chain should be used.
     """
     self._condition = threading.Condition()
     self._host = host
@@ -116,6 +124,14 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     self._channel = None
     self._rpc_states = {}
     self._spinning = False
+    if secure:
+      self._client_credentials = _low.ClientCredentials(
+          root_certificates, private_key, certificate_chain)
+    else:
+      self._client_credentials = None
+    self._root_certificates = root_certificates
+    self._private_key = private_key
+    self._certificate_chain = certificate_chain
 
   def _on_write_event(self, operation_id, event, rpc_state):
     if event.write_accepted:
@@ -310,7 +326,8 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     """
     with self._condition:
       self._completion_queue = _low.CompletionQueue()
-      self._channel = _low.Channel('%s:%d' % (self._host, self._port))
+      self._channel = _low.Channel(
+          '%s:%d' % (self._host, self._port), self._client_credentials)
     return self
 
   def _stop(self):
@@ -369,11 +386,17 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
 
 class _ActivatedRearLink(ticket_interfaces.RearLink, activated.Activated):
 
-  def __init__(self, host, port, request_serializers, response_deserializers):
+  def __init__(
+      self, host, port, request_serializers, response_deserializers, secure,
+      root_certificates, private_key, certificate_chain):
     self._host = host
     self._port = port
     self._request_serializers = request_serializers
     self._response_deserializers = response_deserializers
+    self._secure = secure
+    self._root_certificates = root_certificates
+    self._private_key = private_key
+    self._certificate_chain = certificate_chain
 
     self._lock = threading.Lock()
     self._pool = None
@@ -391,7 +414,8 @@ class _ActivatedRearLink(ticket_interfaces.RearLink, activated.Activated):
       self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
       self._rear_link = RearLink(
           self._host, self._port, self._pool, self._request_serializers,
-          self._response_deserializers)
+          self._response_deserializers, self._secure, self._root_certificates,
+          self._private_key, self._certificate_chain)
       self._rear_link.join_fore_link(self._fore_link)
       self._rear_link.start()
     return self
@@ -422,6 +446,7 @@ class _ActivatedRearLink(ticket_interfaces.RearLink, activated.Activated):
         self._rear_link.accept_front_to_back_ticket(ticket)
 
 
+# TODO(issue 726): reconcile these two creation functions.
 def activated_rear_link(
     host, port, request_serializers, response_deserializers):
   """Creates a RearLink that is also an activated.Activated.
@@ -436,6 +461,42 @@ def activated_rear_link(
       serializer behavior.
     response_deserializers: A dictionary from RPC method name to response
       object deserializer behavior.
+    secure: A boolean indicating whether or not to use a secure connection.
+    root_certificates: The PEM-encoded root certificates or None to ask for
+      them to be retrieved from a default location.
+    private_key: The PEM-encoded private key to use or None if no private key
+      should be used.
+    certificate_chain: The PEM-encoded certificate chain to use or None if no
+      certificate chain should be used.
   """
   return _ActivatedRearLink(
-      host, port, request_serializers, response_deserializers)
+      host, port, request_serializers, response_deserializers, False, None,
+      None, None)
+
+
+
+def secure_activated_rear_link(
+    host, port, request_serializers, response_deserializers, root_certificates,
+    private_key, certificate_chain):
+  """Creates a RearLink that is also an activated.Activated.
+
+  The returned object is only valid for use between calls to its start and stop
+  methods (or in context when used as a context manager).
+
+  Args:
+    host: The host to which to connect for RPC service.
+    port: The port to which to connect for RPC service.
+    request_serializers: A dictionary from RPC method name to request object
+      serializer behavior.
+    response_deserializers: A dictionary from RPC method name to response
+      object deserializer behavior.
+    root_certificates: The PEM-encoded root certificates or None to ask for
+      them to be retrieved from a default location.
+    private_key: The PEM-encoded private key to use or None if no private key
+      should be used.
+    certificate_chain: The PEM-encoded certificate chain to use or None if no
+      certificate chain should be used.
+  """
+  return _ActivatedRearLink(
+      host, port, request_serializers, response_deserializers, True,
+      root_certificates, private_key, certificate_chain)

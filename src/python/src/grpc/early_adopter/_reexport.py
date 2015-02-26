@@ -27,9 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import abc
-import collections
-
 from grpc.framework.face import exceptions as face_exceptions
 from grpc.framework.face import interfaces as face_interfaces
 from grpc.framework.foundation import future
@@ -186,6 +183,14 @@ class _Stub(interfaces.Stub):
   def __getattr__(self, attr):
     underlying_attr = self._assembly_stub.__getattr__(attr)
     cardinality = self._cardinalities.get(attr)
+    # TODO(nathaniel): unify this trick with its other occurrence in the code.
+    if cardinality is None:
+      for name, cardinality in self._cardinalities.iteritems():
+        last_slash_index = name.rfind('/')
+        if 0 <= last_slash_index and name[last_slash_index + 1:] == attr:
+          break
+      else:
+        raise AttributeError(attr)
     if cardinality is interfaces.Cardinality.UNARY_UNARY:
       return _UnaryUnarySyncAsync(underlying_attr)
     elif cardinality is interfaces.Cardinality.UNARY_STREAM:

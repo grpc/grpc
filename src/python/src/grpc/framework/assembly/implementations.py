@@ -31,16 +31,18 @@
 
 import threading
 
+# tickets_interfaces, face_interfaces, and activated are referenced from
+# specification in this module.
 from grpc.framework.assembly import interfaces
 from grpc.framework.base import util as base_utilities
 from grpc.framework.base.packets import implementations as tickets_implementations
-from grpc.framework.base.packets import interfaces as tickets_interfaces
+from grpc.framework.base.packets import interfaces as tickets_interfaces  # pylint: disable=unused-import
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
 from grpc.framework.face import implementations as face_implementations
-from grpc.framework.face import interfaces as face_interfaces
+from grpc.framework.face import interfaces as face_interfaces  # pylint: disable=unused-import
 from grpc.framework.face import utilities as face_utilities
-from grpc.framework.foundation import activated
+from grpc.framework.foundation import activated  # pylint: disable=unused-import
 from grpc.framework.foundation import logging_pool
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -138,7 +140,13 @@ class _DynamicInlineStub(object):
     with self._lock:
       behavior = self._behaviors.get(attr)
       if behavior is None:
-        raise AttributeError(attr)
+        for name, behavior in self._behaviors.iteritems():
+          last_slash_index = name.rfind('/')
+          if 0 <= last_slash_index and name[last_slash_index + 1:] == attr:
+            return behavior
+        else:
+          raise AttributeError(
+              '_DynamicInlineStub instance has no attribute "%s"!' % attr)
       else:
         return behavior
 
