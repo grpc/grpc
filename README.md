@@ -202,7 +202,7 @@ in this example). The generated code contains both stub code for clients to
 use and an abstract interface for servers to implement, both with the method
 defined in our `Greeting` service.
 
-(If you didn't install the gRPC plugins and protoc on your system and are working along with
+(If you didn't install the gRPC plugins and protoc on your system and are just reading along with
 the example, you can skip this step and move
 onto the next one where we examine the generated code.)
 
@@ -327,7 +327,7 @@ how all this works in a bit more detail in our language-specific documentation.
 Client-side gRPC is pretty simple. In this step, we'll use the generated code
 to write a simple client that can access the `Greeter` server we created
 in the [previous section](#server). You can see the complete client code in
-[GreeterClient.java](java/src/main/java/ex/grpc/GreeterClient.java).
+[HelloWorldClient.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldClient.java).
 
 Again, we're not going to go into much detail about how to implement a client;
 we'll leave that for the tutorial.
