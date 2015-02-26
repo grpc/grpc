@@ -27,7 +27,7 @@ Then change your current directory to `grpc-common/node/route_guide`:
 $ cd grpc-common/node/route_guide
 ```
 
-You also should have the relevant tools installed to generate the server and client interface code - if yofu don't already, follow the setup instructions in [the Node.js quick start guide](https://github.com/grpc/grpc-common/tree/master/node).
+You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the Node.js quick start guide](https://github.com/grpc/grpc-common/tree/master/node).
 
 
 ## Defining the service
@@ -90,7 +90,7 @@ message Point {
 
 The Node.js library dynamically generates service descriptors and client stub definitions from `.proto` files loaded at runtime.
 
-To load a `.proto` file, simply `require` the gRPC library, then use its `load()` method to load the proto file:
+To load a `.proto` file, simply `require` the gRPC library, then use its `load()` method:
 
 ```node
 var grpc = require('grpc');
@@ -99,7 +99,7 @@ var protoDescriptor = grpc.load(__dirname + '/route_guide.proto');
 var example = protoDescriptor.examples;
 ```
 
-Then, the stub constructor is in the examples namespace (`protoDescriptor.examples.RouteGuide`) and the service descriptor (which is used to create a server) is a property of the stub (`protoDescriptor.examples.RouteGuide.service`);
+Once you've done this, the stub constructor is in the `examples` namespace (`protoDescriptor.examples.RouteGuide`) and the service descriptor (which is used to create a server) is a property of the stub (`protoDescriptor.examples.RouteGuide.service`);
 
 <a name="server"></a>
 ## Creating the server
@@ -146,7 +146,7 @@ function getFeature(call, callback) {
 }
 ```
 
-The method is passed a call object for the RPC, which has the `Point` parameter as a property, and a callback to be passed the resulting `Feature`. In the method we populate a `Feature` corresponding to the given point and pass it to the callback, with a null first parameter to indicate that there is no error.
+The method is passed a call object for the RPC, which has the `Point` parameter as a property, and a callback to which we can pass our returned `Feature`. In the method body we populate a `Feature` corresponding to the given point and pass it to the callback, with a null first parameter to indicate that there is no error.
 
 Now let's look at something a bit more complicated - a streaming RPC. `listFeatures` is a server-side streaming RPC, so we need to send back multiple `Feature`s to our client.
 
@@ -174,7 +174,7 @@ function listFeatures(call) {
 }
 ```
 
-As you can see, instead of getting the call object and callback in our method parameters, this time we get a call object that implements the `Writable` interface. In the method, we create as many `Feature` objects as we need to return, writing them to the `call` using its `write()` method. Finally, we call `call.end()` to indicate that we have sent all messages.
+As you can see, instead of getting the call object and callback in our method parameters, this time we get a `call` object that implements the `Writable` interface. In the method, we create as many `Feature` objects as we need to return, writing them to the `call` using its `write()` method. Finally, we call `call.end()` to indicate that we have sent all messages.
 
 If you look at the client-side streaming method `RecordRoute` you'll see it's quite similar to the unary call, except this time the `call` parameter implements the `Reader` interface. The `call`'s `'data'` event fires every time there is new data, and the `'end'` event fires when all data has been read. Like the unary case, we respond by calling the callback
 
