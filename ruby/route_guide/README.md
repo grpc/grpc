@@ -37,7 +37,7 @@ Our first step (as you'll know from [Getting started](https://github.com/grpc/gr
 
 To define a service, you specify a named `service` in your .proto file:
 
-```
+```protobuf
 service RouteGuide {
    ...
 }
@@ -46,13 +46,13 @@ service RouteGuide {
 Then you define `rpc` methods inside your service definition, specifying their request and response types. gRPC lets you define four kinds of service method, all of which are used in the `RouteGuide` service:
 
 - A *simple RPC* where the client sends a request to the server using the stub and waits for a response to come back, just like a normal function call.
-```
+```protobuf
    // Obtains the feature at a given position.
    rpc GetFeature(Point) returns (Feature) {}
 ```
 
 - A *server-side streaming RPC* where the client sends a request to the server and gets a stream to read a sequence of messages back. The client reads from the returned stream until there are no more messages. As you can see in our example, you specify a server-side streaming method by placing the `stream` keyword before the *response* type.
-```
+```protobuf
   // Obtains the Features available within the given Rectangle.  Results are
   // streamed rather than returned at once (e.g. in a response message with a
   // repeated field), as the rectangle may cover a large area and contain a
@@ -61,21 +61,21 @@ Then you define `rpc` methods inside your service definition, specifying their r
 ```
 
 - A *client-side streaming RPC* where the client writes a sequence of messages and sends them to the server, again using a provided stream. Once the client has finished writing the messages, it waits for the server to read them all and return its response. You specify a server-side streaming method by placing the `stream` keyword before the *request* type.
-```
+```protobuf
   // Accepts a stream of Points on a route being traversed, returning a
   // RouteSummary when traversal is completed.
   rpc RecordRoute(stream Point) returns (RouteSummary) {}
 ```
 
 - A *bidirectional streaming RPC* where both sides send a sequence of messages using a read-write stream. The two streams operate independently, so clients and servers can read and write in whatever order they like: for example, the server could wait to receive all the client messages before writing its responses, or it could alternately read a message then write a message, or some other combination of reads and writes. The order of messages in each stream is preserved. You specify this type of method by placing the `stream` keyword before both the request and the response.
-```
+```protobuf
   // Accepts a stream of RouteNotes sent while a route is being traversed,
   // while receiving other RouteNotes (e.g. from other users).
   rpc RouteChat(stream RouteNote) returns (stream RouteNote) {}
 ```
 
 Our .proto file also contains protocol buffer message type definitions for all the request and response types used in our service methods - for example, here's the `Point` message type:
-```
+```protobuf
 // Points are represented as latitude-longitude pairs in the E7 representation
 // (degrees multiplied by 10**7 and rounded to the nearest integer).
 // Latitudes should be in the range +/- 90 degrees and longitude should be in
@@ -103,7 +103,7 @@ Running this command regenerates the following files in the lib directory:
 - `lib/route_guide.pb` defines a module `Examples::RouteGuide`
   - This contain all the protocol buffer code to populate, serialize, and retrieve our request and response message types
 - `lib/route_guide_services.pb`, extends `Examples::RouteGuide` with stub and service classes
-   - it adds a class `Service` that is to be used as a base class for define RouteGuide service implementations
+   - a class `Service` for use as a base class when defining RouteGuide service implementations
    - a class `Stub` that can be used to access remote RouteGuide instances
 
 
@@ -138,7 +138,7 @@ class ServerImpl < RouteGuide::Service
   end
 ```
 
-The method is passed a _call for the RPC, the client's `Point` protocol buffer request, and returns  `Feature` protocol buffer. In the method we create the `Feature` with the appropriate information, and then `return` it.
+The method is passed a _call for the RPC, the client's `Point` protocol buffer request, and returns a `Feature` protocol buffer. In the method we create the `Feature` with the appropriate information, and then `return` it.
 
 Now let's look at something a bit more complicated - a streaming RPC. `ListFeatures` is a server-side streaming RPC, so we need to send back multiple `Feature`s to our client.
 
@@ -148,10 +148,9 @@ Now let's look at something a bit more complicated - a streaming RPC. `ListFeatu
   def list_features(rectangle, _call)
     RectangleEnum.new(@feature_db, rectangle).each
   end
-
 ```
 
-As you can see, here the request object is a `Rectangle` in which our client wants to find `Feature`s), but instead of returning a simple response we need to return an [Enumerator](http://ruby-doc.org//core-2.2.0/Enumerator.html) that yields the responses. In the method, we use a helper class `RectangleEnum`, to act as an Enumerator implementation.
+As you can see, here the request object is a `Rectangle` in which our client wants to find `Feature`s, but instead of returning a simple response we need to return an [Enumerator](http://ruby-doc.org//core-2.2.0/Enumerator.html) that yields the responses. In the method, we use a helper class `RectangleEnum`, to act as an Enumerator implementation.
 
 Similarly, the client-side streaming method `record_route` uses an [Enumerable](http://ruby-doc.org//core-2.2.0/Enumerable.html), but here it's obtained from the call object, which we've ignored in the earlier examples.  `call.each_remote_read` yields each message sent by the client in turn.
 
@@ -177,7 +176,7 @@ Finally, let's look at our bidirectional streaming RPC `route_chat`.
   end 
 ```
 
-Here the method receives an [Enumerable](http://ruby-doc.org//core-2.2.0/Enumerable.html), notes, but also returns an [Enumerator](http://ruby-doc.org//core-2.2.0/Enumerator.html) that yields the responses.  The implementation demonstrates how to set these up so that the requests and responses can be handled concurrently.  Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
+Here the method receives an [Enumerable](http://ruby-doc.org//core-2.2.0/Enumerable.html), but also returns an [Enumerator](http://ruby-doc.org//core-2.2.0/Enumerator.html) that yields the responses.  The implementation demonstrates how to set these up so that the requests and responses can be handled concurrently.  Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
 
 ### Starting the server
 
@@ -206,7 +205,7 @@ In this section, we'll look at creating a Rubyclient for our `RouteGuide` servic
 
 To call service methods, we first need to create a *stub*.
 
-We use the `Stub` class of `RouteGuide` module generated from our .proto.
+We use the `Stub` class of the `RouteGuide` module generated from our .proto.
 
 ```ruby
  stub = RouteGuide::Stub.new('localhost:50051')
@@ -247,7 +246,7 @@ Now let's look at our streaming methods. If you've already read [Creating the se
   end
 ```
 
-`The client-side streaming method `record_rout` is similar, except there in an `Enumerable`.
+The client-side streaming method `record_route` is similar, except there we pass the server an `Enumerable`.
 
 ```ruby
   ...
