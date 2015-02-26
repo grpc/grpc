@@ -15,26 +15,26 @@ PREREQUISITES
 
 INSTALL
 -------
-1. Clone the gRPC Java git repo
+1 Clone the gRPC Java git repo
 ```sh
 $ git clone https://github.com/grpc/grpc-java
 ```
 
-2. Install gRPC Java, as described in [How to Build](https://github.com/grpc/grpc-java#how-to-build)
+2 Install gRPC Java, as described in [How to Build](https://github.com/grpc/grpc-java#how-to-build)
 ```sh
 $ # from this dir
 $ cd grpc-java
 $ # follow the instructions in 'How to Build'
 ```
 
-3. [Create an Android project](https://developer.android.com/training/basics/firstapp/creating-project.html) under your working directory.
+3 [Create an Android project](https://developer.android.com/training/basics/firstapp/creating-project.html) under your working directory.
 - Set Application name to "Helloworld Example" and set Company Domain to "grpc.io". Make sure your package name is "io.grpc.helloworldexample"
 - Choose appropriate minimum SDK
 - Use Blank Activity
 - Set Activity Name to HelloworldActivity
 - Set Layout Name to activity_helloworld
 
-4. Prepare the app
+4 Prepare the app
 - Clone this git repo
 ```sh
 $ git clone https://github.com/grpc/grpc-common
@@ -48,7 +48,7 @@ $ git clone https://github.com/grpc/grpc-common
 ```
 added outside your appplication tag
 
-5. Add dependencies. gRPC Java on Android depends on grpc-java, protobuf nano, okhttp
+5 Add dependencies. gRPC Java on Android depends on grpc-java, protobuf nano, okhttp
 - Copy grpc-java .jar files to your_app_dir/app/libs/:
   - grpc-java/core/build/libs/*.jar
   - grpc-java/stub/build/libs/*.jar
@@ -68,4 +68,4 @@ dependencies {
 }
 ```
 
-6. [Run your example app](https://developer.android.com/training/basics/firstapp/running-app.html)
+6 [Run your example app](https://developer.android.com/training/basics/firstapp/running-app.html)
