@@ -36,6 +36,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <tuple>
 
 #include "src/compiler/python_generator.h"
 #include <google/protobuf/compiler/code_generator.h>
