@@ -31,6 +31,7 @@
  *
  */
 
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <cstring>
@@ -55,6 +56,7 @@ using std::initializer_list;
 using std::make_pair;
 using std::map;
 using std::pair;
+using std::replace;
 using std::string;
 using std::strlen;
 using std::vector;
@@ -200,17 +202,16 @@ bool GetModuleAndMessagePath(const Descriptor* type,
     path_elem_type = path_elem_type->containing_type();
   } while (path_elem_type != nullptr);
   string file_name = type->file()->name();
-  string module_name;
   static const int proto_suffix_length = strlen(".proto");
   if (!(file_name.size() > static_cast<size_t>(proto_suffix_length) &&
         file_name.find_last_of(".proto") == file_name.size() - 1)) {
     return false;
   }
-  module_name = file_name.substr(
+  string module = file_name.substr(
       0, file_name.size() - proto_suffix_length) + "_pb2";
-  string package = type->file()->package();
-  string module = (package.empty() ? "" : package + ".") +
-      module_name;
+  module.erase(0, module.find_first_not_of("/"));
+  replace(module.begin(), module.end(), '-', '_');
+  replace(module.begin(), module.end(), '/', '.');
   string message_type;
   for (auto path_iter = message_path.rbegin();
        path_iter != message_path.rend(); ++path_iter) {
