@@ -101,11 +101,10 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void chttp2_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  grpc_credentials *ssl_creds =
-      grpc_ssl_credentials_create(NULL, NULL);
+  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                                {"foo.test.google.com"}};
+                                {"foo.test.google.fr"}};
   grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
@@ -128,7 +127,8 @@ static grpc_end2end_test_config configs[] = {
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
-     chttp2_tear_down_secure_fullstack}, };
+     chttp2_tear_down_secure_fullstack},
+};
 
 int main(int argc, char **argv) {
   size_t i;

@@ -400,7 +400,12 @@ module GRPC
     # @param deadline [TimeConst]
     def new_active_call(ch, marshal, unmarshal, deadline = nil)
       absolute_deadline = Core::TimeConsts.from_relative_time(deadline)
-      call = @ch.create_call(ch, @host, absolute_deadline)
+      # It should be OK to to pass the hostname:port to create_call, but at
+      # the moment this fails a security check.  This will be corrected.
+      #
+      # TODO: # remove this after create_call is updated
+      host = @host.split(':')[0]
+      call = @ch.create_call(ch, host, absolute_deadline)
       ActiveCall.new(call, @queue, marshal, unmarshal, absolute_deadline,
                      started: false)
     end

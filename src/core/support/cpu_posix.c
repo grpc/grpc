@@ -40,6 +40,7 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 static __thread char magic_thread_local;
 
@@ -55,7 +56,7 @@ static void init_ncpus() {
 
 unsigned gpr_cpu_num_cores(void) {
   static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, init_num_cpus);
+  gpr_once_init(&once, init_ncpus);
   return ncpus;
 }
 

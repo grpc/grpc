@@ -56,7 +56,7 @@ class LonelyClientTest(unittest.TestCase):
     finish_tag = object()
 
     completion_queue = _low.CompletionQueue()
-    channel = _low.Channel('%s:%d' % (host, port))
+    channel = _low.Channel('%s:%d' % (host, port), None)
     client_call = _low.Call(channel, method, host, deadline)
 
     client_call.invoke(completion_queue, metadata_tag, finish_tag)
@@ -87,7 +87,7 @@ class EchoTest(unittest.TestCase):
     self.server.start()
 
     self.client_completion_queue = _low.CompletionQueue()
-    self.channel = _low.Channel('%s:%d' % (self.host, port))
+    self.channel = _low.Channel('%s:%d' % (self.host, port), None)
 
   def tearDown(self):
     self.server.stop()
@@ -265,7 +265,7 @@ class CancellationTest(unittest.TestCase):
     self.server.start()
 
     self.client_completion_queue = _low.CompletionQueue()
-    self.channel = _low.Channel('%s:%d' % (self.host, port))
+    self.channel = _low.Channel('%s:%d' % (self.host, port), None)
 
   def tearDown(self):
     self.server.stop()

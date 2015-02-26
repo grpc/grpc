@@ -24,27 +24,27 @@ properly run all the tests.
 If you are planning to work on any of the languages other than C and C++, you
 will also need their appropriate development environments.
 
-If you want to work under Windows, we recommend you to use Visual Studio 2013.
+If you want to work under Windows, we recommend the use of Visual Studio 2013.
 The [Community or Express editions](http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
 are free and suitable for developing with grpc. Note however that our test
 environment and tools are available for Unix environments only at the moment.
 
 ## Testing your changes
 
-We provide a tool to help you run our suite of tests in various environments.
+We provide a tool to help run the suite of tests in various environments.
 In order to run most of the available tests, one would need to run:
 
 `./tools/run_tests/run_tests.py`
 
-If you want to run all the possible tests for all possible languages, do this:
+If you want to run all the possible tests for any of the languages {c, c++, node, php, python}, do this:
 
-`./tools/run_tests/run_tests.py -lall -call`
+`./tools/run_tests/run_tests.py -l <lang> -c all`
 
 ## Adding or removing source code
 
 Each language uses its own build system to work. Currently, the root's Makefile
-and the Visual Studio project files are building the C and C++ source code only
-at the moment. In order to ease the maintenance of these files, we have a
+and the Visual Studio project files are building only the C and C++ source code.
+In order to ease the maintenance of these files, we have a
 template system. Please do not contribute manual changes to any of the generated
 files. Instead, modify the template files, or the build.json file, and
 re-generate the project files using the following command:

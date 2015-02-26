@@ -52,8 +52,13 @@
 #include "src/core/iomgr/pollset_windows.h"
 #endif
 
+
 void grpc_pollset_init(grpc_pollset *pollset);
+void grpc_pollset_shutdown(grpc_pollset *pollset,
+                           void (*shutdown_done)(void *arg),
+                           void *shutdown_done_arg);
 void grpc_pollset_destroy(grpc_pollset *pollset);
+
 
 /* Do some work on a pollset.
    May involve invoking asynchronous callbacks, or actually polling file

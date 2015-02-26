@@ -45,7 +45,8 @@ typedef enum {
   GRPC_TRACE_SURFACE = 1 << 0,
   GRPC_TRACE_CHANNEL = 1 << 1,
   GRPC_TRACE_TCP = 1 << 2,
-  GRPC_TRACE_SECURE_ENDPOINT = 1 << 3
+  GRPC_TRACE_SECURE_ENDPOINT = 1 << 3,
+  GRPC_TRACE_HTTP = 1 << 4
 } grpc_trace_bit_value;
 
 #if GRPC_ENABLE_TRACING

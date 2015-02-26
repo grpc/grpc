@@ -101,15 +101,8 @@ namespace Grpc.Core.Tests
             using (Channel channel = new Channel(host + ":" + port))
             {
                 var call = new Call<string, string>(unaryEchoStringMethod, channel);
-
-                var stopwatch = new Stopwatch();
-                stopwatch.Start();
-                for (int i = 0; i < 1000; i++)
-                {
-                    Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken));
-                }
-                stopwatch.Stop();
-                Console.WriteLine("Elapsed time: " + stopwatch.ElapsedMilliseconds + "ms");
+                BenchmarkUtil.RunBenchmark(100, 1000,
+                                           () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
             }
 
             server.ShutdownAsync().Wait();

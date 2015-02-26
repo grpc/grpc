@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -118,7 +118,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
   gpr_log(GPR_INFO, "testing with %d message pairs.", messages);
-  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.com",
+  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.fr",
                                    deadline);
   GPR_ASSERT(c);
 
@@ -127,7 +127,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
 
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.com",
+  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.fr",
                            deadline, NULL);
   cq_verify(v_server);
   GPR_ASSERT(GRPC_CALL_OK ==

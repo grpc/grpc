@@ -27,44 +27,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-spec_dir = File.expand_path(File.join(File.dirname(__FILE__)))
-$LOAD_PATH.unshift(spec_dir)
-$LOAD_PATH.uniq!
+"""Exceptions raised by GRPC.
 
-require 'apply_auth_examples'
-require 'grpc/auth/signet'
-require 'jwt'
-require 'openssl'
-require 'spec_helper'
+Only GRPC should instantiate and raise these exceptions.
+"""
 
-describe Signet::OAuth2::Client do
-  before(:example) do
-    @key = OpenSSL::PKey::RSA.new(2048)
-    @client = Signet::OAuth2::Client.new(
-        token_credential_uri: 'https://accounts.google.com/o/oauth2/token',
-        scope: 'https://www.googleapis.com/auth/userinfo.profile',
-        issuer: 'app@example.com',
-        audience: 'https://accounts.google.com/o/oauth2/token',
-        signing_key: @key
-      )
-  end
+import abc
 
-  def make_auth_stubs(with_access_token: '')
-    Faraday::Adapter::Test::Stubs.new do |stub|
-      stub.post('/o/oauth2/token') do |env|
-        params = Addressable::URI.form_unencode(env[:body])
-        _claim, _header = JWT.decode(params.assoc('assertion').last,
-                                     @key.public_key)
-        want = ['grant_type', 'urn:ietf:params:oauth:grant-type:jwt-bearer']
-        expect(params.assoc('grant_type')).to eq(want)
-        build_json_response(
-          'access_token' => with_access_token,
-          'token_type' => 'Bearer',
-          'expires_in' => 3600
-        )
-      end
-    end
-  end
 
-  it_behaves_like 'apply/apply! are OK'
-end
+class RpcError(Exception):
+  """Common super type for all exceptions raised by GRPC."""
+  __metaclass__ = abc.ABCMeta
+
+
+class CancellationError(RpcError):
+  """Indicates that an RPC has been cancelled."""
+
+
+class ExpirationError(RpcError):
+  """Indicates that an RPC has expired ("timed out")."""

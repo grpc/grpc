@@ -42,6 +42,7 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "test/core/util/test_config.h"
 
 /* Fills in 'record' of size 'size'. Each byte in record is filled in with the
    same value. The value is extracted from 'record' pointer. */
@@ -123,8 +124,8 @@ static void assert_log_empty(void) {
 /* Given log size and record size, computes the minimum usable space. */
 static gpr_int32 min_usable_space(size_t log_size, size_t record_size) {
   gpr_int32 usable_space;
-  gpr_int32 num_blocks = GPR_MAX(log_size / CENSUS_LOG_MAX_RECORD_SIZE,
-                                 gpr_cpu_num_cores());
+  gpr_int32 num_blocks =
+      GPR_MAX(log_size / CENSUS_LOG_MAX_RECORD_SIZE, gpr_cpu_num_cores());
   gpr_int32 waste_per_block = CENSUS_LOG_MAX_RECORD_SIZE % record_size;
   /* In the worst case, all except one core-local block is full. */
   gpr_int32 num_full_blocks = num_blocks - 1;
@@ -198,7 +199,7 @@ static void writer_thread(void* arg) {
          This should never happen for circular logs. */
       printf("   Writer stalled due to out-of-space: %d out of %d written\n",
              records_written, args->num_records);
-      gpr_sleep_until(gpr_time_add(gpr_now(), gpr_time_from_micros(10000)));
+      gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
     }
   }
   /* Done. Decrement count and signal. */

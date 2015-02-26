@@ -47,7 +47,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase{
     $this->channel = new Grpc\Channel(
         'localhost:' . $port,
         [
-            'grpc.ssl_target_name_override' => 'foo.test.google.com',
+            'grpc.ssl_target_name_override' => 'foo.test.google.fr',
             'credentials' => $credentials
          ]);
   }
