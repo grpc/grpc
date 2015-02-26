@@ -175,6 +175,10 @@ argp.add_argument('-f', '--forever',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('-t', '--travis',
+                  default=False,
+                  action='store_const',
+                  const=True)
 argp.add_argument('--newline_on_success',
                   default=False,
                   action='store_const',
@@ -232,6 +236,7 @@ class TestCache(object):
 
   def finished(self, cmdline, bin_hash):
     self._last_successful_run[cmdline] = bin_hash
+    self.save()
 
   def dump(self):
     return [{'cmdline': k, 'hash': v}
@@ -250,17 +255,18 @@ class TestCache(object):
         self.parse(json.loads(f.read()))
 
 
-def _build_and_run(check_cancelled, newline_on_success, cache):
+def _build_and_run(check_cancelled, newline_on_success, travis, cache):
   """Do one pass of building & running tests."""
   # build latest sequentially
-  if not jobset.run(build_steps, maxjobs=1):
+  if not jobset.run(build_steps, maxjobs=1,
+                    newline_on_success=newline_on_success, travis=travis):
     return 1
 
   # run all the tests
   all_runs = itertools.chain.from_iterable(
       itertools.repeat(one_run, runs_per_test))
   if not jobset.run(all_runs, check_cancelled,
-                    newline_on_success=newline_on_success,
+                    newline_on_success=newline_on_success, travis=travis,
                     maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
                     cache=cache):
     return 2
@@ -286,16 +292,15 @@ if forever:
                      'All tests are now passing properly',
                      do_newline=True)
     jobset.message('IDLE', 'No change detected')
-    test_cache.save()
     while not have_files_changed():
       time.sleep(1)
 else:
   result = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
+                          travis=args.travis,
                           cache=test_cache)
   if result == 0:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
-  test_cache.save()
   sys.exit(result)

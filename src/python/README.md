@@ -4,6 +4,11 @@ gRPC Python
 The Python facility of gRPC.
 
 
+Status
+-------
+
+Usable with limitations, Pre-Alpha
+
 Prerequisites
 -----------------------
 

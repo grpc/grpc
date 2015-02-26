@@ -58,6 +58,7 @@ static int pygrpc_client_credentials_init(ClientCredentials *self,
     self->c_client_credentials =
         grpc_ssl_credentials_create(root_certificates, NULL);
   }
+  return 0;
 }
 
 static void pygrpc_client_credentials_dealloc(ClientCredentials *self) {

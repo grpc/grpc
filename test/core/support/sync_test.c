@@ -56,9 +56,9 @@ typedef struct queue {
                  (That is, except during initialization or
                  destruction, the fields below should be accessed
                  only by a thread that holds mu.) */
-  int head;    /* Index of head of queue 0..N-1. */
-  int length;  /* Number of valid elements in queue 0..N. */
-  int elem[N]; /* elem[head .. head+length-1] are queue elements. */
+  int head;         /* Index of head of queue 0..N-1. */
+  int length;       /* Number of valid elements in queue 0..N. */
+  int elem[N];      /* elem[head .. head+length-1] are queue elements. */
 } queue;
 
 /* Initialize *q. */

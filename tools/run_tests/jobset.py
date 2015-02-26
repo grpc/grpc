@@ -154,7 +154,7 @@ class JobSpec(object):
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, spec, bin_hash, newline_on_success):
+  def __init__(self, spec, bin_hash, newline_on_success, travis):
     self._spec = spec
     self._bin_hash = bin_hash
     self._tempfile = tempfile.TemporaryFile()
@@ -167,7 +167,9 @@ class Job(object):
                                      env=env)
     self._state = _RUNNING
     self._newline_on_success = newline_on_success
-    message('START', spec.shortname)
+    self._travis = travis
+    if not travis:
+      message('START', spec.shortname)
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
@@ -181,7 +183,7 @@ class Job(object):
       else:
         self._state = _SUCCESS
         message('PASSED', self._spec.shortname,
-                do_newline=self._newline_on_success)
+                do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     return self._state
@@ -195,7 +197,7 @@ class Job(object):
 class Jobset(object):
   """Manages one run of jobs."""
 
-  def __init__(self, check_cancelled, maxjobs, newline_on_success, cache):
+  def __init__(self, check_cancelled, maxjobs, newline_on_success, travis, cache):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -203,6 +205,7 @@ class Jobset(object):
     self._completed = 0
     self._maxjobs = maxjobs
     self._newline_on_success = newline_on_success
+    self._travis = travis
     self._cache = cache
 
   def start(self, spec):
@@ -224,7 +227,8 @@ class Jobset(object):
     if should_run:
       self._running.add(Job(spec,
                             bin_hash,
-                            self._newline_on_success))
+                            self._newline_on_success,
+                            self._travis))
     return True
 
   def reap(self):
@@ -240,8 +244,9 @@ class Jobset(object):
         self._completed += 1
         self._running.remove(job)
       if dead: return
-      message('WAITING', '%d jobs running, %d complete, %d failed' % (
-          len(self._running), self._completed, self._failures))
+      if (not self._travis):
+        message('WAITING', '%d jobs running, %d complete, %d failed' % (
+            len(self._running), self._completed, self._failures))
       signal.pause()
 
   def cancelled(self):
@@ -277,10 +282,11 @@ def run(cmdlines,
         check_cancelled=_never_cancelled,
         maxjobs=None,
         newline_on_success=False,
+        travis=False,
         cache=None):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-              newline_on_success,
+              newline_on_success, travis,
               cache if cache is not None else NoCache())
   for cmdline in shuffle_iteratable(cmdlines):
     if not js.start(cmdline):

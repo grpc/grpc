@@ -34,9 +34,23 @@
 #ifndef __GRPC_TEST_UTIL_TEST_CONFIG_H__
 #define __GRPC_TEST_UTIL_TEST_CONFIG_H__
 
+#include <grpc/support/time.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /*  __cplusplus */
+
+#ifndef GRPC_TEST_SLOWDOWN_FACTOR
+#define GRPC_TEST_SLOWDOWN_FACTOR 1.0
+#endif
+
+#define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x) \
+  gpr_time_add(gpr_now(),                   \
+               gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e6 * (x)))
+
+#define GRPC_TIMEOUT_MILLIS_TO_DEADLINE(x) \
+  gpr_time_add(gpr_now(),                   \
+               gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)))
 
 void grpc_test_init(int argc, char **argv);
 

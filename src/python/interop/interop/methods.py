@@ -29,10 +29,15 @@
 
 """Implementations of interoperability test methods."""
 
+import threading
+
 from grpc.early_adopter import utilities
 
 from interop import empty_pb2
 from interop import messages_pb2
+
+_TIMEOUT = 7
+
 
 def _empty_call(request, unused_context):
   return empty_pb2.Empty()
@@ -142,3 +147,134 @@ SERVER_METHODS = {
     FULL_DUPLEX_CALL_METHOD_NAME: _SERVER_FULL_DUPLEX_CALL,
     HALF_DUPLEX_CALL_METHOD_NAME: _SERVER_HALF_DUPLEX_CALL,
 }
+
+
+def _empty_unary(stub):
+  with stub:
+    response = stub.EmptyCall(empty_pb2.Empty(), _TIMEOUT)
+    if not isinstance(response, empty_pb2.Empty):
+      raise TypeError(
+          'response is of type "%s", not empty_pb2.Empty!', type(response))
+
+
+def _large_unary(stub):
+  with stub:
+    request = messages_pb2.SimpleRequest(
+        response_type=messages_pb2.COMPRESSABLE, response_size=314159,
+        payload=messages_pb2.Payload(body=b'\x00' * 271828))
+    response_future = stub.UnaryCall.async(request, _TIMEOUT)
+    response = response_future.result()
+    if response.payload.type is not messages_pb2.COMPRESSABLE:
+      raise ValueError(
+          'response payload type is "%s"!' % type(response.payload.type))
+    if len(response.payload.body) != 314159:
+      raise ValueError(
+          'response body of incorrect size %d!' % len(response.payload.body))
+
+
+def _client_streaming(stub):
+  with stub:
+    payload_body_sizes = (27182, 8, 1828, 45904)
+    payloads = (
+        messages_pb2.Payload(body=b'\x00' * size)
+        for size in payload_body_sizes)
+    requests = (
+        messages_pb2.StreamingInputCallRequest(payload=payload)
+        for payload in payloads)
+    response = stub.StreamingInputCall(requests, _TIMEOUT)
+    if response.aggregated_payload_size != 74922:
+      raise ValueError(
+          'incorrect size %d!' % response.aggregated_payload_size)
+
+
+def _server_streaming(stub):
+  sizes = (31415, 9, 2653, 58979)
+
+  with stub:
+    request = messages_pb2.StreamingOutputCallRequest(
+        response_type=messages_pb2.COMPRESSABLE,
+        response_parameters=(
+            messages_pb2.ResponseParameters(size=sizes[0]),
+            messages_pb2.ResponseParameters(size=sizes[1]),
+            messages_pb2.ResponseParameters(size=sizes[2]),
+            messages_pb2.ResponseParameters(size=sizes[3]),
+        ))
+    response_iterator = stub.StreamingOutputCall(request, _TIMEOUT)
+    for index, response in enumerate(response_iterator):
+      if response.payload.type != messages_pb2.COMPRESSABLE:
+        raise ValueError(
+            'response body of invalid type %s!' % response.payload.type)
+      if len(response.payload.body) != sizes[index]:
+        raise ValueError(
+            'response body of invalid size %d!' % len(response.payload.body))
+
+
+class _Pipe(object):
+
+  def __init__(self):
+    self._condition = threading.Condition()
+    self._values = []
+    self._open = True
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    with self._condition:
+      while not self._values and self._open:
+        self._condition.wait()
+      if self._values:
+        return self._values.pop(0)
+      else:
+        raise StopIteration()
+
+  def add(self, value):
+    with self._condition:
+      self._values.append(value)
+      self._condition.notify()
+
+  def close(self):
+    with self._condition:
+      self._open = False
+      self._condition.notify()
+
+
+def _ping_pong(stub):
+  request_response_sizes = (31415, 9, 2653, 58979)
+  request_payload_sizes = (27182, 8, 1828, 45904)
+
+  with stub:
+    pipe = _Pipe()
+    response_iterator = stub.FullDuplexCall(pipe, _TIMEOUT)
+    print 'Starting ping-pong with response iterator %s' % response_iterator
+    for response_size, payload_size in zip(
+        request_response_sizes, request_payload_sizes):
+      request = messages_pb2.StreamingOutputCallRequest(
+          response_type=messages_pb2.COMPRESSABLE,
+          response_parameters=(messages_pb2.ResponseParameters(
+              size=response_size),),
+          payload=messages_pb2.Payload(body=b'\x00' * payload_size))
+      pipe.add(request)
+      response = next(response_iterator)
+      if response.payload.type != messages_pb2.COMPRESSABLE:
+        raise ValueError(
+            'response body of invalid type %s!' % response.payload.type)
+      if len(response.payload.body) != response_size:
+        raise ValueError(
+            'response body of invalid size %d!' % len(response.payload.body))
+    pipe.close()
+
+
+def test_interoperability(test_case, stub):
+  if test_case == 'empty_unary':
+    _empty_unary(stub)
+  elif test_case == 'large_unary':
+    _large_unary(stub)
+  elif test_case == 'server_streaming':
+    _server_streaming(stub)
+  elif test_case == 'client_streaming':
+    _client_streaming(stub)
+  elif test_case == 'ping_pong':
+    _ping_pong(stub)
+  else:
+    raise NotImplementedError('Test case "%s" not implemented!')

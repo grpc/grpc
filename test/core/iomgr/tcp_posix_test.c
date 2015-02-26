@@ -163,8 +163,7 @@ static void read_test(ssize_t num_bytes, ssize_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   ssize_t written_bytes;
-  gpr_timespec rel_deadline = {20, 0};
-  gpr_timespec deadline = gpr_time_add(gpr_now(), rel_deadline);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
 
   gpr_log(GPR_INFO, "Read test of size %d, slice size %d", num_bytes,
           slice_size);
@@ -206,8 +205,7 @@ static void large_read_test(ssize_t slice_size) {
   grpc_endpoint *ep;
   struct read_socket_state state;
   ssize_t written_bytes;
-  gpr_timespec rel_deadline = {20, 0};
-  gpr_timespec deadline = gpr_time_add(gpr_now(), rel_deadline);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
 
   gpr_log(GPR_INFO, "Start large read test, slice size %d", slice_size);
 
@@ -343,8 +341,7 @@ static void write_test(ssize_t num_bytes, ssize_t slice_size) {
   size_t num_blocks;
   gpr_slice *slices;
   int current_data = 0;
-  gpr_timespec rel_deadline = {20, 0};
-  gpr_timespec deadline = gpr_time_add(gpr_now(), rel_deadline);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
 
   gpr_log(GPR_INFO, "Start write test with %d bytes, slice size %d", num_bytes,
           slice_size);
@@ -400,8 +397,7 @@ static void write_error_test(ssize_t num_bytes, ssize_t slice_size) {
   size_t num_blocks;
   gpr_slice *slices;
   int current_data = 0;
-  gpr_timespec rel_deadline = {20, 0};
-  gpr_timespec deadline = gpr_time_add(gpr_now(), rel_deadline);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
 
   gpr_log(GPR_INFO, "Start write error test with %d bytes, slice size %d",
           num_bytes, slice_size);
@@ -482,7 +478,8 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
 }
 
 static grpc_endpoint_test_config configs[] = {
-    {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up}, };
+    {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up},
+};
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
