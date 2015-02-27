@@ -31,6 +31,8 @@
 
 set -ex
 
+rvm use 2.1.2
+
 CONFIG=${CONFIG:-opt}
 
 # change to grpc repo root

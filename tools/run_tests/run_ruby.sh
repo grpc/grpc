@@ -30,6 +30,8 @@
 
 set -ex
 
+rvm use 2.1.2
+
 # change to grpc repo root
 cd $(dirname $0)/../../src/ruby
 
