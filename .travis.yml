@@ -3,8 +3,10 @@ before_install:
   - sudo add-apt-repository ppa:yjwong/gflags -y
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv
+env:
+  - RUBY_VERSION=2.1
 script:
-  - rvm use 2.1
+  - rvm use $RUBY_VERSION
   - gem install bundler
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg -s 2.0
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg -s 2.0
