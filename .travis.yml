@@ -2,14 +2,14 @@ language: cpp
 before_install:
   - sudo add-apt-repository ppa:yjwong/gflags -y
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libgtest-dev libgflags-dev
+  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv
 script:
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg
-  - make libs/protobuf/dbg/libprotobuf.a
+  - make CONFIG=dbg libs/dbg/protobuf/libprotobuf.a
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg
   - make clean
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt
-  - make libs/protobuf/dbg/libprotobuf.a
+  - make CONFIG=opt libs/opt/protobuf/libprotobuf.a
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l python -t -j 1 -c opt
