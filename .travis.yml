@@ -4,12 +4,8 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev python-all-dev python-pip python-virtualenv
 script:
-  - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg
   - make clean
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt
-  - ./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l python -t -j 16 -c opt
 notifications:
   email: false
