@@ -4,14 +4,14 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv
 script:
-  - rvm install 2.1.2
   - rvm use 2.1.2
-  - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg -s 2.0
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg -s 2.0
+  - gem install bundler
+  - #./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg -s 2.0
+  - #./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg -s 2.0
   - make clean
-  - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt -s 2.0
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt -s 2.0
-  - ./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
+  - #./tools/run_tests/run_tests.py -l c -t -j 16 -c opt -s 2.0
+  - #./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt -s 2.0
+  - #./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l ruby -t -j 16 -c opt
 notifications:
   email: false
