@@ -8,5 +8,6 @@ script:
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt
+  - ./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
 notifications:
   email: false
