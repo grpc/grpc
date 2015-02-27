@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
   grpc::string subscription_topic;
   if (subscriber.GetSubscription(
       subscription_name, &subscription_topic).IsOk()) {
-    s = subscriber.DeleteSubscription(subscription_name);
+    subscriber.DeleteSubscription(subscription_name);
   }
 
   if (publisher.GetTopic(topic).IsOk()) publisher.DeleteTopic(topic);
