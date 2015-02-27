@@ -43,10 +43,17 @@ import time
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 
 
+have_alarm = False
+def alarm_handler(unused_signum, unused_frame):
+  global have_alarm
+  have_alarm = False
+
+
 # setup a signal handler so that signal.pause registers 'something'
 # when a child finishes
 # not using futures and threading to avoid a dependency on subprocess32
 signal.signal(signal.SIGCHLD, lambda unused_signum, unused_frame: None)
+signal.signal(signal.SIGALRM, alarm_handler)
 
 
 def shuffle_iteratable(it):
@@ -187,6 +194,9 @@ class Job(object):
                 do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
+    elif self._state == _RUNNING and time.time() - self._start > 300:
+      message('TIMEOUT', self._spec.shortname, do_newline=self._travis)
+      self.kill()
     return self._state
 
   def kill(self):
@@ -240,6 +250,7 @@ class Jobset(object):
         st = job.state(self._cache)
         if st == _RUNNING: continue
         if st == _FAILURE: self._failures += 1
+        if st == _KILLED: self._failures += 1
         dead.add(job)
       for job in dead:
         self._completed += 1
@@ -248,6 +259,10 @@ class Jobset(object):
       if (not self._travis):
         message('WAITING', '%d jobs running, %d complete, %d failed' % (
             len(self._running), self._completed, self._failures))
+      global have_alarm
+      if not have_alarm:
+        have_alarm = True
+        signal.alarm(10)
       signal.pause()
 
   def cancelled(self):
