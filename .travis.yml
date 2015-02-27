@@ -6,7 +6,7 @@ before_install:
 script:
   - make libs/opt/protobuf/libprotobuf.a shared_cxx static_cxx grpc_python_plugin 
   - ./tools/run_tests/build_python.sh
-  - source python2.7_virtual_environment/bin/activate
+  - python2.7_virtual_environment/bin/activate
   - ./tools/run_tests/run_tests.py -l python -t -j1 -c opt
 notifications:
   email: false
