@@ -266,7 +266,7 @@ conn, err := grpc.Dial(*serverAddr)
 defer conn.Close()
 ```
 
-We can use DialOptions to set the auth credentials (e.g., TLS, GCE crednetials, JWT credentials) in grpc.Dial if the service you request requires that.
+We can use DialOptions to set the auth credentials (e.g., TLS, GCE credentials, JWT credentials) in grpc.Dial if the service you request requires that.
 
 Once the gRPC *channel* is setup, we need a client *stub* to perform RPCs by using the `NewRouteGuideClient` method provided in the `pb` package we generated from our .proto.
 
