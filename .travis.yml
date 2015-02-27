@@ -4,9 +4,9 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev
 script:
-  - ./tools/run_tests/run_tests.py -l c -t -j 8 -c dbg
-  - ./tools/run_tests/run_tests.py -l c -t -j 8 -c opt
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 8 -c dbg
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 8 -c opt
+  - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg
+  - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt
+  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg
+  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt
 notifications:
   email: false
