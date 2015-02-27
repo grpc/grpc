@@ -157,7 +157,7 @@ class AsyncQpsServerTest {
           // The tag is a pointer to an RPC context to invoke
           if (ctx->RunNextState() == false) {
             // this RPC context is done, so refresh it
-            ctx->refresh();
+            ctx->Reset();
           }
         }
         return;
@@ -174,7 +174,7 @@ class AsyncQpsServerTest {
     ServerRpcContext() {}
     virtual ~ServerRpcContext(){};
     virtual bool RunNextState() = 0;// do next state, return false if all done
-    virtual void refresh() = 0;     // start this back at a clean state
+    virtual void Reset() = 0;     // start this back at a clean state
   };
   static void *tag(ServerRpcContext *func) {
     return reinterpret_cast<void *>(func);
@@ -201,7 +201,7 @@ class AsyncQpsServerTest {
     }
     ~ServerRpcContextUnaryImpl() GRPC_OVERRIDE {}
     bool RunNextState() GRPC_OVERRIDE { return (this->*next_state_)(); }
-    void refresh() GRPC_OVERRIDE {
+    void Reset() GRPC_OVERRIDE {
       srv_ctx_ = ServerContext();
       req_ = RequestType();
       response_writer_ =
