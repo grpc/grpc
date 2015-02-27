@@ -198,12 +198,16 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 
 make_targets = []
 languages = set(_LANGUAGES[l] for l in args.language)
-build_steps = [jobset.JobSpec(['make',
-                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                               'CONFIG=%s' % cfg] + list(set(
-                                   itertools.chain.from_iterable(
-                                       l.make_targets() for l in languages))))
-               for cfg in build_configs] + list(set(
+all_make_targets = list(set(
+      itertools.chain.from_iterable(
+        l.make_targets() for l in languages)))
+make_steps = [] if not all_make_targets else [
+    jobset.JobSpec([
+        'make',
+        '-j', '%d' % (multiprocessing.cpu_count() + 1),
+        'CONFIG=%s' % cfg] + all_make_targets)
+    for cfg in build_configs]
+build_steps = make_steps + list(set(
                    jobset.JobSpec(cmdline)
                    for l in languages
                    for cmdline in l.build_steps()))
