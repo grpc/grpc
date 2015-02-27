@@ -263,6 +263,9 @@ To call service methods, we first need to create a gRPC "channel* as the message
 
 ```go
 conn, err := grpc.Dial(*serverAddr)
+if err != nil {
+    ...
+}
 defer conn.Close()
 ```
 
@@ -283,19 +286,10 @@ Now let's look at how we call our service methods. Note that in gRPC-Go, RPC ope
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local method.
 
 ```go
-printFeature(client, &pb.Point{409146138, -746188906})
-...
-
-func printFeature(client pb.RouteGuideClient, point *pb.Point) {
-	log.Printf("Getting feature for point (%d, %d)", point.Latitude, point.Longitude)
-	feature, err := client.GetFeature(context.Background(), point)
-	if err != nil {
-		log.Fatalf("%v.GetFeatures(_) = _, %v: ", client, err)
-		return
-	}
-	log.Println(feature)
+feature, err := client.GetFeature(context.Background(), &pb.Point{409146138, -746188906})
+if err != nil {
+        ...
 }
-
 ```
 
 As you can see, we create and populate a request protocol buffer object (in our case `Point`). We also pass a `context.Context` object which allows us to time-out/cancel an RPC in flight. Finally, we call the method on the stub, passing it the context, and request. If the call doesn't return an error, then we can read the response information from the server from the first return value.
@@ -306,24 +300,24 @@ log.Println(feature)
 
 #### Streaming RPCs
 
-Now let's look at our streaming methods. If you've already read [Creating the server](#server) some of this may look very familiar - streaming RPCs are implemented in a similar way on both sides. Here's where we call the server-side streaming method `ListFeatures`, which returns a stream of geographical `Feature`s:
+Here's where we call the server-side streaming method `ListFeatures`, which returns a stream of geographical `Feature`s from server to client:
 
 ```go
-func printFeatures(client pb.RouteGuideClient, rect *pb.Rectangle) {
-        stream, err := client.ListFeatures(context.Background(), rect)
-        if err != nil {
-                log.Fatalf("%v.ListFeatures(_) = _, %v", client, err)
-        }
-        for {
-                feature, err := stream.Recv()
-                if err == io.EOF {
-                        break
-                }
-                if err != nil {
-                        log.Fatalf("%v.ListFeatures(_) = _, %v", client, err)
-                }
-                log.Println(feature)
-        }
+rect := &pb.Rectangle{ ... }  // initialize a pb.Rectangle
+stream, err := client.ListFeatures(context.Background(), rect)
+if err != nil {
+    ...
+}
+for {
+    feature, err := stream.Recv()
+    if err == io.EOF {
+        break
+    }
+    if err != nil {
+        log.Fatalf("%v.ListFeatures(_) = _, %v", client, err)
+    }
+    log.Println(feature)
+}
 ```
 
 As in simple RPC, we pass the method a context and a request. But instead of getting a response object back, we get back an instance of `RouteGuide_ListFeaturesClient`. The client can use the `RouteGuide_ListFeaturesClient` to read the server's responses. We use the `RouteGuide_ListFeaturesClient`'s `Recv()` method to repeatedly read in the server's responses to a response protocol buffer object (in this case a `Feature`) until there are no more messages: the client needs to check the error `err` returned from `Recv()` after each call. If `nil`, the stream is still good and it can continue reading; if it's `io.EOF` then the message stream has ended; otherwise there must be an RPC error, which is passed over through `err`.
@@ -331,30 +325,28 @@ As in simple RPC, we pass the method a context and a request. But instead of get
 The client-side streaming method `RecordRoute` is similar, except that we only pass the method a context and get a `RouteGuide_RecordRouteClient` back, which has a `Send()` method that we can use to send requests to the server.
 
 ```go
-func runRecordRoute(client pb.RouteGuideClient) {
-	// Create a random number of random points
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	pointCount := int(r.Int31n(100)) + 2 // Traverse at least two points
-	var points []*pb.Point
-	for i := 0; i < pointCount; i++ {
-		points = append(points, randomPoint(r))
-	}
-	log.Printf("Traversing %d points.", len(points))
-	stream, err := client.RecordRoute(context.Background())
-	if err != nil {
-		log.Fatalf("%v.RecordRoute(_) = _, %v", client, err)
-	}
-	for _, point := range points {
-		if err := stream.Send(point); err != nil {
-			log.Fatalf("%v.Send(%v) = %v", stream, point, err)
-		}
-	}
-	reply, err := stream.CloseAndRecv()
-	if err != nil {
-		log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
-	}
-	log.Printf("Route summary: %v", reply)
+// Create a random number of random points
+r := rand.New(rand.NewSource(time.Now().UnixNano()))
+pointCount := int(r.Int31n(100)) + 2 // Traverse at least two points
+var points []*pb.Point
+for i := 0; i < pointCount; i++ {
+	points = append(points, randomPoint(r))
 }
+log.Printf("Traversing %d points.", len(points))
+stream, err := client.RecordRoute(context.Background())
+if err != nil {
+	log.Fatalf("%v.RecordRoute(_) = _, %v", client, err)
+}
+for _, point := range points {
+	if err := stream.Send(point); err != nil {
+		log.Fatalf("%v.Send(%v) = %v", stream, point, err)
+	}
+}
+reply, err := stream.CloseAndRecv()
+if err != nil {
+	log.Fatalf("%v.CloseAndRecv() got error %v, want %v", stream, err, nil)
+}
+log.Printf("Route summary: %v", reply)
 ```
 
 Once we've finished writing our client's requests to the stream using `Send()`, we need to call `CloseAndRecv()` on the stream to let gRPC know that we've finished writing and are expecting to receive a response. We get our RPC status from the `err` returned from `CloseAndRecv()`. If the status is `nil`, then the first return value will be a valid server response.
@@ -363,9 +355,31 @@ Finally, let's look at our bidirectional streaming RPC `RouteChat()`. As in the 
 
 ```go
 stream, err := client.RouteChat(context.Background())
+waitc := make(chan struct{})
+go func() {
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			// read done.
+			close(waitc)
+			return
+		}
+		if err != nil {
+			log.Fatalf("Failed to receive a note : %v", err)
+		}
+		log.Printf("Got message %s at point(%d, %d)", in.Message, in.Location.Latitude, in.Location.Longitude)
+	}
+}()
+for _, note := range notes {
+	if err := stream.Send(note); err != nil {
+		log.Fatalf("Failed to send a note: %v", err)
+	}
+}
+stream.CloseSend()
+<-waitc
 ```
 
-The syntax for reading and writing here is exactly the same as for our client-streaming and server-streaming methods. Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
+Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
 
 ## Try it out!
 
