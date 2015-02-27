@@ -1,25 +1,22 @@
 package io.grpc.helloworldexample;
 
 import android.content.Context;
-import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import io.grpc.ChannelImpl;
-import io.grpc.examples.GreeterGrpc;
-import io.grpc.examples.Helloworld.HelloRequest;
-import io.grpc.examples.Helloworld.HelloReply;
-import io.grpc.transport.okhttp.OkHttpChannelBuilder;
-
 import java.util.concurrent.TimeUnit;
+
+import io.grpc.ChannelImpl;
+import io.grpc.helloworldexample.Helloworld.HelloReply;
+import io.grpc.helloworldexample.Helloworld.HelloRequest;
+import io.grpc.transport.okhttp.OkHttpChannelBuilder;
 
 public class HelloworldActivity extends ActionBarActivity {
     private Button mSendButton;
