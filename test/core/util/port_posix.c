@@ -113,15 +113,22 @@ int grpc_pick_unused_port(void) {
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int try
-    = 0;
+  int try = 0;
 
   for (;;) {
-    int port = try
-      < NUM_RANDOM_PORTS_TO_PICK ? rand() % (65536 - 30000) + 30000 : 0;
+    int port;
+    if (try == 0) {
+      port = getpid() % (65536 - 30000) + 30000;
+    } else if (try < NUM_RANDOM_PORTS_TO_PICK) {
+      port = rand() % (65536 - 30000) + 30000;
+    } else {
+      port = 0;
+    }
+    
     if (!is_port_available(&port, is_tcp)) {
       continue;
     }
+
     GPR_ASSERT(port > 0);
     /* Check that the port # is free for the other type of socket also */
     if (!is_port_available(&port, !is_tcp)) {

@@ -79,7 +79,7 @@ class AsyncEnd2endTest : public ::testing::Test {
  protected:
   AsyncEnd2endTest() : service_(&srv_cq_) {}
 
-  void SetUp() override {
+  void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -89,7 +89,7 @@ class AsyncEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override {
+  void TearDown() GRPC_OVERRIDE {
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;

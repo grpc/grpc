@@ -49,17 +49,17 @@ class CompletionQueue;
 class Credentials;
 class StreamContextInterface;
 
-class Channel final : public ChannelInterface {
+class Channel GRPC_FINAL : public ChannelInterface {
  public:
   Channel(const grpc::string &target, const ChannelArguments &args);
   Channel(const grpc::string &target, const std::unique_ptr<Credentials> &creds,
           const ChannelArguments &args);
 
-  ~Channel() override;
+  ~Channel() GRPC_OVERRIDE;
 
   virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
-                          CompletionQueue *cq) override;
-  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) override;
+                          CompletionQueue *cq) GRPC_OVERRIDE;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) GRPC_OVERRIDE;
 
  private:
   const grpc::string target_;

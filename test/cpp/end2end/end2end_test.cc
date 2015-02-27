@@ -83,7 +83,7 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+              EchoResponse* response) GRPC_OVERRIDE {
     response->set_message(request->message());
     MaybeEchoDeadline(context, request, response);
     return Status::OK;
@@ -93,7 +93,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
 
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) override {
+                       EchoResponse* response) GRPC_OVERRIDE {
     EchoRequest request;
     response->set_message("");
     while (reader->Read(&request)) {
@@ -105,7 +105,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
   // Return 3 messages.
   // TODO(yangg) make it generic by adding a parameter into EchoRequest
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) override {
+                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
     EchoResponse response;
     response.set_message(request->message() + "0");
     writer->Write(response);
@@ -117,9 +117,9 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(
-      ServerContext* context,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+  Status BidiStream(ServerContext* context,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
+      GRPC_OVERRIDE {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -135,7 +135,7 @@ class TestServiceImplDupPkg
     : public ::grpc::cpp::test::util::duplicate::TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+              EchoResponse* response) GRPC_OVERRIDE {
     response->set_message("no package");
     return Status::OK;
   }
@@ -145,7 +145,7 @@ class End2endTest : public ::testing::Test {
  protected:
   End2endTest() : thread_pool_(2) {}
 
-  void SetUp() override {
+  void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -157,7 +157,7 @@ class End2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override { server_->Shutdown(); }
+  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
     std::shared_ptr<ChannelInterface> channel =

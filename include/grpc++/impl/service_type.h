@@ -79,7 +79,11 @@ class AsynchronousService {
 
   AsynchronousService(CompletionQueue* cq, const char** method_names,
                       size_t method_count)
-      : cq_(cq), method_names_(method_names), method_count_(method_count) {}
+      : cq_(cq),
+        dispatch_impl_(nullptr),
+        method_names_(method_names),
+        method_count_(method_count),
+        request_args_(nullptr) {}
 
   ~AsynchronousService() { delete[] request_args_; }
 
@@ -116,10 +120,10 @@ class AsynchronousService {
  private:
   friend class Server;
   CompletionQueue* const cq_;
-  DispatchImpl* dispatch_impl_ = nullptr;
+  DispatchImpl* dispatch_impl_;
   const char** const method_names_;
   size_t method_count_;
-  void** request_args_ = nullptr;
+  void** request_args_;
 };
 
 }  // namespace grpc
