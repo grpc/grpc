@@ -40,20 +40,19 @@
 #include <sstream>
 #include <vector>
 
+#include "src/compiler/generator_helpers.h"
 #include "src/compiler/python_generator.h"
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/descriptor.h>
-#include <google/protobuf/stubs/strutil.h>
 
+using grpc_generator::StringReplace;
+using grpc_generator::StripProto;
 using google::protobuf::Descriptor;
 using google::protobuf::FileDescriptor;
-using google::protobuf::HasSuffixString;
 using google::protobuf::MethodDescriptor;
 using google::protobuf::ServiceDescriptor;
-using google::protobuf::StripString;
-using google::protobuf::StripSuffixString;
 using google::protobuf::io::Printer;
 using google::protobuf::io::StringOutputStream;
 using std::initializer_list;
@@ -197,18 +196,12 @@ bool PrintStub(const ServiceDescriptor* service,
   return true;
 }
 
-// TODO(protobuf team): See TODO for `ModuleName`.
-string StripProto(const string& filename) {
-  const char* suffix = HasSuffixString(filename, ".protodevel")
-      ? ".protodevel" : ".proto";
-  return StripSuffixString(filename, suffix);
-}
 // TODO(protobuf team): Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
 string ModuleName(const string& filename) {
   string basename = StripProto(filename);
-  StripString(&basename, "-", '_');
-  StripString(&basename, "/", '.');
+  basename = StringReplace(basename, "-", "_");
+  basename = StringReplace(basename, "/", ".");
   return basename + "_pb2";
 }
 

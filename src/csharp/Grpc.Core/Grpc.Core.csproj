@@ -67,9 +67,9 @@
     <Compile Include="Utils\ExceptionHelper.cs" />
   </ItemGroup>
   <Choose>
-    <!-- Under Windows, automatically copy the C core library to output dir.
-         Under Monodevelop it's not supported so it has no effect. -->
-    <When Condition=" '$(Platform)' == 'AnyCPU' ">
+    <!-- Under older versions of Monodevelop, Choose is not supported and is just
+         ignored, which gives us the desired effect. -->
+    <When Condition=" '$(OS)' != 'Unix' ">
       <ItemGroup>
         <Content Include="..\..\..\vsprojects\vs2013\Debug\grpc_csharp_ext.dll">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

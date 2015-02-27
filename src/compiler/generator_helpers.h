@@ -31,42 +31,49 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
-#define NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
+#ifndef NET_GRPC_COMPILER_GENERATOR_HELPERS_H__
+#define NET_GRPC_COMPILER_GENERATOR_HELPERS_H__
 
 #include <map>
 #include <string>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
-#include "src/compiler/generator_helpers.h"
 
-namespace grpc_cpp_generator {
+namespace grpc_generator {
 
-inline std::string DotsToColons(const std::string &name) {
-  return grpc_generator::StringReplace(name, ".", "::");
-}
-
-inline std::string DotsToUnderscores(const std::string &name) {
-  return grpc_generator::StringReplace(name, ".", "_");
-}
-
-inline std::string ClassName(const google::protobuf::Descriptor *descriptor,
-                             bool qualified) {
-  // Find "outer", the descriptor of the top-level message in which
-  // "descriptor" is embedded.
-  const google::protobuf::Descriptor *outer = descriptor;
-  while (outer->containing_type() != NULL) outer = outer->containing_type();
-
-  const std::string &outer_name = outer->full_name();
-  std::string inner_name = descriptor->full_name().substr(outer_name.size());
-
-  if (qualified) {
-    return "::" + DotsToColons(outer_name) + DotsToUnderscores(inner_name);
-  } else {
-    return outer->name() + DotsToUnderscores(inner_name);
+inline bool StripSuffix(std::string *filename, const std::string &suffix) {
+  if (filename->length() >= suffix.length()) {
+    size_t suffix_pos = filename->length() - suffix.length();
+    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
+      filename->resize(filename->size() - suffix.size());
+      return true;
+    }
   }
+
+  return false;
 }
 
-}  // namespace grpc_cpp_generator
+inline std::string StripProto(std::string filename) {
+  if (!StripSuffix(&filename, ".protodevel")) {
+    StripSuffix(&filename, ".proto");
+  }
+  return filename;
+}
 
-#endif  // NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
+inline std::string StringReplace(std::string str, const std::string &from,
+                                 const std::string &to) {
+  size_t pos = 0;
+
+  for (;;) {
+    pos = str.find(from, pos);
+    if (pos == std::string::npos) {
+      break;
+    }
+    str.replace(pos, from.length(), to);
+    pos += to.length();
+  }
+
+  return str;
+}
+
+}  // namespace grpc_generator
+
+#endif  // NET_GRPC_COMPILER_GENERATOR_HELPERS_H__
