@@ -61,6 +61,11 @@ typedef enum {
 
 const char* tsi_result_to_string(tsi_result result);
 
+/* --- tsi tracing --- */
+
+/* Call this function before any other tsi function to avoid races. */
+void tsi_enable_tracing(void);
+
 /* --- tsi_frame_protector object ---
 
   This object protects and unprotects buffers once the handshake is done.

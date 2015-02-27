@@ -40,6 +40,8 @@
 extern "C" {
 #endif
 
+extern int tsi_tracing_enabled;
+
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */
 typedef struct {
