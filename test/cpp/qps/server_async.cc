@@ -124,10 +124,12 @@ class AsyncQpsServerTest {
         std::bind(&TestService::AsyncService::RequestCollectServerStats,
                   &async_service_, _1, _2, _3, &srv_cq_, _4);
     for (int i = 0; i < 100; i++) {
-      contexts_.push_front(new ServerRpcContextUnaryImpl<SimpleRequest,
-			   SimpleResponse>(request_unary_, UnaryCall));
-      contexts_.push_front(new ServerRpcContextUnaryImpl<StatsRequest,
-			   ServerStats>(request_stats_, CollectServerStats));
+      contexts_.push_front(
+          new ServerRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
+              request_unary_, UnaryCall));
+      contexts_.push_front(
+          new ServerRpcContextUnaryImpl<StatsRequest, ServerStats>(
+              request_stats_, CollectServerStats));
     }
   }
   ~AsyncQpsServerTest() {
@@ -151,12 +153,12 @@ class AsyncQpsServerTest {
         void *got_tag;
         while (srv_cq_.Next(&got_tag, &ok)) {
           EXPECT_EQ(ok, true);
-	  ServerRpcContext *ctx = detag(got_tag);
+          ServerRpcContext *ctx = detag(got_tag);
           // The tag is a pointer to an RPC context to invoke
           if ((*ctx)() == false) {
-	    // this RPC context is done, so refresh it
-	    ctx->refresh();
-	  }
+            // this RPC context is done, so refresh it
+            ctx->refresh();
+          }
         }
         return;
       }));
@@ -165,13 +167,14 @@ class AsyncQpsServerTest {
       std::this_thread::sleep_for(std::chrono::seconds(5));
     }
   }
+
  private:
   class ServerRpcContext {
-  public:
+   public:
     ServerRpcContext() {}
-    virtual ~ServerRpcContext() {};
-    virtual bool operator()() = 0; // do next state, return false if all done
-    virtual void refresh() = 0; // start this back at a clean state
+    virtual ~ServerRpcContext(){};
+    virtual bool operator()() = 0;  // do next state, return false if all done
+    virtual void refresh() = 0;     // start this back at a clean state
   };
   static void *tag(ServerRpcContext *func) {
     return reinterpret_cast<void *>(func);
@@ -192,25 +195,26 @@ class AsyncQpsServerTest {
         : next_state_(&ServerRpcContextUnaryImpl::invoker),
           request_method_(request_method),
           invoke_method_(invoke_method),
-	  response_writer_(&srv_ctx_) {
+          response_writer_(&srv_ctx_) {
       request_method_(&srv_ctx_, &req_, &response_writer_,
-		      AsyncQpsServerTest::tag(this));
+                      AsyncQpsServerTest::tag(this));
     }
     ~ServerRpcContextUnaryImpl() override {}
-    bool operator()() override {return (this->*next_state_)();}
+    bool operator()() override { return (this->*next_state_)(); }
     void refresh() override {
       srv_ctx_ = ServerContext();
       req_ = RequestType();
       response_writer_ =
-	grpc::ServerAsyncResponseWriter<ResponseType>(&srv_ctx_);
+          grpc::ServerAsyncResponseWriter<ResponseType>(&srv_ctx_);
 
       // Then request the method
       next_state_ = &ServerRpcContextUnaryImpl::invoker;
       request_method_(&srv_ctx_, &req_, &response_writer_,
-		      AsyncQpsServerTest::tag(this));
+                      AsyncQpsServerTest::tag(this));
     }
+
    private:
-    bool finisher() {return false;}
+    bool finisher() { return false; }
     bool invoker() {
       ResponseType response;
 
@@ -219,8 +223,7 @@ class AsyncQpsServerTest {
 
       // Have the response writer work and invoke on_finish when done
       next_state_ = &ServerRpcContextUnaryImpl::finisher;
-      response_writer_.Finish(response, status,
-			      AsyncQpsServerTest::tag(this));
+      response_writer_.Finish(response, status, AsyncQpsServerTest::tag(this));
       return true;
     }
     ServerContext srv_ctx_;
