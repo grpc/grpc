@@ -166,7 +166,7 @@ message from the remote client containing the user's name, then send back
 a greeting in a single `HelloReply`. This is the simplest type of RPC you
 can specify in gRPC - we'll look at some other types later in this document.
 
-```
+```proto
 syntax = "proto3";
 
 option java_package = "io.grpc.examples";
