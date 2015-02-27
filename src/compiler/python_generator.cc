@@ -232,7 +232,8 @@ bool GetModuleAndMessagePath(const Descriptor* type,
        path_iter != message_path.rend(); ++path_iter) {
     message_type += (*path_iter)->name() + ".";
   }
-  message_type.pop_back();
+  // no pop_back prior to C++11
+  message_type.resize(message_type.size() - 1);
   *out = make_pair(module, message_type);
   return true;
 }

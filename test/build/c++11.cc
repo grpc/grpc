@@ -31,23 +31,22 @@
  *
  */
 
-#ifndef __GRPCPP_CONFIG_H__
-#define __GRPCPP_CONFIG_H__
+/* This is just a compilation test, to see if we have zlib installed. */
 
-#include <string>
+#include <stdlib.h>
+#include <zlib.h>
 
-#ifdef GRPC_OLD_CXX
-#define GRPC_FINAL
-#define GRPC_OVERRIDE
-#else
-#define GRPC_FINAL final
-#define GRPC_OVERRIDE override
-#endif
+class Base {
+ public:
+  virtual void foo() = 0;
+};
 
-namespace grpc {
+class Foo final : public Base {
+ public:
+  void foo() override {}
+};
 
-typedef std::string string;
-
-}  // namespace grpc
-
-#endif  // __GRPCPP_CONFIG_H__
+int main() {
+  Foo().foo();
+  return 0;
+}

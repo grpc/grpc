@@ -83,7 +83,7 @@ class ServerBuilder {
   std::vector<AsynchronousService*> async_services_;
   std::vector<grpc::string> ports_;
   std::shared_ptr<ServerCredentials> creds_;
-  ThreadPoolInterface* thread_pool_ = nullptr;
+  ThreadPoolInterface* thread_pool_;
 };
 
 }  // namespace grpc

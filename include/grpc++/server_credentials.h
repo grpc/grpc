@@ -44,7 +44,7 @@ struct grpc_server_credentials;
 namespace grpc {
 
 // grpc_server_credentials wrapper class.
-class ServerCredentials final {
+class ServerCredentials GRPC_FINAL {
  public:
   ~ServerCredentials();
 
