@@ -1,14 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{C61154BA-DD4A-4838-8420-0162A28925E0}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Grpc.IntegrationTesting</RootNamespace>
-    <AssemblyName>Grpc.IntegrationTesting</AssemblyName>
+    <ProjectGuid>{3D166931-BA2D-416E-95A3-D36E8F6E90B9}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Grpc.IntegrationTesting.Client</RootNamespace>
+    <AssemblyName>Grpc.IntegrationTesting.Client</AssemblyName>
+    <StartupObject>Grpc.IntegrationTesting.Client.Program</StartupObject>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -32,38 +33,17 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="Google.ProtocolBuffers">
-      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestServiceGrpc.cs" />
-    <Compile Include="Empty.cs" />
-    <Compile Include="Messages.cs" />
-    <Compile Include="InteropClientServerTest.cs" />
-    <Compile Include="TestServiceImpl.cs" />
-    <Compile Include="InteropServer.cs" />
-    <Compile Include="InteropClient.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\Grpc.Core\Grpc.Core.csproj">
-      <Project>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</Project>
-      <Name>Grpc.Core</Name>
+    <ProjectReference Include="..\Grpc.IntegrationTesting\Grpc.IntegrationTesting.csproj">
+      <Project>{C61154BA-DD4A-4838-8420-0162A28925E0}</Project>
+      <Name>Grpc.IntegrationTesting</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-    <None Include="proto\test.proto" />
-    <None Include="proto\empty.proto" />
-    <None Include="proto\messages.proto" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="proto\" />
   </ItemGroup>
 </Project>
