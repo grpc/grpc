@@ -1095,11 +1095,11 @@ else
 ## That simplifies the codegen a bit, but prevents a fully defined Makefile.
 ## I can live with that.
 ##
-% if tgt.build == 'protoc':
+% if tgt.build == 'protoc' or tgt.language == 'c++':
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
 $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 
@@ -1154,7 +1154,7 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  $(LDLIBS_SECURE)\
 % endif
  -o $(BINDIR)/$(CONFIG)/${tgt.name}
-% if tgt.build == 'protoc':
+% if tgt.build == 'protoc' or tgt.language == 'c++':
 
 endif
 % endif
