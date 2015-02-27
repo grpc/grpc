@@ -199,9 +199,9 @@ class AsyncQpsServerTest {
       request_method_(&srv_ctx_, &req_, &response_writer_,
                       AsyncQpsServerTest::tag(this));
     }
-    ~ServerRpcContextUnaryImpl() override {}
-    bool operator()() override { return (this->*next_state_)(); }
-    void refresh() override {
+    ~ServerRpcContextUnaryImpl() GRPC_OVERRIDE {}
+    bool operator()() GRPC_OVERRIDE { return (this->*next_state_)(); }
+    void refresh() GRPC_OVERRIDE {
       srv_ctx_ = ServerContext();
       req_ = RequestType();
       response_writer_ =

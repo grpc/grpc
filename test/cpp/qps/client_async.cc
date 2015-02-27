@@ -122,9 +122,9 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         start_(now()),
         response_reader_(
             start_req(&context_, req_, ClientRpcContext::tag(this))) {}
-  ~ClientRpcContextUnaryImpl() override {}
-  bool operator()() override { return (this->*next_state_)(); }
-  void report_stats(gpr_histogram *hist) override {
+  ~ClientRpcContextUnaryImpl() GRPC_OVERRIDE {}
+  bool operator()() GRPC_OVERRIDE { return (this->*next_state_)(); }
+  void report_stats(gpr_histogram *hist) GRPC_OVERRIDE {
     gpr_histogram_add(hist, now() - start_);
   }
 
