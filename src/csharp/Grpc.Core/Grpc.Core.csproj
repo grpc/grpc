@@ -76,7 +76,7 @@
         </Content>
       </ItemGroup>
     </When>
-    <Otherwise/>
+    <Otherwise />
   </Choose>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
