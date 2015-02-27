@@ -117,7 +117,7 @@ This contains:
 
 First let's look at how we create a `RouteGuide` server. If you're only interested in creating gRPC clients, you can skip this section and go straight to [Creating the client](#client) (though you might find it interesting anyway!).
 
-There are two parts to making our `RouteGuide` service do its job:
+There are two parts making our `RouteGuide` service do its job:
 - Implementing the service interface generated from our service definition: doing the actual "work" of our service.
 - Running a gRPC server to listen for requests from clients and dispatch them to the right service implementation.
 
