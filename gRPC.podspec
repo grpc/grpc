@@ -1,0 +1,58 @@
+Pod::Spec.new do |s|
+  s.name     = 'gRPC'
+  s.version  = '0.0.1'
+  s.summary  = 'Generic gRPC client library for iOS'
+  s.homepage = 'https://www.grpc.io'
+  s.license  = 'New BSD'
+  s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
+
+  # s.source = { :git => 'https://github.com/grpc/grpc.git',  :tag => 'release-0_5_0' }
+  s.source_files = 'src/objective-c/GRPCClient/*.{h,m}', 'src/objective-c/GRPCClient/private/*.{h,m}'
+  s.private_header_files = 'src/objective-c/GRPCClient/private/*.h'
+
+  s.platform = :ios
+  s.ios.deployment_target = '6.0'
+  s.requires_arc = true
+
+  s.subspec 'C-Core' do |cs|
+  	cs.authors = { 'Craig Tiller'   => 'ctiller@google.com',
+  		           'David Klempner' => 'klempner@google.com',
+  		           'Nicolas Noble'  => 'nnoble@google.com',
+                   'Vijay Pai'      => 'vpai@google.com',
+                   'Yang Gao'       => 'yangg@google.com' }
+
+    cs.source_files = 'src/core/**/*.{h,c}', 'include/grpc/*.h', 'include/grpc/**/*.h'
+    cs.private_header_files = 'src/core/**/*.h'
+    cs.header_mappings_dir = '.'
+    cs.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Build/gRPC" "$(PODS_ROOT)/Headers/Build/gRPC/include"' }
+
+    cs.requires_arc = false
+    cs.libraries = 'z'
+    cs.dependency 'OpenSSL', '~> 1.0.200'
+  end
+
+  # This is a workaround for Cocoapods Issue #1437.
+  # It renames time.h and string.h to grpc_time.h and grpc_string.h.
+  s.prepare_command = <<-CMD
+    DIR_TIME="grpc/support"
+    BAD_TIME="$DIR_TIME/time.h"
+    GOOD_TIME="$DIR_TIME/grpc_time.h"
+    if [ -f "include/$BAD_TIME" ];
+    then
+      grep -rl "$BAD_TIME" include/grpc src/core | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
+      mv "include/$BAD_TIME" "include/$GOOD_TIME"
+    fi
+
+    DIR_STRING="src/core/support"
+    BAD_STRING="$DIR_STRING/string.h"
+    GOOD_STRING="$DIR_STRING/grpc_string.h"
+    if [ -f "$BAD_STRING" ];
+    then
+      grep -rl "$BAD_STRING" include/grpc src/core | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
+      mv "$BAD_STRING" "$GOOD_STRING"
+    fi
+  CMD
+
+  s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Public/gRPC/include"' }
+  s.dependency 'RxLibrary', '~> 0.0'
+end
