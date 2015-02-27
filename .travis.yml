@@ -12,6 +12,7 @@ env:
     - CONFIG=opt TEST=c
     - CONFIG=opt TEST=c++
     - CONFIG=opt TEST=node
+    - CONFIG=opt TEST=ruby RUBY_VERSION=2.1.0
     - CONFIG=opt TEST=ruby
 script:
   - rvm use $RUBY_VERSION
