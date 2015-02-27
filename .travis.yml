@@ -4,16 +4,18 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv
 env:
-  - RUBY_VERSION=2.1
+  global:
+    - RUBY_VERSION=2.1
+  matrix:
+    - CONFIG=dbg TEST=c
+    - CONFIG=dbg TEST=c++
+    - CONFIG=opt TEST=c
+    - CONFIG=opt TEST=c++
+    - CONFIG=opt TEST=node
+    - CONFIG=opt TEST=ruby
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler
-  - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg -s 2.0
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg -s 2.0
-  - make clean
-  - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt -s 2.0
-  - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt -s 2.0
-  - ./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
-  - ./tools/run_tests/run_tests.py -l ruby -t -j 16 -c opt
+  - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 2.0
 notifications:
   email: false
