@@ -160,7 +160,15 @@ CXX = $(CXX_$(CONFIG))
 LD = $(LD_$(CONFIG))
 LDXX = $(LDXX_$(CONFIG))
 AR = ar
+ifeq ($(SYSTEM),Linux)
 STRIP = strip --strip-unneeded
+else
+ifeq ($(SYSTEM),Darwin)
+STRIP = strip -x
+else
+STRIP = strip
+endif
+endif
 INSTALL = install
 RM = rm -f
 
