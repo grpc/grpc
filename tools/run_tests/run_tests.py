@@ -201,7 +201,7 @@ make_targets = []
 languages = set(_LANGUAGES[l] for l in args.language)
 build_steps = [jobset.JobSpec(['make',
                                '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                               'DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
+                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
                                'CONFIG=%s' % cfg] + list(set(
                                    itertools.chain.from_iterable(
                                        l.make_targets() for l in languages))))

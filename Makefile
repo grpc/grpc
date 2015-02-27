@@ -178,6 +178,10 @@ CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
 LDFLAGS += $(LDFLAGS_$(CONFIG))
 
+ifdef EXTRA_DEFINES
+DEFINES += EXTRA_DEFINES
+endif
+
 CFLAGS += -std=c89 -pedantic
 ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
