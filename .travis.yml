@@ -5,9 +5,11 @@ before_install:
   - sudo apt-get install -qq libgtest-dev libgflags-dev
 script:
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg
+  - make libs/protobuf/dbg/libprotobuf.a
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg
   - make clean
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt
+  - make libs/protobuf/dbg/libprotobuf.a
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l python -t -j 1 -c opt
