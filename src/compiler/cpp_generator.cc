@@ -609,7 +609,7 @@ void PrintSourceService(google::protobuf::io::Printer *printer,
       "  std::unique_ptr< $Service$::Stub> stub(new $Service$::Stub());\n"
       "  stub->set_channel(channel);\n"
       "  return stub;\n"
-      "};\n\n");
+      "}\n\n");
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["Idx"] = as_string(i);
     PrintSourceClientMethod(printer, service->method(i), vars);
