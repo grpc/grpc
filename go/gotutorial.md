@@ -117,9 +117,9 @@ This contains:
 
 First let's look at how we create a `RouteGuide` server. If you're only interested in creating gRPC clients, you can skip this section and go straight to [Creating the client](#client) (though you might find it interesting anyway!).
 
-There are two parts to making our `RouteGuide` service do its job:
+There are two parts to make our `RouteGuide` service do its job:
 - Implementing the service interface generated from our service definition: doing the actual "work" of our service.
-- Running a gRPC server to listen for requests from clients and return the service responses.
+- Running a gRPC server to listen for requests from clients and dispatch them to the right service implementation.
 
 You can find our example `RouteGuide` server in [grpc-go/examples/route_guide/server/server.go](https://github.com/grpc/grpc-go/tree/master/examples/route_guide/server/server.go). Let's take a closer look at how it works.
 
@@ -241,7 +241,7 @@ if err != nil {
         log.Fatalf("failed to listen: %v", err)
 }
 grpcServer := grpc.NewServer()
-pb.RegisterRouteGuideServer(grpcServer, newServer())
+pb.RegisterRouteGuideServer(grpcServer, &routeGuideServer{})
 ... // determine whether to use TLS
 grpcServer.Serve(lis)
 ```
@@ -249,10 +249,8 @@ As you can see, we build our server using `grpc.NewServer()`. To do this, we:
 
 1. Specify the port we want to use to listen for client requests using `lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))`.
 2. Create an instance of the gRPC server, by `grpc.NewServer()`.
-3. Create an instance of our service implementation class `routeGuideServer`, by
-   calling the constructor `newServer()`, which essentially does `s := new(routeGuideServer)`.
-4. Register our service implementation with the gRPC server.
-5. Call `Serve()` on the server to do a blocking wait until process is killed or `Stop()` is called.
+3. Register our service implementation with the gRPC server.
+4. Call `Serve()` on the server to do a blocking wait until process is killed or `Stop()` is called.
 
 <a name="client"></a>
 ## Creating the client
