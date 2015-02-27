@@ -73,6 +73,7 @@ DEFINE_string(test_case, "large_unary",
               "ping_pong : full-duplex streaming; "
               "service_account_creds : large_unary with service_account auth; "
               "compute_engine_creds: large_unary with compute engine auth; "
+              "jwt_token_creds: large_unary with JWT token auth; "
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
@@ -143,6 +144,13 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
     creds = CredentialsFactory::ComputeEngineCredentials();
+    return CreateTestChannel(host_port, FLAGS_server_host_override,
+                             FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
+  } else if (test_case == "jwt_token_creds") {
+    std::unique_ptr<Credentials> creds;
+    GPR_ASSERT(FLAGS_enable_ssl);
+    grpc::string json_key = GetServiceAccountJsonKey();
+    creds = CredentialsFactory::JWTCredentials(json_key, std::chrono::hours(1));
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {
@@ -224,6 +232,21 @@ void DoServiceAccountCreds() {
   const char *oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with service account creds done.");
+}
+
+void DoJwtTokenCreds() {
+  gpr_log(GPR_INFO,
+          "Sending a large unary rpc with JWT token credentials ...");
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannelForTestCase("jwt_token_creds");
+  SimpleRequest request;
+  SimpleResponse response;
+  request.set_fill_username(true);
+  PerformLargeUnary(channel, &request, &response);
+  GPR_ASSERT(!response.username().empty());
+  grpc::string json_key = GetServiceAccountJsonKey();
+  GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
+  gpr_log(GPR_INFO, "Large unary with JWT token creds done.");
 }
 
 void DoLargeUnary() {
@@ -414,6 +437,8 @@ int main(int argc, char** argv) {
     DoServiceAccountCreds();
   } else if (FLAGS_test_case == "compute_engine_creds") {
     DoComputeEngineCreds();
+  } else if (FLAGS_test_case == "jwt_token_creds") {
+    DoJwtTokenCreds();
   } else if (FLAGS_test_case == "all") {
     DoEmpty();
     DoLargeUnary();
@@ -421,9 +446,10 @@ int main(int argc, char** argv) {
     DoResponseStreaming();
     DoHalfDuplex();
     DoPingPong();
-    // service_account_creds can only run with ssl.
+    // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_enable_ssl) {
       DoServiceAccountCreds();
+      DoJwtTokenCreds();
     }
     // compute_engine_creds only runs in GCE.
   } else {
@@ -431,7 +457,7 @@ int main(int argc, char** argv) {
         GPR_ERROR,
         "Unsupported test case %s. Valid options are all|empty_unary|"
         "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
-        "service_account_creds|compute_engine_creds",
+        "service_account_creds|compute_engine_creds|jwt_token_creds",
         FLAGS_test_case.c_str());
   }
 
