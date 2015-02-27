@@ -109,9 +109,9 @@ static double now() {
     class ClientRpcContextUnaryImpl : public ClientRpcContext {
   public:
     ClientRpcContextUnaryImpl(const RequestType& req,
-			      std::function<grpc::ClientAsyncResponseReader<
-			      ResponseType> *(grpc::ClientContext *,
-					      const RequestType&, void *)> start_req,
+			      std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<
+			      ResponseType>>(grpc::ClientContext *,
+					     const RequestType&, void *)> start_req,
 			      std::function<void(grpc::Status, ResponseType *)> on_done):
       context_(), req_(req), response_(),	
       next_state_(&ClientRpcContextUnaryImpl::ReqSent),
@@ -226,8 +226,7 @@ static void RunTest(const int client_threads, const int client_channels,
                         TestService::Stub *stub =
                             channels[channel_num].get_stub();
                         grpc::ClientContext context;
-			auto start_req = std::bind(static_cast<grpc::ClientAsyncResponseReader<SimpleResponse>*(TestService::Stub::*)(grpc::ClientContext *,const SimpleRequest &,grpc::CompletionQueue *,void *)>
-						   (&TestService::Stub::UnaryCall),
+			auto start_req = std::bind(&TestService::Stub::AsyncUnaryCall,
 						   stub, _1, _2, &cli_cq, _3);
 			new ClientRpcContextUnaryImpl<SimpleRequest,
 						      SimpleResponse>(request,
