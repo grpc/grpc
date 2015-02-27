@@ -10,7 +10,7 @@
         "<!(node -e \"require('nan')\")"
       ],
       'cflags': [
-        '-std=c++11',
+        '-std=c++0x',
         '-Wall',
         '-pthread',
         '-pedantic',
