@@ -77,7 +77,7 @@ class RpcMethodHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     // Invoke application function, cast proto messages to their actual types.
     return func_(service_, param.server_context,
                  dynamic_cast<const RequestType*>(param.request),
@@ -102,7 +102,7 @@ class ClientStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerReader<RequestType> reader(param.call, param.server_context);
     return func_(service_, param.server_context, &reader,
                  dynamic_cast<ResponseType*>(param.response));
@@ -124,7 +124,7 @@ class ServerStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerWriter<ResponseType> writer(param.call, param.server_context);
     return func_(service_, param.server_context,
                  dynamic_cast<const RequestType*>(param.request), &writer);
@@ -147,7 +147,7 @@ class BidiStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerReaderWriter<ResponseType, RequestType> stream(param.call,
                                                          param.server_context);
     return func_(service_, param.server_context, &stream);

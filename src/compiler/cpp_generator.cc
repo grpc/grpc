@@ -300,13 +300,13 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   (*vars)["Service"] = service->name();
 
   printer->Print(*vars,
-                 "class $Service$ final {\n"
+                 "class $Service$ GRPC_FINAL {\n"
                  " public:\n");
   printer->Indent();
 
   // Client side
   printer->Print(
-      "class Stub final : public ::grpc::InternalStub {\n"
+      "class Stub GRPC_FINAL : public ::grpc::InternalStub {\n"
       " public:\n");
   printer->Indent();
   for (int i = 0; i < service->method_count(); ++i) {
@@ -331,7 +331,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodSync(printer, service->method(i), vars);
   }
-  printer->Print("::grpc::RpcService* service() override final;\n");
+  printer->Print("::grpc::RpcService* service() GRPC_OVERRIDE GRPC_FINAL;\n");
   printer->Outdent();
   printer->Print(
       " private:\n"
@@ -340,7 +340,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
 
   // Server side - Asynchronous
   printer->Print(
-      "class AsyncService final : public ::grpc::AsynchronousService {\n"
+      "class AsyncService GRPC_FINAL : public ::grpc::AsynchronousService {\n"
       " public:\n");
   printer->Indent();
   (*vars)["MethodCount"] = as_string(service->method_count());
