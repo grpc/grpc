@@ -1,2 +1,3 @@
 # OPENSSL_cleanse does racy access to a global
 race:OPENSSL_cleanse
+race:cleanse_ctr
