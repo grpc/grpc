@@ -98,7 +98,7 @@ class ClientRpcContext {
  public:
   ClientRpcContext() {}
   virtual ~ClientRpcContext() {}
-  virtual bool operator()() = 0;  // do next state, return false if steps done
+  virtual bool RunNextState() = 0;  // do next state, return false if steps done
   static void *tag(ClientRpcContext *c) { return reinterpret_cast<void *>(c); }
   static ClientRpcContext *detag(void *t) {
     return reinterpret_cast<ClientRpcContext *>(t);
@@ -126,7 +126,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         response_reader_(
 	    start_req(stub_, &context_, req_, ClientRpcContext::tag(this))) {}
   ~ClientRpcContextUnaryImpl() GRPC_OVERRIDE {}
-  bool operator()() GRPC_OVERRIDE { return (this->*next_state_)(); }
+  bool RunNextState() GRPC_OVERRIDE { return (this->*next_state_)(); }
   void report_stats(gpr_histogram *hist) GRPC_OVERRIDE {
     gpr_histogram_add(hist, now() - start_);
   }
@@ -242,18 +242,19 @@ static void RunTest(const int client_threads, const int client_channels,
             cli_cq.Next(&got_tag, &ok);
             if (!ok) break;
             ClientRpcContext *ctx = ClientRpcContext::detag(got_tag);
-            if ((*ctx)() == false) {
+            if (ctx->RunNextState() == false) {
               // call the callback and then delete it
-              (*ctx)();
+              ctx->report_stats(hist);
+              ctx->RunNextState();
               delete ctx;
             }
             cli_cq.Next(&got_tag, &ok);
             if (!ok) break;
             ctx = ClientRpcContext::detag(got_tag);
-            if ((*ctx)() == false) {
+            if (ctx->RunNextState() == false) {
               // call the callback and then delete it
               ctx->report_stats(hist);
-              (*ctx)();
+	      ctx->RunNextState();
               delete ctx;
             }
             // Now do runtime round-robin assignment of the next
