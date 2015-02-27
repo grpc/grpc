@@ -109,19 +109,22 @@ template <class RequestType, class ResponseType>
 class ClientRpcContextUnaryImpl : public ClientRpcContext {
  public:
   ClientRpcContextUnaryImpl(
+      TestService::Stub *stub,
       const RequestType &req,
       std::function<
           std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-              grpc::ClientContext *, const RequestType &, void *)> start_req,
+	      TestService::Stub *, grpc::ClientContext *, const RequestType &,
+	      void *)> start_req,
       std::function<void(grpc::Status, ResponseType *)> on_done)
       : context_(),
+	stub_(stub),
         req_(req),
         response_(),
         next_state_(&ClientRpcContextUnaryImpl::ReqSent),
         callback_(on_done),
         start_(now()),
         response_reader_(
-            start_req(&context_, req_, ClientRpcContext::tag(this))) {}
+	    start_req(stub_, &context_, req_, ClientRpcContext::tag(this))) {}
   ~ClientRpcContextUnaryImpl() GRPC_OVERRIDE {}
   bool operator()() GRPC_OVERRIDE { return (this->*next_state_)(); }
   void report_stats(gpr_histogram *hist) GRPC_OVERRIDE {
@@ -143,6 +146,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     return false;
   }
   grpc::ClientContext context_;
+  TestService::Stub *stub_;
   RequestType req_;
   ResponseType response_;
   bool (ClientRpcContextUnaryImpl::*next_state_)();
@@ -221,15 +225,14 @@ static void RunTest(const int client_threads, const int client_channels,
           request.set_response_size(payload_size);
 
           grpc::CompletionQueue cli_cq;
+	  auto start_req = std::bind(&TestService::Stub::AsyncUnaryCall, _1,
+				     _2, _3, &cli_cq, _4);
 
           int rpcs_sent = 0;
           while (rpcs_sent < num_rpcs) {
             rpcs_sent++;
             TestService::Stub *stub = channels[channel_num].get_stub();
-            grpc::ClientContext context;
-            auto start_req = std::bind(&TestService::Stub::AsyncUnaryCall, stub,
-                                       _1, _2, &cli_cq, _3);
-            new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
+            new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(stub,
                 request, start_req, CheckDone);
             void *got_tag;
             bool ok;
