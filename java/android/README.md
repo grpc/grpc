@@ -36,6 +36,6 @@ $ git clone https://github.com/grpc/grpc-common
 
 **4 Install the app**
 ```sh
-$ cd grpc-common
+$ cd grpc-common/java/android
 $ ./gradlew installDebug
 ```
