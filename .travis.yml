@@ -7,6 +7,7 @@ script:
   - make clean
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt
+  - source python2.7_virtual_environment/bin/activate
   - ./tools/run_tests/run_tests.py -l python -t -j1 -c opt
 notifications:
   email: false
