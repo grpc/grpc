@@ -31,6 +31,7 @@
 
 set -ex
 
+rvm install 2.1.2
 rvm use 2.1.2
 
 CONFIG=${CONFIG:-opt}
