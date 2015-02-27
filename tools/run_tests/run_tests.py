@@ -44,6 +44,10 @@ import jobset
 import watch_dirs
 
 
+ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+os.chdir(ROOT)
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
