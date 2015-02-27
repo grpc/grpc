@@ -44,6 +44,10 @@ import jobset
 import watch_dirs
 
 
+ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+os.chdir(ROOT)
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
@@ -83,14 +87,14 @@ class CLanguage(object):
     self.make_target = make_target
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
-      self.binaries = [tgt['name']
-                       for tgt in js
-                       if tgt['language'] == test_lang]
+      self.binaries = [tgt for tgt in js if tgt['language'] == test_lang]
 
-  def test_specs(self, config):
+  def test_specs(self, config, travis):
     out = []
-    for name in self.binaries:
-      binary = 'bins/%s/%s' % (config.build_config, name)
+    for target in self.binaries:
+      if travis and target['flaky']:
+        continue
+      binary = 'bins/%s/%s' % (config.build_config, target['name'])
       out.append(config.job_spec(binary, [binary]))
     return out
 
@@ -103,7 +107,7 @@ class CLanguage(object):
 
 class NodeLanguage(object):
 
-  def test_specs(self, config):
+  def test_specs(self, config, travis):
     return [config.job_spec('tools/run_tests/run_node.sh', None)]
 
   def make_targets(self):
@@ -115,7 +119,7 @@ class NodeLanguage(object):
 
 class PhpLanguage(object):
 
-  def test_specs(self, config):
+  def test_specs(self, config, travis):
     return [config.job_spec('src/php/bin/run_tests.sh', None)]
 
   def make_targets(self):
@@ -127,7 +131,7 @@ class PhpLanguage(object):
 
 class PythonLanguage(object):
 
-  def test_specs(self, config):
+  def test_specs(self, config, travis):
     return [config.job_spec('tools/run_tests/run_python.sh', None)]
 
   def make_targets(self):
@@ -171,6 +175,7 @@ argp.add_argument('-c', '--config',
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
 argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('-j', '--jobs', default=1000, type=int)
+argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-f', '--forever',
                   default=False,
                   action='store_const',
@@ -200,6 +205,7 @@ make_targets = []
 languages = set(_LANGUAGES[l] for l in args.language)
 build_steps = [jobset.JobSpec(['make',
                                '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
                                'CONFIG=%s' % cfg] + list(set(
                                    itertools.chain.from_iterable(
                                        l.make_targets() for l in languages))))
@@ -211,7 +217,7 @@ one_run = set(
     spec
     for config in run_configs
     for language in args.language
-    for spec in _LANGUAGES[language].test_specs(config)
+    for spec in _LANGUAGES[language].test_specs(config, args.travis)
     if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test

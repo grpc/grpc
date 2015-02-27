@@ -36,6 +36,14 @@
 
 #include <string>
 
+#ifdef GRPC_OLD_CXX
+#define GRPC_FINAL
+#define GRPC_OVERRIDE
+#else
+#define GRPC_FINAL final
+#define GRPC_OVERRIDE override
+#endif
+
 namespace grpc {
 
 typedef std::string string;
