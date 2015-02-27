@@ -10,5 +10,6 @@ script:
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c opt -s 2.0
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c opt -s 2.0
   - ./tools/run_tests/run_tests.py -l node -t -j 16 -c opt
+  - ./tools/run_tests/run_tests.py -l ruby -t -j 16 -c opt
 notifications:
   email: false
