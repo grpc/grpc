@@ -1,7 +1,14 @@
 {
   "name": "grpc",
   "version": "0.5.0",
+  "author": "Google Inc.",
   "description": "gRPC Library for Node",
+  "contributors": [
+    {
+      "name": "Michael Lumish",
+      "email": "mlumish@google.com"
+    }
+  ],
   "scripts": {
     "lint": "node ./node_modules/jshint/bin/jshint src test examples interop index.js",
     "test": "node ./node_modules/mocha/bin/mocha && npm run-script lint"
@@ -22,6 +29,7 @@
     "strftime": "^0.8.2"
   },
   "files": [
+    "LICENSE",
     "README.md",
     "index.js",
     "binding.gyp",
@@ -31,5 +39,6 @@
     "src",
     "test"
   ],
-  "main": "index.js"
+  "main": "index.js",
+  "license": "BSD-3-Clause"
 }
