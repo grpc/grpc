@@ -4,6 +4,7 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv
 script:
+  - make CONFIG=dbg buildtests_cxx Q=
   - ./tools/run_tests/run_tests.py -l c -t -j 16 -c dbg -s 2.0
   - ./tools/run_tests/run_tests.py -l c++ -t -j 16 -c dbg -s 2.0
   - make clean
