@@ -118,13 +118,13 @@ def guide_route_chat(stub):
 def run():
   with route_guide_pb2.early_adopter_create_RouteGuide_stub('localhost', 50051) as stub:
     print "-------------- GetFeature --------------"
-    guide_get_feature(stub);
+    guide_get_feature(stub)
     print "-------------- ListFeatures --------------"
-    guide_list_features(stub);
+    guide_list_features(stub)
     print "-------------- RecordRoute --------------"
-    guide_record_route(stub);
+    guide_record_route(stub)
     print "-------------- RouteChat --------------"
-    guide_route_chat(stub);
+    guide_route_chat(stub)
 
 
 if __name__ == '__main__':
