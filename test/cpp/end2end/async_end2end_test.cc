@@ -65,9 +65,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) {
-  return (void*)(gpr_intptr)i;
-}
+void* tag(int i) { return (void*)(gpr_intptr)i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -109,18 +107,10 @@ class AsyncEnd2endTest : public ::testing::Test {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
-  void server_ok(int i) {
-    verify_ok(&srv_cq_, i, true);
-  }
-  void client_ok(int i) {
-    verify_ok(&cli_cq_, i , true);
-  }
-  void server_fail(int i) {
-    verify_ok(&srv_cq_, i, false);
-  }
-  void client_fail(int i) {
-    verify_ok(&cli_cq_, i, false);
-  }
+  void server_ok(int i) { verify_ok(&srv_cq_, i, true); }
+  void client_ok(int i) { verify_ok(&cli_cq_, i, true); }
+  void server_fail(int i) { verify_ok(&srv_cq_, i, false); }
+  void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
 
   void SendRpc(int num_rpcs) {
     for (int i = 0; i < num_rpcs; i++) {
@@ -135,12 +125,11 @@ class AsyncEnd2endTest : public ::testing::Test {
       grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
       send_request.set_message("Hello");
-      std::unique_ptr<ClientAsyncResponseReader<EchoResponse> >
-          response_reader(stub_->Echo(
-              &cli_ctx, send_request, &cli_cq_, tag(1)));
+      std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+          stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-      service_.RequestEcho(
-          &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+      service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
+                           tag(2));
 
       server_ok(2);
       EXPECT_EQ(send_request.message(), recv_request.message());
@@ -191,10 +180,9 @@ TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
 
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncWriter<EchoRequest> > cli_stream(
-      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1)));
+      stub_->AsyncRequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1)));
 
-  service_.RequestRequestStream(
-      &srv_ctx, &srv_stream, &srv_cq_, tag(2));
+  service_.RequestRequestStream(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
 
   server_ok(2);
   client_ok(1);
@@ -245,10 +233,10 @@ TEST_F(AsyncEnd2endTest, SimpleServerStreaming) {
 
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
-      stub_->ResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestResponseStream(
-      &srv_ctx, &recv_request, &srv_stream, &srv_cq_, tag(2));
+  service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, &srv_cq_,
+                                 tag(2));
 
   server_ok(2);
   client_ok(1);
@@ -296,10 +284,9 @@ TEST_F(AsyncEnd2endTest, SimpleBidiStreaming) {
 
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
-      cli_stream(stub_->BidiStream(&cli_ctx, &cli_cq_, tag(1)));
+      cli_stream(stub_->AsyncBidiStream(&cli_ctx, &cli_cq_, tag(1)));
 
-  service_.RequestBidiStream(
-      &srv_ctx, &srv_stream, &srv_cq_, tag(2));
+  service_.RequestBidiStream(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
 
   server_ok(2);
   client_ok(1);
@@ -355,10 +342,10 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   cli_ctx.AddMetadata(meta2.first, meta2.second);
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(
-      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
+                       tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   auto client_initial_metadata = srv_ctx.client_metadata();
@@ -397,10 +384,10 @@ TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(
-      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
+                       tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
@@ -445,10 +432,10 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(
-      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
+                       tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   response_writer.SendInitialMetadata(tag(3));
@@ -461,7 +448,6 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   response_writer.Finish(send_response, Status::OK, tag(4));
 
   server_ok(4);
-
 
   response_reader->Finish(&recv_response, &recv_status, tag(5));
   client_ok(5);
@@ -491,20 +477,22 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   std::pair<grpc::string, grpc::string> meta2(
       "key2-bin", {"\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13});
   std::pair<grpc::string, grpc::string> meta3("key3", "val3");
-  std::pair<grpc::string, grpc::string> meta6("key4-bin",
+  std::pair<grpc::string, grpc::string> meta6(
+      "key4-bin",
       {"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d", 14});
   std::pair<grpc::string, grpc::string> meta5("key5", "val5");
-  std::pair<grpc::string, grpc::string> meta4("key6-bin",
+  std::pair<grpc::string, grpc::string> meta4(
+      "key6-bin",
       {"\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15});
 
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  service_.RequestEcho(
-      &srv_ctx, &recv_request, &response_writer, &srv_cq_, tag(2));
+  service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
+                       tag(2));
   server_ok(2);
   EXPECT_EQ(send_request.message(), recv_request.message());
   auto client_initial_metadata = srv_ctx.client_metadata();
@@ -530,7 +518,6 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   response_writer.Finish(send_response, Status::OK, tag(5));
 
   server_ok(5);
-
 
   response_reader->Finish(&recv_response, &recv_status, tag(6));
   client_ok(6);
