@@ -10,7 +10,6 @@ env:
   matrix:
     - CONFIG=dbg TEST=c
     - CONFIG=dbg TEST=c++
-    - CONFIG=asan TEST=c
     - CONFIG=opt TEST=c
     - CONFIG=opt TEST=c++
     - CONFIG=opt TEST=node
