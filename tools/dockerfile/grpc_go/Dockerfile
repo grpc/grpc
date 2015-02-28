@@ -52,8 +52,8 @@ RUN go get google.golang.org/grpc
 ADD service_account service_account
 
 # Build the interop client and server
-RUN cd src/google.golang.org/grpc/interop/client && go install
-RUN cd src/google.golang.org/grpc/interop/server && go install
+RUN go install google.golang.org/grpc/interop/client
+RUN go install google.golang.org/grpc/interop/server
 
 # Specify the default command such that the interop server runs on its known testing port
-CMD ["/bin/bash", "-c", "cd src/google.golang.org/grpc/interop/server && go run server.go --use_tls=true --port=8020"]
+CMD ["server", "--use_tls=true", "--port=8020"]
