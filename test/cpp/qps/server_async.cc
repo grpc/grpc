@@ -183,15 +183,19 @@ class AsyncQpsServerTest {
     return reinterpret_cast<ServerRpcContext *>(tag);
   }
 
+  template<class RequestType, class ResponseType>
+  using RequestMethod = std::function<void(ServerContext *, RequestType *,
+                           grpc::ServerAsyncResponseWriter<ResponseType> *,
+					   void *)>;
+  template<class RequestType, class ResponseType> using InvokeMethod =
+    std::function<grpc::Status(const RequestType *, ResponseType *)>;
+    
   template <class RequestType, class ResponseType>
   class ServerRpcContextUnaryImpl : public ServerRpcContext {
    public:
     ServerRpcContextUnaryImpl(
-        std::function<void(ServerContext *, RequestType *,
-                           grpc::ServerAsyncResponseWriter<ResponseType> *,
-                           void *)> request_method,
-        std::function<grpc::Status(const RequestType *, ResponseType *)>
-            invoke_method)
+        RequestMethod<RequestType,ResponseType> request_method,
+        InvokeMethod<RequestType,ResponseType> invoke_method)
         : next_state_(&ServerRpcContextUnaryImpl::invoker),
           request_method_(request_method),
           invoke_method_(invoke_method),
@@ -229,11 +233,8 @@ class AsyncQpsServerTest {
     ServerContext srv_ctx_;
     RequestType req_;
     bool (ServerRpcContextUnaryImpl::*next_state_)();
-    std::function<void(ServerContext *, RequestType *,
-                       grpc::ServerAsyncResponseWriter<ResponseType> *, void *)>
-        request_method_;
-    std::function<grpc::Status(const RequestType *, ResponseType *)>
-        invoke_method_;
+    RequestMethod<RequestType,ResponseType> request_method_;
+    InvokeMethod<RequestType,ResponseType> invoke_method_;
     grpc::ServerAsyncResponseWriter<ResponseType> response_writer_;
   };
 
@@ -261,12 +262,8 @@ class AsyncQpsServerTest {
   CompletionQueue srv_cq_;
   TestService::AsyncService async_service_;
   std::unique_ptr<Server> server_;
-  std::function<void(ServerContext *, SimpleRequest *,
-                     grpc::ServerAsyncResponseWriter<SimpleResponse> *, void *)>
-      request_unary_;
-  std::function<void(ServerContext *, StatsRequest *,
-                     grpc::ServerAsyncResponseWriter<ServerStats> *, void *)>
-      request_stats_;
+  RequestMethod<SimpleRequest, SimpleResponse> request_unary_;
+  RequestMethod<StatsRequest, ServerStats> request_stats_;
   std::forward_list<ServerRpcContext *> contexts_;
 };
 
