@@ -33,8 +33,6 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-make -j6
-
 root=`pwd`
 virtualenv python2.7_virtual_environment
 source python2.7_virtual_environment/bin/activate
