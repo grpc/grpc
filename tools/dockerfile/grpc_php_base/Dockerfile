@@ -76,7 +76,7 @@ RUN cd /var/local \
 
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
-RUN git clone git@github.com:murgatroid99/Protobuf-PHP.git /var/local/git/protobuf-php
+RUN git clone https://github.com/murgatroid99/Protobuf-PHP.git /var/local/git/protobuf-php
 
 # Install ruby (via RVM) as ruby tools are dependencies for building Protobuf
 # PHP extensions.
@@ -91,7 +91,7 @@ ENV PATH /usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/s
 RUN rvm all do gem install ronn rake
 
 # Get the source from GitHub, this gets the protobuf library as well
-RUN git clone git@github.com:grpc/grpc.git /var/local/git/grpc
+RUN git clone https://github.com/grpc/grpc.git /var/local/git/grpc
 RUN cd /var/local/git/grpc && \
   git pull --recurse-submodules && \
   git submodule update --init --recursive
