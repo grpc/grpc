@@ -77,7 +77,6 @@ end
 
 dir_config('grpc', HEADER_DIRS, LIB_DIRS)
 
-$CFLAGS << ' -std=c89 '
 $CFLAGS << ' -Wno-implicit-function-declaration '
 $CFLAGS << ' -Wno-pointer-sign '
 $CFLAGS << ' -Wno-return-type '
