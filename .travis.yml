@@ -12,7 +12,6 @@ env:
 =======
     - CONFIG=dbg TEST=c
     - CONFIG=dbg TEST=c++
-    - CONFIG=asan TEST=c
     - CONFIG=opt TEST=c
     - CONFIG=opt TEST=c++
 >>>>>>> Add asan/tsan tests
