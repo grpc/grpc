@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,66 +29,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'mkmf'
+set -ex
 
-LIBDIR = RbConfig::CONFIG['libdir']
-INCLUDEDIR = RbConfig::CONFIG['includedir']
+CONFIG=${CONFIG:-opt}
 
-if ENV.key? 'GRPC_ROOT'
-  GRPC_ROOT = ENV['GRPC_ROOT']
-  if ENV.key? 'GRPC_LIB_DIR'
-    GRPC_LIB_DIR = ENV['GRPC_LIB_DIR']
-  else
-    GRPC_LIB_DIR = 'libs/opt'
-  end
-else
-  GRPC_ROOT = nil
-end
+# change to grpc repo root
+cd $(dirname $0)/../..
 
-HEADER_DIRS = [
-  # Search /opt/local (Mac source install)
-  '/opt/local/include',
+# tells npm install to look for files in that directory
+export GRPC_ROOT=`pwd`
+# tells npm install the subdirectory with library files
+export GRPC_LIB_SUBDIR=libs/$CONFIG
 
-  # Search /usr/local (Source install)
-  '/usr/local/include',
+cd src/ruby
 
-  # Check the ruby install locations
-  INCLUDEDIR
-]
-
-LIB_DIRS = [
-  # Search /opt/local (Mac source install)
-  '/opt/local/lib',
-
-  # Search /usr/local (Source install)
-  '/usr/local/lib',
-
-  # Check the ruby install locations
-  LIBDIR
-]
-
-unless GRPC_ROOT.nil?
-  HEADER_DIRS.unshift File.join(GRPC_ROOT, 'include')
-  LIB_DIRS.unshift File.join(GRPC_ROOT, GRPC_LIB_DIR)
-end
-
-def crash(msg)
-  print(" extconf failure: #{msg}\n")
-  exit 1
-end
-
-dir_config('grpc', HEADER_DIRS, LIB_DIRS)
-
-$CFLAGS << ' -std=c89 '
-$CFLAGS << ' -Wno-implicit-function-declaration '
-$CFLAGS << ' -Wno-pointer-sign '
-$CFLAGS << ' -Wno-return-type '
-$CFLAGS << ' -Wall '
-$CFLAGS << ' -pedantic '
-
-$LDFLAGS << ' -lgrpc -lgpr -ldl'
-
-crash('need grpc lib') unless have_library('grpc', 'grpc_channel_destroy')
-have_library('grpc', 'grpc_channel_destroy')
-crash('need gpr lib') unless have_library('gpr', 'gpr_now')
-create_makefile('grpc/grpc')
+bundle install
+rake compile:grpc
