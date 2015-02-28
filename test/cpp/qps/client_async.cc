@@ -105,17 +105,24 @@ class ClientRpcContext {
   }
   virtual void report_stats(gpr_histogram *hist) = 0;
 };
+
+template <class RequestType, class ResponseType>
+using StartMethod =  std::function<
+  std::unique_ptr<grpc::ClientAsyncResponseReader
+		  <ResponseType>>(TestService::Stub *, grpc::ClientContext *,
+				  const RequestType &, void *)> ;
+
+template <class ResponseType> using DoneMethod =
+  std::function<void(grpc::Status, ResponseType *)>;
+  
 template <class RequestType, class ResponseType>
 class ClientRpcContextUnaryImpl : public ClientRpcContext {
  public:
   ClientRpcContextUnaryImpl(
       TestService::Stub *stub,
       const RequestType &req,
-      std::function<
-          std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-	      TestService::Stub *, grpc::ClientContext *, const RequestType &,
-	      void *)> start_req,
-      std::function<void(grpc::Status, ResponseType *)> on_done)
+      StartMethod<RequestType,ResponseType> start_req,
+      DoneMethod<ResponseType> on_done)
       : context_(),
 	stub_(stub),
         req_(req),
@@ -150,7 +157,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
   RequestType req_;
   ResponseType response_;
   bool (ClientRpcContextUnaryImpl::*next_state_)();
-  std::function<void(grpc::Status, ResponseType *)> callback_;
+  DoneMethod<ResponseType> callback_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
