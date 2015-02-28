@@ -217,8 +217,8 @@ module GRPC
 
     def self.included(o)
       o.extend(Dsl)
-      # Update to the use the service name including module. Proivde a default
-      # that can be nil e,g. when modules are declared dynamically.
+      # Update to the use the service name including module. Provide a default
+      # that can be nil e.g. when modules are declared dynamically.
       return unless o.service_name.nil?
       if o.name.nil?
         o.service_name = 'GenericService'

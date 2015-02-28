@@ -31,32 +31,49 @@
  *
  */
 
-#include "test/core/util/test_config.h"
+#ifndef NET_GRPC_COMPILER_GENERATOR_HELPERS_H__
+#define NET_GRPC_COMPILER_GENERATOR_HELPERS_H__
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
-#include <stdlib.h>
-#include <signal.h>
+#include <map>
+#include <string>
 
-#if GPR_GETPID_IN_UNISTD_H
-#include <unistd.h>
-static int seed(void) { return getpid(); }
-#endif
+namespace grpc_generator {
 
-#if GPR_GETPID_IN_PROCESS_H
-#include <process.h>
-static int seed(void) { return _getpid(); }
-#endif
+inline bool StripSuffix(std::string *filename, const std::string &suffix) {
+  if (filename->length() >= suffix.length()) {
+    size_t suffix_pos = filename->length() - suffix.length();
+    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
+      filename->resize(filename->size() - suffix.size());
+      return true;
+    }
+  }
 
-void grpc_test_init(int argc, char **argv) {
-#ifndef GPR_WIN32
-  /* disable SIGPIPE */
-  signal(SIGPIPE, SIG_IGN);
-#endif
-  gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
-          GRPC_TEST_SLOWDOWN_MACHINE_FACTOR, GRPC_TEST_SLOWDOWN_BUILD_FACTOR,
-          GRPC_TEST_SLOWDOWN_FACTOR);
-  /* seed rng with pid, so we don't end up with the same random numbers as a
-     concurrently running test binary */
-  srand(seed());
+  return false;
 }
+
+inline std::string StripProto(std::string filename) {
+  if (!StripSuffix(&filename, ".protodevel")) {
+    StripSuffix(&filename, ".proto");
+  }
+  return filename;
+}
+
+inline std::string StringReplace(std::string str, const std::string &from,
+                                 const std::string &to) {
+  size_t pos = 0;
+
+  for (;;) {
+    pos = str.find(from, pos);
+    if (pos == std::string::npos) {
+      break;
+    }
+    str.replace(pos, from.length(), to);
+    pos += to.length();
+  }
+
+  return str;
+}
+
+}  // namespace grpc_generator
+
+#endif  // NET_GRPC_COMPILER_GENERATOR_HELPERS_H__

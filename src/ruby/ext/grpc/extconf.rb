@@ -32,6 +32,17 @@ require 'mkmf'
 LIBDIR = RbConfig::CONFIG['libdir']
 INCLUDEDIR = RbConfig::CONFIG['includedir']
 
+if ENV.key? 'GRPC_ROOT'
+  GRPC_ROOT = ENV['GRPC_ROOT']
+  if ENV.key? 'GRPC_LIB_DIR'
+    GRPC_LIB_DIR = ENV['GRPC_LIB_DIR']
+  else
+    GRPC_LIB_DIR = 'libs/opt'
+  end
+else
+  GRPC_ROOT = nil
+end
+
 HEADER_DIRS = [
   # Search /opt/local (Mac source install)
   '/opt/local/include',
@@ -53,6 +64,11 @@ LIB_DIRS = [
   # Check the ruby install locations
   LIBDIR
 ]
+
+unless GRPC_ROOT.nil?
+  HEADER_DIRS.unshift File.join(GRPC_ROOT, 'include')
+  LIB_DIRS.unshift File.join(GRPC_ROOT, GRPC_LIB_DIR)
+end
 
 def crash(msg)
   print(" extconf failure: #{msg}\n")

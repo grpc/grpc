@@ -38,50 +38,16 @@
 #include <string>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
+#include "src/compiler/generator_helpers.h"
 
 namespace grpc_cpp_generator {
 
-inline bool StripSuffix(std::string *filename, const std::string &suffix) {
-  if (filename->length() >= suffix.length()) {
-    size_t suffix_pos = filename->length() - suffix.length();
-    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
-      filename->resize(filename->size() - suffix.size());
-      return true;
-    }
-  }
-
-  return false;
-}
-
-inline std::string StripProto(std::string filename) {
-  if (!StripSuffix(&filename, ".protodevel")) {
-    StripSuffix(&filename, ".proto");
-  }
-  return filename;
-}
-
-inline std::string StringReplace(std::string str, const std::string &from,
-                                 const std::string &to) {
-  size_t pos = 0;
-
-  for (;;) {
-    pos = str.find(from, pos);
-    if (pos == std::string::npos) {
-      break;
-    }
-    str.replace(pos, from.length(), to);
-    pos += to.length();
-  }
-
-  return str;
-}
-
 inline std::string DotsToColons(const std::string &name) {
-  return StringReplace(name, ".", "::");
+  return grpc_generator::StringReplace(name, ".", "::");
 }
 
 inline std::string DotsToUnderscores(const std::string &name) {
-  return StringReplace(name, ".", "_");
+  return grpc_generator::StringReplace(name, ".", "_");
 }
 
 inline std::string ClassName(const google::protobuf::Descriptor *descriptor,
