@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install -y nodejs nodejs-legacy
 RUN npm install -g node-gyp
 
 # Get the source from GitHub, this gets the protobuf library as well
-RUN git clone git@github.com:grpc/grpc.git /var/local/git/grpc
+RUN git clone https://github.com/grpc/grpc.git /var/local/git/grpc
 RUN cd /var/local/git/grpc && \
   git pull --recurse-submodules && \
   git submodule update --init --recursive

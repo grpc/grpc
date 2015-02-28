@@ -46,4 +46,4 @@ RUN apt-get update && apt-get install -y \
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0-alpha-1
 
 # Get the GRPC source from GitHub
-RUN git clone --recursive git@github.com:grpc/grpc.git /var/local/git/grpc
+RUN git clone --recursive https://github.com/grpc/grpc.git /var/local/git/grpc
