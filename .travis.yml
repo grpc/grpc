@@ -1,8 +1,9 @@
 language: cpp
 before_install:
   - sudo add-apt-repository ppa:yjwong/gflags -y
+  - sudo add-apt-repository ppa:h-rayflood/llvm -y
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv
+  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5
 env:
   global:
     - RUBY_VERSION=2.1
@@ -16,6 +17,6 @@ env:
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler
-  - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 2.0
+  - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
 notifications:
   email: false
