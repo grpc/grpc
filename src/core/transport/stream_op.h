@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_STREAM_OP_H__
-#define __GRPC_INTERNAL_TRANSPORT_STREAM_OP_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H
 
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
@@ -131,4 +131,4 @@ void grpc_sopb_add_flow_ctl_cb(grpc_stream_op_buffer *sopb,
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_STREAM_OP_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */

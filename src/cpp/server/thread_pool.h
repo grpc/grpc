@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_SERVER_THREAD_POOL_H__
-#define __GRPCPP_INTERNAL_SERVER_THREAD_POOL_H__
+#ifndef GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#define GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
 
 #include <grpc++/config.h>
 #include <grpc++/thread_pool_interface.h>
@@ -62,4 +62,4 @@ class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_SERVER_THREAD_POOL_H__
+#endif  // GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H

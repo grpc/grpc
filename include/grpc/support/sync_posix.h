@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_SYNC_POSIX_H__
-#define __GRPC_SUPPORT_SYNC_POSIX_H__
+#ifndef GRPC_SUPPORT_SYNC_POSIX_H
+#define GRPC_SUPPORT_SYNC_POSIX_H
 
 #include <grpc/support/sync_generic.h>
 
@@ -44,4 +44,4 @@ typedef pthread_once_t gpr_once;
 
 #define GPR_ONCE_INIT PTHREAD_ONCE_INIT
 
-#endif /* __GRPC_SUPPORT_SYNC_POSIX_H__ */
+#endif  /* GRPC_SUPPORT_SYNC_POSIX_H */

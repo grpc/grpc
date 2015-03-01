@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_
-#define __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
+#define GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
 
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -59,4 +59,4 @@ gpr_timespec grpc_alarm_list_next_timeout(void);
 
 void grpc_kick_poller(void);
 
-#endif /* __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H */

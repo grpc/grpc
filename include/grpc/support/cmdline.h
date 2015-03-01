@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_CMDLINE_H__
-#define __GRPC_SUPPORT_CMDLINE_H__
+#ifndef GRPC_SUPPORT_CMDLINE_H
+#define GRPC_SUPPORT_CMDLINE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,4 +92,4 @@ void gpr_cmdline_destroy(gpr_cmdline *cl);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_CMDLINE_H__ */
+#endif  /* GRPC_SUPPORT_CMDLINE_H */

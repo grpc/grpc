@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__
-#define __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H
+#define GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H
 
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/sockaddr.h"
@@ -45,4 +45,4 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
                              void *arg, const struct sockaddr *addr,
                              int addr_len, gpr_timespec deadline);
 
-#endif /* __GRPC_INTERNAL_IOMGR_TCP_CLIENT_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_TCP_CLIENT_H */

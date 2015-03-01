@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SECURITY_SECURITY_CONTEXT_H__
-#define __GRPC_INTERNAL_SECURITY_SECURITY_CONTEXT_H__
+#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
+#define GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H
 
 #include <grpc/grpc_security.h>
 #include "src/core/iomgr/endpoint.h"
@@ -212,4 +212,4 @@ grpc_server *grpc_secure_server_create_internal(grpc_completion_queue *cq,
                                                 const grpc_channel_args *args,
                                                 grpc_security_context *ctx);
 
-#endif /* __GRPC_INTERNAL_SECURITY_SECURITY_CONTEXT_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */

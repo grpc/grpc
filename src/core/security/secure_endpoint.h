@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_ENDPOINT_SECURE_ENDPOINT_H__
-#define __GRPC_INTERNAL_ENDPOINT_SECURE_ENDPOINT_H__
+#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURE_ENDPOINT_H
+#define GRPC_INTERNAL_CORE_SECURITY_SECURE_ENDPOINT_H
 
 #include "src/core/iomgr/endpoint.h"
 #include <grpc/support/slice.h>
@@ -44,4 +44,4 @@ grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *to_wrap,
     gpr_slice *leftover_slices, size_t leftover_nslices);
 
-#endif /* __GRPC_INTERNAL_ENDPOINT_SECURE_ENDPOINT_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURE_ENDPOINT_H */

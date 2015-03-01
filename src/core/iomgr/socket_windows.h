@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__
-#define __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H
+#define GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H
 
 #include <windows.h>
 
@@ -72,4 +72,4 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket);
 void grpc_winsocket_shutdown(grpc_winsocket *socket);
 void grpc_winsocket_orphan(grpc_winsocket *socket);
 
-#endif /* __GRPC_INTERNAL_IOMGR_HANDLE_WINDOWS_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H */

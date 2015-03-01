@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_COMPILER_PYTHON_GENERATOR_H__
-#define __GRPC_COMPILER_PYTHON_GENERATOR_H__
+#ifndef GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
+#define GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
 
 #include <string>
 #include <utility>
@@ -49,4 +49,4 @@ std::pair<bool, std::string> GetServices(const google::protobuf::FileDescriptor*
 
 }  // namespace grpc_python_generator
 
-#endif  // __GRPC_COMPILER_PYTHON_GENERATOR_H__
+#endif  // GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H

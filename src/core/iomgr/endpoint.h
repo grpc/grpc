@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_ENDPOINT_H__
-#define __GRPC_INTERNAL_IOMGR_ENDPOINT_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_H
+#define GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_H
 
 #include "src/core/iomgr/pollset.h"
 #include <grpc/support/slice.h>
@@ -103,4 +103,4 @@ struct grpc_endpoint {
   const grpc_endpoint_vtable *vtable;
 };
 
-#endif /* __GRPC_INTERNAL_IOMGR_ENDPOINT_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_H */

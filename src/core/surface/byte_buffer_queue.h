@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_BYTE_BUFFER_QUEUE_H__
-#define __GRPC_INTERNAL_SURFACE_BYTE_BUFFER_QUEUE_H__
+#ifndef GRPC_INTERNAL_CORE_SURFACE_BYTE_BUFFER_QUEUE_H
+#define GRPC_INTERNAL_CORE_SURFACE_BYTE_BUFFER_QUEUE_H
 
 #include <grpc/byte_buffer.h>
 
@@ -57,4 +57,4 @@ void grpc_bbq_flush(grpc_byte_buffer_queue *q);
 int grpc_bbq_empty(grpc_byte_buffer_queue *q);
 void grpc_bbq_push(grpc_byte_buffer_queue *q, grpc_byte_buffer *bb);
 
-#endif  /* __GRPC_INTERNAL_SURFACE_BYTE_BUFFER_QUEUE_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SURFACE_BYTE_BUFFER_QUEUE_H */

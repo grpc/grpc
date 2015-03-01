@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_IMPL_SERVICE_TYPE_H__
-#define __GRPCPP_IMPL_SERVICE_TYPE_H__
+#ifndef GRPCXX_IMPL_SERVICE_TYPE_H
+#define GRPCXX_IMPL_SERVICE_TYPE_H
 
 namespace google {
 namespace protobuf {
@@ -128,4 +128,4 @@ class AsynchronousService {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_IMPL_SERVICE_TYPE_H__
+#endif  // GRPCXX_IMPL_SERVICE_TYPE_H

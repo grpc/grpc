@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CONFIG_H__
-#define __GRPCPP_CONFIG_H__
+#ifndef GRPCXX_CONFIG_H
+#define GRPCXX_CONFIG_H
 
 #include <string>
 
@@ -50,4 +50,4 @@ typedef std::string string;
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CONFIG_H__
+#endif  // GRPCXX_CONFIG_H

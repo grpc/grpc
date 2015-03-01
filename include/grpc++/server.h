@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_H__
-#define __GRPCPP_SERVER_H__
+#ifndef GRPCXX_SERVER_H
+#define GRPCXX_SERVER_H
 
 #include <condition_variable>
 #include <list>
@@ -130,4 +130,4 @@ class Server GRPC_FINAL : private CallHook,
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_H__
+#endif  // GRPCXX_SERVER_H
