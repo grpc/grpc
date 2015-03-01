@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_THD_H__
-#define __GRPC_SUPPORT_THD_H__
+#ifndef GRPC_SUPPORT_THD_H
+#define GRPC_SUPPORT_THD_H
 /* Thread interface for GPR.
 
    Types
@@ -73,4 +73,4 @@ gpr_thd_id gpr_thd_currentid(void);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_THD_H__ */
+#endif  /* GRPC_SUPPORT_THD_H */

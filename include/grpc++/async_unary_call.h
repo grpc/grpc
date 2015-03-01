@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_ASYNC_UNARY_CALL_H__
-#define __GRPCPP_ASYNC_UNARY_CALL_H__
+#ifndef GRPCXX_ASYNC_UNARY_CALL_H
+#define GRPCXX_ASYNC_UNARY_CALL_H
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -138,4 +138,4 @@ class ServerAsyncResponseWriter GRPC_FINAL
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_ASYNC_UNARY_CALL_H__
+#endif  // GRPCXX_ASYNC_UNARY_CALL_H

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_STREAM_ENCODER_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_STREAM_ENCODER_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H
 
 #include "src/core/transport/chttp2/frame.h"
 #include "src/core/transport/metadata.h"
@@ -90,4 +90,4 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
                         grpc_chttp2_hpack_compressor *compressor,
                         gpr_slice_buffer *output);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_STREAM_ENCODER_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H */

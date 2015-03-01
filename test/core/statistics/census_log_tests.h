@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_STATISTICS_LOG_TESTS_H__
-#define __GRPC_TEST_STATISTICS_LOG_TESTS_H__
+#ifndef GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H
+#define GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H
 
 void test_invalid_record_size();
 void test_end_write_with_different_size();
@@ -48,4 +48,4 @@ void test_multiple_writers();
 void test_performance();
 void test_small_log();
 
-#endif /* __GRPC_TEST_STATISTICS_LOG_TESTS_H__ */
+#endif  /* GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H */

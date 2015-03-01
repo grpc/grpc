@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_IMPL_RPC_METHOD_H__
-#define __GRPCPP_IMPL_RPC_METHOD_H__
+#ifndef GRPCXX_IMPL_RPC_METHOD_H
+#define GRPCXX_IMPL_RPC_METHOD_H
 
 namespace google {
 namespace protobuf {
@@ -66,4 +66,4 @@ class RpcMethod {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_IMPL_RPC_METHOD_H__
+#endif  // GRPCXX_IMPL_RPC_METHOD_H

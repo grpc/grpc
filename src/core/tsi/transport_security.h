@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __TRANSPORT_SECURITY_H_
-#define __TRANSPORT_SECURITY_H_
+#ifndef GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H
+#define GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -115,4 +115,4 @@ char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
 }
 #endif
 
-#endif /* __TRANSPORT_SECURITY_H_ */
+#endif  /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H */

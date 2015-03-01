@@ -43,8 +43,8 @@
  * a valid UTF-8 string overall.
  */
 
-#ifndef __GRPC_SRC_CORE_JSON_JSON_WRITER_H__
-#define __GRPC_SRC_CORE_JSON_JSON_WRITER_H__
+#ifndef GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H
+#define GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H
 
 #include <stdlib.h>
 
@@ -90,4 +90,4 @@ void grpc_json_writer_value_raw_with_len(grpc_json_writer* writer, const char* s
 /* Sets a string value. It'll be escaped, and utf-8 validated. */
 void grpc_json_writer_value_string(grpc_json_writer* writer, const char* string);
 
-#endif /* __GRPC_SRC_CORE_JSON_JSON_WRITER_H__ */
+#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H */

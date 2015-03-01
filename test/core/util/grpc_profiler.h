@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_UTIL_GRPC_PROFILER_H__
-#define __GRPC_TEST_UTIL_GRPC_PROFILER_H__
+#ifndef GRPC_TEST_CORE_UTIL_GRPC_PROFILER_H
+#define GRPC_TEST_CORE_UTIL_GRPC_PROFILER_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,4 +45,4 @@ void grpc_profiler_stop();
 }
 #endif /*  __cplusplus */
 
-#endif /* __GRPC_TEST_UTIL_GRPC_PROFILER_H__ */
+#endif  /* GRPC_TEST_CORE_UTIL_GRPC_PROFILER_H */

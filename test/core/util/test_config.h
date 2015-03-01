@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_UTIL_TEST_CONFIG_H__
-#define __GRPC_TEST_UTIL_TEST_CONFIG_H__
+#ifndef GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
+#define GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 
 #include <grpc/support/time.h>
 
@@ -65,4 +65,4 @@ void grpc_test_init(int argc, char **argv);
 }
 #endif /*  __cplusplus */
 
-#endif /* __GRPC_TEST_UTIL_TEST_CONFIG_H__ */
+#endif  /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */
