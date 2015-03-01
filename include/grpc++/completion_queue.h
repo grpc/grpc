@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_COMPLETION_QUEUE_H__
-#define __GRPCPP_COMPLETION_QUEUE_H__
+#ifndef GRPCXX_COMPLETION_QUEUE_H
+#define GRPCXX_COMPLETION_QUEUE_H
 
 #include <grpc++/impl/client_unary_call.h>
 
@@ -121,4 +121,4 @@ class CompletionQueue {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_COMPLETION_QUEUE_H__
+#endif  // GRPCXX_COMPLETION_QUEUE_H

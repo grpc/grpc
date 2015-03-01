@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ALLOC_H__
-#define __GRPC_SUPPORT_ALLOC_H__
+#ifndef GRPC_SUPPORT_ALLOC_H
+#define GRPC_SUPPORT_ALLOC_H
 
 #include <stddef.h>
 
@@ -55,4 +55,4 @@ void gpr_free_aligned(void *ptr);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_ALLOC_H__ */
+#endif  /* GRPC_SUPPORT_ALLOC_H */

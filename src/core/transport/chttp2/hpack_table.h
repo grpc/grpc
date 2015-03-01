@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_TABLE_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_TABLE_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H
 
 #include "src/core/transport/metadata.h"
 #include <grpc/support/port_platform.h>
@@ -94,4 +94,4 @@ typedef struct {
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_TABLE_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H */

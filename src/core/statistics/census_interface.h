@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_STATISTICS_CENSUS_INTERFACE_H__
-#define __GRPC_INTERNAL_STATISTICS_CENSUS_INTERFACE_H__
+#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_INTERFACE_H
+#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -73,4 +73,4 @@ census_op_id census_tracing_start_op(void);
 /* Ends tracing. Calling this function will invalidate the input op_id. */
 void census_tracing_end_op(census_op_id op_id);
 
-#endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_INTERFACE_H__ */
+#endif  /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_INTERFACE_H */

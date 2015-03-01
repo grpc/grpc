@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __TRANSPORT_SECURITY_INTERFACE_H_
-#define __TRANSPORT_SECURITY_INTERFACE_H_
+#ifndef GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
+#define GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -361,4 +361,4 @@ void tsi_handshaker_destroy(tsi_handshaker* self);
 }
 #endif
 
-#endif /* __TRANSPORT_SECURITY_INTERFACE_H_ */
+#endif  /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */

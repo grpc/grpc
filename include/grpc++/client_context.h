@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CLIENT_CONTEXT_H__
-#define __GRPCPP_CLIENT_CONTEXT_H__
+#ifndef GRPCXX_CLIENT_CONTEXT_H
+#define GRPCXX_CLIENT_CONTEXT_H
 
 #include <chrono>
 #include <map>
@@ -151,4 +151,4 @@ class ClientContext {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CLIENT_CONTEXT_H__
+#endif  // GRPCXX_CLIENT_CONTEXT_H

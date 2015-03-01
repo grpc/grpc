@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -71,4 +71,4 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline);
    Requires GRPC_POLLSET_MU(pollset) locked. */
 void grpc_pollset_kick(grpc_pollset *pollset);
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

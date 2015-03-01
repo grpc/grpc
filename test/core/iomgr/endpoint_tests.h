@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_IOMGR_ENDPOINT_TESTS_H__
-#define __GRPC_TEST_IOMGR_ENDPOINT_TESTS_H__
+#ifndef GRPC_TEST_CORE_IOMGR_ENDPOINT_TESTS_H
+#define GRPC_TEST_CORE_IOMGR_ENDPOINT_TESTS_H
 
 #include <sys/types.h>
 
@@ -54,4 +54,4 @@ struct grpc_endpoint_test_config {
 
 void grpc_endpoint_tests(grpc_endpoint_test_config config);
 
-#endif /* __GRPC_TEST_IOMGR_ENDPOINT_TESTS_H__ */
+#endif  /* GRPC_TEST_CORE_IOMGR_ENDPOINT_TESTS_H */

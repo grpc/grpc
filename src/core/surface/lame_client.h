@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_LAME_CLIENT_H_
-#define __GRPC_INTERNAL_SURFACE_LAME_CLIENT_H_
+#ifndef GRPC_INTERNAL_CORE_SURFACE_LAME_CLIENT_H
+#define GRPC_INTERNAL_CORE_SURFACE_LAME_CLIENT_H
 
 #include <grpc/grpc.h>
 
 /* Create a lame client: this client fails every operation attempted on it. */
 grpc_channel *grpc_lame_client_channel_create(void);
 
-#endif /* __GRPC_INTERNAL_SURFACE_LAME_CLIENT_H_ */
+#endif  /* GRPC_INTERNAL_CORE_SURFACE_LAME_CLIENT_H */

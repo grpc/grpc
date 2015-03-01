@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_STATISTICS_LOG_H__
-#define __GRPC_INTERNAL_STATISTICS_LOG_H__
+#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H
+#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H
 
 #include <stddef.h>
 
@@ -88,4 +88,4 @@ size_t census_log_remaining_space(void);
    out-of-space. */
 int census_log_out_of_space_count(void);
 
-#endif /* __GRPC_INTERNAL_STATISTICS_LOG_H__ */
+#endif  /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H */
