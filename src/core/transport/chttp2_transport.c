@@ -531,6 +531,12 @@ static void destroy_transport(grpc_transport *gt) {
   drop_connection(t);
   unlock(t);
 
+  /* The drop_connection() above puts the transport into an error state, and
+     the follow-up unlock should then (as part of the cleanup work it does)
+     ensure that cb is NULL, and therefore not call back anything further.
+     This check validates this very subtle behavior.
+     It's shutdown path, so I don't believe an extra lock pair is going to be
+     problematic for performance. */
   lock(t);
   GPR_ASSERT(!t->cb);
   unlock(t);
