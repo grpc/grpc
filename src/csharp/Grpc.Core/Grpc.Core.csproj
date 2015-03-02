@@ -65,6 +65,10 @@
     <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="Utils\ExceptionHelper.cs" />
+    <Compile Include="Internal\CredentialsSafeHandle.cs" />
+    <Compile Include="Credentials.cs" />
+    <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
+    <Compile Include="ChannelArgs.cs" />
   </ItemGroup>
   <Choose>
     <!-- Under older versions of Monodevelop, Choose is not supported and is just

@@ -39,6 +39,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/thd.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include <string.h>
 
@@ -264,6 +265,45 @@ grpcsharp_channel_create_call(grpc_channel *channel, grpc_completion_queue *cq,
                               const char *method, const char *host,
                               gpr_timespec deadline) {
   return grpc_channel_create_call(channel, cq, method, host, deadline);
+}
+
+/* Channel args */
+
+GPR_EXPORT grpc_channel_args *GPR_CALLTYPE
+grpcsharp_channel_args_create(size_t num_args) {
+  grpc_channel_args *args =
+      (grpc_channel_args *)gpr_malloc(sizeof(grpc_channel_args));
+  memset(args, 0, sizeof(grpc_channel_args));
+
+  args->num_args = num_args;
+  args->args = (grpc_arg *)gpr_malloc(sizeof(grpc_arg) * num_args);
+  memset(args->args, 0, sizeof(grpc_arg) * num_args);
+  return args;
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_channel_args_set_string(grpc_channel_args *args, size_t index,
+                                  const char *key, const char *value) {
+  GPR_ASSERT(args);
+  GPR_ASSERT(index < args->num_args);
+  args->args[index].type = GRPC_ARG_STRING;
+  args->args[index].key = gpr_strdup(key);
+  args->args[index].value.string = gpr_strdup(value);
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_channel_args_destroy(grpc_channel_args *args) {
+  size_t i;
+  if (args) {
+    for (i = 0; i < args->num_args; i++) {
+      gpr_free(args->args[i].key);
+      if (args->args[i].type == GRPC_ARG_STRING) {
+        gpr_free(args->args[i].value.string);
+      }
+    }
+    gpr_free(args->args);
+    gpr_free(args);
+  }
 }
 
 /* Timespec */
@@ -583,6 +623,34 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
   return grpc_server_request_call(
       server, &(ctx->server_rpc_new.call), &(ctx->server_rpc_new.call_details),
       &(ctx->server_rpc_new.request_metadata), cq, ctx);
+}
+
+/* Security */
+
+GPR_EXPORT grpc_credentials *GPR_CALLTYPE
+grpcsharp_ssl_credentials_create(const char *pem_root_certs,
+                                 const char *key_cert_pair_cert_chain,
+                                 const char *key_cert_pair_private_key) {
+  grpc_ssl_pem_key_cert_pair key_cert_pair;
+  if (key_cert_pair_cert_chain || key_cert_pair_private_key) {
+    key_cert_pair.cert_chain = key_cert_pair_cert_chain;
+    key_cert_pair.private_key = key_cert_pair_private_key;
+    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair);
+  } else {
+    GPR_ASSERT(!key_cert_pair_cert_chain);
+    GPR_ASSERT(!key_cert_pair_private_key);
+    return grpc_ssl_credentials_create(pem_root_certs, NULL);
+  }
+}
+
+GPR_EXPORT void grpcsharp_credentials_release(grpc_credentials *creds) {
+  grpc_credentials_release(creds);
+}
+
+GPR_EXPORT grpc_channel *GPR_CALLTYPE
+grpcsharp_secure_channel_create(grpc_credentials *creds, const char *target,
+                                const grpc_channel_args *args) {
+  return grpc_secure_channel_create(creds, target, args);
 }
 
 /* Logging */

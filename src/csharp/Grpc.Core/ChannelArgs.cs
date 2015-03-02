@@ -29,6 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,79 +37,76 @@ using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
-    public class Channel : IDisposable
+    // TODO: should we be using the builder pattern?
+    public class ChannelArgs
     {
-        readonly ChannelSafeHandle handle;
-        readonly String target;
+        public const string SslTargetNameOverrideKey = "grpc.ssl_target_name_override";
+
+        public class Builder
+        {
+            Dictionary<string,string> stringArgs = new Dictionary<string,string>();
+            // TODO: AddInteger not supported yet.
+            public Builder AddString(string key, string value)
+            {
+                stringArgs.Add(key, value);
+                return this;
+            }
+
+            public ChannelArgs Build()
+            {
+                return new ChannelArgs(stringArgs);
+            }
+        }
+
+        Dictionary<string,string> stringArgs;
+
+        private ChannelArgs(Dictionary<string, string> stringArgs)
+        {
+            // TODO: use immutable dict?
+            this.stringArgs = new Dictionary<string, string>(stringArgs);
+        }
+
+        public string GetSslTargetNameOverride()
+        {
+            string result;
+            if (stringArgs.TryGetValue(SslTargetNameOverrideKey, out result))
+            {
+                return result;
+            }
+            return null;
+        }
+
+        public static Builder NewBuilder()
+        {
+            return new Builder();
+        }
 
         /// <summary>
-        /// Creates a channel.
+        /// Creates native object for the channel arguments.
         /// </summary>
-        public Channel(string target, Credentials credentials = null, ChannelArgs channelArgs = null)
+        /// <returns>The native channel arguments.</returns>
+        internal ChannelArgsSafeHandle ToNativeChannelArgs()
         {
-            using (ChannelArgsSafeHandle nativeChannelArgs = CreateNativeChannelArgs(channelArgs))
+            ChannelArgsSafeHandle nativeArgs = null;
+            try
             {
-                if (credentials != null)
+                nativeArgs = ChannelArgsSafeHandle.Create(stringArgs.Count);
+                int i = 0;
+                foreach (var entry in stringArgs)
                 {
-                    using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
-                    {
-                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
-                    }
+                    nativeArgs.SetString(i, entry.Key, entry.Value);
+                    i++;
                 }
-                else
+                return nativeArgs;
+            }
+            catch (Exception e)
+            {
+                if (nativeArgs != null)
                 {
-                    this.handle = ChannelSafeHandle.Create(target, nativeChannelArgs);
+                    nativeArgs.Dispose();
                 }
+                throw;
             }
-            this.target = GetOverridenTarget(target, channelArgs);
-        }
-
-        internal ChannelSafeHandle Handle
-        {
-            get
-            {
-                return this.handle;
-            }
-        }
-
-        public string Target
-        {
-            get
-            {
-                return this.target;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (handle != null && !handle.IsInvalid)
-            {
-                handle.Dispose();
-            }
-        }
-
-        private static string GetOverridenTarget(string target, ChannelArgs args)
-        {
-            if (args != null && !string.IsNullOrEmpty(args.GetSslTargetNameOverride()))
-            {
-                return args.GetSslTargetNameOverride();
-            }
-            return target;
-        }
-
-        private static ChannelArgsSafeHandle CreateNativeChannelArgs(ChannelArgs args)
-        {
-            if (args == null)
-            {
-                return ChannelArgsSafeHandle.CreateNull();
-            }
-            return args.ToNativeChannelArgs();
         }
     }
 }
