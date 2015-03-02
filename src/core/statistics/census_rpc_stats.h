@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_STATISTICS_CENSUS_RPC_STATS_H__
-#define __GRPC_INTERNAL_STATISTICS_CENSUS_RPC_STATS_H__
+#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_RPC_STATS_H
+#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_RPC_STATS_H
 
 #include "src/core/statistics/census_interface.h"
 #include <grpc/support/port_platform.h>
@@ -98,4 +98,4 @@ void census_stats_store_shutdown(void);
 }
 #endif
 
-#endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_RPC_STATS_H__ */
+#endif  /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_RPC_STATS_H */

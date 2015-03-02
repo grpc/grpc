@@ -64,13 +64,5 @@ ENV CLOUD_SDK /google-cloud-sdk
 RUN $CLOUD_SDK/install.sh --usage-reporting=true --path-update=true --bash-completion=true --rc-path=/.bashrc --disable-installation-options
 ENV PATH $CLOUD_SDK/bin:$PATH
 
-# Install a GitHub SSH service credential that gives access to the GitHub repo while it's private
-# TODO: remove this once the repo is public
-ADD .ssh .ssh
-RUN chmod 600 .ssh/github.rsa
-RUN mkdir -p $HOME/.ssh && echo 'Host github.com' > $HOME/.ssh/config
-RUN echo "    IdentityFile /.ssh/github.rsa" >> $HOME/.ssh/config
-RUN echo 'StrictHostKeyChecking no' >> $HOME/.ssh/config
-
 # Define the default command.
 CMD ["bash"]

@@ -32,7 +32,7 @@
     "name": "census_hash_table_test"
   }, 
   {
-    "flaky": false, 
+    "flaky": true, 
     "language": "c", 
     "name": "census_statistics_multiple_writers_circular_buffer_test"
   }, 
@@ -52,7 +52,7 @@
     "name": "census_statistics_quick_test"
   }, 
   {
-    "flaky": false, 
+    "flaky": true, 
     "language": "c", 
     "name": "census_statistics_small_log_test"
   }, 

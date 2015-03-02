@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_RUBY_GENERATOR_H_
-#define NET_GRPC_COMPILER_RUBY_GENERATOR_H_
+#ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_H
+#define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_H
 
 #include <string>
 
@@ -48,4 +48,4 @@ std::string GetServices(const google::protobuf::FileDescriptor *file);
 
 }  // namespace grpc_ruby_generator
 
-#endif  // NET_GRPC_COMPILER_RUBY_GENERATOR_H_
+#endif  // GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_H

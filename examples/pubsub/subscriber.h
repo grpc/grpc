@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
-#define __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
+#ifndef GRPC_EXAMPLES_PUBSUB_SUBSCRIBER_H
+#define GRPC_EXAMPLES_PUBSUB_SUBSCRIBER_H
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/status.h>
@@ -65,4 +65,4 @@ class Subscriber {
 }  // namespace examples
 }  // namespace grpc
 
-#endif  // __GRPCPP_EXAMPLES_PUBSUB_SUBSCRIBER_H_
+#endif  // GRPC_EXAMPLES_PUBSUB_SUBSCRIBER_H

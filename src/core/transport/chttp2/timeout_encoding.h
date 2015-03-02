@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H_
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H_
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H
 
 #include "src/core/support/string.h"
 #include <grpc/support/time.h>
@@ -44,4 +44,4 @@
 void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer);
 int grpc_chttp2_decode_timeout(const char *buffer, gpr_timespec *timeout);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H_ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_TIMEOUT_ENCODING_H */

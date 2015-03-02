@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
-#define __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
+#ifndef GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
+#define GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
 
 #include "src/core/debug/trace.h"
 #include <grpc/support/log.h>
@@ -44,4 +44,4 @@
     gpr_free(_ev);                                      \
   }
 
-#endif /* __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H */

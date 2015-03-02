@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_
-#define __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H
+#define GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H
 
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
 extern grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
 
-#endif  /* __GRPC_INTERNAL_IOMGR_WAKEUP_FD_PIPE_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H */

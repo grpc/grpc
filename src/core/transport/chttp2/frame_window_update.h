@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
 
 #include <grpc/support/slice.h>
 #include "src/core/transport/chttp2/frame.h"
@@ -52,4 +52,4 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     void *parser, grpc_chttp2_parse_state *state, gpr_slice slice, int is_last);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H */

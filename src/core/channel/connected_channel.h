@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_CHANNEL_CONNECTED_CHANNEL_H__
-#define __GRPC_INTERNAL_CHANNEL_CONNECTED_CHANNEL_H__
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
 
@@ -46,4 +46,4 @@ extern const grpc_channel_filter grpc_connected_channel_filter;
 grpc_transport_setup_result grpc_connected_channel_bind_transport(
     grpc_channel_stack *channel_stack, grpc_transport *transport);
 
-#endif /* __GRPC_INTERNAL_CHANNEL_CONNECTED_CHANNEL_H__ */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H */
