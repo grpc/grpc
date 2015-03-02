@@ -39,8 +39,21 @@
 #include <grpc/support/log.h>
 #include "src/core/support/env.h"
 
-#if GRPC_ENABLE_TRACING
-gpr_uint32 grpc_trace_bits = 0;
+typedef struct tracer {
+  const char *name;
+  int *flag;
+  struct tracer *next;
+} tracer;
+static tracer *tracers;
+
+void grpc_register_tracer(const char *name, int *flag) {
+  tracer *t = gpr_malloc(sizeof(*t));
+  t->name = name;
+  t->flag = flag;
+  t->next = tracers;
+  *flag = 0;
+  tracers = t;
+}
 
 static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
   size_t n = *ns;
@@ -67,26 +80,26 @@ static void parse(const char *s) {
   char **strings = NULL;
   size_t nstrings = 0;
   size_t i;
+  tracer *t;
   split(s, &strings, &nstrings);
-
-  grpc_trace_bits = 0;
 
   for (i = 0; i < nstrings; i++) {
     const char *s = strings[i];
-    if (0 == strcmp(s, "surface")) {
-      grpc_trace_bits |= GRPC_TRACE_SURFACE;
-    } else if (0 == strcmp(s, "channel")) {
-      grpc_trace_bits |= GRPC_TRACE_CHANNEL;
-    } else if (0 == strcmp(s, "tcp")) {
-      grpc_trace_bits |= GRPC_TRACE_TCP;
-    } else if (0 == strcmp(s, "secure_endpoint")) {
-      grpc_trace_bits |= GRPC_TRACE_SECURE_ENDPOINT;
-    } else if (0 == strcmp(s, "http")) {
-      grpc_trace_bits |= GRPC_TRACE_HTTP;
-    } else if (0 == strcmp(s, "all")) {
-      grpc_trace_bits = -1;
+    if (0 == strcmp(s, "all")) {
+      for (t = tracers; t; t = t->next) {
+        *t->flag = 1;
+      }
     } else {
-      gpr_log(GPR_ERROR, "Unknown trace var: '%s'", s);
+      int found = 0;
+      for (t = tracers; t; t = t->next) {
+        if (0 == strcmp(s, t->name)) {
+          *t->flag = 1;
+          found = 1;
+        }
+      }
+      if (!found) {
+        gpr_log(GPR_ERROR, "Unknown trace var: '%s'", s);
+      }
     }
   }
 
@@ -96,17 +109,15 @@ static void parse(const char *s) {
   gpr_free(strings);
 }
 
-void grpc_init_trace_bits() {
-  char *e = gpr_getenv("GRPC_TRACE");
-  if (e == NULL) {
-    grpc_trace_bits = 0;
-  } else {
+void grpc_tracer_init(const char *env_var) {
+  char *e = gpr_getenv(env_var);
+  if (e != NULL) {
     parse(e);
     gpr_free(e);
   }
+  while (tracers) {
+    tracer *t = tracers;
+    tracers = t->next;
+    gpr_free(t);
+  }
 }
-#else
-void grpc_init_trace_bits() {
-}
-#endif
-

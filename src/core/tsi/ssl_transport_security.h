@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __SSL_TRANSPORT_SECURITY_H_
-#define __SSL_TRANSPORT_SECURITY_H_
+#ifndef GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#define GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -170,4 +170,4 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
 }
 #endif
 
-#endif /* __SSL_TRANSPORT_SECURITY_H_ */
+#endif  /* GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

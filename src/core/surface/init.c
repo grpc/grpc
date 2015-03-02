@@ -35,6 +35,10 @@
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/debug/trace.h"
 #include "src/core/statistics/census_interface.h"
+#include "src/core/channel/channel_stack.h"
+#include "src/core/surface/init.h"
+#include "src/core/surface/surface_trace.h"
+#include "src/core/transport/chttp2_transport.h"
 
 static gpr_once g_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
@@ -50,7 +54,11 @@ void grpc_init(void) {
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
-    grpc_init_trace_bits();
+    grpc_register_tracer("channel", &grpc_trace_channel);
+    grpc_register_tracer("surface", &grpc_surface_trace);
+    grpc_register_tracer("http", &grpc_http_trace);
+    grpc_security_pre_init();
+    grpc_tracer_init("GRPC_TRACE");
     grpc_iomgr_init();
     census_init();
   }

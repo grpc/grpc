@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CALL_H__
-#define __GRPCPP_CALL_H__
+#ifndef GRPCXX_IMPL_CALL_H
+#define GRPCXX_IMPL_CALL_H
 
 #include <grpc/grpc.h>
 #include <grpc++/config.h>
@@ -143,4 +143,4 @@ class Call GRPC_FINAL {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CALL_INTERFACE_H__
+#endif  // GRPCXX_IMPL_CALL_H

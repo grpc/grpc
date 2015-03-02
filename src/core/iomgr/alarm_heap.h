@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_ALARM_HEAP_H_
-#define __GRPC_INTERNAL_IOMGR_ALARM_HEAP_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H
+#define GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H
 
 #include "src/core/iomgr/alarm.h"
 
@@ -54,4 +54,4 @@ void grpc_alarm_heap_pop(grpc_alarm_heap *heap);
 
 int grpc_alarm_heap_is_empty(grpc_alarm_heap *heap);
 
-#endif /* __GRPC_INTERNAL_IOMGR_ALARM_HEAP_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H */

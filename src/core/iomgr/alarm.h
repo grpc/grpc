@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_ALARM_H__
-#define __GRPC_INTERNAL_IOMGR_ALARM_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_H
+#define GRPC_INTERNAL_CORE_IOMGR_ALARM_H
 
 #include "src/core/iomgr/iomgr.h"
 #include <grpc/support/port_platform.h>
@@ -86,4 +86,4 @@ void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
    Requires:  cancel() must happen after add() on a given alarm */
 void grpc_alarm_cancel(grpc_alarm *alarm);
 
-#endif /* __GRPC_INTERNAL_IOMGR_ALARM_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_ALARM_H */

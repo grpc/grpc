@@ -1094,6 +1094,21 @@ grpc_cloud_prod_auth_service_account_creds_gen_node_cmd() {
   echo $the_cmd
 }
 
+# constructs the full dockerized node gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_node_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local cmd_prefix="sudo docker run $env_flag grpc/node";
+  local test_script="/usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local added_gfe_flags=$(_grpc_gce_test_flags)
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+  echo $the_cmd
+}
+
 # constructs the full dockerized cpp interop test cmd.
 #
 # call-seq:

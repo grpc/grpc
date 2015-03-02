@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_PROTO_PROTO_UTILS_H__
-#define __GRPCPP_INTERNAL_PROTO_PROTO_UTILS_H__
+#ifndef GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
+#define GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H
 
 struct grpc_byte_buffer;
 namespace google {
@@ -54,4 +54,4 @@ bool DeserializeProto(grpc_byte_buffer *buffer, google::protobuf::Message *msg);
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_PROTO_PROTO_UTILS_H__
+#endif  // GRPC_INTERNAL_CPP_PROTO_PROTO_UTILS_H

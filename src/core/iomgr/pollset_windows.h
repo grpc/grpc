@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
 
 #include <windows.h>
 #include <grpc/support/sync.h>
@@ -53,4 +53,4 @@ typedef struct grpc_pollset {
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 #define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

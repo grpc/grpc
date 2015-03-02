@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_SLICE_BUFFER_H__
-#define __GRPC_SUPPORT_SLICE_BUFFER_H__
+#ifndef GRPC_SUPPORT_SLICE_BUFFER_H
+#define GRPC_SUPPORT_SLICE_BUFFER_H
 
 #include <grpc/support/slice.h>
 
@@ -81,4 +81,4 @@ void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_SLICE_BUFFER_H__ */
+#endif  /* GRPC_SUPPORT_SLICE_BUFFER_H */

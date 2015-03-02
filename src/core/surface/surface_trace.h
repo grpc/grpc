@@ -31,17 +31,19 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
-#define __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__
+#ifndef GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
+#define GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
 
 #include "src/core/debug/trace.h"
 #include <grpc/support/log.h>
 
+extern int grpc_surface_trace;
+
 #define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (grpc_trace_bits & GRPC_TRACE_SURFACE) {           \
+  if (grpc_surface_trace) {           \
     char *_ev = grpc_event_string(event);               \
     gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
     gpr_free(_ev);                                      \
   }
 
-#endif /* __GRPC_INTERNAL_SURFACE_SURFACE_TRACE_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CLIENT_UNARY_CALL_H__
-#define __GRPCPP_CLIENT_UNARY_CALL_H__
+#ifndef GRPCXX_IMPL_CLIENT_UNARY_CALL_H
+#define GRPCXX_IMPL_CLIENT_UNARY_CALL_H
 
 namespace google {
 namespace protobuf {
@@ -56,4 +56,4 @@ Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
 
 }  // namespace grpc
 
-#endif
+#endif  // GRPCXX_IMPL_CLIENT_UNARY_CALL_H

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_SYNC_WIN32_H__
-#define __GRPC_SUPPORT_SYNC_WIN32_H__
+#ifndef GRPC_SUPPORT_SYNC_WIN32_H
+#define GRPC_SUPPORT_SYNC_WIN32_H
 
 #include <grpc/support/sync_generic.h>
 
@@ -48,4 +48,4 @@ typedef CONDITION_VARIABLE gpr_cv;
 typedef INIT_ONCE gpr_once;
 #define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
 
-#endif /* __GRPC_SUPPORT_SYNC_WIN32_H__ */
+#endif  /* GRPC_SUPPORT_SYNC_WIN32_H */
