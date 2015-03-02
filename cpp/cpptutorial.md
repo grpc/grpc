@@ -20,7 +20,7 @@ With gRPC we can define our service once in a .proto file and implement clients 
 
 The example code for our tutorial is in [grpc/grpc-common/cpp/route_guide](https://github.com/grpc/grpc-common/tree/master/cpp/route_guide). To download the example, clone the `grpc-common` repository by running the following command:
 ```shell
-$ git clone https://github.com/google/grpc-common.git
+$ git clone https://github.com/grpc/grpc-common.git
 ```
 
 Then change your current directory to `grpc-common/cpp/route_guide`:
