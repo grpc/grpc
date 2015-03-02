@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\call_op_string.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -221,6 +224,9 @@
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\surface_trace.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
@@ -480,6 +486,9 @@
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\event_string.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\init.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\lame_client.h">

@@ -102,12 +102,12 @@
     "name": "fd_posix_test"
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "fling_stream_test"
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "fling_test"
   }, 

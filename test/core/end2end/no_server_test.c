@@ -41,7 +41,7 @@ static void *tag(gpr_intptr i) { return (void *)i; }
 int main(int argc, char **argv) {
   grpc_channel *chan;
   grpc_call *call;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
   grpc_completion_queue *cq;
   cq_verifier *cqv;
   grpc_event *ev;

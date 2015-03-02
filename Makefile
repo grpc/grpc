@@ -2328,6 +2328,7 @@ LIBGRPC_SRC = \
     src/core/security/secure_transport_setup.c \
     src/core/security/security_context.c \
     src/core/security/server_secure_chttp2.c \
+    src/core/surface/init_secure.c \
     src/core/surface/secure_channel_create.c \
     src/core/surface/secure_server_create.c \
     src/core/tsi/fake_transport_security.c \
@@ -2407,6 +2408,7 @@ LIBGRPC_SRC = \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
+    src/core/surface/surface_trace.c \
     src/core/transport/chttp2/alpn.c \
     src/core/transport/chttp2/bin_encoder.c \
     src/core/transport/chttp2/frame_data.c \
@@ -2472,6 +2474,7 @@ src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
 src/core/security/security_context.c: $(OPENSSL_DEP)
 src/core/security/server_secure_chttp2.c: $(OPENSSL_DEP)
+src/core/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/surface/secure_server_create.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
@@ -2551,6 +2554,7 @@ src/core/surface/metadata_array.c: $(OPENSSL_DEP)
 src/core/surface/server.c: $(OPENSSL_DEP)
 src/core/surface/server_chttp2.c: $(OPENSSL_DEP)
 src/core/surface/server_create.c: $(OPENSSL_DEP)
+src/core/surface/surface_trace.c: $(OPENSSL_DEP)
 src/core/transport/chttp2/alpn.c: $(OPENSSL_DEP)
 src/core/transport/chttp2/bin_encoder.c: $(OPENSSL_DEP)
 src/core/transport/chttp2/frame_data.c: $(OPENSSL_DEP)
@@ -2633,6 +2637,7 @@ $(OBJDIR)/$(CONFIG)/src/core/security/secure_endpoint.o:
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_transport_setup.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/security_context.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/server_secure_chttp2.o: 
+$(OBJDIR)/$(CONFIG)/src/core/surface/init_secure.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/secure_channel_create.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/secure_server_create.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/fake_transport_security.o: 
@@ -2712,6 +2717,7 @@ $(OBJDIR)/$(CONFIG)/src/core/surface/metadata_array.o:
 $(OBJDIR)/$(CONFIG)/src/core/surface/server.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_chttp2.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_create.o: 
+$(OBJDIR)/$(CONFIG)/src/core/surface/surface_trace.o: 
 $(OBJDIR)/$(CONFIG)/src/core/transport/chttp2/alpn.o: 
 $(OBJDIR)/$(CONFIG)/src/core/transport/chttp2/bin_encoder.o: 
 $(OBJDIR)/$(CONFIG)/src/core/transport/chttp2/frame_data.o: 
@@ -2811,6 +2817,7 @@ $(OBJDIR)/$(CONFIG)/test/core/util/slice_splitter.o:
 
 
 LIBGRPC_UNSECURE_SRC = \
+    src/core/surface/init_unsecure.c \
     src/core/channel/call_op_string.c \
     src/core/channel/census_filter.c \
     src/core/channel/channel_args.c \
@@ -2885,6 +2892,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
+    src/core/surface/surface_trace.c \
     src/core/transport/chttp2/alpn.c \
     src/core/transport/chttp2/bin_encoder.c \
     src/core/transport/chttp2/frame_data.c \
@@ -2947,6 +2955,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC_UNSECURE_OBJS:.o=.dep)
 endif
 
+$(OBJDIR)/$(CONFIG)/src/core/surface/init_unsecure.o: 
 $(OBJDIR)/$(CONFIG)/src/core/channel/call_op_string.o: 
 $(OBJDIR)/$(CONFIG)/src/core/channel/census_filter.o: 
 $(OBJDIR)/$(CONFIG)/src/core/channel/channel_args.o: 
@@ -3021,6 +3030,7 @@ $(OBJDIR)/$(CONFIG)/src/core/surface/metadata_array.o:
 $(OBJDIR)/$(CONFIG)/src/core/surface/server.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_chttp2.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/server_create.o: 
+$(OBJDIR)/$(CONFIG)/src/core/surface/surface_trace.o: 
 $(OBJDIR)/$(CONFIG)/src/core/transport/chttp2/alpn.o: 
 $(OBJDIR)/$(CONFIG)/src/core/transport/chttp2/bin_encoder.o: 
 $(OBJDIR)/$(CONFIG)/src/core/transport/chttp2/frame_data.o: 
@@ -8076,10 +8086,21 @@ $(BINDIR)/$(CONFIG)/qps_client_async: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_client_async: $(QPS_CLIENT_ASYNC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_client_async: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_client_async: $(PROTOBUF_DEP) $(QPS_CLIENT_ASYNC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_ASYNC_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/qps_client_async
+
+endif
 
 endif
 
@@ -8153,10 +8174,21 @@ $(BINDIR)/$(CONFIG)/qps_server_async: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_server_async: $(QPS_SERVER_ASYNC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_server_async: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_server_async: $(PROTOBUF_DEP) $(QPS_SERVER_ASYNC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_ASYNC_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/qps_server_async
+
+endif
 
 endif
 
