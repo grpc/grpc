@@ -237,54 +237,70 @@ bool PrintServerFactory(const ServiceDescriptor* service, Printer* out) {
              "Service", service->name());
   {
     IndentScope raii_create_server_indent(out);
-    map<string, pair<string, string>> method_to_module_and_message;
-    out->Print("method_implementations = {\n");
+    map<string, string> method_description_constructors;
+    map<string, pair<string, string>> input_message_modules_and_classes;
+    map<string, pair<string, string>> output_message_modules_and_classes;
     for (int i = 0; i < service->method_count(); ++i) {
-      IndentScope raii_implementations_indent(out);
-      const MethodDescriptor* meth = service->method(i);
-      string meth_type =
-          string(meth->client_streaming() ? "stream" : "unary") +
-          string(meth->server_streaming() ? "_stream" : "_unary") + "_inline";
-      out->Print("\"$Method$\": utilities.$Type$(servicer.$Method$),\n",
-                 "Method", meth->name(),
-                 "Type", meth_type);
-      // Maintain information on the input type of the service method for later
-      // use in constructing the service assembly's activated fore link.
-      const Descriptor* input_type = meth->input_type();
-      pair<string, string> module_and_message;
-      if (!GetModuleAndMessagePath(input_type, &module_and_message)) {
+      const MethodDescriptor* method = service->method(i);
+      const string method_description_constructor =
+          string(method->client_streaming() ? "stream_" : "unary_") +
+          string(method->server_streaming() ? "stream_" : "unary_") +
+          "service_description";
+      pair<string, string> input_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->input_type(),
+                                   &input_message_module_and_class)) {
         return false;
       }
-      method_to_module_and_message.insert(
-          make_pair(meth->name(), module_and_message));
+      pair<string, string> output_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->output_type(),
+                                   &output_message_module_and_class)) {
+        return false;
+      }
+      // Import the modules that define the messages used in RPCs.
+      out->Print("import $Module$\n", "Module",
+                 input_message_module_and_class.first);
+      out->Print("import $Module$\n", "Module",
+                 output_message_module_and_class.first);
+      method_description_constructors.insert(
+          make_pair(method->name(), method_description_constructor));
+      input_message_modules_and_classes.insert(
+          make_pair(method->name(), input_message_module_and_class));
+      output_message_modules_and_classes.insert(
+          make_pair(method->name(), output_message_module_and_class));
+    }
+    out->Print("method_service_descriptions = {\n");
+    for (auto& name_and_description_constructor :
+         method_description_constructors) {
+      IndentScope raii_descriptions_indent(out);
+      const string method_name = name_and_description_constructor.first;
+      auto input_message_module_and_class =
+          input_message_modules_and_classes.find(method_name);
+      auto output_message_module_and_class =
+          output_message_modules_and_classes.find(method_name);
+      out->Print("\"$Method$\": utilities.$Constructor$(\n", "Method",
+                 method_name, "Constructor",
+                 name_and_description_constructor.second);
+      {
+        IndentScope raii_description_arguments_indent(out);
+        out->Print("servicer.$Method$,\n", "Method", method_name);
+        out->Print(
+            "$InputTypeModule$.$InputTypeClass$.FromString,\n",
+            "InputTypeModule", input_message_module_and_class->second.first,
+            "InputTypeClass", input_message_module_and_class->second.second);
+        out->Print(
+            "$OutputTypeModule$.$OutputTypeClass$.SerializeToString,\n",
+            "OutputTypeModule", output_message_module_and_class->second.first,
+            "OutputTypeClass", output_message_module_and_class->second.second);
+      }
+      out->Print("),\n");
     }
     out->Print("}\n");
-    // Ensure that we've imported all of the relevant messages.
-    for (auto& meth_vals : method_to_module_and_message) {
-      out->Print("import $Module$\n",
-                 "Module", meth_vals.second.first);
-    }
-    out->Print("request_deserializers = {\n");
-    for (auto& meth_vals : method_to_module_and_message) {
-      IndentScope raii_serializers_indent(out);
-      string full_input_type_path = meth_vals.second.first + "." +
-          meth_vals.second.second;
-      out->Print("\"$Method$\": $Type$.FromString,\n",
-                 "Method", meth_vals.first,
-                 "Type", full_input_type_path);
-    }
-    out->Print("}\n");
-    out->Print("response_serializers = {\n");
-    for (auto& meth_vals : method_to_module_and_message) {
-      IndentScope raii_serializers_indent(out);
-      out->Print("\"$Method$\": lambda x: x.SerializeToString(),\n",
-                 "Method", meth_vals.first);
-    }
-    out->Print("}\n");
-    out->Print("link = fore.activated_fore_link(port, request_deserializers, "
-               "response_serializers, root_certificates, key_chain_pairs)\n");
-    out->Print("return implementations.assemble_service("
-               "method_implementations, link)\n");
+    // out->Print("return implementations.insecure_server("
+    //            "method_service_descriptions, port)\n");
+    out->Print(
+        "return implementations.secure_server("
+        "method_service_descriptions, port, root_certificates,"
+        " key_chain_pairs)\n");
   }
   return true;
 }
@@ -296,66 +312,74 @@ bool PrintStubFactory(const ServiceDescriptor* service, Printer* out) {
   out->Print(dict, "def early_adopter_create_$Service$_stub(host, port):\n");
   {
     IndentScope raii_create_server_indent(out);
-    map<string, pair<string, string>> method_to_module_and_message;
-    out->Print("method_implementations = {\n");
+    map<string, string> method_description_constructors;
+    map<string, pair<string, string>> input_message_modules_and_classes;
+    map<string, pair<string, string>> output_message_modules_and_classes;
     for (int i = 0; i < service->method_count(); ++i) {
-      IndentScope raii_implementations_indent(out);
-      const MethodDescriptor* meth = service->method(i);
-      string meth_type =
-          string(meth->client_streaming() ? "stream" : "unary") +
-          string(meth->server_streaming() ? "_stream" : "_unary") + "_inline";
-      // TODO(atash): once the expected input to assemble_dynamic_inline_stub is
-      // cleaned up, change this to the expected argument's dictionary values.
-      out->Print("\"$Method$\": utilities.$Type$(None),\n",
-                 "Method", meth->name(),
-                 "Type", meth_type);
-      // Maintain information on the input type of the service method for later
-      // use in constructing the service assembly's activated fore link.
-      const Descriptor* output_type = meth->output_type();
-      pair<string, string> module_and_message;
-      if (!GetModuleAndMessagePath(output_type, &module_and_message)) {
+      const MethodDescriptor* method = service->method(i);
+      const string method_description_constructor =
+          string(method->client_streaming() ? "stream_" : "unary_") +
+          string(method->server_streaming() ? "stream_" : "unary_") +
+          "invocation_description";
+      pair<string, string> input_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->input_type(),
+                                   &input_message_module_and_class)) {
         return false;
       }
-      method_to_module_and_message.insert(
-          make_pair(meth->name(), module_and_message));
+      pair<string, string> output_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->output_type(),
+                                   &output_message_module_and_class)) {
+        return false;
+      }
+      // Import the modules that define the messages used in RPCs.
+      out->Print("import $Module$\n", "Module",
+                 input_message_module_and_class.first);
+      out->Print("import $Module$\n", "Module",
+                 output_message_module_and_class.first);
+      method_description_constructors.insert(
+          make_pair(method->name(), method_description_constructor));
+      input_message_modules_and_classes.insert(
+          make_pair(method->name(), input_message_module_and_class));
+      output_message_modules_and_classes.insert(
+          make_pair(method->name(), output_message_module_and_class));
+    }
+    out->Print("method_invocation_descriptions = {\n");
+    for (auto& name_and_description_constructor :
+         method_description_constructors) {
+      IndentScope raii_descriptions_indent(out);
+      const string method_name = name_and_description_constructor.first;
+      auto input_message_module_and_class =
+          input_message_modules_and_classes.find(method_name);
+      auto output_message_module_and_class =
+          output_message_modules_and_classes.find(method_name);
+      out->Print("\"$Method$\": utilities.$Constructor$(\n", "Method",
+                 method_name, "Constructor",
+                 name_and_description_constructor.second);
+      {
+        IndentScope raii_description_arguments_indent(out);
+        out->Print(
+            "$InputTypeModule$.$InputTypeClass$.SerializeToString,\n",
+            "InputTypeModule", input_message_module_and_class->second.first,
+            "InputTypeClass", input_message_module_and_class->second.second);
+        out->Print(
+            "$OutputTypeModule$.$OutputTypeClass$.FromString,\n",
+            "OutputTypeModule", output_message_module_and_class->second.first,
+            "OutputTypeClass", output_message_module_and_class->second.second);
+      }
+      out->Print("),\n");
     }
     out->Print("}\n");
-    // Ensure that we've imported all of the relevant messages.
-    for (auto& meth_vals : method_to_module_and_message) {
-      out->Print("import $Module$\n",
-                 "Module", meth_vals.second.first);
-    }
-    out->Print("response_deserializers = {\n");
-    for (auto& meth_vals : method_to_module_and_message) {
-      IndentScope raii_serializers_indent(out);
-      string full_output_type_path = meth_vals.second.first + "." +
-          meth_vals.second.second;
-      out->Print("\"$Method$\": $Type$.FromString,\n",
-                 "Method", meth_vals.first,
-                 "Type", full_output_type_path);
-    }
-    out->Print("}\n");
-    out->Print("request_serializers = {\n");
-    for (auto& meth_vals : method_to_module_and_message) {
-      IndentScope raii_serializers_indent(out);
-      out->Print("\"$Method$\": lambda x: x.SerializeToString(),\n",
-                 "Method", meth_vals.first);
-    }
-    out->Print("}\n");
-    out->Print("link = rear.activated_rear_link("
-               "host, port, request_serializers, response_deserializers)\n");
-    out->Print("return implementations.assemble_dynamic_inline_stub("
-               "method_implementations, link)\n");
+    out->Print(
+        "return implementations.insecure_stub("
+        "method_invocation_descriptions, host, port)\n");
   }
   return true;
 }
 
 bool PrintPreamble(const FileDescriptor* file, Printer* out) {
   out->Print("import abc\n");
-  out->Print("from grpc._adapter import fore\n");
-  out->Print("from grpc._adapter import rear\n");
-  out->Print("from grpc.framework.assembly import implementations\n");
-  out->Print("from grpc.framework.assembly import utilities\n");
+  out->Print("from grpc.early_adopter import implementations\n");
+  out->Print("from grpc.early_adopter import utilities\n");
   return true;
 }
 
