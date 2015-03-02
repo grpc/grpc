@@ -34,7 +34,7 @@ set -ex
 cd $(dirname $0)/../..
 
 root=`pwd`
-virtualenv python2.7_virtual_environment
+virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
 source python2.7_virtual_environment/bin/activate
 echo $PATH
 which pip
