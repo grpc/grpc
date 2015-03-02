@@ -9,7 +9,7 @@ See grpc/INSTALL for installation instructions for various platforms.
 
 #Repository Structure
 
-This repository contains source code for gRPC libraries for multiple lanugages written on top
+This repository contains source code for gRPC libraries for multiple languages written on top
 of shared C core library [src/core] (src/core).
 
    * C++ source code: [src/cpp] (src/cpp)

@@ -36,6 +36,8 @@
 #include <sys/signal.h>
 #include <thread>
 
+#include <unistd.h>
+
 #include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -98,7 +100,7 @@ static bool SetPayload(PayloadType type, int size, Payload* payload) {
 
 namespace {
 
-class TestServiceImpl final : public TestService::Service {
+class TestServiceImpl GRPC_FINAL : public TestService::Service {
  public:
   Status CollectServerStats(ServerContext* context, const StatsRequest*,
                             ServerStats* response) {
@@ -147,7 +149,7 @@ static void RunServer() {
   grpc_profiler_start("qps_server.prof");
 
   while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    sleep(5);
   }
 
   grpc_profiler_stop();

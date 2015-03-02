@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
   s.summary       = 'GRPC system in Ruby'
   s.description   = 'Send RPCs from Ruby using GRPC'
+  s.license       = 'BSD-3-Clause'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- spec/*`.split("\n")

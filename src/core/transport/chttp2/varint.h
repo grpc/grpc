@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_VARINT_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_VARINT_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -71,4 +71,4 @@ void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
     }                                                                       \
   } while (0)
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_VARINT_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_VARINT_H */

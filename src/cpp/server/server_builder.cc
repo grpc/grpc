@@ -41,7 +41,7 @@
 
 namespace grpc {
 
-ServerBuilder::ServerBuilder() {}
+ServerBuilder::ServerBuilder() : thread_pool_(nullptr) {}
 
 void ServerBuilder::RegisterService(SynchronousService* service) {
   services_.push_back(service->service());

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
-#define __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
+#ifndef GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
+#define GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
 
 #include <memory>
 
@@ -49,14 +49,14 @@ class CompletionQueue;
 class Credentials;
 class StreamContextInterface;
 
-class Channel final : public ChannelInterface {
+class Channel GRPC_FINAL : public ChannelInterface {
  public:
   Channel(const grpc::string &target, grpc_channel *c_channel);
-  ~Channel() override;
+  ~Channel() GRPC_OVERRIDE;
 
   virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
-                          CompletionQueue *cq) override;
-  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) override;
+                          CompletionQueue *cq) GRPC_OVERRIDE;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) GRPC_OVERRIDE;
 
  private:
   const grpc::string target_;
@@ -65,4 +65,4 @@ class Channel final : public ChannelInterface {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
+#endif  // GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H

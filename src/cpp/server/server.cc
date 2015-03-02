@@ -49,11 +49,12 @@
 
 namespace grpc {
 
-class Server::SyncRequest final : public CompletionQueueTag {
+class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
  public:
   SyncRequest(RpcServiceMethod* method, void* tag)
       : method_(method),
         tag_(tag),
+        in_flight_(false),
         has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
                              method->method_type() ==
                                  RpcMethod::SERVER_STREAMING),
@@ -85,14 +86,14 @@ class Server::SyncRequest final : public CompletionQueueTag {
                    this));
   }
 
-  bool FinalizeResult(void** tag, bool* status) override {
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
     if (!*status) {
       grpc_completion_queue_destroy(cq_);
     }
     return true;
   }
 
-  class CallData final {
+  class CallData GRPC_FINAL {
    public:
     explicit CallData(Server* server, SyncRequest* mrd)
         : cq_(mrd->cq_),
@@ -159,7 +160,7 @@ class Server::SyncRequest final : public CompletionQueueTag {
  private:
   RpcServiceMethod* const method_;
   void* const tag_;
-  bool in_flight_ = false;
+  bool in_flight_;
   const bool has_request_payload_;
   const bool has_response_payload_;
   grpc_call* call_;
@@ -277,7 +278,7 @@ void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
              grpc_call_start_batch(call->call(), ops, nops, buf));
 }
 
-class Server::AsyncRequest final : public CompletionQueueTag {
+class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
  public:
   AsyncRequest(Server* server, void* registered_method, ServerContext* ctx,
                ::google::protobuf::Message* request,
@@ -288,7 +289,9 @@ class Server::AsyncRequest final : public CompletionQueueTag {
         stream_(stream),
         cq_(cq),
         ctx_(ctx),
-        server_(server) {
+        server_(server),
+        call_(nullptr),
+        payload_(nullptr) {
     memset(&array_, 0, sizeof(array_));
     grpc_server_request_registered_call(
         server->server_, registered_method, &call_, &deadline_, &array_,
@@ -302,7 +305,7 @@ class Server::AsyncRequest final : public CompletionQueueTag {
     grpc_metadata_array_destroy(&array_);
   }
 
-  bool FinalizeResult(void** tag, bool* status) override {
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
     *tag = tag_;
     if (*status && request_) {
       if (payload_) {
@@ -337,10 +340,10 @@ class Server::AsyncRequest final : public CompletionQueueTag {
   CompletionQueue* const cq_;
   ServerContext* const ctx_;
   Server* const server_;
-  grpc_call* call_ = nullptr;
+  grpc_call* call_;
   gpr_timespec deadline_;
   grpc_metadata_array array_;
-  grpc_byte_buffer* payload_ = nullptr;
+  grpc_byte_buffer* payload_;
 };
 
 void Server::RequestAsyncCall(void* registered_method, ServerContext* context,

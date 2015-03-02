@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_CREDENTIALS_H_
-#define __GRPCPP_SERVER_CREDENTIALS_H_
+#ifndef GRPCXX_SERVER_CREDENTIALS_H
+#define GRPCXX_SERVER_CREDENTIALS_H
 
 #include <memory>
 #include <vector>
@@ -74,4 +74,4 @@ std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_CREDENTIALS_H_
+#endif  // GRPCXX_SERVER_CREDENTIALS_H

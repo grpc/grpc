@@ -35,7 +35,7 @@
 
 namespace grpc {
 
-ThreadPool::ThreadPool(int num_threads) {
+ThreadPool::ThreadPool(int num_threads) : shutdown_(false) {
   for (int i = 0; i < num_threads; i++) {
     threads_.push_back(std::thread([this]() {
       for (;;) {

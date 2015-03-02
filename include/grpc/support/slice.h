@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_SLICE_H__
-#define __GRPC_SUPPORT_SLICE_H__
+#ifndef GRPC_SUPPORT_SLICE_H
+#define GRPC_SUPPORT_SLICE_H
 
 #include <grpc/support/sync.h>
 
@@ -175,4 +175,4 @@ int gpr_slice_str_cmp(gpr_slice a, const char *b);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_SLICE_H__ */
+#endif  /* GRPC_SUPPORT_SLICE_H */

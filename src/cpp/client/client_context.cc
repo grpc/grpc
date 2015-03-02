@@ -41,7 +41,10 @@ using std::chrono::system_clock;
 namespace grpc {
 
 ClientContext::ClientContext()
-    : call_(nullptr), cq_(nullptr), absolute_deadline_(gpr_inf_future) {}
+    : initial_metadata_received_(false),
+      call_(nullptr),
+      cq_(nullptr),
+      absolute_deadline_(gpr_inf_future) {}
 
 ClientContext::~ClientContext() {
   if (call_) {

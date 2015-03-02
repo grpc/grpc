@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_STRING_H__
-#define __GRPC_SUPPORT_STRING_H__
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_STRING_H
+#define GRPC_INTERNAL_CORE_SUPPORT_STRING_H
 
 #include <stddef.h>
 
@@ -106,4 +106,4 @@ char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_STRING_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SUPPORT_STRING_H */

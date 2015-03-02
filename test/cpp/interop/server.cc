@@ -36,6 +36,7 @@
 #include <thread>
 
 #include <signal.h>
+#include <unistd.h>
 
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
@@ -220,7 +221,7 @@ void RunServer() {
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    sleep(5);
   }
 }
 

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_CONTEXT_H_
-#define __GRPCPP_SERVER_CONTEXT_H_
+#ifndef GRPCXX_SERVER_CONTEXT_H
+#define GRPCXX_SERVER_CONTEXT_H
 
 #include <chrono>
 #include <map>
@@ -66,7 +66,7 @@ class CompletionQueue;
 class Server;
 
 // Interface of server side rpc context.
-class ServerContext final {
+class ServerContext GRPC_FINAL {
  public:
   ServerContext();  // for async calls
   ~ServerContext();
@@ -108,12 +108,12 @@ class ServerContext final {
   ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                 size_t metadata_count);
 
-  CompletionOp* completion_op_ = nullptr;
+  CompletionOp* completion_op_;
 
   std::chrono::system_clock::time_point deadline_;
-  grpc_call* call_ = nullptr;
-  CompletionQueue* cq_ = nullptr;
-  bool sent_initial_metadata_ = false;
+  grpc_call* call_;
+  CompletionQueue* cq_;
+  bool sent_initial_metadata_;
   std::multimap<grpc::string, grpc::string> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
@@ -121,4 +121,4 @@ class ServerContext final {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_CONTEXT_H_
+#endif  // GRPCXX_SERVER_CONTEXT_H

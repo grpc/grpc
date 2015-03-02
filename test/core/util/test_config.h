@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_UTIL_TEST_CONFIG_H__
-#define __GRPC_TEST_UTIL_TEST_CONFIG_H__
+#ifndef GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
+#define GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 
 #include <grpc/support/time.h>
 
@@ -40,16 +40,23 @@
 extern "C" {
 #endif /*  __cplusplus */
 
-#ifndef GRPC_TEST_SLOWDOWN_FACTOR
-#define GRPC_TEST_SLOWDOWN_FACTOR 1.0
+#ifndef GRPC_TEST_SLOWDOWN_BUILD_FACTOR
+#define GRPC_TEST_SLOWDOWN_BUILD_FACTOR 1.0
 #endif
+
+#ifndef GRPC_TEST_SLOWDOWN_MACHINE_FACTOR
+#define GRPC_TEST_SLOWDOWN_MACHINE_FACTOR 1.0
+#endif
+
+#define GRPC_TEST_SLOWDOWN_FACTOR \
+  (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR)
 
 #define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x) \
   gpr_time_add(gpr_now(),                   \
                gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e6 * (x)))
 
 #define GRPC_TIMEOUT_MILLIS_TO_DEADLINE(x) \
-  gpr_time_add(gpr_now(),                   \
+  gpr_time_add(gpr_now(),                  \
                gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)))
 
 void grpc_test_init(int argc, char **argv);
@@ -58,4 +65,4 @@ void grpc_test_init(int argc, char **argv);
 }
 #endif /*  __cplusplus */
 
-#endif /* __GRPC_TEST_UTIL_TEST_CONFIG_H__ */
+#endif  /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

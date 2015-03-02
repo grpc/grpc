@@ -66,7 +66,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr) i; }
+void* tag(int i) { return (void*)(gpr_intptr)i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -80,7 +80,7 @@ class AsyncEnd2endTest : public ::testing::Test {
  protected:
   AsyncEnd2endTest() : service_(&srv_cq_) {}
 
-  void SetUp() override {
+  void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
@@ -90,7 +90,7 @@ class AsyncEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override {
+  void TearDown() GRPC_OVERRIDE {
     server_->Shutdown();
     void* ignored_tag;
     bool ignored_ok;
@@ -127,7 +127,7 @@ class AsyncEnd2endTest : public ::testing::Test {
 
       send_request.set_message("Hello");
       std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-          stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+          stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
       service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                            tag(2));
@@ -181,7 +181,7 @@ TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
 
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncWriter<EchoRequest> > cli_stream(
-      stub_->RequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1)));
+      stub_->AsyncRequestStream(&cli_ctx, &recv_response, &cli_cq_, tag(1)));
 
   service_.RequestRequestStream(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
 
@@ -234,7 +234,7 @@ TEST_F(AsyncEnd2endTest, SimpleServerStreaming) {
 
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncReader<EchoResponse> > cli_stream(
-      stub_->ResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncResponseStream(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   service_.RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, &srv_cq_,
                                  tag(2));
@@ -285,7 +285,7 @@ TEST_F(AsyncEnd2endTest, SimpleBidiStreaming) {
 
   send_request.set_message("Hello");
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
-      cli_stream(stub_->BidiStream(&cli_ctx, &cli_cq_, tag(1)));
+      cli_stream(stub_->AsyncBidiStream(&cli_ctx, &cli_cq_, tag(1)));
 
   service_.RequestBidiStream(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
 
@@ -343,7 +343,7 @@ TEST_F(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   cli_ctx.AddMetadata(meta2.first, meta2.second);
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));
@@ -385,7 +385,7 @@ TEST_F(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));
@@ -433,7 +433,7 @@ TEST_F(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   std::pair<grpc::string, grpc::string> meta2("key2", "val2");
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));
@@ -490,7 +490,7 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
   cli_ctx.AddMetadata(meta2.first, meta2.second);
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-      stub_->Echo(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
                        tag(2));

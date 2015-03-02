@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_CHANNEL_CHANNEL_ARGS_H__
-#define __GRPC_INTERNAL_CHANNEL_CHANNEL_ARGS_H__
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H
 
 #include <grpc/grpc.h>
 
@@ -51,4 +51,4 @@ void grpc_channel_args_destroy(grpc_channel_args *a);
    is specified in channel args, otherwise returns 0. */
 int grpc_channel_args_is_census_enabled(const grpc_channel_args *a);
 
-#endif /* __GRPC_INTERNAL_CHANNEL_CHANNEL_ARGS_H__ */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_ARGS_H */

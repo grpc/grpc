@@ -58,9 +58,9 @@ const char kData[] = "Message data";
 
 class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
  public:
-  Status CreateSubscription(ServerContext* context,
-                            const tech::pubsub::Subscription* request,
-                            tech::pubsub::Subscription* response) override {
+  Status CreateSubscription(
+      ServerContext* context, const tech::pubsub::Subscription* request,
+      tech::pubsub::Subscription* response) GRPC_OVERRIDE {
     EXPECT_EQ(request->topic(), kTopic);
     EXPECT_EQ(request->name(), kSubscriptionName);
     return Status::OK;
@@ -68,7 +68,7 @@ class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
 
   Status GetSubscription(ServerContext* context,
                          const tech::pubsub::GetSubscriptionRequest* request,
-                         tech::pubsub::Subscription* response) override {
+                         tech::pubsub::Subscription* response) GRPC_OVERRIDE {
     EXPECT_EQ(request->subscription(), kSubscriptionName);
     response->set_topic(kTopic);
     return Status::OK;
@@ -77,14 +77,13 @@ class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
   Status DeleteSubscription(
       ServerContext* context,
       const tech::pubsub::DeleteSubscriptionRequest* request,
-      proto2::Empty* response) override {
+      proto2::Empty* response) GRPC_OVERRIDE {
     EXPECT_EQ(request->subscription(), kSubscriptionName);
     return Status::OK;
   }
 
-  Status Pull(ServerContext* context,
-              const tech::pubsub::PullRequest* request,
-              tech::pubsub::PullResponse* response) override {
+  Status Pull(ServerContext* context, const tech::pubsub::PullRequest* request,
+              tech::pubsub::PullResponse* response) GRPC_OVERRIDE {
     EXPECT_EQ(request->subscription(), kSubscriptionName);
     response->set_ack_id("1");
     response->mutable_pubsub_event()->mutable_message()->set_data(kData);
@@ -93,7 +92,7 @@ class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
 
   Status Acknowledge(ServerContext* context,
                      const tech::pubsub::AcknowledgeRequest* request,
-                     proto2::Empty* response) override {
+                     proto2::Empty* response) GRPC_OVERRIDE {
     return Status::OK;
   }
 
@@ -102,7 +101,7 @@ class SubscriberServiceImpl : public tech::pubsub::SubscriberService::Service {
 class SubscriberTest : public ::testing::Test {
  protected:
   // Setup a server and a client for SubscriberService.
-  void SetUp() override {
+  void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     ServerBuilder builder;
@@ -115,7 +114,7 @@ class SubscriberTest : public ::testing::Test {
     subscriber_.reset(new grpc::examples::pubsub::Subscriber(channel_));
   }
 
-  void TearDown() override {
+  void TearDown() GRPC_OVERRIDE {
     server_->Shutdown();
     subscriber_->Shutdown();
   }

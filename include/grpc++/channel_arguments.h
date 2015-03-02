@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CHANNEL_ARGUMENTS_H_
-#define __GRPCPP_CHANNEL_ARGUMENTS_H_
+#ifndef GRPCXX_CHANNEL_ARGUMENTS_H
+#define GRPCXX_CHANNEL_ARGUMENTS_H
 
 #include <vector>
 #include <list>
@@ -82,4 +82,4 @@ class ChannelArguments {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CHANNEL_ARGUMENTS_H_
+#endif  // GRPCXX_CHANNEL_ARGUMENTS_H

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CREDENTIALS_H_
-#define __GRPCPP_CREDENTIALS_H_
+#ifndef GRPCXX_CREDENTIALS_H
+#define GRPCXX_CREDENTIALS_H
 
 #include <chrono>
 #include <memory>
@@ -120,4 +120,4 @@ std::unique_ptr<Credentials> InsecureCredentials();
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CREDENTIALS_H_
+#endif  // GRPCXX_CREDENTIALS_H
