@@ -38,14 +38,15 @@
 namespace grpc {
 
 namespace {
-class SecureServerCredentials final : public ServerCredentials {
+class SecureServerCredentials GRPC_FINAL : public ServerCredentials {
  public:
   explicit SecureServerCredentials(grpc_server_credentials* creds) : creds_(creds) {}
-  ~SecureServerCredentials() override {
+  ~SecureServerCredentials() GRPC_OVERRIDE {
     grpc_server_credentials_release(creds_);
   }
 
-  int AddPortToServer(const grpc::string& addr, grpc_server* server) override {
+  int AddPortToServer(const grpc::string& addr,
+                      grpc_server* server) GRPC_OVERRIDE {
     return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
   }
 
