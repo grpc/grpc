@@ -8,18 +8,14 @@ env:
   global:
     - RUBY_VERSION=2.1
   matrix:
-<<<<<<< HEAD
-=======
     - CONFIG=dbg TEST=c
     - CONFIG=dbg TEST=c++
     - CONFIG=opt TEST=c
     - CONFIG=opt TEST=c++
->>>>>>> Add asan/tsan tests
     - CONFIG=opt TEST=node
     - CONFIG=opt TEST=ruby
     - CONFIG=opt TEST=python
 script:
-  - test $TEST == 'python' && virtualenv python27 && source python27/bin/activate || /bin/true
   - rvm use $RUBY_VERSION
   - gem install bundler
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
