@@ -38,5 +38,5 @@
 
 void grpc_security_pre_init(void) {
   grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);
-  grpc_register_tracer("ssl", &tsi_tracing_enabled);
+  grpc_register_tracer("transport_security", &tsi_tracing_enabled);
 }
