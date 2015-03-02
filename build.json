@@ -572,6 +572,7 @@
     },
     {
       "name": "census_statistics_multiple_writers_circular_buffer_test",
+      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -582,8 +583,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "flaky": true
+      ]
     },
     {
       "name": "census_statistics_multiple_writers_test",
@@ -629,6 +629,7 @@
     },
     {
       "name": "census_statistics_small_log_test",
+      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -639,8 +640,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "flaky": true
+      ]
     },
     {
       "name": "census_stats_store_test",
@@ -868,8 +868,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "flaky": true
+      ]
     },
     {
       "name": "fling_test",
@@ -883,8 +882,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "flaky": true
+      ]
     },
     {
       "name": "gen_hpack_tables",
