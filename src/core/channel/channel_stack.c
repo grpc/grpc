@@ -36,6 +36,8 @@
 
 #include <stdlib.h>
 
+int grpc_trace_channel = 0;
+
 /* Memory layouts.
 
    Channel stack is laid out as: {

@@ -37,6 +37,7 @@
 
 #include "src/core/debug/trace.h"
 #include "src/core/transport/chttp2/frame.h"
+#include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
@@ -218,7 +219,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
             }
           }
           parser->incoming_settings[parser->id] = parser->value;
-          if (grpc_trace_bits & GRPC_TRACE_HTTP) {
+          if (grpc_http_trace) {
             gpr_log(GPR_DEBUG, "CHTTP2: got setting %d = %d", parser->id,
                     parser->value);
           }

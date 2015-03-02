@@ -79,6 +79,7 @@
         "src/core/surface/client.h",
         "src/core/surface/completion_queue.h",
         "src/core/surface/event_string.h",
+        "src/core/surface/init.h",
         "src/core/surface/lame_client.h",
         "src/core/surface/server.h",
         "src/core/surface/surface_trace.h",
@@ -180,6 +181,7 @@
         "src/core/surface/server.c",
         "src/core/surface/server_chttp2.c",
         "src/core/surface/server_create.c",
+        "src/core/surface/surface_trace.c",
         "src/core/transport/chttp2/alpn.c",
         "src/core/transport/chttp2/bin_encoder.c",
         "src/core/transport/chttp2/frame_data.c",
@@ -329,6 +331,7 @@
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_context.c",
         "src/core/security/server_secure_chttp2.c",
+        "src/core/surface/init_secure.c",
         "src/core/surface/secure_channel_create.c",
         "src/core/surface/secure_server_create.c",
         "src/core/tsi/fake_transport_security.c",
@@ -372,6 +375,9 @@
       "name": "grpc_unsecure",
       "build": "all",
       "language": "c",
+      "src": [
+        "src/core/surface/init_unsecure.c"
+      ],
       "deps": [
         "gpr"
       ],

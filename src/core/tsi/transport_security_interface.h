@@ -63,8 +63,8 @@ const char* tsi_result_to_string(tsi_result result);
 
 /* --- tsi tracing --- */
 
-/* Call this function before any other tsi function to avoid races. */
-void tsi_enable_tracing(void);
+/* Set this early to avoid races */
+extern int tsi_tracing_enabled;
 
 /* --- tsi_frame_protector object ---
 
