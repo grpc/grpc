@@ -47,8 +47,8 @@ _EXTENSION_INCLUDE_DIRECTORIES = (
 )
 
 _EXTENSION_LIBRARIES = (
-    'gpr',
     'grpc',
+    'gpr',
     'rt',
 )
 
