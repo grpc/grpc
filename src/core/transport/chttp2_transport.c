@@ -1000,7 +1000,8 @@ static void send_batch(grpc_transport *gt, grpc_stream *gs, grpc_stream_op *ops,
   } else {
     grpc_sopb_append(&t->nuke_later_sopb, ops, ops_count);
   }
-  if (is_last && s->outgoing_sopb.nops == 0 && s->read_closed) {
+  if (is_last && s->outgoing_sopb.nops == 0 && s->read_closed &&
+      !s->published_close) {
     stream_list_join(t, s, PENDING_CALLBACKS);
   }
 
