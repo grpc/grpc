@@ -9,7 +9,6 @@ env:
   matrix:
     - CONFIG=opt TEST=python
 script:
-  - which python
   - rvm use $RUBY_VERSION
   - gem install bundler
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 2.0

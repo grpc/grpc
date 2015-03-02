@@ -37,6 +37,8 @@ root=`pwd`
 export LD_LIBRARY_PATH=$root/libs/opt
 source python2.7_virtual_environment/bin/activate
 echo $PATH
+ls -l python2.7_virtual_environment
+ls -l python2.7_virtual_environment/bin
 which python2.7
 # TODO(issue 215): Properly itemize these in run_tests.py so that they can be parallelized.
 # TODO(atash): Enable dynamic unused port discovery for this test.
