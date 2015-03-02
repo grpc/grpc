@@ -36,8 +36,8 @@ cd $(dirname $0)/../..
 root=`pwd`
 export LD_LIBRARY_PATH=$root/libs/opt
 source python2.7_virtual_environment/bin/activate
-ldd python2.7
-ldd python2.7_virtual_environment/local/lib/python2.7/site-packages/grpc/_adapter/_c.so
+ldd $PWD/python2.7_virtual_environment/bin/python
+ldd $PWD/python2.7_virtual_environment/local/lib/python2.7/site-packages/grpc/_adapter/_c.so
 # TODO(issue 215): Properly itemize these in run_tests.py so that they can be parallelized.
 # TODO(atash): Enable dynamic unused port discovery for this test.
 # TODO(mlumish): Re-enable this test when we can install protoc
