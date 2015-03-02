@@ -38,6 +38,7 @@ _EXTENSION_SOURCES = (
     'grpc/_adapter/_completion_queue.c',
     'grpc/_adapter/_error.c',
     'grpc/_adapter/_server.c',
+    'grpc/_adapter/_client_credentials.c',
     'grpc/_adapter/_server_credentials.c',
 )
 
@@ -80,6 +81,6 @@ _PACKAGE_DIRECTORIES = {
 }
 
 _core.setup(
-    name='grpc-2015', version='0.0.1',
+    name='grpc-2015', version='0.4.0',
     ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
     package_dir=_PACKAGE_DIRECTORIES)

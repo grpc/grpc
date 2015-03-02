@@ -34,6 +34,8 @@
 #include <sys/signal.h>
 #include <thread>
 
+#include <unistd.h>
+
 #include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -97,7 +99,7 @@ static bool SetPayload(PayloadType type, int size, Payload* payload) {
 
 namespace {
 
-class TestServiceImpl final : public TestService::Service {
+class TestServiceImpl GRPC_FINAL : public TestService::Service {
  public:
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
@@ -180,7 +182,7 @@ static void RunServer() {
   auto server = builder.BuildAndStart();
 
   while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    sleep(5);
   }
 }
 

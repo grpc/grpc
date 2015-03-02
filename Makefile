@@ -77,7 +77,7 @@ LDXX_valgrind = g++
 CPPFLAGS_valgrind = -O0
 OPENSSL_CFLAGS_valgrind = -DPURIFY
 LDFLAGS_valgrind =
-DEFINES_valgrind = _DEBUG DEBUG
+DEFINES_valgrind = _DEBUG DEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
 
 VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1
@@ -87,7 +87,7 @@ LD_tsan = clang
 LDXX_tsan = clang++
 CPPFLAGS_tsan = -O1 -fsanitize=thread -fno-omit-frame-pointer
 LDFLAGS_tsan = -fsanitize=thread
-DEFINES_tsan = NDEBUG
+DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
 VALID_CONFIG_asan = 1
 REQUIRE_CUSTOM_LIBRARIES_asan = 1
@@ -97,7 +97,7 @@ LD_asan = clang
 LDXX_asan = clang++
 CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS_asan = -fsanitize=address
-DEFINES_asan = NDEBUG
+DEFINES_asan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -108,7 +108,7 @@ LDXX_msan = clang++-libc++
 CPPFLAGS_msan = -O1 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
-DEFINES_msan = NDEBUG
+DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
 
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
@@ -119,7 +119,7 @@ LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer
 OPENSSL_CFLAGS_ubsan = -DPURIFY
 LDFLAGS_ubsan = -fsanitize=undefined
-DEFINES_ubsan = NDEBUG
+DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
 VALID_CONFIG_gcov = 1
 CC_gcov = gcc
@@ -143,7 +143,15 @@ CXX = $(CXX_$(CONFIG))
 LD = $(LD_$(CONFIG))
 LDXX = $(LDXX_$(CONFIG))
 AR = ar
+ifeq ($(SYSTEM),Linux)
 STRIP = strip --strip-unneeded
+else
+ifeq ($(SYSTEM),Darwin)
+STRIP = strip -x
+else
+STRIP = strip
+endif
+endif
 INSTALL = install
 RM = rm -f
 
@@ -151,6 +159,10 @@ ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
 endif
 
+
+# Detect if we can use C++11
+CXX11_CHECK_CMD = $(CXX) -std=c++11 -o /dev/null -c test/build/c++11.cc
+HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
 # The HOST compiler settings are used to compile the protoc plugins.
 # In most cases, you won't have to change anything, but if you are
@@ -166,8 +178,17 @@ CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 DEFINES += $(DEFINES_$(CONFIG)) INSTALL_PREFIX=\"$(prefix)\"
 LDFLAGS += $(LDFLAGS_$(CONFIG))
 
+ifdef EXTRA_DEFINES
+DEFINES += $(EXTRA_DEFINES)
+endif
+
 CFLAGS += -std=c89 -pedantic
+ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
+else
+CXXFLAGS += -std=c++0x
+DEFINES += GRPC_OLD_CXX
+endif
 CPPFLAGS += -g -fPIC -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter
 LDFLAGS += -g -fPIC
 
@@ -195,7 +216,7 @@ E = @echo
 Q = @
 endif
 
-VERSION = 0.8.0.0
+VERSION = 0.5.0.0
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -509,6 +530,7 @@ time_averaged_stats_test: $(BINDIR)/$(CONFIG)/time_averaged_stats_test
 time_test: $(BINDIR)/$(CONFIG)/time_test
 timeout_encoding_test: $(BINDIR)/$(CONFIG)/timeout_encoding_test
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
+transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 credentials_test: $(BINDIR)/$(CONFIG)/credentials_test
@@ -523,8 +545,10 @@ pubsub_client: $(BINDIR)/$(CONFIG)/pubsub_client
 pubsub_publisher_test: $(BINDIR)/$(CONFIG)/pubsub_publisher_test
 pubsub_subscriber_test: $(BINDIR)/$(CONFIG)/pubsub_subscriber_test
 qps_client: $(BINDIR)/$(CONFIG)/qps_client
+qps_client_async: $(BINDIR)/$(CONFIG)/qps_client_async
 qps_driver: $(BINDIR)/$(CONFIG)/qps_driver
 qps_server: $(BINDIR)/$(CONFIG)/qps_server
+qps_server_async: $(BINDIR)/$(CONFIG)/qps_server_async
 status_test: $(BINDIR)/$(CONFIG)/status_test
 thread_pool_test: $(BINDIR)/$(CONFIG)/thread_pool_test
 chttp2_fake_security_cancel_after_accept_test: $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test
@@ -897,7 +921,11 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
+ifeq ($(HAVE_CXX11),true)
 	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-DLANG_CXX11 -std=c++11" CPPFLAGS="-fPIC $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+else
+	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g" CXXFLAGS="-std=c++0x" CPPFLAGS="-fPIC $(CPPFLAGS_$(CONFIG)) -g" ./configure --disable-shared --enable-static)
+endif
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
@@ -931,9 +959,9 @@ privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: privatelibs_c $(BINDIR)/$(CONFIG)/alarm_heap_test $(BINDIR)/$(CONFIG)/alarm_list_test $(BINDIR)/$(CONFIG)/alarm_test $(BINDIR)/$(CONFIG)/alpn_test $(BINDIR)/$(CONFIG)/bin_encoder_test $(BINDIR)/$(CONFIG)/census_hash_table_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_test $(BINDIR)/$(CONFIG)/census_statistics_performance_test $(BINDIR)/$(CONFIG)/census_statistics_quick_test $(BINDIR)/$(CONFIG)/census_statistics_small_log_test $(BINDIR)/$(CONFIG)/census_stub_test $(BINDIR)/$(CONFIG)/census_window_stats_test $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test $(BINDIR)/$(CONFIG)/chttp2_stream_encoder_test $(BINDIR)/$(CONFIG)/chttp2_stream_map_test $(BINDIR)/$(CONFIG)/chttp2_transport_end2end_test $(BINDIR)/$(CONFIG)/dualstack_socket_test $(BINDIR)/$(CONFIG)/echo_client $(BINDIR)/$(CONFIG)/echo_server $(BINDIR)/$(CONFIG)/echo_test $(BINDIR)/$(CONFIG)/fd_posix_test $(BINDIR)/$(CONFIG)/fling_client $(BINDIR)/$(CONFIG)/fling_server $(BINDIR)/$(CONFIG)/fling_stream_test $(BINDIR)/$(CONFIG)/fling_test $(BINDIR)/$(CONFIG)/gpr_cancellable_test $(BINDIR)/$(CONFIG)/gpr_cmdline_test $(BINDIR)/$(CONFIG)/gpr_env_test $(BINDIR)/$(CONFIG)/gpr_file_test $(BINDIR)/$(CONFIG)/gpr_histogram_test $(BINDIR)/$(CONFIG)/gpr_host_port_test $(BINDIR)/$(CONFIG)/gpr_log_test $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test $(BINDIR)/$(CONFIG)/gpr_slice_test $(BINDIR)/$(CONFIG)/gpr_string_test $(BINDIR)/$(CONFIG)/gpr_sync_test $(BINDIR)/$(CONFIG)/gpr_thd_test $(BINDIR)/$(CONFIG)/gpr_time_test $(BINDIR)/$(CONFIG)/gpr_useful_test $(BINDIR)/$(CONFIG)/grpc_base64_test $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test $(BINDIR)/$(CONFIG)/grpc_channel_stack_test $(BINDIR)/$(CONFIG)/grpc_completion_queue_test $(BINDIR)/$(CONFIG)/grpc_credentials_test $(BINDIR)/$(CONFIG)/grpc_json_token_test $(BINDIR)/$(CONFIG)/grpc_stream_op_test $(BINDIR)/$(CONFIG)/hpack_parser_test $(BINDIR)/$(CONFIG)/hpack_table_test $(BINDIR)/$(CONFIG)/httpcli_format_request_test $(BINDIR)/$(CONFIG)/httpcli_parser_test $(BINDIR)/$(CONFIG)/httpcli_test $(BINDIR)/$(CONFIG)/json_rewrite $(BINDIR)/$(CONFIG)/json_rewrite_test $(BINDIR)/$(CONFIG)/json_test $(BINDIR)/$(CONFIG)/lame_client_test $(BINDIR)/$(CONFIG)/message_compress_test $(BINDIR)/$(CONFIG)/metadata_buffer_test $(BINDIR)/$(CONFIG)/multi_init_test $(BINDIR)/$(CONFIG)/murmur_hash_test $(BINDIR)/$(CONFIG)/no_server_test $(BINDIR)/$(CONFIG)/poll_kick_posix_test $(BINDIR)/$(CONFIG)/resolve_address_test $(BINDIR)/$(CONFIG)/secure_endpoint_test $(BINDIR)/$(CONFIG)/sockaddr_utils_test $(BINDIR)/$(CONFIG)/tcp_client_posix_test $(BINDIR)/$(CONFIG)/tcp_posix_test $(BINDIR)/$(CONFIG)/tcp_server_posix_test $(BINDIR)/$(CONFIG)/time_averaged_stats_test $(BINDIR)/$(CONFIG)/time_test $(BINDIR)/$(CONFIG)/timeout_encoding_test $(BINDIR)/$(CONFIG)/transport_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test
+buildtests_c: privatelibs_c $(BINDIR)/$(CONFIG)/alarm_heap_test $(BINDIR)/$(CONFIG)/alarm_list_test $(BINDIR)/$(CONFIG)/alarm_test $(BINDIR)/$(CONFIG)/alpn_test $(BINDIR)/$(CONFIG)/bin_encoder_test $(BINDIR)/$(CONFIG)/census_hash_table_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_circular_buffer_test $(BINDIR)/$(CONFIG)/census_statistics_multiple_writers_test $(BINDIR)/$(CONFIG)/census_statistics_performance_test $(BINDIR)/$(CONFIG)/census_statistics_quick_test $(BINDIR)/$(CONFIG)/census_statistics_small_log_test $(BINDIR)/$(CONFIG)/census_stub_test $(BINDIR)/$(CONFIG)/census_window_stats_test $(BINDIR)/$(CONFIG)/chttp2_status_conversion_test $(BINDIR)/$(CONFIG)/chttp2_stream_encoder_test $(BINDIR)/$(CONFIG)/chttp2_stream_map_test $(BINDIR)/$(CONFIG)/chttp2_transport_end2end_test $(BINDIR)/$(CONFIG)/dualstack_socket_test $(BINDIR)/$(CONFIG)/echo_client $(BINDIR)/$(CONFIG)/echo_server $(BINDIR)/$(CONFIG)/echo_test $(BINDIR)/$(CONFIG)/fd_posix_test $(BINDIR)/$(CONFIG)/fling_client $(BINDIR)/$(CONFIG)/fling_server $(BINDIR)/$(CONFIG)/fling_stream_test $(BINDIR)/$(CONFIG)/fling_test $(BINDIR)/$(CONFIG)/gpr_cancellable_test $(BINDIR)/$(CONFIG)/gpr_cmdline_test $(BINDIR)/$(CONFIG)/gpr_env_test $(BINDIR)/$(CONFIG)/gpr_file_test $(BINDIR)/$(CONFIG)/gpr_histogram_test $(BINDIR)/$(CONFIG)/gpr_host_port_test $(BINDIR)/$(CONFIG)/gpr_log_test $(BINDIR)/$(CONFIG)/gpr_slice_buffer_test $(BINDIR)/$(CONFIG)/gpr_slice_test $(BINDIR)/$(CONFIG)/gpr_string_test $(BINDIR)/$(CONFIG)/gpr_sync_test $(BINDIR)/$(CONFIG)/gpr_thd_test $(BINDIR)/$(CONFIG)/gpr_time_test $(BINDIR)/$(CONFIG)/gpr_useful_test $(BINDIR)/$(CONFIG)/grpc_base64_test $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test $(BINDIR)/$(CONFIG)/grpc_channel_stack_test $(BINDIR)/$(CONFIG)/grpc_completion_queue_test $(BINDIR)/$(CONFIG)/grpc_credentials_test $(BINDIR)/$(CONFIG)/grpc_json_token_test $(BINDIR)/$(CONFIG)/grpc_stream_op_test $(BINDIR)/$(CONFIG)/hpack_parser_test $(BINDIR)/$(CONFIG)/hpack_table_test $(BINDIR)/$(CONFIG)/httpcli_format_request_test $(BINDIR)/$(CONFIG)/httpcli_parser_test $(BINDIR)/$(CONFIG)/httpcli_test $(BINDIR)/$(CONFIG)/json_rewrite $(BINDIR)/$(CONFIG)/json_rewrite_test $(BINDIR)/$(CONFIG)/json_test $(BINDIR)/$(CONFIG)/lame_client_test $(BINDIR)/$(CONFIG)/message_compress_test $(BINDIR)/$(CONFIG)/metadata_buffer_test $(BINDIR)/$(CONFIG)/multi_init_test $(BINDIR)/$(CONFIG)/murmur_hash_test $(BINDIR)/$(CONFIG)/no_server_test $(BINDIR)/$(CONFIG)/poll_kick_posix_test $(BINDIR)/$(CONFIG)/resolve_address_test $(BINDIR)/$(CONFIG)/secure_endpoint_test $(BINDIR)/$(CONFIG)/sockaddr_utils_test $(BINDIR)/$(CONFIG)/tcp_client_posix_test $(BINDIR)/$(CONFIG)/tcp_posix_test $(BINDIR)/$(CONFIG)/tcp_server_posix_test $(BINDIR)/$(CONFIG)/time_averaged_stats_test $(BINDIR)/$(CONFIG)/time_test $(BINDIR)/$(CONFIG)/timeout_encoding_test $(BINDIR)/$(CONFIG)/transport_metadata_test $(BINDIR)/$(CONFIG)/transport_security_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_empty_batch_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test $(BINDIR)/$(CONFIG)/chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test
 
-buildtests_cxx: privatelibs_cxx $(BINDIR)/$(CONFIG)/async_end2end_test $(BINDIR)/$(CONFIG)/channel_arguments_test $(BINDIR)/$(CONFIG)/credentials_test $(BINDIR)/$(CONFIG)/end2end_test $(BINDIR)/$(CONFIG)/interop_client $(BINDIR)/$(CONFIG)/interop_server $(BINDIR)/$(CONFIG)/interop_test $(BINDIR)/$(CONFIG)/pubsub_client $(BINDIR)/$(CONFIG)/pubsub_publisher_test $(BINDIR)/$(CONFIG)/pubsub_subscriber_test $(BINDIR)/$(CONFIG)/qps_client $(BINDIR)/$(CONFIG)/qps_driver $(BINDIR)/$(CONFIG)/qps_server $(BINDIR)/$(CONFIG)/status_test $(BINDIR)/$(CONFIG)/thread_pool_test
+buildtests_cxx: privatelibs_cxx $(BINDIR)/$(CONFIG)/async_end2end_test $(BINDIR)/$(CONFIG)/channel_arguments_test $(BINDIR)/$(CONFIG)/credentials_test $(BINDIR)/$(CONFIG)/end2end_test $(BINDIR)/$(CONFIG)/interop_client $(BINDIR)/$(CONFIG)/interop_server $(BINDIR)/$(CONFIG)/interop_test $(BINDIR)/$(CONFIG)/pubsub_client $(BINDIR)/$(CONFIG)/pubsub_publisher_test $(BINDIR)/$(CONFIG)/pubsub_subscriber_test $(BINDIR)/$(CONFIG)/qps_client $(BINDIR)/$(CONFIG)/qps_client_async $(BINDIR)/$(CONFIG)/qps_driver $(BINDIR)/$(CONFIG)/qps_server $(BINDIR)/$(CONFIG)/qps_server_async $(BINDIR)/$(CONFIG)/status_test $(BINDIR)/$(CONFIG)/thread_pool_test
 
 test: test_c test_cxx
 
@@ -1070,6 +1098,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/timeout_encoding_test || ( echo test timeout_encoding_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/transport_security_test || ( echo test transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_test"
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_fake_security_cancel_after_accept_test || ( echo test chttp2_fake_security_cancel_after_accept_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_fake_security_cancel_after_accept_and_writes_closed_test"
@@ -7492,6 +7522,37 @@ endif
 endif
 
 
+TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/transport_security_test.c \
+
+TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_SECURITY_TEST_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/transport_security_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/transport_security_test: $(TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_transport_security_test: $(TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 ASYNC_END2END_TEST_SRC = \
     test/cpp/end2end/async_end2end_test.cc \
 
@@ -7505,10 +7566,21 @@ $(BINDIR)/$(CONFIG)/async_end2end_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/async_end2end_test: $(ASYNC_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/async_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/async_end2end_test: $(PROTOBUF_DEP) $(ASYNC_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(ASYNC_END2END_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/async_end2end_test
+
+endif
 
 endif
 
@@ -7536,10 +7608,21 @@ $(BINDIR)/$(CONFIG)/channel_arguments_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/channel_arguments_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/channel_arguments_test: $(PROTOBUF_DEP) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_ARGUMENTS_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/channel_arguments_test
+
+endif
 
 endif
 
@@ -7567,10 +7650,21 @@ $(BINDIR)/$(CONFIG)/credentials_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/credentials_test: $(CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/credentials_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/credentials_test: $(PROTOBUF_DEP) $(CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(CREDENTIALS_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/credentials_test
+
+endif
 
 endif
 
@@ -7598,10 +7692,21 @@ $(BINDIR)/$(CONFIG)/end2end_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/end2end_test: $(END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/end2end_test: $(PROTOBUF_DEP) $(END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(END2END_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/end2end_test
+
+endif
 
 endif
 
@@ -7625,7 +7730,7 @@ GRPC_CPP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_cpp_plugin: protobuf_dep_error
 
@@ -7657,7 +7762,7 @@ GRPC_PYTHON_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_python_plugin: protobuf_dep_error
 
@@ -7689,7 +7794,7 @@ GRPC_RUBY_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_ruby_plugin: protobuf_dep_error
 
@@ -7728,10 +7833,21 @@ $(BINDIR)/$(CONFIG)/interop_client: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/interop_client: $(INTEROP_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/interop_client: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/interop_client: $(PROTOBUF_DEP) $(INTEROP_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_CLIENT_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/interop_client
+
+endif
 
 endif
 
@@ -7765,10 +7881,21 @@ $(BINDIR)/$(CONFIG)/interop_server: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/interop_server: $(INTEROP_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/interop_server: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/interop_server: $(PROTOBUF_DEP) $(INTEROP_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_SERVER_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/interop_server
+
+endif
 
 endif
 
@@ -7799,10 +7926,21 @@ $(BINDIR)/$(CONFIG)/interop_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/interop_test: $(INTEROP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/interop_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/interop_test: $(PROTOBUF_DEP) $(INTEROP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(INTEROP_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/interop_test
+
+endif
 
 endif
 
@@ -7830,10 +7968,21 @@ $(BINDIR)/$(CONFIG)/pubsub_client: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/pubsub_client: $(PUBSUB_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/pubsub_client: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/pubsub_client: $(PROTOBUF_DEP) $(PUBSUB_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(PUBSUB_CLIENT_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/pubsub_client
+
+endif
 
 endif
 
@@ -7861,10 +8010,21 @@ $(BINDIR)/$(CONFIG)/pubsub_publisher_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/pubsub_publisher_test: $(PUBSUB_PUBLISHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/pubsub_publisher_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/pubsub_publisher_test: $(PROTOBUF_DEP) $(PUBSUB_PUBLISHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(PUBSUB_PUBLISHER_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/pubsub_publisher_test
+
+endif
 
 endif
 
@@ -7892,10 +8052,21 @@ $(BINDIR)/$(CONFIG)/pubsub_subscriber_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/pubsub_subscriber_test: $(PUBSUB_SUBSCRIBER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/pubsub_subscriber_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/pubsub_subscriber_test: $(PROTOBUF_DEP) $(PUBSUB_SUBSCRIBER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(PUBSUB_SUBSCRIBER_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/pubsub_subscriber_test
+
+endif
 
 endif
 
@@ -7923,10 +8094,21 @@ $(BINDIR)/$(CONFIG)/qps_client: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_client: $(QPS_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_client: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_client: $(PROTOBUF_DEP) $(QPS_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/qps_client
+
+endif
 
 endif
 
@@ -7937,6 +8119,50 @@ deps_qps_client: $(QPS_CLIENT_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(QPS_CLIENT_OBJS:.o=.dep)
+endif
+endif
+
+
+QPS_CLIENT_ASYNC_SRC = \
+    $(GENDIR)/test/cpp/qps/qpstest.pb.cc \
+    test/cpp/qps/client_async.cc \
+
+QPS_CLIENT_ASYNC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_CLIENT_ASYNC_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/qps_client_async: openssl_dep_error
+
+else
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_client_async: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_client_async: $(PROTOBUF_DEP) $(QPS_CLIENT_ASYNC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_CLIENT_ASYNC_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/qps_client_async
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qpstest.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_qps_client_async: $(QPS_CLIENT_ASYNC_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(QPS_CLIENT_ASYNC_OBJS:.o=.dep)
 endif
 endif
 
@@ -7954,10 +8180,21 @@ $(BINDIR)/$(CONFIG)/qps_driver: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_driver: $(QPS_DRIVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_driver: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_driver: $(PROTOBUF_DEP) $(QPS_DRIVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(QPS_DRIVER_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/qps_driver
+
+endif
 
 endif
 
@@ -7985,10 +8222,21 @@ $(BINDIR)/$(CONFIG)/qps_server: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_server: $(QPS_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_server: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_server: $(PROTOBUF_DEP) $(QPS_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/qps_server
+
+endif
 
 endif
 
@@ -7999,6 +8247,50 @@ deps_qps_server: $(QPS_SERVER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(QPS_SERVER_OBJS:.o=.dep)
+endif
+endif
+
+
+QPS_SERVER_ASYNC_SRC = \
+    $(GENDIR)/test/cpp/qps/qpstest.pb.cc \
+    test/cpp/qps/server_async.cc \
+
+QPS_SERVER_ASYNC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_SERVER_ASYNC_SRC))))
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL with ALPN.
+
+$(BINDIR)/$(CONFIG)/qps_server_async: openssl_dep_error
+
+else
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/qps_server_async: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/qps_server_async: $(PROTOBUF_DEP) $(QPS_SERVER_ASYNC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_SERVER_ASYNC_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/qps_server_async
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qpstest.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_qps_server_async: $(QPS_SERVER_ASYNC_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(QPS_SERVER_ASYNC_OBJS:.o=.dep)
 endif
 endif
 
@@ -8016,10 +8308,21 @@ $(BINDIR)/$(CONFIG)/status_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/status_test: $(STATUS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/status_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/status_test: $(PROTOBUF_DEP) $(STATUS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/status_test
+
+endif
 
 endif
 
@@ -8047,10 +8350,21 @@ $(BINDIR)/$(CONFIG)/thread_pool_test: openssl_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/thread_pool_test: $(THREAD_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/thread_pool_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/thread_pool_test: $(PROTOBUF_DEP) $(THREAD_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_POOL_TEST_OBJS) $(GTEST_LIB) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/thread_pool_test
+
+endif
 
 endif
 

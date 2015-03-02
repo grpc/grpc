@@ -81,6 +81,8 @@ static void parse(const char *s) {
       grpc_trace_bits |= GRPC_TRACE_TCP;
     } else if (0 == strcmp(s, "secure_endpoint")) {
       grpc_trace_bits |= GRPC_TRACE_SECURE_ENDPOINT;
+    } else if (0 == strcmp(s, "http")) {
+      grpc_trace_bits |= GRPC_TRACE_HTTP;
     } else if (0 == strcmp(s, "all")) {
       grpc_trace_bits = -1;
     } else {

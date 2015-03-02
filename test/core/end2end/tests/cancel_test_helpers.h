@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_END2END_TESTS_CANCEL_TEST_HELPERS_H__
-#define __GRPC_TEST_END2END_TESTS_CANCEL_TEST_HELPERS_H__
+#ifndef GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
+#define GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 
 typedef struct {
   grpc_call_error (*initiate_cancel)(grpc_call *call);
@@ -48,4 +48,4 @@ static const cancellation_mode cancellation_modes[] = {
     {grpc_call_cancel, GRPC_STATUS_CANCELLED, ""},
     {wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED, "Deadline Exceeded"}, };
 
-#endif
+#endif  /* GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H */

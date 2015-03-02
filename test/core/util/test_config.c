@@ -34,6 +34,7 @@
 #include "test/core/util/test_config.h"
 
 #include <grpc/support/port_platform.h>
+#include <grpc/support/log.h>
 #include <stdlib.h>
 #include <signal.h>
 
@@ -52,6 +53,9 @@ void grpc_test_init(int argc, char **argv) {
   /* disable SIGPIPE */
   signal(SIGPIPE, SIG_IGN);
 #endif
+  gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
+          GRPC_TEST_SLOWDOWN_MACHINE_FACTOR, GRPC_TEST_SLOWDOWN_BUILD_FACTOR,
+          GRPC_TEST_SLOWDOWN_FACTOR);
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());

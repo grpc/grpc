@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
   s.summary       = 'GRPC system in Ruby'
   s.description   = 'Send RPCs from Ruby using GRPC'
+  s.license       = 'BSD-3-Clause'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- spec/*`.split("\n")
@@ -22,6 +23,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'faraday', '~> 0.9'
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'
+  s.add_dependency 'googleauth', '~> 0.1'
   s.add_dependency 'logging', '~> 1.8'
   s.add_dependency 'jwt', '~> 1.2.1'
   s.add_dependency 'minitest', '~> 5.4'  # reqd for interop tests

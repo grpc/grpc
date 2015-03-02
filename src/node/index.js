@@ -78,7 +78,7 @@ function load(filename) {
 /**
  * Get a function that a client can use to update metadata with authentication
  * information from a Google Auth credential object, which comes from the
- * googleauth library.
+ * google-auth-library.
  * @param {Object} credential The credential object to use
  * @return {function(Object, callback)} Metadata updater function
  */

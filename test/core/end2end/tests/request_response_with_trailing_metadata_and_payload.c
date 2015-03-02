@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -134,7 +134,7 @@ static void test_request_response_with_metadata_and_payload(
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
-                               "foo.test.google.com", deadline);
+                               "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -169,8 +169,7 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq,
-                                                      tag(101)));
+                                                      f.server_cq, tag(101)));
   cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 
@@ -205,7 +204,7 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.com"));
+  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr"));
   GPR_ASSERT(was_cancelled == 1);
   GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));

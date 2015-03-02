@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_CORE_DEBUG_TRACE_H
-#define GRPC_CORE_DEBUG_TRACE_H
+#ifndef GRPC_INTERNAL_CORE_DEBUG_TRACE_H
+#define GRPC_INTERNAL_CORE_DEBUG_TRACE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,7 +45,8 @@ typedef enum {
   GRPC_TRACE_SURFACE = 1 << 0,
   GRPC_TRACE_CHANNEL = 1 << 1,
   GRPC_TRACE_TCP = 1 << 2,
-  GRPC_TRACE_SECURE_ENDPOINT = 1 << 3
+  GRPC_TRACE_SECURE_ENDPOINT = 1 << 3,
+  GRPC_TRACE_HTTP = 1 << 4
 } grpc_trace_bit_value;
 
 #if GRPC_ENABLE_TRACING
@@ -56,5 +57,4 @@ extern gpr_uint32 grpc_trace_bits;
 
 void grpc_init_trace_bits();
 
-#endif
-
+#endif  /* GRPC_INTERNAL_CORE_DEBUG_TRACE_H */

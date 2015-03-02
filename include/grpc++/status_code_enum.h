@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_STATUS_CODE_ENUM_H__
-#define __GRPCPP_STATUS_CODE_ENUM_H__
+#ifndef GRPCXX_STATUS_CODE_ENUM_H
+#define GRPCXX_STATUS_CODE_ENUM_H
 
 namespace grpc {
 
@@ -195,4 +195,4 @@ enum StatusCode {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_STATUS_CODE_ENUM_H_
+#endif  // GRPCXX_STATUS_CODE_ENUM_H

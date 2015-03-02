@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -109,7 +109,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.com",
+  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.fr",
                                    deadline);
   GPR_ASSERT(c);
 
@@ -121,8 +121,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(100)));
-  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo",
-                           "foo.test.google.com", deadline, NULL);
+  cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "foo.test.google.fr",
+                           deadline, NULL);
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -182,10 +182,10 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
   deadline = five_seconds_time();
-  c1 = grpc_channel_create_call_old(f.client, "/alpha", "foo.test.google.com",
+  c1 = grpc_channel_create_call_old(f.client, "/alpha", "foo.test.google.fr",
                                     deadline);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call_old(f.client, "/beta", "foo.test.google.com",
+  c2 = grpc_channel_create_call_old(f.client, "/beta", "foo.test.google.fr",
                                     deadline);
   GPR_ASSERT(c1);
 
@@ -196,7 +196,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_invoke_old(c2, f.client_cq, tag(401), tag(402), 0));
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c1, tag(303)));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c2, tag(303)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c2, tag(403)));
 
   ev = grpc_completion_queue_next(
       f.client_cq, gpr_time_add(gpr_now(), gpr_time_from_seconds(10)));
@@ -211,7 +211,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   cq_expect_server_rpc_new(v_server, &s1, tag(100),
                            live_call == 300 ? "/alpha" : "/beta",
-                           "foo.test.google.com", deadline, NULL);
+                           "foo.test.google.fr", deadline, NULL);
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK ==
@@ -230,14 +230,14 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* first request is finished, we should be able to start the second */
   cq_expect_finished_with_status(v_client, tag(live_call + 2),
                                  GRPC_STATUS_UNIMPLEMENTED, "xyz", NULL);
-  cq_expect_finish_accepted(v_client, tag(live_call + 3), GRPC_OP_OK);
   live_call = (live_call == 300) ? 400 : 300;
+  cq_expect_finish_accepted(v_client, tag(live_call + 3), GRPC_OP_OK);
   cq_verify(v_client);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(f.server, tag(200)));
   cq_expect_server_rpc_new(v_server, &s2, tag(200),
                            live_call == 300 ? "/alpha" : "/beta",
-                           "foo.test.google.com", deadline, NULL);
+                           "foo.test.google.fr", deadline, NULL);
   cq_verify(v_server);
 
   GPR_ASSERT(GRPC_CALL_OK ==

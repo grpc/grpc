@@ -107,7 +107,7 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
-                                {"foo.test.google.com"}};
+                                {"foo.test.google.fr"}};
   grpc_channel_args *new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_oauth2_creds);
@@ -133,7 +133,8 @@ static grpc_end2end_test_config configs[] = {
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
-     chttp2_tear_down_secure_fullstack}, };
+     chttp2_tear_down_secure_fullstack},
+};
 
 int main(int argc, char **argv) {
   size_t i;

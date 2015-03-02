@@ -9,13 +9,13 @@ See grpc/INSTALL for installation instructions for various platforms.
 
 #Repository Structure
 
-This repository contains source code for gRPC libraries for multiple lanugages written on top
+This repository contains source code for gRPC libraries for multiple languages written on top
 of shared C core library [src/core] (src/core).
 
    * C++ source code: [src/cpp] (src/cpp)
-   * Python source code: [src/python] (src/python)
    * Ruby source code: [src/ruby] (src/ruby)
    * NodeJS source code: [src/node] (src/node)
+   * Python source code: [src/python] (src/python)
    * PHP source code: [src/php] (src/php)
    * C# source code: [src/csharp] (src/csharp)
    * Objective-C source code: [src/objective-c] (src/objective-c)
@@ -33,9 +33,9 @@ Libraries in different languages are in different state of development. We are s
 
    * shared C core library [src/core] (src/core) : Early adopter ready - Alpha.
    * C++ Library: [src/cpp] (src/cpp) : Early adopter ready - Alpha.
-   * Python Library: [src/python] (src/python) : Early adopter ready - Alpha.
    * Ruby Library: [src/ruby] (src/ruby) : Early adopter ready - Alpha.
    * NodeJS Library: [src/node] (src/node) : Early adopter ready - Alpha.
+   * Python Library: [src/python] (src/python) : Usable with limitations - Pre-Alpha.
    * PHP Library: [src/php] (src/php) : Pre-Alpha.
    * C# Library: [src/csharp] (src/csharp) : Pre-Alpha.
    * Objective-C Library: [src/objective-c] (src/objective-c): Pre-Alpha.

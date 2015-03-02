@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_CHANNEL_CHANNEL_STACK_H__
-#define __GRPC_INTERNAL_CHANNEL_CHANNEL_STACK_H__
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H
 
 /* A channel filter defines how operations on a channel are implemented.
    Channel filters are chained together to create full channels, and if those
@@ -301,4 +301,4 @@ void grpc_call_element_send_finish(grpc_call_element *cur_elem);
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
   if (grpc_trace_bits & GRPC_TRACE_CHANNEL) grpc_call_log_op(sev, elem, op)
 
-#endif /* __GRPC_INTERNAL_CHANNEL_CHANNEL_STACK_H__ */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_TIME_AVERAGED_STATS_H_
-#define __GRPC_INTERNAL_IOMGR_TIME_AVERAGED_STATS_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_TIME_AVERAGED_STATS_H
+#define GRPC_INTERNAL_CORE_IOMGR_TIME_AVERAGED_STATS_H
 
 /* This tracks a time-decaying weighted average.  It works by collecting
    batches of samples and then mixing their average into a time-decaying
@@ -85,4 +85,4 @@ void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats *stats,
    value. */
 double grpc_time_averaged_stats_update_average(grpc_time_averaged_stats *stats);
 
-#endif /* __GRPC_INTERNAL_IOMGR_TIME_AVERAGED_STATS_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_TIME_AVERAGED_STATS_H */

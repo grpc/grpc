@@ -47,80 +47,83 @@ typedef struct testing_pair {
 } testing_pair;
 
 static testing_pair testing_pairs[] = {
-  /* Testing valid parsing. */
+    /* Testing valid parsing. */
 
-  /* Testing trivial parses, with de-indentation. */
-  { " 0 ", "0" },
-  { " 1 ", "1" },
-  { " \"a\" ", "\"a\"" },
-  { " true ", "true" },
-  /* Testing the parser's ability to decode trivial UTF-16. */
-  { "\"\\u0020\\\\\\u0010\\u000a\\u000D\"", "\" \\\\\\u0010\\n\\r\"" },
-  /* Testing various UTF-8 sequences. */
-  { "\"ßâñć௵⇒\"", "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"" },
-  { "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"", "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"" },
-  /* Testing UTF-8 character "𝄞", U+11D1E. */
-  { "\"\xf0\x9d\x84\x9e\"", "\"\\ud834\\udd1e\"" },
-  { "\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\"" },
-  /* Testing nested empty containers. */
-  { " [ [ ] , { } , [ ] ] ", "[[],{},[]]", },
-  /* Testing escapes and control chars in key strings. */
-  { " { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ", "{\"\\u007f\\n\\\\a , b\":1,\"\":0}" },
-  /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
-  { "\"abc\xf0\x9d\x24\"", "\"abc\"" },
-  { "\"\xff\"", "\"\"" },
-  /* Testing valid number parsing. */
-  { "[0, 42 , 0.0123, 123.456]", "[0,42,0.0123,123.456]"},
-  { "[1e4,-53.235e-31, 0.3e+3]", "[1e4,-53.235e-31,0.3e+3]" },
-  /* Testing keywords parsing. */
-  { "[true, false, null]", "[true,false,null]" },
+    /* Testing trivial parses, with de-indentation. */
+    {" 0 ", "0"},
+    {" 1 ", "1"},
+    {" \"a\" ", "\"a\""},
+    {" true ", "true"},
+    /* Testing the parser's ability to decode trivial UTF-16. */
+    {"\"\\u0020\\\\\\u0010\\u000a\\u000D\"", "\" \\\\\\u0010\\n\\r\""},
+    /* Testing various UTF-8 sequences. */
+    {"\"ßâñć௵⇒\"", "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\""},
+    {"\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"",
+     "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\""},
+    /* Testing UTF-8 character "𝄞", U+11D1E. */
+    {"\"\xf0\x9d\x84\x9e\"", "\"\\ud834\\udd1e\""},
+    {"\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\""},
+    /* Testing nested empty containers. */
+    {
+     " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
+    },
+    /* Testing escapes and control chars in key strings. */
+    {" { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ",
+     "{\"\\u007f\\n\\\\a , b\":1,\"\":0}"},
+    /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
+    {"\"abc\xf0\x9d\x24\"", "\"abc\""},
+    {"\"\xff\"", "\"\""},
+    /* Testing valid number parsing. */
+    {"[0, 42 , 0.0123, 123.456]", "[0,42,0.0123,123.456]"},
+    {"[1e4,-53.235e-31, 0.3e+3]", "[1e4,-53.235e-31,0.3e+3]"},
+    /* Testing keywords parsing. */
+    {"[true, false, null]", "[true,false,null]"},
 
+    /* Testing invalid parsing. */
 
-  /* Testing invalid parsing. */
-
-  /* Testing plain invalid things, exercising the state machine. */
-  { "\\", NULL },
-  { "nu ll", NULL },
-  { "fals", NULL },
-  /* Testing unterminated string. */
-  { "\"\\x", NULL },
-  /* Testing invalid UTF-16 number. */
-  { "\"\\u123x", NULL },
-  /* Testing imbalanced surrogate pairs. */
-  { "\"\\ud834f", NULL },
-  { "\"\\ud834\\n", NULL },
-  { "\"\\udd1ef", NULL },
-  { "\"\\ud834\\ud834\"", NULL },
-  { "\"\\ud834\\u1234\"", NULL },
-  /* Testing embedded invalid whitechars. */
-  { "\"\n\"", NULL },
-  { "\"\t\"", NULL },
-  /* Testing empty json data. */
-  { "", NULL },
-  /* Testing extra characters after end of parsing. */
-  { "{},", NULL },
-  /* Testing imbalanced containers. */
-  { "{}}", NULL },
-  { "[]]", NULL },
-  { "{{}", NULL },
-  { "[[]", NULL },
-  { "[}", NULL },
-  { "{]", NULL },
-  /*Testing trailing comma. */
-  { "{,}", NULL },
-  { "[1,2,3,4,]", NULL },
-  /* Testing having a key syntax in an array. */
-  { "[\"x\":0]", NULL },
-  /* Testing invalid numbers. */
-  { "1.", NULL },
-  { "1e", NULL },
-  { ".12", NULL },
-  { "1.x", NULL },
-  { "1.12x", NULL },
-  { "1ex", NULL },
-  { "1e12x", NULL },
-  { ".12x", NULL },
-  { "000", NULL },
+    /* Testing plain invalid things, exercising the state machine. */
+    {"\\", NULL},
+    {"nu ll", NULL},
+    {"fals", NULL},
+    /* Testing unterminated string. */
+    {"\"\\x", NULL},
+    /* Testing invalid UTF-16 number. */
+    {"\"\\u123x", NULL},
+    /* Testing imbalanced surrogate pairs. */
+    {"\"\\ud834f", NULL},
+    {"\"\\ud834\\n", NULL},
+    {"\"\\udd1ef", NULL},
+    {"\"\\ud834\\ud834\"", NULL},
+    {"\"\\ud834\\u1234\"", NULL},
+    /* Testing embedded invalid whitechars. */
+    {"\"\n\"", NULL},
+    {"\"\t\"", NULL},
+    /* Testing empty json data. */
+    {"", NULL},
+    /* Testing extra characters after end of parsing. */
+    {"{},", NULL},
+    /* Testing imbalanced containers. */
+    {"{}}", NULL},
+    {"[]]", NULL},
+    {"{{}", NULL},
+    {"[[]", NULL},
+    {"[}", NULL},
+    {"{]", NULL},
+    /*Testing trailing comma. */
+    {"{,}", NULL},
+    {"[1,2,3,4,]", NULL},
+    /* Testing having a key syntax in an array. */
+    {"[\"x\":0]", NULL},
+    /* Testing invalid numbers. */
+    {"1.", NULL},
+    {"1e", NULL},
+    {".12", NULL},
+    {"1.x", NULL},
+    {"1.12x", NULL},
+    {"1ex", NULL},
+    {"1e12x", NULL},
+    {".12x", NULL},
+    {"000", NULL},
 };
 
 static void test_pairs() {
@@ -169,7 +172,7 @@ static void test_atypical() {
   gpr_free(scratchpad);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_pairs();
   test_atypical();

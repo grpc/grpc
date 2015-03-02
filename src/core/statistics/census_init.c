@@ -38,13 +38,11 @@
 #include "src/core/statistics/census_tracing.h"
 
 void census_init(void) {
-  gpr_log(GPR_INFO, "Initialize census library.");
   census_tracing_init();
   census_stats_store_init();
 }
 
 void census_shutdown(void) {
-  gpr_log(GPR_INFO, "Shutdown census library.");
   census_stats_store_shutdown();
   census_tracing_shutdown();
 }

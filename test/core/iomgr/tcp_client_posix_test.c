@@ -43,9 +43,10 @@
 #include "src/core/iomgr/socket_utils_posix.h"
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include "test/core/util/test_config.h"
 
 static gpr_timespec test_deadline(void) {
-  return gpr_time_add(gpr_now(), gpr_time_from_seconds(10));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
 }
 
 static void must_succeed(void *arg, grpc_endpoint *tcp) {
@@ -150,13 +151,12 @@ void test_times_out(void) {
 
   /* connect to dummy server address */
 
-  connect_deadline = gpr_time_add(gpr_now(), gpr_time_from_micros(1000000));
+  connect_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
 
   grpc_tcp_client_connect(must_fail, &ev, (struct sockaddr *)&addr, addr_len,
                           connect_deadline);
   /* Make sure the event doesn't trigger early */
-  GPR_ASSERT(!gpr_event_wait(
-                 &ev, gpr_time_add(gpr_now(), gpr_time_from_micros(500000))));
+  GPR_ASSERT(!gpr_event_wait(&ev, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(500)));
   /* Now wait until it should have triggered */
   sleep(1);
 
@@ -168,7 +168,8 @@ void test_times_out(void) {
   }
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
   grpc_iomgr_init();
   test_succeeds();
   gpr_log(GPR_ERROR, "End of first test");

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ATM_H__
-#define __GRPC_SUPPORT_ATM_H__
+#ifndef GRPC_SUPPORT_ATM_H
+#define GRPC_SUPPORT_ATM_H
 
 /* This interface provides atomic operations and barriers.
    It is internal to gpr support code and should not be used outside it.
@@ -89,4 +89,4 @@
 #error could not determine platform for atm
 #endif
 
-#endif /* __GRPC_SUPPORT_ATM_H__ */
+#endif  /* GRPC_SUPPORT_ATM_H */

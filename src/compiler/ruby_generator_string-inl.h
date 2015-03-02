@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_RUBY_GENERATOR_STRING_INL_H_
-#define NET_GRPC_COMPILER_RUBY_GENERATOR_STRING_INL_H_
+#ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_STRING_INL_H
+#define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_STRING_INL_H
 
 #include <algorithm>
 #include <string>
@@ -130,4 +130,4 @@ inline std::string RubyTypeOf(const std::string &a_type,
 
 }  // namespace grpc_ruby_generator
 
-#endif  // NET_GRPC_COMPILER_RUBY_GENERATOR_STRING_INL_H_
+#endif  // GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_STRING_INL_H

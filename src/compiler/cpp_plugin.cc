@@ -63,7 +63,7 @@ class CppGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
       return false;
     }
 
-    std::string file_name = grpc_cpp_generator::StripProto(file->name());
+    std::string file_name = grpc_generator::StripProto(file->name());
 
     // Generate .pb.h
     Insert(context, file_name + ".pb.h", "includes",

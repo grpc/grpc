@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_UTIL_PORT_H__
-#define __GRPC_TEST_UTIL_PORT_H__
+#ifndef GRPC_TEST_CORE_UTIL_PORT_H
+#define GRPC_TEST_CORE_UTIL_PORT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,4 +49,4 @@ int grpc_pick_unused_port_or_die();
 }
 #endif
 
-#endif /* __GRPC_TEST_UTIL_PORT_H__ */
+#endif  /* GRPC_TEST_CORE_UTIL_PORT_H */

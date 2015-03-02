@@ -107,6 +107,7 @@ namespace Grpc.Core
         /// </summary>
         private GrpcEnvironment()
         {
+            GrpcLog.RedirectNativeLogs(Console.Error);
             grpcsharp_init();
             threadPool = new GrpcThreadPool(THREAD_POOL_SIZE);
             threadPool.Start();

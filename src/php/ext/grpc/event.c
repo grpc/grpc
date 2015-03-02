@@ -90,10 +90,6 @@ zval *grpc_php_convert_event(grpc_event *event) {
         add_property_stringl(event_object, "data", read_string, read_len, true);
       }
       break;
-    case GRPC_INVOKE_ACCEPTED:
-      add_property_long(event_object, "data",
-                        (long)event->data.invoke_accepted);
-      break;
     case GRPC_WRITE_ACCEPTED:
       add_property_long(event_object, "data", (long)event->data.write_accepted);
       break;

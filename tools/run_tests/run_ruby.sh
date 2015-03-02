@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,41 +28,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'faraday'
-require 'grpc/auth/signet'
+set -ex
 
-module GRPC
-  # Module Auth provides classes that provide Google-specific authentication
-  # used to access Google gRPC services.
-  module Auth
-    # Extends Signet::OAuth2::Client so that the auth token is obtained from
-    # the GCE metadata server.
-    class GCECredentials < Signet::OAuth2::Client
-      COMPUTE_AUTH_TOKEN_URI = 'http://metadata/computeMetadata/v1/'\
-                               'instance/service-accounts/default/token'
-      COMPUTE_CHECK_URI = 'http://metadata.google.internal'
+# change to grpc repo root
+cd $(dirname $0)/../../src/ruby
 
-      # Detect if this appear to be a GCE instance, by checking if metadata
-      # is available
-      def self.on_gce?(options = {})
-        c = options[:connection] || Faraday.default_connection
-        resp = c.get(COMPUTE_CHECK_URI)
-        return false unless resp.status == 200
-        return false unless resp.headers.key?('Metadata-Flavor')
-        return resp.headers['Metadata-Flavor'] == 'Google'
-      rescue Faraday::ConnectionFailed
-        return false
-      end
-
-      # Overrides the super class method to change how access tokens are
-      # fetched.
-      def fetch_access_token(options = {})
-        c = options[:connection] || Faraday.default_connection
-        c.headers = { 'Metadata-Flavor' => 'Google' }
-        resp = c.get(COMPUTE_AUTH_TOKEN_URI)
-        Signet::OAuth2.parse_credentials(resp.body,
-                                         resp.headers['content-type'])
-      end
-    end
-  end
-end
+rake

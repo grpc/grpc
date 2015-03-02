@@ -63,7 +63,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -122,7 +122,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
-                               "foo.test.google.com", deadline);
+                               "foo.test.google.fr:1234", deadline);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -150,8 +150,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
                                                       &call_details,
                                                       &request_metadata_recv,
-                                                      f.server_cq,
-                                                      tag(101)));
+                                                      f.server_cq, tag(101)));
   cq_expect_completion(v_server, tag(101), GRPC_OP_OK);
   cq_verify(v_server);
 
@@ -178,7 +177,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.com"));
+  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
   GPR_ASSERT(was_cancelled == 0);
 
   gpr_free(details);

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -33,6 +33,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Internal\GrpcLog.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcException.cs" />
     <Compile Include="Calls.cs" />
@@ -62,10 +63,20 @@
     <Compile Include="Internal\ClientStreamingInputObserver.cs" />
     <Compile Include="Internal\ServerStreamingOutputObserver.cs" />
     <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
+    <Compile Include="Utils\BenchmarkUtil.cs" />
+    <Compile Include="Utils\ExceptionHelper.cs" />
   </ItemGroup>
+  <Choose>
+    <!-- Under older versions of Monodevelop, Choose is not supported and is just
+         ignored, which gives us the desired effect. -->
+    <When Condition=" '$(OS)' != 'Unix' ">
+      <ItemGroup>
+        <Content Include="..\..\..\vsprojects\vs2013\Debug\grpc_csharp_ext.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+      </ItemGroup>
+    </When>
+    <Otherwise />
+  </Choose>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Internal\" />
-    <Folder Include="Utils\" />
-  </ItemGroup>
 </Project>

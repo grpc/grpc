@@ -38,6 +38,8 @@
 #include <string>
 #include <thread>
 
+#include <unistd.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
@@ -57,7 +59,7 @@ DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
-DEFINE_string(server_host_override, "foo.test.google.com",
+DEFINE_string(server_host_override, "foo.test.google.fr",
               "Override the server host which is sent in HTTP header");
 DEFINE_string(test_case, "large_unary",
               "Configure different test cases. Valid options are: "
@@ -313,8 +315,7 @@ void DoResponseStreamingWithSlowConsumer() {
     GPR_ASSERT(response.payload().body() ==
                grpc::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_INFO, "received message %d", i);
-    std::this_thread::sleep_for(
-        std::chrono::milliseconds(kReceiveDelayMilliSeconds));
+    usleep(kReceiveDelayMilliSeconds * 1000);
     ++i;
   }
   GPR_ASSERT(kNumResponseMessages == i);

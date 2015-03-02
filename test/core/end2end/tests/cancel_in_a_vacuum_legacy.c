@@ -60,7 +60,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -109,7 +109,7 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
 
-  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.com",
+  c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.fr",
                                    deadline);
   GPR_ASSERT(c);
 

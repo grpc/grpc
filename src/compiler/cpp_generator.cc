@@ -186,7 +186,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(
         *vars,
         "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
-        "$Method$(::grpc::ClientContext* context, "
+        "Async$Method$(::grpc::ClientContext* context, "
         "const $Request$& request, "
         "::grpc::CompletionQueue* cq, void* tag);\n");
   } else if (ClientOnlyStreaming(method)) {
@@ -196,7 +196,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
         "::grpc::ClientContext* context, $Response$* response);\n");
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>> $Method$("
+        "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>> Async$Method$("
         "::grpc::ClientContext* context, $Response$* response, "
         "::grpc::CompletionQueue* cq, void* tag);\n");
   } else if (ServerOnlyStreaming(method)) {
@@ -206,7 +206,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
         "::grpc::ClientContext* context, const $Request$& request);\n");
     printer->Print(
         *vars,
-        "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> $Method$("
+        "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> Async$Method$("
         "::grpc::ClientContext* context, const $Request$& request, "
         "::grpc::CompletionQueue* cq, void* tag);\n");
   } else if (BidiStreaming(method)) {
@@ -217,7 +217,7 @@ void PrintHeaderClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< "
                    "$Request$, $Response$>> "
-                   "$Method$(::grpc::ClientContext* context, "
+                   "Async$Method$(::grpc::ClientContext* context, "
                    "::grpc::CompletionQueue* cq, void* tag);\n");
   }
 }
@@ -300,13 +300,13 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   (*vars)["Service"] = service->name();
 
   printer->Print(*vars,
-                 "class $Service$ final {\n"
+                 "class $Service$ GRPC_FINAL {\n"
                  " public:\n");
   printer->Indent();
 
   // Client side
   printer->Print(
-      "class Stub final : public ::grpc::InternalStub {\n"
+      "class Stub GRPC_FINAL : public ::grpc::InternalStub {\n"
       " public:\n");
   printer->Indent();
   for (int i = 0; i < service->method_count(); ++i) {
@@ -331,7 +331,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderServerMethodSync(printer, service->method(i), vars);
   }
-  printer->Print("::grpc::RpcService* service() override final;\n");
+  printer->Print("::grpc::RpcService* service() GRPC_OVERRIDE GRPC_FINAL;\n");
   printer->Outdent();
   printer->Print(
       " private:\n"
@@ -340,7 +340,7 @@ void PrintHeaderService(google::protobuf::io::Printer *printer,
 
   // Server side - Asynchronous
   printer->Print(
-      "class AsyncService final : public ::grpc::AsynchronousService {\n"
+      "class AsyncService GRPC_FINAL : public ::grpc::AsynchronousService {\n"
       " public:\n");
   printer->Indent();
   (*vars)["MethodCount"] = as_string(service->method_count());
@@ -390,7 +390,7 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(
         *vars,
         "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
-        "$Service$::Stub::$Method$(::grpc::ClientContext* context, "
+        "$Service$::Stub::Async$Method$(::grpc::ClientContext* context, "
         "const $Request$& request, "
         "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
@@ -416,7 +416,7 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
                    "}\n\n");
     printer->Print(*vars,
                    "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>> "
-                   "$Service$::Stub::$Method$("
+                   "$Service$::Stub::Async$Method$("
                    "::grpc::ClientContext* context, $Response$* response, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
@@ -443,7 +443,7 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
                    "}\n\n");
     printer->Print(*vars,
                    "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> "
-                   "$Service$::Stub::$Method$("
+                   "$Service$::Stub::Async$Method$("
                    "::grpc::ClientContext* context, const $Request$& request, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
@@ -471,7 +471,7 @@ void PrintSourceClientMethod(google::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "std::unique_ptr< ::grpc::ClientAsyncReaderWriter< "
                    "$Request$, $Response$>> "
-                   "$Service$::Stub::$Method$(::grpc::ClientContext* context, "
+                   "$Service$::Stub::Async$Method$(::grpc::ClientContext* context, "
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
                    "  return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< "
@@ -609,7 +609,7 @@ void PrintSourceService(google::protobuf::io::Printer *printer,
       "  std::unique_ptr< $Service$::Stub> stub(new $Service$::Stub());\n"
       "  stub->set_channel(channel);\n"
       "  return stub;\n"
-      "};\n\n");
+      "}\n\n");
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["Idx"] = as_string(i);
     PrintSourceClientMethod(printer, service->method(i), vars);

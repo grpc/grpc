@@ -103,11 +103,15 @@ NAN_METHOD(Channel::New) {
     grpc_channel *wrapped_channel;
     // Owned by the Channel object
     NanUtf8String *host = new NanUtf8String(args[0]);
+    NanUtf8String *host_override = NULL;
     if (args[1]->IsUndefined()) {
       wrapped_channel = grpc_channel_create(**host, NULL);
     } else if (args[1]->IsObject()) {
       grpc_credentials *creds = NULL;
       Handle<Object> args_hash(args[1]->ToObject()->Clone());
+      if (args_hash->HasOwnProperty(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG))) {
+        host_override = new NanUtf8String(args_hash->Get(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
+      }
       if (args_hash->HasOwnProperty(NanNew("credentials"))) {
         Handle<Value> creds_value = args_hash->Get(NanNew("credentials"));
         if (!Credentials::HasInstance(creds_value)) {
@@ -155,7 +159,12 @@ NAN_METHOD(Channel::New) {
     } else {
       return NanThrowTypeError("Channel expects a string and an object");
     }
-    Channel *channel = new Channel(wrapped_channel, host);
+    Channel *channel;
+    if (host_override == NULL) {
+      channel = new Channel(wrapped_channel, host);
+    } else {
+      channel = new Channel(wrapped_channel, host_override);
+    }
     channel->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
