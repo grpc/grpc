@@ -34,6 +34,7 @@ set -ex
 cd $(dirname $0)/../..
 
 root=`pwd`
+rm -rf python2.7_virtual_environment
 virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
 source python2.7_virtual_environment/bin/activate
 pip install enum34==1.0.4 futures==2.2.0 protobuf==3.0.0-alpha-1

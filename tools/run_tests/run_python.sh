@@ -36,10 +36,6 @@ cd $(dirname $0)/../..
 root=`pwd`
 export LD_LIBRARY_PATH=$root/libs/opt
 source python2.7_virtual_environment/bin/activate
-ldd $PWD/python2.7_virtual_environment/bin/python
-ldd $PWD/python2.7_virtual_environment/local/lib/python2.7/site-packages/grpc/_adapter/_c.so
-objdump -T /lib/x86_64-linux-gnu/libc.so.6
-objdump -T /lib/x86_64-linux-gnu/libc.so.6 | grep clock_gettime
 # TODO(issue 215): Properly itemize these in run_tests.py so that they can be parallelized.
 # TODO(atash): Enable dynamic unused port discovery for this test.
 # TODO(mlumish): Re-enable this test when we can install protoc
