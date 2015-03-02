@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
-#define __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_
+#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_TRACING_H
+#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_TRACING_H
 
 #include <grpc/support/time.h>
 #include "src/core/statistics/census_rpc_stats.h"
@@ -93,4 +93,4 @@ census_trace_obj** census_get_active_ops(int* num_active_ops);
 }
 #endif
 
-#endif /* __GRPC_INTERNAL_STATISTICS_CENSUS_TRACING_H_ */
+#endif  /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_TRACING_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ATM_WIN32_H__
-#define __GRPC_SUPPORT_ATM_WIN32_H__
+#ifndef GRPC_SUPPORT_ATM_WIN32_H
+#define GRPC_SUPPORT_ATM_WIN32_H
 
 /* Win32 variant of atm_platform.h */
 #include <grpc/support/port_platform.h>
@@ -105,4 +105,4 @@ static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta) {
   return old;
 }
 
-#endif /* __GRPC_SUPPORT_ATM_WIN32_H__ */
+#endif  /* GRPC_SUPPORT_ATM_WIN32_H */

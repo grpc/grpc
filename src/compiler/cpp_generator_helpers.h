@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
-#define NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
+#ifndef GRPC_INTERNAL_COMPILER_CPP_GENERATOR_HELPERS_H
+#define GRPC_INTERNAL_COMPILER_CPP_GENERATOR_HELPERS_H
 
 #include <map>
 #include <string>
@@ -69,4 +69,4 @@ inline std::string ClassName(const google::protobuf::Descriptor *descriptor,
 
 }  // namespace grpc_cpp_generator
 
-#endif  // NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
+#endif  // GRPC_INTERNAL_COMPILER_CPP_GENERATOR_HELPERS_H

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_THREAD_POOL_INTERFACE_H__
-#define __GRPCPP_THREAD_POOL_INTERFACE_H__
+#ifndef GRPCXX_THREAD_POOL_INTERFACE_H
+#define GRPCXX_THREAD_POOL_INTERFACE_H
 
 #include <functional>
 
@@ -49,4 +49,4 @@ class ThreadPoolInterface {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_THREAD_POOL_INTERFACE_H__
+#endif  // GRPCXX_THREAD_POOL_INTERFACE_H

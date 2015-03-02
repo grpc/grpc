@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_STATISTICS_WINDOW_STATS_H_
-#define __GRPC_INTERNAL_STATISTICS_WINDOW_STATS_H_
+#ifndef GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H
+#define GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H
 
 #include <grpc/support/time.h>
 
@@ -170,4 +170,4 @@ void census_window_stats_get_sums(const struct census_window_stats* wstats,
    assertion failure). This function is thread-compatible. */
 void census_window_stats_destroy(struct census_window_stats* wstats);
 
-#endif /* __GRPC_INTERNAL_STATISTICS_WINDOW_STATS_H_ */
+#endif  /* GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H */

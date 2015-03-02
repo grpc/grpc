@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_DATA_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_DATA_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H
 
 /* Parser for GRPC streams embedded in DATA frames */
 
@@ -77,4 +77,4 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
 /* create a slice with an empty data frame and is_last set */
 gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_DATA_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H */

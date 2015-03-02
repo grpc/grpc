@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKET_UTILS_POSIX_H__
-#define __GRPC_INTERNAL_IOMGR_SOCKET_UTILS_POSIX_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -105,4 +105,4 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
 int grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
                                  int protocol, grpc_dualstack_mode *dsmode);
 
-#endif /* __GRPC_INTERNAL_IOMGR_SOCKET_UTILS_POSIX_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H */

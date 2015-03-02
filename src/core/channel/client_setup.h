@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__
-#define __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H
 
 #include "src/core/channel/client_channel.h"
 #include "src/core/transport/metadata.h"
@@ -70,4 +70,4 @@ gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r);
 
 grpc_mdctx *grpc_client_setup_get_mdctx(grpc_client_setup_request *r);
 
-#endif /* __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__ */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H */

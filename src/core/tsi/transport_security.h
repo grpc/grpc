@@ -31,14 +31,16 @@
  *
  */
 
-#ifndef __TRANSPORT_SECURITY_H_
-#define __TRANSPORT_SECURITY_H_
+#ifndef GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H
+#define GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H
 
 #include "src/core/tsi/transport_security_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern int tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */
@@ -115,4 +117,4 @@ char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
 }
 #endif
 
-#endif /* __TRANSPORT_SECURITY_H_ */
+#endif  /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H */
