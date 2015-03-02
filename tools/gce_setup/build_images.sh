@@ -30,7 +30,7 @@
 
 
 main() {
-  # restart builder vm and wait for images to sync to it
+  # rebuild images on all languages on existing builder vm. 
   source grpc_docker.sh
   cd ../../
 
