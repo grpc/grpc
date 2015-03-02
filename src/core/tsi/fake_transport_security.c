@@ -392,10 +392,8 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
-    if (tsi_tracing_enabled) {
-      gpr_log(GPR_INFO, "%s prepared %s.", impl->is_client ? "Client" : "Server",
-              tsi_fake_handshake_message_to_string(impl->next_message_to_send));
-    }
+    gpr_log(GPR_INFO, "%s prepared %s.", impl->is_client ? "Client" : "Server",
+            tsi_fake_handshake_message_to_string(impl->next_message_to_send));
     impl->next_message_to_send = next_message_to_send;
   }
   result = drain_frame_to_bytes(bytes, bytes_size, &impl->outgoing);
@@ -403,9 +401,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   if (!impl->is_client &&
       impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     /* We're done. */
-    if (tsi_tracing_enabled) {
-      gpr_log(GPR_INFO, "Server is done.");
-    }
+    gpr_log(GPR_INFO, "Server is done.");
     impl->result = TSI_OK;
   } else {
     impl->needs_incoming_message = 1;
@@ -440,17 +436,13 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
             tsi_fake_handshake_message_to_string(received_msg),
             tsi_fake_handshake_message_to_string(expected_msg));
   }
-  if (tsi_tracing_enabled) {
-    gpr_log(GPR_INFO, "%s received %s.", impl->is_client ? "Client" : "Server",
-            tsi_fake_handshake_message_to_string(received_msg));
-  }
+  gpr_log(GPR_INFO, "%s received %s.", impl->is_client ? "Client" : "Server",
+          tsi_fake_handshake_message_to_string(received_msg));
   tsi_fake_frame_reset(&impl->incoming, 0 /* needs_draining */);
   impl->needs_incoming_message = 0;
   if (impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     /* We're done. */
-    if (tsi_tracing_enabled) {
-      gpr_log(GPR_INFO, "%s is done.", impl->is_client ? "Client" : "Server");
-    }
+    gpr_log(GPR_INFO, "%s is done.", impl->is_client ? "Client" : "Server");
     impl->result = TSI_OK;
   }
   return TSI_OK;
