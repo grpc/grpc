@@ -39,7 +39,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
-#include "src/core/debug/trace.h"
 #include "src/core/tsi/transport_security.h"
 
 #include <openssl/bio.h>
@@ -163,7 +162,7 @@ static const char* ssl_error_string(int error) {
 /* TODO(jboeuf): Remove when we are past the debugging phase with this code. */
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
-  if ((where & flag) && (grpc_trace_bits & GRPC_TRACE_SSL)) {
+  if ((where & flag) && tsi_tracing_enabled) {
     gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
             SSL_state_string_long(ssl), SSL_state_string(ssl));
   }
@@ -1095,8 +1094,9 @@ static int does_entry_match_name(const char* entry, size_t entry_length,
     return 0;
   }
   name_subdomain = strchr(name, '.');
+  if (name_subdomain == NULL) return 0;
   name_subdomain_length = strlen(name_subdomain);
-  if (name_subdomain == NULL || name_subdomain_length < 2) return 0;
+  if (name_subdomain_length < 2) return 0;
   name_subdomain++; /* Starts after the dot. */
   name_subdomain_length--;
   entry += 2;       /* Remove *. */

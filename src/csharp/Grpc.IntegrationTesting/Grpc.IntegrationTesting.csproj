@@ -6,10 +6,9 @@
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{C61154BA-DD4A-4838-8420-0162A28925E0}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <RootNamespace>Grpc.IntegrationTesting</RootNamespace>
     <AssemblyName>Grpc.IntegrationTesting</AssemblyName>
-    <StartupObject>Grpc.IntegrationTesting.Client</StartupObject>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -43,10 +42,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Client.cs" />
     <Compile Include="TestServiceGrpc.cs" />
     <Compile Include="Empty.cs" />
     <Compile Include="Messages.cs" />
+    <Compile Include="InteropClientServerTest.cs" />
+    <Compile Include="TestServiceImpl.cs" />
+    <Compile Include="InteropServer.cs" />
+    <Compile Include="InteropClient.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

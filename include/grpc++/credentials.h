@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CREDENTIALS_H_
-#define __GRPCPP_CREDENTIALS_H_
+#ifndef GRPCXX_CREDENTIALS_H
+#define GRPCXX_CREDENTIALS_H
 
 #include <chrono>
 #include <memory>
@@ -47,7 +47,7 @@ namespace grpc {
 // to creating an instance using CredentialsFactory, and passing it down
 // during channel construction.
 
-class Credentials final {
+class Credentials GRPC_FINAL {
  public:
   ~Credentials();
 
@@ -133,4 +133,4 @@ class CredentialsFactory {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CREDENTIALS_H_
+#endif  // GRPCXX_CREDENTIALS_H

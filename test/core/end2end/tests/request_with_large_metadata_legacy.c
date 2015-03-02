@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -118,7 +118,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   meta.key = "key";
   meta.value = gpr_malloc(large_size + 1);
   memset((char *)meta.value, 'a', large_size);
-  ((char*)meta.value)[large_size] = 0;
+  ((char *)meta.value)[large_size] = 0;
   meta.value_length = large_size;
 
   c = grpc_channel_create_call_old(f.client, "/foo", "foo.test.google.fr",

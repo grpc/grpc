@@ -2,7 +2,9 @@
 import json
 %>
 
-${json.dumps([{"name": tgt.name, "language": tgt.language}
+${json.dumps([{"name": tgt.name,
+               "language": tgt.language,
+               "flaky": tgt.get("flaky", False)}
               for tgt in targets
               if tgt.get('run', True) and tgt.build == 'test'],
              sort_keys=True, indent=2)}

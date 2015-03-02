@@ -123,7 +123,7 @@ static void test_connect(int n) {
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
 
   for (i = 0; i < n; i++) {
-    deadline = gpr_time_add(gpr_now(), gpr_time_from_micros(10000000));
+    deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
 
     nconnects_before = nconnects;
     clifd = socket(addr.ss_family, SOCK_STREAM, 0);

@@ -62,7 +62,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -163,11 +163,9 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s,
-                                                      &call_details,
-                                                      &request_metadata_recv,
-                                                      f.server_cq,
-                                                      tag(2)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
+                                 f.server, &s, &call_details,
+                                 &request_metadata_recv, f.server_cq, tag(2)));
   cq_expect_completion(v_server, tag(2), GRPC_OP_OK);
   cq_verify(v_server);
 

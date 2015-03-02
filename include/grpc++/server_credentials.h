@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_CREDENTIALS_H_
-#define __GRPCPP_SERVER_CREDENTIALS_H_
+#ifndef GRPCXX_SERVER_CREDENTIALS_H
+#define GRPCXX_SERVER_CREDENTIALS_H
 
 #include <memory>
 #include <vector>
@@ -44,7 +44,7 @@ struct grpc_server_credentials;
 namespace grpc {
 
 // grpc_server_credentials wrapper class.
-class ServerCredentials final {
+class ServerCredentials GRPC_FINAL {
  public:
   ~ServerCredentials();
 
@@ -79,4 +79,4 @@ class ServerCredentialsFactory {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_CREDENTIALS_H_
+#endif  // GRPCXX_SERVER_CREDENTIALS_H

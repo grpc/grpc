@@ -72,7 +72,7 @@ RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
 # Get the source from GitHub
-RUN git clone git@github.com:grpc/grpc.git /var/local/git/grpc
+RUN git clone https://github.com/grpc/grpc.git /var/local/git/grpc
 RUN cd /var/local/git/grpc && \
   git pull --recurse-submodules && \
   git submodule update --init --recursive

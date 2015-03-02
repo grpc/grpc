@@ -31,10 +31,18 @@
  *
  */
 
-#ifndef __GRPCPP_CONFIG_H__
-#define __GRPCPP_CONFIG_H__
+#ifndef GRPCXX_CONFIG_H
+#define GRPCXX_CONFIG_H
 
 #include <string>
+
+#ifdef GRPC_OLD_CXX
+#define GRPC_FINAL
+#define GRPC_OVERRIDE
+#else
+#define GRPC_FINAL final
+#define GRPC_OVERRIDE override
+#endif
 
 namespace grpc {
 
@@ -42,4 +50,4 @@ typedef std::string string;
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CONFIG_H__
+#endif  // GRPCXX_CONFIG_H

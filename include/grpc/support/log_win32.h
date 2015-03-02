@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_LOG_WIN32_H__
-#define __GRPC_SUPPORT_LOG_WIN32_H__
+#ifndef GRPC_SUPPORT_LOG_WIN32_H
+#define GRPC_SUPPORT_LOG_WIN32_H
 
 #include <windows.h>
 
@@ -50,4 +50,4 @@ char *gpr_format_message(DWORD messageid);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_LOG_H__ */
+#endif  /* GRPC_SUPPORT_LOG_WIN32_H */

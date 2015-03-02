@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,49 +29,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-spec_dir = File.expand_path(File.join(File.dirname(__FILE__)))
-$LOAD_PATH.unshift(spec_dir)
-$LOAD_PATH.uniq!
+set -ex
 
-require 'apply_auth_examples'
-require 'grpc/auth/service_account'
-require 'jwt'
-require 'multi_json'
-require 'openssl'
-require 'spec_helper'
+CONFIG=${CONFIG:-opt}
 
-describe GRPC::Auth::ServiceAccountCredentials do
-  before(:example) do
-    @key = OpenSSL::PKey::RSA.new(2048)
-    cred_json = {
-      private_key_id: 'a_private_key_id',
-      private_key: @key.to_pem,
-      client_email: 'app@developer.gserviceaccount.com',
-      client_id: 'app.apps.googleusercontent.com',
-      type: 'service_account'
-    }
-    cred_json_text = MultiJson.dump(cred_json)
-    @client = GRPC::Auth::ServiceAccountCredentials.new(
-        'https://www.googleapis.com/auth/userinfo.profile',
-        StringIO.new(cred_json_text))
-  end
+# change to grpc repo root
+cd $(dirname $0)/../..
 
-  def make_auth_stubs(with_access_token: '')
-    Faraday::Adapter::Test::Stubs.new do |stub|
-      stub.post('/oauth2/v3/token') do |env|
-        params = Addressable::URI.form_unencode(env[:body])
-        _claim, _header = JWT.decode(params.assoc('assertion').last,
-                                     @key.public_key)
-        want = ['grant_type', 'urn:ietf:params:oauth:grant-type:jwt-bearer']
-        expect(params.assoc('grant_type')).to eq(want)
-        build_json_response(
-          'access_token' => with_access_token,
-          'token_type' => 'Bearer',
-          'expires_in' => 3600
-        )
-      end
-    end
-  end
+# tells npm install to look for files in that directory
+export GRPC_ROOT=`pwd`
+# tells npm install the subdirectory with library files
+export GRPC_LIB_SUBDIR=libs/$CONFIG
 
-  it_behaves_like 'apply/apply! are OK'
-end
+cd src/ruby
+
+bundle install
+rake compile:grpc

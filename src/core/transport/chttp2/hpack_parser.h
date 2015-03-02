@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_PARSER_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_PARSER_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_PARSER_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_PARSER_H
 
 #include <stddef.h>
 
@@ -108,4 +108,4 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     void *hpack_parser, grpc_chttp2_parse_state *state, gpr_slice slice,
     int is_last);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_HPACK_PARSER_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_PARSER_H */

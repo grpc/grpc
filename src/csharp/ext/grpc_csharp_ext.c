@@ -35,9 +35,10 @@
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/alloc.h>
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
+#include <grpc/support/thd.h>
+#include <grpc/grpc.h>
 
 #include <string.h>
 
@@ -343,6 +344,23 @@ grpcsharp_call_start_unary(grpc_call *call, callback_funcptr callback,
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
 
+/* Synchronous unary call */
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_call_blocking_unary(grpc_call *call,
+                              grpc_completion_queue *dedicated_cq,
+                              callback_funcptr callback,
+                              const char *send_buffer, size_t send_buffer_len) {
+  GPR_ASSERT(grpcsharp_call_start_unary(call, callback, send_buffer,
+                                        send_buffer_len) == GRPC_CALL_OK);
+
+  /* TODO: we would like to use pluck, but we don't know the tag */
+  GPR_ASSERT(grpcsharp_completion_queue_next_with_callback(dedicated_cq) ==
+             GRPC_OP_COMPLETE);
+  grpc_completion_queue_shutdown(dedicated_cq);
+  GPR_ASSERT(grpcsharp_completion_queue_next_with_callback(dedicated_cq) ==
+             GRPC_QUEUE_SHUTDOWN);
+}
+
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_start_client_streaming(grpc_call *call,
                                       callback_funcptr callback) {
@@ -566,3 +584,32 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
       server, &(ctx->server_rpc_new.call), &(ctx->server_rpc_new.call_details),
       &(ctx->server_rpc_new.request_metadata), cq, ctx);
 }
+
+/* Logging */
+
+typedef void(GPR_CALLTYPE *grpcsharp_log_func)(const char *file, gpr_int32 line,
+                                               gpr_uint64 thd_id,
+                                               const char *severity_string,
+                                               const char *msg);
+static grpcsharp_log_func log_func = NULL;
+
+/* Redirects gpr_log to log_func callback */
+static void grpcsharp_log_handler(gpr_log_func_args *args) {
+  log_func(args->file, args->line, gpr_thd_currentid(),
+           gpr_log_severity_string(args->severity), args->message);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
+  GPR_ASSERT(func);
+  log_func = func;
+  gpr_set_log_function(grpcsharp_log_handler);
+}
+
+/* For testing */
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_test_callback(callback_funcptr callback) {
+  callback(GRPC_OP_OK, NULL);
+}
+
+/* For testing */
+GPR_EXPORT void *GPR_CALLTYPE grpcsharp_test_nop(void *ptr) { return ptr; }

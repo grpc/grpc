@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SUPPORT_CPU_H__
-#define __GRPC_INTERNAL_SUPPORT_CPU_H__
+#ifndef GRPC_SUPPORT_CPU_H
+#define GRPC_SUPPORT_CPU_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,4 +54,4 @@ unsigned gpr_cpu_current_cpu(void);
 }  // extern "C"
 #endif
 
-#endif /* __GRPC_INTERNAL_SUPPORT_CPU_H__ */
+#endif  /* GRPC_SUPPORT_CPU_H */

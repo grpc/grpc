@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_TIME_H__
-#define __GRPC_SUPPORT_TIME_H__
+#ifndef GRPC_SUPPORT_TIME_H
+#define GRPC_SUPPORT_TIME_H
 /* Time support.
    We use gpr_timespec, which is analogous to struct timespec.  On some
    machines, absolute times may be in local time.  */
@@ -100,4 +100,4 @@ double gpr_timespec_to_micros(gpr_timespec t);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_TIME_H__ */
+#endif  /* GRPC_SUPPORT_TIME_H */

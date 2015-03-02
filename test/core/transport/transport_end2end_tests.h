@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_TEST_TRANSPORT_TRANSPORT_END2END_TESTS_H__
-#define __GRPC_TEST_TRANSPORT_TRANSPORT_END2END_TESTS_H__
+#ifndef GRPC_TEST_CORE_TRANSPORT_TRANSPORT_END2END_TESTS_H
+#define GRPC_TEST_CORE_TRANSPORT_TRANSPORT_END2END_TESTS_H
 
 #include "src/core/transport/transport.h"
 
@@ -65,4 +65,4 @@ typedef struct grpc_transport_test_config {
 /* Run the test suite on one configuration */
 void grpc_transport_end2end_tests(grpc_transport_test_config *config);
 
-#endif /* __GRPC_TEST_TRANSPORT_TRANSPORT_END2END_TESTS_H__ */
+#endif  /* GRPC_TEST_CORE_TRANSPORT_TRANSPORT_END2END_TESTS_H */

@@ -78,9 +78,8 @@ int main(int argc, char **argv) {
 
   GPR_ASSERT(argc == 2);
   channel = grpc_channel_create(argv[1], NULL);
-  call = grpc_channel_create_call_old(
-      channel, "/foo", "localhost",
-      gpr_time_add(gpr_time_from_seconds(5), gpr_now()));
+  call = grpc_channel_create_call_old(channel, "/foo", "localhost",
+                                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5));
   GPR_ASSERT(grpc_call_invoke_old(call, cq, (void *)1, (void *)1, 0) ==
              GRPC_CALL_OK);
 

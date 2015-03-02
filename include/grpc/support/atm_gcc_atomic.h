@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ATM_GCC_ATOMIC_H__
-#define __GRPC_SUPPORT_ATM_GCC_ATOMIC_H__
+#ifndef GRPC_SUPPORT_ATM_GCC_ATOMIC_H
+#define GRPC_SUPPORT_ATM_GCC_ATOMIC_H
 
 /* atm_platform.h for gcc and gcc-like compilers with the
    __atomic_* interface.  */
@@ -66,4 +66,4 @@ static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
                                      __ATOMIC_RELAXED);
 }
 
-#endif /* __GRPC_SUPPORT_ATM_GCC_ATOMIC_H__ */
+#endif  /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */
