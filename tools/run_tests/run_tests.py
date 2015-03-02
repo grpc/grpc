@@ -135,7 +135,7 @@ class PythonLanguage(object):
     return [config.job_spec('tools/run_tests/run_python.sh', None)]
 
   def make_targets(self):
-    return[]
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_python.sh']]
