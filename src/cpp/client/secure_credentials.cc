@@ -37,19 +37,20 @@
 #include <grpc/support/log.h>
 
 #include <grpc++/channel_arguments.h>
+#include <grpc++/config.h>
 #include <grpc++/credentials.h>
 #include "src/cpp/client/channel.h"
 
 namespace grpc {
 
-class SecureCredentials final : public Credentials {
+class SecureCredentials GRPC_FINAL : public Credentials {
  public:
   explicit SecureCredentials(grpc_credentials* c_creds) : c_creds_(c_creds) {}
-  ~SecureCredentials() override { grpc_credentials_release(c_creds_); }
+  ~SecureCredentials() GRPC_OVERRIDE { grpc_credentials_release(c_creds_); }
   grpc_credentials* GetRawCreds() { return c_creds_; }
 
   std::shared_ptr<grpc::ChannelInterface> CreateChannel(
-      const string& target, const grpc::ChannelArguments& args) override {
+      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
     return std::shared_ptr<ChannelInterface>(new Channel(
@@ -57,9 +58,7 @@ class SecureCredentials final : public Credentials {
         grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
   }
 
-  SecureCredentials* AsSecureCredentials() {
-    return this;
-  }
+  SecureCredentials* AsSecureCredentials() { return this; }
 
  private:
   grpc_credentials* const c_creds_;
