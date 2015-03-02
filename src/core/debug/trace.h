@@ -36,26 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-/* set to zero to remove all debug trace code */
-#ifndef GRPC_ENABLE_TRACING
-# define GRPC_ENABLE_TRACING 1
-#endif
-
-typedef enum {
-  GRPC_TRACE_SURFACE = 1 << 0,
-  GRPC_TRACE_CHANNEL = 1 << 1,
-  GRPC_TRACE_TCP = 1 << 2,
-  GRPC_TRACE_SECURE_ENDPOINT = 1 << 3,
-  GRPC_TRACE_HTTP = 1 << 4,
-  GRPC_TRACE_SSL = 1 << 5
-} grpc_trace_bit_value;
-
-#if GRPC_ENABLE_TRACING
-extern gpr_uint32 grpc_trace_bits;
-#else
-# define grpc_trace_bits 0
-#endif
-
-void grpc_init_trace_bits();
+void grpc_register_tracer(const char *name, int *flag);
+void grpc_tracer_init(const char *env_var_name);
 
 #endif  /* GRPC_INTERNAL_CORE_DEBUG_TRACE_H */

@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/debug/trace.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/frame_data.h"
 #include "src/core/transport/chttp2/frame_goaway.h"
@@ -64,11 +63,13 @@
 #define CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define CLIENT_CONNECT_STRLEN 24
 
+int grpc_http_trace = 0;
+
 typedef struct transport transport;
 typedef struct stream stream;
 
 #define IF_TRACING(stmt)                    \
-  if (!(grpc_trace_bits & GRPC_TRACE_HTTP)) \
+  if (!(grpc_http_trace))                   \
     ;                                       \
   else                                      \
   stmt

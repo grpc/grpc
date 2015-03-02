@@ -145,6 +145,7 @@
     <ClInclude Include="..\..\src\core\surface\client.h" />
     <ClInclude Include="..\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="..\..\src\core\surface\event_string.h" />
+    <ClInclude Include="..\..\src\core\surface\init.h" />
     <ClInclude Include="..\..\src\core\surface\lame_client.h" />
     <ClInclude Include="..\..\src\core\surface\server.h" />
     <ClInclude Include="..\..\src\core\surface\surface_trace.h" />
@@ -172,6 +173,8 @@
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\call_op_string.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\census_filter.c">
@@ -319,6 +322,8 @@
     <ClCompile Include="..\..\src\core\surface\server_chttp2.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server_create.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\surface_trace.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
     </ClCompile>
