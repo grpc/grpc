@@ -8,12 +8,6 @@ env:
   global:
     - RUBY_VERSION=2.1
   matrix:
-    - CONFIG=dbg TEST=c
-    - CONFIG=dbg TEST=c++
-    - CONFIG=opt TEST=c
-    - CONFIG=opt TEST=c++
-    - CONFIG=opt TEST=node
-    - CONFIG=opt TEST=ruby
     - CONFIG=opt TEST=python
 script:
   - rvm use $RUBY_VERSION
