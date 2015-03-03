@@ -1777,7 +1777,6 @@
       ],
       "deps": [
         "pubsub_client_lib",
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

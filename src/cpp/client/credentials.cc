@@ -47,7 +47,8 @@ grpc_credentials *Credentials::GetRawCreds() { return creds_; }
 
 std::unique_ptr<Credentials> CredentialsFactory::GoogleDefaultCredentials() {
   grpc_credentials *c_creds = grpc_google_default_credentials_create();
-  std::unique_ptr<Credentials> cpp_creds(new Credentials(c_creds));
+  std::unique_ptr<Credentials> cpp_creds(
+      c_creds == nullptr ? nullptr : new Credentials(c_creds));
   return cpp_creds;
 }
 
