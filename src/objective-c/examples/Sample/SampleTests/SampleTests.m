@@ -34,6 +34,11 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
+#import <gRPC/GRPCCall.h>
+#import <gRPC/GRPCMethodName.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
+#import <RxLibrary/GRXWriteable.h>
+
 @interface SampleTests : XCTestCase
 
 @end
@@ -62,4 +67,35 @@
     }];
 }
 
+- (void)testConnectionToSandboxServer {
+  XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
+  
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
+                                                         interface:@"TestService"
+                                                            method:@"EmptyCall"];
+
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com:443"
+                                           method:method
+                                   requestsWriter:requestsWriter];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    NSLog(@"Received unexpected response: %@", value);
+  } completionHandler:^(NSError *errorOrNil) {
+    if (errorOrNil) {
+      NSLog(@"Finished with error: %@", errorOrNil);
+    } else {
+      [expectation fulfill];
+    }
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:10.0 handler:^(NSError *error) {
+    if(error) {
+      XCTFail(@"Server unreachable. Error: %@", error);
+    }
+  }];
+}
 @end
