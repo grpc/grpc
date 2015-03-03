@@ -38,12 +38,8 @@ RUN cd /var/local/git/grpc \
 # Install the gRPC C# extension library
 RUN make install_grpc_csharp_ext -j12 -C /var/local/git/grpc
 
-# TODO: download NuGet from web. The problem is there seems to be no direct link
-# we could use :-)
-ADD NuGet.exe NuGet.exe
-
 # Restore the NuGet dependencies
-RUN cd /var/local/git/grpc/src/csharp && mono /NuGet.exe restore Grpc.sln
+RUN cd /var/local/git/grpc/src/csharp && mono /var/local/NuGet.exe restore Grpc.sln
 
 # Build gRPC solution
 RUN cd /var/local/git/grpc/src/csharp && xbuild Grpc.sln
