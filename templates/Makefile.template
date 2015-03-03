@@ -859,7 +859,7 @@ ifeq ($(INSTALL_OK),true)
 	@echo "Your system looks ready to go."
 	@echo
 else
-	@echo "Your system doesn't have protoc 3.0.0+ installed. While this"
+	@echo "We couldn't find protoc 3.0.0+ installed on your system. While this"
 	@echo "won't prevent grpc from working, you won't be able to compile"
 	@echo "and run any meaningful code with it."
 	@echo
@@ -868,7 +868,8 @@ else
 	@echo
 	@echo "   https://github.com/google/protobuf/releases"
 	@echo
-	@echo "Once you've done so, you can re-run this check by doing:"
+	@echo "Once you've done so, or if you think this message is in error,"
+	@echo "you can re-run this check by doing:"
 	@echo
 	@echo "   make verify-install"
 endif
@@ -1003,7 +1004,7 @@ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
 % endif
 % endif
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a 
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
 endif
 
 <%
@@ -1222,4 +1223,3 @@ strip_c strip-shared_c strip-static_c \
 strip_cxx strip-shared_cxx strip-static_cxx \
 dep_c dep_cxx bins_dep_c bins_dep_cxx \
 clean
-

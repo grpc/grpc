@@ -31,19 +31,12 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
-#define GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H
-
+#include "src/core/surface/init.h"
 #include "src/core/debug/trace.h"
-#include <grpc/support/log.h>
+#include "src/core/security/secure_endpoint.h"
+#include "src/core/tsi/transport_security_interface.h"
 
-extern int grpc_surface_trace;
-
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (grpc_surface_trace) {           \
-    char *_ev = grpc_event_string(event);               \
-    gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
-    gpr_free(_ev);                                      \
-  }
-
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_SURFACE_TRACE_H */
+void grpc_security_pre_init(void) {
+  grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);
+  grpc_register_tracer("transport_security", &tsi_tracing_enabled);
+}
