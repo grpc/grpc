@@ -123,7 +123,7 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 /* All test configurations */
 
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/simple_ssl_fullstack", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+    {"chttp2/simple_ssl_fullstack", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION | FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION,
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
