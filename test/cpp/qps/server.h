@@ -46,7 +46,8 @@ class Server {
   virtual ServerStats Mark() = 0;
 };
 
-std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config, int port);
+std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config,
+                                                int port);
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config, int port);
 
 }  // namespace testing

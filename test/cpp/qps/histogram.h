@@ -46,7 +46,9 @@ class Histogram {
 
   void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
   void Add(double value) { gpr_histogram_add(impl_, value); }
-  double Percentile(double pctile) { return gpr_histogram_percentile(impl_, pctile); }
+  double Percentile(double pctile) {
+    return gpr_histogram_percentile(impl_, pctile);
+  }
   double Count() { return gpr_histogram_count(impl_); }
   void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
 
@@ -56,8 +58,7 @@ class Histogram {
 
   gpr_histogram* impl_;
 };
-
 }
 }
 
-#endif  /* TEST_QPS_HISTOGRAM_H */
+#endif /* TEST_QPS_HISTOGRAM_H */

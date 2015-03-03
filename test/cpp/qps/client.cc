@@ -65,7 +65,8 @@ class SynchronousClient GRPC_FINAL : public Client {
  public:
   SynchronousClient(const ClientConfig& config) : timer_(new Timer) {
     for (int i = 0; i < config.client_channels(); i++) {
-      channels_.push_back(ClientChannelInfo(config.server_targets(i % config.server_targets_size()), config));
+      channels_.push_back(ClientChannelInfo(
+          config.server_targets(i % config.server_targets_size()), config));
       auto* stub = channels_.back().get_stub();
       for (int j = 0; j < config.outstanding_rpcs_per_channel(); j++) {
         threads_.emplace_back(new Thread(stub, config));
@@ -104,29 +105,32 @@ class SynchronousClient GRPC_FINAL : public Client {
  private:
   class Thread {
    public:
-    Thread(TestService::Stub* stub, const ClientConfig& config) : stub_(stub), config_(config), done_(false), new_(nullptr), impl_([this]() {
-      SimpleRequest request;
-      SimpleResponse response;
-      request.set_response_type(
-          grpc::testing::PayloadType::COMPRESSABLE);
-      request.set_response_size(config_.payload_size());
-      for (;;) {
-        {
-          std::lock_guard<std::mutex> g(mu_);
-          if (done_) return;
-          if (new_) {
-            new_->Swap(&histogram_);
-            new_ = nullptr;
-            cv_.notify_one();
-          }
-        }
-        double start = Timer::Now();
-        grpc::ClientContext context;
-        grpc::Status s =
-            stub_->UnaryCall(&context, request, &response);
-        histogram_.Add((Timer::Now() - start) * 1e9);
-      }
-    }) {}
+    Thread(TestService::Stub* stub, const ClientConfig& config)
+        : stub_(stub),
+          config_(config),
+          done_(false),
+          new_(nullptr),
+          impl_([this]() {
+            SimpleRequest request;
+            SimpleResponse response;
+            request.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
+            request.set_response_size(config_.payload_size());
+            for (;;) {
+              {
+                std::lock_guard<std::mutex> g(mu_);
+                if (done_) return;
+                if (new_) {
+                  new_->Swap(&histogram_);
+                  new_ = nullptr;
+                  cv_.notify_one();
+                }
+              }
+              double start = Timer::Now();
+              grpc::ClientContext context;
+              grpc::Status s = stub_->UnaryCall(&context, request, &response);
+              histogram_.Add((Timer::Now() - start) * 1e9);
+            }
+          }) {}
 
     ~Thread() {
       {
@@ -155,18 +159,19 @@ class SynchronousClient GRPC_FINAL : public Client {
     std::mutex mu_;
     std::condition_variable cv_;
     bool done_;
-    Histogram *new_;
+    Histogram* new_;
     Histogram histogram_;
     std::thread impl_;
   };
 
   class ClientChannelInfo {
    public:
-    explicit ClientChannelInfo(const grpc::string& target, const ClientConfig& config)
+    explicit ClientChannelInfo(const grpc::string& target,
+                               const ClientConfig& config)
         : channel_(CreateTestChannel(target, config.enable_ssl())),
           stub_(TestService::NewStub(channel_)) {}
-    ChannelInterface *get_channel() { return channel_.get(); }
-    TestService::Stub *get_stub() { return stub_.get(); }
+    ChannelInterface* get_channel() { return channel_.get(); }
+    TestService::Stub* get_stub() { return stub_.get(); }
 
    private:
     std::shared_ptr<ChannelInterface> channel_;

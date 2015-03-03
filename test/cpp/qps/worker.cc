@@ -63,8 +63,8 @@ DEFINE_int32(server_port, 0, "Spawned server port.");
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
+namespace google {}
+namespace gflags {}
 using namespace google;
 using namespace gflags;
 
@@ -77,16 +77,20 @@ namespace testing {
 
 std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   switch (config.client_type()) {
-  	case ClientType::SYNCHRONOUS_CLIENT: return CreateSynchronousClient(config);
-  	case ClientType::ASYNC_CLIENT: abort(); //return CreateAsyncClient(config);
+    case ClientType::SYNCHRONOUS_CLIENT:
+      return CreateSynchronousClient(config);
+    case ClientType::ASYNC_CLIENT:
+      abort();  // return CreateAsyncClient(config);
   }
   abort();
 }
 
 std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   switch (config.server_type()) {
-  	case ServerType::SYNCHRONOUS_SERVER: return CreateSynchronousServer(config, FLAGS_server_port);
-  	case ServerType::ASYNC_SERVER: abort(); //return CreateAsyncServer(config, FLAGS_server_port);
+    case ServerType::SYNCHRONOUS_SERVER:
+      return CreateSynchronousServer(config, FLAGS_server_port);
+    case ServerType::ASYNC_SERVER:
+      abort();  // return CreateAsyncServer(config, FLAGS_server_port);
   }
   abort();
 }
@@ -95,23 +99,25 @@ class WorkerImpl final : public Worker::Service {
  public:
   WorkerImpl() : acquired_(false) {}
 
-  Status RunTest(ServerContext* ctx, ServerReaderWriter<ClientStatus, ClientArgs>* stream) GRPC_OVERRIDE {
-  	InstanceGuard g(this);
-  	if (!g.Acquired()) {
-  	  return Status(RESOURCE_EXHAUSTED);
-  	}
+  Status RunTest(ServerContext* ctx,
+                 ServerReaderWriter<ClientStatus, ClientArgs>* stream)
+      GRPC_OVERRIDE {
+    InstanceGuard g(this);
+    if (!g.Acquired()) {
+      return Status(RESOURCE_EXHAUSTED);
+    }
 
-  	ClientArgs args;
-  	if (!stream->Read(&args)) {
-  	  return Status(INVALID_ARGUMENT);
-  	}
-  	if (!args.has_setup()) {
-  	  return Status(INVALID_ARGUMENT);
-  	}
-  	auto client = CreateClient(args.setup());
-  	if (!client) {
-  	  return Status(INVALID_ARGUMENT);
-  	}
+    ClientArgs args;
+    if (!stream->Read(&args)) {
+      return Status(INVALID_ARGUMENT);
+    }
+    if (!args.has_setup()) {
+      return Status(INVALID_ARGUMENT);
+    }
+    auto client = CreateClient(args.setup());
+    if (!client) {
+      return Status(INVALID_ARGUMENT);
+    }
     ClientStatus status;
     if (!stream->Write(status)) {
       return Status(UNKNOWN);
@@ -127,23 +133,25 @@ class WorkerImpl final : public Worker::Service {
     return Status::OK;
   }
 
-  Status RunServer(ServerContext* ctx, ServerReaderWriter<ServerStatus, ServerArgs>* stream) GRPC_OVERRIDE {
-  	InstanceGuard g(this);
-  	if (!g.Acquired()) {
-  	  return Status(RESOURCE_EXHAUSTED);
-  	}
+  Status RunServer(ServerContext* ctx,
+                   ServerReaderWriter<ServerStatus, ServerArgs>* stream)
+      GRPC_OVERRIDE {
+    InstanceGuard g(this);
+    if (!g.Acquired()) {
+      return Status(RESOURCE_EXHAUSTED);
+    }
 
-  	ServerArgs args;
-  	if (!stream->Read(&args)) {
-  	  return Status(INVALID_ARGUMENT);
-  	}
-  	if (!args.has_setup()) {
-  	  return Status(INVALID_ARGUMENT);
-  	}
-  	auto server = CreateServer(args.setup());
-  	if (!server) {
-  	  return Status(INVALID_ARGUMENT);
-  	}
+    ServerArgs args;
+    if (!stream->Read(&args)) {
+      return Status(INVALID_ARGUMENT);
+    }
+    if (!args.has_setup()) {
+      return Status(INVALID_ARGUMENT);
+    }
+    auto server = CreateServer(args.setup());
+    if (!server) {
+      return Status(INVALID_ARGUMENT);
+    }
     ServerStatus status;
     status.set_port(FLAGS_server_port);
     if (!stream->Write(status)) {
@@ -163,27 +171,32 @@ class WorkerImpl final : public Worker::Service {
  private:
   class InstanceGuard {
    public:
-   	InstanceGuard(WorkerImpl* impl) : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
-   	~InstanceGuard() { if (acquired_) { impl_->ReleaseInstance(); } }
+    InstanceGuard(WorkerImpl* impl)
+        : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
+    ~InstanceGuard() {
+      if (acquired_) {
+        impl_->ReleaseInstance();
+      }
+    }
 
-   	bool Acquired() const { return acquired_; }
+    bool Acquired() const { return acquired_; }
 
    private:
-   	WorkerImpl* const impl_;
-   	const bool acquired_;
+    WorkerImpl* const impl_;
+    const bool acquired_;
   };
 
   bool TryAcquireInstance() {
-  	std::lock_guard<std::mutex> g(mu_);
-  	if (acquired_) return false;
-  	acquired_ = true;
-  	return true;
+    std::lock_guard<std::mutex> g(mu_);
+    if (acquired_) return false;
+    acquired_ = true;
+    return true;
   }
 
   void ReleaseInstance() {
-  	std::lock_guard<std::mutex> g(mu_);
-  	GPR_ASSERT(acquired_);
-  	acquired_ = false;
+    std::lock_guard<std::mutex> g(mu_);
+    GPR_ASSERT(acquired_);
+    acquired_ = false;
   }
 
   std::mutex mu_;
@@ -209,10 +222,10 @@ static void RunServer() {
   }
 }
 
-} // namespace testing
-} // namespace grpc
+}  // namespace testing
+}  // namespace grpc
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   signal(SIGINT, sigint_handler);
 
   grpc_init();

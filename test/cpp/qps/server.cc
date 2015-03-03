@@ -85,7 +85,10 @@ class TestServiceImpl GRPC_FINAL : public TestService::Service {
 
 class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
  public:
-  SynchronousServer(const ServerConfig& config, int port) : thread_pool_(config.threads()), impl_(MakeImpl(port)), timer_(new Timer) {}
+  SynchronousServer(const ServerConfig& config, int port)
+      : thread_pool_(config.threads()),
+        impl_(MakeImpl(port)),
+        timer_(new Timer) {}
 
   ServerStats Mark() GRPC_OVERRIDE {
     std::unique_ptr<Timer> timer(new Timer);
@@ -120,7 +123,8 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
   std::unique_ptr<Timer> timer_;
 };
 
-std::unique_ptr<grpc::testing::Server> CreateSynchronousServer(const ServerConfig& config, int port) {
+std::unique_ptr<grpc::testing::Server> CreateSynchronousServer(
+    const ServerConfig& config, int port) {
   return std::unique_ptr<Server>(new SynchronousServer(config, port));
 }
 

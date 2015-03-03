@@ -83,7 +83,8 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   auto workers = get_hosts("QPS_WORKERS");
   ClientConfig client_config = initial_client_config;
 
-  // TODO(ctiller): support running multiple configurations, and binpack client/server pairs
+  // TODO(ctiller): support running multiple configurations, and binpack
+  // client/server pairs
   // to available workers
   GPR_ASSERT(workers.size() >= num_clients + num_servers);
 
@@ -98,7 +99,8 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   vector<ServerData> servers;
   for (size_t i = 0; i < num_servers; i++) {
     ServerData sd;
-    sd.stub = std::move(Worker::NewStub(CreateChannelDeprecated(workers[i], ChannelArguments())));
+    sd.stub = std::move(Worker::NewStub(
+        CreateChannelDeprecated(workers[i], ChannelArguments())));
     ServerArgs args;
     *args.mutable_setup() = server_config;
     sd.stream = std::move(sd.stub->RunServer(alloc_context()));
@@ -126,7 +128,8 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   vector<ClientData> clients;
   for (size_t i = 0; i < num_clients; i++) {
     ClientData cd;
-    cd.stub = std::move(Worker::NewStub(CreateChannelDeprecated(workers[i + num_servers], ChannelArguments())));
+    cd.stub = std::move(Worker::NewStub(
+        CreateChannelDeprecated(workers[i + num_servers], ChannelArguments())));
     ClientArgs args;
     *args.mutable_setup() = client_config;
     cd.stream = std::move(cd.stub->RunTest(alloc_context()));
@@ -191,6 +194,5 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
     GPR_ASSERT(server.stream->Finish().IsOk());
   }
 }
-
 }
 }

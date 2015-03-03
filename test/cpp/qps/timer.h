@@ -39,9 +39,9 @@ class Timer {
   Timer();
 
   struct Result {
-  	double wall;
-  	double user;
-  	double system;
+    double wall;
+    double user;
+    double system;
   };
 
   Result Mark();
@@ -54,4 +54,4 @@ class Timer {
   const Result start_;
 };
 
-#endif // TEST_QPS_TIMER_H
+#endif  // TEST_QPS_TIMER_H

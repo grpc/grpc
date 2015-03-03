@@ -47,7 +47,8 @@ DEFINE_int32(server_threads, 1, "Number of server threads");
 DEFINE_string(server_type, "SYNCHRONOUS_SERVER", "Server type");
 
 // Client config
-DEFINE_int32(outstanding_rpcs_per_channel, 1, "Number of outstanding rpcs per channel");
+DEFINE_int32(outstanding_rpcs_per_channel, 1,
+             "Number of outstanding rpcs per channel");
 DEFINE_int32(client_channels, 1, "Number of client channels");
 DEFINE_int32(payload_size, 1, "Payload size");
 DEFINE_string(client_type, "SYNCHRONOUS_CLIENT", "Client type");
@@ -59,8 +60,8 @@ using grpc::testing::ServerType;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
+namespace google {}
+namespace gflags {}
 using namespace google;
 using namespace gflags;
 
@@ -76,7 +77,8 @@ int main(int argc, char **argv) {
   ClientConfig client_config;
   client_config.set_client_type(client_type);
   client_config.set_enable_ssl(FLAGS_enable_ssl);
-  client_config.set_outstanding_rpcs_per_channel(FLAGS_outstanding_rpcs_per_channel);
+  client_config.set_outstanding_rpcs_per_channel(
+      FLAGS_outstanding_rpcs_per_channel);
   client_config.set_client_channels(FLAGS_client_channels);
   client_config.set_payload_size(FLAGS_payload_size);
 
@@ -85,9 +87,9 @@ int main(int argc, char **argv) {
   server_config.set_threads(FLAGS_server_threads);
   server_config.set_enable_ssl(FLAGS_enable_ssl);
 
-  RunScenario(client_config, FLAGS_num_clients, server_config, FLAGS_num_servers);
+  RunScenario(client_config, FLAGS_num_clients, server_config,
+              FLAGS_num_servers);
 
   grpc_shutdown();
   return 0;
 }
-
