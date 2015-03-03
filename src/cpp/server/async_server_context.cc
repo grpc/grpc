@@ -58,14 +58,14 @@ void AsyncServerContext::Accept(grpc_completion_queue *cq) {
                  call_, GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
 }
 
-bool AsyncServerContext::StartRead(google::protobuf::Message *request) {
+bool AsyncServerContext::StartRead(grpc::protobuf::Message *request) {
   GPR_ASSERT(request);
   request_ = request;
   grpc_call_error err = grpc_call_start_read_old(call_, this);
   return err == GRPC_CALL_OK;
 }
 
-bool AsyncServerContext::StartWrite(const google::protobuf::Message &response,
+bool AsyncServerContext::StartWrite(const grpc::protobuf::Message &response,
                                     int flags) {
   grpc_byte_buffer *buffer = nullptr;
   if (!SerializeProto(response, &buffer)) {

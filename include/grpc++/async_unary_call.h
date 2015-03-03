@@ -49,7 +49,7 @@ class ClientAsyncResponseReader GRPC_FINAL {
  public:
   ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
-                    const google::protobuf::Message& request, void* tag)
+                    const grpc::protobuf::Message& request, void* tag)
       : context_(context),
         call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);

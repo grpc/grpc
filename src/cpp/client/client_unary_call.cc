@@ -44,8 +44,8 @@ namespace grpc {
 // Wrapper that performs a blocking unary call
 Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
                          ClientContext *context,
-                         const google::protobuf::Message &request,
-                         google::protobuf::Message *result) {
+                         const grpc::protobuf::Message &request,
+                         grpc::protobuf::Message *result) {
   CompletionQueue cq;
   Call call(channel->CreateCall(method, context, &cq));
   CallOpBuffer buf;

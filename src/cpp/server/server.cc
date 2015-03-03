@@ -117,8 +117,8 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     }
 
     void Run() {
-      std::unique_ptr<google::protobuf::Message> req;
-      std::unique_ptr<google::protobuf::Message> res;
+      std::unique_ptr<grpc::protobuf::Message> req;
+      std::unique_ptr<grpc::protobuf::Message> res;
       if (has_request_payload_) {
         req.reset(method_->AllocateRequestProto());
         if (!DeserializeProto(request_payload_, req.get())) {
@@ -298,7 +298,7 @@ void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
 class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
  public:
   AsyncRequest(Server* server, void* registered_method, ServerContext* ctx,
-               ::google::protobuf::Message* request,
+               grpc::protobuf::Message* request,
                ServerAsyncStreamingInterface* stream, CompletionQueue* cq,
                void* tag)
       : tag_(tag),
@@ -352,7 +352,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
 
  private:
   void* const tag_;
-  ::google::protobuf::Message* const request_;
+  grpc::protobuf::Message* const request_;
   ServerAsyncStreamingInterface* const stream_;
   CompletionQueue* const cq_;
   ServerContext* const ctx_;
@@ -364,7 +364,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
 };
 
 void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
-                              ::google::protobuf::Message* request,
+                              grpc::protobuf::Message* request,
                               ServerAsyncStreamingInterface* stream,
                               CompletionQueue* cq, void* tag) {
   new AsyncRequest(this, registered_method, context, request, stream, cq, tag);
