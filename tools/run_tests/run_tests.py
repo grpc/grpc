@@ -151,6 +151,16 @@ class RubyLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
 
+class CSharpLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec('tools/run_tests/run_csharp.sh', None)]
+
+  def make_targets(self):
+    return ['grpc_csharp_ext']
+
+  def build_steps(self):
+    return [['tools/run_tests/build_csharp.sh']]
 
 # different configurations we can run under
 _CONFIGS = {
@@ -175,7 +185,8 @@ _LANGUAGES = {
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
-    'ruby': RubyLanguage()
+    'ruby': RubyLanguage(),
+    'csharp': CSharpLanguage()
     }
 
 # parse command line
