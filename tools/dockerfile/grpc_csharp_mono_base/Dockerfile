@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,18 +27,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Base Dockerfile for gRPC C# (on Mono).
+#
+# Includes gRPC C# installation dependencies, things that are unlikely to vary.
+FROM grpc/base
 
-out=`realpath ${1:-coverage}`
+# Update to a newer version of mono
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
 
-root=`realpath $(dirname $0)/../..`
-tmp=`mktemp`
-cd $root
-tools/run_tests/run_tests.py -c gcov -l c c++ || true
-lcov --capture --directory . --output-file $tmp
-genhtml $tmp --output-directory $out
-rm $tmp
-if which xdg-open > /dev/null
-then
-  xdg-open file://$out/index.html
-fi
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    mono-devel \
+    nunit \
+    nunit-console \
+    monodevelop
+
+# Get the source from GitHub
+RUN git clone git@github.com:grpc/grpc.git /var/local/git/grpc
+RUN cd /var/local/git/grpc && \
+  git pull --recurse-submodules && \
+  git submodule update --init --recursive
+
+# Define the default command.
+CMD ["bash","-l"]

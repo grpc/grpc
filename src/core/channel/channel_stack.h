@@ -298,7 +298,9 @@ void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
 void grpc_call_element_send_finish(grpc_call_element *cur_elem);
 
+extern int grpc_trace_channel;
+
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
-  if (grpc_trace_bits & GRPC_TRACE_CHANNEL) grpc_call_log_op(sev, elem, op)
+  if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
 
 #endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */

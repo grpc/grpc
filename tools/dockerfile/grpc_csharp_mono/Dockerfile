@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,18 +27,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+# Dockerfile for gRPC C# (on Mono).
+FROM grpc/csharp_mono_base
 
-out=`realpath ${1:-coverage}`
+# Pull the latest sources
+RUN cd /var/local/git/grpc \
+  && git pull --recurse-submodules \
+  && git submodule update --init --recursive
 
-root=`realpath $(dirname $0)/../..`
-tmp=`mktemp`
-cd $root
-tools/run_tests/run_tests.py -c gcov -l c c++ || true
-lcov --capture --directory . --output-file $tmp
-genhtml $tmp --output-directory $out
-rm $tmp
-if which xdg-open > /dev/null
-then
-  xdg-open file://$out/index.html
-fi
+# Install the gRPC C# extension library
+RUN make install_grpc_csharp_ext -j12 -C /var/local/git/grpc
+
+# TODO: download NuGet from web. The problem is there seems to be no direct link
+# we could use :-)
+ADD NuGet.exe NuGet.exe
+
+# Restore the NuGet dependencies
+RUN cd /var/local/git/grpc/src/csharp && mono /NuGet.exe restore Grpc.sln
+
+# Build gRPC solution
+RUN cd /var/local/git/grpc/src/csharp && xbuild Grpc.sln
+
+# Add a cacerts directory containing the Google root pem file, allowing the
+# ruby client to access the production test instance
+ADD cacerts cacerts
+
+# Add a service_account directory containing the auth creds file
+ADD service_account service_account
+
+# TODO: add command to run the interop server
+CMD ["/bin/bash", "-l"]

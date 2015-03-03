@@ -37,7 +37,7 @@ import sys
 import time
 import unittest
 
-from grpc.framework.face import exceptions
+from grpc.early_adopter import exceptions
 from grpc.framework.foundation import future
 
 # Identifiers of entities we expect to find in the generated module.

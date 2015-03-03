@@ -33,10 +33,9 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-make -j6
-
 root=`pwd`
-virtualenv python2.7_virtual_environment
+rm -rf python2.7_virtual_environment
+virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
 source python2.7_virtual_environment/bin/activate
 pip install enum34==1.0.4 futures==2.2.0 protobuf==3.0.0-alpha-1
 CFLAGS=-I$root/include LDFLAGS=-L$root/libs/opt pip install src/python/src

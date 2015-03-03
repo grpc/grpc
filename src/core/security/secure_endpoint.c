@@ -65,6 +65,8 @@ typedef struct {
   gpr_refcount ref;
 } secure_endpoint;
 
+int grpc_trace_secure_endpoint = 0;
+
 static void secure_endpoint_ref(secure_endpoint *ep) { gpr_ref(&ep->ref); }
 
 static void destroy(secure_endpoint *secure_ep) {
@@ -96,7 +98,7 @@ static void flush_read_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
 
 static void call_read_cb(secure_endpoint *ep, gpr_slice *slices, size_t nslices,
                          grpc_endpoint_cb_status error) {
-  if (grpc_trace_bits & GRPC_TRACE_SECURE_ENDPOINT) {
+  if (grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < nslices; i++) {
       char *data =
@@ -231,7 +233,7 @@ static grpc_endpoint_write_status endpoint_write(grpc_endpoint *secure_ep,
   grpc_endpoint_write_status status;
   GPR_ASSERT(ep->output_buffer.count == 0);
 
-  if (grpc_trace_bits & GRPC_TRACE_SECURE_ENDPOINT) {
+  if (grpc_trace_secure_endpoint) {
     for (i = 0; i < nslices; i++) {
       char *data =
           gpr_hexdump((char *)GPR_SLICE_START_PTR(slices[i]),
