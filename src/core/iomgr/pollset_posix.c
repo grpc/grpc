@@ -267,7 +267,6 @@ static void unary_poll_do_promote(void *args, int success) {
    * and we don't have any mechanism to unbecome multipoller. */
   pollset->in_flight_cbs--;
   if (pollset->shutting_down) {
-    gpr_log(GPR_INFO, "Shutting down");
     /* We don't care about this pollset anymore. */
     if (pollset->in_flight_cbs == 0) {
       do_shutdown_cb = 1;
@@ -275,7 +274,6 @@ static void unary_poll_do_promote(void *args, int success) {
   } else if (grpc_fd_is_orphaned(fd)) {
     /* Don't try to add it to anything, we'll drop our ref on it below */
   } else if (pollset->vtable != original_vtable) {
-    gpr_log(GPR_INFO, "Not original vtable");
     pollset->vtable->add_fd(pollset, fd);
   } else if (fd != pollset->data.ptr) {
     grpc_fd *fds[2];
