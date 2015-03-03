@@ -57,12 +57,12 @@ using grpc::Status;
 using grpc::testing::ClientArgs;
 using grpc::testing::ClientConfig;
 using grpc::testing::ClientResult;
-using grpc::testing::QpsClient;
-using grpc::testing::QpsServer;
+using grpc::testing::Worker;
 using grpc::testing::ServerArgs;
 using grpc::testing::ServerConfig;
 using grpc::testing::ServerStatus;
 
+#if 0
 static vector<string> get_hosts(const string& name) {
   char* env = gpr_getenv(name.c_str());
   if (!env) return vector<string>();
@@ -92,8 +92,7 @@ void RunScenario(const ClientConfig& client_config, size_t num_clients,
   };
 
   // Get client, server lists
-  auto clients = get_hosts("QPS_CLIENTS");
-  auto servers = get_hosts("QPS_SERVERS");
+  auto workers = get_hosts("QPS_WORKERS");
 
   GPR_ASSERT(clients.size() >= num_clients);
   GPR_ASSERT(servers.size() >= num_servers);
@@ -186,3 +185,4 @@ void RunScenario(const ClientConfig& client_config, size_t num_clients,
   	}
   }
 }
+#endif

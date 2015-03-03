@@ -1816,42 +1816,6 @@
       ]
     },
     {
-      "name": "qps_client",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "test/cpp/qps/client.cc"
-      ],
-      "deps": [
-        "qps",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "qps_client_async",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/client_async.cc"
-      ],
-      "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "qps_driver",
       "build": "test",
       "run": false,
@@ -1870,33 +1834,21 @@
       ]
     },
     {
-      "name": "qps_server",
+      "name": "qps_worker",
       "build": "test",
       "run": false,
       "language": "c++",
+      "headers": [
+        "test/cpp/qps/client.h",
+        "test/cpp/qps/server.h"
+      ],
       "src": [
-        "test/cpp/qps/server.cc"
+        "test/cpp/qps/client.cc",
+        "test/cpp/qps/server.cc",
+        "test/cpp/qps/worker.cc"
       ],
       "deps": [
         "qps",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "qps_server_async",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/server_async.cc"
-      ],
-      "deps": [
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",

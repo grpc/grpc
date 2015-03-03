@@ -75,9 +75,21 @@ message Latencies {
   required double l_999 = 4;
 }
 
+enum ClientType {
+  SYNCHRONOUS_CLIENT = 1;
+  ASYNC_CLIENT = 2;
+}
+
+enum ServerType {
+  SYNCHRONOUS_SERVER = 1;
+  ASYNC_SERVER = 2;
+}
+
 message ClientConfig {
-  required bool enable_ssl = 1;
-  required int32 client_threads = 2;
+  repeated string server_targets = 1;
+  required ClientType client_type = 2;
+  required bool enable_ssl = 3;
+  required int32 client_threads = 4;
   // We have a configurable number of channels for sending RPCs.
   // RPCs are sent round-robin on the available channels by the
   // various threads. Interesting cases are 1 global channel or
@@ -86,14 +98,18 @@ message ClientConfig {
   // rather than just at initialization time in order to also measure the
   // impact of cache thrashing caused by channel changes. This is an issue
   // if you are not in one of the above "interesting cases"
-  required int32 client_channels = 3;
-  required int32 num_rpcs = 4;
-  required int32 payload_size = 5;
+  required int32 client_channels = 5;
+  required int32 num_rpcs = 6;
+  required int32 payload_size = 7;
 }
 
+message ClientStart {}
+
 message ClientArgs {
-  repeated string server_targets = 1;
-  required ClientConfig config = 2;
+  oneof argtype {
+    ClientConfig setup = 1;
+    ClientStart start = 2;
+  }
 }
 
 message ClientResult {
@@ -104,9 +120,14 @@ message ClientResult {
   required double time_system = 5;
 }
 
+message ClientStatus {
+  optional ClientResult result = 1;
+}
+
 message ServerConfig {
-  required int32 threads = 1;
-  required bool enable_ssl = 2;
+  required ServerType server_type = 1;
+  required int32 threads = 2;
+  required bool enable_ssl = 3;
 }
 
 message ServerArgs {
@@ -203,12 +224,9 @@ service TestService {
       returns (stream StreamingOutputCallResponse);
 }
 
-service QpsClient {
+service Worker {
   // Start test with specified workload
-  rpc RunTest(ClientArgs) returns (ClientResult);
-}
-
-service QpsServer {
+  rpc RunTest(stream ClientArgs) returns (stream ClientStatus);
   // Start test with specified workload
   rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
 }
