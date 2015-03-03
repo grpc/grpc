@@ -34,7 +34,6 @@
 #ifndef GRPCXX_CONFIG_H
 #define GRPCXX_CONFIG_H
 
-
 #ifdef GRPC_OLD_CXX
 #define GRPC_FINAL
 #define GRPC_OVERRIDE

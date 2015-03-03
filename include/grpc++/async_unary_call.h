@@ -77,7 +77,6 @@ class ClientAsyncResponseReader GRPC_FINAL {
     call_.PerformOps(&finish_buf_);
   }
 
-
  private:
   ClientContext* context_;
   Call call_;
