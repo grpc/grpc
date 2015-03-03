@@ -34,7 +34,7 @@ main() {
   # temporarily remove ping_pong and cancel_after_first_response while investigating timeout
   test_cases=(large_unary empty_unary client_streaming server_streaming cancel_after_begin)
   auth_test_cases=(service_account_creds compute_engine_creds)
-  clients=(cxx java go ruby node csharp_mono)
+  clients=(cxx java go ruby node)
   for test_case in "${test_cases[@]}"
   do
     for client in "${clients[@]}"
