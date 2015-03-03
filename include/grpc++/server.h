@@ -47,12 +47,6 @@
 
 struct grpc_server;
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
 namespace grpc {
 class AsynchronousService;
 class RpcService;
@@ -101,7 +95,7 @@ class Server GRPC_FINAL : private CallHook,
 
   // DispatchImpl
   void RequestAsyncCall(void* registered_method, ServerContext* context,
-                        ::google::protobuf::Message* request,
+                        grpc::protobuf::Message* request,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* cq, void* tag);
 
