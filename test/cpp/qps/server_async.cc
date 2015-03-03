@@ -145,21 +145,24 @@ class AsyncQpsServerTest {
       delete contexts_.front();
       contexts_.pop_front();
     }
+    for (auto& thr: threads_) {
+      thr.join();
+    }
   }
   void ServeRpcs(int num_threads) {
-    std::vector<std::thread> threads;
     for (int i = 0; i < num_threads; i++) {
-      threads.push_back(std::thread([=]() {
+      threads_.push_back(std::thread([=]() {
         // Wait until work is available or we are shutting down
         bool ok;
         void *got_tag;
         while (srv_cq_.Next(&got_tag, &ok)) {
-          EXPECT_EQ(ok, true);
-          ServerRpcContext *ctx = detag(got_tag);
-          // The tag is a pointer to an RPC context to invoke
-          if (ctx->RunNextState() == false) {
-            // this RPC context is done, so refresh it
-            ctx->Reset();
+          if (ok) {
+            ServerRpcContext *ctx = detag(got_tag);
+            // The tag is a pointer to an RPC context to invoke
+            if (ctx->RunNextState() == false) {
+              // this RPC context is done, so refresh it
+              ctx->Reset();
+            }
           }
         }
         return;
@@ -262,6 +265,7 @@ class AsyncQpsServerTest {
   }
   CompletionQueue srv_cq_;
   TestService::AsyncService async_service_;
+  std::vector<std::thread> threads_;
   std::unique_ptr<Server> server_;
   std::function<void(ServerContext *, SimpleRequest *,
                      grpc::ServerAsyncResponseWriter<SimpleResponse> *, void *)>
