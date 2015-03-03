@@ -48,42 +48,14 @@
 #include "src/cpp/server/thread_pool.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/server.h"
 #include "test/cpp/qps/timer.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-DEFINE_int32(port, 0, "Server port.");
-DEFINE_int32(driver_port, 0, "Server driver port.");
-
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::ServerReaderWriter;
-using grpc::ThreadPool;
-using grpc::testing::Payload;
-using grpc::testing::PayloadType;
-using grpc::testing::ServerStats;
-using grpc::testing::SimpleRequest;
-using grpc::testing::SimpleResponse;
-using grpc::testing::StatsRequest;
-using grpc::testing::TestService;
-using grpc::testing::QpsServer;
-using grpc::testing::ServerArgs;
-using grpc::testing::ServerStats;
-using grpc::testing::ServerStatus;
-using grpc::Status;
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
-using namespace google;
-using namespace gflags;
-
-static bool got_sigint = false;
-
-static void sigint_handler(int x) { got_sigint = 1; }
+namespace grpc {
+namespace testing {
 
 static bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
@@ -96,8 +68,6 @@ static bool SetPayload(PayloadType type, int size, Payload* payload) {
   payload->set_body(body.get(), size);
   return true;
 }
-
-namespace {
 
 class TestServiceImpl GRPC_FINAL : public TestService::Service {
  public:
@@ -113,88 +83,46 @@ class TestServiceImpl GRPC_FINAL : public TestService::Service {
   }
 };
 
-}  // namespace
-
-class ServerImpl : public QpsServer::Service {
+class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
  public:
-  Status RunServer(ServerContext* ctx, ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
-    ServerArgs args;
-    if (!stream->Read(&args)) return Status::OK;
+  SynchronousServer(const ServerConfig& config, int port) : thread_pool_(config.threads()), impl_(MakeImpl(port)), timer_(new Timer) {}
 
-    std::lock_guard<std::mutex> lock(server_mu_);
+  ServerStats Mark() GRPC_OVERRIDE {
+    std::unique_ptr<Timer> timer(new Timer);
+    timer.swap(timer_);
 
-    char* server_address = NULL;
-    gpr_join_host_port(&server_address, "::", FLAGS_port);
+    auto timer_result = timer->Mark();
 
-    TestServiceImpl service;
-
-    ServerBuilder builder;
-    builder.AddPort(server_address);
-    builder.RegisterService(&service);
-
-    std::unique_ptr<ThreadPool> pool(new ThreadPool(args.config().threads()));
-    builder.SetThreadPool(pool.get());
-
-    auto server = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
-
-    gpr_free(server_address);
-
-    ServerStatus status;
-    status.set_port(FLAGS_port);
-    if (!stream->Write(status)) return Status(grpc::UNKNOWN);
-
-    grpc_profiler_start("qps_server.prof");
-    Timer timer;
-
-    if (stream->Read(&args)) {
-      gpr_log(GPR_ERROR, "Got a server request, but not expecting one");
-      return Status(grpc::UNKNOWN);
-    }
-
-    auto timer_result = timer.Mark();
-    grpc_profiler_stop();
-
-    auto* stats = status.mutable_stats();
-    stats->set_time_elapsed(timer_result.wall);
-    stats->set_time_system(timer_result.system);
-    stats->set_time_user(timer_result.user);
-    stream->Write(status);
-    return Status::OK;
+    ServerStats stats;
+    stats.set_time_elapsed(timer_result.wall);
+    stats.set_time_system(timer_result.system);
+    stats.set_time_user(timer_result.user);
+    return stats;
   }
 
  private:
-  std::mutex server_mu_;
+  std::unique_ptr<grpc::Server> MakeImpl(int port) {
+    ServerBuilder builder;
+
+    char* server_address = NULL;
+    gpr_join_host_port(&server_address, "::", port);
+    builder.AddPort(server_address);
+    gpr_free(server_address);
+
+    builder.RegisterService(&service_);
+
+    return builder.BuildAndStart();
+  }
+
+  TestServiceImpl service_;
+  ThreadPool thread_pool_;
+  std::unique_ptr<grpc::Server> impl_;
+  std::unique_ptr<Timer> timer_;
 };
 
-static void RunServer() {
-  char* server_address = NULL;
-  gpr_join_host_port(&server_address, "::", FLAGS_driver_port);
-
-  ServerImpl service;
-
-  ServerBuilder builder;
-  builder.AddPort(server_address);
-  builder.RegisterService(&service);
-
-  gpr_free(server_address);
-
-  auto server = builder.BuildAndStart();
-
-  while (!got_sigint) {
-    sleep(5);
-  }
+std::unique_ptr<grpc::testing::Server> CreateSynchronousServer(const ServerConfig& config, int port) {
+  return std::unique_ptr<Server>(new SynchronousServer(config, port));
 }
 
-int main(int argc, char** argv) {
-  signal(SIGINT, sigint_handler);
-
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
-
-  GPR_ASSERT(FLAGS_port != 0);
-  RunServer();
-
-  grpc_shutdown();
-  return 0;
-}
+}  // namespace testing
+}  // namespace grpc

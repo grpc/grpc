@@ -36,7 +36,11 @@
 
 #include "test/cpp/qps/qpstest.pb.h"
 
+namespace grpc {
+namespace testing {
 void RunScenario(const grpc::testing::ClientConfig& client_config, size_t num_clients,
                  const grpc::testing::ServerConfig& server_config, size_t num_servers);
+}
+}
 
 #endif

@@ -6,25 +6,23 @@ set -ex
 
 cd $(dirname $0)/../../..
 
-killall qps_server qps_client || true
+killall qps_worker || true
 
 config=opt
 
 NUMCPUS=`python2.7 -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 
-make CONFIG=$config qps_client qps_server qps_driver -j$NUMCPUS
+make CONFIG=$config qps_worker qps_driver -j$NUMCPUS
 
-bins/$config/qps_server -driver_port 10000 -port 10002 &
-SERVER_PID=$!
-bins/$config/qps_client -driver_port 10001 &
-CLIENT_PID=$!
+bins/$config/qps_worker -driver_port 10000 -server_port 10001 &
+PID1=$!
+bins/$config/qps_worker -driver_port 10010 -server_port 10011 &
+PID2=$!
 
-export QPS_SERVERS=localhost:10000
-export QPS_CLIENTS=localhost:10001
+export QPS_WORKERS="localhost:10000,localhost:10010"
 
 bins/$config/qps_driver $*
 
-kill -2 $CLIENT_PID
-kill -2 $SERVER_PID
+kill -2 $PID1 $PID2
 wait
 

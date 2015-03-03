@@ -42,6 +42,8 @@ namespace testing {
 class Server {
  public:
   virtual ~Server() {}
+
+  virtual ServerStats Mark() = 0;
 };
 
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config, int port);

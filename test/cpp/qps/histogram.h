@@ -31,27 +31,33 @@
  *
  */
 
-#ifndef TEST_QPS_TIMER_H
-#define TEST_QPS_TIMER_H
+#ifndef TEST_QPS_HISTOGRAM_H
+#define TEST_QPS_HISTOGRAM_H
 
-class Timer {
+#include <grpc/support/histogram.h>
+
+namespace grpc {
+namespace testing {
+
+class Histogram {
  public:
-  Timer();
+  Histogram() : impl_(gpr_histogram_create(0.01, 60e9)) {}
+  ~Histogram() { gpr_histogram_destroy(impl_); }
 
-  struct Result {
-  	double wall;
-  	double user;
-  	double system;
-  };
-
-  Result Mark();
-
-  static double Now();
+  void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
+  void Add(double value) { gpr_histogram_add(impl_, value); }
+  double Percentile(double pctile) { return gpr_histogram_percentile(impl_, pctile); }
+  double Count() { return gpr_histogram_count(impl_); }
+  void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
 
  private:
-  static Result Sample();
+  Histogram(const Histogram&);
+  Histogram& operator=(const Histogram&);
 
-  const Result start_;
+  gpr_histogram* impl_;
 };
 
-#endif // TEST_QPS_TIMER_H
+}
+}
+
+#endif  /* TEST_QPS_HISTOGRAM_H */

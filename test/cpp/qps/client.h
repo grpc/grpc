@@ -42,6 +42,8 @@ namespace testing {
 class Client {
  public:
   virtual ~Client() {}
+
+  virtual ClientStats Mark() = 0;
 };
 
 std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& args);

@@ -35,8 +35,14 @@
 
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <grpc/support/time.h>
 
 Timer::Timer() : start_(Sample()) {}
+
+double Timer::Now() {
+  auto ts = gpr_now();
+  return ts.tv_sec + 1e-9 * ts.tv_nsec;
+}
 
 static double time_double(struct timeval* tv) {
   return tv->tv_sec + 1e-6 * tv->tv_usec;

@@ -78,7 +78,7 @@ namespace testing {
 std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   switch (config.client_type()) {
   	case ClientType::SYNCHRONOUS_CLIENT: return CreateSynchronousClient(config);
-  	case ClientType::ASYNC_CLIENT: return CreateAsyncClient(config);
+  	case ClientType::ASYNC_CLIENT: abort(); //return CreateAsyncClient(config);
   }
   abort();
 }
@@ -86,7 +86,7 @@ std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
 std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   switch (config.server_type()) {
   	case ServerType::SYNCHRONOUS_SERVER: return CreateSynchronousServer(config, FLAGS_server_port);
-  	case ServerType::ASYNC_SERVER: return CreateAsyncServer(config, FLAGS_server_port);
+  	case ServerType::ASYNC_SERVER: abort(); //return CreateAsyncServer(config, FLAGS_server_port);
   }
   abort();
 }
@@ -112,6 +112,17 @@ class WorkerImpl final : public Worker::Service {
   	if (!client) {
   	  return Status(INVALID_ARGUMENT);
   	}
+    ClientStatus status;
+    if (!stream->Write(status)) {
+      return Status(UNKNOWN);
+    }
+    while (stream->Read(&args)) {
+      if (!args.has_mark()) {
+        return Status(INVALID_ARGUMENT);
+      }
+      *status.mutable_stats() = client->Mark();
+      stream->Write(status);
+    }
 
     return Status::OK;
   }
@@ -126,13 +137,25 @@ class WorkerImpl final : public Worker::Service {
   	if (!stream->Read(&args)) {
   	  return Status(INVALID_ARGUMENT);
   	}
-  	if (!args.has_config()) {
+  	if (!args.has_setup()) {
   	  return Status(INVALID_ARGUMENT);
   	}
-  	auto server = CreateServer(args.config());
+  	auto server = CreateServer(args.setup());
   	if (!server) {
   	  return Status(INVALID_ARGUMENT);
   	}
+    ServerStatus status;
+    status.set_port(FLAGS_server_port);
+    if (!stream->Write(status)) {
+      return Status(UNKNOWN);
+    }
+    while (stream->Read(&args)) {
+      if (!args.has_mark()) {
+        return Status(INVALID_ARGUMENT);
+      }
+      *status.mutable_stats() = server->Mark();
+      stream->Write(status);
+    }
 
     return Status::OK;
   }

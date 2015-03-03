@@ -89,30 +89,21 @@ message ClientConfig {
   repeated string server_targets = 1;
   required ClientType client_type = 2;
   required bool enable_ssl = 3;
-  required int32 client_threads = 4;
-  // We have a configurable number of channels for sending RPCs.
-  // RPCs are sent round-robin on the available channels by the
-  // various threads. Interesting cases are 1 global channel or
-  // 1 per-thread channel, but we can support any number.
-  // The channels are assigned round-robin on an RPC by RPC basis
-  // rather than just at initialization time in order to also measure the
-  // impact of cache thrashing caused by channel changes. This is an issue
-  // if you are not in one of the above "interesting cases"
+  required int32 outstanding_rpcs_per_channel = 4;
   required int32 client_channels = 5;
-  required int32 num_rpcs = 6;
-  required int32 payload_size = 7;
+  required int32 payload_size = 6;
 }
 
-message ClientStart {}
+message Mark {}
 
 message ClientArgs {
   oneof argtype {
     ClientConfig setup = 1;
-    ClientStart start = 2;
+    Mark mark = 2;
   }
 }
 
-message ClientResult {
+message ClientStats {
   required Latencies latencies = 1;
   required int32 num_rpcs = 2;
   required double time_elapsed = 3;
@@ -121,7 +112,7 @@ message ClientResult {
 }
 
 message ClientStatus {
-  optional ClientResult result = 1;
+  optional ClientStats stats = 1;
 }
 
 message ServerConfig {
@@ -131,7 +122,10 @@ message ServerConfig {
 }
 
 message ServerArgs {
-  required ServerConfig config = 1;
+  oneof argtype {
+    ServerConfig setup = 1;
+    Mark mark = 2;
+  }
 }
 
 message ServerStatus {

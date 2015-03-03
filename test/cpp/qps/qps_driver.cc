@@ -32,6 +32,7 @@
  */
 
 #include <gflags/gflags.h>
+#include <grpc/support/log.h>
 
 #include "test/cpp/qps/driver.h"
 
@@ -43,15 +44,18 @@ DEFINE_bool(enable_ssl, false, "Use SSL");
 
 // Server config
 DEFINE_int32(server_threads, 1, "Number of server threads");
+DEFINE_string(server_type, "SYNCHRONOUS_SERVER", "Server type");
 
 // Client config
-DEFINE_int32(client_threads, 1, "Number of client threads");
+DEFINE_int32(outstanding_rpcs_per_channel, 1, "Number of outstanding rpcs per channel");
 DEFINE_int32(client_channels, 1, "Number of client channels");
-DEFINE_int32(num_rpcs, 10000, "Number of rpcs per client thread");
 DEFINE_int32(payload_size, 1, "Payload size");
+DEFINE_string(client_type, "SYNCHRONOUS_CLIENT", "Client type");
 
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
+using grpc::testing::ClientType;
+using grpc::testing::ServerType;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
@@ -64,14 +68,20 @@ int main(int argc, char **argv) {
   grpc_init();
   ParseCommandLineFlags(&argc, &argv, true);
 
+  ClientType client_type;
+  ServerType server_type;
+  GPR_ASSERT(ClientType_Parse(FLAGS_client_type, &client_type));
+  GPR_ASSERT(ServerType_Parse(FLAGS_server_type, &server_type));
+
   ClientConfig client_config;
+  client_config.set_client_type(client_type);
   client_config.set_enable_ssl(FLAGS_enable_ssl);
-  client_config.set_client_threads(FLAGS_client_threads);
+  client_config.set_outstanding_rpcs_per_channel(FLAGS_outstanding_rpcs_per_channel);
   client_config.set_client_channels(FLAGS_client_channels);
-  client_config.set_num_rpcs(FLAGS_num_rpcs);
   client_config.set_payload_size(FLAGS_payload_size);
 
   ServerConfig server_config;
+  server_config.set_server_type(server_type);
   server_config.set_threads(FLAGS_server_threads);
   server_config.set_enable_ssl(FLAGS_enable_ssl);
 
