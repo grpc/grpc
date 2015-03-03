@@ -75,8 +75,18 @@ namespace Grpc.Core
         }
 
         // only call before Start()
-        public int AddPort(string addr) {
+        public int AddPort(string addr)
+        {
             return handle.AddPort(addr);
+        }
+
+        // only call before Start()
+        public int AddPort(string addr, ServerCredentials credentials)
+        {
+            using (var nativeCredentials = credentials.ToNativeCredentials())
+            {
+                return handle.AddPort(addr, nativeCredentials);
+            }
         }
 
         public void Start()

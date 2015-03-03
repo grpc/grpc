@@ -74,6 +74,8 @@
     <Compile Include="OperationFailedException.cs" />
     <Compile Include="Internal\AsyncCall.cs" />
     <Compile Include="Utils\Preconditions.cs" />
+    <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
+    <Compile Include="ServerCredentials.cs" />
   </ItemGroup>
   <Choose>
     <!-- Under older versions of Monodevelop, Choose is not supported and is just
