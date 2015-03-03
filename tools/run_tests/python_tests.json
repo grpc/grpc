@@ -1,0 +1,18 @@
+[
+  "grpc._adapter._blocking_invocation_inline_service_test",
+  "grpc._adapter._c_test",
+  "grpc._adapter._event_invocation_synchronous_event_service_test",
+  "grpc._adapter._future_invocation_asynchronous_event_service_test",
+  "grpc._adapter._links_test",
+  "grpc._adapter._lonely_rear_link_test",
+  "grpc._adapter._low_test",
+  "grpc.early_adopter.implementations_test",
+  "grpc.framework.assembly.implementations_test",
+  "grpc.framework.base.packets.implementations_test",
+  "grpc.framework.face.blocking_invocation_inline_service_test",
+  "grpc.framework.face.event_invocation_synchronous_event_service_test",
+  "grpc.framework.face.future_invocation_asynchronous_event_service_test",
+  "grpc.framework.foundation._later_test",
+  "grpc.framework.foundation._logging_pool_test"
+]
+

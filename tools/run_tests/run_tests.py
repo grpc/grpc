@@ -57,8 +57,19 @@ class SimpleConfig(object):
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
 
-  def job_spec(self, binary, hash_targets):
-    return jobset.JobSpec(cmdline=[binary],
+  def job_spec(self, cmdline, hash_targets):
+    """Construct a jobset.JobSpec for a test under this config
+
+       Args:
+         cmdline:      a list of strings specifying the command line the test
+                       would like to run
+         hash_targets: either None (don't do caching of test results), or
+                       a list of strings specifying files to include in a
+                       binary hash to check if a test has changed
+                       -- if used, all artifacts needed to run the test must
+                          be listed
+    """
+    return jobset.JobSpec(cmdline=cmdline,
                           environ=self.environ,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
@@ -74,9 +85,9 @@ class ValgrindConfig(object):
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
-  def job_spec(self, binary, hash_targets):
+  def job_spec(self, cmdline, hash_targets):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
-                          self.args + [binary],
+                          self.args + cmdline,
                           shortname='valgrind %s' % binary,
                           hash_targets=None)
 
@@ -95,7 +106,7 @@ class CLanguage(object):
       if travis and target['flaky']:
         continue
       binary = 'bins/%s/%s' % (config.build_config, target['name'])
-      out.append(config.job_spec(binary, [binary]))
+      out.append(config.job_spec([binary], [binary]))
     return out
 
   def make_targets(self):
@@ -108,7 +119,7 @@ class CLanguage(object):
 class NodeLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_node.sh', None)]
+    return [config.job_spec(['tools/run_tests/run_node.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
@@ -120,7 +131,7 @@ class NodeLanguage(object):
 class PhpLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('src/php/bin/run_tests.sh', None)]
+    return [config.job_spec(['src/php/bin/run_tests.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
@@ -131,8 +142,13 @@ class PhpLanguage(object):
 
 class PythonLanguage(object):
 
+  def __init__(self):
+    with open('tools/run_tests/python_tests.json') as f:
+      self._tests = json.load(f)
+
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_python.sh', None)]
+    return [config.job_spec(['tools/run_tests/run_python.sh', test], None)
+            for test in self._tests]
 
   def make_targets(self):
     return ['static_c']
@@ -143,7 +159,7 @@ class PythonLanguage(object):
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_ruby.sh', None)]
+    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
