@@ -324,6 +324,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
 
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
     *tag = tag_;
+    bool orig_status = *status;
     if (*status && request_) {
       if (payload_) {
         *status = DeserializeProto(payload_, request_);
@@ -343,7 +344,9 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
     }
     ctx_->call_ = call_;
     Call call(call_, server_, cq_);
-    ctx_->BeginCompletionOp(&call);
+    if (orig_status && call_) {
+      ctx_->BeginCompletionOp(&call);
+    }
     // just the pointers inside call are copied here
     stream_->BindCall(&call);
     delete this;
