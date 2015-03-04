@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,46 +28,50 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
+using Grpc.Core.Internal;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core
 {
-    /// <summary>
-    /// grpc_channel from <grpc/grpc.h>
-    /// </summary>
-    internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
+    public abstract class Credentials
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+        /// <summary>
+        /// Creates native object for the credentials.
+        /// </summary>
+        /// <returns>The native credentials.</returns>
+        internal abstract CredentialsSafeHandle ToNativeCredentials();
+    }
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_secure_channel_create(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+    /// <summary>
+    /// Client-side SSL credentials.
+    /// </summary>
+    public class SslCredentials : Credentials
+    {
+        string pemRootCerts;
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_channel_destroy(IntPtr channel);
-
-        private ChannelSafeHandle()
+        public SslCredentials(string pemRootCerts)
         {
+            this.pemRootCerts = pemRootCerts;
         }
 
-        public static ChannelSafeHandle Create(string target, ChannelArgsSafeHandle channelArgs)
+        /// <summary>
+        /// PEM encoding of the server root certificates.
+        /// </summary>
+        public string RootCerts
         {
-            return grpcsharp_channel_create(target, channelArgs);
+            get
+            {
+                return this.pemRootCerts;
+            }
         }
 
-        public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
+        internal override CredentialsSafeHandle ToNativeCredentials()
         {
-            return grpcsharp_secure_channel_create(credentials, target, channelArgs);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            grpcsharp_channel_destroy(handle);
-            return true;
+            return CredentialsSafeHandle.CreateSslCredentials(pemRootCerts);
         }
     }
 }
+

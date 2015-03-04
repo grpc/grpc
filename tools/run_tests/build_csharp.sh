@@ -28,19 +28,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -ex
 
-main() {
-  # rebuild images on all languages on existing builder vm. 
-  source grpc_docker.sh
-  cd ../../
+# change to gRPC repo root
+cd $(dirname $0)/../..
 
-  # build images for all languages
-  languages=(cxx java go ruby node python csharp_mono)
-  for lan in "${languages[@]}"
-  do
-    grpc_update_image $lan
-  done
-}
+root=`pwd`
 
-set -x
-main "$@"
+xbuild src/csharp/Grpc.sln

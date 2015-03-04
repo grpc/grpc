@@ -28,19 +28,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set -ex
 
-main() {
-  # rebuild images on all languages on existing builder vm. 
-  source grpc_docker.sh
-  cd ../../
+# change to gRPC repo root
+cd $(dirname $0)/../..
 
-  # build images for all languages
-  languages=(cxx java go ruby node python csharp_mono)
-  for lan in "${languages[@]}"
-  do
-    grpc_update_image $lan
-  done
-}
+root=`pwd`
+cd src/csharp
 
-set -x
-main "$@"
+# TODO: All the tests run pretty fast. In the future, we might need to teach
+# run_tests.py about separate tests to make them run in parallel.
+for assembly_name in Grpc.Core.Tests Grpc.Examples.Tests Grpc.IntegrationTesting
+do
+  LD_LIBRARY_PATH=$root/libs/dbg nunit-console -labels $assembly_name/bin/Debug/$assembly_name.dll
+done
+
+
