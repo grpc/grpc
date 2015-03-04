@@ -43,6 +43,7 @@
 #include <list>
 #include <thread>
 #include <vector>
+#include "test/cpp/qps/histogram.h"
 
 using std::list;
 using std::thread;
@@ -171,6 +172,7 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   gpr_sleep_until(gpr_time_add(start, gpr_time_from_seconds(15)));
 
   // Finish a run
+  Histogram latencies;
   gpr_log(GPR_INFO, "Finishing");
   for (auto& server : servers) {
     GPR_ASSERT(server.stream->Write(server_mark));
@@ -183,6 +185,7 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   }
   for (auto& client : clients) {
     GPR_ASSERT(client.stream->Read(&client_status));
+    latencies.MergeProto(client_status.stats().latencies());
   }
 
   for (auto& client : clients) {
@@ -193,6 +196,9 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
     GPR_ASSERT(server.stream->WritesDone());
     GPR_ASSERT(server.stream->Finish().IsOk());
   }
+
+  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
+    latencies.Percentile(50) / 1e3, latencies.Percentile(95) / 1e3, latencies.Percentile(99) / 1e3, latencies.Percentile(99.9) / 1e3);
 }
 }
 }

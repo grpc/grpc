@@ -68,11 +68,13 @@ message Payload {
   optional bytes body = 2;
 }
 
-message Latencies {
-  required double l_50 = 1;
-  required double l_90 = 2;
-  required double l_99 = 3;
-  required double l_999 = 4;
+message HistogramData {
+  repeated uint32 bucket = 1;
+  required double min_seen = 2;
+  required double max_seen = 3;
+  required double sum = 4;
+  required double sum_of_squares = 5;
+  required double count = 6;
 }
 
 enum ClientType {
@@ -104,8 +106,7 @@ message ClientArgs {
 }
 
 message ClientStats {
-  required Latencies latencies = 1;
-  required int32 num_rpcs = 2;
+  required HistogramData latencies = 1;
   required double time_elapsed = 3;
   required double time_user = 4;
   required double time_system = 5;

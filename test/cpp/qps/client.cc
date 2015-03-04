@@ -90,12 +90,7 @@ class SynchronousClient GRPC_FINAL : public Client {
     auto timer_result = timer->Mark();
 
     ClientStats stats;
-    auto* l = stats.mutable_latencies();
-    l->set_l_50(latencies.Percentile(50));
-    l->set_l_90(latencies.Percentile(90));
-    l->set_l_99(latencies.Percentile(99));
-    l->set_l_999(latencies.Percentile(99.9));
-    stats.set_num_rpcs(latencies.Count());
+    latencies.FillProto(stats.mutable_latencies());
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);

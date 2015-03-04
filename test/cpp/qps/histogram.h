@@ -35,6 +35,7 @@
 #define TEST_QPS_HISTOGRAM_H
 
 #include <grpc/support/histogram.h>
+#include "test/cpp/qps/qpstest.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -51,6 +52,21 @@ class Histogram {
   }
   double Count() { return gpr_histogram_count(impl_); }
   void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
+  void FillProto(HistogramData* p) {
+    size_t n;
+    const auto* data = gpr_histogram_get_contents(impl_, &n);
+    for (size_t i = 0; i < n; i++) {
+      p->add_bucket(data[i]);
+    }
+    p->set_min_seen(gpr_histogram_minimum(impl_));
+    p->set_max_seen(gpr_histogram_maximum(impl_));
+    p->set_sum(gpr_histogram_sum(impl_));
+    p->set_sum_of_squares(gpr_histogram_sum_of_squares(impl_));
+    p->set_count(gpr_histogram_count(impl_));
+  }
+  void MergeProto(const HistogramData& p) {
+    gpr_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(), p.min_seen(), p.max_seen(), p.sum(), p.sum_of_squares(), p.count());
+  }
 
  private:
   Histogram(const Histogram&);

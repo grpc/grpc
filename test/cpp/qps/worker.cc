@@ -169,6 +169,7 @@ class WorkerImpl final : public Worker::Service {
   }
 
  private:
+  // Protect against multiple clients using this worker at once.
   class InstanceGuard {
    public:
     InstanceGuard(WorkerImpl* impl)
