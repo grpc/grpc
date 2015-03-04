@@ -31,7 +31,6 @@
  *
  */
 
-#include <google/protobuf/message.h>
 #include <grpc/support/alloc.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/client_context.h>
