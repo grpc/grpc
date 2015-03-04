@@ -102,8 +102,8 @@ bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array,
       if (::node::Buffer::HasInstance(value)) {
         current->value = ::node::Buffer::Data(value);
         current->value_length = ::node::Buffer::Length(value);
-        Persistent<Value> handle;
-        NanAssignPersistent(handle, value);
+        Persistent<Value> *handle = new Persistent<Value>();
+        NanAssignPersistent(*handle, value);
         resources->handles.push_back(unique_ptr<PersistentHolder>(
             new PersistentHolder(handle)));
       } else if (value->IsString()) {
@@ -196,8 +196,8 @@ class SendMessageOp : public Op {
       return false;
     }
     out->data.send_message = BufferToByteBuffer(value);
-    Persistent<Value> handle;
-    NanAssignPersistent(handle, value);
+    Persistent<Value> *handle = new Persistent<Value>();
+    NanAssignPersistent(*handle, value);
     resources->handles.push_back(unique_ptr<PersistentHolder>(
         new PersistentHolder(handle)));
     return true;
