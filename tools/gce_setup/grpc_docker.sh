@@ -674,7 +674,7 @@ _grpc_launch_servers_args() {
   [[ -n $1 ]] && {
     servers="$@"
   } || {
-    servers="cxx java go node ruby python"
+    servers="cxx java go node ruby python csharp_mono"
     echo "$FUNCNAME: no servers specified, will launch defaults '$servers'"
   }
 }
@@ -710,6 +710,7 @@ grpc_launch_servers() {
       node)   grpc_port=8040 ;;
       python) grpc_port=8050 ;;
       ruby)   grpc_port=8060 ;;
+      csharp_mono)   grpc_port=8070 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
     esac
     local docker_label="grpc/$server"
