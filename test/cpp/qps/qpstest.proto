@@ -94,8 +94,11 @@ message ClientConfig {
   required int32 outstanding_rpcs_per_channel = 4;
   required int32 client_channels = 5;
   required int32 payload_size = 6;
+  // only for async client:
+  optional int32 async_client_threads = 7;
 }
 
+// Request current stats
 message Mark {}
 
 message ClientArgs {

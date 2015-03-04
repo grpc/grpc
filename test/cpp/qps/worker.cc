@@ -80,7 +80,7 @@ std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
     case ClientType::SYNCHRONOUS_CLIENT:
       return CreateSynchronousClient(config);
     case ClientType::ASYNC_CLIENT:
-      abort();  // return CreateAsyncClient(config);
+      return CreateAsyncClient(config);
   }
   abort();
 }

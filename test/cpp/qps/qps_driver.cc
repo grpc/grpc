@@ -53,6 +53,7 @@ DEFINE_int32(outstanding_rpcs_per_channel, 1,
 DEFINE_int32(client_channels, 1, "Number of client channels");
 DEFINE_int32(payload_size, 1, "Payload size");
 DEFINE_string(client_type, "SYNCHRONOUS_CLIENT", "Client type");
+DEFINE_int32(async_client_threads, 1, "Async client threads");
 
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
@@ -84,6 +85,7 @@ int main(int argc, char **argv) {
       FLAGS_outstanding_rpcs_per_channel);
   client_config.set_client_channels(FLAGS_client_channels);
   client_config.set_payload_size(FLAGS_payload_size);
+  client_config.set_async_client_threads(FLAGS_async_client_threads);
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);
@@ -92,6 +94,8 @@ int main(int argc, char **argv) {
 
   auto result = RunScenario(client_config, FLAGS_num_clients, server_config,
               FLAGS_num_servers);
+
+  gpr_log(GPR_INFO, "QPS: %.1f", result.latencies.Count() / average(result.client_resources, [](ResourceUsage u) { return u.wall_time; }));
 
   gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
     result.latencies.Percentile(50) / 1000, result.latencies.Percentile(95) / 1000,
