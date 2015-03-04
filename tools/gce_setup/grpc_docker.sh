@@ -1170,8 +1170,9 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_cxx_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_csharp_mono_cmd() {
-  local cmd_prefix="sudo docker run grpc/csharp_mono";
-  local test_script="mono /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/Grpc.IntegrationTesting.Client.exe --use_tls=true --use_test_ca=true";
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local cmd_prefix="sudo docker run $workdir_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true --use_test_ca=true";
   local the_cmd="$cmd_prefix $test_script $@";
   echo $the_cmd
 }
@@ -1183,8 +1184,9 @@ grpc_interop_gen_csharp_mono_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_gen_csharp_mono_cmd() {
   local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
-  local cmd_prefix="sudo docker run $env_flag grpc/csharp_mono";
-  local test_script="mono /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local cmd_prefix="sudo docker run $env_flag $workdir_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
   local gfe_flags=$(_grpc_prod_gfe_flags);
   local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
   echo $the_cmd
