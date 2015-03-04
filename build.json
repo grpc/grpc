@@ -1846,9 +1846,10 @@
         "test/cpp/qps/server.h"
       ],
       "src": [
-        "test/cpp/qps/client.cc",
         "test/cpp/qps/client_async.cc",
-        "test/cpp/qps/server.cc",
+        "test/cpp/qps/client_sync.cc",
+        "test/cpp/qps/server_async.cc",
+        "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/worker.cc"
       ],
       "deps": [

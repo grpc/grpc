@@ -70,8 +70,6 @@ using namespace gflags;
 
 static bool got_sigint = false;
 
-static void sigint_handler(int x) { got_sigint = 1; }
-
 namespace grpc {
 namespace testing {
 
@@ -90,7 +88,7 @@ std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
     case ServerType::SYNCHRONOUS_SERVER:
       return CreateSynchronousServer(config, FLAGS_server_port);
     case ServerType::ASYNC_SERVER:
-      abort();  // return CreateAsyncServer(config, FLAGS_server_port);
+      return CreateAsyncServer(config, FLAGS_server_port);
   }
   abort();
 }
