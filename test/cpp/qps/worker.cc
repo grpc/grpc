@@ -70,8 +70,6 @@ using namespace gflags;
 
 static bool got_sigint = false;
 
-static void sigint_handler(int x) { got_sigint = 1; }
-
 namespace grpc {
 namespace testing {
 
