@@ -118,7 +118,7 @@ class Call : public ::node::ObjectWrap {
   static NAN_METHOD(New);
   static NAN_METHOD(StartBatch);
   static NAN_METHOD(Cancel);
-  static v8::Persistent<v8::Function> constructor;
+  static NanCallback *constructor;
   // Used for typechecking instances of this javascript class
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 

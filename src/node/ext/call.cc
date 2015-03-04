@@ -54,8 +54,6 @@ using std::vector;
 namespace grpc {
 namespace node {
 
-using ::node::Buffer;
-using v8::Arguments;
 using v8::Array;
 using v8::Boolean;
 using v8::Exception;
@@ -74,7 +72,7 @@ using v8::Uint32;
 using v8::String;
 using v8::Value;
 
-Persistent<Function> Call::constructor;
+NanCallback *Call::constructor;
 Persistent<FunctionTemplate> Call::fun_tpl;
 
 
@@ -101,9 +99,9 @@ bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array,
       Handle<Value> value = values->Get(j);
       grpc_metadata *current = &array->metadata[array->count];
       current->key = **utf8_key;
-      if (Buffer::HasInstance(value)) {
-        current->value = Buffer::Data(value);
-        current->value_length = Buffer::Length(value);
+      if (::node::Buffer::HasInstance(value)) {
+        current->value = ::node::Buffer::Data(value);
+        current->value_length = ::node::Buffer::Length(value);
         Persistent<Value> handle;
         NanAssignPersistent(handle, value);
         resources->handles.push_back(unique_ptr<PersistentHolder>(
@@ -140,7 +138,7 @@ Handle<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
   Handle<Object> metadata_object = NanNew<Object>();
   for (unsigned int i = 0; i < length; i++) {
     grpc_metadata* elem = &metadata_elements[i];
-    Handle<String> key_string = String::New(elem->key);
+    Handle<String> key_string = NanNew(elem->key);
     Handle<Array> array;
     if (metadata_object->Has(key_string)) {
       array = Handle<Array>::Cast(metadata_object->Get(key_string));
@@ -194,7 +192,7 @@ class SendMessageOp : public Op {
   }
   bool ParseOp(Handle<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
-    if (!Buffer::HasInstance(value)) {
+    if (!::node::Buffer::HasInstance(value)) {
       return false;
     }
     out->data.send_message = BufferToByteBuffer(value);
@@ -357,7 +355,7 @@ class ClientStatusOp : public Op {
     Handle<Object> status_obj = NanNew<Object>();
     status_obj->Set(NanNew("code"), NanNew<Number>(status));
     if (status_details != NULL) {
-      status_obj->Set(NanNew("details"), String::New(status_details));
+      status_obj->Set(NanNew("details"), NanNew(status_details));
     }
     status_obj->Set(NanNew("metadata"), ParseMetadata(&metadata_array));
     return NanEscapeScope(status_obj);
@@ -436,20 +434,21 @@ Call::~Call() {
 
 void Call::Init(Handle<Object> exports) {
   NanScope();
-  Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
+  Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
   tpl->SetClassName(NanNew("Call"));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   NanSetPrototypeTemplate(tpl, "startBatch",
-                          FunctionTemplate::New(StartBatch)->GetFunction());
+                          NanNew<FunctionTemplate>(StartBatch)->GetFunction());
   NanSetPrototypeTemplate(tpl, "cancel",
-                          FunctionTemplate::New(Cancel)->GetFunction());
+                          NanNew<FunctionTemplate>(Cancel)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
-  NanAssignPersistent(constructor, tpl->GetFunction());
-  constructor->Set(NanNew("WRITE_BUFFER_HINT"),
-                   NanNew<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
-  constructor->Set(NanNew("WRITE_NO_COMPRESS"),
-                   NanNew<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
-  exports->Set(String::NewSymbol("Call"), constructor);
+  Handle<Function> ctr = tpl->GetFunction();
+  ctr->Set(NanNew("WRITE_BUFFER_HINT"),
+           NanNew<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
+  ctr->Set(NanNew("WRITE_NO_COMPRESS"),
+           NanNew<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
+  exports->Set(NanNew("Call"), ctr);
+  constructor = new NanCallback(ctr);
 }
 
 bool Call::HasInstance(Handle<Value> val) {
@@ -463,8 +462,8 @@ Handle<Value> Call::WrapStruct(grpc_call *call) {
     return NanEscapeScope(NanNull());
   }
   const int argc = 1;
-  Handle<Value> argv[argc] = {External::New(reinterpret_cast<void *>(call))};
-  return NanEscapeScope(constructor->NewInstance(argc, argv));
+  Handle<Value> argv[argc] = {NanNew<External>(reinterpret_cast<void *>(call))};
+  return NanEscapeScope(constructor->GetFunction()->NewInstance(argc, argv));
 }
 
 NAN_METHOD(Call::New) {
@@ -473,9 +472,10 @@ NAN_METHOD(Call::New) {
   if (args.IsConstructCall()) {
     Call *call;
     if (args[0]->IsExternal()) {
+      Handle<External> ext = args[0].As<External>();
       // This option is used for wrapping an existing call
       grpc_call *call_value =
-          reinterpret_cast<grpc_call *>(External::Unwrap(args[0]));
+          reinterpret_cast<grpc_call *>(ext->Value());
       call = new Call(call_value);
     } else {
       if (!Channel::HasInstance(args[0])) {
@@ -500,15 +500,14 @@ NAN_METHOD(Call::New) {
           wrapped_channel, CompletionQueueAsyncWorker::GetQueue(), *method,
           channel->GetHost(), MillisecondsToTimespec(deadline));
       call = new Call(wrapped_call);
-      args.This()->SetHiddenValue(String::NewSymbol("channel_"),
-                                  channel_object);
+      args.This()->SetHiddenValue(NanNew("channel_"), channel_object);
     }
     call->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
     const int argc = 4;
     Local<Value> argv[argc] = {args[0], args[1], args[2], args[3]};
-    NanReturnValue(constructor->NewInstance(argc, argv));
+    NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
   }
 }
 
