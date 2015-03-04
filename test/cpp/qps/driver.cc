@@ -198,7 +198,8 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   }
 
   gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-    latencies.Percentile(50) / 1e3, latencies.Percentile(95) / 1e3, latencies.Percentile(99) / 1e3, latencies.Percentile(99.9) / 1e3);
+          latencies.Percentile(50) / 1e3, latencies.Percentile(95) / 1e3,
+          latencies.Percentile(99) / 1e3, latencies.Percentile(99.9) / 1e3);
 }
 }
 }

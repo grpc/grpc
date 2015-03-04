@@ -65,7 +65,9 @@ class Histogram {
     p->set_count(gpr_histogram_count(impl_));
   }
   void MergeProto(const HistogramData& p) {
-    gpr_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(), p.min_seen(), p.max_seen(), p.sum(), p.sum_of_squares(), p.count());
+    gpr_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(),
+                                 p.min_seen(), p.max_seen(), p.sum(),
+                                 p.sum_of_squares(), p.count());
   }
 
  private:
