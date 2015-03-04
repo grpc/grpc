@@ -225,8 +225,6 @@ static void RunServer() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  signal(SIGINT, sigint_handler);
-
   grpc_init();
   ParseCommandLineFlags(&argc, &argv, true);
 
