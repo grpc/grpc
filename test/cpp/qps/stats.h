@@ -31,30 +31,29 @@
  *
  */
 
-#ifndef TEST_QPS_DRIVER_H
-#define TEST_QPS_DRIVER_H
+#ifndef TEST_QPS_STATS_UTILS_H
+#define TEST_QPS_STATS_UTILS_H
 
 #include "test/cpp/qps/histogram.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include <string>
 
 namespace grpc {
 namespace testing {
-struct ResourceUsage {
-  double wall_time;
-  double user_time;
-  double system_time;
-};
 
-struct ScenarioResult {
-  Histogram latencies;
-  std::vector<ResourceUsage> client_resources;
-  std::vector<ResourceUsage> server_resources;
-};
+template <class T, class F>
+double sum(const T& container, F functor) {
+  double r = 0;
+  for (auto v : container) {
+  	r += functor(v);
+  }
+  return r;
+}
 
-ScenarioResult RunScenario(const grpc::testing::ClientConfig& client_config,
-                 size_t num_clients,
-                 const grpc::testing::ServerConfig& server_config,
-                 size_t num_servers);
+template <class T, class F>
+double average(const T& container, F functor) {
+  return sum(container, functor) / container.size();
+}
+
 } // namespace testing
 } // namespace grpc
 

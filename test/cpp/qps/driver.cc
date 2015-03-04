@@ -71,7 +71,7 @@ static vector<string> get_hosts(const string& name) {
   }
 }
 
-void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
+ScenarioResult RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
                  const ServerConfig& server_config, size_t num_servers) {
   // ClientContext allocator (all are destroyed at scope exit)
   list<ClientContext> contexts;
@@ -172,7 +172,7 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   gpr_sleep_until(gpr_time_add(start, gpr_time_from_seconds(15)));
 
   // Finish a run
-  Histogram latencies;
+  ScenarioResult result;
   gpr_log(GPR_INFO, "Finishing");
   for (auto& server : servers) {
     GPR_ASSERT(server.stream->Write(server_mark));
@@ -182,10 +182,14 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
   }
   for (auto& server : servers) {
     GPR_ASSERT(server.stream->Read(&server_status));
+    const auto& stats = server_status.stats();
+    result.server_resources.push_back(ResourceUsage{stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
   for (auto& client : clients) {
     GPR_ASSERT(client.stream->Read(&client_status));
-    latencies.MergeProto(client_status.stats().latencies());
+    const auto& stats = client_status.stats();
+    result.latencies.MergeProto(stats.latencies());
+    result.client_resources.push_back(ResourceUsage{stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
 
   for (auto& client : clients) {
@@ -196,10 +200,7 @@ void RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
     GPR_ASSERT(server.stream->WritesDone());
     GPR_ASSERT(server.stream->Finish().IsOk());
   }
-
-  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-          latencies.Percentile(50) / 1e3, latencies.Percentile(95) / 1e3,
-          latencies.Percentile(99) / 1e3, latencies.Percentile(99.9) / 1e3);
+  return result;
 }
-}
-}
+}  // namespace testing
+}  // namespace grpc
