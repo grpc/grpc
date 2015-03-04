@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "http://www.grpc.io/",
@@ -39,7 +39,7 @@
     "strftime": "^0.8.2"
   },
   "engines": {
-    "node": ">=0.10.13 <0.11"
+    "node": ">=0.10.13"
   },
   "files": [
     "LICENSE",
