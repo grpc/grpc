@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* --- Tracing. --- */
+
+int tsi_tracing_enabled = 0;
+
 /* --- Utils. --- */
 
 char* tsi_strdup(const char* src) {

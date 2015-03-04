@@ -47,12 +47,6 @@ using std::chrono::system_clock;
 struct grpc_call;
 struct grpc_completion_queue;
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
 namespace grpc {
 
 class CallOpBuffer;
