@@ -57,24 +57,12 @@
 namespace grpc {
 namespace testing {
 
-static bool SetPayload(PayloadType type, int size, Payload* payload) {
-  PayloadType response_type = type;
-  // TODO(yangg): Support UNCOMPRESSABLE payload.
-  if (type != PayloadType::COMPRESSABLE) {
-    return false;
-  }
-  payload->set_type(response_type);
-  std::unique_ptr<char[]> body(new char[size]());
-  payload->set_body(body.get(), size);
-  return true;
-}
-
 class TestServiceImpl GRPC_FINAL : public TestService::Service {
  public:
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
     if (request->has_response_size() && request->response_size() > 0) {
-      if (!SetPayload(request->response_type(), request->response_size(),
+      if (!Server::SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
@@ -87,21 +75,7 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
  public:
   SynchronousServer(const ServerConfig& config, int port)
       : thread_pool_(config.threads()),
-        impl_(MakeImpl(port)),
-        timer_(new Timer) {}
-
-  ServerStats Mark() GRPC_OVERRIDE {
-    std::unique_ptr<Timer> timer(new Timer);
-    timer.swap(timer_);
-
-    auto timer_result = timer->Mark();
-
-    ServerStats stats;
-    stats.set_time_elapsed(timer_result.wall);
-    stats.set_time_system(timer_result.system);
-    stats.set_time_user(timer_result.user);
-    return stats;
-  }
+        impl_(MakeImpl(port)) {}
 
  private:
   std::unique_ptr<grpc::Server> MakeImpl(int port) {
@@ -120,7 +94,6 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
   TestServiceImpl service_;
   ThreadPool thread_pool_;
   std::unique_ptr<grpc::Server> impl_;
-  std::unique_ptr<Timer> timer_;
 };
 
 std::unique_ptr<grpc::testing::Server> CreateSynchronousServer(
