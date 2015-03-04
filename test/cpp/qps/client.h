@@ -38,6 +38,9 @@
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/qpstest.pb.h"
 
+#include <condition_variable>
+#include <mutex>
+
 namespace grpc {
 namespace testing {
 
