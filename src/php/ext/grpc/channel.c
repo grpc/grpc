@@ -51,7 +51,6 @@
 #include "grpc/support/log.h"
 #include "grpc/grpc_security.h"
 
-#include "completion_queue.h"
 #include "server.h"
 #include "credentials.h"
 

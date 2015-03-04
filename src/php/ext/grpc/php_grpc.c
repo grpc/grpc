@@ -34,8 +34,6 @@
 #include "call.h"
 #include "channel.h"
 #include "server.h"
-#include "completion_queue.h"
-#include "event.h"
 #include "timeval.h"
 #include "credentials.h"
 #include "server_credentials.h"
@@ -127,26 +125,11 @@ PHP_MINIT_FUNCTION(grpc) {
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_INVALID_FLAGS",
                          GRPC_CALL_ERROR_INVALID_FLAGS, CONST_CS);
 
-  /* Register op error constants */
-  REGISTER_LONG_CONSTANT("Grpc\\OP_OK", GRPC_OP_OK, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\OP_ERROR", GRPC_OP_ERROR, CONST_CS);
-
   /* Register flag constants */
   REGISTER_LONG_CONSTANT("Grpc\\WRITE_BUFFER_HINT", GRPC_WRITE_BUFFER_HINT,
                          CONST_CS);
   REGISTER_LONG_CONSTANT("Grpc\\WRITE_NO_COMPRESS", GRPC_WRITE_NO_COMPRESS,
                          CONST_CS);
-
-  /* Register completion type constants */
-  REGISTER_LONG_CONSTANT("Grpc\\QUEUE_SHUTDOWN", GRPC_QUEUE_SHUTDOWN, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\READ", GRPC_READ, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\FINISH_ACCEPTED", GRPC_FINISH_ACCEPTED,
-                         CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\WRITE_ACCEPTED", GRPC_WRITE_ACCEPTED, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\CLIENT_METADATA_READ",
-                         GRPC_CLIENT_METADATA_READ, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\FINISHED", GRPC_FINISHED, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\SERVER_RPC_NEW", GRPC_SERVER_RPC_NEW, CONST_CS);
 
   /* Register status constants */
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_OK", GRPC_STATUS_OK, CONST_CS);
@@ -181,10 +164,27 @@ PHP_MINIT_FUNCTION(grpc) {
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_DATA_LOSS", GRPC_STATUS_DATA_LOSS,
                          CONST_CS);
 
+  /* Register op type constants */
+  REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_INITIAL_METADATA",
+                         GRPC_OP_SEND_INITIAL_METADATA, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_MESSAGE",
+                         GRPC_OP_SEND_MESSAGE, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_CLOSE_FROM_CLIENT",
+                         GRPC_OP_SEND_CLOSE_FROM_CLIENT, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_STATUS_FROM_SERVER",
+                         GRPC_OP_SEND_STATUS_FROM_SERVER, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_INITIAL_METADATA",
+                         GRPC_OP_RECV_INITIAL_METADATA, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_MESSAGE",
+                         GRPC_OP_RECV_MESSAGE, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_STATUS_ON_CLIENT",
+                         GRPC_OP_RECV_STATUS_ON_CLIENT, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_CLOSE_ON_SERVER",
+                         GRPC_OP_RECV_CLOSE_ON_SERVER, CONST_CS);
+
   grpc_init_call(TSRMLS_C);
   grpc_init_channel(TSRMLS_C);
   grpc_init_server(TSRMLS_C);
-  grpc_init_completion_queue(TSRMLS_C);
   grpc_init_timeval(TSRMLS_C);
   grpc_init_credentials(TSRMLS_C);
   grpc_init_server_credentials(TSRMLS_C);
