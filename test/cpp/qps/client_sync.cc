@@ -64,20 +64,20 @@ namespace testing {
 class SynchronousClient GRPC_FINAL : public Client {
  public:
   SynchronousClient(const ClientConfig& config) : Client(config) {
-    size_t num_threads = config.outstanding_rpcs_per_channel() * config.client_channels();
+    size_t num_threads =
+        config.outstanding_rpcs_per_channel() * config.client_channels();
     responses_.resize(num_threads);
     StartThreads(num_threads);
   }
 
-  ~SynchronousClient() {
-    EndThreads();
-  }
+  ~SynchronousClient() { EndThreads(); }
 
   void ThreadFunc(Histogram* histogram, size_t thread_idx) {
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = Timer::Now();
     grpc::ClientContext context;
-    grpc::Status s = stub->UnaryCall(&context, request_, &responses_[thread_idx]);
+    grpc::Status s =
+        stub->UnaryCall(&context, request_, &responses_[thread_idx]);
     histogram->Add((Timer::Now() - start) * 1e9);
   }
 

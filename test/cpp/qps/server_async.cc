@@ -57,11 +57,12 @@
 #include <grpc/support/log.h>
 
 namespace grpc {
-  namespace testing {
+namespace testing {
 
 class AsyncQpsServerTest : public Server {
  public:
-  AsyncQpsServerTest(const ServerConfig& config, int port) : srv_cq_(), async_service_(&srv_cq_), server_(nullptr) {
+  AsyncQpsServerTest(const ServerConfig &config, int port)
+      : srv_cq_(), async_service_(&srv_cq_), server_(nullptr) {
     char *server_address = NULL;
     gpr_join_host_port(&server_address, "::", port);
 
@@ -103,7 +104,7 @@ class AsyncQpsServerTest : public Server {
   ~AsyncQpsServerTest() {
     server_->Shutdown();
     srv_cq_.Shutdown();
-    for (auto& thr: threads_) {
+    for (auto &thr : threads_) {
       thr.join();
     }
     while (!contexts_.empty()) {
@@ -117,8 +118,8 @@ class AsyncQpsServerTest : public Server {
    public:
     ServerRpcContext() {}
     virtual ~ServerRpcContext(){};
-    virtual bool RunNextState() = 0;// do next state, return false if all done
-    virtual void Reset() = 0;     // start this back at a clean state
+    virtual bool RunNextState() = 0;  // do next state, return false if all done
+    virtual void Reset() = 0;         // start this back at a clean state
   };
   static void *tag(ServerRpcContext *func) {
     return reinterpret_cast<void *>(func);
@@ -201,9 +202,10 @@ class AsyncQpsServerTest : public Server {
   std::forward_list<ServerRpcContext *> contexts_;
 };
 
-std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config, int port) {
-  return std::unique_ptr<Server>(new AsyncQpsServerTest(config, port)); 
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config,
+                                          int port) {
+  return std::unique_ptr<Server>(new AsyncQpsServerTest(config, port));
 }
 
-  }// namespace testing
-}// namespace grpc
+}  // namespace testing
+}  // namespace grpc

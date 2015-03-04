@@ -62,8 +62,9 @@ class TestServiceImpl GRPC_FINAL : public TestService::Service {
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
     if (request->has_response_size() && request->response_size() > 0) {
-      if (!Server::SetPayload(request->response_type(), request->response_size(),
-                      response->mutable_payload())) {
+      if (!Server::SetPayload(request->response_type(),
+                              request->response_size(),
+                              response->mutable_payload())) {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
     }
@@ -74,8 +75,7 @@ class TestServiceImpl GRPC_FINAL : public TestService::Service {
 class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
  public:
   SynchronousServer(const ServerConfig& config, int port)
-      : thread_pool_(config.threads()),
-        impl_(MakeImpl(port)) {}
+      : thread_pool_(config.threads()), impl_(MakeImpl(port)) {}
 
  private:
   std::unique_ptr<grpc::Server> MakeImpl(int port) {

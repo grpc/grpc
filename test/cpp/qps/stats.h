@@ -44,7 +44,7 @@ template <class T, class F>
 double sum(const T& container, F functor) {
   double r = 0;
   for (auto v : container) {
-  	r += functor(v);
+    r += functor(v);
   }
   return r;
 }
@@ -54,7 +54,7 @@ double average(const T& container, F functor) {
   return sum(container, functor) / container.size();
 }
 
-} // namespace testing
-} // namespace grpc
+}  // namespace testing
+}  // namespace grpc
 
 #endif

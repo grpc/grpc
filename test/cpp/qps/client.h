@@ -84,8 +84,7 @@ class Client {
 
   class ClientChannelInfo {
    public:
-    explicit ClientChannelInfo(const grpc::string& target,
-                               const ClientConfig& config)
+    ClientChannelInfo(const grpc::string& target, const ClientConfig& config)
         : channel_(CreateTestChannel(target, config.enable_ssl())),
           stub_(TestService::NewStub(channel_)) {}
     ChannelInterface* get_channel() { return channel_.get(); }
@@ -98,14 +97,12 @@ class Client {
   std::vector<ClientChannelInfo> channels_;
 
   void StartThreads(size_t num_threads) {
-  	for (size_t i = 0; i < num_threads; i++) {
-  	  threads_.emplace_back(new Thread(this, i));
-  	}
+    for (size_t i = 0; i < num_threads; i++) {
+      threads_.emplace_back(new Thread(this, i));
+    }
   }
 
-  void EndThreads() {
-  	threads_.clear();
-  }
+  void EndThreads() { threads_.clear(); }
 
   virtual void ThreadFunc(Histogram* histogram, size_t thread_idx) = 0;
 

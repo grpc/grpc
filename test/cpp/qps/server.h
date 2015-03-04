@@ -42,7 +42,7 @@ namespace testing {
 
 class Server {
  public:
- 	Server():timer_(new Timer) {}
+  Server() : timer_(new Timer) {}
   virtual ~Server() {}
 
   ServerStats Mark() {
@@ -58,17 +58,17 @@ class Server {
     return stats;
   }
 
-	static bool SetPayload(PayloadType type, int size, Payload* payload) {
-	  PayloadType response_type = type;
-	  // TODO(yangg): Support UNCOMPRESSABLE payload.
-	  if (type != PayloadType::COMPRESSABLE) {
-	    return false;
-	  }
-	  payload->set_type(response_type);
-	  std::unique_ptr<char[]> body(new char[size]());
-	  payload->set_body(body.get(), size);
-	  return true;
-	}
+  static bool SetPayload(PayloadType type, int size, Payload* payload) {
+    PayloadType response_type = type;
+    // TODO(yangg): Support UNCOMPRESSABLE payload.
+    if (type != PayloadType::COMPRESSABLE) {
+      return false;
+    }
+    payload->set_type(response_type);
+    std::unique_ptr<char[]> body(new char[size]());
+    payload->set_body(body.get(), size);
+    return true;
+  }
 
  private:
   std::unique_ptr<Timer> timer_;

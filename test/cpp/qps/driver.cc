@@ -71,8 +71,10 @@ static vector<string> get_hosts(const string& name) {
   }
 }
 
-ScenarioResult RunScenario(const ClientConfig& initial_client_config, size_t num_clients,
-                 const ServerConfig& server_config, size_t num_servers) {
+ScenarioResult RunScenario(const ClientConfig& initial_client_config,
+                           size_t num_clients,
+                           const ServerConfig& server_config,
+                           size_t num_servers) {
   // ClientContext allocator (all are destroyed at scope exit)
   list<ClientContext> contexts;
   auto alloc_context = [&contexts]() {
@@ -183,13 +185,15 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config, size_t num
   for (auto& server : servers) {
     GPR_ASSERT(server.stream->Read(&server_status));
     const auto& stats = server_status.stats();
-    result.server_resources.push_back(ResourceUsage{stats.time_elapsed(), stats.time_user(), stats.time_system()});
+    result.server_resources.push_back(ResourceUsage{
+        stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
   for (auto& client : clients) {
     GPR_ASSERT(client.stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result.latencies.MergeProto(stats.latencies());
-    result.client_resources.push_back(ResourceUsage{stats.time_elapsed(), stats.time_user(), stats.time_system()});
+    result.client_resources.push_back(ResourceUsage{
+        stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
 
   for (auto& client : clients) {

@@ -52,10 +52,10 @@ struct ScenarioResult {
 };
 
 ScenarioResult RunScenario(const grpc::testing::ClientConfig& client_config,
-                 size_t num_clients,
-                 const grpc::testing::ServerConfig& server_config,
-                 size_t num_servers);
-} // namespace testing
-} // namespace grpc
+                           size_t num_clients,
+                           const grpc::testing::ServerConfig& server_config,
+                           size_t num_servers);
+}  // namespace testing
+}  // namespace grpc
 
 #endif

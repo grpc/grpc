@@ -43,10 +43,10 @@ namespace testing {
 class Histogram {
  public:
   Histogram() : impl_(gpr_histogram_create(0.01, 60e9)) {}
-  ~Histogram() { if (impl_) gpr_histogram_destroy(impl_); }
-  Histogram(Histogram&& other) : impl_(other.impl_) {
-    other.impl_ = nullptr;
+  ~Histogram() {
+    if (impl_) gpr_histogram_destroy(impl_);
   }
+  Histogram(Histogram&& other) : impl_(other.impl_) { other.impl_ = nullptr; }
 
   void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
   void Add(double value) { gpr_histogram_add(impl_, value); }
