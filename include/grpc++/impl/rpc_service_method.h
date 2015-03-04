@@ -39,10 +39,10 @@
 #include <memory>
 #include <vector>
 
+#include <grpc++/config.h>
 #include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include <google/protobuf/message.h>
 
 namespace grpc {
 class ServerContext;
