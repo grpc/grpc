@@ -36,36 +36,28 @@ using System.Threading.Tasks;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_channel from <grpc/grpc.h>
+    /// grpc_credentials from <grpc/grpc_security.h>
     /// </summary>
-    internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
+    internal class CredentialsSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
+        static extern CredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_secure_channel_create(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+        static extern void grpcsharp_credentials_release(IntPtr credentials);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_channel_destroy(IntPtr channel);
-
-        private ChannelSafeHandle()
+        private CredentialsSafeHandle()
         {
         }
 
-        public static ChannelSafeHandle Create(string target, ChannelArgsSafeHandle channelArgs)
+        public static CredentialsSafeHandle CreateSslCredentials(string pemRootCerts)
         {
-            return grpcsharp_channel_create(target, channelArgs);
-        }
-
-        public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
-        {
-            return grpcsharp_secure_channel_create(credentials, target, channelArgs);
+            return grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_channel_destroy(handle);
+            grpcsharp_credentials_release(handle);
             return true;
         }
     }

@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Google.ProtocolBuffers;
@@ -49,10 +50,10 @@ namespace Grpc.IntegrationTesting
         private class ClientOptions
         {
             public bool help;
-            public string serverHost;
-            public string serverHostOverride;
+            public string serverHost= "127.0.0.1";
+            public string serverHostOverride = "foo.test.google.fr";
             public int? serverPort;
-            public string testCase;
+            public string testCase = "large_unary";
             public bool useTls;
             public bool useTestCa;
         }
@@ -98,10 +99,24 @@ namespace Grpc.IntegrationTesting
             GrpcEnvironment.Initialize();
 
             string addr = string.Format("{0}:{1}", options.serverHost, options.serverPort);
-            using (Channel channel = new Channel(addr))
+
+            Credentials credentials = null;
+            if (options.useTls)
+            {
+                // TODO: use also Env variable for location of the ca file.
+                credentials = new SslCredentials(File.ReadAllText("data/ca.pem"));
+            }
+
+            ChannelArgs channelArgs = null;
+            if (!string.IsNullOrEmpty(options.serverHostOverride))
+            {
+                channelArgs = ChannelArgs.NewBuilder()
+                    .AddString(ChannelArgs.SslTargetNameOverrideKey, options.serverHostOverride).Build();
+            }
+
+            using (Channel channel = new Channel(addr, credentials, channelArgs))
             {
                 TestServiceGrpc.ITestServiceClient client = new TestServiceGrpc.TestServiceClientStub(channel);
-
                 RunTestCase(options.testCase, client);
             }
 
