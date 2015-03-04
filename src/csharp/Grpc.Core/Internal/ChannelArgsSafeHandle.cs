@@ -30,43 +30,48 @@
 #endregion
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_channel from <grpc/grpc.h>
+    /// grpc_channel_args from <grpc/grpc.h>
     /// </summary>
-    internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
+    internal class ChannelArgsSafeHandle : SafeHandleZeroIsInvalid
     {
         [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_channel_create(string target, ChannelArgsSafeHandle channelArgs);
+        static extern ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs);
+
+        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
+        static extern void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_secure_channel_create(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+        static extern void grpcsharp_channel_args_destroy(IntPtr args);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_channel_destroy(IntPtr channel);
-
-        private ChannelSafeHandle()
+        private ChannelArgsSafeHandle()
         {
         }
 
-        public static ChannelSafeHandle Create(string target, ChannelArgsSafeHandle channelArgs)
+        public static ChannelArgsSafeHandle CreateNull()
         {
-            return grpcsharp_channel_create(target, channelArgs);
+            return new ChannelArgsSafeHandle();
         }
 
-        public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
+        public static ChannelArgsSafeHandle Create(int size)
         {
-            return grpcsharp_secure_channel_create(credentials, target, channelArgs);
+            return grpcsharp_channel_args_create(new UIntPtr((uint)size));
+        }
+
+        public void SetString(int index, string key, string value)
+        {
+            grpcsharp_channel_args_set_string(this, new UIntPtr((uint)index), key, value);
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_channel_destroy(handle);
+            grpcsharp_channel_args_destroy(handle);
             return true;
         }
     }
 }
+

@@ -383,7 +383,7 @@ grpc_interop_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -411,12 +411,13 @@ grpc_interop_test_args() {
 
   [[ -n $1 ]] && {  # server_type
     case $1 in
-      cxx)    grpc_port=8010 ;;
-      go)     grpc_port=8020 ;;
-      java)   grpc_port=8030 ;;
-      node)   grpc_port=8040 ;;
-      python) grpc_port=8050 ;;
-      ruby)   grpc_port=8060 ;;
+      cxx)          grpc_port=8010 ;;
+      go)           grpc_port=8020 ;;
+      java)         grpc_port=8030 ;;
+      node)         grpc_port=8040 ;;
+      python)       grpc_port=8050 ;;
+      ruby)         grpc_port=8060 ;;
+      csharp_mono)  grpc_port=8070 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
     esac
     shift
@@ -454,7 +455,7 @@ grpc_cloud_prod_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -673,7 +674,7 @@ _grpc_launch_servers_args() {
   [[ -n $1 ]] && {
     servers="$@"
   } || {
-    servers="cxx java go node ruby python"
+    servers="cxx java go node ruby python csharp_mono"
     echo "$FUNCNAME: no servers specified, will launch defaults '$servers'"
   }
 }
@@ -709,6 +710,7 @@ grpc_launch_servers() {
       node)   grpc_port=8040 ;;
       python) grpc_port=8050 ;;
       ruby)   grpc_port=8060 ;;
+      csharp_mono)   grpc_port=8070 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
     esac
     local docker_label="grpc/$server"
@@ -1160,6 +1162,34 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_cxx_cmd() {
     local added_gfe_flags=$(_grpc_gce_test_flags)
     local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
     echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_interop_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local cmd_prefix="sudo docker run $workdir_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true --use_test_ca=true";
+  local the_cmd="$cmd_prefix $test_script $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_csharp_mono_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local cmd_prefix="sudo docker run $env_flag $workdir_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
 }
 
 # outputs the flags passed to gfe tests
