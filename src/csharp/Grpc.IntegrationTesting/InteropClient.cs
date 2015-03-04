@@ -103,8 +103,16 @@ namespace Grpc.IntegrationTesting
             Credentials credentials = null;
             if (options.useTls)
             {
-                // TODO: use also Env variable for location of the ca file.
-                credentials = new SslCredentials(File.ReadAllText("data/ca.pem"));
+                string caPath = "data/ca.pem";  // Default testing CA
+                if (!options.useTestCa)
+                {
+                    caPath = Environment.GetEnvironmentVariable("SSL_CERT_FILE");
+                    if (string.IsNullOrEmpty(caPath))
+                    {
+                        throw new ArgumentException("CA path environment variable is not set.");
+                    }
+                }
+                credentials = new SslCredentials(File.ReadAllText(caPath));
             }
 
             ChannelArgs channelArgs = null;
