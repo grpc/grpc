@@ -88,6 +88,8 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
 
     builder.RegisterService(&service_);
 
+    builder.SetThreadPool(&thread_pool_);
+
     return builder.BuildAndStart();
   }
 
