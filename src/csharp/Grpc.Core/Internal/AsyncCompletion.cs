@@ -2,11 +2,11 @@
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //     * Redistributions in binary form must reproduce the above
@@ -16,7 +16,7 @@
 //     * Neither the name of Google Inc. nor the names of its
 // contributors may be used to endorse or promote products derived from
 // this software without specific prior written permission.
-//
+// 
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,44 +32,64 @@
 #endregion
 
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
-	/// <summary>
-	/// Represents RPC result.
-	/// </summary>
-	public struct Status
-	{
-		readonly StatusCode statusCode;
-		readonly string detail;
+    /// <summary>
+    /// If error != null, there's been an error or operation has been cancelled.
+    /// </summary>
+    internal delegate void AsyncCompletionDelegate(Exception error);
 
-		public Status(StatusCode statusCode, string detail)
-		{
-			this.statusCode = statusCode;
-			this.detail = detail;
-		}
+    /// <summary>
+    /// Helper for transforming AsyncCompletionDelegate into full-fledged Task.
+    /// </summary>
+    internal class AsyncCompletionTaskSource
+    {
+        readonly TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
+        readonly AsyncCompletionDelegate completionDelegate;
 
-        /// <summary>
-        /// Gets the gRPC status code. OK indicates success, all other values indicate an error.
-        /// </summary>
-		public StatusCode StatusCode
-		{
-			get
-			{
-				return statusCode;
-			}
-		}
+        public AsyncCompletionTaskSource()
+        {
+            completionDelegate = new AsyncCompletionDelegate(HandleCompletion);
+        }
 
-        /// <summary>
-        /// Gets the detail.
-        /// </summary>
-		public string Detail
-		{
-			get
-			{
-				return detail;
-			}
-		}
-	}
+        public Task Task
+        {
+            get
+            {
+                return tcs.Task;
+            }
+        }
+
+        public AsyncCompletionDelegate CompletionDelegate
+        {
+            get
+            {
+                return completionDelegate;
+            }
+        }
+
+        private void HandleCompletion(Exception error)
+        {
+            if (error == null)
+            {
+                tcs.SetResult(null);
+                return;
+            }
+            if (error is OperationCanceledException)
+            {
+                tcs.SetCanceled();
+                return;
+            }
+            tcs.SetException(error);
+        }
+    }
+
 }

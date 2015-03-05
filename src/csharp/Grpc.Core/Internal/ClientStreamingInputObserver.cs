@@ -47,9 +47,10 @@ namespace Grpc.Core.Internal
 
 		public void OnCompleted()
 		{
-
+            var taskSource = new AsyncCompletionTaskSource();
+            call.StartSendCloseFromClient(taskSource.CompletionDelegate);
             // TODO: how bad is the Wait here?
-            call.SendCloseFromClientAsync().Wait();
+            taskSource.Task.Wait();
 		}
 
 		public void OnError(Exception error)
@@ -59,8 +60,10 @@ namespace Grpc.Core.Internal
 
 		public void OnNext(TWrite value)
 		{
+            var taskSource = new AsyncCompletionTaskSource();
+            call.StartSendMessage(value, taskSource.CompletionDelegate);
             // TODO: how bad is the Wait here?
-            call.SendMessageAsync(value).Wait();
+            taskSource.Task.Wait();
 		}
 	}
 }

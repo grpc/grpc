@@ -38,7 +38,6 @@ using Grpc.Core;
 
 namespace Grpc.Core.Internal
 {
-    //TODO: rename the delegate
     internal delegate void CompletionCallbackDelegate(GRPCOpError error, IntPtr batchContextPtr);
 
     /// <summary>

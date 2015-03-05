@@ -32,44 +32,17 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
 
 namespace Grpc.Core
 {
-	/// <summary>
-	/// Represents RPC result.
-	/// </summary>
-	public struct Status
-	{
-		readonly StatusCode statusCode;
-		readonly string detail;
-
-		public Status(StatusCode statusCode, string detail)
-		{
-			this.statusCode = statusCode;
-			this.detail = detail;
-		}
-
-        /// <summary>
-        /// Gets the gRPC status code. OK indicates success, all other values indicate an error.
-        /// </summary>
-		public StatusCode StatusCode
-		{
-			get
-			{
-				return statusCode;
-			}
-		}
-
-        /// <summary>
-        /// Gets the detail.
-        /// </summary>
-		public string Detail
-		{
-			get
-			{
-				return detail;
-			}
-		}
-	}
+    /// <summary>
+    /// Thrown when gRPC operation fails.
+    /// </summary>
+    public class OperationFailedException : Exception
+    {
+        public OperationFailedException(string message) : base(message)
+        {
+        }
+    }
 }
+

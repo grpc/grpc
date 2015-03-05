@@ -40,19 +40,21 @@ namespace Grpc.Core.Internal
     /// Observer that writes all arriving messages to a call abstraction (in blocking fashion)
     /// and then halfcloses the call. Used for server-side call handling.
     /// </summary>
-    internal class ServerStreamingOutputObserver<TWrite, TRead> : IObserver<TWrite>
+    internal class ServerStreamingOutputObserver<TRequest, TResponse> : IObserver<TResponse>
 	{
-        readonly AsyncCall<TWrite, TRead> call;
+        readonly AsyncCallServer<TRequest, TResponse> call;
 
-        public ServerStreamingOutputObserver(AsyncCall<TWrite, TRead> call)
+        public ServerStreamingOutputObserver(AsyncCallServer<TRequest, TResponse> call)
 		{
             this.call = call;
 		}
 
 		public void OnCompleted()
 		{
+            var taskSource = new AsyncCompletionTaskSource();
+            call.StartSendStatusFromServer(new Status(StatusCode.OK, ""), taskSource.CompletionDelegate);
             // TODO: how bad is the Wait here?
-            call.SendStatusFromServerAsync(new Status(StatusCode.OK, "")).Wait();
+            taskSource.Task.Wait();
 		}
 
 		public void OnError(Exception error)
@@ -61,10 +63,12 @@ namespace Grpc.Core.Internal
 			throw new InvalidOperationException("This should never be called.");
 		}
 
-		public void OnNext(TWrite value)
+		public void OnNext(TResponse value)
 		{
+            var taskSource = new AsyncCompletionTaskSource();
+            call.StartSendMessage(value, taskSource.CompletionDelegate);
             // TODO: how bad is the Wait here?
-            call.SendMessageAsync(value).Wait();
+            taskSource.Task.Wait();
 		}
 	}
 }
