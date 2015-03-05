@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CLIENT_CONTEXT_H__
-#define __GRPCPP_CLIENT_CONTEXT_H__
+#ifndef GRPCXX_CLIENT_CONTEXT_H
+#define GRPCXX_CLIENT_CONTEXT_H
 
 #include <chrono>
 #include <map>
@@ -46,12 +46,6 @@ using std::chrono::system_clock;
 
 struct grpc_call;
 struct grpc_completion_queue;
-
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
 
 namespace grpc {
 
@@ -139,7 +133,7 @@ class ClientContext {
     return authority_;
   }
 
-  bool initial_metadata_received_ = false;
+  bool initial_metadata_received_;
   grpc_call *call_;
   grpc_completion_queue *cq_;
   gpr_timespec absolute_deadline_;
@@ -151,4 +145,4 @@ class ClientContext {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CLIENT_CONTEXT_H__
+#endif  // GRPCXX_CLIENT_CONTEXT_H

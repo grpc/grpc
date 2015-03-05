@@ -34,7 +34,7 @@ FROM grpc/base
 RUN apt-get update && apt-get install -y lintian
 
 # Get the source from GitHub
-RUN git clone git@github.com:grpc/grpc.git /var/local/git/grpc
+RUN git clone https://github.com/grpc/grpc.git /var/local/git/grpc
 RUN cd /var/local/git/grpc && \
   git pull --recurse-submodules && \
   git submodule update --init --recursive

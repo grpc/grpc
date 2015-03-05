@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H
 
 #include <grpc/support/port_platform.h>
 
@@ -71,4 +71,4 @@ void grpc_pollset_kick_post_poll(grpc_pollset_kick_state *kick_state);
 
 void grpc_pollset_kick_kick(grpc_pollset_kick_state *kick_state);
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_KICK_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_H */

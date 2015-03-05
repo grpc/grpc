@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_COMPLETION_QUEUE_H__
-#define __GRPCPP_COMPLETION_QUEUE_H__
+#ifndef GRPCXX_COMPLETION_QUEUE_H
+#define GRPCXX_COMPLETION_QUEUE_H
 
 #include <grpc++/impl/client_unary_call.h>
 
@@ -106,8 +106,8 @@ class CompletionQueue {
   friend Status BlockingUnaryCall(ChannelInterface *channel,
                                   const RpcMethod &method,
                                   ClientContext *context,
-                                  const google::protobuf::Message &request,
-                                  google::protobuf::Message *result);
+                                  const grpc::protobuf::Message &request,
+                                  grpc::protobuf::Message *result);
 
   // Wraps grpc_completion_queue_pluck.
   // Cannot be mixed with calls to Next().
@@ -121,4 +121,4 @@ class CompletionQueue {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_COMPLETION_QUEUE_H__
+#endif  // GRPCXX_COMPLETION_QUEUE_H

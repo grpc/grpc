@@ -31,18 +31,18 @@
  *
  */
 
-#ifndef __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__
-#define __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__
+#ifndef GRPCXX_IMPL_RPC_SERVICE_METHOD_H
+#define GRPCXX_IMPL_RPC_SERVICE_METHOD_H
 
 #include <functional>
 #include <map>
 #include <memory>
 #include <vector>
 
+#include <grpc++/config.h>
 #include <grpc++/impl/rpc_method.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include <google/protobuf/message.h>
 
 namespace grpc {
 class ServerContext;
@@ -56,13 +56,13 @@ class MethodHandler {
   virtual ~MethodHandler() {}
   struct HandlerParameter {
     HandlerParameter(Call* c, ServerContext* context,
-                     const google::protobuf::Message* req,
-                     google::protobuf::Message* resp)
+                     const grpc::protobuf::Message* req,
+                     grpc::protobuf::Message* resp)
         : call(c), server_context(context), request(req), response(resp) {}
     Call* call;
     ServerContext* server_context;
-    const google::protobuf::Message* request;
-    google::protobuf::Message* response;
+    const grpc::protobuf::Message* request;
+    grpc::protobuf::Message* response;
   };
   virtual Status RunHandler(const HandlerParameter& param) = 0;
 };
@@ -77,7 +77,7 @@ class RpcMethodHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     // Invoke application function, cast proto messages to their actual types.
     return func_(service_, param.server_context,
                  dynamic_cast<const RequestType*>(param.request),
@@ -102,7 +102,7 @@ class ClientStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerReader<RequestType> reader(param.call, param.server_context);
     return func_(service_, param.server_context, &reader,
                  dynamic_cast<ResponseType*>(param.response));
@@ -124,7 +124,7 @@ class ServerStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerWriter<ResponseType> writer(param.call, param.server_context);
     return func_(service_, param.server_context,
                  dynamic_cast<const RequestType*>(param.request), &writer);
@@ -147,7 +147,7 @@ class BidiStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  Status RunHandler(const HandlerParameter& param) final {
+  Status RunHandler(const HandlerParameter& param) GRPC_FINAL {
     ServerReaderWriter<ResponseType, RequestType> stream(param.call,
                                                          param.server_context);
     return func_(service_, param.server_context, &stream);
@@ -165,8 +165,8 @@ class RpcServiceMethod : public RpcMethod {
   // Takes ownership of the handler and two prototype objects.
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
                    MethodHandler* handler,
-                   google::protobuf::Message* request_prototype,
-                   google::protobuf::Message* response_prototype)
+                   grpc::protobuf::Message* request_prototype,
+                   grpc::protobuf::Message* response_prototype)
       : RpcMethod(name, type),
         handler_(handler),
         request_prototype_(request_prototype),
@@ -174,17 +174,17 @@ class RpcServiceMethod : public RpcMethod {
 
   MethodHandler* handler() { return handler_.get(); }
 
-  google::protobuf::Message* AllocateRequestProto() {
+  grpc::protobuf::Message* AllocateRequestProto() {
     return request_prototype_->New();
   }
-  google::protobuf::Message* AllocateResponseProto() {
+  grpc::protobuf::Message* AllocateResponseProto() {
     return response_prototype_->New();
   }
 
  private:
   std::unique_ptr<MethodHandler> handler_;
-  std::unique_ptr<google::protobuf::Message> request_prototype_;
-  std::unique_ptr<google::protobuf::Message> response_prototype_;
+  std::unique_ptr<grpc::protobuf::Message> request_prototype_;
+  std::unique_ptr<grpc::protobuf::Message> response_prototype_;
 };
 
 // This class contains all the method information for an rpc service. It is
@@ -203,4 +203,4 @@ class RpcService {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_IMPL_RPC_SERVICE_METHOD_H__
+#endif  // GRPCXX_IMPL_RPC_SERVICE_METHOD_H

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_STATUS_H__
-#define __GRPCPP_STATUS_H__
+#ifndef GRPCXX_STATUS_H
+#define GRPCXX_STATUS_H
 
 #include <grpc++/status_code_enum.h>
 #include <grpc++/config.h>
@@ -62,4 +62,4 @@ class Status {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_STATUS_H__
+#endif  // GRPCXX_STATUS_H

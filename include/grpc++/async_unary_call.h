@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_ASYNC_UNARY_CALL_H__
-#define __GRPCPP_ASYNC_UNARY_CALL_H__
+#ifndef GRPCXX_ASYNC_UNARY_CALL_H
+#define GRPCXX_ASYNC_UNARY_CALL_H
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -45,11 +45,11 @@
 
 namespace grpc {
 template <class R>
-class ClientAsyncResponseReader final {
+class ClientAsyncResponseReader GRPC_FINAL {
  public:
   ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
-                    const google::protobuf::Message& request, void* tag)
+                    const grpc::protobuf::Message& request, void* tag)
       : context_(context),
         call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
@@ -77,9 +77,8 @@ class ClientAsyncResponseReader final {
     call_.PerformOps(&finish_buf_);
   }
 
-
  private:
-  ClientContext* context_ = nullptr;
+  ClientContext* context_;
   Call call_;
   CallOpBuffer init_buf_;
   CallOpBuffer meta_buf_;
@@ -87,7 +86,8 @@ class ClientAsyncResponseReader final {
 };
 
 template <class W>
-class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter GRPC_FINAL
+    : public ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -127,7 +127,7 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
   }
 
  private:
-  void BindCall(Call* call) override { call_ = *call; }
+  void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
 
   Call call_;
   ServerContext* ctx_;
@@ -137,4 +137,4 @@ class ServerAsyncResponseWriter final : public ServerAsyncStreamingInterface {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_ASYNC_UNARY_CALL_H__
+#endif  // GRPCXX_ASYNC_UNARY_CALL_H

@@ -31,11 +31,11 @@
  *
  */
 
-#ifndef __GRPC_TEST_UTIL_PARSE_HEXSTRING_H_
-#define __GRPC_TEST_UTIL_PARSE_HEXSTRING_H_
+#ifndef GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
+#define GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H
 
 #include <grpc/support/slice.h>
 
 gpr_slice parse_hexstring(const char *hexstring);
 
-#endif /* __GRPC_TEST_UTIL_PARSE_HEXSTRING_H_ */
+#endif  /* GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H */

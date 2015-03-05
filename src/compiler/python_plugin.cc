@@ -36,6 +36,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <tuple>
 
 #include "src/compiler/python_generator.h"
 #include <google/protobuf/compiler/code_generator.h>
@@ -56,12 +57,10 @@ using std::strlen;
 class PythonGrpcGenerator : public CodeGenerator {
  public:
   PythonGrpcGenerator() {}
-  ~PythonGrpcGenerator() override {}
+  ~PythonGrpcGenerator() {}
 
-  bool Generate(const FileDescriptor* file,
-                const string& parameter,
-                GeneratorContext* context,
-                string* error) const override {
+  bool Generate(const FileDescriptor* file, const string& parameter,
+                GeneratorContext* context, string* error) const {
     // Get output file name.
     string file_name;
     static const int proto_suffix_length = strlen(".proto");

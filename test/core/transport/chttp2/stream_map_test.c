@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
   test_empty_find();
   test_double_deletion();
 
-  while (n < 10000000) {
+  while (n < 100000) {
     test_basic_add_find(n);
     test_delete_evens_sweep(n);
     test_delete_evens_incremental(n);

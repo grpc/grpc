@@ -31,9 +31,9 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SUPPORT_THD_INTERNAL_H__
-#define __GRPC_INTERNAL_SUPPORT_THD_INTERNAL_H__
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_THD_INTERNAL_H
+#define GRPC_INTERNAL_CORE_SUPPORT_THD_INTERNAL_H
 
 /* Internal interfaces between modules within the gpr support library.  */
 
-#endif /* __GRPC_INTERNAL_SUPPORT_THD_INTERNAL_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SUPPORT_THD_INTERNAL_H */

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_BUILDER_H__
-#define __GRPCPP_SERVER_BUILDER_H__
+#ifndef GRPCXX_SERVER_BUILDER_H
+#define GRPCXX_SERVER_BUILDER_H
 
 #include <memory>
 #include <vector>
@@ -87,9 +87,9 @@ class ServerBuilder {
   std::vector<AsynchronousService*> async_services_;
   std::vector<grpc::string> ports_;
   std::shared_ptr<ServerCredentials> creds_;
-  ThreadPoolInterface* thread_pool_ = nullptr;
+  ThreadPoolInterface* thread_pool_;
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_BUILDER_H__
+#endif  // GRPCXX_SERVER_BUILDER_H

@@ -79,6 +79,7 @@
         "src/core/surface/client.h",
         "src/core/surface/completion_queue.h",
         "src/core/surface/event_string.h",
+        "src/core/surface/init.h",
         "src/core/surface/lame_client.h",
         "src/core/surface/server.h",
         "src/core/surface/surface_trace.h",
@@ -180,6 +181,7 @@
         "src/core/surface/server.c",
         "src/core/surface/server_chttp2.c",
         "src/core/surface/server_create.c",
+        "src/core/surface/surface_trace.c",
         "src/core/transport/chttp2/alpn.c",
         "src/core/transport/chttp2/bin_encoder.c",
         "src/core/transport/chttp2/frame_data.c",
@@ -329,6 +331,7 @@
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_context.c",
         "src/core/security/server_secure_chttp2.c",
+        "src/core/surface/init_secure.c",
         "src/core/surface/secure_channel_create.c",
         "src/core/surface/secure_server_create.c",
         "src/core/tsi/fake_transport_security.c",
@@ -372,6 +375,9 @@
       "name": "grpc_unsecure",
       "build": "all",
       "language": "c",
+      "src": [
+        "src/core/surface/init_unsecure.c"
+      ],
       "deps": [
         "gpr"
       ],
@@ -469,6 +475,20 @@
         "grpc++",
         "grpc",
         "gpr"
+      ]
+    },
+    {
+      "name": "qps",
+      "build": "private",
+      "language": "c++",
+      "headers": [
+        "test/cpp/qps/driver.h",
+        "test/cpp/qps/timer.h"
+      ],
+      "src": [
+        "test/cpp/qps/qpstest.proto",
+        "test/cpp/qps/driver.cc",
+        "test/cpp/qps/timer.cc"
       ]
     },
     {
@@ -572,6 +592,7 @@
     },
     {
       "name": "census_statistics_multiple_writers_circular_buffer_test",
+      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -628,6 +649,7 @@
     },
     {
       "name": "census_statistics_small_log_test",
+      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -1755,7 +1777,6 @@
       ],
       "deps": [
         "pubsub_client_lib",
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -1798,15 +1819,15 @@
       ]
     },
     {
-      "name": "qps_client",
+      "name": "qps_driver",
       "build": "test",
       "run": false,
       "language": "c++",
       "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/client.cc"
+        "test/cpp/qps/qps_driver.cc"
       ],
       "deps": [
+        "qps",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1816,15 +1837,23 @@
       ]
     },
     {
-      "name": "qps_server",
+      "name": "qps_worker",
       "build": "test",
       "run": false,
       "language": "c++",
+      "headers": [
+        "test/cpp/qps/client.h",
+        "test/cpp/qps/server.h"
+      ],
       "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/server.cc"
+        "test/cpp/qps/client_async.cc",
+        "test/cpp/qps/client_sync.cc",
+        "test/cpp/qps/server_async.cc",
+        "test/cpp/qps/server_sync.cc",
+        "test/cpp/qps/worker.cc"
       ],
       "deps": [
+        "qps",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",

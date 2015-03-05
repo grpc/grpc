@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_LOG_H__
-#define __GRPC_SUPPORT_LOG_H__
+#ifndef GRPC_SUPPORT_LOG_H
+#define GRPC_SUPPORT_LOG_H
 
 #include <stdlib.h> /* for abort() */
 #include <stdarg.h>
@@ -105,4 +105,4 @@ void gpr_set_log_function(gpr_log_func func);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_LOG_H__ */
+#endif  /* GRPC_SUPPORT_LOG_H */

@@ -119,12 +119,12 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
       break;
 
     case T_FLOAT:
-      if (interval && RFLOAT(time)->float_value < 0.0)
+      if (interval && RFLOAT_VALUE(time) < 0.0)
         rb_raise(rb_eArgError, "%s must be positive", tstr);
       else {
         double f, d;
 
-        d = modf(RFLOAT(time)->float_value, &f);
+        d = modf(RFLOAT_VALUE(time), &f);
         if (d < 0) {
           d += 1;
           f -= 1;
@@ -132,7 +132,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
         t.tv_sec = (time_t)f;
         if (f != t.tv_sec) {
           rb_raise(rb_eRangeError, "%f out of Time range",
-                   RFLOAT(time)->float_value);
+                   RFLOAT_VALUE(time));
         }
         t.tv_nsec = (time_t)(d * 1e9 + 0.5);
       }

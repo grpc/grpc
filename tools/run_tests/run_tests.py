@@ -44,17 +44,35 @@ import jobset
 import watch_dirs
 
 
+ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+os.chdir(ROOT)
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ={}):
+  def __init__(self, config, environ=None):
+    if environ is None:
+      environ = {}
     self.build_config = config
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
+    self.environ['CONFIG'] = config
 
-  def job_spec(self, binary, hash_targets):
-    return jobset.JobSpec(cmdline=[binary],
+  def job_spec(self, cmdline, hash_targets):
+    """Construct a jobset.JobSpec for a test under this config
+
+       Args:
+         cmdline:      a list of strings specifying the command line the test
+                       would like to run
+         hash_targets: either None (don't do caching of test results), or
+                       a list of strings specifying files to include in a
+                       binary hash to check if a test has changed
+                       -- if used, all artifacts needed to run the test must
+                          be listed
+    """
+    return jobset.JobSpec(cmdline=cmdline,
                           environ=self.environ,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
@@ -63,16 +81,18 @@ class SimpleConfig(object):
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
 class ValgrindConfig(object):
 
-  def __init__(self, config, tool, args=[]):
+  def __init__(self, config, tool, args=None):
+    if args is None:
+      args = []
     self.build_config = config
     self.tool = tool
     self.args = args
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
-  def job_spec(self, binary, hash_targets):
+  def job_spec(self, cmdline, hash_targets):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
-                          self.args + [binary],
+                          self.args + cmdline,
                           shortname='valgrind %s' % binary,
                           hash_targets=None)
 
@@ -83,15 +103,15 @@ class CLanguage(object):
     self.make_target = make_target
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
-      self.binaries = [tgt['name']
-                       for tgt in js
-                       if tgt['language'] == test_lang]
+      self.binaries = [tgt for tgt in js if tgt['language'] == test_lang]
 
-  def test_specs(self, config):
+  def test_specs(self, config, travis):
     out = []
-    for name in self.binaries:
-      binary = 'bins/%s/%s' % (config.build_config, name)
-      out.append(config.job_spec(binary, [binary]))
+    for target in self.binaries:
+      if travis and target['flaky']:
+        continue
+      binary = 'bins/%s/%s' % (config.build_config, target['name'])
+      out.append(config.job_spec([binary], [binary]))
     return out
 
   def make_targets(self):
@@ -100,11 +120,17 @@ class CLanguage(object):
   def build_steps(self):
     return []
 
+  def supports_multi_config(self):
+    return True
+
+  def __str__(self):
+    return self.make_target
+
 
 class NodeLanguage(object):
 
-  def test_specs(self, config):
-    return [config.job_spec('tools/run_tests/run_node.sh', None)]
+  def test_specs(self, config, travis):
+    return [config.job_spec(['tools/run_tests/run_node.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
@@ -112,11 +138,17 @@ class NodeLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'node'
+
 
 class PhpLanguage(object):
 
-  def test_specs(self, config):
-    return [config.job_spec('src/php/bin/run_tests.sh', None)]
+  def test_specs(self, config, travis):
+    return [config.job_spec(['src/php/bin/run_tests.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
@@ -124,18 +156,68 @@ class PhpLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'php'
+
 
 class PythonLanguage(object):
 
-  def test_specs(self, config):
-    return [config.job_spec('tools/run_tests/run_python.sh', None)]
+  def __init__(self):
+    with open('tools/run_tests/python_tests.json') as f:
+      self._tests = json.load(f)
+
+  def test_specs(self, config, travis):
+    return [config.job_spec(['tools/run_tests/run_python.sh', test], None)
+            for test in self._tests]
 
   def make_targets(self):
-    return[]
+    return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_python.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'python'
+
+class RubyLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None)]
+
+  def make_targets(self):
+    return ['static_c']
+
+  def build_steps(self):
+    return [['tools/run_tests/build_ruby.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'ruby'
+
+class CSharpLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec('tools/run_tests/run_csharp.sh', None)]
+
+  def make_targets(self):
+    return ['grpc_csharp_ext']
+
+  def build_steps(self):
+    return [['tools/run_tests/build_csharp.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'csharp'
 
 # different configurations we can run under
 _CONFIGS = {
@@ -160,6 +242,8 @@ _LANGUAGES = {
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
+    'ruby': RubyLanguage(),
+    'csharp': CSharpLanguage()
     }
 
 # parse command line
@@ -171,7 +255,12 @@ argp.add_argument('-c', '--config',
 argp.add_argument('-n', '--runs_per_test', default=1, type=int)
 argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('-j', '--jobs', default=1000, type=int)
+argp.add_argument('-s', '--slowdown', default=1.0, type=float)
 argp.add_argument('-f', '--forever',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('-t', '--travis',
                   default=False,
                   action='store_const',
                   const=True)
@@ -194,20 +283,29 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 
 make_targets = []
 languages = set(_LANGUAGES[l] for l in args.language)
+
+if len(build_configs) > 1:
+  for language in languages:
+    if not language.supports_multi_config():
+      print language, 'does not support multiple build configurations'
+      sys.exit(1)
+
 build_steps = [jobset.JobSpec(['make',
                                '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
                                'CONFIG=%s' % cfg] + list(set(
                                    itertools.chain.from_iterable(
                                        l.make_targets() for l in languages))))
                for cfg in build_configs] + list(set(
-                   jobset.JobSpec(cmdline)
+                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                   for cfg in build_configs
                    for l in languages
                    for cmdline in l.build_steps()))
 one_run = set(
     spec
     for config in run_configs
     for language in args.language
-    for spec in _LANGUAGES[language].test_specs(config)
+    for spec in _LANGUAGES[language].test_specs(config, args.travis)
     if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test
@@ -251,17 +349,18 @@ class TestCache(object):
         self.parse(json.loads(f.read()))
 
 
-def _build_and_run(check_cancelled, newline_on_success, cache):
+def _build_and_run(check_cancelled, newline_on_success, travis, cache):
   """Do one pass of building & running tests."""
   # build latest sequentially
-  if not jobset.run(build_steps, maxjobs=1):
+  if not jobset.run(build_steps, maxjobs=1,
+                    newline_on_success=newline_on_success, travis=travis):
     return 1
 
   # run all the tests
   all_runs = itertools.chain.from_iterable(
       itertools.repeat(one_run, runs_per_test))
   if not jobset.run(all_runs, check_cancelled,
-                    newline_on_success=newline_on_success,
+                    newline_on_success=newline_on_success, travis=travis,
                     maxjobs=min(args.jobs, min(c.maxjobs for c in run_configs)),
                     cache=cache):
     return 2
@@ -292,6 +391,7 @@ if forever:
 else:
   result = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
+                          travis=args.travis,
                           cache=test_cache)
   if result == 0:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)

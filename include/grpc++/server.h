@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_H__
-#define __GRPCPP_SERVER_H__
+#ifndef GRPCXX_SERVER_H
+#define GRPCXX_SERVER_H
 
 #include <condition_variable>
 #include <list>
@@ -47,12 +47,6 @@
 
 struct grpc_server;
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
 namespace grpc {
 class AsynchronousService;
 class RpcService;
@@ -61,8 +55,8 @@ class ServerCredentials;
 class ThreadPoolInterface;
 
 // Currently it only supports handling rpcs in a single thread.
-class Server final : private CallHook,
-                     private AsynchronousService::DispatchImpl {
+class Server GRPC_FINAL : private CallHook,
+                          private AsynchronousService::DispatchImpl {
  public:
   ~Server();
 
@@ -97,11 +91,11 @@ class Server final : private CallHook,
   void RunRpc();
   void ScheduleCallback();
 
-  void PerformOpsOnCall(CallOpBuffer* ops, Call* call) override;
+  void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;
 
   // DispatchImpl
   void RequestAsyncCall(void* registered_method, ServerContext* context,
-                        ::google::protobuf::Message* request,
+                        grpc::protobuf::Message* request,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* cq, void* tag);
 
@@ -130,4 +124,4 @@ class Server final : private CallHook,
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_H__
+#endif  // GRPCXX_SERVER_H

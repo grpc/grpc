@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_RUBY_GENERATOR_MAP_INL_H_
-#define NET_GRPC_COMPILER_RUBY_GENERATOR_MAP_INL_H_
+#ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_MAP_INL_H
+#define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_MAP_INL_H
 
 #include <iostream>
 #include <initializer_list>
@@ -69,4 +69,4 @@ inline std::map<std::string, std::string> ListToDict(
 
 }  // namespace grpc_ruby_generator
 
-#endif  // NET_GRPC_COMPILER_RUBY_GENERATOR_MAP_INL_H_
+#endif  // GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_MAP_INL_H

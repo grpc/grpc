@@ -51,7 +51,7 @@ using v8::String;
 
 void InitStatusConstants(Handle<Object> exports) {
   NanScope();
-  Handle<Object> status = Object::New();
+  Handle<Object> status = NanNew<Object>();
   exports->Set(NanNew("status"), status);
   Handle<Value> OK(NanNew<Uint32, uint32_t>(GRPC_STATUS_OK));
   status->Set(NanNew("OK"), OK);
@@ -100,7 +100,7 @@ void InitStatusConstants(Handle<Object> exports) {
 
 void InitCallErrorConstants(Handle<Object> exports) {
   NanScope();
-  Handle<Object> call_error = Object::New();
+  Handle<Object> call_error = NanNew<Object>();
   exports->Set(NanNew("callError"), call_error);
   Handle<Value> OK(NanNew<Uint32, uint32_t>(GRPC_CALL_OK));
   call_error->Set(NanNew("OK"), OK);
@@ -131,7 +131,7 @@ void InitCallErrorConstants(Handle<Object> exports) {
 
 void InitOpTypeConstants(Handle<Object> exports) {
   NanScope();
-  Handle<Object> op_type = Object::New();
+  Handle<Object> op_type = NanNew<Object>();
   exports->Set(NanNew("opType"), op_type);
   Handle<Value> SEND_INITIAL_METADATA(
       NanNew<Uint32, uint32_t>(GRPC_OP_SEND_INITIAL_METADATA));

@@ -37,3 +37,19 @@ Testing
 ```
 $ tools/run_tests/run_python.sh
 ```
+
+
+Installing
+-----------------------
+
+- [Install the gRPC core](https://github.com/grpc/grpc/blob/master/INSTALL)
+
+- Install gRPC Python's dependencies
+```
+$ pip install -r requirements.txt
+```
+
+- Install gRPC Python
+```
+$ pip install src/python/src
+```

@@ -31,21 +31,16 @@
  *
  */
 
-#ifndef __GRPCPP_CALL_H__
-#define __GRPCPP_CALL_H__
+#ifndef GRPCXX_IMPL_CALL_H
+#define GRPCXX_IMPL_CALL_H
 
 #include <grpc/grpc.h>
+#include <grpc++/config.h>
 #include <grpc++/status.h>
 #include <grpc++/completion_queue.h>
 
 #include <memory>
 #include <map>
-
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
 
 struct grpc_call;
 struct grpc_op;
@@ -56,7 +51,7 @@ class Call;
 
 class CallOpBuffer : public CompletionQueueTag {
  public:
-  CallOpBuffer() : return_tag_(this) {}
+  CallOpBuffer();
   ~CallOpBuffer();
 
   void Reset(void *next_return_tag);
@@ -66,8 +61,8 @@ class CallOpBuffer : public CompletionQueueTag {
       std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendInitialMetadata(ClientContext *ctx);
   void AddRecvInitialMetadata(ClientContext *ctx);
-  void AddSendMessage(const google::protobuf::Message &message);
-  void AddRecvMessage(google::protobuf::Message *message);
+  void AddSendMessage(const grpc::protobuf::Message &message);
+  void AddRecvMessage(grpc::protobuf::Message *message);
   void AddClientSendClose();
   void AddClientRecvStatus(ClientContext *ctx, Status *status);
   void AddServerSendStatus(std::multimap<grpc::string, grpc::string> *metadata,
@@ -80,40 +75,40 @@ class CallOpBuffer : public CompletionQueueTag {
   void FillOps(grpc_op *ops, size_t *nops);
 
   // Called by completion queue just prior to returning from Next() or Pluck()
-  bool FinalizeResult(void **tag, bool *status) override;
+  bool FinalizeResult(void **tag, bool *status) GRPC_OVERRIDE;
 
-  bool got_message = false;
+  bool got_message;
 
  private:
-  void *return_tag_ = nullptr;
+  void *return_tag_;
   // Send initial metadata
-  bool send_initial_metadata_ = false;
-  size_t initial_metadata_count_ = 0;
-  grpc_metadata *initial_metadata_ = nullptr;
+  bool send_initial_metadata_;
+  size_t initial_metadata_count_;
+  grpc_metadata *initial_metadata_;
   // Recv initial metadta
-  std::multimap<grpc::string, grpc::string> *recv_initial_metadata_ = nullptr;
-  grpc_metadata_array recv_initial_metadata_arr_ = {0, 0, nullptr};
+  std::multimap<grpc::string, grpc::string> *recv_initial_metadata_;
+  grpc_metadata_array recv_initial_metadata_arr_;
   // Send message
-  const google::protobuf::Message *send_message_ = nullptr;
-  grpc_byte_buffer *send_message_buf_ = nullptr;
+  const grpc::protobuf::Message *send_message_;
+  grpc_byte_buffer *send_message_buf_;
   // Recv message
-  google::protobuf::Message *recv_message_ = nullptr;
-  grpc_byte_buffer *recv_message_buf_ = nullptr;
+  grpc::protobuf::Message *recv_message_;
+  grpc_byte_buffer *recv_message_buf_;
   // Client send close
-  bool client_send_close_ = false;
+  bool client_send_close_;
   // Client recv status
-  std::multimap<grpc::string, grpc::string> *recv_trailing_metadata_ = nullptr;
-  Status *recv_status_ = nullptr;
-  grpc_metadata_array recv_trailing_metadata_arr_ = {0, 0, nullptr};
-  grpc_status_code status_code_ = GRPC_STATUS_OK;
-  char *status_details_ = nullptr;
-  size_t status_details_capacity_ = 0;
+  std::multimap<grpc::string, grpc::string> *recv_trailing_metadata_;
+  Status *recv_status_;
+  grpc_metadata_array recv_trailing_metadata_arr_;
+  grpc_status_code status_code_;
+  char *status_details_;
+  size_t status_details_capacity_;
   // Server send status
-  const Status *send_status_ = nullptr;
-  size_t trailing_metadata_count_ = 0;
-  grpc_metadata *trailing_metadata_ = nullptr;
+  const Status *send_status_;
+  size_t trailing_metadata_count_;
+  grpc_metadata *trailing_metadata_;
   int cancelled_buf_;
-  bool *recv_closed_ = nullptr;
+  bool *recv_closed_;
 };
 
 // Channel and Server implement this to allow them to hook performing ops
@@ -124,7 +119,7 @@ class CallHook {
 };
 
 // Straightforward wrapping of the C call object
-class Call final {
+class Call GRPC_FINAL {
  public:
   /* call is owned by the caller */
   Call(grpc_call *call, CallHook *call_hook_, CompletionQueue *cq);
@@ -142,4 +137,4 @@ class Call final {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CALL_INTERFACE_H__
+#endif  // GRPCXX_IMPL_CALL_H

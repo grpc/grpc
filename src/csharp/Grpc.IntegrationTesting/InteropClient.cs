@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Google.ProtocolBuffers;
@@ -44,27 +45,27 @@ using grpc.testing;
 
 namespace Grpc.IntegrationTesting
 {
-    class Client
+    public class InteropClient
     {
         private class ClientOptions
         {
             public bool help;
-            public string serverHost;
-            public string serverHostOverride;
+            public string serverHost= "127.0.0.1";
+            public string serverHostOverride = "foo.test.google.fr";
             public int? serverPort;
-            public string testCase;
+            public string testCase = "large_unary";
             public bool useTls;
             public bool useTestCa;
         }
 
         ClientOptions options;
 
-        private Client(ClientOptions options)
+        private InteropClient(ClientOptions options)
         {
             this.options = options;
         }
 
-        public static void Main(string[] args)
+        public static void Run(string[] args)
         {
             Console.WriteLine("gRPC C# interop testing client");
             ClientOptions options = ParseArguments(args);
@@ -89,7 +90,7 @@ namespace Grpc.IntegrationTesting
                 Environment.Exit(1);
             }
 
-            var interopClient = new Client(options);
+            var interopClient = new InteropClient(options);
             interopClient.Run();
         }
 
@@ -98,10 +99,32 @@ namespace Grpc.IntegrationTesting
             GrpcEnvironment.Initialize();
 
             string addr = string.Format("{0}:{1}", options.serverHost, options.serverPort);
-            using (Channel channel = new Channel(addr))
+
+            Credentials credentials = null;
+            if (options.useTls)
+            {
+                string caPath = "data/ca.pem";  // Default testing CA
+                if (!options.useTestCa)
+                {
+                    caPath = Environment.GetEnvironmentVariable("SSL_CERT_FILE");
+                    if (string.IsNullOrEmpty(caPath))
+                    {
+                        throw new ArgumentException("CA path environment variable is not set.");
+                    }
+                }
+                credentials = new SslCredentials(File.ReadAllText(caPath));
+            }
+
+            ChannelArgs channelArgs = null;
+            if (!string.IsNullOrEmpty(options.serverHostOverride))
+            {
+                channelArgs = ChannelArgs.NewBuilder()
+                    .AddString(ChannelArgs.SslTargetNameOverrideKey, options.serverHostOverride).Build();
+            }
+
+            using (Channel channel = new Channel(addr, credentials, channelArgs))
             {
                 TestServiceGrpc.ITestServiceClient client = new TestServiceGrpc.TestServiceClientStub(channel);
-
                 RunTestCase(options.testCase, client);
             }
 

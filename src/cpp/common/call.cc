@@ -31,7 +31,6 @@
  *
  */
 
-#include <google/protobuf/message.h>
 #include <grpc/support/alloc.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/client_context.h>
@@ -40,6 +39,30 @@
 #include "src/cpp/proto/proto_utils.h"
 
 namespace grpc {
+
+CallOpBuffer::CallOpBuffer()
+    : return_tag_(this),
+      send_initial_metadata_(false),
+      initial_metadata_count_(0),
+      initial_metadata_(nullptr),
+      recv_initial_metadata_(nullptr),
+      recv_initial_metadata_arr_{0, 0, nullptr},
+      send_message_(nullptr),
+      send_message_buf_(nullptr),
+      recv_message_(nullptr),
+      recv_message_buf_(nullptr),
+      client_send_close_(false),
+      recv_trailing_metadata_(nullptr),
+      recv_status_(nullptr),
+      recv_trailing_metadata_arr_{0, 0, nullptr},
+      status_code_(GRPC_STATUS_OK),
+      status_details_(nullptr),
+      status_details_capacity_(0),
+      send_status_(nullptr),
+      trailing_metadata_count_(0),
+      trailing_metadata_(nullptr),
+      cancelled_buf_(0),
+      recv_closed_(nullptr) {}
 
 void CallOpBuffer::Reset(void* next_return_tag) {
   return_tag_ = next_return_tag;
@@ -139,11 +162,11 @@ void CallOpBuffer::AddSendInitialMetadata(ClientContext* ctx) {
   AddSendInitialMetadata(&ctx->send_initial_metadata_);
 }
 
-void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
+void CallOpBuffer::AddSendMessage(const grpc::protobuf::Message& message) {
   send_message_ = &message;
 }
 
-void CallOpBuffer::AddRecvMessage(google::protobuf::Message* message) {
+void CallOpBuffer::AddRecvMessage(grpc::protobuf::Message* message) {
   recv_message_ = message;
   recv_message_->Clear();
 }

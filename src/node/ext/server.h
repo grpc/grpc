@@ -67,7 +67,7 @@ class Server : public ::node::ObjectWrap {
   static NAN_METHOD(AddSecureHttp2Port);
   static NAN_METHOD(Start);
   static NAN_METHOD(Shutdown);
-  static v8::Persistent<v8::Function> constructor;
+  static NanCallback *constructor;
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_server *wrapped_server;

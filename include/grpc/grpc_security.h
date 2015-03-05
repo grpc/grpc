@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SECURITY_H_
-#define GRPC_SECURITY_H_
+#ifndef GRPC_GRPC_SECURITY_H
+#define GRPC_GRPC_SECURITY_H
 
 #include "grpc.h"
 #include "status.h"
@@ -185,4 +185,4 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr);
 }
 #endif
 
-#endif /* GRPC_SECURITY_H_ */
+#endif  /* GRPC_GRPC_SECURITY_H */

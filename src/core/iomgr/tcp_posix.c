@@ -63,6 +63,8 @@ typedef struct grpc_tcp_slice_state {
   int memory_owned;        /* True if slices array is owned */
 } grpc_tcp_slice_state;
 
+int grpc_tcp_trace = 0;
+
 static void slice_state_init(grpc_tcp_slice_state *state, gpr_slice *slices,
                              size_t nslices, size_t valid_slices) {
   state->slices = slices;
@@ -294,7 +296,7 @@ static void call_read_cb(grpc_tcp *tcp, gpr_slice *slices, size_t nslices,
                          grpc_endpoint_cb_status status) {
   grpc_endpoint_read_cb cb = tcp->read_cb;
 
-  if (grpc_trace_bits & GRPC_TRACE_TCP) {
+  if (grpc_tcp_trace) {
     size_t i;
     gpr_log(GPR_DEBUG, "read: status=%d", status);
     for (i = 0; i < nslices; i++) {
@@ -495,7 +497,7 @@ static grpc_endpoint_write_status grpc_tcp_write(grpc_endpoint *ep,
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_endpoint_write_status status;
 
-  if (grpc_trace_bits & GRPC_TRACE_TCP) {
+  if (grpc_tcp_trace) {
     size_t i;
 
     for (i = 0; i < nslices; i++) {

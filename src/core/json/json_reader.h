@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SRC_CORE_JSON_JSON_READER_H__
-#define __GRPC_SRC_CORE_JSON_JSON_READER_H__
+#ifndef GRPC_INTERNAL_CORE_JSON_JSON_READER_H
+#define GRPC_INTERNAL_CORE_JSON_JSON_READER_H
 
 #include <grpc/support/port_platform.h>
 #include "src/core/json/json_common.h"
@@ -157,4 +157,4 @@ void grpc_json_reader_init(grpc_json_reader* reader,
  */
 int grpc_json_reader_is_complete(grpc_json_reader* reader);
 
-#endif /* __GRPC_SRC_CORE_JSON_JSON_READER_H__ */
+#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_READER_H */

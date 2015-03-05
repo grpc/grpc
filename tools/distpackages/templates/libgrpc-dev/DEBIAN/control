@@ -1,5 +1,5 @@
 Package: libgrpc-dev
-Version: 0.8.0
+Version: 0.5.0
 Architecture: amd64
 Maintainer: Jan Tattermusch <jtattermusch@google.com>
 Depends: libgrpc, libc6-dev | libc-dev

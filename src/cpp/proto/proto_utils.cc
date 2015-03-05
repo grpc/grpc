@@ -36,11 +36,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/slice.h>
-#include <google/protobuf/message.h>
 
 namespace grpc {
 
-bool SerializeProto(const google::protobuf::Message &msg,
+bool SerializeProto(const grpc::protobuf::Message &msg,
                     grpc_byte_buffer **bp) {
   grpc::string msg_str;
   bool success = msg.SerializeToString(&msg_str);
@@ -54,7 +53,7 @@ bool SerializeProto(const google::protobuf::Message &msg,
 }
 
 bool DeserializeProto(grpc_byte_buffer *buffer,
-                      google::protobuf::Message *msg) {
+                      grpc::protobuf::Message *msg) {
   grpc::string msg_string;
   grpc_byte_buffer_reader *reader = grpc_byte_buffer_reader_create(buffer);
   gpr_slice slice;
