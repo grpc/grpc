@@ -53,6 +53,13 @@ static grpc_transport_setup_result setup_transport(void *server,
 }
 
 static void new_transport(void *server, grpc_endpoint *tcp) {
+  /*
+   * Beware that the call to grpc_create_chttp2_transport() has to happen before
+   * grpc_tcp_server_destroy(). This is fine here, but similar code
+   * asynchronously doing a handshake instead of calling grpc_tcp_server_start()
+   * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
+   * case.
+   */
   grpc_create_chttp2_transport(setup_transport, server,
                                grpc_server_get_channel_args(server), tcp, NULL,
                                0, grpc_mdctx_create(), 0);
