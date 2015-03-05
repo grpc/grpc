@@ -31,24 +31,63 @@
  *
  */
 
-#include "test/core/util/grpc_profiler.h"
+#include <cassert>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <vector>
+#include <sstream>
 
-#if GRPC_HAVE_PERFTOOLS
-#include <gperftools/profiler.h>
+#include <sys/signal.h>
 
-void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
-
-void grpc_profiler_stop() { ProfilerStop(); }
-#else
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
+#include <grpc/support/host_port.h>
+#include <gflags/gflags.h>
+#include <grpc++/client_context.h>
+#include <grpc++/status.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include "test/core/util/grpc_profiler.h"
+#include "test/cpp/util/create_test_channel.h"
+#include "test/cpp/qps/client.h"
+#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/histogram.h"
+#include "test/cpp/qps/timer.h"
 
-void grpc_profiler_start(const char *filename) {
-  gpr_log(GPR_DEBUG,
-          "You do not have google-perftools installed, profiling is disabled [for %s]", filename);
-  gpr_log(GPR_DEBUG,
-          "To install on ubuntu: sudo apt-get install google-perftools "
-          "libgoogle-perftools-dev");
+namespace grpc {
+namespace testing {
+
+class SynchronousClient GRPC_FINAL : public Client {
+ public:
+  SynchronousClient(const ClientConfig& config) : Client(config) {
+    size_t num_threads =
+        config.outstanding_rpcs_per_channel() * config.client_channels();
+    responses_.resize(num_threads);
+    StartThreads(num_threads);
+  }
+
+  ~SynchronousClient() { EndThreads(); }
+
+  void ThreadFunc(Histogram* histogram, size_t thread_idx) {
+    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    double start = Timer::Now();
+    grpc::ClientContext context;
+    grpc::Status s =
+        stub->UnaryCall(&context, request_, &responses_[thread_idx]);
+    histogram->Add((Timer::Now() - start) * 1e9);
+  }
+
+ private:
+  std::vector<SimpleResponse> responses_;
+};
+
+std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config) {
+  return std::unique_ptr<Client>(new SynchronousClient(config));
 }
 
-void grpc_profiler_stop(void) {}
-#endif
+}  // namespace testing
+}  // namespace grpc

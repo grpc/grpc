@@ -31,49 +31,55 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_SERVER_H_
-#define NET_GRPC_NODE_SERVER_H_
+#ifndef TEST_QPS_HISTOGRAM_H
+#define TEST_QPS_HISTOGRAM_H
 
-#include <node.h>
-#include <nan.h>
-#include "grpc/grpc.h"
+#include <grpc/support/histogram.h>
+#include "test/cpp/qps/qpstest.pb.h"
 
 namespace grpc {
-namespace node {
+namespace testing {
 
-/* Wraps grpc_server as a JavaScript object. Provides a constructor
-   and wrapper methods for grpc_server_create, grpc_server_request_call,
-   grpc_server_add_http2_port, and grpc_server_start. */
-class Server : public ::node::ObjectWrap {
+class Histogram {
  public:
-  /* Initializes the Server class and exposes the constructor and
-     wrapper methods to JavaScript */
-  static void Init(v8::Handle<v8::Object> exports);
-  /* Tests whether the given value was constructed by this class's
-     JavaScript constructor */
-  static bool HasInstance(v8::Handle<v8::Value> val);
+  Histogram() : impl_(gpr_histogram_create(0.01, 60e9)) {}
+  ~Histogram() {
+    if (impl_) gpr_histogram_destroy(impl_);
+  }
+  Histogram(Histogram&& other) : impl_(other.impl_) { other.impl_ = nullptr; }
+
+  void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
+  void Add(double value) { gpr_histogram_add(impl_, value); }
+  double Percentile(double pctile) {
+    return gpr_histogram_percentile(impl_, pctile);
+  }
+  double Count() { return gpr_histogram_count(impl_); }
+  void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
+  void FillProto(HistogramData* p) {
+    size_t n;
+    const auto* data = gpr_histogram_get_contents(impl_, &n);
+    for (size_t i = 0; i < n; i++) {
+      p->add_bucket(data[i]);
+    }
+    p->set_min_seen(gpr_histogram_minimum(impl_));
+    p->set_max_seen(gpr_histogram_maximum(impl_));
+    p->set_sum(gpr_histogram_sum(impl_));
+    p->set_sum_of_squares(gpr_histogram_sum_of_squares(impl_));
+    p->set_count(gpr_histogram_count(impl_));
+  }
+  void MergeProto(const HistogramData& p) {
+    gpr_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(),
+                                 p.min_seen(), p.max_seen(), p.sum(),
+                                 p.sum_of_squares(), p.count());
+  }
 
  private:
-  explicit Server(grpc_server *server);
-  ~Server();
+  Histogram(const Histogram&);
+  Histogram& operator=(const Histogram&);
 
-  // Prevent copying
-  Server(const Server &);
-  Server &operator=(const Server &);
-
-  static NAN_METHOD(New);
-  static NAN_METHOD(RequestCall);
-  static NAN_METHOD(AddHttp2Port);
-  static NAN_METHOD(AddSecureHttp2Port);
-  static NAN_METHOD(Start);
-  static NAN_METHOD(Shutdown);
-  static NanCallback *constructor;
-  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
-
-  grpc_server *wrapped_server;
+  gpr_histogram* impl_;
 };
+}
+}
 
-}  // namespace node
-}  // namespace grpc
-
-#endif  // NET_GRPC_NODE_SERVER_H_
+#endif /* TEST_QPS_HISTOGRAM_H */

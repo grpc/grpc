@@ -31,49 +31,54 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_SERVER_H_
-#define NET_GRPC_NODE_SERVER_H_
+#ifndef TEST_QPS_SERVER_H
+#define TEST_QPS_SERVER_H
 
-#include <node.h>
-#include <nan.h>
-#include "grpc/grpc.h"
+#include "test/cpp/qps/timer.h"
+#include "test/cpp/qps/qpstest.pb.h"
 
 namespace grpc {
-namespace node {
+namespace testing {
 
-/* Wraps grpc_server as a JavaScript object. Provides a constructor
-   and wrapper methods for grpc_server_create, grpc_server_request_call,
-   grpc_server_add_http2_port, and grpc_server_start. */
-class Server : public ::node::ObjectWrap {
+class Server {
  public:
-  /* Initializes the Server class and exposes the constructor and
-     wrapper methods to JavaScript */
-  static void Init(v8::Handle<v8::Object> exports);
-  /* Tests whether the given value was constructed by this class's
-     JavaScript constructor */
-  static bool HasInstance(v8::Handle<v8::Value> val);
+  Server() : timer_(new Timer) {}
+  virtual ~Server() {}
+
+  ServerStats Mark() {
+    std::unique_ptr<Timer> timer(new Timer);
+    timer.swap(timer_);
+
+    auto timer_result = timer->Mark();
+
+    ServerStats stats;
+    stats.set_time_elapsed(timer_result.wall);
+    stats.set_time_system(timer_result.system);
+    stats.set_time_user(timer_result.user);
+    return stats;
+  }
+
+  static bool SetPayload(PayloadType type, int size, Payload* payload) {
+    PayloadType response_type = type;
+    // TODO(yangg): Support UNCOMPRESSABLE payload.
+    if (type != PayloadType::COMPRESSABLE) {
+      return false;
+    }
+    payload->set_type(response_type);
+    std::unique_ptr<char[]> body(new char[size]());
+    payload->set_body(body.get(), size);
+    return true;
+  }
 
  private:
-  explicit Server(grpc_server *server);
-  ~Server();
-
-  // Prevent copying
-  Server(const Server &);
-  Server &operator=(const Server &);
-
-  static NAN_METHOD(New);
-  static NAN_METHOD(RequestCall);
-  static NAN_METHOD(AddHttp2Port);
-  static NAN_METHOD(AddSecureHttp2Port);
-  static NAN_METHOD(Start);
-  static NAN_METHOD(Shutdown);
-  static NanCallback *constructor;
-  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
-
-  grpc_server *wrapped_server;
+  std::unique_ptr<Timer> timer_;
 };
 
-}  // namespace node
+std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config,
+                                                int port);
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config, int port);
+
+}  // namespace testing
 }  // namespace grpc
 
-#endif  // NET_GRPC_NODE_SERVER_H_
+#endif

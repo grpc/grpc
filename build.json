@@ -503,6 +503,20 @@
       ]
     },
     {
+      "name": "qps",
+      "build": "private",
+      "language": "c++",
+      "headers": [
+        "test/cpp/qps/driver.h",
+        "test/cpp/qps/timer.h"
+      ],
+      "src": [
+        "test/cpp/qps/qpstest.proto",
+        "test/cpp/qps/driver.cc",
+        "test/cpp/qps/timer.cc"
+      ]
+    },
+    {
       "name": "grpc_csharp_ext",
       "build": "all",
       "language": "csharp",
@@ -1830,15 +1844,15 @@
       ]
     },
     {
-      "name": "qps_client",
+      "name": "qps_driver",
       "build": "test",
       "run": false,
       "language": "c++",
       "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/client.cc"
+        "test/cpp/qps/qps_driver.cc"
       ],
       "deps": [
+        "qps",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1848,51 +1862,23 @@
       ]
     },
     {
-      "name": "qps_client_async",
+      "name": "qps_worker",
       "build": "test",
       "run": false,
       "language": "c++",
+      "headers": [
+        "test/cpp/qps/client.h",
+        "test/cpp/qps/server.h"
+      ],
       "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/client_async.cc"
+        "test/cpp/qps/client_async.cc",
+        "test/cpp/qps/client_sync.cc",
+        "test/cpp/qps/server_async.cc",
+        "test/cpp/qps/server_sync.cc",
+        "test/cpp/qps/worker.cc"
       ],
       "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "qps_server",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/server.cc"
-      ],
-      "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "qps_server_async",
-      "build": "test",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/server_async.cc"
-      ],
-      "deps": [
+        "qps",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",

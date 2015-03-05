@@ -44,7 +44,6 @@
 namespace grpc {
 namespace node {
 
-using ::node::Buffer;
 using v8::Context;
 using v8::Function;
 using v8::Handle;
@@ -54,8 +53,8 @@ using v8::Value;
 
 grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
   NanScope();
-  int length = Buffer::Length(buffer);
-  char *data = Buffer::Data(buffer);
+  int length = ::node::Buffer::Length(buffer);
+  char *data = ::node::Buffer::Data(buffer);
   gpr_slice slice = gpr_slice_malloc(length);
   memcpy(GPR_SLICE_START_PTR(slice), data, length);
   grpc_byte_buffer *byte_buffer(grpc_byte_buffer_create(&slice, 1));
@@ -66,7 +65,7 @@ grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
 Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   NanEscapableScope();
   if (buffer == NULL) {
-    NanReturnNull();
+    return NanNull();
   }
   size_t length = grpc_byte_buffer_length(buffer);
   char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));
@@ -82,12 +81,14 @@ Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
 
 Handle<Value> MakeFastBuffer(Handle<Value> slowBuffer) {
   NanEscapableScope();
-  Handle<Object> globalObj = Context::GetCurrent()->Global();
+  Handle<Object> globalObj = NanGetCurrentContext()->Global();
   Handle<Function> bufferConstructor = Handle<Function>::Cast(
       globalObj->Get(NanNew("Buffer")));
-  Handle<Value> consArgs[3] = { slowBuffer,
-                                NanNew<Number>(Buffer::Length(slowBuffer)),
-                                NanNew<Number>(0) };
+  Handle<Value> consArgs[3] = {
+    slowBuffer,
+    NanNew<Number>(::node::Buffer::Length(slowBuffer)),
+    NanNew<Number>(0)
+  };
   Handle<Object> fastBuffer = bufferConstructor->NewInstance(3, consArgs);
   return NanEscapeScope(fastBuffer);
 }

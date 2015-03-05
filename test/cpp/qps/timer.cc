@@ -31,49 +31,41 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_SERVER_H_
-#define NET_GRPC_NODE_SERVER_H_
+#include "test/cpp/qps/timer.h"
 
-#include <node.h>
-#include <nan.h>
-#include "grpc/grpc.h"
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <grpc/support/time.h>
 
-namespace grpc {
-namespace node {
+Timer::Timer() : start_(Sample()) {}
 
-/* Wraps grpc_server as a JavaScript object. Provides a constructor
-   and wrapper methods for grpc_server_create, grpc_server_request_call,
-   grpc_server_add_http2_port, and grpc_server_start. */
-class Server : public ::node::ObjectWrap {
- public:
-  /* Initializes the Server class and exposes the constructor and
-     wrapper methods to JavaScript */
-  static void Init(v8::Handle<v8::Object> exports);
-  /* Tests whether the given value was constructed by this class's
-     JavaScript constructor */
-  static bool HasInstance(v8::Handle<v8::Value> val);
+double Timer::Now() {
+  auto ts = gpr_now();
+  return ts.tv_sec + 1e-9 * ts.tv_nsec;
+}
 
- private:
-  explicit Server(grpc_server *server);
-  ~Server();
+static double time_double(struct timeval* tv) {
+  return tv->tv_sec + 1e-6 * tv->tv_usec;
+}
 
-  // Prevent copying
-  Server(const Server &);
-  Server &operator=(const Server &);
+Timer::Result Timer::Sample() {
+  struct rusage usage;
+  struct timeval tv;
+  gettimeofday(&tv, nullptr);
+  getrusage(RUSAGE_SELF, &usage);
 
-  static NAN_METHOD(New);
-  static NAN_METHOD(RequestCall);
-  static NAN_METHOD(AddHttp2Port);
-  static NAN_METHOD(AddSecureHttp2Port);
-  static NAN_METHOD(Start);
-  static NAN_METHOD(Shutdown);
-  static NanCallback *constructor;
-  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
+  Result r;
+  r.wall = time_double(&tv);
+  r.user = time_double(&usage.ru_utime);
+  r.system = time_double(&usage.ru_stime);
+  return r;
+}
 
-  grpc_server *wrapped_server;
-};
-
-}  // namespace node
-}  // namespace grpc
-
-#endif  // NET_GRPC_NODE_SERVER_H_
+Timer::Result Timer::Mark() {
+  Result s = Sample();
+  Result r;
+  r.wall = s.wall - start_.wall;
+  r.user = s.user - start_.user;
+  r.system = s.system - start_.system;
+  return r;
+}
