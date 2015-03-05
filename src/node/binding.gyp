@@ -24,7 +24,9 @@
       'link_settings': {
         'libraries': [
           '-lrt',
-          '-lpthread'
+          '-lpthread',
+          '-lgrpc',
+          '-lgpr'
         ],
       },
       "target_name": "grpc",
@@ -38,27 +40,6 @@
         "ext/server.cc",
         "ext/server_credentials.cc",
         "ext/timeval.cc"
-      ],
-      'conditions' : [
-        ['no_install=="yes"', {
-          'include_dirs': [
-            "<(grpc_root)/include"
-          ],
-          'link_settings': {
-            'libraries': [
-              '<(grpc_root)/<(grpc_lib_subdir)/libgrpc.a',
-              '<(grpc_root)/<(grpc_lib_subdir)/libgpr.a'
-            ]
-          }
-        }],
-        ['no_install!="yes"', {
-            'link_settings': {
-              'libraries': [
-                '-lgrpc',
-                '-lgpr'
-              ]
-            }
-          }]
       ]
     }
   ]
