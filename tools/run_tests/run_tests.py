@@ -51,11 +51,14 @@ os.chdir(ROOT)
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ={}):
+  def __init__(self, config, environ=None):
+    if environ is None:
+      environ = {}
     self.build_config = config
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
+    self.environ['CONFIG'] = config
 
   def job_spec(self, binary, hash_targets):
     return jobset.JobSpec(cmdline=[binary],
@@ -67,7 +70,9 @@ class SimpleConfig(object):
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
 class ValgrindConfig(object):
 
-  def __init__(self, config, tool, args=[]):
+  def __init__(self, config, tool, args=None):
+    if args is None:
+      args = []
     self.build_config = config
     self.tool = tool
     self.args = args
@@ -104,6 +109,12 @@ class CLanguage(object):
   def build_steps(self):
     return []
 
+  def supports_multi_config(self):
+    return True
+
+  def __str__(self):
+    return self.make_target
+
 
 class NodeLanguage(object):
 
@@ -115,6 +126,12 @@ class NodeLanguage(object):
 
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'node'
 
 
 class PhpLanguage(object):
@@ -128,6 +145,12 @@ class PhpLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'php'
+
 
 class PythonLanguage(object):
 
@@ -140,6 +163,12 @@ class PythonLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_python.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'python'
+
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
@@ -151,6 +180,12 @@ class RubyLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'ruby'
+
 class CSharpLanguage(object):
 
   def test_specs(self, config, travis):
@@ -161,6 +196,12 @@ class CSharpLanguage(object):
 
   def build_steps(self):
     return [['tools/run_tests/build_csharp.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'csharp'
 
 # different configurations we can run under
 _CONFIGS = {
@@ -226,6 +267,13 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 
 make_targets = []
 languages = set(_LANGUAGES[l] for l in args.language)
+
+if len(build_configs) > 1:
+  for language in languages:
+    if not language.supports_multi_config():
+      print language, 'does not support multiple build configurations'
+      sys.exit(1)
+
 build_steps = [jobset.JobSpec(['make',
                                '-j', '%d' % (multiprocessing.cpu_count() + 1),
                                'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
@@ -233,7 +281,8 @@ build_steps = [jobset.JobSpec(['make',
                                    itertools.chain.from_iterable(
                                        l.make_targets() for l in languages))))
                for cfg in build_configs] + list(set(
-                   jobset.JobSpec(cmdline)
+                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                   for cfg in build_configs
                    for l in languages
                    for cmdline in l.build_steps()))
 one_run = set(
