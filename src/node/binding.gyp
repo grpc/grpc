@@ -1,9 +1,4 @@
 {
-  "variables" : {
-    'no_install': "<!(echo $GRPC_NO_INSTALL)",
-    'grpc_root': "<!(echo $GRPC_ROOT)",
-    'grpc_lib_subdir': "<!(echo $GRPC_LIB_SUBDIR)"
-    },
   "targets" : [
     {
       'include_dirs': [
