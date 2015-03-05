@@ -1,6 +1,6 @@
 {
   "name": "grpc",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "author": "Google Inc.",
   "description": "gRPC Library for Node",
   "homepage": "http://www.grpc.io/",
@@ -25,11 +25,10 @@
     "gcov": "NODE_ENV=test YOURPACKAGE_COVERAGE=1 ./node_modules/.bin/mocha   --require blanket   --reporter mocha-lcov-reporter | ./node_modules/coveralls/bin/coveralls.js"
   },
   "dependencies": {
-    "bindings": "^1.2.1",
-    "jshint": "^2.5.5",
-    "nan": "~1.3.0",
+    "bindings": "^1.2.0",
+    "nan": "^1.5.0",
     "protobufjs": "murgatroid99/ProtoBuf.js",
-    "underscore": "^1.7.0",
+    "underscore": "^1.6.0",
     "underscore.string": "^3.0.0"
   },
   "devDependencies": {
@@ -37,10 +36,14 @@
     "blanket": "^1.1.6",
     "coveralls": "^2.11.2",
     "google-auth-library": "^0.9.2",
+    "jshint": "^2.5.0",
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
     "mocha-lcov-reporter": "~0.0.2",
     "strftime": "^0.8.2"
+  },
+  "engines": {
+    "node": ">=0.10.13"
   },
   "files": [
     "LICENSE",

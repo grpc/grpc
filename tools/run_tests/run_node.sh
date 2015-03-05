@@ -30,9 +30,12 @@
 
 set -ex
 
+CONFIG=${CONFIG:-opt}
+
 # change to grpc repo root
 cd $(dirname $0)/../..
 
+export LD_LIBRARY_PATH=$root/libs/$CONFIG
 root=`pwd`
 cd $root/src/node
 if [ "$CONFIG" = "gcov" ]
