@@ -31,24 +31,30 @@
  *
  */
 
-#include "test/core/util/grpc_profiler.h"
+#ifndef TEST_QPS_STATS_UTILS_H
+#define TEST_QPS_STATS_UTILS_H
 
-#if GRPC_HAVE_PERFTOOLS
-#include <gperftools/profiler.h>
+#include "test/cpp/qps/histogram.h"
+#include <string>
 
-void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
+namespace grpc {
+namespace testing {
 
-void grpc_profiler_stop() { ProfilerStop(); }
-#else
-#include <grpc/support/log.h>
-
-void grpc_profiler_start(const char *filename) {
-  gpr_log(GPR_DEBUG,
-          "You do not have google-perftools installed, profiling is disabled [for %s]", filename);
-  gpr_log(GPR_DEBUG,
-          "To install on ubuntu: sudo apt-get install google-perftools "
-          "libgoogle-perftools-dev");
+template <class T, class F>
+double sum(const T& container, F functor) {
+  double r = 0;
+  for (auto v : container) {
+    r += functor(v);
+  }
+  return r;
 }
 
-void grpc_profiler_stop(void) {}
+template <class T, class F>
+double average(const T& container, F functor) {
+  return sum(container, functor) / container.size();
+}
+
+}  // namespace testing
+}  // namespace grpc
+
 #endif

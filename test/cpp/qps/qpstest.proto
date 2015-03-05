@@ -51,17 +51,14 @@ message StatsRequest {
 }
 
 message ServerStats {
-  // wall clock time for timestamp
-  required double time_now = 1;
+  // wall clock time
+  required double time_elapsed = 1;
 
   // user time used by the server process and threads
   required double time_user = 2;
 
   // server time used by the server process and all threads
   required double time_system = 3;
-
-  // RPC count so far
-  optional int32 num_rpcs = 4;
 }
 
 message Payload {
@@ -71,29 +68,73 @@ message Payload {
   optional bytes body = 2;
 }
 
-message Latencies {
-  required double l_50 = 1;
-  required double l_90 = 2;
-  required double l_99 = 3;
-  required double l_999 = 4;
+message HistogramData {
+  repeated uint32 bucket = 1;
+  required double min_seen = 2;
+  required double max_seen = 3;
+  required double sum = 4;
+  required double sum_of_squares = 5;
+  required double count = 6;
 }
 
-message StartArgs {
-  required string server_host = 1;
-  required int32 server_port = 2;
-  optional bool enable_ssl = 3 [default = false];
-  optional int32 client_threads = 4 [default = 1];
-  optional int32 client_channels = 5 [default = -1];
-  optional int32 num_rpcs = 6 [default = 1];
-  optional int32 payload_size = 7 [default = 1];
+enum ClientType {
+  SYNCHRONOUS_CLIENT = 1;
+  ASYNC_CLIENT = 2;
 }
 
-message StartResult {
-  required Latencies latencies = 1;
-  required int32 num_rpcs = 2;
+enum ServerType {
+  SYNCHRONOUS_SERVER = 1;
+  ASYNC_SERVER = 2;
+}
+
+message ClientConfig {
+  repeated string server_targets = 1;
+  required ClientType client_type = 2;
+  required bool enable_ssl = 3;
+  required int32 outstanding_rpcs_per_channel = 4;
+  required int32 client_channels = 5;
+  required int32 payload_size = 6;
+  // only for async client:
+  optional int32 async_client_threads = 7;
+}
+
+// Request current stats
+message Mark {}
+
+message ClientArgs {
+  oneof argtype {
+    ClientConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ClientStats {
+  required HistogramData latencies = 1;
   required double time_elapsed = 3;
   required double time_user = 4;
   required double time_system = 5;
+}
+
+message ClientStatus {
+  optional ClientStats stats = 1;
+}
+
+message ServerConfig {
+  required ServerType server_type = 1;
+  required int32 threads = 2;
+  required bool enable_ssl = 3;
+}
+
+message ServerArgs {
+  oneof argtype {
+    ServerConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerStatus {
+  optional ServerStats stats = 1;
+  required int32 port = 2;
 }
 
 message SimpleRequest {
@@ -153,12 +194,6 @@ message StreamingOutputCallResponse {
 }
 
 service TestService {
-  // Start test with specified workload
-  rpc StartTest(StartArgs) returns (Latencies);
-
-  // Collect stats from server, ignore request content
-  rpc CollectServerStats(StatsRequest) returns (ServerStats);
-
   // One request followed by one response.
   // The server returns the client payload as-is.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
@@ -185,4 +220,11 @@ service TestService {
   // first request.
   rpc HalfDuplexCall(stream StreamingOutputCallRequest)
       returns (stream StreamingOutputCallResponse);
+}
+
+service Worker {
+  // Start test with specified workload
+  rpc RunTest(stream ClientArgs) returns (stream ClientStatus);
+  // Start test with specified workload
+  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
 }

@@ -31,24 +31,31 @@
  *
  */
 
-#include "test/core/util/grpc_profiler.h"
+#ifndef TEST_QPS_DRIVER_H
+#define TEST_QPS_DRIVER_H
 
-#if GRPC_HAVE_PERFTOOLS
-#include <gperftools/profiler.h>
+#include "test/cpp/qps/histogram.h"
+#include "test/cpp/qps/qpstest.pb.h"
 
-void grpc_profiler_start(const char *filename) { ProfilerStart(filename); }
+namespace grpc {
+namespace testing {
+struct ResourceUsage {
+  double wall_time;
+  double user_time;
+  double system_time;
+};
 
-void grpc_profiler_stop() { ProfilerStop(); }
-#else
-#include <grpc/support/log.h>
+struct ScenarioResult {
+  Histogram latencies;
+  std::vector<ResourceUsage> client_resources;
+  std::vector<ResourceUsage> server_resources;
+};
 
-void grpc_profiler_start(const char *filename) {
-  gpr_log(GPR_DEBUG,
-          "You do not have google-perftools installed, profiling is disabled [for %s]", filename);
-  gpr_log(GPR_DEBUG,
-          "To install on ubuntu: sudo apt-get install google-perftools "
-          "libgoogle-perftools-dev");
-}
+ScenarioResult RunScenario(const grpc::testing::ClientConfig& client_config,
+                           size_t num_clients,
+                           const grpc::testing::ServerConfig& server_config,
+                           size_t num_servers);
+}  // namespace testing
+}  // namespace grpc
 
-void grpc_profiler_stop(void) {}
 #endif
