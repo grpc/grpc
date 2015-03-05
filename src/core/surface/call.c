@@ -375,6 +375,7 @@ static void unlock(grpc_call *call) {
            sizeof(completed_requests));
     call->num_completed_requests = 0;
     call->completing = 1;
+    grpc_call_internal_ref(call);
   }
 
   if (!call->sending) {
@@ -403,6 +404,7 @@ static void unlock(grpc_call *call) {
     lock(call);
     call->completing = 0;
     unlock(call);
+    grpc_call_internal_unref(call, 0);
   }
 }
 
