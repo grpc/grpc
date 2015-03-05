@@ -60,7 +60,7 @@ namespace testing {
 class TestServiceImpl GRPC_FINAL : public TestService::Service {
  public:
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
-                   SimpleResponse* response) override {
+                   SimpleResponse* response) GRPC_OVERRIDE {
     if (request->has_response_size() && request->response_size() > 0) {
       if (!Server::SetPayload(request->response_type(),
                               request->response_size(),
