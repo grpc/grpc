@@ -21,7 +21,8 @@
   },
   "scripts": {
     "lint": "node ./node_modules/jshint/bin/jshint src test examples interop index.js",
-    "test": "node ./node_modules/mocha/bin/mocha && npm run-script lint"
+    "test": "node ./node_modules/mocha/bin/mocha && npm run-script lint",
+    "gcov": "NODE_ENV=test YOURPACKAGE_COVERAGE=1 ./node_modules/.bin/mocha   --require blanket   --reporter mocha-lcov-reporter | ./node_modules/coveralls/bin/coveralls.js"
   },
   "dependencies": {
     "bindings": "^1.2.1",
@@ -33,9 +34,12 @@
   },
   "devDependencies": {
     "async": "^0.9.0",
+    "blanket": "^1.1.6",
+    "coveralls": "^2.11.2",
     "google-auth-library": "^0.9.2",
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
+    "mocha-lcov-reporter": "~0.0.2",
     "strftime": "^0.8.2"
   },
   "files": [
@@ -50,5 +54,10 @@
     "test"
   ],
   "main": "index.js",
-  "license": "BSD-3-Clause"
+  "license": "BSD-3-Clause",
+  "config": {
+    "blanket": {
+      "pattern": "src/"
+    }
+  }
 }
