@@ -93,7 +93,7 @@ std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   abort();
 }
 
-class WorkerImpl final : public Worker::Service {
+class WorkerImpl GRPC_FINAL : public Worker::Service {
  public:
   WorkerImpl() : acquired_(false) {}
 
