@@ -433,10 +433,12 @@ function Server(getMetadata, options) {
    * @this Server
    */
   this.listen = function() {
-    console.log('Server starting');
-    _.each(handlers, function(handler, handler_name) {
-      console.log('Serving', handler_name);
-    });
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('Server starting');
+      _.each(handlers, function(handler, handler_name) {
+        console.log('Serving', handler_name);
+      });
+    }
     if (this.started) {
       throw 'Server is already running';
     }
