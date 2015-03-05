@@ -41,8 +41,6 @@
 namespace grpc {
 namespace node {
 
-using ::node::Buffer;
-using v8::Arguments;
 using v8::Exception;
 using v8::External;
 using v8::Function;
@@ -56,7 +54,7 @@ using v8::ObjectTemplate;
 using v8::Persistent;
 using v8::Value;
 
-Persistent<Function> ServerCredentials::constructor;
+NanCallback *ServerCredentials::constructor;
 Persistent<FunctionTemplate> ServerCredentials::fun_tpl;
 
 ServerCredentials::ServerCredentials(grpc_server_credentials *credentials)
@@ -68,16 +66,17 @@ ServerCredentials::~ServerCredentials() {
 
 void ServerCredentials::Init(Handle<Object> exports) {
   NanScope();
-  Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
+  Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
   tpl->SetClassName(NanNew("ServerCredentials"));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   NanAssignPersistent(fun_tpl, tpl);
-  NanAssignPersistent(constructor, tpl->GetFunction());
-  constructor->Set(NanNew("createSsl"),
-                   FunctionTemplate::New(CreateSsl)->GetFunction());
-  constructor->Set(NanNew("createFake"),
-                   FunctionTemplate::New(CreateFake)->GetFunction());
-  exports->Set(NanNew("ServerCredentials"), constructor);
+  Handle<Function> ctr = tpl->GetFunction();
+  ctr->Set(NanNew("createSsl"),
+           NanNew<FunctionTemplate>(CreateSsl)->GetFunction());
+  ctr->Set(NanNew("createFake"),
+           NanNew<FunctionTemplate>(CreateFake)->GetFunction());
+  constructor = new NanCallback(ctr);
+  exports->Set(NanNew("ServerCredentials"), ctr);
 }
 
 bool ServerCredentials::HasInstance(Handle<Value> val) {
@@ -93,8 +92,8 @@ Handle<Value> ServerCredentials::WrapStruct(
   }
   const int argc = 1;
   Handle<Value> argv[argc] = {
-      External::New(reinterpret_cast<void *>(credentials))};
-  return NanEscapeScope(constructor->NewInstance(argc, argv));
+    NanNew<External>(reinterpret_cast<void *>(credentials))};
+  return NanEscapeScope(constructor->GetFunction()->NewInstance(argc, argv));
 }
 
 grpc_server_credentials *ServerCredentials::GetWrappedServerCredentials() {
@@ -109,15 +108,16 @@ NAN_METHOD(ServerCredentials::New) {
       return NanThrowTypeError(
           "ServerCredentials can only be created with the provide functions");
     }
+    Handle<External> ext = args[0].As<External>();
     grpc_server_credentials *creds_value =
-        reinterpret_cast<grpc_server_credentials *>(External::Unwrap(args[0]));
+        reinterpret_cast<grpc_server_credentials *>(ext->Value());
     ServerCredentials *credentials = new ServerCredentials(creds_value);
     credentials->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
     const int argc = 1;
     Local<Value> argv[argc] = {args[0]};
-    NanReturnValue(constructor->NewInstance(argc, argv));
+    NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
   }
 }
 
@@ -126,20 +126,20 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   NanScope();
   char *root_certs = NULL;
   grpc_ssl_pem_key_cert_pair key_cert_pair;
-  if (Buffer::HasInstance(args[0])) {
-    root_certs = Buffer::Data(args[0]);
+  if (::node::Buffer::HasInstance(args[0])) {
+    root_certs = ::node::Buffer::Data(args[0]);
   } else if (!(args[0]->IsNull() || args[0]->IsUndefined())) {
     return NanThrowTypeError(
         "createSSl's first argument must be a Buffer if provided");
   }
-  if (!Buffer::HasInstance(args[1])) {
+  if (!::node::Buffer::HasInstance(args[1])) {
     return NanThrowTypeError("createSsl's second argument must be a Buffer");
   }
-  key_cert_pair.private_key = Buffer::Data(args[1]);
-  if (!Buffer::HasInstance(args[2])) {
+  key_cert_pair.private_key = ::node::Buffer::Data(args[1]);
+  if (!::node::Buffer::HasInstance(args[2])) {
     return NanThrowTypeError("createSsl's third argument must be a Buffer");
   }
-  key_cert_pair.cert_chain = Buffer::Data(args[2]);
+  key_cert_pair.cert_chain = ::node::Buffer::Data(args[2]);
   NanReturnValue(WrapStruct(
       grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1)));
 }
