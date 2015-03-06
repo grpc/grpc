@@ -35,5 +35,6 @@
 #define GRPC_INTERNAL_CORE_SURFACE_INIT_H
 
 void grpc_security_pre_init(void);
+int grpc_is_initialized(void);
 
 #endif  /* GRPC_INTERNAL_CORE_SURFACE_INIT_H */
