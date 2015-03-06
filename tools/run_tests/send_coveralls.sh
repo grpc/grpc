@@ -30,7 +30,7 @@
 
 set -ex
 
-export root=$(realpath $(dirname $0)/../..)
+export root=$(dirname $0)/../..
 
 coveralls --exclude third_party --exclude gens -b$root --gcov-options '\-p' --dump $root/core_coveralls.txt
 coveralls --exclude third_party --exclude gens -b$root/src/node --gcov-options '\-p' --dump $root/node_coveralls.txt
