@@ -35,6 +35,7 @@
 
 #include "src/core/channel/http_filter.h"
 #include "src/core/channel/http_server_filter.h"
+#include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_server.h"
 #include "src/core/security/security_context.h"
@@ -43,7 +44,26 @@
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+
+typedef struct grpc_server_secure_state {
+  grpc_server *server;
+  grpc_tcp_server *tcp;
+  int is_shutdown;
+  gpr_mu mu;
+  gpr_refcount refcount;
+} grpc_server_secure_state;
+
+static void state_ref(grpc_server_secure_state *state) {
+  gpr_ref(&state->refcount);
+}
+
+static void state_unref(grpc_server_secure_state *state) {
+  if (gpr_unref(&state->refcount)) {
+    gpr_free(state);
+  }
+}
 
 static grpc_transport_setup_result setup_transport(void *server,
                                                    grpc_transport *transport,
@@ -54,44 +74,62 @@ static grpc_transport_setup_result setup_transport(void *server,
                                      GPR_ARRAY_SIZE(extra_filters), mdctx);
 }
 
-static void on_secure_transport_setup_done(void *server,
+static void on_secure_transport_setup_done(void *statep,
                                            grpc_security_status status,
                                            grpc_endpoint *secure_endpoint) {
+  grpc_server_secure_state *state = statep;
   if (status == GRPC_SECURITY_OK) {
-    grpc_create_chttp2_transport(
-        setup_transport, server, grpc_server_get_channel_args(server),
-        secure_endpoint, NULL, 0, grpc_mdctx_create(), 0);
+    gpr_mu_lock(&state->mu);
+    if (!state->is_shutdown) {
+      grpc_create_chttp2_transport(
+          setup_transport, state->server,
+          grpc_server_get_channel_args(state->server),
+          secure_endpoint, NULL, 0, grpc_mdctx_create(), 0);
+    } else {
+      /* We need to consume this here, because the server may already have gone
+       * away. */
+      grpc_endpoint_destroy(secure_endpoint);
+    }
+    gpr_mu_unlock(&state->mu);
   } else {
     gpr_log(GPR_ERROR, "Secure transport failed with error %d", status);
   }
+  state_unref(state);
 }
 
-static void on_accept(void *server, grpc_endpoint *tcp) {
-  const grpc_channel_args *args = grpc_server_get_channel_args(server);
+static void on_accept(void *statep, grpc_endpoint *tcp) {
+  grpc_server_secure_state *state = statep;
+  const grpc_channel_args *args = grpc_server_get_channel_args(state->server);
   grpc_security_context *ctx = grpc_find_security_context_in_args(args);
   GPR_ASSERT(ctx);
-  grpc_setup_secure_transport(ctx, tcp, on_secure_transport_setup_done, server);
+  state_ref(state);
+  grpc_setup_secure_transport(ctx, tcp, on_secure_transport_setup_done, state);
 }
 
 /* Note: the following code is the same with server_chttp2.c */
 
 /* Server callback: start listening on our ports */
-static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets,
+static void start(grpc_server *server, void *statep, grpc_pollset **pollsets,
                   size_t pollset_count) {
-  grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start(tcp, pollsets, pollset_count, on_accept, server);
+  grpc_server_secure_state *state = statep;
+  grpc_tcp_server_start(state->tcp, pollsets, pollset_count, on_accept, state);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void destroy(grpc_server *server, void *tcpp) {
-  grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_destroy(tcp);
+static void destroy(grpc_server *server, void *statep) {
+  grpc_server_secure_state *state = statep;
+  gpr_mu_lock(&state->mu);
+  state->is_shutdown = 1;
+  grpc_tcp_server_destroy(state->tcp);
+  gpr_mu_unlock(&state->mu);
+  state_unref(state);
 }
 
 int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
+  grpc_server_secure_state *state = NULL;
   size_t i;
   unsigned count = 0;
   int port_num = -1;
@@ -132,8 +170,15 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr) {
   }
   grpc_resolved_addresses_destroy(resolved);
 
+  state = gpr_malloc(sizeof(*state));
+  state->server = server;
+  state->tcp = tcp;
+  state->is_shutdown = 0;
+  gpr_mu_init(&state->mu);
+  gpr_ref_init(&state->refcount, 1);
+
   /* Register with the server only upon success */
-  grpc_server_add_listener(server, tcp, start, destroy);
+  grpc_server_add_listener(server, state, start, destroy);
 
   return port_num;
 
