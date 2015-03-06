@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 // 
@@ -30,7 +29,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
-
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -38,14 +36,12 @@ using Grpc.Core;
 
 namespace Grpc.Core.Internal
 {
-    //TODO: rename the delegate
-    internal delegate void CompletionCallbackDelegate(GRPCOpError error, IntPtr batchContextPtr);
-
+    internal delegate void CompletionCallbackDelegate(GRPCOpError error,IntPtr batchContextPtr);
     /// <summary>
     /// grpc_call from <grpc/grpc.h>
     /// </summary>
-	internal class CallSafeHandle : SafeHandleZeroIsInvalid
-	{
+    internal class CallSafeHandle : SafeHandleZeroIsInvalid
+    {
         const UInt32 GRPC_WRITE_BUFFER_HINT = 1;
 
         [DllImport("grpc_csharp_ext.dll")]
@@ -59,22 +55,22 @@ namespace Grpc.Core.Internal
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_start_unary(CallSafeHandle call,
-                                                                        [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
-                                                                        byte[] send_buffer, UIntPtr send_buffer_len);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_call_blocking_unary(CallSafeHandle call, CompletionQueueSafeHandle dedicatedCq,
                                                                [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
                                                                byte[] send_buffer, UIntPtr send_buffer_len);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_call_blocking_unary(CallSafeHandle call, CompletionQueueSafeHandle dedicatedCq,
+                                                         [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
+                                                         byte[] send_buffer, UIntPtr send_buffer_len);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_start_client_streaming(CallSafeHandle call,
-                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+                                                                          [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_start_server_streaming(CallSafeHandle call,
-                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
-                                                                      byte[] send_buffer, UIntPtr send_buffer_len);
+                                                                          [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
+                                                                          byte[] send_buffer, UIntPtr send_buffer_len);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call,
@@ -82,27 +78,26 @@ namespace Grpc.Core.Internal
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_send_message(CallSafeHandle call,
-                                                                      [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
-                                                                      byte[] send_buffer, UIntPtr send_buffer_len);
+                                                                [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback,
+                                                                byte[] send_buffer, UIntPtr send_buffer_len);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_send_close_from_client(CallSafeHandle call,
-                                                                             [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+                                                                          [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_send_status_from_server(CallSafeHandle call, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback, StatusCode statusCode, string statusMessage);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern GRPCCallError grpcsharp_call_recv_message(CallSafeHandle call,
-                                                               [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_call_start_serverside(CallSafeHandle call,
                                                                 [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_call_destroy(IntPtr call);
+        static extern GRPCCallError grpcsharp_call_start_serverside(CallSafeHandle call,
+                                                                    [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
 
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_call_destroy(IntPtr call);
 
         private CallSafeHandle()
         {
@@ -115,12 +110,12 @@ namespace Grpc.Core.Internal
 
         public void StartUnary(byte[] payload, CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpcsharp_call_start_unary(this, callback, payload, new UIntPtr((ulong) payload.Length)));
+            AssertCallOk(grpcsharp_call_start_unary(this, callback, payload, new UIntPtr((ulong)payload.Length)));
         }
 
         public void BlockingUnary(CompletionQueueSafeHandle dedicatedCq, byte[] payload, CompletionCallbackDelegate callback)
         {
-            grpcsharp_call_blocking_unary(this, dedicatedCq, callback, payload, new UIntPtr((ulong) payload.Length));
+            grpcsharp_call_blocking_unary(this, dedicatedCq, callback, payload, new UIntPtr((ulong)payload.Length));
         }
 
         public void StartClientStreaming(CompletionCallbackDelegate callback)
@@ -130,7 +125,7 @@ namespace Grpc.Core.Internal
 
         public void StartServerStreaming(byte[] payload, CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpcsharp_call_start_server_streaming(this, callback, payload, new UIntPtr((ulong) payload.Length)));
+            AssertCallOk(grpcsharp_call_start_server_streaming(this, callback, payload, new UIntPtr((ulong)payload.Length)));
         }
 
         public void StartDuplexStreaming(CompletionCallbackDelegate callback)
@@ -140,7 +135,7 @@ namespace Grpc.Core.Internal
 
         public void StartSendMessage(byte[] payload, CompletionCallbackDelegate callback)
         {
-            AssertCallOk(grpcsharp_call_send_message(this, callback, payload, new UIntPtr((ulong) payload.Length)));
+            AssertCallOk(grpcsharp_call_send_message(this, callback, payload, new UIntPtr((ulong)payload.Length)));
         }
 
         public void StartSendCloseFromClient(CompletionCallbackDelegate callback)
@@ -173,19 +168,20 @@ namespace Grpc.Core.Internal
             AssertCallOk(grpcsharp_call_cancel_with_status(this, status.StatusCode, status.Detail));
         }
 
-		protected override bool ReleaseHandle()
-		{
+        protected override bool ReleaseHandle()
+        {
             grpcsharp_call_destroy(handle);
-			return true;
-		}
+            return true;
+        }
 
         private static void AssertCallOk(GRPCCallError callError)
         {
             Trace.Assert(callError == GRPCCallError.GRPC_CALL_OK, "Status not GRPC_CALL_OK");
         }
 
-        private static UInt32 GetFlags(bool buffered) {
+        private static UInt32 GetFlags(bool buffered)
+        {
             return buffered ? 0 : GRPC_WRITE_BUFFER_HINT;
         }
-	}
+    }
 }

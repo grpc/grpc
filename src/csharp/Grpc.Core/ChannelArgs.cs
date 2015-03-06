@@ -99,7 +99,7 @@ namespace Grpc.Core
                 }
                 return nativeArgs;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 if (nativeArgs != null)
                 {

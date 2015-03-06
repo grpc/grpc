@@ -51,7 +51,6 @@
     <Compile Include="Internal\SafeHandleZeroIsInvalid.cs" />
     <Compile Include="Internal\Timespec.cs" />
     <Compile Include="Internal\GrpcThreadPool.cs" />
-    <Compile Include="Internal\AsyncCall.cs" />
     <Compile Include="Internal\ServerSafeHandle.cs" />
     <Compile Include="Method.cs" />
     <Compile Include="ServerCalls.cs" />
@@ -69,6 +68,12 @@
     <Compile Include="Credentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
     <Compile Include="ChannelArgs.cs" />
+    <Compile Include="Internal\AsyncCompletion.cs" />
+    <Compile Include="Internal\AsyncCallBase.cs" />
+    <Compile Include="Internal\AsyncCallServer.cs" />
+    <Compile Include="OperationFailedException.cs" />
+    <Compile Include="Internal\AsyncCall.cs" />
+    <Compile Include="Utils\Preconditions.cs" />
   </ItemGroup>
   <Choose>
     <!-- Under older versions of Monodevelop, Choose is not supported and is just
