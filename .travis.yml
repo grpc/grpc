@@ -15,10 +15,7 @@ script:
   - env
   - rvm use $RUBY_VERSION
   - gem install bundler
-  - export TRAVIS_JOB_NUMBER_OLD=$TRAVIS_JOB_NUMBER
-  - export TRAVIS_JOB_NUMBER="$TRAVIS_JOB_NUMBER_OLD.$TEST"
-  - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
-  - export TRAVIS_JOB_NUMBER=$TRAVIS_JOB_NUMBER_OLD
+  - TRAVIS_JOB_NUMBER="$TRAVIS_JOB_NUMBER.$TEST" ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
 after_success:
   - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens -b. --gcov-options '\-p' ; fi
 notifications:
