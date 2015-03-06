@@ -120,7 +120,7 @@ class RouteGuideClient {
       std::cout << "Found feature called "
                 << feature.name() << " at "
                 << feature.location().latitude()/kCoordFactor_ << ", "
-                << feature.location().latitude()/kCoordFactor_ << std::endl;
+                << feature.location().longitude()/kCoordFactor_ << std::endl;
     }
     Status status = reader->Finish();
     if (status.IsOk()) {

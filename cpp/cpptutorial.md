@@ -298,7 +298,7 @@ Now let's look at our streaming methods. If you've already read [Creating the se
       std::cout << "Found feature called "
                 << feature.name() << " at "
                 << feature.location().latitude()/kCoordFactor_ << ", "
-                << feature.location().latitude()/kCoordFactor_ << std::endl;
+                << feature.location().longitude()/kCoordFactor_ << std::endl;
     }
     Status status = reader->Finish();
 ```
