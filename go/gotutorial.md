@@ -414,8 +414,6 @@ stream.CloseSend()
 
 The syntax for reading and writing here is very similar to our client-side streaming method, except we use the stream's `CloseSend()` method once we've finished our call. Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
 
-Although each side will always get the other's messages in the order they were written, both the client and server can read and write in any order — the streams operate completely independently.
-
 ## Try it out!
 
 To compile and run the server, assuming you are in the folder
