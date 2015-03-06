@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,9 +27,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
-
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -38,25 +35,25 @@ using Grpc.Core;
 
 namespace math
 {
-	class MathClient
+    class MathClient
     {
-		public static void Main (string[] args)
-		{
+        public static void Main(string[] args)
+        {
             GrpcEnvironment.Initialize();
 
-			using (Channel channel = new Channel("127.0.0.1:23456"))
-			{
-				MathGrpc.IMathServiceClient stub = new MathGrpc.MathServiceClientStub(channel);
-				MathExamples.DivExample(stub);
+            using (Channel channel = new Channel("127.0.0.1:23456"))
+            {
+                MathGrpc.IMathServiceClient stub = new MathGrpc.MathServiceClientStub(channel);
+                MathExamples.DivExample(stub);
 
                 MathExamples.FibExample(stub);
 
-				MathExamples.SumExample(stub);
+                MathExamples.SumExample(stub);
 
-				MathExamples.DivManyExample(stub);
-			}
+                MathExamples.DivManyExample(stub);
+            }
 
             GrpcEnvironment.Shutdown();
-		}
-	}
+        }
+    }
 }

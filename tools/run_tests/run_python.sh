@@ -36,4 +36,4 @@ cd $(dirname $0)/../..
 root=`pwd`
 export LD_LIBRARY_PATH=$root/libs/opt
 source python2.7_virtual_environment/bin/activate
-python2.7 -B -m $*
+python2.7 -B $*
