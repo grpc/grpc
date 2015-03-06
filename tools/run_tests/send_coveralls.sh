@@ -33,5 +33,5 @@ set -ex
 export root=$(dirname $0)/../..
 
 coveralls --exclude third_party --exclude gens -b$root --gcov-options '\-p' --dump $root/core_coveralls.txt
-coveralls --exclude third_party --exclude gens -b$root/src/node --gcov-options '\-p' --dump $root/node_coveralls.txt
+coveralls --exclude third_party --exclude gens -b$root/src/node/build --gcov-options '\-p' --dump $root/node_coveralls.txt
 node ./src/node/coveralls_multi.js $root/core_coveralls.txt $root/node_coveralls.txt -- $SCRIPT_LCOV_FILE
