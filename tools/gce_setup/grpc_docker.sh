@@ -797,7 +797,26 @@ grpc_interop_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" 
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  PID=$!
+  echo "pid is $PID"
+  for x in {0..5}
+  do
+    if ps -p $PID
+    then
+      sleep 10
+    else
+      echo "normal return before timeout"
+      # looks like the test is done
+      wait $PID
+      local ret=$?
+      echo " return $ret"
+      return $ret
+    fi
+  done
+  kill $PID
+  echo "got killed by timeout not normal"
+  return 1
 }
 
 # Runs a test command on a docker instance.
@@ -843,7 +862,26 @@ grpc_cloud_prod_test() {
   echo "  $ssh_cmd"
   echo "on $host"
   [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  PID=$!
+  echo "pid is $PID"
+  for x in {0..5}
+  do
+    if ps -p $PID
+    then
+      sleep 10
+    else
+      echo "normal return before timeout"
+      # looks like the test is done
+      wait $PID
+      local ret=$?
+      echo " return $ret"
+      return $ret
+    fi
+  done
+  kill $PID
+  echo "got killed by timeout not normal"
+  return 1
 }
 
 # Runs a test command on a docker instance.
