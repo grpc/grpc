@@ -73,3 +73,13 @@ void grpc_shutdown(void) {
   }
   gpr_mu_unlock(&g_init_mu);
 }
+
+int grpc_is_initialized(void) {
+  int r;
+  gpr_once_init(&g_init, do_init);
+  gpr_mu_lock(&g_init_mu);
+  r = g_initializations > 0;
+  gpr_mu_unlock(&g_init_mu);
+  return r;
+}
+
