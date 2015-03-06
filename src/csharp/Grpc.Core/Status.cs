@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,7 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
 
 using System;
@@ -36,40 +34,40 @@ using System.Runtime.InteropServices;
 
 namespace Grpc.Core
 {
-	/// <summary>
-	/// Represents RPC result.
-	/// </summary>
-	public struct Status
-	{
-		readonly StatusCode statusCode;
-		readonly string detail;
+    /// <summary>
+    /// Represents RPC result.
+    /// </summary>
+    public struct Status
+    {
+        readonly StatusCode statusCode;
+        readonly string detail;
 
-		public Status(StatusCode statusCode, string detail)
-		{
-			this.statusCode = statusCode;
-			this.detail = detail;
-		}
+        public Status(StatusCode statusCode, string detail)
+        {
+            this.statusCode = statusCode;
+            this.detail = detail;
+        }
 
         /// <summary>
         /// Gets the gRPC status code. OK indicates success, all other values indicate an error.
         /// </summary>
-		public StatusCode StatusCode
-		{
-			get
-			{
-				return statusCode;
-			}
-		}
+        public StatusCode StatusCode
+        {
+            get
+            {
+                return statusCode;
+            }
+        }
 
         /// <summary>
         /// Gets the detail.
         /// </summary>
-		public string Detail
-		{
-			get
-			{
-				return detail;
-			}
-		}
-	}
+        public string Detail
+        {
+            get
+            {
+                return detail;
+            }
+        }
+    }
 }
