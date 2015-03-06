@@ -39,6 +39,25 @@ module GRPC
     # Default deadline is 5 seconds.
     DEFAULT_DEADLINE = 5
 
+    # setup_channel is used by #initialize to constuct a channel from its
+    # arguments.
+    def self.setup_channel(alt_chan, host, creds, **kw)
+      unless alt_chan.nil?
+        fail(TypeError, '!Channel') unless alt_chan.is_a?(Core::Channel)
+        return alt_chan
+      end
+      return Core::Channel.new(host, kw) if creds.nil?
+      fail(TypeError, '!Credentials') unless creds.is_a?(Core::Credentials)
+      Core::Channel.new(host, kw, creds)
+    end
+
+    # check_update_metadata is used by #initialize verify that it's a Proc.
+    def self.check_update_metadata(update_metadata)
+      return update_metadata if update_metadata.nil?
+      fail(TypeError, '!is_a?Proc') unless update_metadata.is_a?(Proc)
+      update_metadata
+    end
+
     # Creates a new ClientStub.
     #
     # Minimally, a stub is created with the just the host of the gRPC service
@@ -73,39 +92,15 @@ module GRPC
     # @param update_metadata a func that updates metadata as described above
     # @param kw [KeywordArgs]the channel arguments
     def initialize(host, q,
-                   channel_override:nil,
+                   channel_override: nil,
                    deadline: DEFAULT_DEADLINE,
                    creds: nil,
                    update_metadata: nil,
                    **kw)
-      unless q.is_a? Core::CompletionQueue
-        fail(ArgumentError, 'not a CompletionQueue')
-      end
+      fail(TypeError, '!CompletionQueue') unless q.is_a?(Core::CompletionQueue)
       @queue = q
-
-      # set the channel instance
-      if !channel_override.nil?
-        ch = channel_override
-        fail(ArgumentError, 'not a Channel') unless ch.is_a? Core::Channel
-      else
-        if creds.nil?
-          ch = Core::Channel.new(host, kw)
-        elsif !creds.is_a?(Core::Credentials)
-          fail(ArgumentError, 'not a Credentials')
-        else
-          ch = Core::Channel.new(host, kw, creds)
-        end
-      end
-      @ch = ch
-
-      @update_metadata = nil
-      unless update_metadata.nil?
-        unless update_metadata.is_a? Proc
-          fail(ArgumentError, 'update_metadata is not a Proc')
-        end
-        @update_metadata = update_metadata
-      end
-
+      @ch = ClientStub.setup_channel(channel_override, host, creds, **kw)
+      @update_metadata = ClientStub.check_update_metadata(update_metadata)
       @host = host
       @deadline = deadline
     end
