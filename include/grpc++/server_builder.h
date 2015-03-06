@@ -87,6 +87,7 @@ class ServerBuilder {
   std::vector<AsynchronousService*> async_services_;
   std::vector<grpc::string> ports_;
   std::shared_ptr<ServerCredentials> creds_;
+  AnonymousService* anonymous_service_;
   ThreadPoolInterface* thread_pool_;
 };
 

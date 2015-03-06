@@ -393,7 +393,9 @@
       "build": "all",
       "language": "c++",
       "public_headers": [
+        "include/grpc++/anonymous_service.h",
         "include/grpc++/async_unary_call.h",
+        "include/grpc++/byte_buffer.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
@@ -434,11 +436,13 @@
         "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
+        "src/cpp/server/anonymous_service.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_context.cc",
         "src/cpp/server/server_credentials.cc",
         "src/cpp/server/thread_pool.cc",
+        "src/cpp/util/byte_buffer.cc",
         "src/cpp/util/status.cc",
         "src/cpp/util/time.cc"
       ],

@@ -48,6 +48,8 @@
 struct grpc_server;
 
 namespace grpc {
+class AnonymousServerContext;
+class AnonymousService;
 class AsynchronousService;
 class RpcService;
 class RpcServiceMethod;
@@ -69,6 +71,7 @@ class Server GRPC_FINAL : private CallHook,
   void Wait();
 
  private:
+  friend class AnonymousService;
   friend class ServerBuilder;
 
   class SyncRequest;
@@ -82,6 +85,7 @@ class Server GRPC_FINAL : private CallHook,
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(RpcService* service);
   bool RegisterAsyncService(AsynchronousService* service);
+  void RegisterAnonymousService(AnonymousService* service);
   // Add a listening port. Can be called multiple times.
   int AddPort(const grpc::string& addr);
   // Start the server.
@@ -96,6 +100,10 @@ class Server GRPC_FINAL : private CallHook,
   // DispatchImpl
   void RequestAsyncCall(void* registered_method, ServerContext* context,
                         grpc::protobuf::Message* request,
+                        ServerAsyncStreamingInterface* stream,
+                        CompletionQueue* cq, void* tag);
+
+  void RequestAsyncAnonymousCall(AnonymousServerContext* context,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* cq, void* tag);
 

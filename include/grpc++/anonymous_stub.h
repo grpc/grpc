@@ -31,14 +31,15 @@
  *
  */
 
-#ifndef __GRPCPP_ANONYMOUS_STUB_H_
-#define __GRPCPP_ANONYMOUS_STUB_H_
+#ifndef GRPCXX_ANONYMOUS_STUB_H
+#define GRPCXX_ANONYMOUS_STUB_H
 
+#include <grpc++/byte_buffer.h>
 #include <grpc++/stream.h>
 
 namespace grpc {
 
-typedef ClientReaderWriter<ByteBuffer, ByteBuffer> GenericClientReaderWriter;
+typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericClientReaderWriter;
 
 // Anonymous stubs provide a type-unsafe interface to call gRPC methods
 // by name.
@@ -53,6 +54,6 @@ class AnonymousStub {
   std::shared_ptr<ChannelInterface> channel_;
 };
 
-} // namespace
+} // namespace grpc
 
-#endif
+#endif  // GRPCXX_ANONYMOUS_STUB_H
