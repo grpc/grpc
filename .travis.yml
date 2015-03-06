@@ -10,20 +10,15 @@ env:
     - RUBY_VERSION=2.1
     - COVERALLS_PARALLEL=true
   matrix:
-    - CONFIG=dbg TEST=c
-    - CONFIG=dbg TEST=c++
-    - CONFIG=opt TEST=c
-    - CONFIG=opt TEST=c++
-    - CONFIG=opt TEST=node
-    - CONFIG=opt TEST=ruby
-    - CONFIG=opt TEST=python
-    - CONFIG=gcov TEST=c
-    - CONFIG=gcov TEST=c++
     - CONFIG=gcov TEST=node
 script:
+  - env
   - rvm use $RUBY_VERSION
   - gem install bundler
+  - export COVERALLS_SERVICE_JOB_ID_OLD=$COVERALLS_SERVICE_JOB_ID
+  - export COVERALLS_SERVICE_JOB_ID="$COVERALLS_SERVICE_JOB_ID_OLD.$TEST"
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
+  - export COVERALLS_SERVICE_JOB_ID=$COVERALLS_SERVICE_JOB_ID_OLD
 after_success:
   - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens -b. --gcov-options '\-p' ; fi
 notifications:

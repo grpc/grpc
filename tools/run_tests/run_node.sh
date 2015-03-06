@@ -40,7 +40,7 @@ export LD_LIBRARY_PATH=$root/libs/$CONFIG
 cd $root/src/node
 if [ "$CONFIG" = "gcov" ]
   then
-  npm run-script gcov
+  NODE_ENV=test YOURPACKAGE_COVERAGE=1 node $root/src/node/node_modules/.bin/mocha   --require blanket   --reporter mocha-lcov-reporter | $root/src/node/node_modules/coveralls/bin/coveralls.js
   else
   npm test
 fi
