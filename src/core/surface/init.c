@@ -40,17 +40,17 @@
 #include "src/core/surface/surface_trace.h"
 #include "src/core/transport/chttp2_transport.h"
 
-static gpr_once g_init = GPR_ONCE_INIT;
+static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 static int g_initializations;
 
-static void do_init(void) {
+static void do_basic_init(void) {
   gpr_mu_init(&g_init_mu);
   g_initializations = 0;
 }
 
 void grpc_init(void) {
-  gpr_once_init(&g_init, do_init);
+  gpr_once_init(&g_basic_init, do_basic_init);
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
@@ -76,7 +76,7 @@ void grpc_shutdown(void) {
 
 int grpc_is_initialized(void) {
   int r;
-  gpr_once_init(&g_init, do_init);
+  gpr_once_init(&g_basic_init, do_basic_init);
   gpr_mu_lock(&g_init_mu);
   r = g_initializations > 0;
   gpr_mu_unlock(&g_init_mu);
