@@ -214,7 +214,7 @@ void RunServer(const std::string& db_path) {
   RouteGuideImpl service(db_path);
 
   ServerBuilder builder;
-  builder.AddPort(server_address);
+  builder.AddPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
@@ -239,10 +239,10 @@ In this section, we'll look at creating a C++ client for our `RouteGuide` servic
 
 To call service methods, we first need to create a *stub*.
 
-First we need to create a gRPC *channel* for our stub, specifying the server address and port we want to connect to and any special channel arguments - in our case we'll use the default `ChannelArguments`:
+First we need to create a gRPC *channel* for our stub, specifying the server address and port we want to connect to and any special channel arguments - in our case we'll use the default `ChannelArguments` and no SSL:
 
 ```cpp
-grpc::CreateChannelDeprecated("localhost:50051", ChannelArguments());
+grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials(), ChannelArguments());
 ```
 
 Now we can use the channel to create our stub using the `NewStub` method provided in the `RouteGuide` class we generated from our .proto.
