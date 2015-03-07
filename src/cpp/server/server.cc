@@ -371,6 +371,12 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
                 array_.metadata[i].value,
                 array_.metadata[i].value + array_.metadata[i].value_length)));
       }
+      if (anonymous_ctx_) {
+        anonymous_ctx_->method_.assign(call_details_.method,
+                                       call_details_.method_capacity);
+        anonymous_ctx_->host_.assign(call_details_.host,
+                                     call_details_.host_capacity);
+      }
     }
     ctx->call_ = call_;
     Call call(call_, server_, cq_);
@@ -403,6 +409,7 @@ void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
                               CompletionQueue* cq, void* tag) {
   new AsyncRequest(this, registered_method, context, request, stream, cq, tag);
 }
+
 void Server::RequestAsyncAnonymousCall(AnonymousServerContext* context,
                                        ServerAsyncStreamingInterface* stream,
                                        CompletionQueue* cq, void* tag) {

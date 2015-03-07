@@ -34,16 +34,37 @@
 #ifndef __GRPCPP_BYTE_BUFFER_H_
 #define __GRPCPP_BYTE_BUFFER_H_
 
-#include <grpc++/stream.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc++/config.h>
 
 namespace grpc {
 
-class ByteBuffer {
+class ByteBuffer GRPC_FINAL {
  public:
-  // Some interface with operations that make sense.
+  ByteBuffer() : buffer_(nullptr) {}
+
+  ~ByteBuffer() {
+    if (buffer_) {
+      grpc_byte_buffer_destroy(buffer_);
+    }
+  }
 
  private:
-  grpc_byte_buffer* byte_buffer_;
+  friend class CallOpBuffer;
+
+  // takes ownership
+  void set_buffer(grpc_byte_buffer* buf) {
+    GPR_ASSERT(!buffer_);
+    buffer_ = buf;
+  }
+
+  grpc_byte_buffer* buffer() const {
+    GPR_ASSERT(buffer_);
+    return buffer_;
+  }
+
+  grpc_byte_buffer* buffer_;
 };
 
 } // namespace

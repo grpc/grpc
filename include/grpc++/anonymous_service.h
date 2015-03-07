@@ -49,6 +49,8 @@ class AnonymousServerContext : public ServerContext {
   const grpc::string& host() const { return host_; }
 
  private:
+  friend class Server;
+
   grpc::string method_;
   grpc::string host_;
 };
@@ -62,6 +64,7 @@ class AnonymousService {
   void RequestCall(AnonymousServerContext* ctx,
                    GenericServerReaderWriter* reader_writer,
                    CompletionQueue* cq, void* tag);
+
  private:
   friend class Server;
   Server* server_;

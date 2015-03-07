@@ -31,8 +31,10 @@
  *
  */
 
-#include <grpc/support/alloc.h>
 #include <grpc++/impl/call.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc++/byte_buffer.h>
 #include <grpc++/client_context.h>
 #include <grpc++/channel_interface.h>
 
@@ -48,9 +50,11 @@ CallOpBuffer::CallOpBuffer()
       recv_initial_metadata_(nullptr),
       recv_initial_metadata_arr_{0, 0, nullptr},
       send_message_(nullptr),
-      send_message_buf_(nullptr),
+      send_message_buffer_(nullptr),
+      send_buf_(nullptr),
       recv_message_(nullptr),
-      recv_message_buf_(nullptr),
+      recv_message_buffer_(nullptr),
+      recv_buf_(nullptr),
       client_send_close_(false),
       recv_trailing_metadata_(nullptr),
       recv_status_(nullptr),
@@ -74,18 +78,20 @@ void CallOpBuffer::Reset(void* next_return_tag) {
   recv_initial_metadata_ = nullptr;
   recv_initial_metadata_arr_.count = 0;
 
+  if (send_buf_ && send_message_) {
+    grpc_byte_buffer_destroy(send_buf_);
+  }
   send_message_ = nullptr;
-  if (send_message_buf_) {
-    grpc_byte_buffer_destroy(send_message_buf_);
-    send_message_buf_ = nullptr;
-  }
+  send_message_buffer_ = nullptr;
+  send_buf_ = nullptr;
 
-  recv_message_ = nullptr;
   got_message = false;
-  if (recv_message_buf_) {
-    grpc_byte_buffer_destroy(recv_message_buf_);
-    recv_message_buf_ = nullptr;
+  if (recv_buf_ && recv_message_) {
+    grpc_byte_buffer_destroy(recv_buf_);
   }
+  recv_message_ = nullptr;
+  recv_message_buffer_ = nullptr;
+  recv_buf_ = nullptr;
 
   client_send_close_ = false;
 
@@ -106,11 +112,11 @@ CallOpBuffer::~CallOpBuffer() {
   gpr_free(status_details_);
   gpr_free(recv_initial_metadata_arr_.metadata);
   gpr_free(recv_trailing_metadata_arr_.metadata);
-  if (recv_message_buf_) {
-    grpc_byte_buffer_destroy(recv_message_buf_);
+  if (recv_buf_ && recv_message_) {
+    grpc_byte_buffer_destroy(recv_buf_);
   }
-  if (send_message_buf_) {
-    grpc_byte_buffer_destroy(send_message_buf_);
+  if (send_buf_ && send_message_) {
+    grpc_byte_buffer_destroy(send_buf_);
   }
 }
 
@@ -166,9 +172,17 @@ void CallOpBuffer::AddSendMessage(const grpc::protobuf::Message& message) {
   send_message_ = &message;
 }
 
+void CallOpBuffer::AddSendMessage(const ByteBuffer& message) {
+  send_message_buffer_ = &message;
+}
+
 void CallOpBuffer::AddRecvMessage(grpc::protobuf::Message* message) {
   recv_message_ = message;
   recv_message_->Clear();
+}
+
+void CallOpBuffer::AddRecvMessage(ByteBuffer* message) {
+  recv_message_buffer_ = message;
 }
 
 void CallOpBuffer::AddClientSendClose() { client_send_close_ = true; }
@@ -206,19 +220,23 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
     ops[*nops].data.recv_initial_metadata = &recv_initial_metadata_arr_;
     (*nops)++;
   }
-  if (send_message_) {
-    bool success = SerializeProto(*send_message_, &send_message_buf_);
-    if (!success) {
-      abort();
-      // TODO handle parse failure
+  if (send_message_ || send_message_buffer_) {
+    if (send_message_) {
+      bool success = SerializeProto(*send_message_, &send_buf_);
+      if (!success) {
+        abort();
+        // TODO handle parse failure
+      }
+    } else {
+      send_buf_ = send_message_buffer_->buffer();
     }
     ops[*nops].op = GRPC_OP_SEND_MESSAGE;
-    ops[*nops].data.send_message = send_message_buf_;
+    ops[*nops].data.send_message = send_buf_;
     (*nops)++;
   }
-  if (recv_message_) {
+  if (recv_message_ || recv_message_buffer_) {
     ops[*nops].op = GRPC_OP_RECV_MESSAGE;
-    ops[*nops].data.recv_message = &recv_message_buf_;
+    ops[*nops].data.recv_message = &recv_buf_;
     (*nops)++;
   }
   if (client_send_close_) {
@@ -256,9 +274,11 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
 
 bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
   // Release send buffers.
-  if (send_message_buf_) {
-    grpc_byte_buffer_destroy(send_message_buf_);
-    send_message_buf_ = nullptr;
+  if (send_buf_ && send_message_) {
+    if (send_message_) {
+      grpc_byte_buffer_destroy(send_buf_);
+    }
+    send_buf_ = nullptr;
   }
   if (initial_metadata_) {
     gpr_free(initial_metadata_);
@@ -275,12 +295,16 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
     FillMetadataMap(&recv_initial_metadata_arr_, recv_initial_metadata_);
   }
   // Parse received message if any.
-  if (recv_message_) {
-    if (recv_message_buf_) {
+  if (recv_message_ || recv_message_buffer_) {
+    if (recv_buf_) {
       got_message = *status;
-      *status = *status && DeserializeProto(recv_message_buf_, recv_message_);
-      grpc_byte_buffer_destroy(recv_message_buf_);
-      recv_message_buf_ = nullptr;
+      if (recv_message_) {
+        *status = *status && DeserializeProto(recv_buf_, recv_message_);
+        grpc_byte_buffer_destroy(recv_buf_);
+      } else {
+        recv_message_buffer_->set_buffer(recv_buf_);
+      }
+      recv_buf_ = nullptr;
     } else {
       // Read failed
       got_message = false;
