@@ -59,11 +59,11 @@ grpc_server *grpc_secure_server_create(grpc_server_credentials *creds,
   grpc_server *server = NULL;
   if (creds == NULL) return NULL; /* TODO(ctiller): Return lame server. */
 
-  if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
+  if (strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL) == 0) {
     status = grpc_ssl_server_security_context_create(
         grpc_ssl_server_credentials_get_config(creds), &ctx);
-  } else if (!strcmp(creds->type,
-                     GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY)) {
+  } else if (strcmp(creds->type,
+		    GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) == 0) {
     ctx = grpc_fake_server_security_context_create();
     status = GRPC_SECURITY_OK;
   }

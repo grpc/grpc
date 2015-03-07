@@ -654,7 +654,7 @@ int main(int argc, char **argv) {
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
-    if (!strcmp(test_strategies[i].name, read_strategy)) {
+    if (strcmp(test_strategies[i].name, read_strategy) == 0) {
       test_strategy = &test_strategies[i];
     }
   }

@@ -109,7 +109,7 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
     };
     int i;
     for (i = 0; i < (int)(sizeof(svc) / sizeof(svc[0])); i++) {
-      if (!strcmp(port, svc[i][0])) {
+      if (strcmp(port, svc[i][0]) == 0) {
         s = getaddrinfo(host, svc[i][1], &hints, &result);
         break;
       }
