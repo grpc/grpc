@@ -52,8 +52,9 @@
 /* 1 hour max. */
 const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0};
 
-#define GRPC_AUTH_JSON_KEY_TYPE_INVALID "invalid"
-#define GRPC_AUTH_JSON_KEY_TYPE_SERVICE_ACCOUNT "service_account"
+#define GRPC_AUTH_JSON_TYPE_INVALID "invalid"
+#define GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT "service_account"
+#define GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER "authorized_user"
 
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
@@ -87,7 +88,7 @@ static int set_json_key_string_property(grpc_json *json, const char *prop_name,
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key *json_key) {
   return (json_key != NULL) &&
-         strcmp(json_key->type, GRPC_AUTH_JSON_KEY_TYPE_INVALID);
+         strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID);
 }
 
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
@@ -100,7 +101,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
   int success = 0;
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
-  result.type = GRPC_AUTH_JSON_KEY_TYPE_INVALID;
+  result.type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json == NULL) {
     gpr_log(GPR_ERROR, "Invalid json string %s", json_string);
     goto end;
@@ -108,10 +109,10 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
 
   prop_value = json_get_string_property(json, "type");
   if (prop_value == NULL ||
-      strcmp(prop_value, GRPC_AUTH_JSON_KEY_TYPE_SERVICE_ACCOUNT)) {
+      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT)) {
     goto end;
   }
-  result.type = GRPC_AUTH_JSON_KEY_TYPE_SERVICE_ACCOUNT;
+  result.type = GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT;
 
   if (!set_json_key_string_property(json, "private_key_id",
                                     &result.private_key_id) ||
@@ -148,7 +149,7 @@ end:
 
 void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key) {
   if (json_key == NULL) return;
-  json_key->type = GRPC_AUTH_JSON_KEY_TYPE_INVALID;
+  json_key->type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json_key->client_id != NULL) {
     gpr_free(json_key->client_id);
     json_key->client_id = NULL;
@@ -331,3 +332,67 @@ void grpc_jwt_encode_and_sign_set_override(
     grpc_jwt_encode_and_sign_override func) {
   g_jwt_encode_and_sign_override = func;
 }
+
+/* --- grpc_auth_refresh_token --- */
+
+int grpc_auth_refresh_token_is_valid(
+    const grpc_auth_refresh_token *refresh_token) {
+  return (refresh_token != NULL) &&
+         strcmp(refresh_token->type, GRPC_AUTH_JSON_TYPE_INVALID);
+}
+
+grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
+    const char *json_string) {
+  grpc_auth_refresh_token result;
+  char *scratchpad = gpr_strdup(json_string);
+  grpc_json *json = grpc_json_parse_string(scratchpad);
+  const char *prop_value;
+  int success = 0;
+
+  memset(&result, 0, sizeof(grpc_auth_refresh_token));
+  result.type = GRPC_AUTH_JSON_TYPE_INVALID;
+  if (json == NULL) {
+    gpr_log(GPR_ERROR, "Invalid json string %s", json_string);
+    goto end;
+  }
+
+  prop_value = json_get_string_property(json, "type");
+  if (prop_value == NULL ||
+      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER)) {
+    goto end;
+  }
+  result.type = GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER;
+
+  if (!set_json_key_string_property(json, "client_secret",
+                                    &result.client_secret) ||
+      !set_json_key_string_property(json, "client_id", &result.client_id) ||
+      !set_json_key_string_property(json, "refresh_token",
+                                    &result.refresh_token)) {
+    goto end;
+  }
+  success = 1;
+
+end:
+  if (json != NULL) grpc_json_destroy(json);
+  if (!success) grpc_auth_refresh_token_destruct(&result);
+  gpr_free(scratchpad);
+  return result;
+}
+
+void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token) {
+  if (refresh_token == NULL) return;
+  refresh_token->type = GRPC_AUTH_JSON_TYPE_INVALID;
+  if (refresh_token->client_id != NULL) {
+    gpr_free(refresh_token->client_id);
+    refresh_token->client_id = NULL;
+  }
+  if (refresh_token->client_secret != NULL) {
+    gpr_free(refresh_token->client_secret);
+    refresh_token->client_secret = NULL;
+  }
+  if (refresh_token->refresh_token != NULL) {
+    gpr_free(refresh_token->refresh_token);
+    refresh_token->refresh_token = NULL;
+  }
+}
+

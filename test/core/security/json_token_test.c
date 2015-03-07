@@ -78,6 +78,13 @@ static const char test_json_key_str_part3[] =
     "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
     "com\", \"type\": \"service_account\" }";
 
+/* Test refresh token. */
+static const char test_refresh_token_str[] =
+    "{ \"client_id\": \"32555999999.apps.googleusercontent.com\","
+    "  \"client_secret\": \"EmssLNjJy1332hD4KFsecret\","
+    "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
+    "  \"type\": \"authorized_user\"}";
+
 static const char test_scope[] = "myperm1 myperm2";
 
 static const char test_service_url[] = "https://foo.com/foo.v1";
@@ -419,6 +426,64 @@ static void test_jwt_creds_jwt_encode_and_sign(void) {
                            jwt_creds_check_jwt_claim);
 }
 
+static void test_parse_refresh_token_success(void) {
+  grpc_auth_refresh_token refresh_token =
+      grpc_auth_refresh_token_create_from_string(test_refresh_token_str);
+  GPR_ASSERT(grpc_auth_refresh_token_is_valid(&refresh_token));
+  GPR_ASSERT(refresh_token.type != NULL &&
+             !(strcmp(refresh_token.type, "authorized_user")));
+  GPR_ASSERT(refresh_token.client_id != NULL &&
+             !(strcmp(refresh_token.client_id,
+                      "32555999999.apps.googleusercontent.com")));
+  GPR_ASSERT(
+      refresh_token.client_secret != NULL &&
+      !(strcmp(refresh_token.client_secret, "EmssLNjJy1332hD4KFsecret")));
+  GPR_ASSERT(refresh_token.refresh_token != NULL &&
+             !(strcmp(refresh_token.refresh_token,
+                      "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42")));
+  grpc_auth_refresh_token_destruct(&refresh_token);
+}
+
+static void test_parse_refresh_token_failure_no_type(void) {
+  const char refresh_token_str[] =
+      "{ \"client_id\": \"32555999999.apps.googleusercontent.com\","
+      "  \"client_secret\": \"EmssLNjJy1332hD4KFsecret\","
+      "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\"}";
+  grpc_auth_refresh_token refresh_token =
+      grpc_auth_refresh_token_create_from_string(refresh_token_str);
+  GPR_ASSERT(!grpc_auth_refresh_token_is_valid(&refresh_token));
+}
+
+static void test_parse_refresh_token_failure_no_client_id(void) {
+  const char refresh_token_str[] =
+      "{ \"client_secret\": \"EmssLNjJy1332hD4KFsecret\","
+      "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
+      "  \"type\": \"authorized_user\"}";
+  grpc_auth_refresh_token refresh_token =
+      grpc_auth_refresh_token_create_from_string(refresh_token_str);
+  GPR_ASSERT(!grpc_auth_refresh_token_is_valid(&refresh_token));
+}
+
+static void test_parse_refresh_token_failure_no_client_secret(void) {
+  const char refresh_token_str[] =
+      "{ \"client_id\": \"32555999999.apps.googleusercontent.com\","
+      "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
+      "  \"type\": \"authorized_user\"}";
+  grpc_auth_refresh_token refresh_token =
+      grpc_auth_refresh_token_create_from_string(refresh_token_str);
+  GPR_ASSERT(!grpc_auth_refresh_token_is_valid(&refresh_token));
+}
+
+static void test_parse_refresh_token_failure_no_refresh_token(void) {
+  const char refresh_token_str[] =
+      "{ \"client_id\": \"32555999999.apps.googleusercontent.com\","
+      "  \"client_secret\": \"EmssLNjJy1332hD4KFsecret\","
+      "  \"type\": \"authorized_user\"}";
+  grpc_auth_refresh_token refresh_token =
+      grpc_auth_refresh_token_create_from_string(refresh_token_str);
+  GPR_ASSERT(!grpc_auth_refresh_token_is_valid(&refresh_token));
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_parse_json_key_success();
@@ -430,5 +495,10 @@ int main(int argc, char **argv) {
   test_parse_json_key_failure_no_private_key();
   test_service_account_creds_jwt_encode_and_sign();
   test_jwt_creds_jwt_encode_and_sign();
+  test_parse_refresh_token_success();
+  test_parse_refresh_token_failure_no_type();
+  test_parse_refresh_token_failure_no_client_id();
+  test_parse_refresh_token_failure_no_client_secret();
+  test_parse_refresh_token_failure_no_refresh_token();
   return 0;
 }
