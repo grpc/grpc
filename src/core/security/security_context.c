@@ -421,7 +421,7 @@ static grpc_security_status ssl_channel_check_call_host(
   /* If the target name was overridden, then the original target_name was
      'checked' transitively during the previous peer check at the end of the
      handshake. */
-  if (c->overridden_target_name != NULL && !strcmp(host, c->target_name)) {
+  if (c->overridden_target_name != NULL && strcmp(host, c->target_name) == 0) {
     return GRPC_SECURITY_OK;
   } else {
     return GRPC_SECURITY_ERROR;
@@ -610,7 +610,7 @@ grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
 
   for (i = 0; args && i < args->num_args; i++) {
     grpc_arg *arg = &args->args[i];
-    if (!strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) &&
+    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
         arg->type == GRPC_ARG_STRING) {
       overridden_target_name = arg->value.string;
       break;
