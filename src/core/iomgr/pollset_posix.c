@@ -396,6 +396,9 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   pfd[1].events = grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
 
   r = poll(pfd, GPR_ARRAY_SIZE(pfd), timeout);
+
+  grpc_fd_end_poll(&fd_watcher);
+
   if (r < 0) {
     if (errno != EINTR) {
       gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
@@ -415,7 +418,6 @@ static int unary_poll_pollset_maybe_work(grpc_pollset *pollset,
   }
 
   grpc_pollset_kick_post_poll(&pollset->kick_state);
-  grpc_fd_end_poll(&fd_watcher);
 
   gpr_mu_lock(&pollset->mu);
   pollset->counter = 0;
