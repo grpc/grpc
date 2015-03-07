@@ -83,6 +83,8 @@ struct grpc_completion_queue {
 #endif
 };
 
+static __thread grpc_completion_queue *polling_cq;
+
 /* Default do-nothing on_finish function */
 static void null_on_finish(void *user_data, grpc_op_error error) {}
 
@@ -127,8 +129,10 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
     ev->bucket_prev = cc->buckets[bucket]->bucket_prev;
     ev->bucket_next->bucket_prev = ev->bucket_prev->bucket_next = ev;
   }
-  gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
-  grpc_pollset_kick(&cc->pollset);
+  if (polling_cq != cc) {
+    gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
+    grpc_pollset_kick(&cc->pollset);
+  }
   return ev;
 }
 
@@ -282,6 +286,9 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cc,
                                        gpr_timespec deadline) {
   event *ev = NULL;
 
+  GPR_ASSERT(polling_cq == NULL);
+  polling_cq = cc;
+
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
     if (cc->queue != NULL) {
@@ -314,11 +321,13 @@ grpc_event *grpc_completion_queue_next(grpc_completion_queue *cc,
     if (gpr_cv_wait(GRPC_POLLSET_CV(&cc->pollset),
                     GRPC_POLLSET_MU(&cc->pollset), deadline)) {
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+      polling_cq = NULL;
       return NULL;
     }
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ev->base);
+  polling_cq = NULL;
   return &ev->base;
 }
 
@@ -355,6 +364,9 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
                                         gpr_timespec deadline) {
   event *ev = NULL;
 
+  GPR_ASSERT(polling_cq == NULL);
+  polling_cq = cc;
+
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   for (;;) {
     if ((ev = pluck_event(cc, tag))) {
@@ -370,11 +382,13 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
     if (gpr_cv_wait(GRPC_POLLSET_CV(&cc->pollset),
                     GRPC_POLLSET_MU(&cc->pollset), deadline)) {
       gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+      polling_cq = NULL;
       return NULL;
     }
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ev->base);
+  polling_cq = NULL;
   return &ev->base;
 }
 
