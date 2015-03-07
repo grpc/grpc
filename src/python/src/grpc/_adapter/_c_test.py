@@ -70,7 +70,8 @@ class _CTest(unittest.TestCase):
   def testChannel(self):
     _c.init()
 
-    channel = _c.Channel('test host:12345', None)
+    channel = _c.Channel(
+        'test host:12345', None, server_host_override='ignored')
     del channel
 
     _c.shut_down()

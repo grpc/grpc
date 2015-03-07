@@ -125,7 +125,8 @@ def insecure_stub(methods, host, port):
 
 
 def secure_stub(
-    methods, host, port, root_certificates, private_key, certificate_chain):
+    methods, host, port, root_certificates, private_key, certificate_chain,
+    server_host_override=None):
   """Constructs an insecure interfaces.Stub.
 
   Args:
@@ -140,6 +141,8 @@ def secure_stub(
       should be used.
     certificate_chain: The PEM-encoded certificate chain to use or None if no
       certificate chain should be used.
+    server_host_override: (For testing only) the target name used for SSL
+      host name checking.
 
   Returns:
     An interfaces.Stub affording RPC invocation.
@@ -148,7 +151,7 @@ def secure_stub(
   activated_rear_link = _rear.secure_activated_rear_link(
       host, port, breakdown.request_serializers,
       breakdown.response_deserializers, root_certificates, private_key,
-      certificate_chain)
+      certificate_chain, server_host_override=server_host_override)
   return _build_stub(breakdown, activated_rear_link)
 
 
