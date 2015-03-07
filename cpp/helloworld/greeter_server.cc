@@ -39,6 +39,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include "helloworld.pb.h"
 
@@ -64,7 +65,7 @@ void RunServer() {
   GreeterServiceImpl service;
 
   ServerBuilder builder;
-  builder.AddPort(server_address);
+  builder.AddPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;

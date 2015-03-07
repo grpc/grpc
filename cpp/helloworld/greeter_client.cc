@@ -40,6 +40,7 @@
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
 #include <grpc++/status.h>
 #include "helloworld.pb.h"
 
@@ -80,7 +81,8 @@ int main(int argc, char** argv) {
   grpc_init();
 
   GreeterClient greeter(
-      grpc::CreateChannelDeprecated("localhost:50051", ChannelArguments()));
+      grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials(),
+                          ChannelArguments()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
