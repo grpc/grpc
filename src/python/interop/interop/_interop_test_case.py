@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,15 +27,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Common code for unit tests of the interoperability test code."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+from interop import methods
 
-root=`pwd`
-rm -rf python2.7_virtual_environment
-virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-source python2.7_virtual_environment/bin/activate
-pip install enum34==1.0.4 futures==2.2.0 protobuf==3.0.0-alpha-1
-CFLAGS=-I$root/include LDFLAGS=-L$root/libs/opt pip install src/python/src
-pip install src/python/interop
+
+class InteropTestCase(object):
+  """Unit test methods.
+
+  This class must be mixed in with unittest.TestCase and a class that defines
+  setUp and tearDown methods that manage a stub attribute.
+  """
+
+  def testEmptyUnary(self):
+    methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub)
+
+  def testLargeUnary(self):
+    methods.TestCase.LARGE_UNARY.test_interoperability(self.stub)
+
+  def testServerStreaming(self):
+    methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub)
+
+  def testClientStreaming(self):
+    methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub)
+
+  def testPingPong(self):
+    methods.TestCase.PING_PONG.test_interoperability(self.stub)
