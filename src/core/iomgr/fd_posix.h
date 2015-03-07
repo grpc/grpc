@@ -52,6 +52,7 @@ typedef struct grpc_fd_watcher {
   struct grpc_fd_watcher *prev;
   grpc_pollset *pollset;
   grpc_fd *fd;
+  int r, w;
 } grpc_fd_watcher;
 
 struct grpc_fd {
