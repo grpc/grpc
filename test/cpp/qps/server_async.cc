@@ -46,6 +46,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <gtest/gtest.h>
 #include "src/cpp/server/thread_pool.h"
@@ -67,7 +68,7 @@ class AsyncQpsServerTest : public Server {
     gpr_join_host_port(&server_address, "::", port);
 
     ServerBuilder builder;
-    builder.AddPort(server_address);
+    builder.AddPort(server_address, InsecureServerCredentials());
     gpr_free(server_address);
 
     builder.RegisterAsyncService(&async_service_);

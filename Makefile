@@ -942,13 +942,13 @@ static: static_c static_cxx
 
 static_c:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 
-static_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.a
+static_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 
 shared: shared_c shared_cxx
 
 shared_c:  $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
 
-shared_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT)
+shared_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT)
 grpc_csharp_ext: shared_csharp
@@ -1844,6 +1844,8 @@ strip-static_cxx: static_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.a
+	$(E) "[STRIP]   Stripping libgrpc++_unsecure.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
 endif
 
 strip-shared_c: shared_c
@@ -1860,6 +1862,8 @@ strip-shared_cxx: shared_cxx
 ifeq ($(CONFIG),opt)
 	$(E) "[STRIP]   Stripping libgrpc++.so"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT)
+	$(E) "[STRIP]   Stripping libgrpc++_unsecure.so"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT)
 endif
 
 strip-shared_csharp: shared_csharp
@@ -2019,6 +2023,9 @@ install-static_cxx: static_cxx strip-static_cxx
 	$(E) "[INSTALL] Installing libgrpc++.a"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(prefix)/lib/libgrpc++.a
+	$(E) "[INSTALL] Installing libgrpc++_unsecure.a"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(prefix)/lib/libgrpc++_unsecure.a
 
 
 
@@ -2081,6 +2088,19 @@ else
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
+endif
+endif
+ifeq ($(SYSTEM),MINGW32)
+	$(E) "[INSTALL] Installing grpc++_unsecure.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc++_unsecure.$(SHARED_EXT) $(prefix)/lib/grpc++_unsecure.$(SHARED_EXT)
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure-imp.a $(prefix)/lib/libgrpc++_unsecure-imp.a
+else
+	$(E) "[INSTALL] Installing libgrpc++_unsecure.$(SHARED_EXT)"
+	$(Q) $(INSTALL) -d $(prefix)/lib
+	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.$(SHARED_EXT)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf libgrpc++_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so
 endif
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2350,7 +2370,6 @@ LIBGRPC_SRC = \
     src/core/security/server_secure_chttp2.c \
     src/core/surface/init_secure.c \
     src/core/surface/secure_channel_create.c \
-    src/core/surface/secure_server_create.c \
     src/core/tsi/fake_transport_security.c \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
@@ -2496,7 +2515,6 @@ src/core/security/security_context.c: $(OPENSSL_DEP)
 src/core/security/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
-src/core/surface/secure_server_create.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
@@ -2602,13 +2620,13 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)
-	$(Q) rm -rf tmp-merge
-	$(Q) mkdir tmp-merge
-	$(Q) ( cd tmp-merge ; $(AR) x ../$(LIBDIR)/$(CONFIG)/libgrpc.a )
-	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; ar x ../$${l} ) ; done
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge/__.SYMDEF*
-	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge/*
-	$(Q) rm -rf tmp-merge
+	$(Q) rm -rf tmp-merge-grpc
+	$(Q) mkdir tmp-merge-grpc
+	$(Q) ( cd tmp-merge-grpc ; $(AR) x ../$(LIBDIR)/$(CONFIG)/libgrpc.a )
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge-grpc ; ar x ../$${l} ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge-grpc/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge-grpc/*
+	$(Q) rm -rf tmp-merge-grpc
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
@@ -2659,7 +2677,6 @@ $(OBJDIR)/$(CONFIG)/src/core/security/security_context.o:
 $(OBJDIR)/$(CONFIG)/src/core/security/server_secure_chttp2.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/init_secure.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/secure_channel_create.o: 
-$(OBJDIR)/$(CONFIG)/src/core/surface/secure_server_create.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/fake_transport_security.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/ssl_transport_security.o: 
 $(OBJDIR)/$(CONFIG)/src/core/tsi/transport_security.o: 
@@ -3074,17 +3091,21 @@ $(OBJDIR)/$(CONFIG)/src/core/transport/transport.o:
 
 
 LIBGRPC++_SRC = \
+    src/cpp/client/secure_credentials.cc \
+    src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel.cc \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/client_unary_call.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/credentials.cc \
+    src/cpp/client/insecure_credentials.cc \
     src/cpp/client/internal_stub.cc \
     src/cpp/common/call.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
+    src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
     src/cpp/server/server_context.cc \
@@ -3151,17 +3172,21 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
+src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/channel.cc: $(OPENSSL_DEP)
 src/cpp/client/channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/client/client_context.cc: $(OPENSSL_DEP)
 src/cpp/client/client_unary_call.cc: $(OPENSSL_DEP)
 src/cpp/client/create_channel.cc: $(OPENSSL_DEP)
 src/cpp/client/credentials.cc: $(OPENSSL_DEP)
+src/cpp/client/insecure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/internal_stub.cc: $(OPENSSL_DEP)
 src/cpp/common/call.cc: $(OPENSSL_DEP)
 src/cpp/common/completion_queue.cc: $(OPENSSL_DEP)
 src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
 src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
+src/cpp/server/insecure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/server/server.cc: $(OPENSSL_DEP)
 src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
 src/cpp/server/server_context.cc: $(OPENSSL_DEP)
@@ -3186,15 +3211,15 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT)$(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++-imp.a -o $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc-imp
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++-imp.a -o $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc-imp
 else
 $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT): $(LIBGRPC++_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(LIBGRPC++_OBJS) $(LDLIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++.so.0
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++.so
 endif
@@ -3210,17 +3235,21 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/secure_credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/secure_server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/channel.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/channel_arguments.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/client_context.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/client_unary_call.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/create_channel.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/insecure_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/internal_stub.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/call.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/completion_queue.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/rpc_method.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/proto/proto_utils.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/insecure_server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_builder.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_context.o: 
@@ -3293,6 +3322,125 @@ endif
 
 
 $(OBJDIR)/$(CONFIG)/test/cpp/util/create_test_channel.o:     $(GENDIR)/test/cpp/util/messages.pb.cc    $(GENDIR)/test/cpp/util/echo.pb.cc    $(GENDIR)/test/cpp/util/echo_duplicate.pb.cc
+
+
+LIBGRPC++_UNSECURE_SRC = \
+    src/cpp/client/channel.cc \
+    src/cpp/client/channel_arguments.cc \
+    src/cpp/client/client_context.cc \
+    src/cpp/client/client_unary_call.cc \
+    src/cpp/client/create_channel.cc \
+    src/cpp/client/credentials.cc \
+    src/cpp/client/insecure_credentials.cc \
+    src/cpp/client/internal_stub.cc \
+    src/cpp/common/call.cc \
+    src/cpp/common/completion_queue.cc \
+    src/cpp/common/rpc_method.cc \
+    src/cpp/proto/proto_utils.cc \
+    src/cpp/server/insecure_server_credentials.cc \
+    src/cpp/server/server.cc \
+    src/cpp/server/server_builder.cc \
+    src/cpp/server/server_context.cc \
+    src/cpp/server/server_credentials.cc \
+    src/cpp/server/thread_pool.cc \
+    src/cpp/util/status.cc \
+    src/cpp/util/time.cc \
+
+PUBLIC_HEADERS_CXX += \
+    include/grpc++/async_unary_call.h \
+    include/grpc++/channel_arguments.h \
+    include/grpc++/channel_interface.h \
+    include/grpc++/client_context.h \
+    include/grpc++/completion_queue.h \
+    include/grpc++/config.h \
+    include/grpc++/create_channel.h \
+    include/grpc++/credentials.h \
+    include/grpc++/impl/call.h \
+    include/grpc++/impl/client_unary_call.h \
+    include/grpc++/impl/internal_stub.h \
+    include/grpc++/impl/rpc_method.h \
+    include/grpc++/impl/rpc_service_method.h \
+    include/grpc++/impl/service_type.h \
+    include/grpc++/server.h \
+    include/grpc++/server_builder.h \
+    include/grpc++/server_context.h \
+    include/grpc++/server_credentials.h \
+    include/grpc++/status.h \
+    include/grpc++/status_code_enum.h \
+    include/grpc++/stream.h \
+    include/grpc++/thread_pool_interface.h \
+
+LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: protobuf_dep_error
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/grpc++_unsecure.$(SHARED_EXT): protobuf_dep_error
+else
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT): protobuf_dep_error
+endif
+
+else
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a: $(ZLIB_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_UNSECURE_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBGRPC++_UNSECURE_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a
+endif
+
+
+
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/grpc++_unsecure.$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT)$(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc++_unsecure.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure-imp.a -o $(LIBDIR)/$(CONFIG)/grpc++_unsecure.$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr-imp -lgrpc_unsecure-imp
+else
+$(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT): $(LIBGRPC++_UNSECURE_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc++_unsecure.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT) $(LIBGRPC++_UNSECURE_OBJS) $(LDLIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) -lgpr -lgrpc_unsecure
+	$(Q) ln -sf libgrpc++_unsecure.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.so.0
+	$(Q) ln -sf libgrpc++_unsecure.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.so
+endif
+endif
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC++_UNSECURE_OBJS:.o=.dep)
+endif
+
+$(OBJDIR)/$(CONFIG)/src/cpp/client/channel.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/channel_arguments.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/client_context.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/client_unary_call.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/create_channel.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/insecure_credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/internal_stub.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/common/call.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/common/completion_queue.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/common/rpc_method.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/proto/proto_utils.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/insecure_server_credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/server.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/server_builder.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/server_context.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/server_credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/thread_pool.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/util/status.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/util/time.o: 
 
 
 LIBPUBSUB_CLIENT_LIB_SRC = \
@@ -3468,15 +3616,15 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP)$(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT)$(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr-imp -lgrpc-imp
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext.def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) -lgpr-imp -lgrpc-imp
 else
 $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) -lgpr -lgrpc
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS) -lgpr -lgrpc
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.0 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(LIBGRPC_CSHARP_EXT_OBJS) $(LDLIBS) -lgpr -lgrpc
 	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.so.0
 	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.so
 endif
