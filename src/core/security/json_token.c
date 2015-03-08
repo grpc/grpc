@@ -257,7 +257,7 @@ static char *dot_concat_and_free_strings(char *str1, char *str2) {
 }
 
 const EVP_MD *openssl_digest_from_algorithm(const char *algorithm) {
-  if (!strcmp(algorithm, GRPC_JWT_RSA_SHA256_ALGORITHM)) {
+  if (strcmp(algorithm, GRPC_JWT_RSA_SHA256_ALGORITHM) == 0) {
     return EVP_sha256();
   } else {
     gpr_log(GPR_ERROR, "Unknown algorithm %s.", algorithm);

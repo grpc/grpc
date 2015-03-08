@@ -143,9 +143,10 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
              GRPC_CREDENTIALS_OK);
   GPR_ASSERT(token_lifetime.tv_sec == 3599);
   GPR_ASSERT(token_lifetime.tv_nsec == 0);
-  GPR_ASSERT(!strcmp(grpc_mdstr_as_c_string(token_elem->key), "Authorization"));
-  GPR_ASSERT(!strcmp(grpc_mdstr_as_c_string(token_elem->value),
-                     "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"));
+  GPR_ASSERT(strcmp(grpc_mdstr_as_c_string(token_elem->key),
+                    "Authorization") == 0);
+  GPR_ASSERT(strcmp(grpc_mdstr_as_c_string(token_elem->value),
+                    "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") == 0);
   grpc_mdelem_unref(token_elem);
   grpc_mdctx_unref(ctx);
 }
@@ -294,15 +295,16 @@ static void test_ssl_oauth2_composite_creds(void) {
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_credentials_unref(ssl_creds);
   grpc_credentials_unref(oauth2_creds);
-  GPR_ASSERT(!strcmp(composite_creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE));
+  GPR_ASSERT(strcmp(composite_creds->type,
+                    GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0);
   GPR_ASSERT(grpc_credentials_has_request_metadata(composite_creds));
   GPR_ASSERT(!grpc_credentials_has_request_metadata_only(composite_creds));
   creds_array = grpc_composite_credentials_get_credentials(composite_creds);
   GPR_ASSERT(creds_array->num_creds == 2);
-  GPR_ASSERT(
-      !strcmp(creds_array->creds_array[0]->type, GRPC_CREDENTIALS_TYPE_SSL));
-  GPR_ASSERT(
-      !strcmp(creds_array->creds_array[1]->type, GRPC_CREDENTIALS_TYPE_OAUTH2));
+  GPR_ASSERT(strcmp(creds_array->creds_array[0]->type,
+                    GRPC_CREDENTIALS_TYPE_SSL) == 0);
+  GPR_ASSERT(strcmp(creds_array->creds_array[1]->type,
+                    GRPC_CREDENTIALS_TYPE_OAUTH2) == 0);
   grpc_credentials_get_request_metadata(composite_creds, test_service_url,
                                         check_ssl_oauth2_composite_metadata,
                                         composite_creds);
@@ -338,17 +340,18 @@ static void test_ssl_oauth2_iam_composite_creds(void) {
   grpc_credentials_unref(oauth2_creds);
   grpc_credentials_unref(aux_creds);
   grpc_credentials_unref(iam_creds);
-  GPR_ASSERT(!strcmp(composite_creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE));
+  GPR_ASSERT(strcmp(composite_creds->type,
+                    GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0);
   GPR_ASSERT(grpc_credentials_has_request_metadata(composite_creds));
   GPR_ASSERT(!grpc_credentials_has_request_metadata_only(composite_creds));
   creds_array = grpc_composite_credentials_get_credentials(composite_creds);
   GPR_ASSERT(creds_array->num_creds == 3);
-  GPR_ASSERT(
-      !strcmp(creds_array->creds_array[0]->type, GRPC_CREDENTIALS_TYPE_SSL));
-  GPR_ASSERT(
-      !strcmp(creds_array->creds_array[1]->type, GRPC_CREDENTIALS_TYPE_OAUTH2));
-  GPR_ASSERT(
-      !strcmp(creds_array->creds_array[2]->type, GRPC_CREDENTIALS_TYPE_IAM));
+  GPR_ASSERT(strcmp(creds_array->creds_array[0]->type,
+                    GRPC_CREDENTIALS_TYPE_SSL) == 0);
+  GPR_ASSERT(strcmp(creds_array->creds_array[1]->type,
+                    GRPC_CREDENTIALS_TYPE_OAUTH2) == 0);
+  GPR_ASSERT(strcmp(creds_array->creds_array[2]->type,
+                    GRPC_CREDENTIALS_TYPE_IAM) == 0);
   grpc_credentials_get_request_metadata(composite_creds, test_service_url,
                                         check_ssl_oauth2_iam_composite_metadata,
                                         composite_creds);
@@ -359,12 +362,12 @@ static void on_oauth2_creds_get_metadata_success(
     grpc_credentials_status status) {
   GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
   GPR_ASSERT(num_md == 1);
-  GPR_ASSERT(
-      !strcmp(grpc_mdstr_as_c_string(md_elems[0]->key), "Authorization"));
-  GPR_ASSERT(!strcmp(grpc_mdstr_as_c_string(md_elems[0]->value),
-                     "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"));
+  GPR_ASSERT(strcmp(grpc_mdstr_as_c_string(md_elems[0]->key),
+                    "Authorization") == 0);
+  GPR_ASSERT(strcmp(grpc_mdstr_as_c_string(md_elems[0]->value),
+                    "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") == 0);
   GPR_ASSERT(user_data != NULL);
-  GPR_ASSERT(!strcmp((const char *)user_data, test_user_data));
+  GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
 }
 
 static void on_oauth2_creds_get_metadata_failure(
@@ -373,19 +376,19 @@ static void on_oauth2_creds_get_metadata_failure(
   GPR_ASSERT(status == GRPC_CREDENTIALS_ERROR);
   GPR_ASSERT(num_md == 0);
   GPR_ASSERT(user_data != NULL);
-  GPR_ASSERT(!strcmp((const char *)user_data, test_user_data));
+  GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
 }
 
 static void validate_compute_engine_http_request(
     const grpc_httpcli_request *request) {
   GPR_ASSERT(!request->use_ssl);
-  GPR_ASSERT(!strcmp(request->host, "metadata"));
-  GPR_ASSERT(
-      !strcmp(request->path,
-              "/computeMetadata/v1/instance/service-accounts/default/token"));
+  GPR_ASSERT(strcmp(request->host, "metadata") == 0);
+  GPR_ASSERT(strcmp(request->path,
+             "/computeMetadata/v1/instance/service-accounts/default/token")
+             == 0);
   GPR_ASSERT(request->hdr_count == 1);
-  GPR_ASSERT(!strcmp(request->hdrs[0].key, "Metadata-Flavor"));
-  GPR_ASSERT(!strcmp(request->hdrs[0].value, "Google"));
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Metadata-Flavor") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value, "Google") == 0);
 }
 
 static int compute_engine_httpcli_get_success_override(
@@ -467,19 +470,19 @@ static void validate_jwt_encode_and_sign_params(
   GPR_ASSERT(json_key->private_key != NULL);
   GPR_ASSERT(RSA_check_key(json_key->private_key));
   GPR_ASSERT(json_key->type != NULL &&
-             !(strcmp(json_key->type, "service_account")));
+             strcmp(json_key->type, "service_account") == 0);
   GPR_ASSERT(json_key->private_key_id != NULL &&
-             !strcmp(json_key->private_key_id,
-                     "e6b5137873db8d2ef81e06a47289e6434ec8a165"));
+             strcmp(json_key->private_key_id,
+                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
   GPR_ASSERT(json_key->client_id != NULL &&
-             !strcmp(json_key->client_id,
-                     "777-abaslkan11hlb6nmim3bpspl31ud.apps."
-                     "googleusercontent.com"));
+             strcmp(json_key->client_id,
+                    "777-abaslkan11hlb6nmim3bpspl31ud.apps."
+                    "googleusercontent.com") == 0);
   GPR_ASSERT(json_key->client_email != NULL &&
-             !strcmp(json_key->client_email,
-                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
-                     "gserviceaccount.com"));
-  if (scope != NULL) GPR_ASSERT(!strcmp(scope, test_scope));
+             strcmp(json_key->client_email,
+                    "777-abaslkan11hlb6nmim3bpspl31ud@developer."
+                    "gserviceaccount.com") == 0);
+  if (scope != NULL) GPR_ASSERT(strcmp(scope, test_scope) == 0);
   GPR_ASSERT(!gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime));
 }
 
@@ -517,12 +520,12 @@ static void validate_service_account_http_request(
   GPR_ASSERT(!memcmp(expected_body, body, body_size));
   gpr_free(expected_body);
   GPR_ASSERT(request->use_ssl);
-  GPR_ASSERT(!strcmp(request->host, "www.googleapis.com"));
-  GPR_ASSERT(!strcmp(request->path, "/oauth2/v3/token"));
+  GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
+  GPR_ASSERT(strcmp(request->path, "/oauth2/v3/token") == 0);
   GPR_ASSERT(request->hdr_count == 1);
-  GPR_ASSERT(!strcmp(request->hdrs[0].key, "Content-Type"));
-  GPR_ASSERT(
-      !strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"));
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
+                    "application/x-www-form-urlencoded") == 0);
 }
 
 static int service_account_httpcli_post_success(
@@ -626,12 +629,12 @@ static void on_jwt_creds_get_metadata_success(void *user_data,
   gpr_asprintf(&expected_md_value, "Bearer %s", test_signed_jwt);
   GPR_ASSERT(status == GRPC_CREDENTIALS_OK);
   GPR_ASSERT(num_md == 1);
-  GPR_ASSERT(
-      !strcmp(grpc_mdstr_as_c_string(md_elems[0]->key), "Authorization"));
-  GPR_ASSERT(
-      !strcmp(grpc_mdstr_as_c_string(md_elems[0]->value), expected_md_value));
+  GPR_ASSERT(strcmp(grpc_mdstr_as_c_string(md_elems[0]->key),
+                    "Authorization") == 0);
+  GPR_ASSERT(strcmp(grpc_mdstr_as_c_string(md_elems[0]->value),
+                    expected_md_value) == 0);
   GPR_ASSERT(user_data != NULL);
-  GPR_ASSERT(!strcmp((const char *)user_data, test_user_data));
+  GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
   gpr_free(expected_md_value);
 }
 
@@ -642,7 +645,7 @@ static void on_jwt_creds_get_metadata_failure(void *user_data,
   GPR_ASSERT(status == GRPC_CREDENTIALS_ERROR);
   GPR_ASSERT(num_md == 0);
   GPR_ASSERT(user_data != NULL);
-  GPR_ASSERT(!strcmp((const char *)user_data, test_user_data));
+  GPR_ASSERT(strcmp((const char *)user_data, test_user_data) == 0);
 }
 
 static void test_jwt_creds_success(void) {

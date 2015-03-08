@@ -348,7 +348,7 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
   {
     gpr_mu_lock(&c->cache_mu);
     if (c->cached.service_url != NULL &&
-        !strcmp(c->cached.service_url, service_url) &&
+        strcmp(c->cached.service_url, service_url) == 0 &&
         c->cached.jwt_md != NULL &&
         (gpr_time_cmp(gpr_time_sub(c->cached.jwt_expiration, gpr_now()),
                       refresh_threshold) > 0)) {
@@ -957,7 +957,7 @@ static grpc_credentials_array get_creds_array(grpc_credentials **creds_addr) {
   grpc_credentials *creds = *creds_addr;
   result.creds_array = creds_addr;
   result.num_creds = 1;
-  if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE)) {
+  if (strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0) {
     result = *grpc_composite_credentials_get_credentials(creds);
   }
   return result;
@@ -995,7 +995,7 @@ const grpc_credentials_array *grpc_composite_credentials_get_credentials(
     grpc_credentials *creds) {
   const grpc_composite_credentials *c =
       (const grpc_composite_credentials *)creds;
-  GPR_ASSERT(!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE));
+  GPR_ASSERT(strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0);
   return &c->inner;
 }
 
@@ -1003,14 +1003,14 @@ grpc_credentials *grpc_credentials_contains_type(
     grpc_credentials *creds, const char *type,
     grpc_credentials **composite_creds) {
   size_t i;
-  if (!strcmp(creds->type, type)) {
+  if (strcmp(creds->type, type) == 0) {
     if (composite_creds != NULL) *composite_creds = NULL;
     return creds;
-  } else if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE)) {
+  } else if (strcmp(creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE) == 0) {
     const grpc_credentials_array *inner_creds_array =
         grpc_composite_credentials_get_credentials(creds);
     for (i = 0; i < inner_creds_array->num_creds; i++) {
-      if (!strcmp(type, inner_creds_array->creds_array[i]->type)) {
+      if (strcmp(type, inner_creds_array->creds_array[i]->type) == 0) {
         if (composite_creds != NULL) *composite_creds = creds;
         return inner_creds_array->creds_array[i];
       }
