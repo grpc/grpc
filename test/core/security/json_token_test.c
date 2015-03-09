@@ -431,16 +431,16 @@ static void test_parse_refresh_token_success(void) {
       grpc_auth_refresh_token_create_from_string(test_refresh_token_str);
   GPR_ASSERT(grpc_auth_refresh_token_is_valid(&refresh_token));
   GPR_ASSERT(refresh_token.type != NULL &&
-             !(strcmp(refresh_token.type, "authorized_user")));
+             (strcmp(refresh_token.type, "authorized_user") == 0));
   GPR_ASSERT(refresh_token.client_id != NULL &&
-             !(strcmp(refresh_token.client_id,
-                      "32555999999.apps.googleusercontent.com")));
+             (strcmp(refresh_token.client_id,
+                     "32555999999.apps.googleusercontent.com") == 0));
   GPR_ASSERT(
       refresh_token.client_secret != NULL &&
-      !(strcmp(refresh_token.client_secret, "EmssLNjJy1332hD4KFsecret")));
+      (strcmp(refresh_token.client_secret, "EmssLNjJy1332hD4KFsecret") == 0));
   GPR_ASSERT(refresh_token.refresh_token != NULL &&
-             !(strcmp(refresh_token.refresh_token,
-                      "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42")));
+             (strcmp(refresh_token.refresh_token,
+                     "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42") == 0));
   grpc_auth_refresh_token_destruct(&refresh_token);
 }
 
