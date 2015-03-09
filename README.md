@@ -249,15 +249,15 @@ tutorial for your chosen language: check if there's one available yet in the rel
 Our server application has two classes:
 
 - a main server class that hosts the service implementation and allows access over the
-network: [HelloWorldServer.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldServer.java).
+network: [HelloWorldServer.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java).
 
 
-- a simple service implementation class [GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldServer.java#L51).
+- a simple service implementation class [GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java#L51).
 
 
 #### Service implementation
 
-[GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldServer.java#L51)
+[GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java#L51)
 actually implements our GreetingService's required behaviour.
 
 As you can see, the class `GreeterImpl` implements the interface
