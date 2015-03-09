@@ -66,7 +66,7 @@ class _FaceStub(object):
       self._rear_link.start()
       self._rear_link.join_fore_link(self._front)
       self._front.join_rear_link(self._rear_link)
-      self._under_stub = face_implementations.stub(self._front, self._pool)
+      self._under_stub = face_implementations.generic_stub(self._front, self._pool)
 
   def __exit__(self, exc_type, exc_val, exc_tb):
     with self._lock:
@@ -86,18 +86,18 @@ class _FaceStub(object):
         return getattr(self._under_stub, attr)
 
 
-def _behaviors(implementations, front, pool):
+def _behaviors(method_cardinalities, front, pool):
   behaviors = {}
-  stub = face_implementations.stub(front, pool)
-  for name, implementation in implementations.iteritems():
-    if implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
-      behaviors[name] = stub.unary_unary_sync_async(name)
-    elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
+  stub = face_implementations.generic_stub(front, pool)
+  for name, method_cardinality in method_cardinalities.iteritems():
+    if method_cardinality is cardinality.Cardinality.UNARY_UNARY:
+      behaviors[name] = stub.unary_unary_multi_callable(name)
+    elif method_cardinality is cardinality.Cardinality.UNARY_STREAM:
       behaviors[name] = lambda request, context, bound_name=name: (
           stub.inline_value_in_stream_out(bound_name, request, context))
-    elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
-      behaviors[name] = stub.stream_unary_sync_async(name)
-    elif implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
+    elif method_cardinality is cardinality.Cardinality.STREAM_UNARY:
+      behaviors[name] = stub.stream_unary_multi_callable(name)
+    elif method_cardinality is cardinality.Cardinality.STREAM_STREAM:
       behaviors[name] = lambda request_iterator, context, bound_name=name: (
           stub.inline_stream_in_stream_out(
               bound_name, request_iterator, context))
@@ -106,8 +106,8 @@ def _behaviors(implementations, front, pool):
 
 class _DynamicInlineStub(object):
 
-  def __init__(self, implementations, rear_link):
-    self._implementations = implementations
+  def __init__(self, cardinalities, rear_link):
+    self._cardinalities = cardinalities
     self._rear_link = rear_link
     self._lock = threading.Lock()
     self._pool = None
@@ -123,7 +123,7 @@ class _DynamicInlineStub(object):
       self._rear_link.join_fore_link(self._front)
       self._front.join_rear_link(self._rear_link)
       self._behaviors = _behaviors(
-          self._implementations, self._front, self._pool)
+          self._cardinalities, self._front, self._pool)
       return self
 
   def __exit__(self, exc_type, exc_val, exc_tb):
@@ -151,58 +151,6 @@ class _DynamicInlineStub(object):
         return behavior
 
 
-def _servicer(implementations, pool):
-  inline_value_in_value_out_methods = {}
-  inline_value_in_stream_out_methods = {}
-  inline_stream_in_value_out_methods = {}
-  inline_stream_in_stream_out_methods = {}
-  event_value_in_value_out_methods = {}
-  event_value_in_stream_out_methods = {}
-  event_stream_in_value_out_methods = {}
-  event_stream_in_stream_out_methods = {}
-
-  for name, implementation in implementations.iteritems():
-    if implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
-      if implementation.style is style.Service.INLINE:
-        inline_value_in_value_out_methods[name] = (
-            face_utilities.inline_unary_unary_method(implementation.unary_unary_inline))
-      elif implementation.style is style.Service.EVENT:
-        event_value_in_value_out_methods[name] = (
-            face_utilities.event_unary_unary_method(implementation.unary_unary_event))
-    elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
-      if implementation.style is style.Service.INLINE:
-        inline_value_in_stream_out_methods[name] = (
-            face_utilities.inline_unary_stream_method(implementation.unary_stream_inline))
-      elif implementation.style is style.Service.EVENT:
-        event_value_in_stream_out_methods[name] = (
-            face_utilities.event_unary_stream_method(implementation.unary_stream_event))
-    if implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
-      if implementation.style is style.Service.INLINE:
-        inline_stream_in_value_out_methods[name] = (
-            face_utilities.inline_stream_unary_method(implementation.stream_unary_inline))
-      elif implementation.style is style.Service.EVENT:
-        event_stream_in_value_out_methods[name] = (
-            face_utilities.event_stream_unary_method(implementation.stream_unary_event))
-    elif implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
-      if implementation.style is style.Service.INLINE:
-        inline_stream_in_stream_out_methods[name] = (
-            face_utilities.inline_stream_stream_method(implementation.stream_stream_inline))
-      elif implementation.style is style.Service.EVENT:
-        event_stream_in_stream_out_methods[name] = (
-            face_utilities.event_stream_stream_method(implementation.stream_stream_event))
-
-  return face_implementations.servicer(
-      pool,
-      inline_value_in_value_out_methods=inline_value_in_value_out_methods,
-      inline_value_in_stream_out_methods=inline_value_in_stream_out_methods,
-      inline_stream_in_value_out_methods=inline_stream_in_value_out_methods,
-      inline_stream_in_stream_out_methods=inline_stream_in_stream_out_methods,
-      event_value_in_value_out_methods=event_value_in_value_out_methods,
-      event_value_in_stream_out_methods=event_value_in_stream_out_methods,
-      event_stream_in_value_out_methods=event_stream_in_value_out_methods,
-      event_stream_in_stream_out_methods=event_stream_in_stream_out_methods)
-
-
 class _ServiceAssembly(interfaces.Server):
 
   def __init__(self, implementations, fore_link):
@@ -215,7 +163,8 @@ class _ServiceAssembly(interfaces.Server):
   def _start(self):
     with self._lock:
       self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
-      servicer = _servicer(self._implementations, self._pool)
+      servicer = face_implementations.servicer(
+          self._pool, self._implementations, None)
       self._back = tickets_implementations.back(
           servicer, self._pool, self._pool, self._pool, _ONE_DAY_IN_SECONDS,
           _ONE_DAY_IN_SECONDS)
@@ -251,7 +200,7 @@ class _ServiceAssembly(interfaces.Server):
 
 
 def assemble_face_stub(activated_rear_link):
-  """Assembles a face_interfaces.Stub.
+  """Assembles a face_interfaces.GenericStub.
 
   The returned object is a context manager and may only be used in context to
   invoke RPCs.
@@ -262,12 +211,12 @@ def assemble_face_stub(activated_rear_link):
       when passed to this method.
 
   Returns:
-    A face_interfaces.Stub on which, in context, RPCs can be invoked.
+    A face_interfaces.GenericStub on which, in context, RPCs can be invoked.
   """
   return _FaceStub(activated_rear_link)
 
 
-def assemble_dynamic_inline_stub(implementations, activated_rear_link):
+def assemble_dynamic_inline_stub(cardinalities, activated_rear_link):
   """Assembles a stub with method names for attributes.
 
   The returned object is a context manager and may only be used in context to
@@ -276,29 +225,27 @@ def assemble_dynamic_inline_stub(implementations, activated_rear_link):
   The returned object, when used in context, will respond to attribute access
   as follows: if the requested attribute is the name of a unary-unary RPC
   method, the value of the attribute will be a
-  face_interfaces.UnaryUnarySyncAsync with which to invoke the RPC method. If
-  the requested attribute is the name of a unary-stream RPC method, the value
-  of the attribute will be a callable with the semantics of
-  face_interfaces.Stub.inline_value_in_stream_out, minus the "name" parameter,
+  face_interfaces.UnaryUnaryMultiCallable with which to invoke the RPC method.
+  If the requested attribute is the name of a unary-stream RPC method, the
+  value of the attribute will be a face_interfaces.UnaryStreamMultiCallable
   with which to invoke the RPC method. If the requested attribute is the name
   of a stream-unary RPC method, the value of the attribute will be a
-  face_interfaces.StreamUnarySyncAsync with which to invoke the RPC method. If
-  the requested attribute is the name of a stream-stream RPC method, the value
-  of the attribute will be a callable with the semantics of
-  face_interfaces.Stub.inline_stream_in_stream_out, minus the "name" parameter,
+  face_interfaces.StreamUnaryMultiCallable with which to invoke the RPC method.
+  If the requested attribute is the name of a stream-stream RPC method, the
+  value of the attribute will be a face_interfaces.StreamStreamMultiCallable
   with which to invoke the RPC method.
 
   Args:
-    implementations: A dictionary from RPC method name to
-      interfaces.MethodImplementation.
+    cardinalities: A dictionary from RPC method name to cardinality.Cardinality
+      value identifying the cardinality of the named RPC method.
     activated_rear_link: An object that is both a tickets_interfaces.RearLink
       and an activated.Activated. The object should be in the inactive state
       when passed to this method.
 
   Returns:
-    A stub on which, in context, RPCs can be invoked.
+    A face_interfaces.DynamicStub on which, in context, RPCs can be invoked.
   """
-  return _DynamicInlineStub(implementations, activated_rear_link)
+  return _DynamicInlineStub(cardinalities, activated_rear_link)
 
 
 def assemble_service(implementations, activated_fore_link):
@@ -306,7 +253,7 @@ def assemble_service(implementations, activated_fore_link):
 
   Args:
     implementations: A dictionary from RPC method name to
-      interfaces.MethodImplementation.
+      face_interfaces.MethodImplementation.
     activated_fore_link: An object that is both a tickets_interfaces.ForeLink
       and an activated.Activated. The object should be in the inactive state
       when passed to this method.

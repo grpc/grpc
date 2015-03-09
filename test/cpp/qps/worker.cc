@@ -51,6 +51,7 @@
 #include <grpc++/status.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
+#include <grpc++/server_credentials.h>
 #include <grpc++/stream.h>
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -209,7 +210,7 @@ static void RunServer() {
   WorkerImpl service;
 
   ServerBuilder builder;
-  builder.AddPort(server_address);
+  builder.AddPort(server_address, InsecureServerCredentials());
   builder.RegisterService(&service);
 
   gpr_free(server_address);

@@ -92,7 +92,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  void SendInitialMetadata(void* tag) {
+  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
     GPR_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.Reset(tag);

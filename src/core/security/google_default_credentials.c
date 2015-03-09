@@ -75,8 +75,8 @@ static void on_compute_engine_detection_http_response(
     size_t i;
     for (i = 0; i < response->hdr_count; i++) {
       grpc_httpcli_header *header = &response->hdrs[i];
-      if (!strcmp(header->key, "Metadata-Flavor") &&
-          !strcmp(header->value, "Google")) {
+      if (strcmp(header->key, "Metadata-Flavor") == 0 &&
+          strcmp(header->value, "Google") == 0) {
         detector->success = 1;
         break;
       }
