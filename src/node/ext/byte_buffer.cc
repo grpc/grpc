@@ -65,7 +65,7 @@ grpc_byte_buffer *BufferToByteBuffer(Handle<Value> buffer) {
 Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   NanEscapableScope();
   if (buffer == NULL) {
-    return NanNull();
+    return NanEscapeScope(NanNull());
   }
   size_t length = grpc_byte_buffer_length(buffer);
   char *result = reinterpret_cast<char *>(calloc(length, sizeof(char)));

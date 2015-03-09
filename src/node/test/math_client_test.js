@@ -81,7 +81,7 @@ describe('Math client', function() {
       done();
     });
   });
-  it.only('should handle a client streaming request', function(done) {
+  it('should handle a client streaming request', function(done) {
     var call = math_client.sum(function handleSumResult(err, value) {
       assert.ifError(err);
       assert.equal(value.num, 21);
