@@ -104,4 +104,8 @@ grpc_pollset *grpc_backup_pollset(void);
 void grpc_platform_become_multipoller(grpc_pollset *pollset,
                                       struct grpc_fd **fds, size_t fd_count);
 
+/* Set up backup poller. This probably wants to be a multipoller. */
+void grpc_platform_become_backup_poller(grpc_pollset *pollset, struct grpc_fd **fds,
+                                        size_t fd_count);
+
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */
