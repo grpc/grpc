@@ -60,14 +60,9 @@ class EventInvocationSynchronousEventServiceTestCase(
     self.digest = digest.digest(
         stock_service.STOCK_TEST_SERVICE, self.control, None)
 
-    self.server, self.stub, self.memo = self.set_up_implementation(
+    self.stub, self.memo = self.set_up_implementation(
         self.digest.name, self.digest.methods,
-        {}, {}, {}, {},
-        self.digest.event_unary_unary_methods,
-        self.digest.event_unary_stream_methods,
-        self.digest.event_stream_unary_methods,
-        self.digest.event_stream_stream_methods,
-        None)
+        self.digest.event_method_implementations, None)
 
   def tearDown(self):
     """See unittest.TestCase.tearDown for full specification.

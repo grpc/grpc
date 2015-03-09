@@ -27,101 +27,44 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Utilities for the face layer of RPC Framework."""
+"""Utilities for RPC framework's face layer."""
 
-# stream is referenced from specification in this module.
+import collections
+
+from grpc.framework.common import cardinality
+from grpc.framework.common import style
 from grpc.framework.face import interfaces
-from grpc.framework.foundation import stream  # pylint: disable=unused-import
+from grpc.framework.foundation import stream
 
 
-class _InlineUnaryUnaryMethod(interfaces.InlineValueInValueOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, request, context):
-    return self._behavior(request, context)
-
-
-class _InlineUnaryStreamMethod(interfaces.InlineValueInStreamOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, request, context):
-    return self._behavior(request, context)
+class _MethodImplementation(
+    interfaces.MethodImplementation,
+    collections.namedtuple(
+        '_MethodImplementation',
+        ['cardinality', 'style', 'unary_unary_inline', 'unary_stream_inline',
+         'stream_unary_inline', 'stream_stream_inline', 'unary_unary_event',
+         'unary_stream_event', 'stream_unary_event', 'stream_stream_event',])):
+  pass
 
 
-class _InlineStreamUnaryMethod(interfaces.InlineStreamInValueOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, request_iterator, context):
-    return self._behavior(request_iterator, context)
-
-
-class _InlineStreamStreamMethod(interfaces.InlineStreamInStreamOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, request_iterator, context):
-    return self._behavior(request_iterator, context)
-
-
-class _EventUnaryUnaryMethod(interfaces.EventValueInValueOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, request, response_callback, context):
-    return self._behavior(request, response_callback, context)
-
-
-class _EventUnaryStreamMethod(interfaces.EventValueInStreamOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, request, response_consumer, context):
-    return self._behavior(request, response_consumer, context)
-
-
-class _EventStreamUnaryMethod(interfaces.EventStreamInValueOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, response_callback, context):
-    return self._behavior(response_callback, context)
-
-
-class _EventStreamStreamMethod(interfaces.EventStreamInStreamOutMethod):
-
-  def __init__(self, behavior):
-    self._behavior = behavior
-
-  def service(self, response_consumer, context):
-    return self._behavior(response_consumer, context)
-
-
-def inline_unary_unary_method(behavior):
-  """Creates an interfaces.InlineValueInValueOutMethod from a behavior.
+def unary_unary_inline(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
-    behavior: The implementation of a unary-unary RPC method as a callable
-      value that takes a request value and an interfaces.RpcContext object and
+    behavior: The implementation of a unary-unary RPC method as a callable value
+      that takes a request value and an interfaces.RpcContext object and
       returns a response value.
 
   Returns:
-    An interfaces.InlineValueInValueOutMethod derived from the given behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _InlineUnaryUnaryMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.UNARY_UNARY, style.Service.INLINE, behavior,
+      None, None, None, None, None, None, None)
 
 
-def inline_unary_stream_method(behavior):
-  """Creates an interfaces.InlineValueInStreamOutMethod from a behavior.
+def unary_stream_inline(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a unary-stream RPC method as a callable
@@ -129,13 +72,15 @@ def inline_unary_stream_method(behavior):
       returns an iterator of response values.
 
   Returns:
-    An interfaces.InlineValueInStreamOutMethod derived from the given behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _InlineUnaryStreamMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.UNARY_STREAM, style.Service.INLINE, None,
+      behavior, None, None, None, None, None, None)
 
 
-def inline_stream_unary_method(behavior):
-  """Creates an interfaces.InlineStreamInValueOutMethod from a behavior.
+def stream_unary_inline(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-unary RPC method as a callable
@@ -143,13 +88,15 @@ def inline_stream_unary_method(behavior):
       interfaces.RpcContext object and returns a response value.
 
   Returns:
-    An interfaces.InlineStreamInValueOutMethod derived from the given behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _InlineStreamUnaryMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.STREAM_UNARY, style.Service.INLINE, None, None,
+      behavior, None, None, None, None, None)
 
 
-def inline_stream_stream_method(behavior):
-  """Creates an interfaces.InlineStreamInStreamOutMethod from a behavior.
+def stream_stream_inline(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-stream RPC method as a callable
@@ -157,14 +104,15 @@ def inline_stream_stream_method(behavior):
       interfaces.RpcContext object and returns an iterator of response values.
 
   Returns:
-    An interfaces.InlineStreamInStreamOutMethod derived from the given
-      behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _InlineStreamStreamMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.STREAM_STREAM, style.Service.INLINE, None, None,
+      None, behavior, None, None, None, None)
 
 
-def event_unary_unary_method(behavior):
-  """Creates an interfaces.EventValueInValueOutMethod from a behavior.
+def unary_unary_event(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a unary-unary RPC method as a callable
@@ -172,27 +120,31 @@ def event_unary_unary_method(behavior):
       the response value of the RPC, and an interfaces.RpcContext.
 
   Returns:
-    An interfaces.EventValueInValueOutMethod derived from the given behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _EventUnaryUnaryMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.UNARY_UNARY, style.Service.EVENT, None, None,
+      None, None, behavior, None, None, None)
 
 
-def event_unary_stream_method(behavior):
-  """Creates an interfaces.EventValueInStreamOutMethod from a behavior.
+def unary_stream_event(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a unary-stream RPC method as a callable
       value that takes a request value, a stream.Consumer to which to pass the
-      response values of the RPC, and an interfaces.RpcContext.
+      the response values of the RPC, and an interfaces.RpcContext.
 
   Returns:
-    An interfaces.EventValueInStreamOutMethod derived from the given behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _EventUnaryStreamMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.UNARY_STREAM, style.Service.EVENT, None, None,
+      None, None, None, behavior, None, None)
 
 
-def event_stream_unary_method(behavior):
-  """Creates an interfaces.EventStreamInValueOutMethod from a behavior.
+def stream_unary_event(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-unary RPC method as a callable
@@ -201,13 +153,15 @@ def event_stream_unary_method(behavior):
       which the request values of the RPC should be passed.
 
   Returns:
-    An interfaces.EventStreamInValueOutMethod derived from the given behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _EventStreamUnaryMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.STREAM_UNARY, style.Service.EVENT, None, None,
+      None, None, None, None, behavior, None)
 
 
-def event_stream_stream_method(behavior):
-  """Creates an interfaces.EventStreamInStreamOutMethod from a behavior.
+def stream_stream_event(behavior):
+  """Creates an interfaces.MethodImplementation for the given behavior.
 
   Args:
     behavior: The implementation of a stream-stream RPC method as a callable
@@ -216,6 +170,8 @@ def event_stream_stream_method(behavior):
       which the request values of the RPC should be passed.
 
   Returns:
-    An interfaces.EventStreamInStreamOutMethod derived from the given behavior.
+    An interfaces.MethodImplementation derived from the given behavior.
   """
-  return _EventStreamStreamMethod(behavior)
+  return _MethodImplementation(
+      cardinality.Cardinality.STREAM_STREAM, style.Service.EVENT, None, None,
+      None, None, None, None, None, behavior)
