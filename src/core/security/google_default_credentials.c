@@ -138,6 +138,23 @@ static grpc_credentials *create_jwt_creds_from_path(char *creds_path) {
   return result;
 }
 
+/* Takes ownership of creds_path if not NULL. */
+static grpc_credentials *create_refresh_token_creds_from_path(
+    char *creds_path) {
+  grpc_credentials *result = NULL;
+  gpr_slice creds_data;
+  int file_ok = 0;
+  if (creds_path == NULL) return NULL;
+  creds_data = gpr_load_file(creds_path, &file_ok);
+  gpr_free(creds_path);
+  if (file_ok) {
+    result = grpc_refresh_token_credentials_create(
+        (const char *)GPR_SLICE_START_PTR(creds_data));
+    gpr_slice_unref(creds_data);
+  }
+  return result;
+}
+
 grpc_credentials *grpc_google_default_credentials_create(void) {
   grpc_credentials *result = NULL;
   int serving_cached_credentials = 0;
@@ -157,7 +174,7 @@ grpc_credentials *grpc_google_default_credentials_create(void) {
   if (result != NULL) goto end;
 
   /* Then the well-known file. */
-  result = create_jwt_creds_from_path(
+  result = create_refresh_token_creds_from_path(
       grpc_get_well_known_google_credentials_file_path());
   if (result != NULL) goto end;
 

@@ -46,20 +46,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-/* -- Constants. -- */
-
-#define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
-
-#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata"
-#define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
-  "/computeMetadata/v1/instance/service-accounts/default/token"
-
-#define GRPC_SERVICE_ACCOUNT_HOST "www.googleapis.com"
-#define GRPC_SERVICE_ACCOUNT_TOKEN_PATH "/oauth2/v3/token"
-#define GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX                         \
-  "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&" \
-  "assertion="
-
 /* -- Common. -- */
 
 typedef struct {
@@ -671,8 +657,8 @@ static void service_account_fetch_oauth2(
   }
   gpr_asprintf(&body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = GRPC_SERVICE_ACCOUNT_HOST;
-  request.path = GRPC_SERVICE_ACCOUNT_TOKEN_PATH;
+  request.host = GRPC_GOOGLE_OAUTH2_SERVICE_HOST;
+  request.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
   request.hdr_count = 1;
   request.hdrs = &header;
   request.use_ssl = 1;
@@ -700,6 +686,67 @@ grpc_credentials *grpc_service_account_credentials_create(
   c->scope = gpr_strdup(scope);
   c->key = key;
   c->token_lifetime = token_lifetime;
+  return &c->base.base;
+}
+
+/* -- RefreshToken credentials. -- */
+
+typedef struct {
+  grpc_oauth2_token_fetcher_credentials base;
+  grpc_auth_refresh_token refresh_token;
+} grpc_refresh_token_credentials;
+
+static void refresh_token_destroy(grpc_credentials *creds) {
+  grpc_refresh_token_credentials *c =
+      (grpc_refresh_token_credentials *)creds;
+  grpc_auth_refresh_token_destruct(&c->refresh_token);
+  oauth2_token_fetcher_destroy(&c->base.base);
+}
+
+static grpc_credentials_vtable refresh_token_vtable = {
+    refresh_token_destroy, oauth2_token_fetcher_has_request_metadata,
+    oauth2_token_fetcher_has_request_metadata_only,
+    oauth2_token_fetcher_get_request_metadata};
+
+static void refresh_token_fetch_oauth2(
+    grpc_credentials_metadata_request *metadata_req,
+    grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
+  grpc_refresh_token_credentials *c =
+      (grpc_refresh_token_credentials *)metadata_req->creds;
+  grpc_httpcli_header header = {"Content-Type",
+                                "application/x-www-form-urlencoded"};
+  grpc_httpcli_request request;
+  char *body = NULL;
+  gpr_asprintf(&body, GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
+               c->refresh_token.client_id, c->refresh_token.client_secret,
+               c->refresh_token.refresh_token);
+  memset(&request, 0, sizeof(grpc_httpcli_request));
+  request.host = GRPC_GOOGLE_OAUTH2_SERVICE_HOST;
+  request.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
+  request.hdr_count = 1;
+  request.hdrs = &header;
+  request.use_ssl = 1;
+  grpc_httpcli_post(&request, body, strlen(body), deadline, response_cb,
+                    metadata_req);
+  gpr_free(body);
+}
+
+grpc_credentials *grpc_refresh_token_credentials_create(
+    const char *json_refresh_token) {
+  grpc_refresh_token_credentials *c;
+  grpc_auth_refresh_token refresh_token =
+      grpc_auth_refresh_token_create_from_string(json_refresh_token);
+
+  if (!grpc_auth_refresh_token_is_valid(&refresh_token)) {
+    gpr_log(GPR_ERROR,
+            "Invalid input for refresh token credentials creation");
+    return NULL;
+  }
+  c = gpr_malloc(sizeof(grpc_refresh_token_credentials));
+  memset(c, 0, sizeof(grpc_refresh_token_credentials));
+  init_oauth2_token_fetcher(&c->base, refresh_token_fetch_oauth2);
+  c->base.base.vtable = &refresh_token_vtable;
+  c->refresh_token = refresh_token;
   return &c->base.base;
 }
 

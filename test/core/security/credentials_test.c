@@ -84,6 +84,13 @@ static const char test_json_key_str_part3[] =
     "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
     "com\", \"type\": \"service_account\" }";
 
+/* Test refresh token. */
+static const char test_refresh_token_str[] =
+    "{ \"client_id\": \"32555999999.apps.googleusercontent.com\","
+    "  \"client_secret\": \"EmssLNjJy1332hD4KFsecret\","
+    "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
+    "  \"type\": \"authorized_user\"}";
+
 static const char valid_oauth2_json_response[] =
     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
     " \"expires_in\":3599, "
@@ -96,10 +103,6 @@ static const char test_scope[] = "perm1 perm2";
 static const char test_signed_jwt[] =
     "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImY0OTRkN2M1YWU2MGRmOTcyNmM4YW"
     "U0MDcyZTViYTdmZDkwODg2YzcifQ";
-
-static const char expected_service_account_http_body_prefix[] =
-    "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&"
-    "assertion=";
 
 static const char test_service_url[] = "https://foo.com/foo.v1";
 static const char other_test_service_url[] = "https://bar.com/bar.v1";
@@ -463,6 +466,87 @@ static void test_compute_engine_creds_failure(void) {
   grpc_httpcli_set_override(NULL, NULL);
 }
 
+static void validate_refresh_token_http_request(
+    const grpc_httpcli_request *request, const char *body, size_t body_size) {
+  /* The content of the assertion is tested extensively in json_token_test. */
+  char *expected_body = NULL;
+  GPR_ASSERT(body != NULL);
+  GPR_ASSERT(body_size != 0);
+  gpr_asprintf(&expected_body, GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
+               "32555999999.apps.googleusercontent.com",
+               "EmssLNjJy1332hD4KFsecret",
+               "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42");
+  GPR_ASSERT(strlen(expected_body) == body_size);
+  GPR_ASSERT(memcmp(expected_body, body, body_size) == 0);
+  gpr_free(expected_body);
+  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(strcmp(request->host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
+  GPR_ASSERT(strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
+  GPR_ASSERT(request->hdr_count == 1);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
+                    "application/x-www-form-urlencoded") == 0);
+}
+
+static int refresh_token_httpcli_post_success(
+    const grpc_httpcli_request *request, const char *body, size_t body_size,
+    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
+    void *user_data) {
+  grpc_httpcli_response response =
+      http_response(200, valid_oauth2_json_response);
+  validate_refresh_token_http_request(request, body, body_size);
+  on_response(user_data, &response);
+  return 1;
+}
+
+static int refresh_token_httpcli_post_failure(
+    const grpc_httpcli_request *request, const char *body, size_t body_size,
+    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
+    void *user_data) {
+  grpc_httpcli_response response = http_response(403, "Not Authorized.");
+  validate_refresh_token_http_request(request, body, body_size);
+  on_response(user_data, &response);
+  return 1;
+}
+
+static void test_refresh_token_creds_success(void) {
+  grpc_credentials *refresh_token_creds =
+      grpc_refresh_token_credentials_create(test_refresh_token_str);
+  GPR_ASSERT(grpc_credentials_has_request_metadata(refresh_token_creds));
+  GPR_ASSERT(grpc_credentials_has_request_metadata_only(refresh_token_creds));
+
+  /* First request: http get should be called. */
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            refresh_token_httpcli_post_success);
+  grpc_credentials_get_request_metadata(refresh_token_creds, test_service_url,
+                                        on_oauth2_creds_get_metadata_success,
+                                        (void *)test_user_data);
+
+  /* Second request: the cached token should be served directly. */
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  grpc_credentials_get_request_metadata(refresh_token_creds, test_service_url,
+                                        on_oauth2_creds_get_metadata_success,
+                                        (void *)test_user_data);
+
+  grpc_credentials_unref(refresh_token_creds);
+  grpc_httpcli_set_override(NULL, NULL);
+}
+
+static void test_refresh_token_creds_failure(void) {
+  grpc_credentials *refresh_token_creds =
+      grpc_refresh_token_credentials_create(test_refresh_token_str);
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            refresh_token_httpcli_post_failure);
+  GPR_ASSERT(grpc_credentials_has_request_metadata(refresh_token_creds));
+  GPR_ASSERT(grpc_credentials_has_request_metadata_only(refresh_token_creds));
+  grpc_credentials_get_request_metadata(refresh_token_creds, test_service_url,
+                                        on_oauth2_creds_get_metadata_failure,
+                                        (void *)test_user_data);
+  grpc_credentials_unref(refresh_token_creds);
+  grpc_httpcli_set_override(NULL, NULL);
+}
+
 static void validate_jwt_encode_and_sign_params(
     const grpc_auth_json_key *json_key, const char *scope,
     gpr_timespec token_lifetime) {
@@ -515,13 +599,13 @@ static void validate_service_account_http_request(
   GPR_ASSERT(body != NULL);
   GPR_ASSERT(body_size != 0);
   gpr_asprintf(&expected_body, "%s%s",
-               expected_service_account_http_body_prefix, test_signed_jwt);
+               GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, test_signed_jwt);
   GPR_ASSERT(strlen(expected_body) == body_size);
-  GPR_ASSERT(!memcmp(expected_body, body, body_size));
+  GPR_ASSERT(memcmp(expected_body, body, body_size) == 0);
   gpr_free(expected_body);
   GPR_ASSERT(request->use_ssl);
-  GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
-  GPR_ASSERT(strcmp(request->path, "/oauth2/v3/token") == 0);
+  GPR_ASSERT(strcmp(request->host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
+  GPR_ASSERT(strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
   GPR_ASSERT(request->hdr_count == 1);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(strcmp(request->hdrs[0].value,
@@ -711,6 +795,8 @@ int main(int argc, char **argv) {
   test_ssl_oauth2_iam_composite_creds();
   test_compute_engine_creds_success();
   test_compute_engine_creds_failure();
+  test_refresh_token_creds_success();
+  test_refresh_token_creds_failure();
   test_service_account_creds_success();
   test_service_account_creds_http_failure();
   test_service_account_creds_signing_failure();
