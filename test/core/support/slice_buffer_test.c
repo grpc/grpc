@@ -62,8 +62,13 @@ int main(int argc, char **argv) {
   }
   GPR_ASSERT(buf.count > 0);
   GPR_ASSERT(buf.length == 50);
-  gpr_slice_unref(aaa);
-  gpr_slice_unref(bb);
+  for (i = 0; i < 10; i++) {
+    gpr_slice_buffer_pop(&buf);
+    gpr_slice_unref(aaa);
+    gpr_slice_unref(bb);
+  }
+  GPR_ASSERT(buf.count == 0);
+  GPR_ASSERT(buf.length == 0);
   gpr_slice_buffer_destroy(&buf);
 
   return 0;
