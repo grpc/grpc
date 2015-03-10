@@ -30,17 +30,10 @@
 
 set -ex
 
-CONFIG=${CONFIG:-opt}
+export root=$(dirname $0)/../..
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+cd $root
 
-root=`pwd`
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
-cd $root/src/node
-if [ "$CONFIG" = "gcov" ]
-  then
-  NODE_ENV=test YOURPACKAGE_COVERAGE=1 node $root/src/node/node_modules/.bin/mocha   --require blanket   --reporter mocha-lcov-reporter >$SCRIPT_LCOV_FILE
-  else
-  npm test
-fi
+coveralls --exclude third_party --exclude gens -b. --gcov-options '\-p' --dump ./core_coveralls.txt
+coveralls --exclude src/node/build -bsrc/node/build --gcov-options '\-p' --dump ./node_coveralls.txt
+node ./src/node/coveralls_multi.js $root/core_coveralls.txt $root/node_coveralls.txt -- $SCRIPT_LCOV_FILE

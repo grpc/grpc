@@ -1,4 +1,7 @@
 {
+  "variables" : {
+    'config': "<!(echo $CONFIG)"
+  },
   "targets" : [
     {
       'include_dirs': [
@@ -35,6 +38,20 @@
         "ext/server.cc",
         "ext/server_credentials.cc",
         "ext/timeval.cc"
+      ],
+      'conditions' : [
+        ['config=="gcov"', {
+          'cflags' : [
+            '-ftest-coverage',
+            '-fprofile-arcs',
+            '-O0'
+          ],
+          'ldflags' : [
+            '-ftest-coverage',
+            '-fprofile-arcs'
+          ]
+        }
+       ]
       ]
     }
   ]
