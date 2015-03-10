@@ -249,15 +249,15 @@ tutorial for your chosen language: check if there's one available yet in the rel
 Our server application has two classes:
 
 - a main server class that hosts the service implementation and allows access over the
-network: [HelloWorldServer.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldServer.java).
+network: [HelloWorldServer.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java).
 
 
-- a simple service implementation class [GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldServer.java#L51).
+- a simple service implementation class [GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java#L51).
 
 
 #### Service implementation
 
-[GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldServer.java#L51)
+[GreeterImpl.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java#L51)
 actually implements our GreetingService's required behaviour.
 
 As you can see, the class `GreeterImpl` implements the interface
@@ -286,7 +286,7 @@ message, as specified in our interface definition.
 
 #### Server implementation
 
-[HelloWorldServer.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldServer.java)
+[HelloWorldServer.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldServer.java)
 shows the other main feature required to provide a gRPC service; making the service
 implementation available from the network.
 
@@ -324,7 +324,7 @@ how all this works in a bit more detail in our language-specific documentation.
 Client-side gRPC is pretty simple. In this step, we'll use the generated code
 to write a simple client that can access the `Greeter` server we created
 in the [previous section](#server). You can see the complete client code in
-[HelloWorldClient.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/HelloWorldClient.java).
+[HelloWorldClient.java](https://github.com/grpc/grpc-java/blob/master/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldClient.java).
 
 Again, we're not going to go into much detail about how to implement a client;
 we'll leave that for the tutorial.
