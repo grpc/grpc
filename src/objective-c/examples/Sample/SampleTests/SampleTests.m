@@ -40,62 +40,62 @@
 #import <RxLibrary/GRXWriteable.h>
 
 @interface SampleTests : XCTestCase
-
 @end
 
 @implementation SampleTests
 
-- (void)setUp {
-    [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
-}
+- (void)testConnectionToLocalServer {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
 
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
-    [super tearDown];
-}
-
-- (void)testExample {
-    // This is an example of a functional test case.
-    XCTAssert(YES, @"Pass");
-}
-
-- (void)testPerformanceExample {
-    // This is an example of a performance test case.
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-    }];
-}
-
-- (void)testConnectionToSandboxServer {
-  XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
-  
+  // This method isn't implemented by the local server.
   GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
                                                          interface:@"TestService"
                                                             method:@"EmptyCall"];
 
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com:443"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
                                            method:method
                                    requestsWriter:requestsWriter];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-    NSLog(@"Received unexpected response: %@", value);
+    XCTFail(@"Received unexpected response: %@", value);
   } completionHandler:^(NSError *errorOrNil) {
-    if (errorOrNil) {
-      NSLog(@"Finished with error: %@", errorOrNil);
-    } else {
-      [expectation fulfill];
-    }
+    XCTAssertNotNil(errorOrNil, @"Finished without error!");
+    XCTAssertEqual(errorOrNil.code, 12, @"Finished with unexpected error: %@", errorOrNil);
+    [expectation fulfill];
   }];
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:10.0 handler:^(NSError *error) {
-    if(error) {
-      XCTFail(@"Server unreachable. Error: %@", error);
-    }
+  [self waitForExpectationsWithTimeout:10.0 handler:nil];
+}
+
+- (void)testEmptyRPC {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.example.routeguide"
+                                                         interface:@"RouteGuide"
+                                                            method:@"RecordRoute"];
+
+  id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
+                                           method:method
+                                   requestsWriter:requestsWriter];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
+    [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    [completion fulfill];
   }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:10.0 handler:nil];
 }
 @end

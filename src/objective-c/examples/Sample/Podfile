@@ -4,6 +4,8 @@ platform :ios, '8.0'
 pod 'gRPC', :path => "../../../.."
 pod 'RxLibrary', :path => "../../../.."
 
+link_with 'Sample', 'SampleTests'
+
 target 'Sample' do
 end
 
