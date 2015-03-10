@@ -731,6 +731,44 @@ grpc_launch_servers() {
   done
 }
 
+# Runs a test command on a docker instance
+#
+# The test command is issued via gcloud compute
+#
+# There are 3 possible results:
+# 1. successful return code and finished within 60 seconds
+# 2. failure return code and finished within 60 seconds
+# 3. command does not return within 60 seconds, in which case it will be killed.
+test_runner() {
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  local ssh_cmd="bash -l -c \"$cmd\""
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  PID=$!
+  echo "pid is $PID"
+  for x in {0..5}
+  do
+    if ps -p $PID
+    then
+      # test command has not returned and 60 seconds timeout has not reached
+      sleep 10
+    else
+      # test command has returned, return the return code from the test command
+      wait $PID
+      local ret=$?
+      echo " test runner return $ret before timeout"
+      return $ret
+    fi
+  done
+  kill $PID
+  echo "test got killed by timeout return as failure"
+  return 1
+}
+
 # Runs a test command on a docker instance.
 #
 # call-seq:
@@ -790,14 +828,7 @@ grpc_interop_test() {
   cmd=$($grpc_gen_test_cmd $flags)
   [[ -n $cmd ]] || return 1
 
-  local project_opt="--project $grpc_project"
-  local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" 
+  test_runner
 }
 
 # Runs a test command on a docker instance.
@@ -836,14 +867,7 @@ grpc_cloud_prod_test() {
   cmd=$($grpc_gen_test_cmd $test_case_flag)
   [[ -n $cmd ]] || return 1
 
-  local project_opt="--project $grpc_project"
-  local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  test_runner
 }
 
 # Runs a test command on a docker instance.
@@ -882,14 +906,7 @@ grpc_cloud_prod_auth_test() {
   cmd=$($grpc_gen_test_cmd $test_case_flag)
   [[ -n $cmd ]] || return 1
 
-  local project_opt="--project $grpc_project"
-  local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  test_runner
 }
 
 # constructs the full dockerized ruby interop test cmd.
