@@ -917,7 +917,7 @@ PUBLIC_HEADERS_C += \\
 LIB${lib.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIB${lib.name.upper()}_SRC))))
 
 ## If the library requires OpenSSL with ALPN, let's add some restrictions.
-% if lib.get('secure', True):
+% if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure libraries if you don't have OpenSSL with ALPN.
@@ -993,14 +993,14 @@ $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP)\
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
 % if lib.get('baselib', False):
-% if lib.get('secure', True):
-	$(Q) rm -rf tmp-merge
-	$(Q) mkdir tmp-merge
-	$(Q) ( cd tmp-merge ; $(AR) x ../$(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
-	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge ; <%text>ar x ../$${l}</%text> ) ; done
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge/__.SYMDEF*
-	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge/*
-	$(Q) rm -rf tmp-merge
+% if lib.get('secure', 'check') == 'yes':
+	$(Q) rm -rf tmp-merge-${lib.name}
+	$(Q) mkdir tmp-merge-${lib.name}
+	$(Q) ( cd tmp-merge-${lib.name} ; $(AR) x ../$(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge-${lib.name} ; <%text>ar x ../$${l}</%text> ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge-${lib.name}/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge-${lib.name}/*
+	$(Q) rm -rf tmp-merge-${lib.name}
 % endif
 % endif
 ifeq ($(SYSTEM),Darwin)
@@ -1028,8 +1028,10 @@ endif
     mingw_libs = mingw_libs + ' -l' + dep + '-imp'
     mingw_lib_deps = mingw_lib_deps + '$(LIBDIR)/$(CONFIG)/' + dep + '.$(SHARED_EXT)'
 
-  if lib.get('secure', True):
+  if lib.get('secure', 'check') == 'yes':
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+
+  if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
     mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
 
@@ -1056,7 +1058,7 @@ else
 endif
 endif
 % endif
-% if lib.get('secure', True):
+% if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 ## If the lib was secure, we have to close the Makefile's if that tested
 ## the presence of an ALPN-capable OpenSSL.
 
@@ -1069,13 +1071,13 @@ endif
 endif
 % endif
 
-% if lib.get('secure', True):
+% if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 ifneq ($(NO_SECURE),true)
 % endif
 ifneq ($(NO_DEPS),true)
 -include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
 endif
-% if lib.get('secure', True):
+% if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
 endif
 % endif
 
@@ -1102,7 +1104,7 @@ ${tgt.name.upper()}_SRC = \\
 
 ${tgt.name.upper()}_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(${tgt.name.upper()}_SRC))))
 
-% if tgt.get('secure', True):
+% if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL with ALPN.
@@ -1176,7 +1178,7 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 % endif
 % if tgt.build == 'protoc':
  $(HOST_LDLIBS_PROTOC)\
-% elif tgt.get('secure', True):
+% elif tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
  $(LDLIBS_SECURE)\
 % endif
  -o $(BINDIR)/$(CONFIG)/${tgt.name}
@@ -1184,7 +1186,7 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 
 endif
 % endif
-% if tgt.get('secure', True):
+% if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 
 endif
 % endif
@@ -1199,13 +1201,13 @@ $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
 
 deps_${tgt.name}: $(${tgt.name.upper()}_OBJS:.o=.dep)
 
-% if tgt.get('secure', True):
+% if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 ifneq ($(NO_SECURE),true)
 % endif
 ifneq ($(NO_DEPS),true)
 -include $(${tgt.name.upper()}_OBJS:.o=.dep)
 endif
-% if tgt.get('secure', True):
+% if tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
 endif
 % endif
 </%def>

@@ -42,19 +42,35 @@
 static int pygrpc_channel_init(Channel *self, PyObject *args, PyObject *kwds) {
   const char *hostport;
   PyObject *client_credentials;
-  static char *kwlist[] = {"hostport", "client_credentials", NULL};
+  char *server_host_override = NULL;
+  static char *kwlist[] = {"hostport", "client_credentials",
+                           "server_host_override", NULL};
+  grpc_arg server_host_override_arg;
+  grpc_channel_args channel_args;
 
-  if (!(PyArg_ParseTupleAndKeywords(args, kwds, "sO:Channel", kwlist,
-                                    &hostport, &client_credentials))) {
+  if (!(PyArg_ParseTupleAndKeywords(args, kwds, "sO|z:Channel", kwlist,
+                                    &hostport, &client_credentials,
+                                    &server_host_override))) {
     return -1;
   }
   if (client_credentials == Py_None) {
     self->c_channel = grpc_channel_create(hostport, NULL);
     return 0;
   } else {
-    self->c_channel = grpc_secure_channel_create(
-        ((ClientCredentials *)client_credentials)->c_client_credentials,
-        hostport, NULL);
+    if (server_host_override == NULL) {
+      self->c_channel = grpc_secure_channel_create(
+	  ((ClientCredentials *)client_credentials)->c_client_credentials,
+          hostport, NULL);
+    } else {
+      server_host_override_arg.type = GRPC_ARG_STRING;
+      server_host_override_arg.key = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
+      server_host_override_arg.value.string = server_host_override;
+      channel_args.num_args = 1;
+      channel_args.args = &server_host_override_arg;
+      self->c_channel = grpc_secure_channel_create(
+          ((ClientCredentials *)client_credentials)->c_client_credentials,
+          hostport, &channel_args);
+    }
     return 0;
   }
 }

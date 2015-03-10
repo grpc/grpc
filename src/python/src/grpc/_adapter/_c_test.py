@@ -70,7 +70,8 @@ class _CTest(unittest.TestCase):
   def testChannel(self):
     _c.init()
 
-    channel = _c.Channel('test host:12345', None)
+    channel = _c.Channel(
+        'test host:12345', None, server_host_override='ignored')
     del channel
 
     _c.shut_down()
@@ -92,7 +93,7 @@ class _CTest(unittest.TestCase):
     _c.init()
 
     completion_queue = _c.CompletionQueue()
-    server = _c.Server(completion_queue, None)
+    server = _c.Server(completion_queue)
     server.add_http2_addr('[::]:0')
     server.start()
     server.stop()
@@ -102,7 +103,7 @@ class _CTest(unittest.TestCase):
 
     service_tag = object()
     completion_queue = _c.CompletionQueue()
-    server = _c.Server(completion_queue, None)
+    server = _c.Server(completion_queue)
     server.add_http2_addr('[::]:0')
     server.start()
     server.service(service_tag)
@@ -119,7 +120,7 @@ class _CTest(unittest.TestCase):
     del completion_queue
 
     completion_queue = _c.CompletionQueue()
-    server = _c.Server(completion_queue, None)
+    server = _c.Server(completion_queue)
     server.add_http2_addr('[::]:0')
     server.start()
     thread = threading.Thread(target=completion_queue.get, args=(_FUTURE,))

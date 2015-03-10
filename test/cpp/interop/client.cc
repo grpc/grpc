@@ -82,9 +82,10 @@ DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
 
 using grpc::ChannelInterface;
 using grpc::ClientContext;
+using grpc::ComputeEngineCredentials;
 using grpc::CreateTestChannel;
 using grpc::Credentials;
-using grpc::CredentialsFactory;
+using grpc::ServiceAccountCredentials;
 using grpc::testing::ResponseParameters;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
@@ -96,8 +97,8 @@ using grpc::testing::TestService;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
+namespace google {}
+namespace gflags {}
 using namespace google;
 using namespace gflags;
 
@@ -135,14 +136,14 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
-    creds = CredentialsFactory::ServiceAccountCredentials(
-        json_key, FLAGS_oauth_scope, std::chrono::hours(1));
+    creds = ServiceAccountCredentials(json_key, FLAGS_oauth_scope,
+                                      std::chrono::hours(1));
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else if (test_case == "compute_engine_creds") {
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
-    creds = CredentialsFactory::ComputeEngineCredentials();
+    creds = ComputeEngineCredentials();
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {
@@ -202,7 +203,7 @@ void DoComputeEngineCreds() {
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(response.username().c_str() == FLAGS_default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
-  const char *oauth_scope_str = response.oauth_scope().c_str();
+  const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with compute engine creds done.");
 }
@@ -221,7 +222,7 @@ void DoServiceAccountCreds() {
   GPR_ASSERT(!response.oauth_scope().empty());
   grpc::string json_key = GetServiceAccountJsonKey();
   GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
-  const char *oauth_scope_str = response.oauth_scope().c_str();
+  const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with service account creds done.");
 }

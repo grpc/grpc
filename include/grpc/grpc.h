@@ -436,6 +436,9 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 grpc_channel *grpc_channel_create(const char *target,
                                   const grpc_channel_args *args);
 
+/* Create a lame client: this client fails every operation attempted on it. */
+grpc_channel *grpc_lame_client_channel_create(void);
+
 /* Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);
 

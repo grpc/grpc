@@ -82,7 +82,7 @@ class EchoTest(unittest.TestCase):
     self.host = 'localhost'
 
     self.server_completion_queue = _low.CompletionQueue()
-    self.server = _low.Server(self.server_completion_queue, None)
+    self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
 
@@ -260,7 +260,7 @@ class CancellationTest(unittest.TestCase):
     self.host = 'localhost'
 
     self.server_completion_queue = _low.CompletionQueue()
-    self.server = _low.Server(self.server_completion_queue, None)
+    self.server = _low.Server(self.server_completion_queue)
     port = self.server.add_http2_addr('[::]:0')
     self.server.start()
 

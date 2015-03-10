@@ -78,16 +78,15 @@ class Server GRPC_FINAL : private CallHook,
   class AsyncRequest;
 
   // ServerBuilder use only
-  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         ServerCredentials* creds);
-  Server();
+  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned);
+  Server() = delete;
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(RpcService* service);
   bool RegisterAsyncService(AsynchronousService* service);
   void RegisterAnonymousService(AnonymousService* service);
   // Add a listening port. Can be called multiple times.
-  int AddPort(const grpc::string& addr);
+  int AddPort(const grpc::string& addr, ServerCredentials* creds);
   // Start the server.
   bool Start();
 
@@ -101,7 +100,7 @@ class Server GRPC_FINAL : private CallHook,
   void RequestAsyncCall(void* registered_method, ServerContext* context,
                         grpc::protobuf::Message* request,
                         ServerAsyncStreamingInterface* stream,
-                        CompletionQueue* cq, void* tag);
+                        CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
 
   void RequestAsyncAnonymousCall(AnonymousServerContext* context,
                         ServerAsyncStreamingInterface* stream,
@@ -121,13 +120,11 @@ class Server GRPC_FINAL : private CallHook,
   std::list<SyncRequest> sync_methods_;
 
   // Pointer to the c grpc server.
-  grpc_server* server_;
+  grpc_server* const server_;
 
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
-  // Whether the server is created with credentials.
-  bool secure_;
 };
 
 }  // namespace grpc

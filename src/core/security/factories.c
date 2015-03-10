@@ -33,9 +33,9 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include "src/core/security/credentials.h"
 #include "src/core/security/security_context.h"
-#include "src/core/surface/lame_client.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -49,32 +49,4 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
        grpc_fake_transport_security_channel_create}};
   return grpc_secure_channel_create_with_factories(
       factories, GPR_ARRAY_SIZE(factories), creds, target, args);
-}
-
-grpc_server *grpc_secure_server_create(grpc_server_credentials *creds,
-                                       grpc_completion_queue *cq,
-                                       const grpc_channel_args *args) {
-  grpc_security_status status = GRPC_SECURITY_ERROR;
-  grpc_security_context *ctx = NULL;
-  grpc_server *server = NULL;
-  if (creds == NULL) return NULL; /* TODO(ctiller): Return lame server. */
-
-  if (!strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL)) {
-    status = grpc_ssl_server_security_context_create(
-        grpc_ssl_server_credentials_get_config(creds), &ctx);
-  } else if (!strcmp(creds->type,
-                     GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY)) {
-    ctx = grpc_fake_server_security_context_create();
-    status = GRPC_SECURITY_OK;
-  }
-
-  if (status != GRPC_SECURITY_OK) {
-    gpr_log(GPR_ERROR,
-            "Unable to create secure server with credentials of type %s.",
-            creds->type);
-    return NULL; /* TODO(ctiller): Return lame server. */
-  }
-  server = grpc_secure_server_create_internal(cq, args, ctx);
-  grpc_security_context_unref(ctx);
-  return server;
 }

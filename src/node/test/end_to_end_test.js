@@ -235,4 +235,73 @@ describe('end-to-end', function() {
       });
     });
   });
+  it('should send multiple messages', function(complete) {
+    var done = multiDone(complete, 2);
+    var requests = ['req1', 'req2'];
+    var deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 3);
+    var status_text = 'xyz';
+    var call = new grpc.Call(channel,
+                             'dummy_method',
+                             Infinity);
+    var client_batch = {};
+    client_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+    client_batch[grpc.opType.SEND_MESSAGE] = new Buffer(requests[0]);
+    client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+    call.startBatch(client_batch, function(err, response) {
+      assert.ifError(err);
+      assert.deepEqual(response, {
+        'send metadata': true,
+        'send message': true,
+        'metadata': {}
+      });
+      var req2_batch = {};
+      req2_batch[grpc.opType.SEND_MESSAGE] = new Buffer(requests[1]);
+      req2_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+      req2_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(req2_batch, function(err, resp) {
+        assert.ifError(err);
+        assert.deepEqual(resp, {
+          'send message': true,
+          'client close': true,
+          'status': {
+            'code': grpc.status.OK,
+            'details': status_text,
+            'metadata': {}
+          }
+        });
+        done();
+      });
+    });
+
+    server.requestCall(function(err, call_details) {
+      var new_call = call_details['new call'];
+      assert.notEqual(new_call, null);
+      var server_call = new_call.call;
+      assert.notEqual(server_call, null);
+      var server_batch = {};
+      server_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+      server_batch[grpc.opType.RECV_MESSAGE] = true;
+      server_call.startBatch(server_batch, function(err, response) {
+        assert.ifError(err);
+        assert(response['send metadata']);
+        assert.strictEqual(response.read.toString(), requests[0]);
+        var end_batch = {};
+        end_batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;
+        end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+          'metadata': {},
+          'code': grpc.status.OK,
+          'details': status_text
+        };
+        end_batch[grpc.opType.RECV_MESSAGE] = true;
+        server_call.startBatch(end_batch, function(err, response) {
+          assert.ifError(err);
+          assert(response['send status']);
+          assert(!response.cancelled);
+          assert.strictEqual(response.read.toString(), requests[1]);
+          done();
+        });
+      });
+    });
+  });
 });

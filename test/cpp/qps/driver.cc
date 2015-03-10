@@ -103,7 +103,7 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   for (size_t i = 0; i < num_servers; i++) {
     ServerData sd;
     sd.stub = std::move(Worker::NewStub(
-        CreateChannelDeprecated(workers[i], ChannelArguments())));
+        CreateChannel(workers[i], InsecureCredentials(), ChannelArguments())));
     ServerArgs args;
     *args.mutable_setup() = server_config;
     sd.stream = std::move(sd.stub->RunServer(alloc_context()));
@@ -131,8 +131,8 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   vector<ClientData> clients;
   for (size_t i = 0; i < num_clients; i++) {
     ClientData cd;
-    cd.stub = std::move(Worker::NewStub(
-        CreateChannelDeprecated(workers[i + num_servers], ChannelArguments())));
+    cd.stub = std::move(Worker::NewStub(CreateChannel(
+        workers[i + num_servers], InsecureCredentials(), ChannelArguments())));
     ClientArgs args;
     *args.mutable_setup() = client_config;
     cd.stream = std::move(cd.stub->RunTest(alloc_context()));
