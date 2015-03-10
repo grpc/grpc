@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,15 +27,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""Insecure client-server interoperability as a unit test."""
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+import unittest
 
-root=`pwd`
-rm -rf python2.7_virtual_environment
-virtualenv -p /usr/bin/python2.7 python2.7_virtual_environment
-source python2.7_virtual_environment/bin/activate
-pip install enum34==1.0.4 futures==2.2.0 protobuf==3.0.0-alpha-1
-CFLAGS=-I$root/include LDFLAGS=-L$root/libs/opt pip install src/python/src
-pip install src/python/interop
+from grpc.early_adopter import implementations
+
+from interop import _interop_test_case
+from interop import methods
+
+
+class InsecureInteropTest(
+    _interop_test_case.InteropTestCase,
+    unittest.TestCase):
+
+  def setUp(self):
+    self.server = implementations.insecure_server(methods.SERVER_METHODS, 0)
+    self.server.start()
+    port = self.server.port()
+    self.stub = implementations.insecure_stub(
+        methods.CLIENT_METHODS, 'localhost', port)
+
+  def tearDown(self):
+    self.server.stop()
+
+
+if __name__ == '__main__':
+  unittest.main()

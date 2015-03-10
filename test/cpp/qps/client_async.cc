@@ -94,7 +94,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     hist->Add((Timer::Now() - start_) * 1e9);
   }
 
-  void StartNewClone() {
+  void StartNewClone() GRPC_OVERRIDE {
     new ClientRpcContextUnaryImpl(stub_, req_, start_req_, callback_);
   }
 
@@ -175,7 +175,7 @@ class AsyncClient GRPC_FINAL : public Client {
     }
   }
 
-  void ThreadFunc(Histogram *histogram, size_t thread_idx) {
+  void ThreadFunc(Histogram *histogram, size_t thread_idx) GRPC_OVERRIDE {
     void *got_tag;
     bool ok;
     cli_cqs_[thread_idx]->Next(&got_tag, &ok);

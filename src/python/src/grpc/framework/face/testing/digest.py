@@ -34,6 +34,8 @@ import threading
 
 # testing_control, interfaces, and testing_service are referenced from
 # specification in this module.
+from grpc.framework.common import cardinality
+from grpc.framework.common import style
 from grpc.framework.face import exceptions
 from grpc.framework.face import interfaces as face_interfaces
 from grpc.framework.face.testing import control as testing_control  # pylint: disable=unused-import
@@ -50,15 +52,9 @@ class TestServiceDigest(
         'TestServiceDigest',
         ['name',
          'methods',
-         'inline_unary_unary_methods',
-         'inline_unary_stream_methods',
-         'inline_stream_unary_methods',
-         'inline_stream_stream_methods',
-         'event_unary_unary_methods',
-         'event_unary_stream_methods',
-         'event_stream_unary_methods',
-         'event_stream_stream_methods',
-         'multi_method',
+         'inline_method_implementations',
+         'event_method_implementations',
+         'multi_method_implementation',
          'unary_unary_messages_sequences',
          'unary_stream_messages_sequences',
          'stream_unary_messages_sequences',
@@ -69,32 +65,14 @@ class TestServiceDigest(
     name: The RPC service name to be used in the test.
     methods: A sequence of interfaces.Method objects describing the RPC
       methods that will be called during the test.
-    inline_unary_unary_methods: A dict from method name to
-      face_interfaces.InlineValueInValueOutMethod object to be used in tests of
+    inline_method_implementations: A dict from RPC method name to
+      face_interfaces.MethodImplementation object to be used in tests of
       in-line calls to behaviors under test.
-    inline_unary_stream_methods: A dict from method name to
-      face_interfaces.InlineValueInStreamOutMethod object to be used in tests of
-      in-line calls to behaviors under test.
-    inline_stream_unary_methods: A dict from method name to
-      face_interfaces.InlineStreamInValueOutMethod object to be used in tests of
-      in-line calls to behaviors under test.
-    inline_stream_stream_methods: A dict from method name to
-      face_interfaces.InlineStreamInStreamOutMethod object to be used in tests
-      of in-line calls to behaviors under test.
-    event_unary_unary_methods: A dict from method name to
-      face_interfaces.EventValueInValueOutMethod object to be used in tests of
+    event_method_implementations: A dict from RPC method name to
+      face_interfaces.MethodImplementation object to be used in tests of
       event-driven calls to behaviors under test.
-    event_unary_stream_methods: A dict from method name to
-      face_interfaces.EventValueInStreamOutMethod object to be used in tests of
-      event-driven calls to behaviors under test.
-    event_stream_unary_methods: A dict from method name to
-      face_interfaces.EventStreamInValueOutMethod object to be used in tests of
-      event-driven calls to behaviors under test.
-    event_stream_stream_methods: A dict from method name to
-      face_interfaces.EventStreamInStreamOutMethod object to be used in tests of
-      event-driven calls to behaviors under test.
-    multi_method: A face_interfaces.MultiMethod to be used in tests of generic
-      calls to behaviors under test.
+    multi_method_implementation: A face_interfaces.MultiMethodImplementation to
+      be used in tests of generic calls to behaviors under test.
     unary_unary_messages_sequences: A dict from method name to sequence of
       service.UnaryUnaryTestMessages objects to be used to test the method
       with the given name.
@@ -130,27 +108,33 @@ class _BufferingConsumer(stream.Consumer):
     self.terminated = True
 
 
-class _InlineUnaryUnaryMethod(face_interfaces.InlineValueInValueOutMethod):
+class _InlineUnaryUnaryMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, unary_unary_test_method, control):
     self._test_method = unary_unary_test_method
     self._control = control
 
-  def service(self, request, context):
+    self.cardinality = cardinality.Cardinality.UNARY_UNARY
+    self.style = style.Service.INLINE
+
+  def unary_unary_inline(self, request, context):
     response_list = []
     self._test_method.service(
         request, response_list.append, context, self._control)
     return response_list.pop(0)
 
 
-class _EventUnaryUnaryMethod(face_interfaces.EventValueInValueOutMethod):
+class _EventUnaryUnaryMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, unary_unary_test_method, control, pool):
     self._test_method = unary_unary_test_method
     self._control = control
     self._pool = pool
 
-  def service(self, request, response_callback, context):
+    self.cardinality = cardinality.Cardinality.UNARY_UNARY
+    self.style = style.Service.EVENT
+
+  def unary_unary_event(self, request, response_callback, context):
     if self._pool is None:
       self._test_method.service(
           request, response_callback, context, self._control)
@@ -160,13 +144,16 @@ class _EventUnaryUnaryMethod(face_interfaces.EventValueInValueOutMethod):
           self._control)
 
 
-class _InlineUnaryStreamMethod(face_interfaces.InlineValueInStreamOutMethod):
+class _InlineUnaryStreamMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, unary_stream_test_method, control):
     self._test_method = unary_stream_test_method
     self._control = control
 
-  def service(self, request, context):
+    self.cardinality = cardinality.Cardinality.UNARY_STREAM
+    self.style = style.Service.INLINE
+
+  def unary_stream_inline(self, request, context):
     response_consumer = _BufferingConsumer()
     self._test_method.service(
         request, response_consumer, context, self._control)
@@ -174,14 +161,17 @@ class _InlineUnaryStreamMethod(face_interfaces.InlineValueInStreamOutMethod):
       yield response
 
 
-class _EventUnaryStreamMethod(face_interfaces.EventValueInStreamOutMethod):
+class _EventUnaryStreamMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, unary_stream_test_method, control, pool):
     self._test_method = unary_stream_test_method
     self._control = control
     self._pool = pool
 
-  def service(self, request, response_consumer, context):
+    self.cardinality = cardinality.Cardinality.UNARY_STREAM
+    self.style = style.Service.EVENT
+
+  def unary_stream_event(self, request, response_consumer, context):
     if self._pool is None:
       self._test_method.service(
           request, response_consumer, context, self._control)
@@ -191,13 +181,16 @@ class _EventUnaryStreamMethod(face_interfaces.EventValueInStreamOutMethod):
           self._control)
 
 
-class _InlineStreamUnaryMethod(face_interfaces.InlineStreamInValueOutMethod):
+class _InlineStreamUnaryMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, stream_unary_test_method, control):
     self._test_method = stream_unary_test_method
     self._control = control
 
-  def service(self, request_iterator, context):
+    self.cardinality = cardinality.Cardinality.STREAM_UNARY
+    self.style = style.Service.INLINE
+
+  def stream_unary_inline(self, request_iterator, context):
     response_list = []
     request_consumer = self._test_method.service(
         response_list.append, context, self._control)
@@ -207,14 +200,17 @@ class _InlineStreamUnaryMethod(face_interfaces.InlineStreamInValueOutMethod):
     return response_list.pop(0)
 
 
-class _EventStreamUnaryMethod(face_interfaces.EventStreamInValueOutMethod):
+class _EventStreamUnaryMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, stream_unary_test_method, control, pool):
     self._test_method = stream_unary_test_method
     self._control = control
     self._pool = pool
 
-  def service(self, response_callback, context):
+    self.cardinality = cardinality.Cardinality.STREAM_UNARY
+    self.style = style.Service.EVENT
+
+  def stream_unary_event(self, response_callback, context):
     request_consumer = self._test_method.service(
         response_callback, context, self._control)
     if self._pool is None:
@@ -223,13 +219,16 @@ class _EventStreamUnaryMethod(face_interfaces.EventStreamInValueOutMethod):
       return stream_util.ThreadSwitchingConsumer(request_consumer, self._pool)
 
 
-class _InlineStreamStreamMethod(face_interfaces.InlineStreamInStreamOutMethod):
+class _InlineStreamStreamMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, stream_stream_test_method, control):
     self._test_method = stream_stream_test_method
     self._control = control
 
-  def service(self, request_iterator, context):
+    self.cardinality = cardinality.Cardinality.STREAM_STREAM
+    self.style = style.Service.INLINE
+
+  def stream_stream_inline(self, request_iterator, context):
     response_consumer = _BufferingConsumer()
     request_consumer = self._test_method.service(
         response_consumer, context, self._control)
@@ -241,14 +240,17 @@ class _InlineStreamStreamMethod(face_interfaces.InlineStreamInStreamOutMethod):
     response_consumer.terminate()
 
 
-class _EventStreamStreamMethod(face_interfaces.EventStreamInStreamOutMethod):
+class _EventStreamStreamMethod(face_interfaces.MethodImplementation):
 
   def __init__(self, stream_stream_test_method, control, pool):
     self._test_method = stream_stream_test_method
     self._control = control
     self._pool = pool
 
-  def service(self, response_consumer, context):
+    self.cardinality = cardinality.Cardinality.STREAM_STREAM
+    self.style = style.Service.EVENT
+
+  def stream_stream_event(self, response_consumer, context):
     request_consumer = self._test_method.service(
         response_consumer, context, self._control)
     if self._pool is None:
@@ -332,7 +334,7 @@ class _StreamUnaryAdaptation(object):
         response_consumer.consume_and_terminate, context, control)
 
 
-class _MultiMethod(face_interfaces.MultiMethod):
+class _MultiMethodImplementation(face_interfaces.MultiMethodImplementation):
 
   def __init__(self, methods, control, pool):
     self._methods = methods
@@ -427,19 +429,21 @@ def digest(service, control, pool):
   adaptations.update(unary_stream.adaptations)
   adaptations.update(stream_unary.adaptations)
   adaptations.update(stream_stream.adaptations)
+  inlines = dict(unary_unary.inlines)
+  inlines.update(unary_stream.inlines)
+  inlines.update(stream_unary.inlines)
+  inlines.update(stream_stream.inlines)
+  events = dict(unary_unary.events)
+  events.update(unary_stream.events)
+  events.update(stream_unary.events)
+  events.update(stream_stream.events)
 
   return TestServiceDigest(
       service.name(),
       methods,
-      unary_unary.inlines,
-      unary_stream.inlines,
-      stream_unary.inlines,
-      stream_stream.inlines,
-      unary_unary.events,
-      unary_stream.events,
-      stream_unary.events,
-      stream_stream.events,
-      _MultiMethod(adaptations, control, pool),
+      inlines,
+      events,
+      _MultiMethodImplementation(adaptations, control, pool),
       unary_unary.messages,
       unary_stream.messages,
       stream_unary.messages,

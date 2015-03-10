@@ -30,23 +30,20 @@
 import abc
 import collections
 
-# assembly_interfaces is referenced from specification in this module.
-from grpc.framework.assembly import interfaces as assembly_interfaces  # pylint: disable=unused-import
-from grpc.framework.assembly import utilities as assembly_utilities
+# face_interfaces is referenced from specification in this module.
+from grpc.framework.common import cardinality
+from grpc.framework.face import interfaces as face_interfaces  # pylint: disable=unused-import
+from grpc.framework.face import utilities as face_utilities
 from grpc.early_adopter import _reexport
 from grpc.early_adopter import interfaces
 
 
-# TODO(issue 726): Kill the "implementations" attribute of this in favor
-# of the same-information-less-bogusly-represented "cardinalities".
 class InvocationBreakdown(object):
   """An intermediate representation of invocation-side views of RPC methods.
 
   Attributes:
     cardinalities: A dictionary from RPC method name to interfaces.Cardinality
       value.
-    implementations: A dictionary from RPC method name to
-      assembly_interfaces.MethodImplementation describing the method.
     request_serializers: A dictionary from RPC method name to callable
       behavior to be used serializing request values for the RPC.
     response_deserializers: A dictionary from RPC method name to callable
@@ -59,8 +56,7 @@ class _EasyInvocationBreakdown(
     InvocationBreakdown,
     collections.namedtuple(
         '_EasyInvocationBreakdown',
-        ('cardinalities', 'implementations', 'request_serializers',
-         'response_deserializers'))):
+        ('cardinalities', 'request_serializers', 'response_deserializers'))):
   pass
 
 
@@ -68,8 +64,8 @@ class ServiceBreakdown(object):
   """An intermediate representation of service-side views of RPC methods.
 
   Attributes:
-    implementations: A dictionary from RPC method name
-      assembly_interfaces.MethodImplementation implementing the RPC method.
+    implementations: A dictionary from RPC method name to
+      face_interfaces.MethodImplementation implementing the RPC method.
     request_deserializers: A dictionary from RPC method name to callable
       behavior to be used deserializing request values for the RPC.
     response_serializers: A dictionary from RPC method name to callable
@@ -97,25 +93,14 @@ def break_down_invocation(method_descriptions):
     An InvocationBreakdown corresponding to the given method descriptions.
   """
   cardinalities = {}
-  implementations = {}
   request_serializers = {}
   response_deserializers = {}
   for name, method_description in method_descriptions.iteritems():
-    cardinality = method_description.cardinality()
-    cardinalities[name] = cardinality
-    if cardinality is interfaces.Cardinality.UNARY_UNARY:
-      implementations[name] = assembly_utilities.unary_unary_inline(None)
-    elif cardinality is interfaces.Cardinality.UNARY_STREAM:
-      implementations[name] = assembly_utilities.unary_stream_inline(None)
-    elif cardinality is interfaces.Cardinality.STREAM_UNARY:
-      implementations[name] = assembly_utilities.stream_unary_inline(None)
-    elif cardinality is interfaces.Cardinality.STREAM_STREAM:
-      implementations[name] = assembly_utilities.stream_stream_inline(None)
+    cardinalities[name] = method_description.cardinality()
     request_serializers[name] = method_description.serialize_request
     response_deserializers[name] = method_description.deserialize_response
   return _EasyInvocationBreakdown(
-      cardinalities, implementations, request_serializers,
-      response_deserializers)
+      cardinalities, request_serializers, response_deserializers)
 
 
 def break_down_service(method_descriptions):
@@ -139,28 +124,28 @@ def break_down_service(method_descriptions):
           service_behavior=method_description.service_unary_unary):
         return service_behavior(
             request, _reexport.rpc_context(face_rpc_context))
-      implementations[name] = assembly_utilities.unary_unary_inline(service)
+      implementations[name] = face_utilities.unary_unary_inline(service)
     elif cardinality is interfaces.Cardinality.UNARY_STREAM:
       def service(
           request, face_rpc_context,
           service_behavior=method_description.service_unary_stream):
         return service_behavior(
             request, _reexport.rpc_context(face_rpc_context))
-      implementations[name] = assembly_utilities.unary_stream_inline(service)
+      implementations[name] = face_utilities.unary_stream_inline(service)
     elif cardinality is interfaces.Cardinality.STREAM_UNARY:
       def service(
           request_iterator, face_rpc_context,
           service_behavior=method_description.service_stream_unary):
         return service_behavior(
             request_iterator, _reexport.rpc_context(face_rpc_context))
-      implementations[name] = assembly_utilities.stream_unary_inline(service)
+      implementations[name] = face_utilities.stream_unary_inline(service)
     elif cardinality is interfaces.Cardinality.STREAM_STREAM:
       def service(
           request_iterator, face_rpc_context,
           service_behavior=method_description.service_stream_stream):
         return service_behavior(
             request_iterator, _reexport.rpc_context(face_rpc_context))
-      implementations[name] = assembly_utilities.stream_stream_inline(service)
+      implementations[name] = face_utilities.stream_stream_inline(service)
     request_deserializers[name] = method_description.deserialize_request
     response_serializers[name] = method_description.serialize_response
 

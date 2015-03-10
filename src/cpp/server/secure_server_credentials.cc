@@ -31,22 +31,41 @@
  *
  */
 
-#include <string.h>
+#include <grpc/grpc_security.h>
 
-#include <grpc/grpc.h>
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <grpc++/server_credentials.h>
 
-grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
-                                         const char *target,
-                                         const grpc_channel_args *args) {
-  grpc_secure_channel_factory factories[] = {
-      {GRPC_CREDENTIALS_TYPE_SSL, grpc_ssl_channel_create},
-      {GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY,
-       grpc_fake_transport_security_channel_create}};
-  return grpc_secure_channel_create_with_factories(
-      factories, GPR_ARRAY_SIZE(factories), creds, target, args);
+namespace grpc {
+
+namespace {
+class SecureServerCredentials GRPC_FINAL : public ServerCredentials {
+ public:
+  explicit SecureServerCredentials(grpc_server_credentials* creds) : creds_(creds) {}
+  ~SecureServerCredentials() GRPC_OVERRIDE {
+    grpc_server_credentials_release(creds_);
+  }
+
+  int AddPortToServer(const grpc::string& addr,
+                      grpc_server* server) GRPC_OVERRIDE {
+    return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
+  }
+
+ private:
+  grpc_server_credentials* const creds_;
+};
+}  // namespace
+
+std::shared_ptr<ServerCredentials> SslServerCredentials(
+    const SslServerCredentialsOptions &options) {
+  std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
+  for (const auto &key_cert_pair : options.pem_key_cert_pairs) {
+    pem_key_cert_pairs.push_back(
+        {key_cert_pair.private_key.c_str(), key_cert_pair.cert_chain.c_str()});
+  }
+  grpc_server_credentials *c_creds = grpc_ssl_server_credentials_create(
+      options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
+      &pem_key_cert_pairs[0], pem_key_cert_pairs.size());
+  return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(c_creds));
 }
+
+}  // namespace grpc
