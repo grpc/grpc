@@ -213,14 +213,14 @@ class _DynamicStub(interfaces.DynamicStub):
     self._pool = pool
 
   def __getattr__(self, attr):
-    cardinality = self._cardinalities.get(attr)
-    if cardinality is cardinality.Cardinality.UNARY_UNARY:
+    method_cardinality = self._cardinalities.get(attr)
+    if method_cardinality is cardinality.Cardinality.UNARY_UNARY:
       return _UnaryUnaryMultiCallable(self._front, attr)
-    elif cardinality is cardinality.Cardinality.UNARY_STREAM:
+    elif method_cardinality is cardinality.Cardinality.UNARY_STREAM:
       return _UnaryStreamMultiCallable(self._front, attr)
-    elif cardinality is cardinality.Cardinality.STREAM_UNARY:
+    elif method_cardinality is cardinality.Cardinality.STREAM_UNARY:
       return _StreamUnaryMultiCallable(self._front, attr, self._pool)
-    elif cardinality is cardinality.Cardinality.STREAM_STREAM:
+    elif method_cardinality is cardinality.Cardinality.STREAM_STREAM:
       return _StreamStreamMultiCallable(self._front, attr, self._pool)
     else:
       raise AttributeError('_DynamicStub object has no attribute "%s"!' % attr)
@@ -315,4 +315,4 @@ def dynamic_stub(cardinalities, front, pool, prefix):
     An interfaces.DynamicStub that performs RPCs via the given
       base_interfaces.Front.
   """
-  return _DynamicStub(cardinalities, front, pool, prefix)
+  return _DynamicStub(cardinalities, front, pool)
