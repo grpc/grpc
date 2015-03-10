@@ -44,6 +44,7 @@
 #include "src/core/surface/call.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
+#include "src/core/surface/init.h"
 #include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -612,6 +613,9 @@ grpc_server *grpc_server_create_from_filters(grpc_completion_queue *cq,
   int census_enabled = grpc_channel_args_is_census_enabled(args);
 
   grpc_server *server = gpr_malloc(sizeof(grpc_server));
+
+  GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
+
   memset(server, 0, sizeof(grpc_server));
   if (cq) addcq(server, cq);
 

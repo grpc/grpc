@@ -43,6 +43,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "src/cpp/server/thread_pool.h"
@@ -83,7 +84,7 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
 
     char* server_address = NULL;
     gpr_join_host_port(&server_address, "::", port);
-    builder.AddPort(server_address);
+    builder.AddPort(server_address, InsecureServerCredentials());
     gpr_free(server_address);
 
     builder.RegisterService(&service_);

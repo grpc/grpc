@@ -170,11 +170,16 @@ class PythonLanguage(object):
       self._tests = json.load(f)
 
   def test_specs(self, config, travis):
-    return [config.job_spec(['tools/run_tests/run_python.sh', test], None)
-            for test in self._tests]
+    modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
+                                test['module']], None)
+               for test in self._tests if 'module' in test]
+    files = [config.job_spec(['tools/run_tests/run_python.sh',
+                              test['file']], None)
+             for test in self._tests if 'file' in test]
+    return files + modules
 
   def make_targets(self):
-    return ['static_c']
+    return ['static_c', 'grpc_python_plugin']
 
   def build_steps(self):
     return [['tools/run_tests/build_python.sh']]
@@ -374,7 +379,7 @@ test_cache.maybe_load()
 if forever:
   success = True
   while True:
-    dw = watch_dirs.DirWatcher(['src', 'include', 'test'])
+    dw = watch_dirs.DirWatcher(['src', 'include', 'test', 'examples'])
     initial_time = dw.most_recent_change()
     have_files_changed = lambda: dw.most_recent_change() != initial_time
     previous_success = success

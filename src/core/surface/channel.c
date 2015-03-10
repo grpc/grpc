@@ -39,6 +39,7 @@
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/client.h"
+#include "src/core/surface/init.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -63,6 +64,7 @@ grpc_channel *grpc_channel_create_from_filters(
   size_t size =
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
   grpc_channel *channel = gpr_malloc(size);
+  GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
   /* decremented by grpc_channel_destroy, and grpc_client_channel_closed if is_client */
   gpr_ref_init(&channel->refs, 1 + is_client);

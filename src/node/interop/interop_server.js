@@ -165,16 +165,16 @@ function handleHalfDuplex(call) {
 function getServer(port, tls) {
   // TODO(mlumish): enable TLS functionality
   var options = {};
+  var server_creds = null;
   if (tls) {
     var key_path = path.join(__dirname, '../test/data/server1.key');
     var pem_path = path.join(__dirname, '../test/data/server1.pem');
 
     var key_data = fs.readFileSync(key_path);
     var pem_data = fs.readFileSync(pem_path);
-    var server_creds = grpc.ServerCredentials.createSsl(null,
-                                                        key_data,
-                                                        pem_data);
-    options.credentials = server_creds;
+    server_creds = grpc.ServerCredentials.createSsl(null,
+                                                    key_data,
+                                                    pem_data);
   }
   var server = new Server({
     'grpc.testing.TestService' : {
@@ -186,7 +186,7 @@ function getServer(port, tls) {
       halfDuplexCall: handleHalfDuplex
     }
   }, null, options);
-  var port_num = server.bind('0.0.0.0:' + port, tls);
+  var port_num = server.bind('0.0.0.0:' + port, server_creds);
   return {server: server, port: port_num};
 }
 

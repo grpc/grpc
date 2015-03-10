@@ -35,11 +35,11 @@ import threading
 import unittest
 
 from grpc.framework.assembly import implementations
-from grpc.framework.assembly import utilities
 from grpc.framework.base import interfaces
 from grpc.framework.base.packets import packets as tickets
 from grpc.framework.base.packets import interfaces as tickets_interfaces
 from grpc.framework.base.packets import null
+from grpc.framework.face import utilities as face_utilities
 from grpc.framework.foundation import logging_pool
 from grpc._junkdrawer import math_pb2
 
@@ -81,11 +81,15 @@ def _sum(request_iterator, unused_context):
 
 
 _IMPLEMENTATIONS = {
-    DIV: utilities.unary_unary_inline(_div),
-    DIV_MANY: utilities.stream_stream_inline(_div_many),
-    FIB: utilities.unary_stream_inline(_fib),
-    SUM: utilities.stream_unary_inline(_sum),
+    DIV: face_utilities.unary_unary_inline(_div),
+    DIV_MANY: face_utilities.stream_stream_inline(_div_many),
+    FIB: face_utilities.unary_stream_inline(_fib),
+    SUM: face_utilities.stream_unary_inline(_sum),
 }
+
+_CARDINALITIES = {
+    name: implementation.cardinality
+    for name, implementation in _IMPLEMENTATIONS.iteritems()}
 
 _TIMEOUT = 10
 
@@ -170,8 +174,8 @@ class FaceStubTest(unittest.TestCase):
     face_stub = implementations.assemble_face_stub(pipe)
 
     with service, face_stub:
-      sync_async = face_stub.stream_unary_sync_async(SUM)
-      response_future = sync_async.async(
+      multi_callable = face_stub.stream_unary_multi_callable(SUM)
+      response_future = multi_callable.future(
           (math_pb2.Num(num=index) for index in range(stream_length)),
           _TIMEOUT)
       self.assertEqual(
@@ -214,7 +218,7 @@ class DynamicInlineStubTest(unittest.TestCase):
     pipe = PipeLink()
     service = implementations.assemble_service(_IMPLEMENTATIONS, pipe)
     dynamic_stub = implementations.assemble_dynamic_inline_stub(
-        _IMPLEMENTATIONS, pipe)
+        _CARDINALITIES, pipe)
 
     service.start()
     with dynamic_stub:
@@ -229,7 +233,7 @@ class DynamicInlineStubTest(unittest.TestCase):
     pipe = PipeLink()
     service = implementations.assemble_service(_IMPLEMENTATIONS, pipe)
     dynamic_stub = implementations.assemble_dynamic_inline_stub(
-        _IMPLEMENTATIONS, pipe)
+        _CARDINALITIES, pipe)
 
     with service, dynamic_stub:
       response_iterator = dynamic_stub.Fib(
@@ -244,10 +248,10 @@ class DynamicInlineStubTest(unittest.TestCase):
     pipe = PipeLink()
     service = implementations.assemble_service(_IMPLEMENTATIONS, pipe)
     dynamic_stub = implementations.assemble_dynamic_inline_stub(
-        _IMPLEMENTATIONS, pipe)
+        _CARDINALITIES, pipe)
 
     with service, dynamic_stub:
-      response_future = dynamic_stub.Sum.async(
+      response_future = dynamic_stub.Sum.future(
           (math_pb2.Num(num=index) for index in range(stream_length)),
           _TIMEOUT)
       self.assertEqual(
@@ -261,7 +265,7 @@ class DynamicInlineStubTest(unittest.TestCase):
     pipe = PipeLink()
     service = implementations.assemble_service(_IMPLEMENTATIONS, pipe)
     dynamic_stub = implementations.assemble_dynamic_inline_stub(
-        _IMPLEMENTATIONS, pipe)
+        _CARDINALITIES, pipe)
 
     with service, dynamic_stub:
       response_iterator = dynamic_stub.DivMany(

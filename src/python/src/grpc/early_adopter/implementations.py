@@ -33,7 +33,7 @@ import threading
 
 from grpc._adapter import fore as _fore
 from grpc._adapter import rear as _rear
-from grpc.early_adopter import _assembly_utilities
+from grpc.early_adopter import _face_utilities
 from grpc.early_adopter import _reexport
 from grpc.early_adopter import interfaces
 from grpc.framework.assembly import implementations as _assembly_implementations
@@ -95,12 +95,13 @@ class _Server(interfaces.Server):
 
 def _build_stub(breakdown, activated_rear_link):
   assembly_stub = _assembly_implementations.assemble_dynamic_inline_stub(
-      breakdown.implementations, activated_rear_link)
+      _reexport.common_cardinalities(breakdown.cardinalities),
+      activated_rear_link)
   return _reexport.stub(assembly_stub, breakdown.cardinalities)
 
 
 def _build_server(methods, port, private_key, certificate_chain):
-  breakdown = _assembly_utilities.break_down_service(methods)
+  breakdown = _face_utilities.break_down_service(methods)
   return _Server(breakdown, port, private_key, certificate_chain)
 
 
@@ -117,7 +118,7 @@ def insecure_stub(methods, host, port):
   Returns:
     An interfaces.Stub affording RPC invocation.
   """
-  breakdown = _assembly_utilities.break_down_invocation(methods)
+  breakdown = _face_utilities.break_down_invocation(methods)
   activated_rear_link = _rear.activated_rear_link(
       host, port, breakdown.request_serializers,
       breakdown.response_deserializers)
@@ -125,7 +126,8 @@ def insecure_stub(methods, host, port):
 
 
 def secure_stub(
-    methods, host, port, root_certificates, private_key, certificate_chain):
+    methods, host, port, root_certificates, private_key, certificate_chain,
+    server_host_override=None):
   """Constructs an insecure interfaces.Stub.
 
   Args:
@@ -140,15 +142,17 @@ def secure_stub(
       should be used.
     certificate_chain: The PEM-encoded certificate chain to use or None if no
       certificate chain should be used.
+    server_host_override: (For testing only) the target name used for SSL
+      host name checking.
 
   Returns:
     An interfaces.Stub affording RPC invocation.
   """
-  breakdown = _assembly_utilities.break_down_invocation(methods)
+  breakdown = _face_utilities.break_down_invocation(methods)
   activated_rear_link = _rear.secure_activated_rear_link(
       host, port, breakdown.request_serializers,
       breakdown.response_deserializers, root_certificates, private_key,
-      certificate_chain)
+      certificate_chain, server_host_override=server_host_override)
   return _build_stub(breakdown, activated_rear_link)
 
 

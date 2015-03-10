@@ -91,14 +91,9 @@ class FutureInvocationAsynchronousEventServiceTestCase(
     self.digest = digest.digest(
         stock_service.STOCK_TEST_SERVICE, self.control, self.digest_pool)
 
-    self.server, self.stub, self.memo = self.set_up_implementation(
+    self.stub, self.memo = self.set_up_implementation(
         self.digest.name, self.digest.methods,
-        {}, {}, {}, {},
-        self.digest.event_unary_unary_methods,
-        self.digest.event_unary_stream_methods,
-        self.digest.event_stream_unary_methods,
-        self.digest.event_stream_stream_methods,
-        None)
+        self.digest.event_method_implementations, None)
 
   def tearDown(self):
     """See unittest.TestCase.tearDown for full specification.
@@ -190,8 +185,8 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         request = test_messages.request()
 
         with self.control.pause():
-          sync_async = self.stub.unary_unary_sync_async(name)
-          response_future = sync_async.async(request, _TIMEOUT)
+          multi_callable = self.stub.unary_unary_multi_callable(name)
+          response_future = multi_callable.future(request, _TIMEOUT)
           self.assertIsInstance(
               response_future.exception(), exceptions.ExpirationError)
           with self.assertRaises(exceptions.ExpirationError):
@@ -216,8 +211,8 @@ class FutureInvocationAsynchronousEventServiceTestCase(
         requests = test_messages.requests()
 
         with self.control.pause():
-          sync_async = self.stub.stream_unary_sync_async(name)
-          response_future = sync_async.async(iter(requests), _TIMEOUT)
+          multi_callable = self.stub.stream_unary_multi_callable(name)
+          response_future = multi_callable.future(iter(requests), _TIMEOUT)
           self.assertIsInstance(
               response_future.exception(), exceptions.ExpirationError)
           with self.assertRaises(exceptions.ExpirationError):

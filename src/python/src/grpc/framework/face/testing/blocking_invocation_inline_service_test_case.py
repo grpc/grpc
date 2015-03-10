@@ -61,13 +61,9 @@ class BlockingInvocationInlineServiceTestCase(
     self.digest = digest.digest(
         stock_service.STOCK_TEST_SERVICE, self.control, None)
 
-    self.server, self.stub, self.memo = self.set_up_implementation(
+    self.stub, self.memo = self.set_up_implementation(
         self.digest.name, self.digest.methods,
-        self.digest.inline_unary_unary_methods,
-        self.digest.inline_unary_stream_methods,
-        self.digest.inline_stream_unary_methods,
-        self.digest.inline_stream_stream_methods,
-        {}, {}, {}, {}, None)
+        self.digest.inline_method_implementations, None)
 
   def tearDown(self):
     """See unittest.TestCase.tearDown for full specification.
@@ -147,8 +143,8 @@ class BlockingInvocationInlineServiceTestCase(
 
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
-          sync_async = self.stub.unary_unary_sync_async(name)
-          sync_async(request, _TIMEOUT)
+          multi_callable = self.stub.unary_unary_multi_callable(name)
+          multi_callable(request, _TIMEOUT)
 
   def testExpiredUnaryRequestStreamResponse(self):
     for name, test_messages_sequence in (
@@ -170,8 +166,8 @@ class BlockingInvocationInlineServiceTestCase(
 
         with self.control.pause(), self.assertRaises(
             exceptions.ExpirationError):
-          sync_async = self.stub.stream_unary_sync_async(name)
-          sync_async(iter(requests), _TIMEOUT)
+          multi_callable = self.stub.stream_unary_multi_callable(name)
+          multi_callable(iter(requests), _TIMEOUT)
 
   def testExpiredStreamRequestStreamResponse(self):
     for name, test_messages_sequence in (

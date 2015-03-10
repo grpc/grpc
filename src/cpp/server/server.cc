@@ -170,26 +170,13 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               ServerCredentials* creds)
+Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned)
     : started_(false),
       shutdown_(false),
       num_running_cb_(0),
+      server_(grpc_server_create(cq_.cq(), nullptr)),
       thread_pool_(thread_pool),
-      thread_pool_owned_(thread_pool_owned),
-      secure_(creds != nullptr) {
-  if (creds) {
-    server_ =
-        grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
-  } else {
-    server_ = grpc_server_create(cq_.cq(), nullptr);
-  }
-}
-
-Server::Server() {
-  // Should not be called.
-  GPR_ASSERT(false);
-}
+      thread_pool_owned_(thread_pool_owned) {}
 
 Server::~Server() {
   std::unique_lock<std::mutex> lock(mu_);
@@ -239,13 +226,9 @@ bool Server::RegisterAsyncService(AsynchronousService* service) {
   return true;
 }
 
-int Server::AddPort(const grpc::string& addr) {
+int Server::AddPort(const grpc::string& addr, ServerCredentials* creds) {
   GPR_ASSERT(!started_);
-  if (secure_) {
-    return grpc_server_add_secure_http2_port(server_, addr.c_str());
-  } else {
-    return grpc_server_add_http2_port(server_, addr.c_str());
-  }
+  return creds->AddPortToServer(addr, server_);
 }
 
 bool Server::Start() {
