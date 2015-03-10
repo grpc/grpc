@@ -66,7 +66,7 @@ class ChannelArguments {
   void SetChannelArgs(grpc_channel_args* channel_args) const;
 
  private:
-  friend class Channel;
+  friend class SecureCredentials;
   friend class testing::ChannelArgumentsTest;
 
   // TODO(yangg) implement copy and assign
