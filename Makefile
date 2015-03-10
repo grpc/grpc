@@ -3092,6 +3092,7 @@ LIBGRPC++_SRC = \
     src/cpp/server/server_credentials.cc \
     src/cpp/server/thread_pool.cc \
     src/cpp/util/byte_buffer.cc \
+    src/cpp/util/slice.cc \
     src/cpp/util/status.cc \
     src/cpp/util/time.cc \
 
@@ -3116,6 +3117,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/server_builder.h \
     include/grpc++/server_context.h \
     include/grpc++/server_credentials.h \
+    include/grpc++/slice.h \
     include/grpc++/status.h \
     include/grpc++/status_code_enum.h \
     include/grpc++/stream.h \
@@ -3173,6 +3175,7 @@ src/cpp/server/server_context.cc: $(OPENSSL_DEP)
 src/cpp/server/server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/server/thread_pool.cc: $(OPENSSL_DEP)
 src/cpp/util/byte_buffer.cc: $(OPENSSL_DEP)
+src/cpp/util/slice.cc: $(OPENSSL_DEP)
 src/cpp/util/status.cc: $(OPENSSL_DEP)
 src/cpp/util/time.cc: $(OPENSSL_DEP)
 endif
@@ -3234,6 +3237,7 @@ $(OBJDIR)/$(CONFIG)/src/cpp/server/server_context.o:
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/thread_pool.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/util/byte_buffer.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/util/slice.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/util/status.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/util/time.o: 
 

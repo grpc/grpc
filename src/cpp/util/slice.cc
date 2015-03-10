@@ -31,44 +31,20 @@
  *
  */
 
-#ifndef GRPCXX_SLICE_H
-#define GRPCXX_SLICE_H
-
-#include <grpc/support/slice.h>
-#include <grpc++/config.h>
+#include <grpc++/slice.h>
 
 namespace grpc {
 
-class Slice GRPC_FINAL {
- public:
-  // construct empty slice
-  Slice();
-  // destructor - drops one ref
-  ~Slice();
-  // construct slice from grpc slice, adding a ref
-  enum AddRef { ADD_REF };
-  Slice(gpr_slice slice, AddRef);
-  // construct slice from grpc slice, stealing a ref
-  enum StealRef { STEAL_REF };
-  Slice(gpr_slice slice, StealRef);
-  // copy constructor - adds a ref
-  Slice(const Slice& other);
-  // assignment
-  Slice& operator=(Slice other) {
-    std::swap(slice_, other.slice_);
-    return *this;
-  }
+Slice::Slice() : slice_(gpr_empty_slice()) {}
 
-  size_t size() const { return GPR_SLICE_LENGTH(slice_); }
-  const gpr_uint8* begin() const { return GPR_SLICE_START_PTR(slice_); }
-  const gpr_uint8* end() const { return GPR_SLICE_END_PTR(slice_); }
+Slice::~Slice() {
+  gpr_slice_unref(slice_);
+}
 
- private:
-  friend class ByteBuffer;
+Slice::Slice(gpr_slice slice, AddRef) : slice_(gpr_slice_ref(slice)) {}
 
-  gpr_slice slice_;
-};
+Slice::Slice(gpr_slice slice, StealRef) : slice_(slice) {}
+
+Slice::Slice(const Slice& other) : slice_(gpr_slice_ref(other.slice_)) {}
 
 }  // namespace grpc
-
-#endif  // GRPCXX_SLICE_H

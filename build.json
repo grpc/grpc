@@ -413,6 +413,7 @@
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
+        "include/grpc++/slice.h",
         "include/grpc++/status.h",
         "include/grpc++/status_code_enum.h",
         "include/grpc++/stream.h",
@@ -443,6 +444,7 @@
         "src/cpp/server/server_credentials.cc",
         "src/cpp/server/thread_pool.cc",
         "src/cpp/util/byte_buffer.cc",
+        "src/cpp/util/slice.cc",
         "src/cpp/util/status.cc",
         "src/cpp/util/time.cc"
       ],

@@ -31,12 +31,15 @@
  *
  */
 
-#ifndef __GRPCPP_BYTE_BUFFER_H_
-#define __GRPCPP_BYTE_BUFFER_H_
+#ifndef GRPCXX_BYTE_BUFFER_H
+#define GRPCXX_BYTE_BUFFER_H
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc++/config.h>
+#include <grpc++/slice.h>
+
+#include <vector>
 
 namespace grpc {
 
@@ -44,29 +47,38 @@ class ByteBuffer GRPC_FINAL {
  public:
   ByteBuffer() : buffer_(nullptr) {}
 
+  ByteBuffer(Slice* slices, size_t nslices);
+
   ~ByteBuffer() {
     if (buffer_) {
       grpc_byte_buffer_destroy(buffer_);
     }
   }
 
+  void Dump(std::vector<Slice>* slices);
+
+  void Clear();
+  size_t Length();
+
  private:
   friend class CallOpBuffer;
 
   // takes ownership
   void set_buffer(grpc_byte_buffer* buf) {
-    GPR_ASSERT(!buffer_);
+    if (buffer_) {
+      gpr_log(GPR_ERROR, "Overriding existing buffer");
+      Clear();
+    }
     buffer_ = buf;
   }
 
   grpc_byte_buffer* buffer() const {
-    GPR_ASSERT(buffer_);
     return buffer_;
   }
 
   grpc_byte_buffer* buffer_;
 };
 
-} // namespace
+}  // namespace grpc
 
-#endif
+#endif  // GRPCXX_BYTE_BUFFER_H
