@@ -86,6 +86,7 @@ using grpc::ClientContext;
 using grpc::ComputeEngineCredentials;
 using grpc::CreateTestChannel;
 using grpc::Credentials;
+using grpc::JWTCredentials;
 using grpc::ServiceAccountCredentials;
 using grpc::testing::ResponseParameters;
 using grpc::testing::SimpleRequest;
@@ -151,7 +152,7 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
-    creds = CredentialsFactory::JWTCredentials(json_key, std::chrono::hours(1));
+    creds = JWTCredentials(json_key, std::chrono::hours(1));
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {
