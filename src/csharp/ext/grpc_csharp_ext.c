@@ -653,6 +653,41 @@ grpcsharp_secure_channel_create(grpc_credentials *creds, const char *target,
   return grpc_secure_channel_create(creds, target, args);
 }
 
+GPR_EXPORT grpc_server_credentials *GPR_CALLTYPE
+grpcsharp_ssl_server_credentials_create(
+    const char *pem_root_certs, const char **key_cert_pair_cert_chain_array,
+    const char **key_cert_pair_private_key_array, size_t num_key_cert_pairs) {
+  size_t i;
+  grpc_server_credentials *creds;
+  grpc_ssl_pem_key_cert_pair *key_cert_pairs =
+      gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair) * num_key_cert_pairs);
+  memset(key_cert_pairs, 0,
+         sizeof(grpc_ssl_pem_key_cert_pair) * num_key_cert_pairs);
+
+  for (i = 0; i < num_key_cert_pairs; i++) {
+    if (key_cert_pair_cert_chain_array[i] ||
+        key_cert_pair_private_key_array[i]) {
+      key_cert_pairs[i].cert_chain = key_cert_pair_cert_chain_array[i];
+      key_cert_pairs[i].private_key = key_cert_pair_private_key_array[i];
+    }
+  }
+  creds = grpc_ssl_server_credentials_create(pem_root_certs, key_cert_pairs,
+                                             num_key_cert_pairs);
+  gpr_free(key_cert_pairs);
+  return creds;
+}
+
+GPR_EXPORT void grpcsharp_server_credentials_release(
+    grpc_server_credentials *creds) {
+  grpc_server_credentials_release(creds);
+}
+
+GPR_EXPORT gpr_int32 GPR_CALLTYPE
+grpcsharp_server_add_secure_http2_port(grpc_server *server, const char *addr,
+                                       grpc_server_credentials *creds) {
+  return grpc_server_add_secure_http2_port(server, addr, creds);
+}
+
 /* Logging */
 
 typedef void(GPR_CALLTYPE *grpcsharp_log_func)(const char *file, gpr_int32 line,
