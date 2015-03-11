@@ -182,8 +182,8 @@ PHP_METHOD(Server, request_call) {
     goto cleanup;
   }
   add_property_zval(result, "call", grpc_php_wrap_call(call, true));
-  add_property_string(result, "method", details.method, false);
-  add_property_string(result, "host", details.host, false);
+  add_property_string(result, "method", details.method, true);
+  add_property_string(result, "host", details.host, true);
   add_property_zval(result, "absolute_deadline",
                     grpc_php_wrap_timeval(details.deadline));
   add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata));
