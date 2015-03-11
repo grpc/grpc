@@ -107,8 +107,8 @@ PHP_METHOD(Server, __construct) {
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval *args_array = NULL;
   grpc_channel_args args;
-  /* "a" == 1 optional array */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &args_array) ==
+  /* "|a" == 1 optional array */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a", &args_array) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Server expects an array",
@@ -198,7 +198,7 @@ PHP_METHOD(Server, add_secure_http2_port) {
   int addr_len;
   zval *creds_obj;
   /* "sO" == 1 string, 1 object */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len,
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sO", &addr, &addr_len,
                             &creds_obj, grpc_ce_server_credentials) ==
       FAILURE) {
     zend_throw_exception(
