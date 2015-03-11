@@ -61,7 +61,8 @@ typedef struct wrapped_grpc_call {
 void grpc_init_call(TSRMLS_D);
 
 /* Creates a Call object that wraps the given grpc_call struct */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned);
+zval *grpc_php_wrap_call(grpc_call *wrapped, grpc_completion_queue *queue,
+                         bool owned);
 
 /* Creates and returns a PHP associative array of metadata from a C array of
  * call metadata */

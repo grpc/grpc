@@ -42,8 +42,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
   public function tearDown() {
     unset($this->channel);
     unset($this->server);
-    unset($this->client_queue);
-    unset($this->server_queue);
   }
 
   public function testSimpleRequestBody() {
@@ -63,6 +61,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
 
     $event = $this->server->request_call();
     $this->assertSame('dummy_method', $event->method);
+    $this->assertSame([], $event->metadata);
     $server_call = $event->call;
 
     $event = $server_call->start_batch([
@@ -81,8 +80,8 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
 
     $event = $call->start_batch([
         Grpc\OP_RECV_INITIAL_METADATA => true,
-        Grpc\OP_RECV_STATUS_ON_CLIENT => true,
-                                       ]);
+        Grpc\OP_RECV_STATUS_ON_CLIENT => true
+                                 ]);
 
     $this->assertSame([], $event->metadata);
     $status = $event->status;
@@ -134,7 +133,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertTrue($event->send_status);
     $this->assertTrue($event->send_message);
     $this->assertFalse($event->cancelled);
-    $this->assertSame($req_text, $event->read);
+    $this->assertSame($req_text, $event->message);
 
     $event = $call->start_batch([
         Grpc\OP_RECV_INITIAL_METADATA => true,
@@ -143,7 +142,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
                                        ]);
 
     $this->assertSame([], $event->metadata);
-    $this->assertSame($reply_text, $event->read);
+    $this->assertSame($reply_text, $event->message);
     $status = $event->status;
     $this->assertSame([], $status->metadata);
     $this->assertSame(Grpc\STATUS_OK, $status->code);

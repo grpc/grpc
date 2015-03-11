@@ -181,7 +181,8 @@ PHP_METHOD(Server, request_call) {
                          1 TSRMLS_CC);
     goto cleanup;
   }
-  add_property_zval(result, "call", grpc_php_wrap_call(call, true));
+  add_property_zval(result, "call", grpc_php_wrap_call(call, server->queue,
+                                                       true));
   add_property_string(result, "method", details.method, true);
   add_property_string(result, "host", details.host, true);
   add_property_zval(result, "absolute_deadline",

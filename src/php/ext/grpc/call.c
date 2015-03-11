@@ -60,18 +60,18 @@
 void free_wrapped_grpc_call(void *object TSRMLS_DC) {
   wrapped_grpc_call *call = (wrapped_grpc_call *)object;
   grpc_event *event;
-  if (call->queue != NULL) {
-    grpc_completion_queue_shutdown(call->queue);
-    event = grpc_completion_queue_next(call->queue, gpr_inf_future);
-    while (event != NULL) {
-      if (event->type == GRPC_QUEUE_SHUTDOWN) {
-        break;
-      }
-      event = grpc_completion_queue_next(call->queue, gpr_inf_future);
-    }
-    grpc_completion_queue_destroy(call->queue);
-  }
   if (call->owned && call->wrapped != NULL) {
+    if (call->queue != NULL) {
+      grpc_completion_queue_shutdown(call->queue);
+      event = grpc_completion_queue_next(call->queue, gpr_inf_future);
+      while (event != NULL) {
+        if (event->type == GRPC_QUEUE_SHUTDOWN) {
+          break;
+        }
+        event = grpc_completion_queue_next(call->queue, gpr_inf_future);
+      }
+      grpc_completion_queue_destroy(call->queue);
+    }
     grpc_call_destroy(call->wrapped);
   }
   efree(call);
@@ -98,14 +98,15 @@ zend_object_value create_wrapped_grpc_call(zend_class_entry *class_type
 
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the struct
    should be destroyed at the end of the object's lifecycle */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
+zval *grpc_php_wrap_call(grpc_call *wrapped, grpc_completion_queue *queue,
+                         bool owned) {
   zval *call_object;
   MAKE_STD_ZVAL(call_object);
   object_init_ex(call_object, grpc_ce_call);
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
   call->wrapped = wrapped;
-  call->queue = grpc_completion_queue_create();
+  call->queue = queue;
   return call_object;
 }
 
@@ -276,7 +277,7 @@ PHP_METHOD(Call, start_batch) {
   grpc_metadata_array recv_trailing_metadata;
   grpc_status_code status;
   char *status_details = NULL;
-  size_t status_details_capacity;
+  size_t status_details_capacity = 0;
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
@@ -406,14 +407,15 @@ PHP_METHOD(Call, start_batch) {
     ops[op_num].op = (grpc_op_type)index;
     op_num++;
   }
-  error = grpc_call_start_batch(call->wrapped, ops, op_num, NULL);
+  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped);
   if (error != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException,
                          "start_batch was called incorrectly",
                          (long)error TSRMLS_CC);
     goto cleanup;
   }
-  event = grpc_completion_queue_pluck(call->queue, NULL, gpr_inf_future);
+  event = grpc_completion_queue_pluck(call->queue, call->wrapped,
+                                      gpr_inf_future);
   if (event->data.op_complete != GRPC_OP_OK) {
     zend_throw_exception(spl_ce_LogicException,
                          "The batch failed for some reason",
@@ -449,7 +451,7 @@ PHP_METHOD(Call, start_batch) {
         add_property_zval(recv_status, "metadata",
                           grpc_parse_metadata_array(&recv_trailing_metadata));
         add_property_long(recv_status, "code", status);
-        add_property_string(recv_status, "details", status_details, false);
+        add_property_string(recv_status, "details", status_details, true);
         add_property_zval(result, "status", recv_status);
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
