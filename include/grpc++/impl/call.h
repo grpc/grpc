@@ -42,12 +42,6 @@
 #include <memory>
 #include <map>
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
 struct grpc_call;
 struct grpc_op;
 
@@ -67,8 +61,8 @@ class CallOpBuffer : public CompletionQueueTag {
       std::multimap<grpc::string, grpc::string> *metadata);
   void AddSendInitialMetadata(ClientContext *ctx);
   void AddRecvInitialMetadata(ClientContext *ctx);
-  void AddSendMessage(const google::protobuf::Message &message);
-  void AddRecvMessage(google::protobuf::Message *message);
+  void AddSendMessage(const grpc::protobuf::Message &message);
+  void AddRecvMessage(grpc::protobuf::Message *message);
   void AddClientSendClose();
   void AddClientRecvStatus(ClientContext *ctx, Status *status);
   void AddServerSendStatus(std::multimap<grpc::string, grpc::string> *metadata,
@@ -95,10 +89,10 @@ class CallOpBuffer : public CompletionQueueTag {
   std::multimap<grpc::string, grpc::string> *recv_initial_metadata_;
   grpc_metadata_array recv_initial_metadata_arr_;
   // Send message
-  const google::protobuf::Message *send_message_;
+  const grpc::protobuf::Message *send_message_;
   grpc_byte_buffer *send_message_buf_;
   // Recv message
-  google::protobuf::Message *recv_message_;
+  grpc::protobuf::Message *recv_message_;
   grpc_byte_buffer *recv_message_buf_;
   // Client send close
   bool client_send_close_;

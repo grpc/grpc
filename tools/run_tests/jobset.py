@@ -136,7 +136,7 @@ def which(filename):
 class JobSpec(object):
   """Specifies what to run for a job."""
 
-  def __init__(self, cmdline, shortname=None, environ={}, hash_targets=[]):
+  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -144,6 +144,10 @@ class JobSpec(object):
       hash_targets: which files to include in the hash representing the jobs version
                     (or empty, indicating the job should not be hashed)
     """
+    if environ is None:
+      environ = {}
+    if hash_targets is None:
+      hash_targets = []
     self.cmdline = cmdline
     self.environ = environ
     self.shortname = cmdline[0] if shortname is None else shortname

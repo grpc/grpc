@@ -51,14 +51,28 @@ os.chdir(ROOT)
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ={}):
+  def __init__(self, config, environ=None):
+    if environ is None:
+      environ = {}
     self.build_config = config
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
+    self.environ['CONFIG'] = config
 
-  def job_spec(self, binary, hash_targets):
-    return jobset.JobSpec(cmdline=[binary],
+  def job_spec(self, cmdline, hash_targets):
+    """Construct a jobset.JobSpec for a test under this config
+
+       Args:
+         cmdline:      a list of strings specifying the command line the test
+                       would like to run
+         hash_targets: either None (don't do caching of test results), or
+                       a list of strings specifying files to include in a
+                       binary hash to check if a test has changed
+                       -- if used, all artifacts needed to run the test must
+                          be listed
+    """
+    return jobset.JobSpec(cmdline=cmdline,
                           environ=self.environ,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
@@ -67,16 +81,18 @@ class SimpleConfig(object):
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
 class ValgrindConfig(object):
 
-  def __init__(self, config, tool, args=[]):
+  def __init__(self, config, tool, args=None):
+    if args is None:
+      args = []
     self.build_config = config
     self.tool = tool
     self.args = args
     self.maxjobs = 2 * multiprocessing.cpu_count()
     self.allow_hashing = False
 
-  def job_spec(self, binary, hash_targets):
+  def job_spec(self, cmdline, hash_targets):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
-                          self.args + [binary],
+                          self.args + cmdline,
                           shortname='valgrind %s' % binary,
                           hash_targets=None)
 
@@ -95,7 +111,7 @@ class CLanguage(object):
       if travis and target['flaky']:
         continue
       binary = 'bins/%s/%s' % (config.build_config, target['name'])
-      out.append(config.job_spec(binary, [binary]))
+      out.append(config.job_spec([binary], [binary]))
     return out
 
   def make_targets(self):
@@ -104,11 +120,17 @@ class CLanguage(object):
   def build_steps(self):
     return []
 
+  def supports_multi_config(self):
+    return True
+
+  def __str__(self):
+    return self.make_target
+
 
 class NodeLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_node.sh', None)]
+    return [config.job_spec(['tools/run_tests/run_node.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
@@ -116,11 +138,17 @@ class NodeLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'node'
+
 
 class PhpLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('src/php/bin/run_tests.sh', None)]
+    return [config.job_spec(['src/php/bin/run_tests.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
@@ -128,22 +156,44 @@ class PhpLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'php'
+
 
 class PythonLanguage(object):
 
+  def __init__(self):
+    with open('tools/run_tests/python_tests.json') as f:
+      self._tests = json.load(f)
+
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_python.sh', None)]
+    modules = [config.job_spec(['tools/run_tests/run_python.sh', '-m',
+                                test['module']], None)
+               for test in self._tests if 'module' in test]
+    files = [config.job_spec(['tools/run_tests/run_python.sh',
+                              test['file']], None)
+             for test in self._tests if 'file' in test]
+    return files + modules
 
   def make_targets(self):
-    return ['static_c']
+    return ['static_c', 'grpc_python_plugin']
 
   def build_steps(self):
     return [['tools/run_tests/build_python.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'python'
+
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_ruby.sh', None)]
+    return [config.job_spec(['tools/run_tests/run_ruby.sh'], None)]
 
   def make_targets(self):
     return ['static_c']
@@ -151,6 +201,28 @@ class RubyLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
 
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'ruby'
+
+class CSharpLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec('tools/run_tests/run_csharp.sh', None)]
+
+  def make_targets(self):
+    return ['grpc_csharp_ext']
+
+  def build_steps(self):
+    return [['tools/run_tests/build_csharp.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'csharp'
 
 # different configurations we can run under
 _CONFIGS = {
@@ -175,7 +247,8 @@ _LANGUAGES = {
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
-    'ruby': RubyLanguage()
+    'ruby': RubyLanguage(),
+    'csharp': CSharpLanguage()
     }
 
 # parse command line
@@ -215,6 +288,13 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 
 make_targets = []
 languages = set(_LANGUAGES[l] for l in args.language)
+
+if len(build_configs) > 1:
+  for language in languages:
+    if not language.supports_multi_config():
+      print language, 'does not support multiple build configurations'
+      sys.exit(1)
+
 build_steps = [jobset.JobSpec(['make',
                                '-j', '%d' % (multiprocessing.cpu_count() + 1),
                                'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
@@ -222,7 +302,8 @@ build_steps = [jobset.JobSpec(['make',
                                    itertools.chain.from_iterable(
                                        l.make_targets() for l in languages))))
                for cfg in build_configs] + list(set(
-                   jobset.JobSpec(cmdline)
+                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                   for cfg in build_configs
                    for l in languages
                    for cmdline in l.build_steps()))
 one_run = set(
@@ -298,7 +379,7 @@ test_cache.maybe_load()
 if forever:
   success = True
   while True:
-    dw = watch_dirs.DirWatcher(['src', 'include', 'test'])
+    dw = watch_dirs.DirWatcher(['src', 'include', 'test', 'examples'])
     initial_time = dw.most_recent_change()
     have_files_changed = lambda: dw.most_recent_change() != initial_time
     previous_success = success

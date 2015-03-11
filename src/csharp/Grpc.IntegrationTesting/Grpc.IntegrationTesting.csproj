@@ -62,8 +62,21 @@
     <None Include="proto\test.proto" />
     <None Include="proto\empty.proto" />
     <None Include="proto\messages.proto" />
+    <None Include="data\README">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="data\ca.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="data\server1.key">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="data\server1.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="proto\" />
+    <Folder Include="data\" />
   </ItemGroup>
 </Project>

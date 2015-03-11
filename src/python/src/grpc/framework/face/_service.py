@@ -105,15 +105,14 @@ def adapt_inline_value_in_value_out(method):
   def adaptation(response_consumer, operation_context):
     rpc_context = _control.RpcContext(operation_context)
     return stream_util.TransformingConsumer(
-        lambda request: method.service(request, rpc_context), response_consumer)
+        lambda request: method(request, rpc_context), response_consumer)
   return adaptation
 
 
 def adapt_inline_value_in_stream_out(method):
   def adaptation(response_consumer, operation_context):
     rpc_context = _control.RpcContext(operation_context)
-    return _ValueInStreamOutConsumer(
-        method.service, rpc_context, response_consumer)
+    return _ValueInStreamOutConsumer(method, rpc_context, response_consumer)
   return adaptation
 
 
@@ -123,7 +122,7 @@ def adapt_inline_stream_in_value_out(method, pool):
     operation_context.add_termination_callback(rendezvous.set_outcome)
     def in_pool_thread():
       response_consumer.consume_and_terminate(
-          method.service(rendezvous, _control.RpcContext(operation_context)))
+          method(rendezvous, _control.RpcContext(operation_context)))
     pool.submit(_pool_wrap(in_pool_thread, operation_context))
     return rendezvous
   return adaptation
@@ -149,7 +148,7 @@ def adapt_inline_stream_in_stream_out(method, pool):
     operation_context.add_termination_callback(rendezvous.set_outcome)
     def in_pool_thread():
       _control.pipe_iterator_to_consumer(
-          method.service(rendezvous, _control.RpcContext(operation_context)),
+          method(rendezvous, _control.RpcContext(operation_context)),
           response_consumer, operation_context.is_active, True)
     pool.submit(_pool_wrap(in_pool_thread, operation_context))
     return rendezvous
@@ -159,7 +158,7 @@ def adapt_inline_stream_in_stream_out(method, pool):
 def adapt_event_value_in_value_out(method):
   def adaptation(response_consumer, operation_context):
     def on_payload(payload):
-      method.service(
+      method(
           payload, response_consumer.consume_and_terminate,
           _control.RpcContext(operation_context))
     return _control.UnaryConsumer(on_payload)
@@ -169,7 +168,7 @@ def adapt_event_value_in_value_out(method):
 def adapt_event_value_in_stream_out(method):
   def adaptation(response_consumer, operation_context):
     def on_payload(payload):
-      method.service(
+      method(
           payload, response_consumer, _control.RpcContext(operation_context))
     return _control.UnaryConsumer(on_payload)
   return adaptation
@@ -178,12 +177,11 @@ def adapt_event_value_in_stream_out(method):
 def adapt_event_stream_in_value_out(method):
   def adaptation(response_consumer, operation_context):
     rpc_context = _control.RpcContext(operation_context)
-    return method.service(response_consumer.consume_and_terminate, rpc_context)
+    return method(response_consumer.consume_and_terminate, rpc_context)
   return adaptation
 
 
 def adapt_event_stream_in_stream_out(method):
   def adaptation(response_consumer, operation_context):
-    return method.service(
-        response_consumer, _control.RpcContext(operation_context))
+    return method(response_consumer, _control.RpcContext(operation_context))
   return adaptation

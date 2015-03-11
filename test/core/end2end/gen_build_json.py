@@ -46,6 +46,7 @@ END2END_FIXTURES = [
 
 
 END2END_TESTS = [
+    'bad_hostname',
     'cancel_after_accept',
     'cancel_after_accept_and_writes_closed',
     'cancel_after_invoke',
@@ -106,7 +107,7 @@ def main():
               'name': 'end2end_fixture_%s' % f,
               'build': 'private',
               'language': 'c',
-              'secure': True,
+              'secure': 'check',
               'src': ['test/core/end2end/fixtures/%s.c' % f]
           }
           for f in END2END_FIXTURES] + [
@@ -114,7 +115,7 @@ def main():
               'name': 'end2end_test_%s' % t,
               'build': 'private',
               'language': 'c',
-              'secure': False,
+              'secure': 'no',
               'src': ['test/core/end2end/tests/%s.c' % t],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
           }

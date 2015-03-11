@@ -34,8 +34,6 @@
 #ifndef GRPCXX_CONFIG_H
 #define GRPCXX_CONFIG_H
 
-#include <string>
-
 #ifdef GRPC_OLD_CXX
 #define GRPC_FINAL
 #define GRPC_OVERRIDE
@@ -44,9 +42,23 @@
 #define GRPC_OVERRIDE override
 #endif
 
+#ifndef GRPC_CUSTOM_STRING
+#include <string>
+#define GRPC_CUSTOM_STRING std::string
+#endif
+
+#ifndef GRPC_CUSTOM_MESSAGE
+#include <google/protobuf/message.h>
+#define GRPC_CUSTOM_MESSAGE ::google::protobuf::Message
+#endif
+
 namespace grpc {
 
-typedef std::string string;
+typedef GRPC_CUSTOM_STRING string;
+
+namespace protobuf {
+typedef GRPC_CUSTOM_MESSAGE Message;
+}  // namespace protobuf
 
 }  // namespace grpc
 

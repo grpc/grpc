@@ -364,7 +364,7 @@ grpc_docker_launch_registry() {
 grpc_docker_pull_known() {
   local addr=$1
   [[ -n $addr ]] || addr="0.0.0.0:5000"
-  local known="base cxx php_base php ruby_base ruby java_base java go node_base node python_base python"
+  local known="base cxx php_base php ruby_base ruby java_base java go node_base node python_base python csharp_mono_base csharp_mono"
   echo "... pulling docker images for '$known'"
   for i in $known
   do
@@ -429,7 +429,10 @@ grpc_dockerfile_install() {
     grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
-
+  [[ $image_label == "grpc/csharp_mono" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
 
   # TODO(temiola): maybe make cache/no-cache a func option?
   sudo docker build $cache_opt -t $image_label $dockerfile_dir || {

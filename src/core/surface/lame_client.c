@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/lame_client.h"
+#include <grpc/grpc.h>
 
 #include <string.h>
 

@@ -384,6 +384,11 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fake_security_bad_hostname_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fake_security_cancel_after_accept_test"
   }, 
   {
@@ -620,6 +625,11 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_bad_hostname_test"
   }, 
   {
     "flaky": false, 
@@ -864,6 +874,11 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_fullstack_uds_bad_hostname_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_fullstack_uds_cancel_after_accept_test"
   }, 
   {
@@ -1100,6 +1115,11 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_bad_hostname_test"
   }, 
   {
     "flaky": false, 
@@ -1344,6 +1364,11 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_bad_hostname_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test"
   }, 
   {
@@ -1584,6 +1609,11 @@
   {
     "flaky": false, 
     "language": "c", 
+    "name": "chttp2_socket_pair_bad_hostname_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_socket_pair_cancel_after_accept_test"
   }, 
   {
@@ -1820,6 +1850,11 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_bad_hostname_test"
   }, 
   {
     "flaky": false, 

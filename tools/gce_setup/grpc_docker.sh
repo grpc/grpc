@@ -383,7 +383,7 @@ grpc_interop_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd="grpc_interop_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -411,12 +411,13 @@ grpc_interop_test_args() {
 
   [[ -n $1 ]] && {  # server_type
     case $1 in
-      cxx)    grpc_port=8010 ;;
-      go)     grpc_port=8020 ;;
-      java)   grpc_port=8030 ;;
-      node)   grpc_port=8040 ;;
-      python) grpc_port=8050 ;;
-      ruby)   grpc_port=8060 ;;
+      cxx)          grpc_port=8010 ;;
+      go)           grpc_port=8020 ;;
+      java)         grpc_port=8030 ;;
+      node)         grpc_port=8040 ;;
+      python)       grpc_port=8050 ;;
+      ruby)         grpc_port=8060 ;;
+      csharp_mono)  grpc_port=8070 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
     esac
     shift
@@ -454,7 +455,7 @@ grpc_cloud_prod_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby)
+      cxx|go|java|node|php|python|ruby|csharp_mono)
         grpc_gen_test_cmd="grpc_cloud_prod_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
           echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
@@ -673,7 +674,7 @@ _grpc_launch_servers_args() {
   [[ -n $1 ]] && {
     servers="$@"
   } || {
-    servers="cxx java go node ruby python"
+    servers="cxx java go node ruby python csharp_mono"
     echo "$FUNCNAME: no servers specified, will launch defaults '$servers'"
   }
 }
@@ -709,6 +710,7 @@ grpc_launch_servers() {
       node)   grpc_port=8040 ;;
       python) grpc_port=8050 ;;
       ruby)   grpc_port=8060 ;;
+      csharp_mono)   grpc_port=8070 ;;
       *) echo "bad server_type: $1" 1>&2; return 1 ;;
     esac
     local docker_label="grpc/$server"
@@ -727,6 +729,44 @@ grpc_launch_servers() {
     [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
     gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
   done
+}
+
+# Runs a test command on a docker instance
+#
+# The test command is issued via gcloud compute
+#
+# There are 3 possible results:
+# 1. successful return code and finished within 60 seconds
+# 2. failure return code and finished within 60 seconds
+# 3. command does not return within 60 seconds, in which case it will be killed.
+test_runner() {
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  local ssh_cmd="bash -l -c \"$cmd\""
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" &
+  PID=$!
+  echo "pid is $PID"
+  for x in {0..5}
+  do
+    if ps -p $PID
+    then
+      # test command has not returned and 60 seconds timeout has not reached
+      sleep 10
+    else
+      # test command has returned, return the return code from the test command
+      wait $PID
+      local ret=$?
+      echo " test runner return $ret before timeout"
+      return $ret
+    fi
+  done
+  kill $PID
+  echo "test got killed by timeout return as failure"
+  return 1
 }
 
 # Runs a test command on a docker instance.
@@ -788,14 +828,7 @@ grpc_interop_test() {
   cmd=$($grpc_gen_test_cmd $flags)
   [[ -n $cmd ]] || return 1
 
-  local project_opt="--project $grpc_project"
-  local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" 
+  test_runner
 }
 
 # Runs a test command on a docker instance.
@@ -834,14 +867,7 @@ grpc_cloud_prod_test() {
   cmd=$($grpc_gen_test_cmd $test_case_flag)
   [[ -n $cmd ]] || return 1
 
-  local project_opt="--project $grpc_project"
-  local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  test_runner
 }
 
 # Runs a test command on a docker instance.
@@ -880,14 +906,7 @@ grpc_cloud_prod_auth_test() {
   cmd=$($grpc_gen_test_cmd $test_case_flag)
   [[ -n $cmd ]] || return 1
 
-  local project_opt="--project $grpc_project"
-  local zone_opt="--zone $grpc_zone"
-  local ssh_cmd="bash -l -c \"$cmd\""
-  echo "will run:"
-  echo "  $ssh_cmd"
-  echo "on $host"
-  [[ $dry_run == 1 ]] && return 0  # don't run the command on a dry run
-  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
+  test_runner
 }
 
 # constructs the full dockerized ruby interop test cmd.
@@ -899,6 +918,17 @@ grpc_interop_gen_ruby_cmd() {
   local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c"
   local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
   local the_cmd="$cmd_prefix 'ruby $test_script --use_test_ca --use_tls $@'"
+  echo $the_cmd
+}
+
+# constructs the full dockerized python interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_interop_gen_python_cmd() {
+  local cmd_prefix="sudo docker run grpc/python bin/bash -l -c"
+  local the_cmd="$cmd_prefix 'python -B -m interop.client --use_test_ca --use_tls $@'"
   echo $the_cmd
 }
 
@@ -1160,6 +1190,34 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_cxx_cmd() {
     local added_gfe_flags=$(_grpc_gce_test_flags)
     local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
     echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_interop_gen_csharp_mono_cmd() {
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local cmd_prefix="sudo docker run $workdir_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true --use_test_ca=true";
+  local the_cmd="$cmd_prefix $test_script $@";
+  echo $the_cmd
+}
+
+# constructs the full dockerized csharp-mono gce=>prod interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_gen_csharp_mono_cmd() {
+  local env_flag="-e SSL_CERT_FILE=/cacerts/roots.pem "
+  local workdir_flag="-w /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Client/bin/Debug"
+  local cmd_prefix="sudo docker run $env_flag $workdir_flag grpc/csharp_mono";
+  local test_script="mono Grpc.IntegrationTesting.Client.exe --use_tls=true";
+  local gfe_flags=$(_grpc_prod_gfe_flags);
+  local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
+  echo $the_cmd
 }
 
 # outputs the flags passed to gfe tests

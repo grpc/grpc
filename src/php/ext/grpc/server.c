@@ -107,9 +107,6 @@ PHP_METHOD(Server, __construct) {
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   zval *args_array = NULL;
   grpc_channel_args args;
-  HashTable *array_hash;
-  zval **creds_obj = NULL;
-  wrapped_grpc_server_credentials *creds = NULL;
   /* "a" == 1 optional array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &args_array) ==
       FAILURE) {
@@ -122,28 +119,8 @@ PHP_METHOD(Server, __construct) {
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(server->queue, NULL);
   } else {
-    array_hash = Z_ARRVAL_P(args_array);
-    if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
-                       (void **)&creds_obj) == SUCCESS) {
-      if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
-          grpc_ce_server_credentials) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "credentials must be a ServerCredentials object",
-                             1 TSRMLS_CC);
-        return;
-      }
-      creds = (wrapped_grpc_server_credentials *)zend_object_store_get_object(
-          *creds_obj TSRMLS_CC);
-      zend_hash_del(array_hash, "credentials", sizeof("credentials"));
-    }
     php_grpc_read_args_array(args_array, &args);
-    if (creds == NULL) {
-      server->wrapped = grpc_server_create(server->queue, &args);
-    } else {
-      gpr_log(GPR_DEBUG, "Initialized secure server");
-      server->wrapped =
-          grpc_secure_server_create(creds->wrapped, server->queue, &args);
-    }
+    server->wrapped = grpc_server_create(server->queue, &args);
     efree(args.args);
   }
 }
@@ -219,14 +196,21 @@ PHP_METHOD(Server, add_secure_http2_port) {
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
   int addr_len;
-  /* "s" == 1 string */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len) ==
+  zval *creds_obj;
+  /* "sO" == 1 string, 1 object */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len,
+                            &creds_obj, grpc_ce_server_credentials) ==
       FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "add_http2_port expects a string", 1 TSRMLS_CC);
+    zend_throw_exception(
+        spl_ce_InvalidArgumentException,
+        "add_http2_port expects a string and a ServerCredentials", 1 TSRMLS_CC);
     return;
   }
-  RETURN_LONG(grpc_server_add_secure_http2_port(server->wrapped, addr));
+  wrapped_grpc_server_credentials *creds =
+      (wrapped_grpc_server_credentials *)zend_object_store_get_object(
+          creds_obj TSRMLS_CC);
+  RETURN_LONG(grpc_server_add_secure_http2_port(server->wrapped, addr,
+                                                creds->wrapped));
 }
 
 /**

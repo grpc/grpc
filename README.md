@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/grpc/grpc.svg?branch=master)](https://travis-ci.org/grpc/grpc)
+
 [gRPC - An RPC library and framework](http://github.com/grpc/grpc)
 ===================================
 

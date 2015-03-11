@@ -46,55 +46,24 @@ class FaceTestCase(object):
 
   @abc.abstractmethod
   def set_up_implementation(
-      self,
-      name,
-      methods,
-      inline_value_in_value_out_methods,
-      inline_value_in_stream_out_methods,
-      inline_stream_in_value_out_methods,
-      inline_stream_in_stream_out_methods,
-      event_value_in_value_out_methods,
-      event_value_in_stream_out_methods,
-      event_stream_in_value_out_methods,
-      event_stream_in_stream_out_methods,
-      multi_method):
+      self, name, methods, method_implementations,
+      multi_method_implementation):
     """Instantiates the Face Layer implementation under test.
 
     Args:
       name: The service name to be used in the test.
       methods: A sequence of interfaces.Method objects describing the RPC
         methods that will be called during the test.
-      inline_value_in_value_out_methods: A dictionary from string method names
-        to face_interfaces.InlineValueInValueOutMethod implementations of those
-        methods.
-      inline_value_in_stream_out_methods: A dictionary from string method names
-        to face_interfaces.InlineValueInStreamOutMethod implementations of those
-        methods.
-      inline_stream_in_value_out_methods: A dictionary from string method names
-        to face_interfaces.InlineStreamInValueOutMethod implementations of those
-        methods.
-      inline_stream_in_stream_out_methods: A dictionary from string method names
-        to face_interfaces.InlineStreamInStreamOutMethod implementations of
-        those methods.
-      event_value_in_value_out_methods: A dictionary from string method names
-        to face_interfaces.EventValueInValueOutMethod implementations of those
-        methods.
-      event_value_in_stream_out_methods: A dictionary from string method names
-        to face_interfaces.EventValueInStreamOutMethod implementations of those
-        methods.
-      event_stream_in_value_out_methods: A dictionary from string method names
-        to face_interfaces.EventStreamInValueOutMethod implementations of those
-        methods.
-      event_stream_in_stream_out_methods: A dictionary from string method names
-        to face_interfaces.EventStreamInStreamOutMethod implementations of those
-        methods.
-      multi_method: An face_interfaces.MultiMethod, or None.
+      method_implementations: A dictionary from string RPC method name to
+        face_interfaces.MethodImplementation object specifying
+        implementation of an RPC method.
+      multi_method_implementation: An face_interfaces.MultiMethodImplementation
+        or None.
 
     Returns:
-      A sequence of length three the first element of which is a
-        face_interfaces.Server, the second element of which is a
-        face_interfaces.Stub, (both of which are backed by the given method
-        implementations), and the third element of which is an arbitrary memo
+      A sequence of length two the first element of which is a
+        face_interfaces.GenericStub (backed by the given method
+        implementations), and the second element of which is an arbitrary memo
         object to be kept and passed to tearDownImplementation at the conclusion
         of the test.
     """
@@ -105,7 +74,7 @@ class FaceTestCase(object):
     """Destroys the Face layer implementation under test.
 
     Args:
-      memo: The object from the third position of the return value of
+      memo: The object from the second position of the return value of
         set_up_implementation.
     """
     raise NotImplementedError()
