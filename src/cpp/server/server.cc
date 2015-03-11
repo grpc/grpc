@@ -355,10 +355,8 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
                 array_.metadata[i].value + array_.metadata[i].value_length)));
       }
       if (anonymous_ctx_) {
-        anonymous_ctx_->method_.assign(call_details_.method,
-                                       call_details_.method_capacity);
-        anonymous_ctx_->host_.assign(call_details_.host,
-                                     call_details_.host_capacity);
+        anonymous_ctx_->method_ = call_details_.method;
+        anonymous_ctx_->host_ = call_details_.host;
       }
     }
     ctx->call_ = call_;

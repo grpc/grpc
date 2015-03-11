@@ -70,6 +70,8 @@ class Server GRPC_FINAL : private CallHook,
   // function to ever return)
   void Wait();
 
+  CompletionQueue* cq() { return &cq_; }
+
  private:
   friend class AnonymousService;
   friend class ServerBuilder;
