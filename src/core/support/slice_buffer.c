@@ -143,6 +143,13 @@ void gpr_slice_buffer_addn(gpr_slice_buffer *sb, gpr_slice *s, size_t n) {
   }
 }
 
+void gpr_slice_buffer_pop(gpr_slice_buffer *sb) {
+  if (sb->count != 0) {
+    size_t count = --sb->count;
+    sb->length -= GPR_SLICE_LENGTH(sb->slices[count]);
+  }
+}
+
 void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb) {
   size_t i;
 
