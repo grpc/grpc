@@ -174,45 +174,6 @@ class _StreamUnarySyncAsync(interfaces.StreamUnarySyncAsync):
     return _ReexportedFuture(self._underlying.future(request_iterator, timeout))
 
 
-class _Stub(interfaces.Stub):
-
-  def __init__(self, assembly_stub, cardinalities):
-    self._assembly_stub = assembly_stub
-    self._cardinalities = cardinalities
-
-  def __enter__(self):
-    self._assembly_stub.__enter__()
-    return self
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
-    self._assembly_stub.__exit__(exc_type, exc_val, exc_tb)
-    return False
-
-  def __getattr__(self, attr):
-    underlying_attr = self._assembly_stub.__getattr__(attr)
-    method_cardinality = self._cardinalities.get(attr)
-    # TODO(nathaniel): unify this trick with its other occurrence in the code.
-    if method_cardinality is None:
-      for name, method_cardinality in self._cardinalities.iteritems():
-        last_slash_index = name.rfind('/')
-        if 0 <= last_slash_index and name[last_slash_index + 1:] == attr:
-          break
-      else:
-        raise AttributeError(attr)
-    if method_cardinality is interfaces.Cardinality.UNARY_UNARY:
-      return _UnaryUnarySyncAsync(underlying_attr)
-    elif method_cardinality is interfaces.Cardinality.UNARY_STREAM:
-      return lambda request, timeout: _CancellableIterator(
-          underlying_attr(request, timeout))
-    elif method_cardinality is interfaces.Cardinality.STREAM_UNARY:
-      return _StreamUnarySyncAsync(underlying_attr)
-    elif method_cardinality is interfaces.Cardinality.STREAM_STREAM:
-      return lambda request_iterator, timeout: _CancellableIterator(
-          underlying_attr(request_iterator, timeout))
-    else:
-      raise AttributeError(attr)
-
-
 def common_cardinalities(early_adopter_cardinalities):
   common_cardinalities = {}
   for name, early_adopter_cardinality in early_adopter_cardinalities.iteritems():
@@ -225,5 +186,13 @@ def rpc_context(face_rpc_context):
   return _RpcContext(face_rpc_context)
 
 
-def stub(face_stub, cardinalities):
-  return _Stub(face_stub, cardinalities)
+def cancellable_iterator(face_cancellable_iterator):
+  return _CancellableIterator(face_cancellable_iterator)
+
+
+def unary_unary_sync_async(face_unary_unary_multi_callable):
+  return _UnaryUnarySyncAsync(face_unary_unary_multi_callable)
+
+
+def stream_unary_sync_async(face_stream_unary_multi_callable):
+  return _StreamUnarySyncAsync(face_stream_unary_multi_callable)
