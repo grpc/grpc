@@ -36,7 +36,7 @@ echo $result_file_name
 main() {
   source grpc_docker.sh
   test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response)
-  clients=(cxx java go ruby node csharp_mono)
+  clients=(cxx java go ruby node python csharp_mono)
   servers=(cxx java go ruby node python)
   for test_case in "${test_cases[@]}"
   do
