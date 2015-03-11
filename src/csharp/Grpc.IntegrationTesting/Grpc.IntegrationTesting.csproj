@@ -49,6 +49,7 @@
     <Compile Include="TestServiceImpl.cs" />
     <Compile Include="InteropServer.cs" />
     <Compile Include="InteropClient.cs" />
+    <Compile Include="TestCredentials.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -51,5 +51,5 @@ ADD cacerts cacerts
 # Add a service_account directory containing the auth creds file
 ADD service_account service_account
 
-# TODO: add command to run the interop server
-CMD ["/bin/bash", "-l"]
+# Run the C# Interop Server
+CMD ["/bin/bash", "-l", "-c", "cd /var/local/git/grpc/src/csharp/Grpc.IntegrationTesting.Server/bin/Debug && mono Grpc.IntegrationTesting.Server.exe --use_tls=true --port=8070"]
