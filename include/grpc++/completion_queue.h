@@ -34,6 +34,7 @@
 #ifndef GRPCXX_COMPLETION_QUEUE_H
 #define GRPCXX_COMPLETION_QUEUE_H
 
+#include <grpc/support/time.h>
 #include <grpc++/impl/client_unary_call.h>
 
 struct grpc_completion_queue;
@@ -75,10 +76,10 @@ class CompletionQueue {
   explicit CompletionQueue(grpc_completion_queue *take);
   ~CompletionQueue();
 
-  // Blocking read from queue.
-  // Returns true if an event was received, false if the queue is ready
-  // for destruction.
-  bool Next(void **tag, bool *ok);
+  // Blocking (until deadline) read from queue.
+  // Returns false if the queue is ready for destruction, true otherwise
+  // If the deadline passed, *tag will be null
+  bool Next(void **tag, bool *ok, gpr_timespec deadline=gpr_inf_future);
 
   // Shutdown has to be called, and the CompletionQueue can only be
   // destructed when false is returned from Next().
