@@ -33,11 +33,10 @@
  */
 class EndToEndTest extends PHPUnit_Framework_TestCase{
   public function setUp() {
-    $this->client_queue = new Grpc\CompletionQueue();
-    $this->server_queue = new Grpc\CompletionQueue();
     $this->server = new Grpc\Server($this->server_queue, []);
     $port = $this->server->add_http2_port('0.0.0.0:0');
     $this->channel = new Grpc\Channel('localhost:' . $port, []);
+    $this->server->start();
   }
 
   public function tearDown() {
@@ -53,6 +52,33 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
     $call = new Grpc\Call($this->channel,
                           'dummy_method',
                           $deadline);
+
+    $event = $this->call->start_batch([
+        Grpc\OP_SEND_INITIAL_METADATA => [],
+        Grpc\OP_SEND_CLOSE_FROM_CLIENT => true
+                                       ]);
+
+    $this->assertTrue($event->send_metadata);
+    $this->assertTrue($event->send_close);
+
+    $event = $this->server->request_call();
+    $this->assertSame('dummy_method', $event->method);
+    $server_call = $event->call;
+
+    $event = $server_call->start_batch([
+        Grpc\OP_SEND_INITIAL_METADATA => [],
+        Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            'metadata' => [],
+            'code' => Grpc\STATUS_OK,
+            'details' => $status_text
+                                            ],
+        Grpc\OP_RECV_CLOSE_ON_SERVER => true
+                                        ]);
+
+    $this->assertTrue($event->send_metadata);
+    $this->assertTrue($event->send_status);
+    $this->assertFalse($event->cancelled);
+
     $tag = 1;
     $call->invoke($this->client_queue, $tag, $tag);
     $server_tag = 2;
@@ -64,7 +90,6 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
     $this->assertSame(Grpc\OP_OK, $event->data);
 
     // check that a server rpc new was received
-    $this->server->start();
     $this->server->request_call($server_tag);
     $event = $this->server_queue->next($deadline);
     $this->assertNotNull($event);

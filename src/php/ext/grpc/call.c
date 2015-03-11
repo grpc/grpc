@@ -287,6 +287,8 @@ PHP_METHOD(Call, start_batch) {
   zval *recv_status;
   grpc_metadata_array_init(&metadata);
   grpc_metadata_array_init(&trailing_metadata);
+  grpc_metadata_array_init(&recv_metadata);
+  grpc_metadata_array_init(&recv_trailing_metadata);
   MAKE_STD_ZVAL(result);
   object_init(result);
   /* "a" == 1 array */
@@ -458,13 +460,7 @@ PHP_METHOD(Call, start_batch) {
     }
   }
 cleanup:
-  if (metadata.metadata != NULL) {
-    gpr_free(metadata.metadata);
-  }
   grpc_metadata_array_destroy(&metadata);
-  if (trailing_metadata.metadata != NULL) {
-    gpr_free(trailing_metadata.metadata);
-  }
   grpc_metadata_array_destroy(&trailing_metadata);
   grpc_metadata_array_destroy(&recv_metadata);
   grpc_metadata_array_destroy(&recv_trailing_metadata);
