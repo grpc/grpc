@@ -126,25 +126,35 @@ void gpr_histogram_add(gpr_histogram *h, double x) {
 }
 
 int gpr_histogram_merge(gpr_histogram *dst, gpr_histogram *src) {
-  size_t i;
   if ((dst->num_buckets != src->num_buckets) ||
       (dst->multiplier != src->multiplier)) {
     /* Fail because these histograms don't match */
     return 0;
   }
-  dst->sum += src->sum;
-  dst->sum_of_squares += src->sum_of_squares;
-  dst->count += src->count;
-  if (src->min_seen < dst->min_seen) {
-    dst->min_seen = src->min_seen;
+  gpr_histogram_merge_contents(dst, src->buckets, src->num_buckets,
+                               src->min_seen, src->max_seen, src->sum,
+                               src->sum_of_squares, src->count);
+  return 1;
+}
+
+void gpr_histogram_merge_contents(gpr_histogram *dst, const gpr_uint32 *data,
+                                  size_t data_count, double min_seen,
+                                  double max_seen, double sum,
+                                  double sum_of_squares, double count) {
+  size_t i;
+  GPR_ASSERT(dst->num_buckets == data_count);
+  dst->sum += sum;
+  dst->sum_of_squares += sum_of_squares;
+  dst->count += count;
+  if (min_seen < dst->min_seen) {
+    dst->min_seen = min_seen;
   }
-  if (src->max_seen > dst->max_seen) {
-    dst->max_seen = src->max_seen;
+  if (max_seen > dst->max_seen) {
+    dst->max_seen = max_seen;
   }
   for (i = 0; i < dst->num_buckets; i++) {
-    dst->buckets[i] += src->buckets[i];
+    dst->buckets[i] += data[i];
   }
-  return 1;
 }
 
 static double threshold_for_count_below(gpr_histogram *h, double count_below) {
@@ -221,4 +231,9 @@ double gpr_histogram_sum(gpr_histogram *h) { return h->sum; }
 
 double gpr_histogram_sum_of_squares(gpr_histogram *h) {
   return h->sum_of_squares;
+}
+
+const gpr_uint32 *gpr_histogram_get_contents(gpr_histogram *h, size_t *size) {
+  *size = h->num_buckets;
+  return h->buckets;
 }

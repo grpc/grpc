@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_H__
-#define __GRPC_INTERNAL_IOMGR_IOMGR_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
+#define GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 
 /* gRPC Callback definition */
 typedef void (*grpc_iomgr_cb_func)(void *arg, int success);
@@ -44,4 +44,4 @@ void grpc_iomgr_shutdown(void);
    and causes the invocation of a callback at some point in the future */
 void grpc_iomgr_add_callback(grpc_iomgr_cb_func cb, void *cb_arg);
 
-#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

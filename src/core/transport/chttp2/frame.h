@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
@@ -77,4 +77,4 @@ typedef struct {
 #define GRPC_CHTTP2_DATA_FLAG_PADDED 8
 #define GRPC_CHTTP2_FLAG_HAS_PRIORITY 0x20
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_FRAME_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_H */

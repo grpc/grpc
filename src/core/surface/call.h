@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_CALL_H__
-#define __GRPC_INTERNAL_SURFACE_CALL_H__
+#ifndef GRPC_INTERNAL_CORE_SURFACE_CALL_H
+#define GRPC_INTERNAL_CORE_SURFACE_CALL_H
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/metadata_buffer.h"
@@ -119,4 +119,4 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
 
-#endif /* __GRPC_INTERNAL_SURFACE_CALL_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */

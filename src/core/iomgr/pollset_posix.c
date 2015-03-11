@@ -66,7 +66,7 @@ static void backup_poller(void *p) {
     gpr_timespec next_poll = gpr_time_add(last_poll, delta);
     grpc_pollset_work(&g_backup_pollset, gpr_time_add(gpr_now(), gpr_time_from_seconds(1)));
     gpr_mu_unlock(&g_backup_pollset.mu);
-    /*gpr_sleep_until(next_poll);*/
+    gpr_sleep_until(next_poll);
     gpr_mu_lock(&g_backup_pollset.mu);
     last_poll = next_poll;
   }
@@ -267,7 +267,6 @@ static void unary_poll_do_promote(void *args, int success) {
    * and we don't have any mechanism to unbecome multipoller. */
   pollset->in_flight_cbs--;
   if (pollset->shutting_down) {
-    gpr_log(GPR_INFO, "Shutting down");
     /* We don't care about this pollset anymore. */
     if (pollset->in_flight_cbs == 0) {
       do_shutdown_cb = 1;
@@ -275,7 +274,6 @@ static void unary_poll_do_promote(void *args, int success) {
   } else if (grpc_fd_is_orphaned(fd)) {
     /* Don't try to add it to anything, we'll drop our ref on it below */
   } else if (pollset->vtable != original_vtable) {
-    gpr_log(GPR_INFO, "Not original vtable");
     pollset->vtable->add_fd(pollset, fd);
   } else if (fd != pollset->data.ptr) {
     grpc_fd *fds[2];

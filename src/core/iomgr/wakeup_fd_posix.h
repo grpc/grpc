@@ -59,8 +59,8 @@
  * 2. If the polling thread was awakened by a wakeup_fd event, call
  *    grpc_wakeup_fd_consume_wakeup() on it.
  */
-#ifndef __GRPC_INTERNAL_IOMGR_WAKEUP_FD_POSIX_H_
-#define __GRPC_INTERNAL_IOMGR_WAKEUP_FD_POSIX_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H
 
 void grpc_wakeup_fd_global_init(void);
 void grpc_wakeup_fd_global_destroy(void);
@@ -96,4 +96,4 @@ void grpc_wakeup_fd_destroy(grpc_wakeup_fd_info *fd_info);
  * wakeup_fd_nospecial.c if no such implementation exists. */
 extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
 
-#endif /* __GRPC_INTERNAL_IOMGR_WAKEUP_FD_POSIX_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H */

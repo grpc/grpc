@@ -31,17 +31,11 @@
  *
  */
 
-#ifndef __GRPCPP_CHANNEL_INTERFACE_H__
-#define __GRPCPP_CHANNEL_INTERFACE_H__
+#ifndef GRPCXX_CHANNEL_INTERFACE_H
+#define GRPCXX_CHANNEL_INTERFACE_H
 
 #include <grpc++/status.h>
 #include <grpc++/impl/call.h>
-
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
 
 struct grpc_call;
 
@@ -63,4 +57,4 @@ class ChannelInterface : public CallHook {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CHANNEL_INTERFACE_H__
+#endif  // GRPCXX_CHANNEL_INTERFACE_H

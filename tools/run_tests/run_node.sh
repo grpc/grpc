@@ -30,9 +30,13 @@
 
 set -ex
 
+CONFIG=${CONFIG:-opt}
+
 # change to grpc repo root
 cd $(dirname $0)/../..
 
 root=`pwd`
+
+export LD_LIBRARY_PATH=$root/libs/$CONFIG
 
 $root/src/node/node_modules/mocha/bin/mocha $root/src/node/test

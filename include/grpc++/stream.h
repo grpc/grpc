@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_STREAM_H__
-#define __GRPCPP_STREAM_H__
+#ifndef GRPCXX_STREAM_H
+#define GRPCXX_STREAM_H
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -88,7 +88,7 @@ class ClientReader GRPC_FINAL : public ClientStreamingInterface,
  public:
   // Blocking create a stream and write the first request out.
   ClientReader(ChannelInterface* channel, const RpcMethod& method,
-               ClientContext* context, const google::protobuf::Message& request)
+               ClientContext* context, const grpc::protobuf::Message& request)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
     CallOpBuffer buf;
     buf.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -142,7 +142,7 @@ class ClientWriter GRPC_FINAL : public ClientStreamingInterface,
  public:
   // Blocking create a stream.
   ClientWriter(ChannelInterface* channel, const RpcMethod& method,
-               ClientContext* context, google::protobuf::Message* response)
+               ClientContext* context, grpc::protobuf::Message* response)
       : context_(context),
         response_(response),
         call_(channel->CreateCall(method, context, &cq_)) {
@@ -179,7 +179,7 @@ class ClientWriter GRPC_FINAL : public ClientStreamingInterface,
 
  private:
   ClientContext* context_;
-  google::protobuf::Message* const response_;
+  grpc::protobuf::Message* const response_;
   CompletionQueue cq_;
   Call call_;
 };
@@ -386,7 +386,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncStreamingInterface,
   // Create a stream and write the first request out.
   ClientAsyncReader(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
-                    const google::protobuf::Message& request, void* tag)
+                    const grpc::protobuf::Message& request, void* tag)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
@@ -436,7 +436,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncStreamingInterface,
  public:
   ClientAsyncWriter(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
-                    google::protobuf::Message* response, void* tag)
+                    grpc::protobuf::Message* response, void* tag)
       : context_(context),
         response_(response),
         call_(channel->CreateCall(method, context, cq)) {
@@ -477,7 +477,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncStreamingInterface,
 
  private:
   ClientContext* context_;
-  google::protobuf::Message* const response_;
+  grpc::protobuf::Message* const response_;
   Call call_;
   CallOpBuffer init_buf_;
   CallOpBuffer meta_buf_;
@@ -710,4 +710,4 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_STREAM_H__
+#endif  // GRPCXX_STREAM_H

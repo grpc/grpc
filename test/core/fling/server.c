@@ -205,8 +205,8 @@ int main(int argc, char **argv) {
                                                     test_server1_cert};
     grpc_server_credentials *ssl_creds =
         grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
-    server = grpc_secure_server_create(ssl_creds, cq, NULL);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
+    server = grpc_server_create(cq, NULL);
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
     server = grpc_server_create(cq, NULL);
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
           case FLING_SERVER_SEND_STATUS_FOR_STREAMING:
             /* Send status and close completed at server */
             grpc_call_destroy(call);
-            request_call();
+            if (!shutdown_started) request_call();
             break;
           case FLING_SERVER_READ_FOR_UNARY:
             /* Finished payload read for unary. Start all reamaining
@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
             grpc_byte_buffer_destroy(payload_buffer);
             payload_buffer = NULL;
             grpc_call_destroy(call);
-            request_call();
+            if (!shutdown_started) request_call();
             break;
         }
         break;

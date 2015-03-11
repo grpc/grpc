@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_CHANNEL_METADATA_BUFFER_H__
-#define __GRPC_INTERNAL_CHANNEL_METADATA_BUFFER_H__
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_METADATA_BUFFER_H
+#define GRPC_INTERNAL_CORE_CHANNEL_METADATA_BUFFER_H
 
 #include "src/core/channel/channel_stack.h"
 
@@ -67,4 +67,4 @@ grpc_metadata *grpc_metadata_buffer_extract_elements(
     grpc_metadata_buffer *buffer);
 void grpc_metadata_buffer_cleanup_elements(void *elements, grpc_op_error error);
 
-#endif /* __GRPC_INTERNAL_CHANNEL_METADATA_BUFFER_H__ */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_METADATA_BUFFER_H */

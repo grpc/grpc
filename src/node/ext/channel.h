@@ -66,7 +66,7 @@ class Channel : public ::node::ObjectWrap {
 
   static NAN_METHOD(New);
   static NAN_METHOD(Close);
-  static v8::Persistent<v8::Function> constructor;
+  static NanCallback *constructor;
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_channel *wrapped_channel;

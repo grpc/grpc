@@ -31,7 +31,6 @@
  *
  */
 
-#include <google/protobuf/message.h>
 #include <grpc/support/alloc.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/client_context.h>
@@ -163,11 +162,11 @@ void CallOpBuffer::AddSendInitialMetadata(ClientContext* ctx) {
   AddSendInitialMetadata(&ctx->send_initial_metadata_);
 }
 
-void CallOpBuffer::AddSendMessage(const google::protobuf::Message& message) {
+void CallOpBuffer::AddSendMessage(const grpc::protobuf::Message& message) {
   send_message_ = &message;
 }
 
-void CallOpBuffer::AddRecvMessage(google::protobuf::Message* message) {
+void CallOpBuffer::AddRecvMessage(grpc::protobuf::Message* message) {
   recv_message_ = message;
   recv_message_->Clear();
 }

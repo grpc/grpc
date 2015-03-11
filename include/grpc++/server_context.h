@@ -31,13 +31,13 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_CONTEXT_H_
-#define __GRPCPP_SERVER_CONTEXT_H_
+#ifndef GRPCXX_SERVER_CONTEXT_H
+#define GRPCXX_SERVER_CONTEXT_H
 
 #include <chrono>
 #include <map>
 
-#include "config.h"
+#include <grpc++/config.h>
 
 struct gpr_timespec;
 struct grpc_metadata;
@@ -121,4 +121,4 @@ class ServerContext GRPC_FINAL {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_CONTEXT_H_
+#endif  // GRPCXX_SERVER_CONTEXT_H

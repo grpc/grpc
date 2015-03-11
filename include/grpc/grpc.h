@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_GRPC_H__
-#define __GRPC_GRPC_H__
+#ifndef GRPC_GRPC_H
+#define GRPC_GRPC_H
 
 #include <grpc/status.h>
 
@@ -436,6 +436,9 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
 grpc_channel *grpc_channel_create(const char *target,
                                   const grpc_channel_args *args);
 
+/* Create a lame client: this client fails every operation attempted on it. */
+grpc_channel *grpc_lame_client_channel_create(void);
+
 /* Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);
 
@@ -632,4 +635,4 @@ void grpc_server_destroy(grpc_server *server);
 }
 #endif
 
-#endif /* __GRPC_GRPC_H__ */
+#endif  /* GRPC_GRPC_H */

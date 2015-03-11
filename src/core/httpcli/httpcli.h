@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_HTTPCLI_HTTPCLI_H__
-#define __GRPC_INTERNAL_HTTPCLI_HTTPCLI_H__
+#ifndef GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H
+#define GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H
 
 #include <stddef.h>
 
@@ -115,4 +115,4 @@ typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);
 
-#endif /* __GRPC_INTERNAL_HTTPCLI_HTTPCLI_H__ */
+#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_H */

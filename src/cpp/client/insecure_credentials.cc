@@ -31,27 +31,35 @@
  *
  */
 
-#include <grpc/grpc.h>
+#include <string>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/security/security_context.h"
-#include "src/core/surface/completion_queue.h"
-#include "src/core/surface/server.h"
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-grpc_server *grpc_secure_server_create_internal(
-    grpc_completion_queue *cq, const grpc_channel_args *args,
-    grpc_security_context *context) {
-  grpc_arg context_arg;
-  grpc_channel_args *args_copy;
-  grpc_server *server;
-  if (grpc_find_security_context_in_args(args) != NULL) {
-    gpr_log(GPR_ERROR, "Cannot set security context in channel args.");
+#include <grpc++/channel_arguments.h>
+#include <grpc++/config.h>
+#include <grpc++/credentials.h>
+#include "src/cpp/client/channel.h"
+
+namespace grpc {
+
+namespace {
+class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
+ public:
+  std::shared_ptr<grpc::ChannelInterface> CreateChannel(
+      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE {
+    grpc_channel_args channel_args;
+    args.SetChannelArgs(&channel_args);
+    return std::shared_ptr<ChannelInterface>(new Channel(
+        target, grpc_channel_create(target.c_str(), &channel_args)));
   }
 
-  context_arg = grpc_security_context_to_arg(context);
-  args_copy = grpc_channel_args_copy_and_add(args, &context_arg);
-  server = grpc_server_create_from_filters(cq, NULL, 0, args_copy);
-  grpc_channel_args_destroy(args_copy);
-  return server;
+  SecureCredentials* AsSecureCredentials() { return nullptr; }
+};
+}  // namespace
+
+std::unique_ptr<Credentials> InsecureCredentials() {
+  return std::unique_ptr<Credentials>(new InsecureCredentialsImpl());
 }
+
+}  // namespace grpc

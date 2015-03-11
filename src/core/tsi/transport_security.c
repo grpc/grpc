@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* --- Tracing. --- */
+
+int tsi_tracing_enabled = 0;
+
 /* --- Utils. --- */
 
 char* tsi_strdup(const char* src) {
@@ -204,7 +208,7 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* self,
       return property;
     }
     if (name != NULL && property->name != NULL &&
-        !strcmp(property->name, name)) {
+        strcmp(property->name, name) == 0) {
       return property;
     }
   }

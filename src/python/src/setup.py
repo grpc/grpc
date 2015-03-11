@@ -47,8 +47,9 @@ _EXTENSION_INCLUDE_DIRECTORIES = (
 )
 
 _EXTENSION_LIBRARIES = (
-    'gpr',
     'grpc',
+    'gpr',
+    'rt',
 )
 
 _EXTENSION_MODULE = _core.Extension(
@@ -63,7 +64,6 @@ _PACKAGES = (
     'grpc._junkdrawer',
     'grpc.early_adopter',
     'grpc.framework',
-    'grpc.framework.assembly',
     'grpc.framework.base',
     'grpc.framework.base.packets',
     'grpc.framework.common',

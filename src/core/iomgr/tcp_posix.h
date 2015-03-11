@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_TCP_POSIX_H__
-#define __GRPC_INTERNAL_IOMGR_TCP_POSIX_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_TCP_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_TCP_POSIX_H
 /*
    Low level TCP "bottom half" implementation, for use by transports built on
    top of a TCP connection.
@@ -49,8 +49,10 @@
 
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 
+extern int grpc_tcp_trace;
+
 /* Create a tcp endpoint given a file desciptor and a read slice size.
    Takes ownership of fd. */
 grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size);
 
-#endif /* __GRPC_INTERNAL_IOMGR_TCP_POSIX_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_TCP_POSIX_H */

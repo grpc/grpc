@@ -42,37 +42,17 @@ class FaceTestCase(test_case.FaceTestCase):
   """Provides abstract Face-layer tests an in-memory implementation."""
 
   def set_up_implementation(
-      self,
-      name,
-      methods,
-      inline_value_in_value_out_methods,
-      inline_value_in_stream_out_methods,
-      inline_stream_in_value_out_methods,
-      inline_stream_in_stream_out_methods,
-      event_value_in_value_out_methods,
-      event_value_in_stream_out_methods,
-      event_stream_in_value_out_methods,
-      event_stream_in_stream_out_methods,
-      multi_method):
+      self, name, methods, method_implementations,
+      multi_method_implementation):
     servicer_pool = logging_pool.pool(_MAXIMUM_POOL_SIZE)
     stub_pool = logging_pool.pool(_MAXIMUM_POOL_SIZE)
 
     servicer = implementations.servicer(
-        servicer_pool,
-        inline_value_in_value_out_methods=inline_value_in_value_out_methods,
-        inline_value_in_stream_out_methods=inline_value_in_stream_out_methods,
-        inline_stream_in_value_out_methods=inline_stream_in_value_out_methods,
-        inline_stream_in_stream_out_methods=inline_stream_in_stream_out_methods,
-        event_value_in_value_out_methods=event_value_in_value_out_methods,
-        event_value_in_stream_out_methods=event_value_in_stream_out_methods,
-        event_stream_in_value_out_methods=event_stream_in_value_out_methods,
-        event_stream_in_stream_out_methods=event_stream_in_stream_out_methods,
-        multi_method=multi_method)
+        servicer_pool, method_implementations, multi_method_implementation)
 
     linked_pair = base_util.linked_pair(servicer, _TIMEOUT)
-    server = implementations.server()
-    stub = implementations.stub(linked_pair.front, stub_pool)
-    return server, stub, (servicer_pool, stub_pool, linked_pair)
+    stub = implementations.generic_stub(linked_pair.front, stub_pool)
+    return stub, (servicer_pool, stub_pool, linked_pair)
 
   def tear_down_implementation(self, memo):
     servicer_pool, stub_pool, linked_pair = memo

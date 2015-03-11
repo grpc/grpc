@@ -65,21 +65,30 @@ def _stub(args):
       root_certificates = resources.test_root_certificates()
     else:
       root_certificates = resources.prod_root_certificates()
-    # TODO(nathaniel): server host override.
 
     stub = implementations.secure_stub(
         methods.CLIENT_METHODS, args.server_host, args.server_port,
-        root_certificates, None, None)
+        root_certificates, None, None,
+        server_host_override=args.server_host_override)
   else:
     stub = implementations.insecure_stub(
         methods.CLIENT_METHODS, args.server_host, args.server_port)
   return stub
 
 
+def _test_case_from_arg(test_case_arg):
+  for test_case in methods.TestCase:
+    if test_case_arg == test_case.value:
+      return test_case
+  else:
+    raise ValueError('No test case "%s"!' % test_case_arg)
+
+
 def _test_interoperability():
   args = _args()
   stub = _stub(args)
-  methods.test_interoperability(args.test_case, stub)
+  test_case = _test_case_from_arg(args.test_case)
+  test_case.test_interoperability(stub)
 
 
 if __name__ == '__main__':
