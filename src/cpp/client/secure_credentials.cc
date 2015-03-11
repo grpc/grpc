@@ -104,6 +104,15 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
       json_key.c_str(), scope.c_str(), lifetime));
 }
 
+// Builds JWT credentials.
+std::unique_ptr<Credentials> JWTCredentials(
+    const grpc::string &json_key, std::chrono::seconds token_lifetime) {
+  gpr_timespec lifetime = gpr_time_from_seconds(
+      token_lifetime.count() > 0 ? token_lifetime.count() : 0);
+  return WrapCredentials(
+      grpc_jwt_credentials_create(json_key.c_str(), lifetime));
+}
+
 // Builds IAM credentials.
 std::unique_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,
