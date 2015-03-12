@@ -37,8 +37,8 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include <grpc++/anonymous_service.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
@@ -227,9 +227,9 @@ bool Server::RegisterAsyncService(AsynchronousService* service) {
   return true;
 }
 
-void Server::RegisterAnonymousService(AnonymousService* service) {
+void Server::RegisterGenericService(GenericService* service) {
   GPR_ASSERT(service->server_ == nullptr &&
-             "Can only register an anonymous service against one server.");
+             "Can only register an generic service against one server.");
   service->server_ = this;
 }
 
@@ -296,7 +296,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         stream_(stream),
         cq_(cq),
         ctx_(ctx),
-        anonymous_ctx_(nullptr),
+        generic_ctx_(nullptr),
         server_(server),
         call_(nullptr),
         payload_(nullptr) {
@@ -307,7 +307,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         &array_, request ? &payload_ : nullptr, cq->cq(), this);
   }
 
-  AsyncRequest(Server* server, AnonymousServerContext* ctx,
+  AsyncRequest(Server* server, GenericServerContext* ctx,
                ServerAsyncStreamingInterface* stream, CompletionQueue* cq,
                void* tag)
       : tag_(tag),
@@ -315,7 +315,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         stream_(stream),
         cq_(cq),
         ctx_(nullptr),
-        anonymous_ctx_(ctx),
+        generic_ctx_(ctx),
         server_(server),
         call_(nullptr),
         payload_(nullptr) {
@@ -343,7 +343,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         *status = false;
       }
     }
-    ServerContext* ctx = ctx_ ? ctx_ : anonymous_ctx_;
+    ServerContext* ctx = ctx_ ? ctx_ : generic_ctx_;
     GPR_ASSERT(ctx);
     if (*status) {
       ctx->deadline_ = Timespec2Timepoint(call_details_.deadline);
@@ -354,9 +354,9 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
                 array_.metadata[i].value,
                 array_.metadata[i].value + array_.metadata[i].value_length)));
       }
-      if (anonymous_ctx_) {
-        anonymous_ctx_->method_ = call_details_.method;
-        anonymous_ctx_->host_ = call_details_.host;
+      if (generic_ctx_) {
+        generic_ctx_->method_ = call_details_.method;
+        generic_ctx_->host_ = call_details_.host;
       }
     }
     ctx->call_ = call_;
@@ -376,7 +376,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
   ServerAsyncStreamingInterface* const stream_;
   CompletionQueue* const cq_;
   ServerContext* const ctx_;
-  AnonymousServerContext* const anonymous_ctx_;
+  GenericServerContext* const generic_ctx_;
   Server* const server_;
   grpc_call* call_;
   grpc_call_details call_details_;
@@ -391,9 +391,9 @@ void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
   new AsyncRequest(this, registered_method, context, request, stream, cq, tag);
 }
 
-void Server::RequestAsyncAnonymousCall(AnonymousServerContext* context,
-                                       ServerAsyncStreamingInterface* stream,
-                                       CompletionQueue* cq, void* tag) {
+void Server::RequestGenericCall(GenericServerContext* context,
+                                ServerAsyncStreamingInterface* stream,
+                                CompletionQueue* cq, void* tag) {
   new AsyncRequest(this, context, stream, cq, tag);
 }
 

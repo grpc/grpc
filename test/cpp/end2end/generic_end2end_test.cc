@@ -37,7 +37,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo.pb.h"
 #include "src/cpp/util/time.h"
-#include <grpc++/anonymous_service.h>
+#include <grpc++/generic_service.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/byte_buffer.h>
 #include <grpc++/channel_arguments.h>
@@ -77,9 +77,9 @@ void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   EXPECT_EQ(tag(i), got_tag);
 }
 
-class AnonymousEnd2endTest : public ::testing::Test {
+class GenericEnd2endTest : public ::testing::Test {
  protected:
-  AnonymousEnd2endTest() {}
+  GenericEnd2endTest() {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -87,7 +87,7 @@ class AnonymousEnd2endTest : public ::testing::Test {
     // Setup server
     ServerBuilder builder;
     builder.AddPort(server_address_.str(), InsecureServerCredentials());
-    builder.RegisterAnonymousService(&anonymous_service_);
+    builder.RegisterGenericService(&generic_service_);
     server_ = builder.BuildAndStart();
   }
 
@@ -123,7 +123,7 @@ class AnonymousEnd2endTest : public ::testing::Test {
       Status recv_status;
 
       ClientContext cli_ctx;
-      AnonymousServerContext srv_ctx;
+      GenericServerContext srv_ctx;
       GenericServerReaderWriter stream(&srv_ctx);
 
       send_request.set_message("Hello");
@@ -131,7 +131,7 @@ class AnonymousEnd2endTest : public ::testing::Test {
           stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
       client_ok(1);
 
-      anonymous_service_.RequestCall(&srv_ctx, &stream, &srv_cq_, tag(2));
+      generic_service_.RequestCall(&srv_ctx, &stream, &srv_cq_, tag(2));
 
       verify_ok(server_->cq(), 2, true);
       EXPECT_EQ(server_address_.str(), srv_ctx.host());
@@ -171,22 +171,22 @@ class AnonymousEnd2endTest : public ::testing::Test {
   CompletionQueue srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  AnonymousService anonymous_service_;
+  GenericService generic_service_;
   std::ostringstream server_address_;
 };
 
-TEST_F(AnonymousEnd2endTest, SimpleRpc) {
+TEST_F(GenericEnd2endTest, SimpleRpc) {
   ResetStub();
   SendRpc(1);
 }
 
-TEST_F(AnonymousEnd2endTest, SequentialRpcs) {
+TEST_F(GenericEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpc(10);
 }
 
 // // Two pings and a final pong.
-// TEST_F(AnonymousEnd2endTest, SimpleClientStreaming) {
+// TEST_F(GenericEnd2endTest, SimpleClientStreaming) {
 //   ResetStub();
 // 
 //   EchoRequest send_request;
@@ -239,7 +239,7 @@ TEST_F(AnonymousEnd2endTest, SequentialRpcs) {
 // }
 // 
 // // One ping, two pongs.
-// TEST_F(AnonymousEnd2endTest, SimpleServerStreaming) {
+// TEST_F(GenericEnd2endTest, SimpleServerStreaming) {
 //   ResetStub();
 // 
 //   EchoRequest send_request;
@@ -290,7 +290,7 @@ TEST_F(AnonymousEnd2endTest, SequentialRpcs) {
 // }
 // 
 // // One ping, one pong.
-// TEST_F(AnonymousEnd2endTest, SimpleBidiStreaming) {
+// TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 //   ResetStub();
 // 
 //   EchoRequest send_request;
@@ -342,7 +342,7 @@ TEST_F(AnonymousEnd2endTest, SequentialRpcs) {
 // }
 // 
 // // Metadata tests
-// TEST_F(AnonymousEnd2endTest, ClientInitialMetadataRpc) {
+// TEST_F(GenericEnd2endTest, ClientInitialMetadataRpc) {
 //   ResetStub();
 // 
 //   EchoRequest send_request;
@@ -386,7 +386,7 @@ TEST_F(AnonymousEnd2endTest, SequentialRpcs) {
 //   EXPECT_TRUE(recv_status.IsOk());
 // }
 // 
-// TEST_F(AnonymousEnd2endTest, ServerInitialMetadataRpc) {
+// TEST_F(GenericEnd2endTest, ServerInitialMetadataRpc) {
 //   ResetStub();
 // 
 //   EchoRequest send_request;
@@ -434,7 +434,7 @@ TEST_F(AnonymousEnd2endTest, SequentialRpcs) {
 //   EXPECT_TRUE(recv_status.IsOk());
 // }
 // 
-// TEST_F(AnonymousEnd2endTest, ServerTrailingMetadataRpc) {
+// TEST_F(GenericEnd2endTest, ServerTrailingMetadataRpc) {
 //   ResetStub();
 // 
 //   EchoRequest send_request;
@@ -479,7 +479,7 @@ TEST_F(AnonymousEnd2endTest, SequentialRpcs) {
 //   EXPECT_EQ(static_cast<size_t>(2), server_trailing_metadata.size());
 // }
 // 
-// TEST_F(AnonymousEnd2endTest, MetadataRpc) {
+// TEST_F(GenericEnd2endTest, MetadataRpc) {
 //   ResetStub();
 // 
 //   EchoRequest send_request;

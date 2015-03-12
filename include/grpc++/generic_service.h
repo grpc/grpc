@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_ANONYMOUS_SERVICE_H
-#define GRPCXX_ANONYMOUS_SERVICE_H
+#ifndef GRPCXX_GENERIC_SERVICE_H
+#define GRPCXX_GENERIC_SERVICE_H
 
 #include <grpc++/byte_buffer.h>
 #include <grpc++/stream.h>
@@ -43,7 +43,7 @@ namespace grpc {
 
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericServerReaderWriter;
 
-class AnonymousServerContext : public ServerContext {
+class GenericServerContext : public ServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -55,13 +55,13 @@ class AnonymousServerContext : public ServerContext {
   grpc::string host_;
 };
 
-class AnonymousService {
+class GenericService {
  public:
   // TODO(yangg) Once we can add multiple completion queues to the server
   // in c core, add a CompletionQueue* argument to the ctor here.
-  AnonymousService() : server_(nullptr) {}
+  GenericService() : server_(nullptr) {}
 
-  void RequestCall(AnonymousServerContext* ctx,
+  void RequestCall(GenericServerContext* ctx,
                    GenericServerReaderWriter* reader_writer,
                    CompletionQueue* cq, void* tag);
 
@@ -72,4 +72,4 @@ class AnonymousService {
 
 } // namespace grpc
 
-#endif  // GRPCXX_ANONYMOUS_SERVICE_H
+#endif  // GRPCXX_GENERIC_SERVICE_H

@@ -339,11 +339,6 @@
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "anonymous_end2end_test"
-  }, 
-  {
-    "flaky": false, 
-    "language": "c++", 
     "name": "async_end2end_test"
   }, 
   {
@@ -360,6 +355,11 @@
     "flaky": false, 
     "language": "c++", 
     "name": "end2end_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "generic_end2end_test"
   }, 
   {
     "flaky": false, 

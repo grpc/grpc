@@ -31,16 +31,16 @@
  *
  */
 
-#include <grpc++/anonymous_service.h>
+#include <grpc++/generic_service.h>
 
 #include <grpc++/server.h>
 
 namespace grpc {
 
-void AnonymousService::RequestCall(AnonymousServerContext* ctx,
-                   GenericServerReaderWriter* reader_writer,
-                   CompletionQueue* cq, void* tag) {
-  server_->RequestAsyncAnonymousCall(ctx, reader_writer, cq, tag);
+void GenericService::RequestCall(GenericServerContext* ctx,
+                                 GenericServerReaderWriter* reader_writer,
+                                 CompletionQueue* cq, void* tag) {
+  server_->RequestGenericCall(ctx, reader_writer, cq, tag);
 }
 
 } // namespace grpc
