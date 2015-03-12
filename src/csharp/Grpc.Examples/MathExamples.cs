@@ -71,7 +71,8 @@ namespace math
         public static void SumExample(MathGrpc.IMathServiceClient stub)
         {
             List<Num> numbers = new List<Num>
-            {new Num.Builder { Num_ = 1 }.Build(),
+            {
+                new Num.Builder { Num_ = 1 }.Build(),
                 new Num.Builder { Num_ = 2 }.Build(),
                 new Num.Builder { Num_ = 3 }.Build()
             };
@@ -110,24 +111,12 @@ namespace math
         public static void DependendRequestsExample(MathGrpc.IMathServiceClient stub)
         {
             var numberList = new List<Num>
-            { new Num.Builder{ Num_ = 1 }.Build(),
-                new Num.Builder{ Num_ = 2 }.Build(), new Num.Builder{ Num_ = 3 }.Build()
+            {
+                new Num.Builder { Num_ = 1 }.Build(),
+                new Num.Builder { Num_ = 2 }.Build(), new Num.Builder { Num_ = 3 }.Build()
             };
 
             numberList.ToObservable();
-
-            //IObserver<Num> numbers;
-            //Task<Num> call = stub.Sum(out numbers);
-            //foreach (var num in numberList)
-            //{
-            //  numbers.OnNext(num);
-            //}
-            //numbers.OnCompleted();
-
-            //Num sum = call.Result;
-
-            //DivReply result = stub.Div(new DivArgs.Builder { Dividend = sum.Num_, Divisor = numberList.Count }.Build());
         }
     }
 }
-

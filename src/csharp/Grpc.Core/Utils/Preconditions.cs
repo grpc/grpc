@@ -32,10 +32,10 @@
 #endregion
 
 using System;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Grpc.Core.Utils
 {
@@ -66,7 +66,7 @@ namespace Grpc.Core.Utils
         /// <summary>
         /// Throws NullReferenceException if reference is null.
         /// </summary>
-        public static T CheckNotNull<T> (T reference)
+        public static T CheckNotNull<T>(T reference)
         {
             if (reference == null)
             {
@@ -78,7 +78,7 @@ namespace Grpc.Core.Utils
         /// <summary>
         /// Throws NullReferenceException with given message if reference is null.
         /// </summary>
-        public static T CheckNotNull<T> (T reference, string errorMessage)
+        public static T CheckNotNull<T>(T reference, string errorMessage)
         {
             if (reference == null)
             {
@@ -110,4 +110,3 @@ namespace Grpc.Core.Utils
         }
     }
 }
-

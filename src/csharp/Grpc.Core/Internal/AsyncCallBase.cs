@@ -225,7 +225,7 @@ namespace Grpc.Core.Internal
                 payload = serializer(msg);
                 return true;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Console.WriteLine("Exception occured while trying to serialize message");
                 payload = null;
@@ -240,7 +240,7 @@ namespace Grpc.Core.Internal
                 msg = deserializer(payload);
                 return true;
             } 
-            catch(Exception)
+            catch (Exception)
             {
                 Console.WriteLine("Exception occured while trying to deserialize message");
                 msg = default(TRead);
@@ -254,7 +254,7 @@ namespace Grpc.Core.Internal
             {
                 readObserver.OnNext(value);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Exception occured while invoking readObserver.OnNext: " + e);
             }
@@ -266,7 +266,7 @@ namespace Grpc.Core.Internal
             {
                 readObserver.OnCompleted();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Exception occured while invoking readObserver.OnCompleted: " + e);
             }
@@ -278,7 +278,7 @@ namespace Grpc.Core.Internal
             {
                 readObserver.OnError(error);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Exception occured while invoking readObserver.OnError: " + e);
             }
@@ -290,7 +290,7 @@ namespace Grpc.Core.Internal
             {
                 completionDelegate(error);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Exception occured while invoking completion delegate: " + e);
             }
@@ -302,14 +302,15 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected CompletionCallbackDelegate CreateBatchCompletionCallback(Action<bool, BatchContextSafeHandleNotOwned> handler)
         {
-            return new CompletionCallbackDelegate( (error, batchContextPtr) => {
+            return new CompletionCallbackDelegate((error, batchContextPtr) =>
+            {
                 try
                 {
                     var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
                     bool wasError = (error != GRPCOpError.GRPC_OP_OK);
                     handler(wasError, ctx);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine("Caught exception in a native handler: " + e);
                 }
@@ -363,7 +364,6 @@ namespace Grpc.Core.Internal
             {
                 FireCompletion(origCompletionDelegate, null);
             }
-           
         }
 
         /// <summary>

@@ -32,10 +32,10 @@
 #endregion
 
 using System;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Grpc.Core.Utils
 {
@@ -61,8 +61,7 @@ namespace Grpc.Core.Utils
             }
             stopwatch.Stop();
             Console.WriteLine("Elapsed time: " + stopwatch.ElapsedMilliseconds + "ms");
-            Console.WriteLine("Ops per second: " + (int) ((double) benchmarkIterations  * 1000 / stopwatch.ElapsedMilliseconds));
+            Console.WriteLine("Ops per second: " + (int)((double)benchmarkIterations  * 1000 / stopwatch.ElapsedMilliseconds));
         }
     }
 }
-

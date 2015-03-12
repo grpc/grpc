@@ -39,7 +39,7 @@ namespace Grpc.Core
     public class Channel : IDisposable
     {
         readonly ChannelSafeHandle handle;
-        readonly String target;
+        readonly string target;
 
         /// <summary>
         /// Creates a channel.

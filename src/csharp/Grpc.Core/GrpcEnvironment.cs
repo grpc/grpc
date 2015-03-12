@@ -63,8 +63,9 @@ namespace Grpc.Core
         /// lifetime (and call Shutdown once you're done), for the sake of easier testing it's
         /// allowed to initialize the environment again after it has been successfully shutdown.
         /// </summary>
-        public static void Initialize() {
-            lock(staticLock)
+        public static void Initialize()
+        {
+            lock (staticLock)
             {
                 if (instance == null)
                 {
@@ -79,7 +80,7 @@ namespace Grpc.Core
         /// </summary>
         public static void Shutdown()
         {
-            lock(staticLock)
+            lock (staticLock)
             {
                 if (instance != null)
                 {
@@ -133,4 +134,3 @@ namespace Grpc.Core
         }
     }
 }
-

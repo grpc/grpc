@@ -35,10 +35,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
-using grpc.testing;
 
 namespace Grpc.IntegrationTesting
 {
@@ -117,7 +117,5 @@ namespace Grpc.IntegrationTesting
         // TODO: add cancel_after_begin
 
         // TODO: add cancel_after_first_response
-
     }
 }
-

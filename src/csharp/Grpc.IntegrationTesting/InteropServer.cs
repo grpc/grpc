@@ -38,10 +38,10 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Google.ProtocolBuffers;
+using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
-using grpc.testing;
 
 namespace Grpc.IntegrationTesting
 {
@@ -113,7 +113,7 @@ namespace Grpc.IntegrationTesting
         private static ServerOptions ParseArguments(string[] args)
         {
             var options = new ServerOptions();
-            foreach(string arg in args)
+            foreach (string arg in args)
             {
                 ParseArgument(arg, options);
                 if (options.help)
