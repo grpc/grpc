@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {

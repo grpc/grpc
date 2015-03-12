@@ -33,10 +33,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
+    /// <summary>
+    /// Server side credentials.
+    /// </summary>
     public abstract class ServerCredentials
     {
         /// <summary>
@@ -51,8 +55,8 @@ namespace Grpc.Core
     /// </summary>
     public class KeyCertificatePair
     {
-        string certChain;
-        string privateKey;
+        readonly string certChain;
+        readonly string privateKey;
 
         public KeyCertificatePair(string certChain, string privateKey)
         {
@@ -82,10 +86,9 @@ namespace Grpc.Core
     /// </summary>
     public class SslServerCredentials : ServerCredentials
     {
-        // TODO: immutable list...
-        List<KeyCertificatePair> keyCertPairs;
+        ImmutableList<KeyCertificatePair> keyCertPairs;
 
-        public SslServerCredentials(List<KeyCertificatePair> keyCertPairs)
+        public SslServerCredentials(ImmutableList<KeyCertificatePair> keyCertPairs)
         {
             this.keyCertPairs = keyCertPairs;
         }

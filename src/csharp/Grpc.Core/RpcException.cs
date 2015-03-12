@@ -35,6 +35,9 @@ using System;
 
 namespace Grpc.Core
 {
+    /// <summary>
+    /// Thrown when remote procedure call fails.
+    /// </summary>
     public class RpcException : Exception
     {
         private readonly Status status;

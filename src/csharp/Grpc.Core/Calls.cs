@@ -38,8 +38,6 @@ using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
-    // NOTE: this class is work-in-progress
-
     /// <summary>
     /// Helper methods for generated stubs to make RPC calls.
     /// </summary>

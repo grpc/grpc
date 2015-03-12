@@ -33,22 +33,26 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
+    /// <summary>
+    /// Mapping of method names to server call handlers.
+    /// </summary>
     public class ServerServiceDefinition
     {
         readonly string serviceName;
-        // TODO: we would need an immutable dictionary here...
-        readonly Dictionary<string, IServerCallHandler> callHandlers;
+        readonly ImmutableDictionary<string, IServerCallHandler> callHandlers;
 
-        private ServerServiceDefinition(string serviceName, Dictionary<string, IServerCallHandler> callHandlers)
+        private ServerServiceDefinition(string serviceName, ImmutableDictionary<string, IServerCallHandler> callHandlers)
         {
             this.serviceName = serviceName;
-            this.callHandlers = new Dictionary<string, IServerCallHandler>(callHandlers);
+            this.callHandlers = callHandlers;
         }
 
-        internal Dictionary<string, IServerCallHandler> CallHandlers
+        internal ImmutableDictionary<string, IServerCallHandler> CallHandlers
         {
             get
             {
@@ -89,7 +93,7 @@ namespace Grpc.Core
 
             public ServerServiceDefinition Build()
             {
-                return new ServerServiceDefinition(serviceName, callHandlers);
+                return new ServerServiceDefinition(serviceName, callHandlers.ToImmutableDictionary());
             }
         }
     }
