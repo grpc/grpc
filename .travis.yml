@@ -2,10 +2,8 @@ language: cpp
 before_install:
   - sudo add-apt-repository ppa:yjwong/gflags -y
   - sudo add-apt-repository ppa:h-rayflood/llvm -y
-  - sudo add-apt-repository ppa:ondrej/php5-5.6 -y
   - sudo apt-get update -qq
-  - sudo apt-get dist-upgrade -qq
-  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5 php5-dev
+  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5
   - sudo pip install cpp-coveralls
 env:
   global:
@@ -19,7 +17,6 @@ env:
     - CONFIG=opt TEST=node
     - CONFIG=opt TEST=ruby
     - CONFIG=opt TEST=python
-    - CONFIG=opt TEST=php
     - CONFIG=gcov TEST=c
     - CONFIG=gcov TEST=c++
 script:
