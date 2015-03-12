@@ -36,6 +36,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic_service.h>
@@ -355,8 +356,11 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
                 array_.metadata[i].value + array_.metadata[i].value_length)));
       }
       if (generic_ctx_) {
+        // TODO(yangg) remove the copy here.
         generic_ctx_->method_ = call_details_.method;
         generic_ctx_->host_ = call_details_.host;
+        gpr_free(call_details_.method);
+        gpr_free(call_details_.host);
       }
     }
     ctx->call_ = call_;
