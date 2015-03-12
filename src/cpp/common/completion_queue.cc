@@ -57,24 +57,23 @@ class EventDeleter {
   }
 };
 
-bool CompletionQueue::Next(void** tag, bool* ok, gpr_timespec deadline) {
+CompletionQueue::NextStatus CompletionQueue::AsyncNext(void** tag, bool* ok,
+                                                       gpr_timespec deadline) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
   for (;;) {
     ev.reset(grpc_completion_queue_next(cq_, deadline));
     if (!ev) { /* got a NULL back because deadline passed */
-      *ok = true;
-      *tag = nullptr;
-      return true;
+      return TIMEOUT;
     }
     if (ev->type == GRPC_QUEUE_SHUTDOWN) {
-      return false;
+      return SHUTDOWN;
     }
     auto cq_tag = static_cast<CompletionQueueTag*>(ev->tag);
     *ok = ev->data.op_complete == GRPC_OP_OK;
     *tag = cq_tag;
     if (cq_tag->FinalizeResult(tag, ok)) {
-      return true;
+      return GOT_EVENT;
     }
   }
 }

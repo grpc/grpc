@@ -76,10 +76,19 @@ class CompletionQueue {
   explicit CompletionQueue(grpc_completion_queue *take);
   ~CompletionQueue();
 
+  // Tri-state return for Next: SHUTDOWN, GOT_EVENT, TIMEOUT
+  enum NextStatus {SHUTDOWN, GOT_EVENT, TIMEOUT};
+
   // Blocking (until deadline) read from queue.
-  // Returns false if the queue is ready for destruction, true otherwise
-  // If the deadline passed, *tag will be null
-  bool Next(void **tag, bool *ok, gpr_timespec deadline=gpr_inf_future);
+  // Returns false if the queue is ready for destruction, true if event
+
+  bool Next(void **tag, bool *ok) {
+    return (AsyncNext(tag,ok,gpr_inf_future) != SHUTDOWN);
+  }
+
+  // Nonblocking (until deadline) read from queue.
+  // Cannot rely on result of tag or ok if return is TIMEOUT
+  NextStatus AsyncNext(void **tag, bool *ok, gpr_timespec deadline);
 
   // Shutdown has to be called, and the CompletionQueue can only be
   // destructed when false is returned from Next().
