@@ -103,15 +103,13 @@ _sym_db.RegisterMessage(HelloReply)
 
 
 import abc
-from grpc._adapter import fore
-from grpc._adapter import rear
-from grpc.framework.assembly import implementations
-from grpc.framework.assembly import utilities
+from grpc.early_adopter import implementations
+from grpc.early_adopter import utilities
 class EarlyAdopterGreeterServicer(object):
   """<fill me in later!>"""
   __metaclass__ = abc.ABCMeta
   @abc.abstractmethod
-  def SayHello(self, request):
+  def SayHello(self, request, context):
     raise NotImplementedError()
 class EarlyAdopterGreeterServer(object):
   """<fill me in later!>"""
@@ -130,29 +128,24 @@ class EarlyAdopterGreeterStub(object):
     raise NotImplementedError()
   SayHello.async = None
 def early_adopter_create_Greeter_server(servicer, port, root_certificates, key_chain_pairs):
-  method_implementations = {
-    "SayHello": utilities.unary_unary_inline(servicer.SayHello),
-  }
   import helloworld_pb2
-  request_deserializers = {
-    "SayHello": helloworld_pb2.HelloRequest.FromString,
+  import helloworld_pb2
+  method_service_descriptions = {
+    "SayHello": utilities.unary_unary_service_description(
+      servicer.SayHello,
+      helloworld_pb2.HelloRequest.FromString,
+      helloworld_pb2.HelloReply.SerializeToString,
+    ),
   }
-  response_serializers = {
-    "SayHello": lambda x: x.SerializeToString(),
-  }
-  link = fore.activated_fore_link(port, request_deserializers, response_serializers, root_certificates, key_chain_pairs)
-  return implementations.assemble_service(method_implementations, link)
+  return implementations.secure_server(method_service_descriptions, port, root_certificates, key_chain_pairs)
 def early_adopter_create_Greeter_stub(host, port):
-  method_implementations = {
-    "SayHello": utilities.unary_unary_inline(None),
-  }
   import helloworld_pb2
-  response_deserializers = {
-    "SayHello": helloworld_pb2.HelloReply.FromString,
+  import helloworld_pb2
+  method_invocation_descriptions = {
+    "SayHello": utilities.unary_unary_invocation_description(
+      helloworld_pb2.HelloRequest.SerializeToString,
+      helloworld_pb2.HelloReply.FromString,
+    ),
   }
-  request_serializers = {
-    "SayHello": lambda x: x.SerializeToString(),
-  }
-  link = rear.activated_rear_link(host, port, request_serializers, response_deserializers)
-  return implementations.assemble_dynamic_inline_stub(method_implementations, link)
+  return implementations.insecure_stub(method_invocation_descriptions, host, port)
 # @@protoc_insertion_point(module_scope)
