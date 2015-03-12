@@ -44,7 +44,7 @@ namespace Grpc.Core
 
         public class Builder
         {
-            Dictionary<string,string> stringArgs = new Dictionary<string,string>();
+            Dictionary<string, string> stringArgs = new Dictionary<string, string>();
             // TODO: AddInteger not supported yet.
             public Builder AddString(string key, string value)
             {
@@ -58,7 +58,7 @@ namespace Grpc.Core
             }
         }
 
-        Dictionary<string,string> stringArgs;
+        Dictionary<string, string> stringArgs;
 
         private ChannelArgs(Dictionary<string, string> stringArgs)
         {

@@ -40,7 +40,7 @@ using System.Threading;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void GprLogDelegate(IntPtr fileStringPtr, Int32 line, UInt64 threadId, IntPtr severityStringPtr, IntPtr msgPtr);
+    internal delegate void GprLogDelegate(IntPtr fileStringPtr, int line, ulong threadId, IntPtr severityStringPtr, IntPtr msgPtr);
 
     /// <summary>
     /// Logs from gRPC C core library can get lost if your application is not a console app.
@@ -73,7 +73,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private static void HandleWrite(IntPtr fileStringPtr, Int32 line, UInt64 threadId, IntPtr severityStringPtr, IntPtr msgPtr)
+        private static void HandleWrite(IntPtr fileStringPtr, int line, ulong threadId, IntPtr severityStringPtr, IntPtr msgPtr)
         {
             try
             {

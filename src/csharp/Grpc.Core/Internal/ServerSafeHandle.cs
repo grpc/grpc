@@ -53,10 +53,10 @@ namespace Grpc.Core.Internal
         static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern Int32 grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
+        static extern int grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern Int32 grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
+        static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_start(ServerSafeHandle server);

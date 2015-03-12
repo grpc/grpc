@@ -80,16 +80,18 @@ namespace Grpc.Core.Internal
             {
                 return null;
             }
-            byte[] data = new byte[(int) len];
+            byte[] data = new byte[(int)len];
             grpcsharp_batch_context_recv_message_to_buffer(this, data, new UIntPtr((ulong)data.Length));
             return data;
         }
 
-        public CallSafeHandle GetServerRpcNewCall() {
+        public CallSafeHandle GetServerRpcNewCall()
+        {
             return grpcsharp_batch_context_server_rpc_new_call(this);
         }
 
-        public string GetServerRpcNewMethod() {
+        public string GetServerRpcNewMethod()
+        {
             return Marshal.PtrToStringAnsi(grpcsharp_batch_context_server_rpc_new_method(this));
         }
     }

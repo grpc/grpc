@@ -73,8 +73,8 @@ namespace math
         public IObserver<Num> Sum(IObserver<Num> responseObserver)
         {
             var recorder = new RecordingObserver<Num>();
-            Task.Factory.StartNew(() => {
-
+            Task.Factory.StartNew(() =>
+            {
                 List<Num> inputs = recorder.ToList().Result;
 
                 long sum = 0;
@@ -104,7 +104,7 @@ namespace math
         static IEnumerable<Num> FibInternal(long n)
         {
             long a = 1;
-            yield return new Num.Builder { Num_=a }.Build();
+            yield return new Num.Builder { Num_ = a }.Build();
 
             long b = 1;
             for (long i = 0; i < n - 1; i++)
@@ -112,12 +112,12 @@ namespace math
                 long temp = a;
                 a = b;
                 b = temp + b;
-                yield return new Num.Builder { Num_=a }.Build();
+                yield return new Num.Builder { Num_ = a }.Build();
             }
         }
 
-        private class DivObserver : IObserver<DivArgs> {
-
+        private class DivObserver : IObserver<DivArgs>
+        {
             readonly IObserver<DivReply> responseObserver;
 
             public DivObserver(IObserver<DivReply> responseObserver)
@@ -142,4 +142,3 @@ namespace math
         }
     }
 }
-

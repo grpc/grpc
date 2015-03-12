@@ -57,9 +57,9 @@ namespace Grpc.Core.Utils
             data.Add(value);
         }
 
-        public Task<List<T>> ToList() {
+        public Task<List<T>> ToList()
+        {
             return tcs.Task;
         }
     }
 }
-

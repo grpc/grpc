@@ -112,4 +112,3 @@ namespace Grpc.Core.Internal
         GRPC_OP_ERROR
     }
 }
-
