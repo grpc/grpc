@@ -54,7 +54,7 @@ class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
         target, grpc_channel_create(target.c_str(), &channel_args)));
   }
 
-  SecureCredentials* AsSecureCredentials() { return nullptr; }
+  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return nullptr; }
 };
 }  // namespace
 
