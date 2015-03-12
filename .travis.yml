@@ -3,8 +3,8 @@ before_install:
   - sudo add-apt-repository ppa:yjwong/gflags -y
   - sudo add-apt-repository ppa:h-rayflood/llvm -y
   - sudo add-apt-repository ppa:ondrej/php5-5.6 -y
-  - sudo apt-get dist-upgrade -qq
   - sudo apt-get update -qq
+  - sudo apt-get dist-upgrade -qq
   - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5 php5-dev
   - sudo pip install cpp-coveralls
 env:
