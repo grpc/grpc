@@ -1,7 +1,4 @@
 <StyleCopSettings Version="105">
-  <GlobalSettings>
-    <StringProperty Name="MergeSettingsFiles">NoMerge</StringProperty>
-  </GlobalSettings>
   <Analyzers>
     <Analyzer AnalyzerId="StyleCop.CSharp.DocumentationRules">
       <Rules>
