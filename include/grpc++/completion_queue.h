@@ -106,8 +106,8 @@ class CompletionQueue {
   friend Status BlockingUnaryCall(ChannelInterface *channel,
                                   const RpcMethod &method,
                                   ClientContext *context,
-                                  const google::protobuf::Message &request,
-                                  google::protobuf::Message *result);
+                                  const grpc::protobuf::Message &request,
+                                  grpc::protobuf::Message *result);
 
   // Wraps grpc_completion_queue_pluck.
   // Cannot be mixed with calls to Next().

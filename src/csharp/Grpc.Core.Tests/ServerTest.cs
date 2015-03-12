@@ -53,6 +53,5 @@ namespace Grpc.Core.Tests
 
             GrpcEnvironment.Shutdown();
         }
-
     }
 }

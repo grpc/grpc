@@ -67,16 +67,27 @@ namespace Grpc.Core
         }
 
         // only call this before Start()
-        public void AddServiceDefinition(ServerServiceDefinition serviceDefinition) {
-            foreach(var entry in serviceDefinition.CallHandlers)
+        public void AddServiceDefinition(ServerServiceDefinition serviceDefinition)
+        {
+            foreach (var entry in serviceDefinition.CallHandlers)
             {
                 callHandlers.Add(entry.Key, entry.Value);
             }
         }
 
         // only call before Start()
-        public int AddPort(string addr) {
+        public int AddPort(string addr)
+        {
             return handle.AddPort(addr);
+        }
+
+        // only call before Start()
+        public int AddPort(string addr, ServerCredentials credentials)
+        {
+            using (var nativeCredentials = credentials.ToNativeCredentials())
+            {
+                return handle.AddPort(addr, nativeCredentials);
+            }
         }
 
         public void Start()
@@ -98,7 +109,7 @@ namespace Grpc.Core
             {
                 var rpcInfo = newRpcQueue.Take();
 
-                //Console.WriteLine("Server received RPC " + rpcInfo.Method);
+                // Console.WriteLine("Server received RPC " + rpcInfo.Method);
 
                 IServerCallHandler callHandler;
                 if (!callHandlers.TryGetValue(rpcInfo.Method, out callHandler))
@@ -107,7 +118,7 @@ namespace Grpc.Core
                 }
                 callHandler.StartCall(rpcInfo.Method, rpcInfo.Call, GetCompletionQueue());
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("Exception while handling RPC: " + e);
             }
@@ -118,7 +129,8 @@ namespace Grpc.Core
         /// cleans up used resources.
         /// </summary>
         /// <returns>The async.</returns>
-        public async Task ShutdownAsync() {
+        public async Task ShutdownAsync()
+        {
             handle.ShutdownAndNotify(serverShutdownHandler);
             await shutdownTcs.Task;
             handle.Dispose();
@@ -135,11 +147,13 @@ namespace Grpc.Core
             }
         }
 
-        public void Kill() {
+        public void Kill()
+        {
             handle.Dispose();
         }
 
-        private async Task StartHandlingRpcs() {
+        private async Task StartHandlingRpcs()
+        {
             while (true)
             {
                 await Task.Factory.StartNew(RunRpc);
@@ -151,22 +165,27 @@ namespace Grpc.Core
             AssertCallOk(handle.RequestCall(GetCompletionQueue(), newServerRpcHandler));
         }
 
-        private void HandleNewServerRpc(GRPCOpError error, IntPtr batchContextPtr) {
-            try {
+        private void HandleNewServerRpc(GRPCOpError error, IntPtr batchContextPtr)
+        {
+            try
+            {
                 var ctx = new BatchContextSafeHandleNotOwned(batchContextPtr);
 
-                if (error != GRPCOpError.GRPC_OP_OK) {
+                if (error != GRPCOpError.GRPC_OP_OK)
+                {
                     // TODO: handle error
                 }
 
                 var rpcInfo = new NewRpcInfo(ctx.GetServerRpcNewCall(), ctx.GetServerRpcNewMethod());
 
                 // after server shutdown, the callback returns with null call
-                if (!rpcInfo.Call.IsInvalid) {
+                if (!rpcInfo.Call.IsInvalid)
+                {
                     newRpcQueue.Add(rpcInfo);
                 }
-
-            } catch(Exception e) {
+            }
+            catch (Exception e)
+            {
                 Console.WriteLine("Caught exception in a native handler: " + e);
             }
         }

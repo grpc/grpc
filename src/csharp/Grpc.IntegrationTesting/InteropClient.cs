@@ -34,13 +34,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Google.ProtocolBuffers;
+using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
-using grpc.testing;
 
 namespace Grpc.IntegrationTesting
 {
@@ -49,10 +50,10 @@ namespace Grpc.IntegrationTesting
         private class ClientOptions
         {
             public bool help;
-            public string serverHost;
-            public string serverHostOverride;
+            public string serverHost = "127.0.0.1";
+            public string serverHostOverride = TestCredentials.DefaultHostOverride;
             public int? serverPort;
-            public string testCase;
+            public string testCase = "large_unary";
             public bool useTls;
             public bool useTestCa;
         }
@@ -98,10 +99,23 @@ namespace Grpc.IntegrationTesting
             GrpcEnvironment.Initialize();
 
             string addr = string.Format("{0}:{1}", options.serverHost, options.serverPort);
-            using (Channel channel = new Channel(addr))
+
+            Credentials credentials = null;
+            if (options.useTls)
+            {
+                credentials = TestCredentials.CreateTestClientCredentials(options.useTestCa);
+            }
+
+            ChannelArgs channelArgs = null;
+            if (!string.IsNullOrEmpty(options.serverHostOverride))
+            {
+                channelArgs = ChannelArgs.NewBuilder()
+                    .AddString(ChannelArgs.SslTargetNameOverrideKey, options.serverHostOverride).Build();
+            }
+
+            using (Channel channel = new Channel(addr, credentials, channelArgs))
             {
                 TestServiceGrpc.ITestServiceClient client = new TestServiceGrpc.TestServiceClientStub(channel);
-
                 RunTestCase(options.testCase, client);
             }
 
@@ -166,7 +180,7 @@ namespace Grpc.IntegrationTesting
         {
             Console.WriteLine("running client_streaming");
 
-            var bodySizes = new List<int>{27182, 8, 1828, 45904};
+            var bodySizes = new List<int> { 27182, 8, 1828, 45904 };
 
             var context = client.StreamingInputCall();
             foreach (var size in bodySizes)
@@ -185,7 +199,7 @@ namespace Grpc.IntegrationTesting
         {
             Console.WriteLine("running server_streaming");
 
-            var bodySizes = new List<int>{31415, 9, 2653, 58979};
+            var bodySizes = new List<int> { 31415, 9, 2653, 58979 };
 
             var request = StreamingOutputCallRequest.CreateBuilder()
                 .SetResponseType(PayloadType.COMPRESSABLE)
@@ -242,7 +256,6 @@ namespace Grpc.IntegrationTesting
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(2653, response.Payload.Body.Length);
 
-
             inputs.OnNext(StreamingOutputCallRequest.CreateBuilder()
                           .SetResponseType(PayloadType.COMPRESSABLE)
                           .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(58979))
@@ -278,17 +291,18 @@ namespace Grpc.IntegrationTesting
         public static void RunBenchmarkEmptyUnary(TestServiceGrpc.ITestServiceClient client)
         {
             BenchmarkUtil.RunBenchmark(10000, 10000,
-                                       () => { client.EmptyCall(Empty.DefaultInstance);});
+                                       () => { client.EmptyCall(Empty.DefaultInstance); });
         }
 
-        private static Payload CreateZerosPayload(int size) {
+        private static Payload CreateZerosPayload(int size)
+        {
             return Payload.CreateBuilder().SetBody(ByteString.CopyFrom(new byte[size])).Build();
         }
 
         private static ClientOptions ParseArguments(string[] args)
         {
             var options = new ClientOptions();
-            foreach(string arg in args)
+            foreach (string arg in args)
             {
                 ParseArgument(arg, options);
                 if (options.help)

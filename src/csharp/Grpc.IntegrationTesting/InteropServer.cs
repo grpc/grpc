@@ -34,13 +34,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Google.ProtocolBuffers;
+using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
-using grpc.testing;
 
 namespace Grpc.IntegrationTesting
 {
@@ -49,7 +50,7 @@ namespace Grpc.IntegrationTesting
         private class ServerOptions
         {
             public bool help;
-            public int? port;
+            public int? port = 8070;
             public bool useTls;
         }
 
@@ -93,7 +94,14 @@ namespace Grpc.IntegrationTesting
             server.AddServiceDefinition(TestServiceGrpc.BindService(new TestServiceImpl()));
 
             string addr = "0.0.0.0:" + options.port;
-            server.AddPort(addr);
+            if (options.useTls)
+            {
+                server.AddPort(addr, TestCredentials.CreateTestServerCredentials());
+            }
+            else
+            {
+                server.AddPort(addr);
+            }
             Console.WriteLine("Running server on " + addr);
             server.Start();
 
@@ -105,7 +113,7 @@ namespace Grpc.IntegrationTesting
         private static ServerOptions ParseArguments(string[] args)
         {
             var options = new ServerOptions();
-            foreach(string arg in args)
+            foreach (string arg in args)
             {
                 ParseArgument(arg, options);
                 if (options.help)

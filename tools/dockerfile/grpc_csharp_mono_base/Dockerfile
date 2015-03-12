@@ -43,6 +43,9 @@ RUN apt-get update && apt-get install -y \
     nunit-console \
     monodevelop
 
+# Download NuGet
+RUN cd /var/local && wget www.nuget.org/NuGet.exe
+
 # Get the source from GitHub
 RUN git clone git@github.com:grpc/grpc.git /var/local/git/grpc
 RUN cd /var/local/git/grpc && \

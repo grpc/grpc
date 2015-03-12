@@ -95,7 +95,7 @@ shared_context 'setup: tags' do
   end
 
   def new_client_call
-    @ch.create_call('/method', 'localhost', deadline)
+    @ch.create_call('/method', 'foo.test.google.fr', deadline)
   end
 end
 
@@ -346,12 +346,12 @@ end
 describe 'the secure http client/server' do
   before(:example) do
     certs = load_test_certs
-    server_host = 'localhost:0'
+    server_host = '0.0.0.0:0'
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
-    @server = GRPC::Core::Server.new(@server_queue, nil, server_creds)
-    server_port = @server.add_http2_port(server_host, true)
+    @server = GRPC::Core::Server.new(@server_queue, nil)
+    server_port = @server.add_http2_port(server_host, server_creds)
     @server.start
     args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
     @ch = Channel.new("0.0.0.0:#{server_port}", args,
@@ -362,11 +362,9 @@ describe 'the secure http client/server' do
     @server.close
   end
 
-  # TODO: uncomment after updating the to the new c api
-  # it_behaves_like 'basic GRPC message delivery is OK' do
-  # end
+  it_behaves_like 'basic GRPC message delivery is OK' do
+  end
 
-  # TODO: uncomment after updating the to the new c api
-  # it_behaves_like 'GRPC metadata delivery works OK' do
-  # end
+  it_behaves_like 'GRPC metadata delivery works OK' do
+  end
 end

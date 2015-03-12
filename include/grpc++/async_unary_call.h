@@ -49,7 +49,7 @@ class ClientAsyncResponseReader GRPC_FINAL {
  public:
   ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
-                    const google::protobuf::Message& request, void* tag)
+                    const grpc::protobuf::Message& request, void* tag)
       : context_(context),
         call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
@@ -77,7 +77,6 @@ class ClientAsyncResponseReader GRPC_FINAL {
     call_.PerformOps(&finish_buf_);
   }
 
-
  private:
   ClientContext* context_;
   Call call_;
@@ -93,7 +92,7 @@ class ServerAsyncResponseWriter GRPC_FINAL
   explicit ServerAsyncResponseWriter(ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
-  void SendInitialMetadata(void* tag) {
+  void SendInitialMetadata(void* tag) GRPC_OVERRIDE {
     GPR_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.Reset(tag);

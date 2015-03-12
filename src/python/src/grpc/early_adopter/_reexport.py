@@ -27,11 +27,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from grpc.framework.common import cardinality
 from grpc.framework.face import exceptions as face_exceptions
 from grpc.framework.face import interfaces as face_interfaces
 from grpc.framework.foundation import future
 from grpc.early_adopter import exceptions
 from grpc.early_adopter import interfaces
+
+_EARLY_ADOPTER_CARDINALITY_TO_COMMON_CARDINALITY = {
+    interfaces.Cardinality.UNARY_UNARY: cardinality.Cardinality.UNARY_UNARY,
+    interfaces.Cardinality.UNARY_STREAM: cardinality.Cardinality.UNARY_STREAM,
+    interfaces.Cardinality.STREAM_UNARY: cardinality.Cardinality.STREAM_UNARY,
+    interfaces.Cardinality.STREAM_STREAM: cardinality.Cardinality.STREAM_STREAM,
+}
 
 _ABORTION_REEXPORT = {
     face_interfaces.Abortion.CANCELLED: interfaces.Abortion.CANCELLED,
@@ -142,71 +150,49 @@ class _RpcContext(interfaces.RpcContext):
 
 class _UnaryUnarySyncAsync(interfaces.UnaryUnarySyncAsync):
 
-  def __init__(self, face_unary_unary_sync_async):
-    self._underlying = face_unary_unary_sync_async
+  def __init__(self, face_unary_unary_multi_callable):
+    self._underlying = face_unary_unary_multi_callable
 
   def __call__(self, request, timeout):
     return _call_reexporting_errors(
         self._underlying, request, timeout)
 
   def async(self, request, timeout):
-    return _ReexportedFuture(self._underlying.async(request, timeout))
+    return _ReexportedFuture(self._underlying.future(request, timeout))
 
 
 class _StreamUnarySyncAsync(interfaces.StreamUnarySyncAsync):
 
-  def __init__(self, face_stream_unary_sync_async):
-    self._underlying = face_stream_unary_sync_async
+  def __init__(self, face_stream_unary_multi_callable):
+    self._underlying = face_stream_unary_multi_callable
 
   def __call__(self, request_iterator, timeout):
     return _call_reexporting_errors(
         self._underlying, request_iterator, timeout)
 
   def async(self, request_iterator, timeout):
-    return _ReexportedFuture(self._underlying.async(request_iterator, timeout))
+    return _ReexportedFuture(self._underlying.future(request_iterator, timeout))
 
 
-class _Stub(interfaces.Stub):
+def common_cardinalities(early_adopter_cardinalities):
+  common_cardinalities = {}
+  for name, early_adopter_cardinality in early_adopter_cardinalities.iteritems():
+    common_cardinalities[name] = _EARLY_ADOPTER_CARDINALITY_TO_COMMON_CARDINALITY[
+        early_adopter_cardinality]
+  return common_cardinalities
 
-  def __init__(self, assembly_stub, cardinalities):
-    self._assembly_stub = assembly_stub
-    self._cardinalities = cardinalities
-
-  def __enter__(self):
-    self._assembly_stub.__enter__()
-    return self
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
-    self._assembly_stub.__exit__(exc_type, exc_val, exc_tb)
-    return False
-
-  def __getattr__(self, attr):
-    underlying_attr = self._assembly_stub.__getattr__(attr)
-    cardinality = self._cardinalities.get(attr)
-    # TODO(nathaniel): unify this trick with its other occurrence in the code.
-    if cardinality is None:
-      for name, cardinality in self._cardinalities.iteritems():
-        last_slash_index = name.rfind('/')
-        if 0 <= last_slash_index and name[last_slash_index + 1:] == attr:
-          break
-      else:
-        raise AttributeError(attr)
-    if cardinality is interfaces.Cardinality.UNARY_UNARY:
-      return _UnaryUnarySyncAsync(underlying_attr)
-    elif cardinality is interfaces.Cardinality.UNARY_STREAM:
-      return lambda request, timeout: _CancellableIterator(
-          underlying_attr(request, timeout))
-    elif cardinality is interfaces.Cardinality.STREAM_UNARY:
-      return _StreamUnarySyncAsync(underlying_attr)
-    elif cardinality is interfaces.Cardinality.STREAM_STREAM:
-      return lambda request_iterator, timeout: _CancellableIterator(
-          underlying_attr(request_iterator, timeout))
-    else:
-      raise AttributeError(attr)
 
 def rpc_context(face_rpc_context):
   return _RpcContext(face_rpc_context)
 
 
-def stub(assembly_stub, cardinalities):
-  return _Stub(assembly_stub, cardinalities)
+def cancellable_iterator(face_cancellable_iterator):
+  return _CancellableIterator(face_cancellable_iterator)
+
+
+def unary_unary_sync_async(face_unary_unary_multi_callable):
+  return _UnaryUnarySyncAsync(face_unary_unary_multi_callable)
+
+
+def stream_unary_sync_async(face_stream_unary_multi_callable):
+  return _StreamUnarySyncAsync(face_stream_unary_multi_callable)

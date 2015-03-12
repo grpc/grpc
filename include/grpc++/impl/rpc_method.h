@@ -34,12 +34,6 @@
 #ifndef GRPCXX_IMPL_RPC_METHOD_H
 #define GRPCXX_IMPL_RPC_METHOD_H
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
 namespace grpc {
 
 class RpcMethod {

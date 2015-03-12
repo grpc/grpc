@@ -31,12 +31,41 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SURFACE_LAME_CLIENT_H
-#define GRPC_INTERNAL_CORE_SURFACE_LAME_CLIENT_H
+#include "test/cpp/qps/timer.h"
 
-#include <grpc/grpc.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <grpc/support/time.h>
 
-/* Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create(void);
+Timer::Timer() : start_(Sample()) {}
 
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_LAME_CLIENT_H */
+double Timer::Now() {
+  auto ts = gpr_now();
+  return ts.tv_sec + 1e-9 * ts.tv_nsec;
+}
+
+static double time_double(struct timeval* tv) {
+  return tv->tv_sec + 1e-6 * tv->tv_usec;
+}
+
+Timer::Result Timer::Sample() {
+  struct rusage usage;
+  struct timeval tv;
+  gettimeofday(&tv, nullptr);
+  getrusage(RUSAGE_SELF, &usage);
+
+  Result r;
+  r.wall = time_double(&tv);
+  r.user = time_double(&usage.ru_utime);
+  r.system = time_double(&usage.ru_stime);
+  return r;
+}
+
+Timer::Result Timer::Mark() {
+  Result s = Sample();
+  Result r;
+  r.wall = s.wall - start_.wall;
+  r.user = s.user - start_.user;
+  r.system = s.system - start_.system;
+  return r;
+}

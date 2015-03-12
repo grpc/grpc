@@ -65,11 +65,9 @@ class ServerBuilder {
   void RegisterAsyncService(AsynchronousService* service);
 
   // Add a listening port. Can be called multiple times.
-  void AddPort(const grpc::string& addr);
-
-  // Set a ServerCredentials. Can only be called once.
-  // TODO(yangg) move this to be part of AddPort
-  void SetCredentials(const std::shared_ptr<ServerCredentials>& creds);
+  void AddPort(const grpc::string& addr,
+               std::shared_ptr<ServerCredentials> creds,
+               int* selected_port = nullptr);
 
   // Set the thread pool used for running appliation rpc handlers.
   // Does not take ownership.
@@ -79,9 +77,15 @@ class ServerBuilder {
   std::unique_ptr<Server> BuildAndStart();
 
  private:
+  struct Port {
+    grpc::string addr;
+    std::shared_ptr<ServerCredentials> creds;
+    int* selected_port;
+  };
+
   std::vector<RpcService*> services_;
   std::vector<AsynchronousService*> async_services_;
-  std::vector<grpc::string> ports_;
+  std::vector<Port> ports_;
   std::shared_ptr<ServerCredentials> creds_;
   ThreadPoolInterface* thread_pool_;
 };

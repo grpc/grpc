@@ -40,6 +40,7 @@
 #include <node.h>
 #include <nan.h>
 #include "grpc/grpc.h"
+#include "grpc/support/log.h"
 
 #include "channel.h"
 
@@ -54,16 +55,17 @@ v8::Handle<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
 class PersistentHolder {
  public:
-  explicit PersistentHolder(v8::Persistent<v8::Value> persist) :
+  explicit PersistentHolder(v8::Persistent<v8::Value> *persist) :
       persist(persist) {
   }
 
   ~PersistentHolder() {
-    NanDisposePersistent(persist);
+    NanDisposePersistent(*persist);
+    delete persist;
   }
 
  private:
-  v8::Persistent<v8::Value> persist;
+  v8::Persistent<v8::Value> *persist;
 };
 
 struct Resources {
@@ -118,7 +120,7 @@ class Call : public ::node::ObjectWrap {
   static NAN_METHOD(New);
   static NAN_METHOD(StartBatch);
   static NAN_METHOD(Cancel);
-  static v8::Persistent<v8::Function> constructor;
+  static NanCallback *constructor;
   // Used for typechecking instances of this javascript class
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 

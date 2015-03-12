@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,9 +27,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
-
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -41,27 +38,35 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// grpc_channel from <grpc/grpc.h>
     /// </summary>
-	internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
-	{
+    internal class ChannelSafeHandle : SafeHandleZeroIsInvalid
+    {
         [DllImport("grpc_csharp_ext.dll")]
-        static extern ChannelSafeHandle grpcsharp_channel_create(string target, IntPtr channelArgs);
+        static extern ChannelSafeHandle grpcsharp_channel_create(string target, ChannelArgsSafeHandle channelArgs);
 
-		[DllImport("grpc_csharp_ext.dll")]
-		static extern void grpcsharp_channel_destroy(IntPtr channel);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern ChannelSafeHandle grpcsharp_secure_channel_create(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_channel_destroy(IntPtr channel);
 
         private ChannelSafeHandle()
         {
         }
 
-        public static ChannelSafeHandle Create(string target, IntPtr channelArgs)
+        public static ChannelSafeHandle Create(string target, ChannelArgsSafeHandle channelArgs)
         {
             return grpcsharp_channel_create(target, channelArgs);
         }
 
-		protected override bool ReleaseHandle()
-		{
-			grpcsharp_channel_destroy(handle);
-			return true;
-		}
-	}
+        public static ChannelSafeHandle CreateSecure(CredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)
+        {
+            return grpcsharp_secure_channel_create(credentials, target, channelArgs);
+        }
+
+        protected override bool ReleaseHandle()
+        {
+            grpcsharp_channel_destroy(handle);
+            return true;
+        }
+    }
 }

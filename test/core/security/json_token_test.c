@@ -102,18 +102,18 @@ static void test_parse_json_key_success(void) {
       grpc_auth_json_key_create_from_string(json_string);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&json_key));
   GPR_ASSERT(json_key.type != NULL &&
-             !(strcmp(json_key.type, "service_account")));
+             strcmp(json_key.type, "service_account") == 0);
   GPR_ASSERT(json_key.private_key_id != NULL &&
-             !strcmp(json_key.private_key_id,
-                     "e6b5137873db8d2ef81e06a47289e6434ec8a165"));
+             strcmp(json_key.private_key_id,
+                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
   GPR_ASSERT(json_key.client_id != NULL &&
-             !strcmp(json_key.client_id,
-                     "777-abaslkan11hlb6nmim3bpspl31ud.apps."
-                     "googleusercontent.com"));
+             strcmp(json_key.client_id,
+                    "777-abaslkan11hlb6nmim3bpspl31ud.apps."
+                    "googleusercontent.com") == 0);
   GPR_ASSERT(json_key.client_email != NULL &&
-             !strcmp(json_key.client_email,
-                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
-                     "gserviceaccount.com"));
+             strcmp(json_key.client_email,
+                    "777-abaslkan11hlb6nmim3bpspl31ud@developer."
+                    "gserviceaccount.com") == 0);
   GPR_ASSERT(json_key.private_key != NULL);
   gpr_free(json_string);
   grpc_auth_json_key_destruct(&json_key);
@@ -248,15 +248,16 @@ static void check_jwt_header(grpc_json *header) {
   }
   GPR_ASSERT(alg != NULL);
   GPR_ASSERT(alg->type == GRPC_JSON_STRING);
-  GPR_ASSERT(!strcmp(alg->value, "RS256"));
+  GPR_ASSERT(strcmp(alg->value, "RS256") == 0);
 
   GPR_ASSERT(typ != NULL);
   GPR_ASSERT(typ->type == GRPC_JSON_STRING);
-  GPR_ASSERT(!strcmp(typ->value, "JWT"));
+  GPR_ASSERT(strcmp(typ->value, "JWT") == 0);
 
   GPR_ASSERT(kid != NULL);
   GPR_ASSERT(kid->type == GRPC_JSON_STRING);
-  GPR_ASSERT(!strcmp(kid->value, "e6b5137873db8d2ef81e06a47289e6434ec8a165"));
+  GPR_ASSERT(strcmp(kid->value,
+                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
 }
 
 static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
@@ -290,27 +291,26 @@ static void check_jwt_claim(grpc_json *claim, const char *expected_audience,
 
   GPR_ASSERT(iss != NULL);
   GPR_ASSERT(iss->type == GRPC_JSON_STRING);
-  GPR_ASSERT(
-      !strcmp(
-          iss->value,
-          "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com"));
+  GPR_ASSERT(strcmp(iss->value,
+          "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com")
+             ==0);
 
   if (expected_scope != NULL) {
     GPR_ASSERT(scope != NULL);
     GPR_ASSERT(sub == NULL);
     GPR_ASSERT(scope->type == GRPC_JSON_STRING);
-    GPR_ASSERT(!strcmp(scope->value, expected_scope));
+    GPR_ASSERT(strcmp(scope->value, expected_scope) == 0);
   } else {
     /* Claims without scope must have a sub. */
     GPR_ASSERT(scope == NULL);
     GPR_ASSERT(sub != NULL);
     GPR_ASSERT(sub->type == GRPC_JSON_STRING);
-    GPR_ASSERT(!strcmp(iss->value, sub->value));
+    GPR_ASSERT(strcmp(iss->value, sub->value) == 0);
   }
 
   GPR_ASSERT(aud != NULL);
   GPR_ASSERT(aud->type == GRPC_JSON_STRING);
-  GPR_ASSERT(!strcmp(aud->value, expected_audience));
+  GPR_ASSERT(strcmp(aud->value, expected_audience) == 0);
 
   GPR_ASSERT(exp != NULL);
   GPR_ASSERT(exp->type == GRPC_JSON_NUMBER);

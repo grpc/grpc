@@ -102,6 +102,21 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
 
   s = getaddrinfo(host, port, &hints, &result);
   if (s != 0) {
+    /* Retry if well-known service name is recognized */
+    char *svc[][2] = {
+      {"http", "80"},
+      {"https", "443"}
+    };
+    int i;
+    for (i = 0; i < (int)(sizeof(svc) / sizeof(svc[0])); i++) {
+      if (strcmp(port, svc[i][0]) == 0) {
+        s = getaddrinfo(host, svc[i][1], &hints, &result);
+        break;
+      }
+    }
+  }
+
+  if (s != 0) {
     gpr_log(GPR_ERROR, "getaddrinfo: %s", gai_strerror(s));
     goto done;
   }

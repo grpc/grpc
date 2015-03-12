@@ -32,7 +32,9 @@
 #endregion
 
 using System;
+using System.Linq;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -54,21 +56,20 @@ namespace Grpc.Core
 
         public void StartCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
         {
-            var asyncCall = new AsyncCall<TResponse, TRequest>(
+            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer);
 
-            asyncCall.InitializeServer(call);
+            asyncCall.Initialize(call);
            
-            var finishedTask = asyncCall.ServerSideUnaryRequestCallAsync();
+            var requestObserver = new RecordingObserver<TRequest>();
+            var finishedTask = asyncCall.ServerSideCallAsync(requestObserver);
 
-            var request = asyncCall.ReceiveMessageAsync().Result;
-
-            var responseObserver = new ServerStreamingOutputObserver<TResponse, TRequest>(asyncCall);
+            var request = requestObserver.ToList().Result.Single();
+            var responseObserver = new ServerStreamingOutputObserver<TRequest, TResponse>(asyncCall);
             handler(request, responseObserver);
 
             finishedTask.Wait();
-
         }
     }
 
@@ -85,15 +86,15 @@ namespace Grpc.Core
 
         public void StartCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
         {
-            var asyncCall = new AsyncCall<TResponse, TRequest>(
+            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer);
 
-            asyncCall.InitializeServer(call);
+            asyncCall.Initialize(call);
 
-            var responseObserver = new ServerStreamingOutputObserver<TResponse, TRequest>(asyncCall);
+            var responseObserver = new ServerStreamingOutputObserver<TRequest, TResponse>(asyncCall);
             var requestObserver = handler(responseObserver);
-            var finishedTask = asyncCall.ServerSideStreamingRequestCallAsync(requestObserver);
+            var finishedTask = asyncCall.ServerSideCallAsync(requestObserver);
             finishedTask.Wait();
         }
     }
@@ -103,17 +104,15 @@ namespace Grpc.Core
         public void StartCall(string methodName, CallSafeHandle call, CompletionQueueSafeHandle cq)
         {
             // We don't care about the payload type here.
-            AsyncCall<byte[], byte[]> asyncCall = new AsyncCall<byte[], byte[]>(
+            var asyncCall = new AsyncCallServer<byte[], byte[]>(
                 (payload) => payload, (payload) => payload);
 
+            asyncCall.Initialize(call);
 
-            asyncCall.InitializeServer(call);
+            var finishedTask = asyncCall.ServerSideCallAsync(new NullObserver<byte[]>());
 
-            var finishedTask = asyncCall.ServerSideStreamingRequestCallAsync(new NullObserver<byte[]>());
-
-            // TODO: this makes the call finish before all reads can be done which causes trouble
-            // in AsyncCall.HandleReadFinished callback. Revisit this.
-            asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, "No such method.")).Wait();
+            // TODO: check result of the completion status.
+            asyncCall.StartSendStatusFromServer(new Status(StatusCode.Unimplemented, "No such method."), new AsyncCompletionDelegate((error) => { }));
 
             finishedTask.Wait();
         }
@@ -132,7 +131,5 @@ namespace Grpc.Core
         public void OnNext(T value)
         {
         }
-
     }
 }
-

@@ -59,6 +59,7 @@ typedef struct {
   grpc_mdstr *authority_string;
   grpc_mdstr *path_string;
   grpc_mdstr *error_msg_key;
+  grpc_mdstr *status_key;
 } channel_data;
 
 static void do_nothing(void *ignored, grpc_op_error error) {}
@@ -66,17 +67,25 @@ static void do_nothing(void *ignored, grpc_op_error error) {}
 static void bubbleup_error(grpc_call_element *elem, const char *error_msg) {
   grpc_call_op finish_op;
   channel_data *channeld = elem->channel_data;
+  char status[GPR_LTOA_MIN_BUFSIZE];
 
   gpr_log(GPR_ERROR, "%s", error_msg);
   finish_op.type = GRPC_RECV_METADATA;
   finish_op.dir = GRPC_CALL_UP;
   finish_op.flags = 0;
   finish_op.data.metadata = grpc_mdelem_from_metadata_strings(
-      channeld->md_ctx, channeld->error_msg_key,
+      channeld->md_ctx, grpc_mdstr_ref(channeld->error_msg_key),
       grpc_mdstr_from_string(channeld->md_ctx, error_msg));
   finish_op.done_cb = do_nothing;
   finish_op.user_data = NULL;
   grpc_call_next_op(elem, &finish_op);
+
+  gpr_ltoa(GRPC_STATUS_UNAUTHENTICATED, status);
+  finish_op.data.metadata = grpc_mdelem_from_metadata_strings(
+      channeld->md_ctx, grpc_mdstr_ref(channeld->status_key),
+      grpc_mdstr_from_string(channeld->md_ctx, status));
+  grpc_call_next_op(elem, &finish_op);
+
   grpc_call_element_send_cancel(elem);
 }
 
@@ -151,6 +160,7 @@ static void on_host_checked(void *user_data, grpc_security_status status) {
                  grpc_mdstr_as_c_string(calld->host));
     bubbleup_error(elem, error_msg);
     gpr_free(error_msg);
+    calld->op.done_cb(calld->op.user_data, GRPC_OP_ERROR);
   }
 }
 
@@ -193,6 +203,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                          call_host);
             bubbleup_error(elem, error_msg);
             gpr_free(error_msg);
+            op->done_cb(op->user_data, GRPC_OP_ERROR);
           }
           break;
         }
@@ -265,6 +276,7 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->path_string = grpc_mdstr_from_string(channeld->md_ctx, ":path");
   channeld->error_msg_key =
       grpc_mdstr_from_string(channeld->md_ctx, "grpc-message");
+  channeld->status_key = grpc_mdstr_from_string(channeld->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */
@@ -278,6 +290,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   }
   if (channeld->error_msg_key != NULL) {
     grpc_mdstr_unref(channeld->error_msg_key);
+  }
+  if (channeld->status_key != NULL) {
+    grpc_mdstr_unref(channeld->status_key);
   }
   if (channeld->path_string != NULL) {
     grpc_mdstr_unref(channeld->path_string);

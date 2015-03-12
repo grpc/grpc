@@ -37,12 +37,6 @@
 #include <grpc++/status.h>
 #include <grpc++/impl/call.h>
 
-namespace google {
-namespace protobuf {
-class Message;
-}  // namespace protobuf
-}  // namespace google
-
 struct grpc_call;
 
 namespace grpc {

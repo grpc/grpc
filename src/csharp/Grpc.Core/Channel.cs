@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,9 +27,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
-
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -39,18 +36,32 @@ using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
-	public class Channel : IDisposable
-	{
+    public class Channel : IDisposable
+    {
         readonly ChannelSafeHandle handle;
-        readonly String target;
+        readonly string target;
 
-        // TODO: add way how to create grpc_secure_channel....
-		// TODO: add support for channel args...
-		public Channel(string target)
-		{
-            this.handle = ChannelSafeHandle.Create(target, IntPtr.Zero);
-			this.target = target;
-		}
+        /// <summary>
+        /// Creates a channel.
+        /// </summary>
+        public Channel(string target, Credentials credentials = null, ChannelArgs channelArgs = null)
+        {
+            using (ChannelArgsSafeHandle nativeChannelArgs = CreateNativeChannelArgs(channelArgs))
+            {
+                if (credentials != null)
+                {
+                    using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
+                    {
+                        this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
+                    }
+                }
+                else
+                {
+                    this.handle = ChannelSafeHandle.Create(target, nativeChannelArgs);
+                }
+            }
+            this.target = GetOverridenTarget(target, channelArgs);
+        }
 
         internal ChannelSafeHandle Handle
         {
@@ -81,5 +92,23 @@ namespace Grpc.Core
                 handle.Dispose();
             }
         }
-	}
+
+        private static string GetOverridenTarget(string target, ChannelArgs args)
+        {
+            if (args != null && !string.IsNullOrEmpty(args.GetSslTargetNameOverride()))
+            {
+                return args.GetSslTargetNameOverride();
+            }
+            return target;
+        }
+
+        private static ChannelArgsSafeHandle CreateNativeChannelArgs(ChannelArgs args)
+        {
+            if (args == null)
+            {
+                return ChannelArgsSafeHandle.CreateNull();
+            }
+            return args.ToNativeChannelArgs();
+        }
+    }
 }

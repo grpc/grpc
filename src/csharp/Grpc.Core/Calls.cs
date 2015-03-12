@@ -89,9 +89,9 @@ namespace Grpc.Core
             return new ClientStreamingInputObserver<TRequest, TResponse>(asyncCall);
         }
 
-        private static CompletionQueueSafeHandle GetCompletionQueue() {
+        private static CompletionQueueSafeHandle GetCompletionQueue()
+        {
             return GrpcEnvironment.ThreadPool.CompletionQueue;
         }
     }
 }
-

@@ -46,7 +46,7 @@ Installing
 
 - Install gRPC Python's dependencies
 ```
-$ pip install -r requirements.txt
+$ pip install -r src/python/requirements.txt
 ```
 
 - Install gRPC Python

@@ -64,7 +64,6 @@ _PACKAGES = (
     'grpc._junkdrawer',
     'grpc.early_adopter',
     'grpc.framework',
-    'grpc.framework.assembly',
     'grpc.framework.base',
     'grpc.framework.base.packets',
     'grpc.framework.common',

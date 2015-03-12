@@ -95,12 +95,11 @@ def main
     end
   end.parse!
 
+  s = GRPC::RpcServer.new
   if options['secure']
-    s = GRPC::RpcServer.new(creds: test_server_creds)
-    s.add_http2_port(options['host'], true)
+    s.add_http2_port(options['host'], test_server_creds)
     logger.info("... running securely on #{options['host']}")
   else
-    s = GRPC::RpcServer.new
     s.add_http2_port(options['host'])
     logger.info("... running insecurely on #{options['host']}")
   end

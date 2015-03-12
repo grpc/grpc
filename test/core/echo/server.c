@@ -143,8 +143,8 @@ int main(int argc, char **argv) {
                                                     test_server1_cert};
     grpc_server_credentials *ssl_creds =
         grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1);
-    server = grpc_secure_server_create(ssl_creds, cq, &args);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr));
+    server = grpc_server_create(cq, &args);
+    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
     server = grpc_server_create(cq, &args);
