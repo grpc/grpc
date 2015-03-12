@@ -59,7 +59,7 @@ class SecureCredentials GRPC_FINAL : public Credentials {
         grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
   }
 
-  SecureCredentials* AsSecureCredentials() { return this; }
+  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
 
  private:
   grpc_credentials* const c_creds_;
