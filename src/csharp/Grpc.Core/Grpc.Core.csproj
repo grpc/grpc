@@ -31,6 +31,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>..\packages\System.Collections.Immutable.1.1.34-rc\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Internal\GrpcLog.cs" />
@@ -54,7 +57,7 @@
     <Compile Include="Internal\ServerSafeHandle.cs" />
     <Compile Include="Method.cs" />
     <Compile Include="ServerCalls.cs" />
-    <Compile Include="ServerCallHandler.cs" />
+    <Compile Include="Internal\ServerCallHandler.cs" />
     <Compile Include="Marshaller.cs" />
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\RecordingObserver.cs" />
@@ -76,6 +79,9 @@
     <Compile Include="Utils\Preconditions.cs" />
     <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
     <Compile Include="ServerCredentials.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <!-- Under older versions of Monodevelop, Choose is not supported and is just

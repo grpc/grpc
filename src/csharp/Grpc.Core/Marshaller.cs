@@ -66,6 +66,9 @@ namespace Grpc.Core
         }
     }
 
+    /// <summary>
+    /// Utilities for creating marshallers.
+    /// </summary>
     public static class Marshallers
     {
         public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)

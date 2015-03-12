@@ -62,7 +62,7 @@ namespace Grpc.IntegrationTesting
             int port = server.AddPort(host + ":0", TestCredentials.CreateTestServerCredentials());
             server.Start();
 
-            var channelArgs = ChannelArgs.NewBuilder()
+            var channelArgs = ChannelArgs.CreateBuilder()
                 .AddString(ChannelArgs.SslTargetNameOverrideKey, TestCredentials.DefaultHostOverride).Build();
 
             channel = new Channel(host + ":" + port, TestCredentials.CreateTestClientCredentials(true), channelArgs);

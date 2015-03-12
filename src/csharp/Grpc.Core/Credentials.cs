@@ -36,6 +36,9 @@ using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
+    /// <summary>
+    /// Client-side credentials.
+    /// </summary>
     public abstract class Credentials
     {
         /// <summary>
