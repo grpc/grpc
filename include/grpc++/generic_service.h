@@ -43,7 +43,7 @@ namespace grpc {
 
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericServerReaderWriter;
 
-class GenericServerContext : public ServerContext {
+class GenericServerContext GRPC_FINAL : public ServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -55,7 +55,7 @@ class GenericServerContext : public ServerContext {
   grpc::string host_;
 };
 
-class GenericService {
+class GenericService GRPC_FINAL {
  public:
   // TODO(yangg) Once we can add multiple completion queues to the server
   // in c core, add a CompletionQueue* argument to the ctor here.

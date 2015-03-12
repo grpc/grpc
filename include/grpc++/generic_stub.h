@@ -43,7 +43,7 @@ typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericClientReaderWrite
 
 // Generic stubs provide a type-unsafe interface to call gRPC methods
 // by name.
-class GenericStub {
+class GenericStub GRPC_FINAL {
  public:
   explicit GenericStub(std::shared_ptr<ChannelInterface> channel) : channel_(channel) {}
 
