@@ -1655,7 +1655,9 @@ static int process_read(transport *t, gpr_slice slice) {
       if (!init_frame_parser(t)) {
         return 0;
       }
-      t->last_incoming_stream_id = t->incoming_stream_id;
+      if (!t->is_client) {
+        t->last_incoming_stream_id = t->incoming_stream_id;
+      }
       if (t->incoming_frame_size == 0) {
         if (!parse_frame_slice(t, gpr_empty_slice(), 1)) {
           return 0;
