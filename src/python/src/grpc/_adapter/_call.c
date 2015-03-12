@@ -45,7 +45,7 @@ static int pygrpc_call_init(Call *self, PyObject *args, PyObject *kwds) {
   const PyObject *channel;
   const char *method;
   const char *host;
-  const double deadline;
+  double deadline;
   static char *kwlist[] = {"channel", "method", "host", "deadline", NULL};
 
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!ssd:Call", kwlist,
