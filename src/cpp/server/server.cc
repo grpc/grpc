@@ -39,7 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/generic_service.h>
+#include <grpc++/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
@@ -228,7 +228,7 @@ bool Server::RegisterAsyncService(AsynchronousService* service) {
   return true;
 }
 
-void Server::RegisterGenericService(GenericService* service) {
+void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
   GPR_ASSERT(service->server_ == nullptr &&
              "Can only register an generic service against one server.");
   service->server_ = this;
@@ -395,9 +395,9 @@ void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
   new AsyncRequest(this, registered_method, context, request, stream, cq, tag);
 }
 
-void Server::RequestGenericCall(GenericServerContext* context,
-                                ServerAsyncStreamingInterface* stream,
-                                CompletionQueue* cq, void* tag) {
+void Server::RequestAsyncGenericCall(GenericServerContext* context,
+                                     ServerAsyncStreamingInterface* stream,
+                                     CompletionQueue* cq, void* tag) {
   new AsyncRequest(this, context, stream, cq, tag);
 }
 

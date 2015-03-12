@@ -41,9 +41,9 @@
 
 namespace grpc {
 
+class AsyncGenericService;
 class AsynchronousService;
 class CompletionQueue;
-class GenericService;
 class RpcService;
 class Server;
 class ServerCredentials;
@@ -66,7 +66,7 @@ class ServerBuilder {
   void RegisterAsyncService(AsynchronousService* service);
 
   // Register a generic service.
-  void RegisterGenericService(GenericService* service);
+  void RegisterAsyncGenericService(AsyncGenericService* service);
 
   // Add a listening port. Can be called multiple times.
   void AddPort(const grpc::string& addr,
@@ -91,7 +91,7 @@ class ServerBuilder {
   std::vector<AsynchronousService*> async_services_;
   std::vector<Port> ports_;
   std::shared_ptr<ServerCredentials> creds_;
-  GenericService* generic_service_;
+  AsyncGenericService* generic_service_;
   ThreadPoolInterface* thread_pool_;
 };
 

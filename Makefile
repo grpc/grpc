@@ -3108,7 +3108,7 @@ LIBGRPC++_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
-    src/cpp/server/generic_service.cc \
+    src/cpp/server/async_generic_service.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
@@ -3121,6 +3121,7 @@ LIBGRPC++_SRC = \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/async_generic_service.h \
     include/grpc++/async_unary_call.h \
     include/grpc++/byte_buffer.h \
     include/grpc++/channel_arguments.h \
@@ -3130,7 +3131,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
-    include/grpc++/generic_service.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/internal_stub.h \
@@ -3195,7 +3195,7 @@ src/cpp/common/call.cc: $(OPENSSL_DEP)
 src/cpp/common/completion_queue.cc: $(OPENSSL_DEP)
 src/cpp/common/rpc_method.cc: $(OPENSSL_DEP)
 src/cpp/proto/proto_utils.cc: $(OPENSSL_DEP)
-src/cpp/server/generic_service.cc: $(OPENSSL_DEP)
+src/cpp/server/async_generic_service.cc: $(OPENSSL_DEP)
 src/cpp/server/insecure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/server/server.cc: $(OPENSSL_DEP)
 src/cpp/server/server_builder.cc: $(OPENSSL_DEP)
@@ -3261,7 +3261,7 @@ $(OBJDIR)/$(CONFIG)/src/cpp/common/call.o:
 $(OBJDIR)/$(CONFIG)/src/cpp/common/completion_queue.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/rpc_method.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/proto/proto_utils.o: 
-$(OBJDIR)/$(CONFIG)/src/cpp/server/generic_service.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/async_generic_service.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/insecure_server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_builder.o: 
@@ -3352,7 +3352,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
-    src/cpp/server/generic_service.cc \
+    src/cpp/server/async_generic_service.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/server.cc \
     src/cpp/server/server_builder.cc \
@@ -3365,6 +3365,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc++/async_generic_service.h \
     include/grpc++/async_unary_call.h \
     include/grpc++/byte_buffer.h \
     include/grpc++/channel_arguments.h \
@@ -3374,7 +3375,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
-    include/grpc++/generic_service.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/internal_stub.h \
@@ -3454,7 +3454,7 @@ $(OBJDIR)/$(CONFIG)/src/cpp/common/call.o:
 $(OBJDIR)/$(CONFIG)/src/cpp/common/completion_queue.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/rpc_method.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/proto/proto_utils.o: 
-$(OBJDIR)/$(CONFIG)/src/cpp/server/generic_service.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/server/async_generic_service.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/insecure_server_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/server/server_builder.o: 

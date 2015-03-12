@@ -37,7 +37,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo.pb.h"
 #include "src/cpp/util/time.h"
-#include <grpc++/generic_service.h>
+#include <grpc++/async_generic_service.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/byte_buffer.h>
 #include <grpc++/channel_arguments.h>
@@ -87,7 +87,7 @@ class GenericEnd2endTest : public ::testing::Test {
     // Setup server
     ServerBuilder builder;
     builder.AddPort(server_address_.str(), InsecureServerCredentials());
-    builder.RegisterGenericService(&generic_service_);
+    builder.RegisterAsyncGenericService(&generic_service_);
     server_ = builder.BuildAndStart();
   }
 
@@ -124,7 +124,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
       ClientContext cli_ctx;
       GenericServerContext srv_ctx;
-      GenericServerReaderWriter stream(&srv_ctx);
+      GenericServerAsyncReaderWriter stream(&srv_ctx);
 
       send_request.set_message("Hello");
       std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
@@ -171,7 +171,7 @@ class GenericEnd2endTest : public ::testing::Test {
   CompletionQueue srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  GenericService generic_service_;
+  AsyncGenericService generic_service_;
   std::ostringstream server_address_;
 };
 

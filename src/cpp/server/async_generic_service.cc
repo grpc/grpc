@@ -31,16 +31,16 @@
  *
  */
 
-#include <grpc++/generic_service.h>
+#include <grpc++/async_generic_service.h>
 
 #include <grpc++/server.h>
 
 namespace grpc {
 
-void GenericService::RequestCall(GenericServerContext* ctx,
-                                 GenericServerReaderWriter* reader_writer,
-                                 CompletionQueue* cq, void* tag) {
-  server_->RequestGenericCall(ctx, reader_writer, cq, tag);
+void AsyncGenericService::RequestCall(
+    GenericServerContext* ctx, GenericServerAsyncReaderWriter* reader_writer,
+    CompletionQueue* cq, void* tag) {
+  server_->RequestAsyncGenericCall(ctx, reader_writer, cq, tag);
 }
 
 } // namespace grpc

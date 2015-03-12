@@ -39,16 +39,19 @@
 
 namespace grpc {
 
-typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericClientReaderWriter;
+typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
+    GenericClientAsyncReaderWriter;
 
 // Generic stubs provide a type-unsafe interface to call gRPC methods
 // by name.
 class GenericStub GRPC_FINAL {
  public:
-  explicit GenericStub(std::shared_ptr<ChannelInterface> channel) : channel_(channel) {}
+  explicit GenericStub(std::shared_ptr<ChannelInterface> channel)
+      : channel_(channel) {}
 
   // begin a call to a named method
-  std::unique_ptr<GenericClientReaderWriter> Call(ClientContext* context, const grpc::string& method);
+  std::unique_ptr<GenericClientAsyncReaderWriter> Call(
+      ClientContext* context, const grpc::string& method);
 
  private:
   std::shared_ptr<ChannelInterface> channel_;

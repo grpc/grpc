@@ -52,10 +52,10 @@ void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
   async_services_.push_back(service);
 }
 
-void ServerBuilder::RegisterGenericService(GenericService* service) {
+void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
   if (generic_service_) {
     gpr_log(GPR_ERROR,
-            "Adding multiple GenericService is unsupported for now. "
+            "Adding multiple AsyncGenericService is unsupported for now. "
             "Dropping the service %p", service);
     return;
   }
@@ -96,7 +96,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     }
   }
   if (generic_service_) {
-    server->RegisterGenericService(generic_service_);
+    server->RegisterAsyncGenericService(generic_service_);
   }
   for (auto& port : ports_) {
     int r = server->AddPort(port.addr, port.creds.get());

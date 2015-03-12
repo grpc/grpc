@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_GENERIC_SERVICE_H
-#define GRPCXX_GENERIC_SERVICE_H
+#ifndef GRPCXX_ASYNC_GENERIC_SERVICE_H
+#define GRPCXX_ASYNC_GENERIC_SERVICE_H
 
 #include <grpc++/byte_buffer.h>
 #include <grpc++/stream.h>
@@ -41,7 +41,7 @@ struct grpc_server;
 
 namespace grpc {
 
-typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericServerReaderWriter;
+typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericServerAsyncReaderWriter;
 
 class GenericServerContext GRPC_FINAL : public ServerContext {
  public:
@@ -55,14 +55,14 @@ class GenericServerContext GRPC_FINAL : public ServerContext {
   grpc::string host_;
 };
 
-class GenericService GRPC_FINAL {
+class AsyncGenericService GRPC_FINAL {
  public:
   // TODO(yangg) Once we can add multiple completion queues to the server
   // in c core, add a CompletionQueue* argument to the ctor here.
-  GenericService() : server_(nullptr) {}
+  AsyncGenericService() : server_(nullptr) {}
 
   void RequestCall(GenericServerContext* ctx,
-                   GenericServerReaderWriter* reader_writer,
+                   GenericServerAsyncReaderWriter* reader_writer,
                    CompletionQueue* cq, void* tag);
 
  private:
@@ -72,4 +72,4 @@ class GenericService GRPC_FINAL {
 
 } // namespace grpc
 
-#endif  // GRPCXX_GENERIC_SERVICE_H
+#endif  // GRPCXX_ASYNC_GENERIC_SERVICE_H
