@@ -117,6 +117,15 @@ grpc_credentials *grpc_service_account_credentials_create(
 grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
                                               gpr_timespec token_lifetime);
 
+/* Creates an Oauth2 Refresh Token crednetials object. May return NULL if the
+   input is invalid.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak.
+   - json_refresh_token is the JSON string containing the refresh token itself
+     along with a client_id and client_secret. */
+grpc_credentials *grpc_refresh_token_credentials_create(
+    const char *json_refresh_token);
+
 /* Creates a fake transport security credentials object for testing. */
 grpc_credentials *grpc_fake_transport_security_credentials_create(void);
 
