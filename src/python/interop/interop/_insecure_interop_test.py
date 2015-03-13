@@ -42,11 +42,12 @@ class InsecureInteropTest(
     unittest.TestCase):
 
   def setUp(self):
-    self.server = implementations.insecure_server(methods.SERVER_METHODS, 0)
+    self.server = implementations.insecure_server(
+        methods.SERVICE_NAME, methods.SERVER_METHODS, 0)
     self.server.start()
     port = self.server.port()
     self.stub = implementations.insecure_stub(
-        methods.CLIENT_METHODS, 'localhost', port)
+        methods.SERVICE_NAME, methods.CLIENT_METHODS, 'localhost', port)
 
   def tearDown(self):
     self.server.stop()
