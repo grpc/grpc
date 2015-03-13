@@ -46,6 +46,8 @@ namespace Grpc.Core.Tests
     {
         string host = "localhost";
 
+        string serviceName = "/tests.Test";
+
         Method<string, string> unaryEchoStringMethod = new Method<string, string>(
             MethodType.Unary,
             "/tests.Test/UnaryEchoString",
@@ -69,7 +71,7 @@ namespace Grpc.Core.Tests
         {
             Server server = new Server();
             server.AddServiceDefinition(
-                ServerServiceDefinition.CreateBuilder("someService")
+                ServerServiceDefinition.CreateBuilder(serviceName)
                     .AddMethod(unaryEchoStringMethod, HandleUnaryEchoString).Build());
 
             int port = server.AddPort(host + ":0");
@@ -77,7 +79,7 @@ namespace Grpc.Core.Tests
 
             using (Channel channel = new Channel(host + ":" + port))
             {
-                var call = new Call<string, string>(unaryEchoStringMethod, channel);
+                var call = new Call<string, string>(serviceName, unaryEchoStringMethod, channel, Metadata.Empty);
 
                 Assert.AreEqual("ABC", Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)));
 
@@ -92,7 +94,7 @@ namespace Grpc.Core.Tests
         {
             Server server = new Server();
             server.AddServiceDefinition(
-                ServerServiceDefinition.CreateBuilder("someService")
+                ServerServiceDefinition.CreateBuilder(serviceName)
                 .AddMethod(unaryEchoStringMethod, HandleUnaryEchoString).Build());
 
             int port = server.AddPort(host + ":0");
@@ -100,7 +102,7 @@ namespace Grpc.Core.Tests
 
             using (Channel channel = new Channel(host + ":" + port))
             {
-                var call = new Call<string, string>(unaryEchoStringMethod, channel);
+                var call = new Call<string, string>(serviceName, unaryEchoStringMethod, channel, Metadata.Empty);
                 BenchmarkUtil.RunBenchmark(100, 1000,
                                            () => { Calls.BlockingUnaryCall(call, "ABC", default(CancellationToken)); });
             }
@@ -113,14 +115,14 @@ namespace Grpc.Core.Tests
         {
             Server server = new Server();
             server.AddServiceDefinition(
-                ServerServiceDefinition.CreateBuilder("someService").Build());
+                ServerServiceDefinition.CreateBuilder(serviceName).Build());
 
             int port = server.AddPort(host + ":0");
             server.Start();
 
             using (Channel channel = new Channel(host + ":" + port))
             {
-                var call = new Call<string, string>(unaryEchoStringMethod, channel);
+                var call = new Call<string, string>(serviceName, unaryEchoStringMethod, channel, Metadata.Empty);
 
                 try
                 {

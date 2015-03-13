@@ -32,58 +32,42 @@
 #endregion
 
 using System;
-using Grpc.Core.Utils;
+using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
+    // TODO: support adding timeout to methods.
     /// <summary>
-    /// For serializing and deserializing messages.
+    /// Base for client-side stubs.
     /// </summary>
-    public struct Marshaller<T>
+    public abstract class AbstractStub<TStub, TConfig>
+        where TConfig : StubConfiguration
     {
-        readonly Func<T, byte[]> serializer;
-        readonly Func<byte[], T> deserializer;
+        readonly Channel channel;
+        readonly TConfig config;
 
-        public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
+        public AbstractStub(Channel channel, TConfig config)
         {
-            this.serializer = Preconditions.CheckNotNull(serializer);
-            this.deserializer = Preconditions.CheckNotNull(deserializer);
+            this.channel = channel;
+            this.config = config;
         }
 
-        public Func<T, byte[]> Serializer
+        public Channel Channel
         {
             get
             {
-                return this.serializer;
+                return this.channel;
             }
         }
 
-        public Func<byte[], T> Deserializer
+        /// <summary>
+        /// Creates a new call to given method.
+        /// </summary>
+        protected Call<TRequest, TResponse> CreateCall<TRequest, TResponse>(string serviceName, Method<TRequest, TResponse> method)
         {
-            get
-            {
-                return this.deserializer;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Utilities for creating marshallers.
-    /// </summary>
-    public static class Marshallers
-    {
-        public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
-        {
-            return new Marshaller<T>(serializer, deserializer);
-        }
-
-        public static Marshaller<string> StringMarshaller
-        {
-            get
-            {
-                return new Marshaller<string>(System.Text.Encoding.UTF8.GetBytes,
-                                              System.Text.Encoding.UTF8.GetString);
-            }
+            var headerBuilder = Metadata.CreateBuilder();
+            config.HeaderInterceptor(headerBuilder);
+            return new Call<TRequest, TResponse>(serviceName, method, channel, headerBuilder.Build());
         }
     }
 }

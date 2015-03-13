@@ -77,7 +77,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Blocking unary request - unary response call.
         /// </summary>
-        public TResponse UnaryCall(Channel channel, string methodName, TRequest msg)
+        public TResponse UnaryCall(Channel channel, string methodName, TRequest msg, Metadata headers)
         {
             using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
             {
@@ -92,7 +92,11 @@ namespace Grpc.Core.Internal
                     halfcloseRequested = true;
                     readingDone = true;
                 }
-                call.BlockingUnary(cq, payload, unaryResponseHandler);
+
+                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                {
+                    call.BlockingUnary(cq, payload, unaryResponseHandler, metadataArray);
+                }
 
                 try
                 {
@@ -109,7 +113,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a unary request - unary response call.
         /// </summary>
-        public Task<TResponse> UnaryCallAsync(TRequest msg)
+        public Task<TResponse> UnaryCallAsync(TRequest msg, Metadata headers)
         {
             lock (myLock)
             {
@@ -122,8 +126,10 @@ namespace Grpc.Core.Internal
                 byte[] payload = UnsafeSerialize(msg);
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                call.StartUnary(payload, unaryResponseHandler);
-
+                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                {
+                    call.StartUnary(payload, unaryResponseHandler, metadataArray);
+                }
                 return unaryResponseTcs.Task;
             }
         }
@@ -132,7 +138,7 @@ namespace Grpc.Core.Internal
         /// Starts a streamed request - unary response call.
         /// Use StartSendMessage and StartSendCloseFromClient to stream requests.
         /// </summary>
-        public Task<TResponse> ClientStreamingCallAsync()
+        public Task<TResponse> ClientStreamingCallAsync(Metadata headers)
         {
             lock (myLock)
             {
@@ -142,7 +148,10 @@ namespace Grpc.Core.Internal
                 readingDone = true;
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                call.StartClientStreaming(unaryResponseHandler);
+                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                {
+                    call.StartClientStreaming(unaryResponseHandler, metadataArray);
+                }
 
                 return unaryResponseTcs.Task;
             }
@@ -151,7 +160,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a unary request - streamed response call.
         /// </summary>
-        public void StartServerStreamingCall(TRequest msg, IObserver<TResponse> readObserver)
+        public void StartServerStreamingCall(TRequest msg, IObserver<TResponse> readObserver, Metadata headers)
         {
             lock (myLock)
             {
@@ -165,7 +174,10 @@ namespace Grpc.Core.Internal
 
                 byte[] payload = UnsafeSerialize(msg);
         
-                call.StartServerStreaming(payload, finishedHandler);
+                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                {
+                    call.StartServerStreaming(payload, finishedHandler, metadataArray);
+                }
 
                 StartReceiveMessage();
             }
@@ -175,7 +187,7 @@ namespace Grpc.Core.Internal
         /// Starts a streaming request - streaming response call.
         /// Use StartSendMessage and StartSendCloseFromClient to stream requests.
         /// </summary>
-        public void StartDuplexStreamingCall(IObserver<TResponse> readObserver)
+        public void StartDuplexStreamingCall(IObserver<TResponse> readObserver, Metadata headers)
         {
             lock (myLock)
             {
@@ -185,7 +197,10 @@ namespace Grpc.Core.Internal
 
                 this.readObserver = readObserver;
 
-                call.StartDuplexStreaming(finishedHandler);
+                using (var metadataArray = MetadataArraySafeHandle.Create(headers))
+                {
+                    call.StartDuplexStreaming(finishedHandler, metadataArray);
+                }
 
                 StartReceiveMessage();
             }
