@@ -31,27 +31,23 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SUPPORT_CPU_H__
-#define __GRPC_INTERNAL_SUPPORT_CPU_H__
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifdef GPR_CPU_IPHONE
 
-/* Interface providing CPU information for currently running system */
+/* Probably 2 instead of 1, but see comment on gpr_cpu_current_cpu. */
+unsigned gpr_cpu_num_cores(void) {
+  return 1;
+}
 
-/* Return the number of CPU cores on the current system. Will return 0 if
-   the information is not available. */
-unsigned gpr_cpu_num_cores(void);
+/* Most code that's using this is using it to shard across work queues. So
+   unless profiling shows it's a problem or there appears a way to detect the
+   currently running CPU core, let's have it shard the default way.
+   Note that the interface in cpu.h lets gpr_cpu_num_cores return 0, but doing
+   it makes it impossible for gpr_cpu_current_cpu to satisfy its stated range,
+   and some code might be relying on it. */
+unsigned gpr_cpu_current_cpu(void) {
+  return 0;
+}
 
-/* Return the CPU on which the current thread is executing; N.B. This should
-   be considered advisory only - it is possible that the thread is switched
-   to a different CPU at any time. Returns a value in range
-   [0, gpr_cpu_num_cores() - 1] */
-unsigned gpr_cpu_current_cpu(void);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#endif /* __GRPC_INTERNAL_SUPPORT_CPU_H__ */
+#endif /* GPR_CPU_IPHONE */
