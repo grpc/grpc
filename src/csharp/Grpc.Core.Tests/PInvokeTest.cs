@@ -33,13 +33,13 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using NUnit.Framework;
-using System.Runtime.InteropServices;
 
 namespace Grpc.Core.Tests
 {
@@ -73,13 +73,12 @@ namespace Grpc.Core.Tests
         {
             BenchmarkUtil.RunBenchmark(
                 100000, 1000000,
-                () => {
+                () =>
+                {
                     CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create();
                     cq.Dispose();
-                }
-            );
+                });
         }
-
 
         /// <summary>
         /// Approximate results:
@@ -94,10 +93,10 @@ namespace Grpc.Core.Tests
             counter = 0;
             BenchmarkUtil.RunBenchmark(
                 1000000, 10000000,
-                () => {
+                () =>
+                {
                     grpcsharp_test_callback(handler);
-                }
-            );
+                });
             Assert.AreNotEqual(0, counter);
         }
 
@@ -113,10 +112,10 @@ namespace Grpc.Core.Tests
             counter = 0;
             BenchmarkUtil.RunBenchmark(
                 10000, 10000,
-                () => {
-                grpcsharp_test_callback(new CompletionCallbackDelegate(Handler));
-            }
-            );
+                () =>
+                {
+                    grpcsharp_test_callback(new CompletionCallbackDelegate(Handler));
+                });
             Assert.AreNotEqual(0, counter);
         }
 
@@ -129,15 +128,15 @@ namespace Grpc.Core.Tests
         {
             BenchmarkUtil.RunBenchmark(
                 1000000, 100000000,
-                () => {
+                () =>
+                {
                     grpcsharp_test_nop(IntPtr.Zero);
-                }
-            );
+                });
         }
 
-        private void Handler(GRPCOpError op, IntPtr ptr) {
-            counter ++;
+        private void Handler(GRPCOpError op, IntPtr ptr)
+        {
+            counter++;
         }
     }
 }
-

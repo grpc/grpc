@@ -32,26 +32,53 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Google.ProtocolBuffers;
+using grpc.testing;
 using Grpc.Core;
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
-namespace Grpc.Core.Tests
+namespace Grpc.IntegrationTesting
 {
-    public class ServerTest
+    /// <summary>
+    /// SSL Credentials for testing.
+    /// </summary>
+    public static class TestCredentials
     {
-        [Test]
-        public void StartAndShutdownServer()
+        public const string DefaultHostOverride = "foo.test.google.fr";
+
+        public const string ClientCertAuthorityPath = "data/ca.pem";
+        public const string ClientCertAuthorityEnvName = "SSL_CERT_FILE";
+
+        public const string ServerCertChainPath = "data/server1.pem";
+        public const string ServerPrivateKeyPath = "data/server1.key";
+
+        public static SslCredentials CreateTestClientCredentials(bool useTestCa)
         {
-            GrpcEnvironment.Initialize();
+            string caPath = ClientCertAuthorityPath;
+            if (!useTestCa)
+            {
+                caPath = Environment.GetEnvironmentVariable(ClientCertAuthorityEnvName);
+                if (string.IsNullOrEmpty(caPath))
+                {
+                    throw new ArgumentException("CA path environment variable is not set.");
+                }
+            }
+            return new SslCredentials(File.ReadAllText(caPath));
+        }
 
-            Server server = new Server();
-            server.AddPort("localhost:0");
-            server.Start();
-            server.ShutdownAsync().Wait();
-
-            GrpcEnvironment.Shutdown();
+        public static SslServerCredentials CreateTestServerCredentials()
+        {
+            var keyCertPair = new KeyCertificatePair(
+                File.ReadAllText(ServerCertChainPath),
+                File.ReadAllText(ServerPrivateKeyPath));
+            return new SslServerCredentials(ImmutableList.Create(keyCertPair));
         }
     }
 }

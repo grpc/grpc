@@ -43,6 +43,7 @@ typedef gpr_intptr gpr_atm;
 #define gpr_atm_full_barrier() (__atomic_thread_fence(__ATOMIC_SEQ_CST))
 
 #define gpr_atm_acq_load(p) (__atomic_load_n((p), __ATOMIC_ACQUIRE))
+#define gpr_atm_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))
 #define gpr_atm_rel_store(p, value) \
   (__atomic_store_n((p), (gpr_intptr)(value), __ATOMIC_RELEASE))
 

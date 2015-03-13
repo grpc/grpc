@@ -54,7 +54,7 @@ namespace Grpc.Core.Internal
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
         // Set after status is received. Only used for streaming response calls.
-        Nullable<Status> finishedStatus;
+        Status? finishedStatus;
 
         bool readObserverCompleted;  // True if readObserver has already been completed.
 
@@ -64,7 +64,7 @@ namespace Grpc.Core.Internal
             this.finishedHandler = CreateBatchCompletionCallback(HandleFinished);
         }
 
-        public void Initialize(Channel channel, CompletionQueueSafeHandle cq, String methodName)
+        public void Initialize(Channel channel, CompletionQueueSafeHandle cq, string methodName)
         {
             var call = CallSafeHandle.Create(channel.Handle, cq, methodName, channel.Target, Timespec.InfFuture);
             InitializeInternal(call);
@@ -77,9 +77,9 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Blocking unary request - unary response call.
         /// </summary>
-        public TResponse UnaryCall(Channel channel, String methodName, TRequest msg)
+        public TResponse UnaryCall(Channel channel, string methodName, TRequest msg)
         {
-            using(CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
+            using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.Create())
             {
                 byte[] payload = UnsafeSerialize(msg);
 
@@ -254,7 +254,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleUnaryResponse(bool wasError, BatchContextSafeHandleNotOwned ctx)
         {
-            lock(myLock)
+            lock (myLock)
             {
                 finished = true;
                 halfclosed = true;
@@ -264,9 +264,7 @@ namespace Grpc.Core.Internal
 
             if (wasError)
             {
-                unaryResponseTcs.SetException(new RpcException(
-                    new Status(StatusCode.Internal, "Internal error occured.")
-                ));
+                unaryResponseTcs.SetException(new RpcException(new Status(StatusCode.Internal, "Internal error occured.")));
                 return;
             }
 

@@ -39,62 +39,71 @@ using Grpc.Core.Internal;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Mapping of method names to server call handlers.
+    /// Server side credentials.
     /// </summary>
-    public class ServerServiceDefinition
+    public abstract class ServerCredentials
     {
-        readonly string serviceName;
-        readonly ImmutableDictionary<string, IServerCallHandler> callHandlers;
+        /// <summary>
+        /// Creates native object for the credentials.
+        /// </summary>
+        /// <returns>The native credentials.</returns>
+        internal abstract ServerCredentialsSafeHandle ToNativeCredentials();
+    }
 
-        private ServerServiceDefinition(string serviceName, ImmutableDictionary<string, IServerCallHandler> callHandlers)
+    /// <summary>
+    /// Key certificate pair (in PEM encoding).
+    /// </summary>
+    public class KeyCertificatePair
+    {
+        readonly string certChain;
+        readonly string privateKey;
+
+        public KeyCertificatePair(string certChain, string privateKey)
         {
-            this.serviceName = serviceName;
-            this.callHandlers = callHandlers;
+            this.certChain = certChain;
+            this.privateKey = privateKey;
         }
 
-        internal ImmutableDictionary<string, IServerCallHandler> CallHandlers
+        public string CertChain
         {
             get
             {
-                return this.callHandlers;
+                return certChain;
             }
         }
 
-        public static Builder CreateBuilder(string serviceName)
+        public string PrivateKey
         {
-            return new Builder(serviceName);
+            get
+            {
+                return privateKey;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Server-side SSL credentials.
+    /// </summary>
+    public class SslServerCredentials : ServerCredentials
+    {
+        ImmutableList<KeyCertificatePair> keyCertPairs;
+
+        public SslServerCredentials(ImmutableList<KeyCertificatePair> keyCertPairs)
+        {
+            this.keyCertPairs = keyCertPairs;
         }
 
-        public class Builder
+        internal override ServerCredentialsSafeHandle ToNativeCredentials()
         {
-            readonly string serviceName;
-            readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
-
-            public Builder(string serviceName)
+            int count = keyCertPairs.Count;
+            string[] certChains = new string[count];
+            string[] keys = new string[count];
+            for (int i = 0; i < count; i++)
             {
-                this.serviceName = serviceName;
+                certChains[i] = keyCertPairs[i].CertChain;
+                keys[i] = keyCertPairs[i].PrivateKey;
             }
-
-            public Builder AddMethod<TRequest, TResponse>(
-                Method<TRequest, TResponse> method,
-                UnaryRequestServerMethod<TRequest, TResponse> handler)
-            {
-                callHandlers.Add(method.Name, ServerCalls.UnaryRequestCall(method, handler));
-                return this;
-            }
-
-            public Builder AddMethod<TRequest, TResponse>(
-                Method<TRequest, TResponse> method,
-                StreamingRequestServerMethod<TRequest, TResponse> handler)
-            {
-                callHandlers.Add(method.Name, ServerCalls.StreamingRequestCall(method, handler));
-                return this;
-            }
-
-            public ServerServiceDefinition Build()
-            {
-                return new ServerServiceDefinition(serviceName, callHandlers.ToImmutableDictionary());
-            }
+            return ServerCredentialsSafeHandle.CreateSslCredentials(certChains, keys);
         }
     }
 }

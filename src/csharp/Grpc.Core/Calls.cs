@@ -38,8 +38,6 @@ using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
-    // NOTE: this class is work-in-progress
-
     /// <summary>
     /// Helper methods for generated stubs to make RPC calls.
     /// </summary>
@@ -89,9 +87,9 @@ namespace Grpc.Core
             return new ClientStreamingInputObserver<TRequest, TResponse>(asyncCall);
         }
 
-        private static CompletionQueueSafeHandle GetCompletionQueue() {
+        private static CompletionQueueSafeHandle GetCompletionQueue()
+        {
             return GrpcEnvironment.ThreadPool.CompletionQueue;
         }
     }
 }
-

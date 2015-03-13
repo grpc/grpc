@@ -56,6 +56,8 @@
 #include "channel.h"
 #include "byte_buffer.h"
 
+zend_class_entry *grpc_ce_call;
+
 /* Frees and destroys an instance of wrapped_grpc_call */
 void free_wrapped_grpc_call(void *object TSRMLS_DC) {
   wrapped_grpc_call *call = (wrapped_grpc_call *)object;

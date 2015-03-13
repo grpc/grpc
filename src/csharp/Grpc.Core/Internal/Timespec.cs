@@ -40,8 +40,8 @@ namespace Grpc.Core.Internal
     [StructLayout(LayoutKind.Sequential)]
     internal struct Timespec
     {
-        const int nanosPerSecond = 1000 * 1000 * 1000;
-        const int nanosPerTick = 100;
+        const int NanosPerSecond = 1000 * 1000 * 1000;
+        const int NanosPerTick = 100;
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern Timespec gprsharp_now();
@@ -99,14 +99,13 @@ namespace Grpc.Core.Internal
 
         public Timespec Add(TimeSpan timeSpan)
         {
-            long nanos = tv_nsec.ToInt64() + (timeSpan.Ticks % TimeSpan.TicksPerSecond) * nanosPerTick;
-            long overflow_sec = (nanos > nanosPerSecond) ? 1 : 0;
+            long nanos = tv_nsec.ToInt64() + (timeSpan.Ticks % TimeSpan.TicksPerSecond) * NanosPerTick;
+            long overflow_sec = (nanos > NanosPerSecond) ? 1 : 0;
 
             Timespec result;
-            result.tv_nsec = new IntPtr(nanos % nanosPerSecond);
+            result.tv_nsec = new IntPtr(nanos % NanosPerSecond);
             result.tv_sec = new IntPtr(tv_sec.ToInt64() + (timeSpan.Ticks / TimeSpan.TicksPerSecond) + overflow_sec);
             return result;
         }
     }
 }
-

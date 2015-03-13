@@ -10,9 +10,9 @@ This requires `node` to be installed. If you instead have the `nodejs` executabl
 
 ## Installation
 
-First, clone this repository (NPM package coming soon). Then follow the instructions in the `INSTALL` file in the root of the repository to install the C core library that this package depends on.
-
-Then, simply run `npm install` in or referencing this directory.
+ 1. Clone [the grpc repository](https://github.com/grpc/grpc).
+ 2. Follow the instructions in the `INSTALL` file in the root of that repository to install the C core library that this package depends on.
+ 3. Run `npm install`.
 
 ## Tests
 
