@@ -220,8 +220,8 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   client_ok(3);
 
   ByteBuffer recv_buffer;
-  srv_stream.Read(&recv_buffer, tag(3));
-  server_ok(3);
+  srv_stream.Read(&recv_buffer, tag(4));
+  server_ok(4);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EXPECT_EQ(send_request.message(), recv_request.message());
 
@@ -231,8 +231,8 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   gpr_slice s = gpr_slice_from_copied_string(buf.c_str());
   Slice slice(s, Slice::STEAL_REF);
   ByteBuffer send_buffer(&slice, 1);
-  srv_stream.Write(send_buffer, tag(4));
-  server_ok(4);
+  srv_stream.Write(send_buffer, tag(5));
+  server_ok(5);
 
   cli_stream->Read(&recv_response, tag(6));
   client_ok(6);
@@ -243,11 +243,11 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   client_ok(7);
 
   recv_buffer.Clear();
-  srv_stream.Read(&recv_buffer, tag(3));
-  server_fail(3);
+  srv_stream.Read(&recv_buffer, tag(8));
+  server_fail(8);
 
-  srv_stream.Finish(Status::OK, tag(5));
-  server_ok(5);
+  srv_stream.Finish(Status::OK, tag(9));
+  server_ok(9);
 
   cli_stream->Finish(&recv_status, tag(10));
   client_ok(10);
