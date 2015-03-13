@@ -99,6 +99,8 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
     std::chrono::seconds token_lifetime) {
   if (token_lifetime.count() <= 0) {
+    gpr_log(GPR_ERROR,
+            "Trying to create JWTCredentials with non-positive lifetime");
     return WrapCredentials(nullptr);
   }
   gpr_timespec lifetime = gpr_time_from_seconds(token_lifetime.count());
@@ -110,6 +112,8 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
 std::unique_ptr<Credentials> JWTCredentials(
     const grpc::string &json_key, std::chrono::seconds token_lifetime) {
   if (token_lifetime.count() <= 0) {
+    gpr_log(GPR_ERROR,
+            "Trying to create JWTCredentials with non-positive lifetime");
     return WrapCredentials(nullptr);
   }
   gpr_timespec lifetime = gpr_time_from_seconds(token_lifetime.count());
