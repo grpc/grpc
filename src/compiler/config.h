@@ -54,12 +54,10 @@
 #ifndef GRPC_CUSTOM_PRINTER
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/printer.h>
-#include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #define GRPC_CUSTOM_PRINTER ::google::protobuf::io::Printer
 #define GRPC_CUSTOM_CODEDOUTPUTSTREAM ::google::protobuf::io::CodedOutputStream
 #define GRPC_CUSTOM_STRINGOUTPUTSTREAM ::google::protobuf::io::StringOutputStream
-#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ::google::protobuf::io::ZeroCopyOutputStream
 #endif
 
 #ifndef GRPC_CUSTOM_PLUGINMAIN
@@ -85,7 +83,6 @@ namespace io {
 typedef GRPC_CUSTOM_PRINTER Printer;
 typedef GRPC_CUSTOM_CODEDOUTPUTSTREAM CodedOutputStream;
 typedef GRPC_CUSTOM_STRINGOUTPUTSTREAM StringOutputStream;
-typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;
 }  // namespace io
 }  // namespace protobuf
 }  // namespace grpc

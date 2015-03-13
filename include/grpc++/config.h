@@ -52,12 +52,26 @@
 #define GRPC_CUSTOM_MESSAGE ::google::protobuf::Message
 #endif
 
+#ifndef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM
+#include <google/protobuf/io/zero_copy_stream.h>
+#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ::google::protobuf::io::ZeroCopyOutputStream
+#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ::google::protobuf::io::ZeroCopyInputStream
+#endif
+
+
 namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
 
 namespace protobuf {
+
 typedef GRPC_CUSTOM_MESSAGE Message;
+
+namespace io {
+typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;
+typedef GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ZeroCopyInputStream;
+}  // namespace io
+
 }  // namespace protobuf
 
 }  // namespace grpc
