@@ -40,9 +40,11 @@
 
 typedef gpr_intptr gpr_atm;
 
+#define GPR_ATM_COMPILE_BARRIER_() __asm__ __volatile__("" : : : "memory")
+
 #if defined(__i386) || defined(__x86_64__)
 /* All loads are acquire loads and all stores are release stores.  */
-#define GPR_ATM_LS_BARRIER_() __asm__ __volatile__("" : : : "memory")
+#define GPR_ATM_LS_BARRIER_() GPR_ATM_COMPILE_BARRIER_()
 #else
 #define GPR_ATM_LS_BARRIER_() gpr_atm_full_barrier()
 #endif
@@ -55,12 +57,19 @@ static __inline gpr_atm gpr_atm_acq_load(const gpr_atm *p) {
   return value;
 }
 
+static __inline gpr_atm gpr_atm_no_barrier_load(const gpr_atm *p) {
+  gpr_atm value = *p;
+  GPR_ATM_COMPILE_BARRIER_();
+  return value;
+}
+
 static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
   GPR_ATM_LS_BARRIER_();
   *p = value;
 }
 
 #undef GPR_ATM_LS_BARRIER_
+#undef GPR_ATM_COMPILE_BARRIER_
 
 #define gpr_atm_no_barrier_fetch_add(p, delta) \
   gpr_atm_full_fetch_add((p), (delta))
