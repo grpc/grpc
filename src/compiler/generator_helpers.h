@@ -35,14 +35,15 @@
 #define GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
 
 #include <map>
-#include <string>
+
+#include "src/compiler/config.h"
 
 namespace grpc_generator {
 
-inline bool StripSuffix(std::string *filename, const std::string &suffix) {
+inline bool StripSuffix(grpc::string *filename, const grpc::string &suffix) {
   if (filename->length() >= suffix.length()) {
     size_t suffix_pos = filename->length() - suffix.length();
-    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
+    if (filename->compare(suffix_pos, grpc::string::npos, suffix) == 0) {
       filename->resize(filename->size() - suffix.size());
       return true;
     }
@@ -51,20 +52,20 @@ inline bool StripSuffix(std::string *filename, const std::string &suffix) {
   return false;
 }
 
-inline std::string StripProto(std::string filename) {
+inline grpc::string StripProto(grpc::string filename) {
   if (!StripSuffix(&filename, ".protodevel")) {
     StripSuffix(&filename, ".proto");
   }
   return filename;
 }
 
-inline std::string StringReplace(std::string str, const std::string &from,
-                                 const std::string &to) {
+inline grpc::string StringReplace(grpc::string str, const grpc::string &from,
+                                  const grpc::string &to) {
   size_t pos = 0;
 
   for (;;) {
     pos = str.find(from, pos);
-    if (pos == std::string::npos) {
+    if (pos == grpc::string::npos) {
       break;
     }
     str.replace(pos, from.length(), to);
