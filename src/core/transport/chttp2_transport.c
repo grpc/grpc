@@ -1655,7 +1655,15 @@ static int process_read(transport *t, gpr_slice slice) {
       if (!init_frame_parser(t)) {
         return 0;
       }
-      t->last_incoming_stream_id = t->incoming_stream_id;
+      /* t->last_incoming_stream_id is used as last-stream-id when
+         sending GOAWAY frame.
+         https://tools.ietf.org/html/draft-ietf-httpbis-http2-17#section-6.8
+         says that last-stream-id is peer-initiated stream ID.  So,
+         since we don't have server pushed streams, client should send
+         GOAWAY last-stream-id=0 in this case. */
+      if (!t->is_client) {
+        t->last_incoming_stream_id = t->incoming_stream_id;
+      }
       if (t->incoming_frame_size == 0) {
         if (!parse_frame_slice(t, gpr_empty_slice(), 1)) {
           return 0;
