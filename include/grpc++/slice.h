@@ -53,7 +53,7 @@ class Slice GRPC_FINAL {
   Slice(gpr_slice slice, StealRef);
   // copy constructor - adds a ref
   Slice(const Slice& other);
-  // assignment
+  // assignment - ref count is unchanged
   Slice& operator=(Slice other) {
     std::swap(slice_, other.slice_);
     return *this;
