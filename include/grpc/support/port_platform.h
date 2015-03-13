@@ -117,7 +117,11 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#ifdef TARGET_OS_IPHONE
+#define GPR_CPU_IPHONE 1
+#else /* TARGET_OS_IPHONE */
 #define GPR_CPU_POSIX 1
+#endif
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
