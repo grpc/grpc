@@ -46,7 +46,7 @@
 #include "grpc/grpc.h"
 
 /* Class entry for the PHP CompletionQueue class */
-zend_class_entry *grpc_ce_completion_queue;
+extern zend_class_entry *grpc_ce_completion_queue;
 
 /* Wrapper class for grpc_completion_queue that can be associated with a
    PHP object */

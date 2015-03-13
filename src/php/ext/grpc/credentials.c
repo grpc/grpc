@@ -49,6 +49,8 @@
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 
+zend_class_entry *grpc_ce_credentials;
+
 /* Frees and destroys an instance of wrapped_grpc_credentials */
 void free_wrapped_grpc_credentials(void *object TSRMLS_DC) {
   wrapped_grpc_credentials *creds = (wrapped_grpc_credentials *)object;
