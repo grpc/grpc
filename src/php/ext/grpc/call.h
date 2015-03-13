@@ -57,7 +57,7 @@
   } while (0)
 
 /* Class entry for the Call PHP class */
-zend_class_entry *grpc_ce_call;
+extern zend_class_entry *grpc_ce_call;
 
 /* Wrapper struct for grpc_call that can be associated with a PHP object */
 typedef struct wrapped_grpc_call {

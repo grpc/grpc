@@ -47,7 +47,7 @@
 #include "grpc/support/time.h"
 
 /* Class entry for the Timeval PHP Class */
-zend_class_entry *grpc_ce_timeval;
+extern zend_class_entry *grpc_ce_timeval;
 
 /* Wrapper struct for timeval that can be associated with a PHP object */
 typedef struct wrapped_grpc_timeval {
