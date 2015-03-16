@@ -159,9 +159,14 @@ ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
 endif
 
+ifeq ($(SYSTEM),Linux)
+TMPOUT = /dev/null
+else
+TMPOUT = `mktemp /tmp/test-out-XXXXXX`
+endif
 
 # Detect if we can use C++11
-CXX11_CHECK_CMD = $(CXX) -std=c++11 -o /dev/null -c test/build/c++11.cc
+CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
 HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
 # The HOST compiler settings are used to compile the protoc plugins.
@@ -194,9 +199,25 @@ LDFLAGS += -g -fPIC
 
 INCLUDES = . include $(GENDIR)
 ifeq ($(SYSTEM),Darwin)
-INCLUDES += /usr/local/ssl/include /opt/local/include
+ifneq ($(wildcard /usr/local/ssl/include),)
+INCLUDES += /usr/local/ssl/include
+endif
+ifneq ($(wildcard /opt/local/include),)
+INCLUDES += /opt/local/include
+endif
+ifneq ($(wildcard /usr/local/include),)
+INCLUDES += /usr/local/include
+endif
 LIBS = m z
-LDFLAGS += -L/usr/local/ssl/lib -L/opt/local/lib
+ifneq ($(wildcard /usr/local/ssl/lib),)
+LDFLAGS += -L/usr/local/ssl/lib
+endif
+ifneq ($(wildcard /opt/local/lib),)
+LDFLAGS += -L/opt/local/lib
+endif
+ifneq ($(wildcard /usr/local/lib),)
+LDFLAGS += -L/usr/local/lib
+endif
 else
 LIBS = rt m z pthread
 LDFLAGS += -pthread
@@ -251,10 +272,10 @@ else
 IS_GIT_FOLDER = true
 endif
 
-OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/openssl-alpn.c -lssl -lcrypto -ldl $(LDFLAGS)
-ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/zlib.c -lz $(LDFLAGS)
-PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o /dev/null test/build/perftools.c -lprofiler $(LDFLAGS)
-PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o /dev/null test/build/protobuf.cc -lprotobuf $(LDFLAGS)
+OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c -lssl -lcrypto -ldl $(LDFLAGS)
+ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
+PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
+PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 PROTOC_CMD = which protoc
 PROTOC_CHECK_CMD = protoc --version | grep -q libprotoc.3
 
@@ -2039,10 +2060,10 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/gpr.$(SHARED_EXT) $(prefix)/lib/gpr.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr-imp.a $(prefix)/lib/libgpr-imp.a
 else
+ifneq ($(SYSTEM),Darwin)
 	$(E) "[INSTALL] Installing libgpr.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr.$(SHARED_EXT) $(prefix)/lib/libgpr.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgpr.$(SHARED_EXT) $(prefix)/lib/libgpr.so
 endif
 endif
@@ -2052,10 +2073,10 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc.$(SHARED_EXT) $(prefix)/lib/grpc.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc-imp.a $(prefix)/lib/libgrpc-imp.a
 else
+ifneq ($(SYSTEM),Darwin)
 	$(E) "[INSTALL] Installing libgrpc.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc.$(SHARED_EXT) $(prefix)/lib/libgrpc.so
 endif
 endif
@@ -2065,10 +2086,10 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_unsecure.$(SHARED_EXT) $(prefix)/lib/grpc_unsecure.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure-imp.a $(prefix)/lib/libgrpc_unsecure-imp.a
 else
+ifneq ($(SYSTEM),Darwin)
 	$(E) "[INSTALL] Installing libgrpc_unsecure.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc_unsecure.so
 endif
 endif
@@ -2086,10 +2107,10 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc++.$(SHARED_EXT) $(prefix)/lib/grpc++.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++-imp.a $(prefix)/lib/libgrpc++-imp.a
 else
+ifneq ($(SYSTEM),Darwin)
 	$(E) "[INSTALL] Installing libgrpc++.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc++.$(SHARED_EXT) $(prefix)/lib/libgrpc++.so
 endif
 endif
@@ -2099,10 +2120,10 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc++_unsecure.$(SHARED_EXT) $(prefix)/lib/grpc++_unsecure.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure-imp.a $(prefix)/lib/libgrpc++_unsecure-imp.a
 else
+ifneq ($(SYSTEM),Darwin)
 	$(E) "[INSTALL] Installing libgrpc++_unsecure.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc++_unsecure.$(SHARED_EXT) $(prefix)/lib/libgrpc++_unsecure.so
 endif
 endif
@@ -2120,10 +2141,10 @@ ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/grpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/grpc_csharp_ext.$(SHARED_EXT)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext-imp.a $(prefix)/lib/libgrpc_csharp_ext-imp.a
 else
+ifneq ($(SYSTEM),Darwin)
 	$(E) "[INSTALL] Installing libgrpc_csharp_ext.$(SHARED_EXT)"
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.$(SHARED_EXT)
-ifneq ($(SYSTEM),Darwin)
 	$(Q) ln -sf libgrpc_csharp_ext.$(SHARED_EXT) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
 endif

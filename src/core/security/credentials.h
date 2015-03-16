@@ -64,6 +64,22 @@ typedef enum {
 #define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
   "application_default_credentials.json"
 
+#define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
+
+#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata"
+#define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
+  "/computeMetadata/v1/instance/service-accounts/default/token"
+
+#define GRPC_GOOGLE_OAUTH2_SERVICE_HOST "www.googleapis.com"
+#define GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH "/oauth2/v3/token"
+
+#define GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX                         \
+  "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&" \
+  "assertion="
+
+#define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING \
+  "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
+
 /* --- grpc_credentials. --- */
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */

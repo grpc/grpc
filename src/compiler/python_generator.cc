@@ -60,8 +60,6 @@ using std::make_pair;
 using std::map;
 using std::pair;
 using std::replace;
-using std::string;
-using std::strlen;
 using std::vector;
 
 namespace grpc_python_generator {
@@ -72,14 +70,14 @@ namespace {
 
 // Converts an initializer list of the form { key0, value0, key1, value1, ... }
 // into a map of key* to value*. Is merely a readability helper for later code.
-map<string, string> ListToDict(const initializer_list<string>& values) {
+map<std::string, std::string> ListToDict(const initializer_list<std::string>& values) {
   assert(values.size() % 2 == 0);
-  map<string, string> value_map;
+  map<std::string, std::string> value_map;
   auto value_iter = values.begin();
   for (unsigned i = 0; i < values.size()/2; ++i) {
-    string key = *value_iter;
+    std::string key = *value_iter;
     ++value_iter;
-    string value = *value_iter;
+    std::string value = *value_iter;
     value_map[key] = value;
     ++value_iter;
   }
@@ -113,8 +111,8 @@ class IndentScope {
 
 bool PrintServicer(const ServiceDescriptor* service,
                    Printer* out) {
-  string doc = "<fill me in later!>";
-  map<string, string> dict = ListToDict({
+  std::string doc = "<fill me in later!>";
+  map<std::string, std::string> dict = ListToDict({
         "Service", service->name(),
         "Documentation", doc,
       });
@@ -125,7 +123,7 @@ bool PrintServicer(const ServiceDescriptor* service,
     out->Print("__metaclass__ = abc.ABCMeta\n");
     for (int i = 0; i < service->method_count(); ++i) {
       auto meth = service->method(i);
-      string arg_name = meth->client_streaming() ?
+      std::string arg_name = meth->client_streaming() ?
           "request_iterator" : "request";
       out->Print("@abc.abstractmethod\n");
       out->Print("def $Method$(self, $ArgName$, context):\n",
@@ -140,8 +138,8 @@ bool PrintServicer(const ServiceDescriptor* service,
 }
 
 bool PrintServer(const ServiceDescriptor* service, Printer* out) {
-  string doc = "<fill me in later!>";
-  map<string, string> dict = ListToDict({
+  std::string doc = "<fill me in later!>";
+  map<std::string, std::string> dict = ListToDict({
         "Service", service->name(),
         "Documentation", doc,
       });
@@ -169,8 +167,8 @@ bool PrintServer(const ServiceDescriptor* service, Printer* out) {
 
 bool PrintStub(const ServiceDescriptor* service,
                Printer* out) {
-  string doc = "<fill me in later!>";
-  map<string, string> dict = ListToDict({
+  std::string doc = "<fill me in later!>";
+  map<std::string, std::string> dict = ListToDict({
         "Service", service->name(),
         "Documentation", doc,
       });
@@ -181,7 +179,7 @@ bool PrintStub(const ServiceDescriptor* service,
     out->Print("__metaclass__ = abc.ABCMeta\n");
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* meth = service->method(i);
-      string arg_name = meth->client_streaming() ?
+      std::string arg_name = meth->client_streaming() ?
           "request_iterator" : "request";
       auto methdict = ListToDict({"Method", meth->name(), "ArgName", arg_name});
       out->Print("@abc.abstractmethod\n");
@@ -198,29 +196,29 @@ bool PrintStub(const ServiceDescriptor* service,
 
 // TODO(protobuf team): Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-string ModuleName(const string& filename) {
-  string basename = StripProto(filename);
+std::string ModuleName(const std::string& filename) {
+  std::string basename = StripProto(filename);
   basename = StringReplace(basename, "-", "_");
   basename = StringReplace(basename, "/", ".");
   return basename + "_pb2";
 }
 
 bool GetModuleAndMessagePath(const Descriptor* type,
-                             pair<string, string>* out) {
+                             pair<std::string, std::string>* out) {
   const Descriptor* path_elem_type = type;
   vector<const Descriptor*> message_path;
   do {
     message_path.push_back(path_elem_type);
     path_elem_type = path_elem_type->containing_type();
   } while (path_elem_type != nullptr);
-  string file_name = type->file()->name();
+  std::string file_name = type->file()->name();
   static const int proto_suffix_length = strlen(".proto");
   if (!(file_name.size() > static_cast<size_t>(proto_suffix_length) &&
         file_name.find_last_of(".proto") == file_name.size() - 1)) {
     return false;
   }
-  string module = ModuleName(file_name);
-  string message_type;
+  std::string module = ModuleName(file_name);
+  std::string message_type;
   for (auto path_iter = message_path.rbegin();
        path_iter != message_path.rend(); ++path_iter) {
     message_type += (*path_iter)->name() + ".";
@@ -237,21 +235,21 @@ bool PrintServerFactory(const ServiceDescriptor* service, Printer* out) {
              "Service", service->name());
   {
     IndentScope raii_create_server_indent(out);
-    map<string, string> method_description_constructors;
-    map<string, pair<string, string>> input_message_modules_and_classes;
-    map<string, pair<string, string>> output_message_modules_and_classes;
+    map<std::string, std::string> method_description_constructors;
+    map<std::string, pair<std::string, std::string>> input_message_modules_and_classes;
+    map<std::string, pair<std::string, std::string>> output_message_modules_and_classes;
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* method = service->method(i);
-      const string method_description_constructor =
-          string(method->client_streaming() ? "stream_" : "unary_") +
-          string(method->server_streaming() ? "stream_" : "unary_") +
+      const std::string method_description_constructor =
+          std::string(method->client_streaming() ? "stream_" : "unary_") +
+          std::string(method->server_streaming() ? "stream_" : "unary_") +
           "service_description";
-      pair<string, string> input_message_module_and_class;
+      pair<std::string, std::string> input_message_module_and_class;
       if (!GetModuleAndMessagePath(method->input_type(),
                                    &input_message_module_and_class)) {
         return false;
       }
-      pair<string, string> output_message_module_and_class;
+      pair<std::string, std::string> output_message_module_and_class;
       if (!GetModuleAndMessagePath(method->output_type(),
                                    &output_message_module_and_class)) {
         return false;
@@ -272,7 +270,7 @@ bool PrintServerFactory(const ServiceDescriptor* service, Printer* out) {
     for (auto& name_and_description_constructor :
          method_description_constructors) {
       IndentScope raii_descriptions_indent(out);
-      const string method_name = name_and_description_constructor.first;
+      const std::string method_name = name_and_description_constructor.first;
       auto input_message_module_and_class =
           input_message_modules_and_classes.find(method_name);
       auto output_message_module_and_class =
@@ -306,27 +304,27 @@ bool PrintServerFactory(const ServiceDescriptor* service, Printer* out) {
 }
 
 bool PrintStubFactory(const ServiceDescriptor* service, Printer* out) {
-  map<string, string> dict = ListToDict({
+  map<std::string, std::string> dict = ListToDict({
         "Service", service->name(),
       });
   out->Print(dict, "def early_adopter_create_$Service$_stub(host, port):\n");
   {
     IndentScope raii_create_server_indent(out);
-    map<string, string> method_description_constructors;
-    map<string, pair<string, string>> input_message_modules_and_classes;
-    map<string, pair<string, string>> output_message_modules_and_classes;
+    map<std::string, std::string> method_description_constructors;
+    map<std::string, pair<std::string, std::string>> input_message_modules_and_classes;
+    map<std::string, pair<std::string, std::string>> output_message_modules_and_classes;
     for (int i = 0; i < service->method_count(); ++i) {
       const MethodDescriptor* method = service->method(i);
-      const string method_description_constructor =
-          string(method->client_streaming() ? "stream_" : "unary_") +
-          string(method->server_streaming() ? "stream_" : "unary_") +
+      const std::string method_description_constructor =
+          std::string(method->client_streaming() ? "stream_" : "unary_") +
+          std::string(method->server_streaming() ? "stream_" : "unary_") +
           "invocation_description";
-      pair<string, string> input_message_module_and_class;
+      pair<std::string, std::string> input_message_module_and_class;
       if (!GetModuleAndMessagePath(method->input_type(),
                                    &input_message_module_and_class)) {
         return false;
       }
-      pair<string, string> output_message_module_and_class;
+      pair<std::string, std::string> output_message_module_and_class;
       if (!GetModuleAndMessagePath(method->output_type(),
                                    &output_message_module_and_class)) {
         return false;
@@ -347,7 +345,7 @@ bool PrintStubFactory(const ServiceDescriptor* service, Printer* out) {
     for (auto& name_and_description_constructor :
          method_description_constructors) {
       IndentScope raii_descriptions_indent(out);
-      const string method_name = name_and_description_constructor.first;
+      const std::string method_name = name_and_description_constructor.first;
       auto input_message_module_and_class =
           input_message_modules_and_classes.find(method_name);
       auto output_message_module_and_class =
@@ -385,8 +383,8 @@ bool PrintPreamble(const FileDescriptor* file, Printer* out) {
 
 }  // namespace
 
-pair<bool, string> GetServices(const FileDescriptor* file) {
-  string output;
+pair<bool, std::string> GetServices(const FileDescriptor* file) {
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
     StringOutputStream output_stream(&output);

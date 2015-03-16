@@ -47,7 +47,7 @@
 #include "grpc/grpc_security.h"
 
 /* Class entry for the Server_Credentials PHP class */
-zend_class_entry *grpc_ce_server_credentials;
+extern zend_class_entry *grpc_ce_server_credentials;
 
 /* Wrapper struct for grpc_server_credentials that can be associated with a PHP
  * object */

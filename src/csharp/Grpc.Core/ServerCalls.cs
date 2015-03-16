@@ -32,17 +32,18 @@
 #endregion
 
 using System;
+using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
     // TODO: perhaps add also serverSideStreaming and clientSideStreaming
 
-    public delegate void UnaryRequestServerMethod<TRequest, TResponse> (TRequest request, IObserver<TResponse> responseObserver);
+    public delegate void UnaryRequestServerMethod<TRequest, TResponse>(TRequest request, IObserver<TResponse> responseObserver);
 
-    public delegate IObserver<TRequest> StreamingRequestServerMethod<TRequest, TResponse> (IObserver<TResponse> responseObserver);
+    public delegate IObserver<TRequest> StreamingRequestServerMethod<TRequest, TResponse>(IObserver<TResponse> responseObserver);
 
-    internal static class ServerCalls {
-
+    internal static class ServerCalls
+    {
         public static IServerCallHandler UnaryRequestCall<TRequest, TResponse>(Method<TRequest, TResponse> method, UnaryRequestServerMethod<TRequest, TResponse> handler)
         {
             return new UnaryRequestServerCallHandler<TRequest, TResponse>(method, handler);
@@ -52,7 +53,5 @@ namespace Grpc.Core
         {
             return new StreamingRequestServerCallHandler<TRequest, TResponse>(method, handler);
         }
-
     }
 }
-

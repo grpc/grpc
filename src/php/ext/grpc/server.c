@@ -56,6 +56,8 @@
 #include "channel.h"
 #include "server_credentials.h"
 
+zend_class_entry *grpc_ce_server;
+
 /* Frees and destroys an instance of wrapped_grpc_server */
 void free_wrapped_grpc_server(void *object TSRMLS_DC) {
   wrapped_grpc_server *server = (wrapped_grpc_server *)object;

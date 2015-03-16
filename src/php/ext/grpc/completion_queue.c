@@ -52,6 +52,8 @@
 #include "event.h"
 #include "timeval.h"
 
+zend_class_entry *grpc_ce_completion_queue;
+
 /* Frees and destroys a wrapped instance of grpc_completion_queue */
 void free_wrapped_grpc_completion_queue(void *object TSRMLS_DC) {
   wrapped_grpc_completion_queue *queue = NULL;

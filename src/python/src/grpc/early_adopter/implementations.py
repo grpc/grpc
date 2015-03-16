@@ -71,7 +71,8 @@ class _Server(interfaces.Server):
             _ONE_DAY_IN_SECONDS)
         self._fore_link = _fore.ForeLink(
             self._pool, self._breakdown.request_deserializers,
-            self._breakdown.response_serializers, None, self._key_chain_pairs)
+            self._breakdown.response_serializers, None, self._key_chain_pairs,
+            port=self._port)
         self._back.join_fore_link(self._fore_link)
         self._fore_link.join_rear_link(self._back)
         self._fore_link.start()

@@ -181,12 +181,12 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned)
       thread_pool_owned_(thread_pool_owned) {}
 
 Server::~Server() {
-  std::unique_lock<std::mutex> lock(mu_);
-  if (started_ && !shutdown_) {
-    lock.unlock();
-    Shutdown();
-  } else {
-    lock.unlock();
+  {
+    std::unique_lock<std::mutex> lock(mu_);
+    if (started_ && !shutdown_) {
+      lock.unlock();
+      Shutdown();
+    }
   }
   grpc_server_destroy(server_);
   if (thread_pool_owned_) {

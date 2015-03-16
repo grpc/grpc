@@ -68,7 +68,7 @@ namespace Grpc.Core.Tests
             var tp2 = GrpcEnvironment.ThreadPool;
             GrpcEnvironment.Shutdown();
 
-            Assert.IsFalse(Object.ReferenceEquals(tp1, tp2));
+            Assert.IsFalse(object.ReferenceEquals(tp1, tp2));
         }
     }
 }

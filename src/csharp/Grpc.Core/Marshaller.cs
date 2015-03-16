@@ -40,8 +40,8 @@ namespace Grpc.Core
     /// </summary>
     public struct Marshaller<T>
     {
-        readonly Func<T,byte[]> serializer;
-        readonly Func<byte[],T> deserializer;
+        readonly Func<T, byte[]> serializer;
+        readonly Func<byte[], T> deserializer;
 
         public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
         {
@@ -66,9 +66,12 @@ namespace Grpc.Core
         }
     }
 
-    public static class Marshallers {
-
-        public static Marshaller<T> Create<T>(Func<T,byte[]> serializer, Func<byte[],T> deserializer)
+    /// <summary>
+    /// Utilities for creating marshallers.
+    /// </summary>
+    public static class Marshallers
+    {
+        public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
         {
             return new Marshaller<T>(serializer, deserializer);
         }
@@ -81,7 +84,5 @@ namespace Grpc.Core
                                               System.Text.Encoding.UTF8.GetString);
             }
         }
-
     }
 }
-
