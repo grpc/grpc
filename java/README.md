@@ -7,7 +7,7 @@ PREREQUISITES
 - [Java 8](http://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
 
 - [Maven 3.2 or later](http://maven.apache.org/download.cgi).
-  - this is needed to install Netty5, a dependency of gRPC
+  - this is needed to install Netty, a dependency of gRPC
 
 INSTALL
 -------
