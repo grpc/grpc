@@ -240,7 +240,7 @@ _CONFIGS = {
     }
 
 
-_DEFAULT = ['dbg', 'opt']
+_DEFAULT = ['opt']
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
