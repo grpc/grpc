@@ -41,7 +41,8 @@
 
 namespace grpc {
 
-ServerBuilder::ServerBuilder() : thread_pool_(nullptr) {}
+ServerBuilder::ServerBuilder()
+    : generic_service_(nullptr), thread_pool_(nullptr) {}
 
 void ServerBuilder::RegisterService(SynchronousService* service) {
   services_.push_back(service->service());
@@ -49,6 +50,16 @@ void ServerBuilder::RegisterService(SynchronousService* service) {
 
 void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
   async_services_.push_back(service);
+}
+
+void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
+  if (generic_service_) {
+    gpr_log(GPR_ERROR,
+            "Adding multiple AsyncGenericService is unsupported for now. "
+            "Dropping the service %p", service);
+    return;
+  }
+  generic_service_ = service;
 }
 
 void ServerBuilder::AddPort(const grpc::string& addr,
@@ -83,6 +94,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     if (!server->RegisterAsyncService(service)) {
       return nullptr;
     }
+  }
+  if (generic_service_) {
+    server->RegisterAsyncGenericService(generic_service_);
   }
   for (auto& port : ports_) {
     int r = server->AddPort(port.addr, port.creds.get());
