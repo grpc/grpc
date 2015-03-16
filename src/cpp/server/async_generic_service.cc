@@ -43,5 +43,9 @@ void AsyncGenericService::RequestCall(
   server_->RequestAsyncGenericCall(ctx, reader_writer, cq, tag);
 }
 
+CompletionQueue* AsyncGenericService::completion_queue() {
+  return &server_->cq_;
+}
+
 } // namespace grpc
 

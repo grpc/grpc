@@ -91,7 +91,7 @@ bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
 
 class GenericEnd2endTest : public ::testing::Test {
  protected:
-  GenericEnd2endTest() {}
+  GenericEnd2endTest() :  generic_service_("*") {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -145,7 +145,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
       generic_service_.RequestCall(&srv_ctx, &stream, &srv_cq_, tag(2));
 
-      verify_ok(server_->cq(), 2, true);
+      verify_ok(generic_service_.completion_queue(), 2, true);
       EXPECT_EQ(server_address_.str(), srv_ctx.host());
       EXPECT_EQ("/grpc.cpp.test.util.TestService/Echo", srv_ctx.method());
       ByteBuffer recv_buffer;
@@ -212,7 +212,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
   generic_service_.RequestCall(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
 
-  verify_ok(server_->cq(), 2, true);
+  verify_ok(generic_service_.completion_queue(), 2, true);
   EXPECT_EQ(server_address_.str(), srv_ctx.host());
   EXPECT_EQ("/grpc.cpp.test.util.TestService/BidiStream", srv_ctx.method());
 

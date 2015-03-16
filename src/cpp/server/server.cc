@@ -211,7 +211,7 @@ bool Server::RegisterService(RpcService* service) {
 
 bool Server::RegisterAsyncService(AsynchronousService* service) {
   GPR_ASSERT(service->dispatch_impl_ == nullptr &&
-             "Can only register one asynchronous service against one server.");
+             "Can only register an asynchronous service against one server.");
   service->dispatch_impl_ = this;
   service->request_args_ = new void* [service->method_count_];
   for (size_t i = 0; i < service->method_count_; ++i) {
@@ -230,7 +230,7 @@ bool Server::RegisterAsyncService(AsynchronousService* service) {
 
 void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
   GPR_ASSERT(service->server_ == nullptr &&
-             "Can only register one generic service against one server.");
+             "Can only register an async generic service against one server.");
   service->server_ = this;
 }
 

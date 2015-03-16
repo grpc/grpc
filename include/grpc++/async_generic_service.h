@@ -59,11 +59,15 @@ class AsyncGenericService GRPC_FINAL {
  public:
   // TODO(yangg) Once we can add multiple completion queues to the server
   // in c core, add a CompletionQueue* argument to the ctor here.
-  AsyncGenericService() : server_(nullptr) {}
+  // TODO(yangg) support methods list.
+  AsyncGenericService(const grpc::string& methods) : server_(nullptr) {}
 
   void RequestCall(GenericServerContext* ctx,
                    GenericServerAsyncReaderWriter* reader_writer,
                    CompletionQueue* cq, void* tag);
+
+  // The new rpc event should be obtained from this completion queue.
+  CompletionQueue* completion_queue();
 
  private:
   friend class Server;
