@@ -105,6 +105,14 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
     std::chrono::seconds token_lifetime);
 
+// Builds JWT credentials.
+// json_key is the JSON key string containing the client's private key.
+// token_lifetime is the lifetime of each Json Web Token (JWT) created with
+// this credentials.  It should not exceed grpc_max_auth_token_lifetime or
+// will be cropped to this value.
+std::unique_ptr<Credentials> JWTCredentials(
+    const grpc::string& json_key, std::chrono::seconds token_lifetime);
+
 // Builds IAM credentials.
 std::unique_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,
