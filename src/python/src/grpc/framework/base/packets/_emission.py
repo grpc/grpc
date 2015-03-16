@@ -29,29 +29,29 @@
 
 """State and behavior for handling emitted values."""
 
-# packets is referenced from specifications in this module.
+from grpc.framework.base import interfaces as base_interfaces
 from grpc.framework.base.packets import _interfaces
-from grpc.framework.base.packets import packets  # pylint: disable=unused-import
 
 
 class _EmissionManager(_interfaces.EmissionManager):
   """An implementation of _interfaces.EmissionManager."""
 
   def __init__(
-      self, lock, failure_kind, termination_manager, transmission_manager):
+      self, lock, failure_outcome, termination_manager, transmission_manager):
     """Constructor.
 
     Args:
       lock: The operation-wide lock.
-      failure_kind: Whichever one of packets.Kind.SERVICED_FAILURE or
-        packets.Kind.SERVICER_FAILURE describes this object's methods being
-        called inappropriately by customer code.
+      failure_outcome: Whichever one of
+        base_interfaces.Outcome.SERVICED_FAILURE or
+        base_interfaces.Outcome.SERVICER_FAILURE describes this object's
+        methods being called inappropriately by customer code.
       termination_manager: The _interfaces.TerminationManager for the operation.
       transmission_manager: The _interfaces.TransmissionManager for the
         operation.
     """
     self._lock = lock
-    self._failure_kind = failure_kind
+    self._failure_outcome = failure_outcome
     self._termination_manager = termination_manager
     self._transmission_manager = transmission_manager
     self._ingestion_manager = None
@@ -65,8 +65,8 @@ class _EmissionManager(_interfaces.EmissionManager):
     self._expiration_manager = expiration_manager
 
   def _abort(self):
-    self._termination_manager.abort(self._failure_kind)
-    self._transmission_manager.abort(self._failure_kind)
+    self._termination_manager.abort(self._failure_outcome)
+    self._transmission_manager.abort(self._failure_outcome)
     self._ingestion_manager.abort()
     self._expiration_manager.abort()
 
@@ -106,7 +106,7 @@ def front_emission_manager(lock, termination_manager, transmission_manager):
     An _interfaces.EmissionManager appropriate for front-side use.
   """
   return _EmissionManager(
-      lock, packets.Kind.SERVICED_FAILURE, termination_manager,
+      lock, base_interfaces.Outcome.SERVICED_FAILURE, termination_manager,
       transmission_manager)
 
 
@@ -122,5 +122,5 @@ def back_emission_manager(lock, termination_manager, transmission_manager):
     An _interfaces.EmissionManager appropriate for back-side use.
   """
   return _EmissionManager(
-      lock, packets.Kind.SERVICER_FAILURE, termination_manager,
+      lock, base_interfaces.Outcome.SERVICER_FAILURE, termination_manager,
       transmission_manager)

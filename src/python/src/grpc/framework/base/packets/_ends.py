@@ -198,7 +198,7 @@ def _front_operate(
         lock, transmission_pool, callback, operation_id, name,
         subscription.kind, trace_id, timeout, termination_manager)
     operation_context = _context.OperationContext(
-        lock, operation_id, packets.Kind.SERVICED_FAILURE,
+        lock, operation_id, base_interfaces.Outcome.SERVICED_FAILURE,
         termination_manager, transmission_manager)
     emission_manager = _emission.front_emission_manager(
         lock, termination_manager, transmission_manager)
@@ -327,7 +327,7 @@ def _back_operate(
         lock, transmission_pool, callback, ticket.operation_id,
         termination_manager, ticket.subscription)
     operation_context = _context.OperationContext(
-        lock, ticket.operation_id, packets.Kind.SERVICER_FAILURE,
+        lock, ticket.operation_id, base_interfaces.Outcome.SERVICER_FAILURE,
         termination_manager, transmission_manager)
     emission_manager = _emission.back_emission_manager(
         lock, termination_manager, transmission_manager)

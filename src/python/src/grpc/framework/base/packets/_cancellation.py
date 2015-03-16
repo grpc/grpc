@@ -29,6 +29,7 @@
 
 """State and behavior for operation cancellation."""
 
+from grpc.framework.base import interfaces as base_interfaces
 from grpc.framework.base.packets import _interfaces
 from grpc.framework.base.packets import packets
 
@@ -58,7 +59,7 @@ class CancellationManager(_interfaces.CancellationManager):
   def cancel(self):
     """See _interfaces.CancellationManager.cancel for specification."""
     with self._lock:
-      self._termination_manager.abort(packets.Kind.CANCELLATION)
-      self._transmission_manager.abort(packets.Kind.CANCELLATION)
+      self._termination_manager.abort(base_interfaces.Outcome.CANCELLED)
+      self._transmission_manager.abort(base_interfaces.Outcome.CANCELLED)
       self._ingestion_manager.abort()
       self._expiration_manager.abort()
