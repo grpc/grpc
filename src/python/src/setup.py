@@ -54,8 +54,8 @@ _EXTENSION_LIBRARIES = (
 
 _EXTENSION_MODULE = _core.Extension(
     'grpc._adapter._c', sources=list(_EXTENSION_SOURCES),
-    include_dirs=_EXTENSION_INCLUDE_DIRECTORIES,
-    libraries=_EXTENSION_LIBRARIES,
+    include_dirs=list(_EXTENSION_INCLUDE_DIRECTORIES),
+    libraries=list(_EXTENSION_LIBRARIES),
     )
 
 _PACKAGES = (
@@ -82,5 +82,5 @@ _PACKAGE_DIRECTORIES = {
 
 _core.setup(
     name='grpc-2015', version='0.4.0',
-    ext_modules=[_EXTENSION_MODULE], packages=_PACKAGES,
+    ext_modules=[_EXTENSION_MODULE], packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES)
