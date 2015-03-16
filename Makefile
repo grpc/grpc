@@ -272,7 +272,10 @@ else
 IS_GIT_FOLDER = true
 endif
 
-OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c -lssl -lcrypto -ldl $(LDFLAGS)
+OPENSSL_ALPN_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c -lssl -lcrypto $(LDFLAGS)
+ifeq ($(SYSTEM),Linux)
+OPENSSL_ALPN_CHECK_CMD += -ldl
+endif
 ZLIB_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PERFTOOLS_CHECK_CMD = $(CC) $(CFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
@@ -344,12 +347,17 @@ OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/openssl/libssl.a $(LIBDIR)/$(CONFIG)/o
 # need to prefix these to ensure overriding system libraries
 CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/openssl $(LDFLAGS)
+ifeq ($(SYSTEM),Linux)
 LIBS_SECURE = dl
+endif
 else
 NO_SECURE = true
 endif
 else
-LIBS_SECURE = ssl crypto dl
+LIBS_SECURE = ssl crypto
+ifeq ($(SYSTEM),Linux)
+LIBS_SECURE += dl
+endif
 endif
 
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))

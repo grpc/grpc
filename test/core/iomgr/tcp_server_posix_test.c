@@ -38,6 +38,7 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
