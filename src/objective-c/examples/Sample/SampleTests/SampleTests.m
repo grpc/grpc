@@ -42,6 +42,9 @@
 @interface SampleTests : XCTestCase
 @end
 
+// These tests require the gRPC-Java "RouteGuide" sample server to be running locally. Install the
+// gRPC-Java library following the instructions here: https://github.com/grpc/grpc-java And run the
+// server by following the instructions here: https://github.com/grpc/grpc-java/tree/master/examples
 @implementation SampleTests
 
 - (void)testConnectionToLocalServer {
@@ -68,7 +71,7 @@
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:10.0 handler:nil];
+  [self waitForExpectationsWithTimeout:2.0 handler:nil];
 }
 
 - (void)testEmptyRPC {
@@ -96,6 +99,6 @@
 
   [call startWithWriteable:responsesWriteable];
 
-  [self waitForExpectationsWithTimeout:10.0 handler:nil];
+  [self waitForExpectationsWithTimeout:2.0 handler:nil];
 }
 @end
