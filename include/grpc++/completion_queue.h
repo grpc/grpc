@@ -77,19 +77,18 @@ class CompletionQueue {
   ~CompletionQueue();
 
   // Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT
-  enum NextStatus {SHUTDOWN, GOT_EVENT, TIMEOUT};
+  enum NextStatus { SHUTDOWN, GOT_EVENT, TIMEOUT };
 
   // Nonblocking (until deadline) read from queue.
   // Cannot rely on result of tag or ok if return is TIMEOUT
-  NextStatus AsyncNext(void **tag, bool *ok,
-		       std::chrono::system_clock::time_point deadline);
+  NextStatus AsyncNext(void** tag, bool* ok,
+                       std::chrono::system_clock::time_point deadline);
 
   // Blocking (until deadline) read from queue.
   // Returns false if the queue is ready for destruction, true if event
-  bool Next(void **tag, bool *ok) {
-    return (AsyncNext(tag,ok,
-		      std::chrono::system_clock::time_point::max()) !=
-	    SHUTDOWN);
+  bool Next(void** tag, bool* ok) {
+    return (AsyncNext(tag, ok, std::chrono::system_clock::time_point::max()) !=
+            SHUTDOWN);
   }
 
   // Shutdown has to be called, and the CompletionQueue can only be
