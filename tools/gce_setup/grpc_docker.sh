@@ -663,6 +663,58 @@ grpc_show_servers() {
   gcloud compute $project_opt ssh $zone_opt $host --command "$cmd"
 }
 
+_grpc_build_proto_bins_args() {
+  [[ -n $1 ]] && {  # host
+    host=$1
+    shift
+  } || {
+    host='grpc-docker-builder'
+  }
+}
+
+# grpc_build_proto_bins
+# 
+# - rebuilds the dist_proto docker image
+#   * doing this builds the protoc and the ruby, python and cpp bins statically
+#
+# - runs a docker command that copies the built protos to the GCE host
+# - copies the built protos to the local machine
+grpc_build_proto_bins() {
+  _grpc_ensure_gcloud_ssh || return 1;
+
+  # declare vars local so that they don't pollute the shell environment
+  # where they this func is used.
+  local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
+  # set by _grpc_build_proto_bins_args
+  local host
+
+  # set the project zone and check that all necessary args are provided
+  _grpc_set_project_and_zone -f _grpc_build_proto_bins_args "$@" || return 1
+  gce_has_instance $grpc_project $host || return 1;
+  local project_opt="--project $grpc_project"
+  local zone_opt="--zone $grpc_zone"
+  
+  # rebuild the dist_proto image
+  local label='dist_proto'
+  grpc_update_image -- -h $host $label || return 1
+ 
+  # run a command to copy the generated output to the local machine
+  local docker_prefix='sudo docker run -v /tmp:/tmp/proto_bins_out'
+  local tar_name='proto-bins-linux-x86_64.tar.gz'
+  local cp_cmd="cp /tmp/$tar_name /tmp/proto_bins_out"
+  local cmd="$docker_prefix grpc/$label $cp_cmd"
+  local ssh_cmd="bash -l -c \"$cmd\""
+  echo "will run:"
+  echo "  $ssh_cmd"
+  echo "on $host"
+  gcloud compute $project_opt ssh $zone_opt $host --command "$cmd" || return 1
+
+  # copy the tar.gz locally
+  local rmt_tar="$host:/tmp/$tar_name"
+  local local_copy="$(pwd)/$tar_name"
+  gcloud compute copy-files $rmt_tar $local_copy $project_opt $zone_opt || return 1
+}
+
 _grpc_launch_servers_args() {
   [[ -n $1 ]] && {  # host
     host=$1
