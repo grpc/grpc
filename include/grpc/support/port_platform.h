@@ -114,10 +114,11 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__APPLE__)
+#include <TargetConditionals.h>
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#ifdef TARGET_OS_IPHONE
+#if TARGET_OS_IPHONE
 #define GPR_CPU_IPHONE 1
 #else /* TARGET_OS_IPHONE */
 #define GPR_CPU_POSIX 1
