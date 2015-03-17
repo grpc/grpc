@@ -57,12 +57,15 @@ class EventDeleter {
   }
 };
 
-CompletionQueue::NextStatus CompletionQueue::AsyncNext(void** tag, bool* ok,
-                                                       gpr_timespec deadline) {
+CompletionQueue::NextStatus
+CompletionQueue::AsyncNext(void** tag, bool* ok,
+			   std::chrono::system_clock::time_point deadline) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
+  gpr_timespec gpr_deadline;
+  Timepoint2Timespec(deadline, &gpr_deadline);
   for (;;) {
-    ev.reset(grpc_completion_queue_next(cq_, deadline));
+    ev.reset(grpc_completion_queue_next(cq_, gpr_deadline));
     if (!ev) { /* got a NULL back because deadline passed */
       return TIMEOUT;
     }

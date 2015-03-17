@@ -34,7 +34,7 @@
 #ifndef GRPCXX_COMPLETION_QUEUE_H
 #define GRPCXX_COMPLETION_QUEUE_H
 
-#include <grpc/support/time.h>
+#include <chrono>
 #include <grpc++/impl/client_unary_call.h>
 
 struct grpc_completion_queue;
@@ -81,12 +81,15 @@ class CompletionQueue {
 
   // Nonblocking (until deadline) read from queue.
   // Cannot rely on result of tag or ok if return is TIMEOUT
-  NextStatus AsyncNext(void **tag, bool *ok, gpr_timespec deadline);
+  NextStatus AsyncNext(void **tag, bool *ok,
+		       std::chrono::system_clock::time_point deadline);
 
   // Blocking (until deadline) read from queue.
   // Returns false if the queue is ready for destruction, true if event
   bool Next(void **tag, bool *ok) {
-    return (AsyncNext(tag,ok,gpr_inf_future) != SHUTDOWN);
+    return (AsyncNext(tag,ok,
+		      std::chrono::system_clock::time_point::max()) !=
+	    SHUTDOWN);
   }
 
   // Shutdown has to be called, and the CompletionQueue can only be
