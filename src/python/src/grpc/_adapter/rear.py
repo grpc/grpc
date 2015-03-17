@@ -191,8 +191,7 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     if event.status.code is _low.Code.OK:
       kind = tickets.BackToFrontPacket.Kind.COMPLETION
     elif event.status.code is _low.Code.CANCELLED:
-      # TODO(issue 752): Use a CANCELLATION ticket kind here.
-      kind = tickets.BackToFrontPacket.Kind.SERVICER_FAILURE
+      kind = tickets.BackToFrontPacket.Kind.CANCELLATION
     elif event.status.code is _low.Code.EXPIRED:
       kind = tickets.BackToFrontPacket.Kind.EXPIRATION
     else:

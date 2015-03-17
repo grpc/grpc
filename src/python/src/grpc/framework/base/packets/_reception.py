@@ -244,7 +244,9 @@ class _FrontReceiver(_Receiver):
       A base_interfaces.Outcome value describing operation abortion if the
         packet is abortive or None if the packet is not abortive.
     """
-    if packet.kind is packets.BackToFrontPacket.Kind.EXPIRATION:
+    if packet.kind is packets.BackToFrontPacket.Kind.CANCELLATION:
+      return base_interfaces.Outcome.CANCELLED
+    elif packet.kind is packets.BackToFrontPacket.Kind.EXPIRATION:
       return base_interfaces.Outcome.EXPIRED
     elif packet.kind is packets.BackToFrontPacket.Kind.SERVICER_FAILURE:
       return base_interfaces.Outcome.SERVICER_FAILURE
