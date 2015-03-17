@@ -66,12 +66,12 @@ ThreadPool::~ThreadPool() {
     shutdown_ = true;
     cv_.notify_all();
   }
-  for (auto &t : threads_) {
+  for (auto& t : threads_) {
     t.join();
   }
 }
 
-void ThreadPool::ScheduleCallback(const std::function<void()> &callback) {
+void ThreadPool::ScheduleCallback(const std::function<void()>& callback) {
   std::lock_guard<std::mutex> lock(mu_);
   callbacks_.push(callback);
   cv_.notify_one();

@@ -48,10 +48,9 @@ template <class R>
 class ClientAsyncResponseReader GRPC_FINAL {
  public:
   ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
-                    const RpcMethod& method, ClientContext* context,
-                    const grpc::protobuf::Message& request, void* tag)
-      : context_(context),
-        call_(channel->CreateCall(method, context, cq)) {
+                            const RpcMethod& method, ClientContext* context,
+                            const grpc::protobuf::Message& request, void* tag)
+      : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_buf_.Reset(tag);
     init_buf_.AddSendInitialMetadata(&context->send_initial_metadata_);
     init_buf_.AddSendMessage(request);

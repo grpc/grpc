@@ -37,7 +37,7 @@
 
 namespace grpc {
 
-void ChannelArguments::SetSslTargetNameOverride(const grpc::string &name) {
+void ChannelArguments::SetSslTargetNameOverride(const grpc::string& name) {
   SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
 }
 
@@ -50,32 +50,32 @@ grpc::string ChannelArguments::GetSslTargetNameOverride() const {
   return "";
 }
 
-void ChannelArguments::SetInt(const grpc::string &key, int value) {
+void ChannelArguments::SetInt(const grpc::string& key, int value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
   strings_.push_back(key);
-  arg.key = const_cast<char *>(strings_.back().c_str());
+  arg.key = const_cast<char*>(strings_.back().c_str());
   arg.value.integer = value;
 
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetString(const grpc::string &key,
-                                 const grpc::string &value) {
+void ChannelArguments::SetString(const grpc::string& key,
+                                 const grpc::string& value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   strings_.push_back(key);
-  arg.key = const_cast<char *>(strings_.back().c_str());
+  arg.key = const_cast<char*>(strings_.back().c_str());
   strings_.push_back(value);
-  arg.value.string = const_cast<char *>(strings_.back().c_str());
+  arg.value.string = const_cast<char*>(strings_.back().c_str());
 
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetChannelArgs(grpc_channel_args *channel_args) const {
+void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
   channel_args->num_args = args_.size();
   if (channel_args->num_args > 0) {
-    channel_args->args = const_cast<grpc_arg *>(&args_[0]);
+    channel_args->args = const_cast<grpc_arg*>(&args_[0]);
   }
 }
 

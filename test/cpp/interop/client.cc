@@ -237,8 +237,7 @@ void DoServiceAccountCreds() {
 }
 
 void DoJwtTokenCreds() {
-  gpr_log(GPR_INFO,
-          "Sending a large unary rpc with JWT token credentials ...");
+  gpr_log(GPR_INFO, "Sending a large unary rpc with JWT token credentials ...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("jwt_token_creds");
   SimpleRequest request;

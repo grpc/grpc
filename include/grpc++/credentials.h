@@ -50,8 +50,8 @@ class Credentials {
 
  protected:
   friend std::unique_ptr<Credentials> CompositeCredentials(
-    const std::unique_ptr<Credentials>& creds1,
-    const std::unique_ptr<Credentials>& creds2);
+      const std::unique_ptr<Credentials>& creds1,
+      const std::unique_ptr<Credentials>& creds2);
 
   virtual SecureCredentials* AsSecureCredentials() = 0;
 

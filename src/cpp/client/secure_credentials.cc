@@ -55,7 +55,8 @@ class SecureCredentials GRPC_FINAL : public Credentials {
     args.SetChannelArgs(&channel_args);
     return std::shared_ptr<ChannelInterface>(new Channel(
         args.GetSslTargetNameOverride().empty()
-            ? target : args.GetSslTargetNameOverride(),
+            ? target
+            : args.GetSslTargetNameOverride(),
         grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
   }
 
@@ -111,7 +112,7 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
 
 // Builds JWT credentials.
 std::unique_ptr<Credentials> JWTCredentials(
-    const grpc::string &json_key, std::chrono::seconds token_lifetime) {
+    const grpc::string& json_key, std::chrono::seconds token_lifetime) {
   if (token_lifetime.count() <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create JWTCredentials with non-positive lifetime");
