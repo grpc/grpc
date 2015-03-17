@@ -54,10 +54,11 @@ def serve():
     private_key = resources.private_key()
     certificate_chain = resources.certificate_chain()
     server = implementations.secure_server(
-        methods.SERVER_METHODS, args.port, private_key, certificate_chain)
+        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port, private_key,
+        certificate_chain)
   else:
     server = implementations.insecure_server(
-        methods.SERVER_METHODS, args.port)
+        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port)
 
   server.start()
   logging.info('Server serving.')

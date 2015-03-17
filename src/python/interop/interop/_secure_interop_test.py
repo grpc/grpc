@@ -46,12 +46,12 @@ class SecureInteropTest(
 
   def setUp(self):
     self.server = implementations.secure_server(
-        methods.SERVER_METHODS, 0, resources.private_key(),
-        resources.certificate_chain())
+        methods.SERVICE_NAME, methods.SERVER_METHODS, 0,
+        resources.private_key(), resources.certificate_chain())
     self.server.start()
     port = self.server.port()
     self.stub = implementations.secure_stub(
-        methods.CLIENT_METHODS, 'localhost', port,
+        methods.SERVICE_NAME, methods.CLIENT_METHODS, 'localhost', port,
         resources.test_root_certificates(), None, None,
         server_host_override=_SERVER_HOST_OVERRIDE)
 

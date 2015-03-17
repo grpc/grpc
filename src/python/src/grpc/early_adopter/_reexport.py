@@ -174,6 +174,11 @@ class _StreamUnarySyncAsync(interfaces.StreamUnarySyncAsync):
     return _ReexportedFuture(self._underlying.future(request_iterator, timeout))
 
 
+def common_cardinality(early_adopter_cardinality):
+  return _EARLY_ADOPTER_CARDINALITY_TO_COMMON_CARDINALITY[
+      early_adopter_cardinality]
+
+
 def common_cardinalities(early_adopter_cardinalities):
   common_cardinalities = {}
   for name, early_adopter_cardinality in early_adopter_cardinalities.iteritems():
