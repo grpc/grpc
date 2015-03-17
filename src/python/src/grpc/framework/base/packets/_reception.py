@@ -31,6 +31,7 @@
 
 import abc
 
+from grpc.framework.base import interfaces as base_interfaces
 from grpc.framework.base.packets import _interfaces
 from grpc.framework.base.packets import packets
 
@@ -72,11 +73,11 @@ class _Receiver(object):
 
 
 def _abort(
-    category, termination_manager, transmission_manager, ingestion_manager,
+    outcome, termination_manager, transmission_manager, ingestion_manager,
     expiration_manager):
-  """Indicates abortion with the given category to the given managers."""
-  termination_manager.abort(category)
-  transmission_manager.abort(category)
+  """Indicates abortion with the given outcome to the given managers."""
+  termination_manager.abort(outcome)
+  transmission_manager.abort(outcome)
   ingestion_manager.abort()
   expiration_manager.abort()
 
@@ -88,9 +89,9 @@ def _abort_if_abortive(
 
   Args:
     packet: A just-arrived packet.
-    abortive: A callable that takes a packet and returns an operation category
-      indicating that the operation should be aborted or None indicating that
-      the operation should not be aborted.
+    abortive: A callable that takes a packet and returns a
+      base_interfaces.Outcome indicating that the operation should be aborted
+      or None indicating that the operation should not be aborted.
     termination_manager: The operation's _interfaces.TerminationManager.
     transmission_manager: The operation's _interfaces.TransmissionManager.
     ingestion_manager: The operation's _interfaces.IngestionManager.
@@ -99,12 +100,12 @@ def _abort_if_abortive(
   Returns:
     True if the operation was aborted; False otherwise.
   """
-  abort_category = abortive(packet)
-  if abort_category is None:
+  abortion_outcome = abortive(packet)
+  if abortion_outcome is None:
     return False
   else:
     _abort(
-        abort_category, termination_manager, transmission_manager,
+        abortion_outcome, termination_manager, transmission_manager,
         ingestion_manager, expiration_manager)
     return True
 
@@ -114,8 +115,8 @@ def _reception_failure(
     expiration_manager):
   """Aborts the operation with an indication of reception failure."""
   _abort(
-      packets.Kind.RECEPTION_FAILURE, termination_manager, transmission_manager,
-      ingestion_manager, expiration_manager)
+      base_interfaces.Outcome.RECEPTION_FAILURE, termination_manager,
+      transmission_manager, ingestion_manager, expiration_manager)
 
 
 class _BackReceiver(_Receiver):
@@ -147,23 +148,22 @@ class _BackReceiver(_Receiver):
       packet: A just-arrived packet.
 
     Returns:
-      One of packets.Kind.CANCELLATION, packets.Kind.SERVICED_FAILURE, or
-        packets.Kind.RECEPTION_FAILURE, indicating that the packet is abortive
-        and how, or None, indicating that the packet is not abortive.
+      A base_interfaces.Outcome value describing operation abortion if the
+        packet is abortive or None if the packet is not abortive.
     """
     if packet.kind is packets.Kind.CANCELLATION:
-      return packets.Kind.CANCELLATION
+      return base_interfaces.Outcome.CANCELLED
     elif packet.kind is packets.Kind.EXPIRATION:
-      return packets.Kind.EXPIRATION
+      return base_interfaces.Outcome.EXPIRED
     elif packet.kind is packets.Kind.SERVICED_FAILURE:
-      return packets.Kind.SERVICED_FAILURE
+      return base_interfaces.Outcome.SERVICED_FAILURE
     elif packet.kind is packets.Kind.RECEPTION_FAILURE:
-      return packets.Kind.SERVICED_FAILURE
+      return base_interfaces.Outcome.SERVICED_FAILURE
     elif (packet.kind in (packets.Kind.COMMENCEMENT, packets.Kind.ENTIRE) and
           self._first_packet_seen):
-      return packets.Kind.RECEPTION_FAILURE
+      return base_interfaces.Outcome.RECEPTION_FAILURE
     elif self._last_packet_seen:
-      return packets.Kind.RECEPTION_FAILURE
+      return base_interfaces.Outcome.RECEPTION_FAILURE
     else:
       return None
 
@@ -236,18 +236,17 @@ class _FrontReceiver(_Receiver):
       packet: A just-arrived packet.
 
     Returns:
-      One of packets.Kind.EXPIRATION, packets.Kind.SERVICER_FAILURE, or
-        packets.Kind.RECEPTION_FAILURE, indicating that the packet is abortive
-        and how, or None, indicating that the packet is not abortive.
+      A base_interfaces.Outcome value describing operation abortion if the
+        packet is abortive or None if the packet is not abortive.
     """
     if packet.kind is packets.Kind.EXPIRATION:
-      return packets.Kind.EXPIRATION
+      return base_interfaces.Outcome.EXPIRED
     elif packet.kind is packets.Kind.SERVICER_FAILURE:
-      return packets.Kind.SERVICER_FAILURE
+      return base_interfaces.Outcome.SERVICER_FAILURE
     elif packet.kind is packets.Kind.RECEPTION_FAILURE:
-      return packets.Kind.SERVICER_FAILURE
+      return base_interfaces.Outcome.SERVICER_FAILURE
     elif self._last_packet_seen:
-      return packets.Kind.RECEPTION_FAILURE
+      return base_interfaces.Outcome.RECEPTION_FAILURE
     else:
       return None
 

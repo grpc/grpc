@@ -206,7 +206,7 @@ class _IngestionManager(_interfaces.IngestionManager):
   """An implementation of _interfaces.IngestionManager."""
 
   def __init__(
-      self, lock, pool, consumer_creator, failure_kind, termination_manager,
+      self, lock, pool, consumer_creator, failure_outcome, termination_manager,
       transmission_manager):
     """Constructor.
 
@@ -216,8 +216,10 @@ class _IngestionManager(_interfaces.IngestionManager):
       consumer_creator: A _ConsumerCreator wrapping the portion of customer code
         that when called returns the stream.Consumer with which the customer
         code will ingest payload values.
-      failure_kind: Whichever one of packets.Kind.SERVICED_FAILURE or
-        packets.Kind.SERVICER_FAILURE describes local failure of customer code.
+      failure_outcome: Whichever one of
+        interfaces.Outcome.SERVICED_FAILURE or
+        interfaces.Outcome.SERVICER_FAILURE describes local failure of
+        customer code.
       termination_manager: The _interfaces.TerminationManager for the operation.
       transmission_manager: The _interfaces.TransmissionManager for the
         operation.
@@ -225,7 +227,7 @@ class _IngestionManager(_interfaces.IngestionManager):
     self._lock = lock
     self._pool = pool
     self._consumer_creator = consumer_creator
-    self._failure_kind = failure_kind
+    self._failure_outcome = failure_outcome
     self._termination_manager = termination_manager
     self._transmission_manager = transmission_manager
     self._expiration_manager = None
@@ -299,12 +301,12 @@ class _IngestionManager(_interfaces.IngestionManager):
         else:
           with self._lock:
             if self._pending_ingestion is not None:
-              self._abort_and_notify(self._failure_kind)
+              self._abort_and_notify(self._failure_outcome)
             self._processing = False
             return
       else:
         with self._lock:
-          self._abort_and_notify(self._failure_kind)
+          self._abort_and_notify(self._failure_outcome)
           self._processing = False
           return
 
@@ -316,16 +318,16 @@ class _IngestionManager(_interfaces.IngestionManager):
             _CREATE_CONSUMER_EXCEPTION_LOG_MESSAGE, requirement)
         if consumer_creation_outcome.return_value is None:
           with self._lock:
-            self._abort_and_notify(self._failure_kind)
+            self._abort_and_notify(self._failure_outcome)
             self._processing = False
         elif consumer_creation_outcome.return_value.remote_error:
           with self._lock:
-            self._abort_and_notify(packets.Kind.RECEPTION_FAILURE)
+            self._abort_and_notify(interfaces.Outcome.RECEPTION_FAILURE)
             self._processing = False
         elif consumer_creation_outcome.return_value.abandoned:
           with self._lock:
             if self._pending_ingestion is not None:
-              self._abort_and_notify(self._failure_kind)
+              self._abort_and_notify(self._failure_outcome)
             self._processing = False
         else:
           wrapped_ingestion_consumer = _WrappedConsumer(
@@ -346,7 +348,7 @@ class _IngestionManager(_interfaces.IngestionManager):
 
   def consume(self, payload):
     if self._ingestion_complete:
-      self._abort_and_notify(self._failure_kind)
+      self._abort_and_notify(self._failure_outcome)
     elif self._pending_ingestion is not None:
       if self._processing:
         self._pending_ingestion.append(payload)
@@ -359,7 +361,7 @@ class _IngestionManager(_interfaces.IngestionManager):
 
   def terminate(self):
     if self._ingestion_complete:
-      self._abort_and_notify(self._failure_kind)
+      self._abort_and_notify(self._failure_outcome)
     else:
       self._ingestion_complete = True
       if self._pending_ingestion is not None and not self._processing:
@@ -371,7 +373,7 @@ class _IngestionManager(_interfaces.IngestionManager):
 
   def consume_and_terminate(self, payload):
     if self._ingestion_complete:
-      self._abort_and_notify(self._failure_kind)
+      self._abort_and_notify(self._failure_outcome)
     else:
       self._ingestion_complete = True
       if self._pending_ingestion is not None:
@@ -397,19 +399,20 @@ def front_ingestion_manager(
   Args:
     lock: The operation-wide lock.
     pool: A thread pool in which to execute customer code.
-    subscription: A base_interfaces.ServicedSubscription indicating the
+    subscription: A interfaces.ServicedSubscription indicating the
       customer's interest in the results of the operation.
     termination_manager: The _interfaces.TerminationManager for the operation.
     transmission_manager: The _interfaces.TransmissionManager for the
       operation.
-    operation_context: A base_interfaces.OperationContext for the operation.
+    operation_context: A interfaces.OperationContext for the operation.
 
   Returns:
     An IngestionManager appropriate for front-side use.
   """
   ingestion_manager = _IngestionManager(
       lock, pool, _FrontConsumerCreator(subscription, operation_context),
-      packets.Kind.SERVICED_FAILURE, termination_manager, transmission_manager)
+      interfaces.Outcome.SERVICED_FAILURE, termination_manager,
+      transmission_manager)
   ingestion_manager.start(None)
   return ingestion_manager
 
@@ -422,11 +425,11 @@ def back_ingestion_manager(
   Args:
     lock: The operation-wide lock.
     pool: A thread pool in which to execute customer code.
-    servicer: A base_interfaces.Servicer for servicing the operation.
+    servicer: A interfaces.Servicer for servicing the operation.
     termination_manager: The _interfaces.TerminationManager for the operation.
     transmission_manager: The _interfaces.TransmissionManager for the
       operation.
-    operation_context: A base_interfaces.OperationContext for the operation.
+    operation_context: A interfaces.OperationContext for the operation.
     emission_consumer: The _interfaces.EmissionConsumer for the operation.
 
   Returns:
@@ -435,5 +438,6 @@ def back_ingestion_manager(
   ingestion_manager = _IngestionManager(
       lock, pool, _BackConsumerCreator(
           servicer, operation_context, emission_consumer),
-      packets.Kind.SERVICER_FAILURE, termination_manager, transmission_manager)
+      interfaces.Outcome.SERVICER_FAILURE, termination_manager,
+      transmission_manager)
   return ingestion_manager

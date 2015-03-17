@@ -50,16 +50,6 @@ from grpc.framework.foundation import callable_util
 
 _IDLE_ACTION_EXCEPTION_LOG_MESSAGE = 'Exception calling idle action!'
 
-_OPERATION_OUTCOMES = (
-    base_interfaces.Outcome.COMPLETED,
-    base_interfaces.Outcome.CANCELLED,
-    base_interfaces.Outcome.EXPIRED,
-    base_interfaces.Outcome.RECEPTION_FAILURE,
-    base_interfaces.Outcome.TRANSMISSION_FAILURE,
-    base_interfaces.Outcome.SERVICER_FAILURE,
-    base_interfaces.Outcome.SERVICED_FAILURE,
-    )
-
 
 class _EasyOperation(base_interfaces.Operation):
   """A trivial implementation of base_interfaces.Operation."""
@@ -98,7 +88,7 @@ class _Endlette(object):
     # indicates an in-progress fire-and-forget operation for which the customer
     # has chosen to ignore results.
     self._operations = {}
-    self._stats = {outcome: 0 for outcome in _OPERATION_OUTCOMES}
+    self._stats = {outcome: 0 for outcome in base_interfaces.Outcome}
     self._idle_actions = []
 
   def terminal_action(self, operation_id):
@@ -198,7 +188,7 @@ def _front_operate(
         lock, transmission_pool, callback, operation_id, name,
         subscription.kind, trace_id, timeout, termination_manager)
     operation_context = _context.OperationContext(
-        lock, operation_id, packets.Kind.SERVICED_FAILURE,
+        lock, operation_id, base_interfaces.Outcome.SERVICED_FAILURE,
         termination_manager, transmission_manager)
     emission_manager = _emission.front_emission_manager(
         lock, termination_manager, transmission_manager)
@@ -327,7 +317,7 @@ def _back_operate(
         lock, transmission_pool, callback, ticket.operation_id,
         termination_manager, ticket.subscription)
     operation_context = _context.OperationContext(
-        lock, ticket.operation_id, packets.Kind.SERVICER_FAILURE,
+        lock, ticket.operation_id, base_interfaces.Outcome.SERVICER_FAILURE,
         termination_manager, transmission_manager)
     emission_manager = _emission.back_emission_manager(
         lock, termination_manager, transmission_manager)

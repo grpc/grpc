@@ -31,10 +31,9 @@
 
 import time
 
-# _interfaces and packets are referenced from specification in this module.
+# _interfaces is referenced from specification in this module.
 from grpc.framework.base import interfaces as base_interfaces
 from grpc.framework.base.packets import _interfaces  # pylint: disable=unused-import
-from grpc.framework.base.packets import packets  # pylint: disable=unused-import
 
 
 class OperationContext(base_interfaces.OperationContext):
@@ -48,8 +47,9 @@ class OperationContext(base_interfaces.OperationContext):
     Args:
       lock: The operation-wide lock.
       operation_id: An object identifying the operation.
-      local_failure: Whichever one of packets.Kind.SERVICED_FAILURE or
-        packets.Kind.SERVICER_FAILURE describes local failure of customer code.
+      local_failure: Whichever one of base_interfaces.Outcome.SERVICED_FAILURE
+        or base_interfaces.Outcome.SERVICER_FAILURE describes local failure of
+        customer code.
       termination_manager: The _interfaces.TerminationManager for the operation.
       transmission_manager: The _interfaces.TransmissionManager for the
         operation.

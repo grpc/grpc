@@ -34,20 +34,9 @@ import enum
 from grpc.framework.base import interfaces
 from grpc.framework.base.packets import _constants
 from grpc.framework.base.packets import _interfaces
-from grpc.framework.base.packets import packets
 from grpc.framework.foundation import callable_util
 
 _CALLBACK_EXCEPTION_LOG_MESSAGE = 'Exception calling termination callback!'
-
-_KINDS_TO_OUTCOMES = {
-    packets.Kind.COMPLETION: interfaces.Outcome.COMPLETED,
-    packets.Kind.CANCELLATION: interfaces.Outcome.CANCELLED,
-    packets.Kind.EXPIRATION: interfaces.Outcome.EXPIRED,
-    packets.Kind.RECEPTION_FAILURE: interfaces.Outcome.RECEPTION_FAILURE,
-    packets.Kind.TRANSMISSION_FAILURE: interfaces.Outcome.TRANSMISSION_FAILURE,
-    packets.Kind.SERVICER_FAILURE: interfaces.Outcome.SERVICER_FAILURE,
-    packets.Kind.SERVICED_FAILURE: interfaces.Outcome.SERVICED_FAILURE,
-    }
 
 
 @enum.unique
@@ -78,8 +67,8 @@ class _TerminationManager(_interfaces.TerminationManager):
       action: An action to call on operation termination.
       requirements: A combination of _Requirement values identifying what
         must finish for the operation to be considered completed.
-      local_failure: A packets.Kind specifying what constitutes local failure of
-        customer work.
+      local_failure: An interfaces.Outcome specifying what constitutes local
+        failure of customer work.
     """
     self._work_pool = work_pool
     self._utility_pool = utility_pool
@@ -89,27 +78,23 @@ class _TerminationManager(_interfaces.TerminationManager):
     self._expiration_manager = None
 
     self._outstanding_requirements = set(requirements)
-    self._kind = None
+    self._outcome = None
     self._callbacks = []
 
   def set_expiration_manager(self, expiration_manager):
     self._expiration_manager = expiration_manager
 
-  def _terminate(self, kind):
+  def _terminate(self, outcome):
     """Terminates the operation.
 
     Args:
-      kind: One of packets.Kind.COMPLETION, packets.Kind.CANCELLATION,
-        packets.Kind.EXPIRATION, packets.Kind.RECEPTION_FAILURE,
-        packets.Kind.TRANSMISSION_FAILURE, packets.Kind.SERVICER_FAILURE, or
-        packets.Kind.SERVICED_FAILURE.
+      outcome: An interfaces.Outcome describing the outcome of the operation.
     """
     self._expiration_manager.abort()
     self._outstanding_requirements = None
     callbacks = list(self._callbacks)
     self._callbacks = None
-    self._kind = kind
-    outcome = _KINDS_TO_OUTCOMES[kind]
+    self._outcome = outcome
 
     act = callable_util.with_exceptions_logged(
         self._action, _constants.INTERNAL_ERROR_LOG_MESSAGE)
@@ -122,7 +107,7 @@ class _TerminationManager(_interfaces.TerminationManager):
           callback_outcome = callable_util.call_logging_exceptions(
               callback, _CALLBACK_EXCEPTION_LOG_MESSAGE, outcome)
           if callback_outcome.exception is not None:
-            outcome = _KINDS_TO_OUTCOMES[self._local_failure]
+            outcome = self._local_failure
             break
         self._utility_pool.submit(act, outcome)
 
@@ -141,8 +126,7 @@ class _TerminationManager(_interfaces.TerminationManager):
       if self._outstanding_requirements is None:
         self._work_pool.submit(
             callable_util.with_exceptions_logged(
-                callback, _CALLBACK_EXCEPTION_LOG_MESSAGE),
-            _KINDS_TO_OUTCOMES[self._kind])
+                callback, _CALLBACK_EXCEPTION_LOG_MESSAGE), self._outcome)
       else:
         self._callbacks.append(callback)
 
@@ -151,28 +135,28 @@ class _TerminationManager(_interfaces.TerminationManager):
     if self._outstanding_requirements is not None:
       self._outstanding_requirements.discard(_Requirement.EMISSION)
       if not self._outstanding_requirements:
-        self._terminate(packets.Kind.COMPLETION)
+        self._terminate(interfaces.Outcome.COMPLETED)
 
   def transmission_complete(self):
     """See superclass method for specification."""
     if self._outstanding_requirements is not None:
       self._outstanding_requirements.discard(_Requirement.TRANSMISSION)
       if not self._outstanding_requirements:
-        self._terminate(packets.Kind.COMPLETION)
+        self._terminate(interfaces.Outcome.COMPLETED)
 
   def ingestion_complete(self):
     """See superclass method for specification."""
     if self._outstanding_requirements is not None:
       self._outstanding_requirements.discard(_Requirement.INGESTION)
       if not self._outstanding_requirements:
-        self._terminate(packets.Kind.COMPLETION)
+        self._terminate(interfaces.Outcome.COMPLETED)
 
-  def abort(self, kind):
+  def abort(self, outcome):
     """See _interfaces.TerminationManager.abort for specification."""
-    if kind == self._local_failure:
+    if outcome is self._local_failure:
       self._has_failed_locally = True
     if self._outstanding_requirements is not None:
-      self._terminate(kind)
+      self._terminate(outcome)
 
 
 def front_termination_manager(
@@ -195,7 +179,7 @@ def front_termination_manager(
 
   return _TerminationManager(
       work_pool, utility_pool, action, requirements,
-      packets.Kind.SERVICED_FAILURE)
+      interfaces.Outcome.SERVICED_FAILURE)
 
 
 def back_termination_manager(work_pool, utility_pool, action, subscription_kind):
@@ -217,4 +201,4 @@ def back_termination_manager(work_pool, utility_pool, action, subscription_kind)
 
   return _TerminationManager(
       work_pool, utility_pool, action, requirements,
-      packets.Kind.SERVICER_FAILURE)
+      interfaces.Outcome.SERVICER_FAILURE)

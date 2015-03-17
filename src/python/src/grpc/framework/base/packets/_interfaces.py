@@ -83,11 +83,11 @@ class TerminationManager(object):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def abort(self, kind):
+  def abort(self, outcome):
     """Indicates that the operation must abort for the indicated reason.
 
     Args:
-      kind: A value of packets.Kind indicating operation abortion.
+      outcome: A base_interfaces.Outcome indicating operation abortion.
     """
     raise NotImplementedError()
 
@@ -109,11 +109,11 @@ class TransmissionManager(object):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def abort(self, kind):
+  def abort(self, outcome):
     """Indicates that the operation has aborted for the indicated reason.
 
     Args:
-      kind: A value of packets.Kind indicating operation abortion.
+      outcome: A base_interfaces.Outcome indicating operation abortion.
     """
     raise NotImplementedError()
 
