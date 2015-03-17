@@ -32,57 +32,32 @@
 #endregion
 
 using System;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
-    /// <summary>
-    /// For serializing and deserializing messages.
-    /// </summary>
-    public struct Marshaller<T>
+    public delegate void HeaderInterceptorDelegate(Metadata.Builder headerBuilder);
+
+    public class StubConfiguration
     {
-        readonly Func<T, byte[]> serializer;
-        readonly Func<byte[], T> deserializer;
+        /// <summary>
+        /// The default stub configuration.
+        /// </summary>
+        public static readonly StubConfiguration Default = new StubConfiguration((headerBuilder) => { });
 
-        public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
+        readonly HeaderInterceptorDelegate headerInterceptor;
+
+        public StubConfiguration(HeaderInterceptorDelegate headerInterceptor)
         {
-            this.serializer = Preconditions.CheckNotNull(serializer);
-            this.deserializer = Preconditions.CheckNotNull(deserializer);
+            this.headerInterceptor = Preconditions.CheckNotNull(headerInterceptor);
         }
 
-        public Func<T, byte[]> Serializer
+        public HeaderInterceptorDelegate HeaderInterceptor
         {
             get
             {
-                return this.serializer;
-            }
-        }
-
-        public Func<byte[], T> Deserializer
-        {
-            get
-            {
-                return this.deserializer;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Utilities for creating marshallers.
-    /// </summary>
-    public static class Marshallers
-    {
-        public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
-        {
-            return new Marshaller<T>(serializer, deserializer);
-        }
-
-        public static Marshaller<string> StringMarshaller
-        {
-            get
-            {
-                return new Marshaller<string>(System.Text.Encoding.UTF8.GetBytes,
-                                              System.Text.Encoding.UTF8.GetString);
+                return headerInterceptor;
             }
         }
     }

@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,75 +27,99 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
 
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Grpc.Core.Internal;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Mapping of method names to server call handlers.
+    /// gRPC call metadata.
     /// </summary>
-    public class ServerServiceDefinition
+    public class Metadata
     {
-        readonly ImmutableDictionary<string, IServerCallHandler> callHandlers;
+        public static readonly Metadata Empty = new Metadata(ImmutableList<MetadataEntry>.Empty);
 
-        private ServerServiceDefinition(ImmutableDictionary<string, IServerCallHandler> callHandlers)
+        readonly ImmutableList<MetadataEntry> entries;
+
+        public Metadata(ImmutableList<MetadataEntry> entries)
         {
-            this.callHandlers = callHandlers;
+            this.entries = entries;
         }
 
-        internal ImmutableDictionary<string, IServerCallHandler> CallHandlers
+        public ImmutableList<MetadataEntry> Entries
         {
             get
             {
-                return this.callHandlers;
+                return this.entries;
             }
         }
 
-        public static Builder CreateBuilder(string serviceName)
+        public static Builder CreateBuilder()
         {
-            return new Builder(serviceName);
+            return new Builder();
+        }
+       
+        public struct MetadataEntry
+        {
+            readonly string key;
+            readonly byte[] valueBytes;
+
+            public MetadataEntry(string key, byte[] valueBytes)
+            {
+                this.key = key;
+                this.valueBytes = valueBytes;
+            }
+
+            public MetadataEntry(string key, string value)
+            {
+                this.key = key;
+                this.valueBytes = Encoding.ASCII.GetBytes(value);
+            }
+
+            public string Key
+            {
+                get
+                {
+                    return this.key;
+                }
+            }
+
+            // TODO: using ByteString would guarantee immutability.
+            public byte[] ValueBytes
+            {
+                get
+                {
+                    return this.valueBytes;
+                }
+            }
         }
 
         public class Builder
         {
-            readonly string serviceName;
-            readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
+            readonly List<Metadata.MetadataEntry> entries = new List<Metadata.MetadataEntry>();
 
-            public Builder(string serviceName)
+            public List<MetadataEntry> Entries
             {
-                this.serviceName = serviceName;
+                get
+                {
+                    return entries;
+                }
             }
 
-            public Builder AddMethod<TRequest, TResponse>(
-                Method<TRequest, TResponse> method,
-                UnaryRequestServerMethod<TRequest, TResponse> handler)
+            public Builder Add(MetadataEntry entry)
             {
-                callHandlers.Add(GetFullMethodName(serviceName, method.Name), ServerCalls.UnaryRequestCall(method, handler));
+                entries.Add(entry);
                 return this;
             }
 
-            public Builder AddMethod<TRequest, TResponse>(
-                Method<TRequest, TResponse> method,
-                StreamingRequestServerMethod<TRequest, TResponse> handler)
+            public Metadata Build()
             {
-                callHandlers.Add(GetFullMethodName(serviceName, method.Name), ServerCalls.StreamingRequestCall(method, handler));
-                return this;
-            }
-
-            public ServerServiceDefinition Build()
-            {
-                return new ServerServiceDefinition(callHandlers.ToImmutableDictionary());
-            }
-
-            private string GetFullMethodName(string serviceName, string methodName)
-            {
-                return serviceName + "/" + methodName;
+                return new Metadata(entries.ToImmutableList());
             }
         }
     }

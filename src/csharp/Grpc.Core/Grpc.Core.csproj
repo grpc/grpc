@@ -79,6 +79,10 @@
     <Compile Include="Utils\Preconditions.cs" />
     <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
     <Compile Include="ServerCredentials.cs" />
+    <Compile Include="Metadata.cs" />
+    <Compile Include="Internal\MetadataArraySafeHandle.cs" />
+    <Compile Include="Stub\AbstractStub.cs" />
+    <Compile Include="Stub\StubConfiguration.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -96,4 +100,7 @@
     <Otherwise />
   </Choose>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Stub\" />
+  </ItemGroup>
 </Project>

@@ -1,5 +1,4 @@
 #region Copyright notice and license
-
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -28,62 +27,46 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #endregion
-
 using System;
-using Grpc.Core.Utils;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// For serializing and deserializing messages.
+    /// grpc_metadata_array from <grpc/grpc.h>
     /// </summary>
-    public struct Marshaller<T>
+    internal class MetadataArraySafeHandle : SafeHandleZeroIsInvalid
     {
-        readonly Func<T, byte[]> serializer;
-        readonly Func<byte[], T> deserializer;
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity);
 
-        public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
+        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
+        static extern void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength);
+
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern void grpcsharp_metadata_array_destroy_full(IntPtr array);
+
+        private MetadataArraySafeHandle()
         {
-            this.serializer = Preconditions.CheckNotNull(serializer);
-            this.deserializer = Preconditions.CheckNotNull(deserializer);
         }
 
-        public Func<T, byte[]> Serializer
+        public static MetadataArraySafeHandle Create(Metadata metadata)
         {
-            get
+            var entries = metadata.Entries;
+            var metadataArray = grpcsharp_metadata_array_create(new UIntPtr((ulong)entries.Count));
+            for (int i = 0; i < entries.Count; i++)
             {
-                return this.serializer;
+                grpcsharp_metadata_array_add(metadataArray, entries[i].Key, entries[i].ValueBytes, new UIntPtr((ulong)entries[i].ValueBytes.Length));
             }
+            return metadataArray;
         }
 
-        public Func<byte[], T> Deserializer
+        protected override bool ReleaseHandle()
         {
-            get
-            {
-                return this.deserializer;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Utilities for creating marshallers.
-    /// </summary>
-    public static class Marshallers
-    {
-        public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
-        {
-            return new Marshaller<T>(serializer, deserializer);
-        }
-
-        public static Marshaller<string> StringMarshaller
-        {
-            get
-            {
-                return new Marshaller<string>(System.Text.Encoding.UTF8.GetBytes,
-                                              System.Text.Encoding.UTF8.GetString);
-            }
+            grpcsharp_metadata_array_destroy_full(handle);
+            return true;
         }
     }
 }

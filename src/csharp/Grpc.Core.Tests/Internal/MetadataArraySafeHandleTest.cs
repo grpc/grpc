@@ -32,58 +32,31 @@
 #endregion
 
 using System;
+using Grpc.Core;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Grpc.Core
+namespace Grpc.Core.Internal.Tests
 {
-    /// <summary>
-    /// For serializing and deserializing messages.
-    /// </summary>
-    public struct Marshaller<T>
+    public class MetadataArraySafeHandleTest
     {
-        readonly Func<T, byte[]> serializer;
-        readonly Func<byte[], T> deserializer;
-
-        public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
+        [Test]
+        public void CreateEmptyAndDestroy()
         {
-            this.serializer = Preconditions.CheckNotNull(serializer);
-            this.deserializer = Preconditions.CheckNotNull(deserializer);
+            var metadata = Metadata.CreateBuilder().Build();
+            var nativeMetadata = MetadataArraySafeHandle.Create(metadata);
+            nativeMetadata.Dispose();
         }
 
-        public Func<T, byte[]> Serializer
+        [Test]
+        public void CreateAndDestroy()
         {
-            get
-            {
-                return this.serializer;
-            }
-        }
-
-        public Func<byte[], T> Deserializer
-        {
-            get
-            {
-                return this.deserializer;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Utilities for creating marshallers.
-    /// </summary>
-    public static class Marshallers
-    {
-        public static Marshaller<T> Create<T>(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
-        {
-            return new Marshaller<T>(serializer, deserializer);
-        }
-
-        public static Marshaller<string> StringMarshaller
-        {
-            get
-            {
-                return new Marshaller<string>(System.Text.Encoding.UTF8.GetBytes,
-                                              System.Text.Encoding.UTF8.GetString);
-            }
+            var metadata = Metadata.CreateBuilder()
+                .Add(new Metadata.MetadataEntry("host", "somehost"))
+                .Add(new Metadata.MetadataEntry("header2", "header value")).Build();
+            var nativeMetadata = MetadataArraySafeHandle.Create(metadata);
+            nativeMetadata.Dispose();
         }
     }
 }

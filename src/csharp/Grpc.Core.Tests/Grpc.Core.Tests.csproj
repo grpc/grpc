@@ -42,6 +42,7 @@
     <Compile Include="GrpcEnvironmentTest.cs" />
     <Compile Include="TimespecTest.cs" />
     <Compile Include="PInvokeTest.cs" />
+    <Compile Include="Internal\MetadataArraySafeHandleTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -55,5 +56,8 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Internal\" />
   </ItemGroup>
 </Project>

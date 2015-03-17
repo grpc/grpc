@@ -102,34 +102,114 @@ grpcsharp_batch_context *grpcsharp_batch_context_create() {
   return ctx;
 }
 
-/**
- * Destroys metadata array including keys and values.
+/*
+ * Destroys array->metadata.
+ * The array pointer itself is not freed.
  */
-void grpcsharp_metadata_array_destroy_recursive(grpc_metadata_array *array) {
-  if (!array->metadata) {
+void grpcsharp_metadata_array_destroy_metadata_only(
+    grpc_metadata_array *array) {
+  gpr_free(array->metadata);
+}
+
+/*
+ * Destroys keys, values and array->metadata.
+ * The array pointer itself is not freed.
+ */
+void grpcsharp_metadata_array_destroy_metadata_including_entries(
+    grpc_metadata_array *array) {
+  size_t i;
+  if (array->metadata) {
+    for (i = 0; i < array->count; i++) {
+      gpr_free((void *)array->metadata[i].key);
+      gpr_free((void *)array->metadata[i].value);
+    }
+  }
+  gpr_free(array->metadata);
+}
+
+/*
+ * Fully destroys the metadata array.
+ */
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_metadata_array_destroy_full(grpc_metadata_array *array) {
+  if (!array) {
     return;
   }
-  /* TODO: destroy also keys and values */
-  grpc_metadata_array_destroy(array);
+  grpcsharp_metadata_array_destroy_metadata_including_entries(array);
+  gpr_free(array);
+}
+
+/*
+ * Creates an empty metadata array with given capacity.
+ * Array can later be destroyed by grpc_metadata_array_destroy_full.
+ */
+GPR_EXPORT grpc_metadata_array *GPR_CALLTYPE
+grpcsharp_metadata_array_create(size_t capacity) {
+  grpc_metadata_array *array =
+      (grpc_metadata_array *)gpr_malloc(sizeof(grpc_metadata_array));
+  grpc_metadata_array_init(array);
+  array->capacity = capacity;
+  array->count = 0;
+  if (capacity > 0) {
+    array->metadata =
+        (grpc_metadata *)gpr_malloc(sizeof(grpc_metadata) * capacity);
+    memset(array->metadata, 0, sizeof(grpc_metadata) * capacity);
+  } else {
+    array->metadata = NULL;
+  }
+  return array;
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_metadata_array_add(grpc_metadata_array *array, const char *key,
+                             const char *value, size_t value_length) {
+  size_t i = array->count;
+  GPR_ASSERT(array->count < array->capacity);
+  array->metadata[i].key = gpr_strdup(key);
+  array->metadata[i].value = (char *)gpr_malloc(value_length);
+  memcpy((void *)array->metadata[i].value, value, value_length);
+  array->metadata[i].value_length = value_length;
+  array->count++;
+}
+
+/* Move contents of metadata array */
+void grpcsharp_metadata_array_move(grpc_metadata_array *dest,
+                                   grpc_metadata_array *src) {
+  if (!src) {
+    dest->capacity = 0;
+    dest->count = 0;
+    dest->metadata = NULL;
+    return;
+  }
+
+  dest->capacity = src->capacity;
+  dest->count = src->count;
+  dest->metadata = src->metadata;
+
+  src->capacity = 0;
+  src->count = 0;
+  src->metadata = NULL;
 }
 
 void grpcsharp_batch_context_destroy(grpcsharp_batch_context *ctx) {
   if (!ctx) {
     return;
   }
-  grpcsharp_metadata_array_destroy_recursive(&(ctx->send_initial_metadata));
+  grpcsharp_metadata_array_destroy_metadata_including_entries(
+      &(ctx->send_initial_metadata));
 
   grpc_byte_buffer_destroy(ctx->send_message);
 
-  grpcsharp_metadata_array_destroy_recursive(
+  grpcsharp_metadata_array_destroy_metadata_including_entries(
       &(ctx->send_status_from_server.trailing_metadata));
   gpr_free(ctx->send_status_from_server.status_details);
 
-  grpc_metadata_array_destroy(&(ctx->recv_initial_metadata));
+  grpcsharp_metadata_array_destroy_metadata_only(&(ctx->recv_initial_metadata));
 
   grpc_byte_buffer_destroy(ctx->recv_message);
 
-  grpc_metadata_array_destroy(&(ctx->recv_status_on_client.trailing_metadata));
+  grpcsharp_metadata_array_destroy_metadata_only(
+      &(ctx->recv_status_on_client.trailing_metadata));
   gpr_free((void *)ctx->recv_status_on_client.status_details);
 
   /* NOTE: ctx->server_rpc_new.call is not destroyed because callback handler is
@@ -137,7 +217,8 @@ void grpcsharp_batch_context_destroy(grpcsharp_batch_context *ctx) {
      to take its ownership. */
 
   grpc_call_details_destroy(&(ctx->server_rpc_new.call_details));
-  grpc_metadata_array_destroy(&(ctx->server_rpc_new.request_metadata));
+  grpcsharp_metadata_array_destroy_metadata_only(
+      &(ctx->server_rpc_new.request_metadata));
 
   gpr_free(ctx);
 }
@@ -346,17 +427,19 @@ grpcsharp_call_start_write_from_copied_buffer(grpc_call *call,
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_start_unary(grpc_call *call, callback_funcptr callback,
-                           const char *send_buffer, size_t send_buffer_len) {
+                           const char *send_buffer, size_t send_buffer_len,
+                           grpc_metadata_array *initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[6];
   grpcsharp_batch_context *ctx = grpcsharp_batch_context_create();
   ctx->callback = callback;
 
-  /* TODO: implement sending the metadata... */
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
-  /* ctx->send_initial_metadata is already zeroed out. */
-  ops[0].data.send_initial_metadata.count = 0;
-  ops[0].data.send_initial_metadata.metadata = NULL;
+  grpcsharp_metadata_array_move(&(ctx->send_initial_metadata),
+                                initial_metadata);
+  ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
+  ops[0].data.send_initial_metadata.metadata =
+      ctx->send_initial_metadata.metadata;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
@@ -389,9 +472,11 @@ GPR_EXPORT void GPR_CALLTYPE
 grpcsharp_call_blocking_unary(grpc_call *call,
                               grpc_completion_queue *dedicated_cq,
                               callback_funcptr callback,
-                              const char *send_buffer, size_t send_buffer_len) {
+                              const char *send_buffer, size_t send_buffer_len,
+                              grpc_metadata_array *initial_metadata) {
   GPR_ASSERT(grpcsharp_call_start_unary(call, callback, send_buffer,
-                                        send_buffer_len) == GRPC_CALL_OK);
+                                        send_buffer_len,
+                                        initial_metadata) == GRPC_CALL_OK);
 
   /* TODO: we would like to use pluck, but we don't know the tag */
   GPR_ASSERT(grpcsharp_completion_queue_next_with_callback(dedicated_cq) ==
@@ -403,17 +488,19 @@ grpcsharp_call_blocking_unary(grpc_call *call,
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_start_client_streaming(grpc_call *call,
-                                      callback_funcptr callback) {
+                                      callback_funcptr callback,
+                                      grpc_metadata_array *initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[4];
   grpcsharp_batch_context *ctx = grpcsharp_batch_context_create();
   ctx->callback = callback;
 
-  /* TODO: implement sending the metadata... */
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
-  /* ctx->send_initial_metadata is already zeroed out. */
-  ops[0].data.send_initial_metadata.count = 0;
-  ops[0].data.send_initial_metadata.metadata = NULL;
+  grpcsharp_metadata_array_move(&(ctx->send_initial_metadata),
+                                initial_metadata);
+  ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
+  ops[0].data.send_initial_metadata.metadata =
+      ctx->send_initial_metadata.metadata;
 
   ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
   ops[1].data.recv_initial_metadata = &(ctx->recv_initial_metadata);
@@ -435,21 +522,20 @@ grpcsharp_call_start_client_streaming(grpc_call *call,
   return grpc_call_start_batch(call, ops, sizeof(ops) / sizeof(ops[0]), ctx);
 }
 
-GPR_EXPORT grpc_call_error GPR_CALLTYPE
-grpcsharp_call_start_server_streaming(grpc_call *call,
-                                      callback_funcptr callback,
-                                      const char *send_buffer,
-                                      size_t send_buffer_len) {
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
+    grpc_call *call, callback_funcptr callback, const char *send_buffer,
+    size_t send_buffer_len, grpc_metadata_array *initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[5];
   grpcsharp_batch_context *ctx = grpcsharp_batch_context_create();
   ctx->callback = callback;
 
-  /* TODO: implement sending the metadata... */
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
-  /* ctx->send_initial_metadata is already zeroed out. */
-  ops[0].data.send_initial_metadata.count = 0;
-  ops[0].data.send_initial_metadata.metadata = NULL;
+  grpcsharp_metadata_array_move(&(ctx->send_initial_metadata),
+                                initial_metadata);
+  ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
+  ops[0].data.send_initial_metadata.metadata =
+      ctx->send_initial_metadata.metadata;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
   ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
@@ -476,17 +562,19 @@ grpcsharp_call_start_server_streaming(grpc_call *call,
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE
 grpcsharp_call_start_duplex_streaming(grpc_call *call,
-                                      callback_funcptr callback) {
+                                      callback_funcptr callback,
+                                      grpc_metadata_array *initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[3];
   grpcsharp_batch_context *ctx = grpcsharp_batch_context_create();
   ctx->callback = callback;
 
-  /* TODO: implement sending the metadata... */
   ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
-  /* ctx->send_initial_metadata is already zeroed out. */
-  ops[0].data.send_initial_metadata.count = 0;
-  ops[0].data.send_initial_metadata.metadata = NULL;
+  grpcsharp_metadata_array_move(&(ctx->send_initial_metadata),
+                                initial_metadata);
+  ops[0].data.send_initial_metadata.count = ctx->send_initial_metadata.count;
+  ops[0].data.send_initial_metadata.metadata =
+      ctx->send_initial_metadata.metadata;
 
   ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
   ops[1].data.recv_initial_metadata = &(ctx->recv_initial_metadata);

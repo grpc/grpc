@@ -61,7 +61,14 @@ namespace math.Tests
             int port = server.AddPort(host + ":0");
             server.Start();
             channel = new Channel(host + ":" + port);
-            client = MathGrpc.NewStub(channel);
+
+            // TODO: get rid of the custom header here once we have dedicated tests
+            // for header support.
+            var stubConfig = new StubConfiguration((headerBuilder) =>
+            {
+                headerBuilder.Add(new Metadata.MetadataEntry("customHeader", "abcdef"));
+            });
+            client = MathGrpc.NewStub(channel, stubConfig);
         }
 
         [TestFixtureTearDown]
