@@ -63,6 +63,8 @@ _ABORTION_OUTCOME_TO_FRONT_TO_BACK_PACKET_KIND = {
 }
 
 _ABORTION_OUTCOME_TO_BACK_TO_FRONT_PACKET_KIND = {
+    interfaces.Outcome.CANCELLED:
+        packets.BackToFrontPacket.Kind.CANCELLATION,
     interfaces.Outcome.EXPIRED:
         packets.BackToFrontPacket.Kind.EXPIRATION,
     interfaces.Outcome.RECEPTION_FAILURE:

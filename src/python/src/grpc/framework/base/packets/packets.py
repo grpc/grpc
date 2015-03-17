@@ -108,9 +108,9 @@ class BackToFrontPacket(
   class Kind(enum.Enum):
     """Identifies the overall kind of a BackToFrontPacket."""
 
-    # TODO(issue 752): Add CANCELLATION.
     CONTINUATION = 'continuation'
     COMPLETION = 'completion'
+    CANCELLATION = 'cancellation'
     EXPIRATION = 'expiration'
     SERVICER_FAILURE = 'servicer failure'
     SERVICED_FAILURE = 'serviced failure'
