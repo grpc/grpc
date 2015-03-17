@@ -161,6 +161,15 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
   }
 }
 
+void AssertOkOrPrintErrorStatus(const grpc::Status& s) {
+  if (s.IsOk()) {
+    return;
+  }
+  gpr_log(GPR_INFO, "Error status code: %d, message: %s",
+          s.code(), s.details().c_str());
+  GPR_ASSERT(0);
+}
+
 void DoEmpty() {
   gpr_log(GPR_INFO, "Sending an empty rpc...");
   std::shared_ptr<ChannelInterface> channel =
@@ -172,8 +181,8 @@ void DoEmpty() {
   ClientContext context;
 
   grpc::Status s = stub->EmptyCall(&context, request, &response);
+  AssertOkOrPrintErrorStatus(s);
 
-  GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Empty rpc done.");
 }
 
@@ -190,7 +199,7 @@ void PerformLargeUnary(std::shared_ptr<ChannelInterface> channel,
 
   grpc::Status s = stub->UnaryCall(&context, *request, response);
 
-  GPR_ASSERT(s.IsOk());
+  AssertOkOrPrintErrorStatus(s);
   GPR_ASSERT(response->payload().type() ==
              grpc::testing::PayloadType::COMPRESSABLE);
   GPR_ASSERT(response->payload().body() ==
@@ -285,7 +294,7 @@ void DoRequestStreaming() {
   grpc::Status s = stream->Finish();
 
   GPR_ASSERT(response.aggregated_payload_size() == aggregated_payload_size);
-  GPR_ASSERT(s.IsOk());
+  AssertOkOrPrintErrorStatus(s);
   gpr_log(GPR_INFO, "Request streaming done.");
 }
 
@@ -314,7 +323,7 @@ void DoResponseStreaming() {
   GPR_ASSERT(response_stream_sizes.size() == i);
   grpc::Status s = stream->Finish();
 
-  GPR_ASSERT(s.IsOk());
+  AssertOkOrPrintErrorStatus(s);
   gpr_log(GPR_INFO, "Response streaming done.");
 }
 
@@ -346,7 +355,7 @@ void DoResponseStreamingWithSlowConsumer() {
   GPR_ASSERT(kNumResponseMessages == i);
   grpc::Status s = stream->Finish();
 
-  GPR_ASSERT(s.IsOk());
+  AssertOkOrPrintErrorStatus(s);
   gpr_log(GPR_INFO, "Response streaming done.");
 }
 
@@ -379,7 +388,7 @@ void DoHalfDuplex() {
   }
   GPR_ASSERT(response_stream_sizes.size() == i);
   grpc::Status s = stream->Finish();
-  GPR_ASSERT(s.IsOk());
+  AssertOkOrPrintErrorStatus(s);
   gpr_log(GPR_INFO, "Half-duplex streaming rpc done.");
 }
 
@@ -412,7 +421,7 @@ void DoPingPong() {
   stream->WritesDone();
   GPR_ASSERT(!stream->Read(&response));
   grpc::Status s = stream->Finish();
-  GPR_ASSERT(s.IsOk());
+  AssertOkOrPrintErrorStatus(s);
   gpr_log(GPR_INFO, "Ping pong streaming done.");
 }
 
