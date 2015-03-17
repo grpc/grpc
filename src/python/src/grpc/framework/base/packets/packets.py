@@ -36,22 +36,6 @@ import enum
 from grpc.framework.base import interfaces  # pylint: disable=unused-import
 
 
-@enum.unique
-class Kind(enum.Enum):
-  """Identifies the overall kind of a ticket."""
-
-  COMMENCEMENT = 'commencement'
-  CONTINUATION = 'continuation'
-  COMPLETION = 'completion'
-  ENTIRE = 'entire'
-  CANCELLATION = 'cancellation'
-  EXPIRATION = 'expiration'
-  SERVICER_FAILURE = 'servicer failure'
-  SERVICED_FAILURE = 'serviced failure'
-  RECEPTION_FAILURE = 'reception failure'
-  TRANSMISSION_FAILURE = 'transmission failure'
-
-
 class FrontToBackPacket(
     collections.namedtuple(
         'FrontToBackPacket',
@@ -66,9 +50,7 @@ class FrontToBackPacket(
       packet's place among all the packets sent from front to back for this
       particular operation. Must be zero if kind is Kind.COMMENCEMENT or
       Kind.ENTIRE. Must be positive for any other kind.
-    kind: One of Kind.COMMENCEMENT, Kind.CONTINUATION, Kind.COMPLETION,
-      Kind.ENTIRE, Kind.CANCELLATION, Kind.EXPIRATION, Kind.SERVICED_FAILURE,
-      Kind.RECEPTION_FAILURE, or Kind.TRANSMISSION_FAILURE.
+    kind: A Kind value describing the overall kind of ticket.
     name: The name of an operation. Must be present if kind is Kind.COMMENCEMENT
       or Kind.ENTIRE. Must be None for any other kind.
     subscription: An interfaces.ServicedSubscription.Kind value describing the
@@ -88,6 +70,21 @@ class FrontToBackPacket(
       operations.
   """
 
+  @enum.unique
+  class Kind(enum.Enum):
+    """Identifies the overall kind of a FrontToBackPacket."""
+
+    COMMENCEMENT = 'commencement'
+    CONTINUATION = 'continuation'
+    COMPLETION = 'completion'
+    ENTIRE = 'entire'
+    CANCELLATION = 'cancellation'
+    EXPIRATION = 'expiration'
+    SERVICER_FAILURE = 'servicer failure'
+    SERVICED_FAILURE = 'serviced failure'
+    RECEPTION_FAILURE = 'reception failure'
+    TRANSMISSION_FAILURE = 'transmission failure'
+
 
 class BackToFrontPacket(
     collections.namedtuple(
@@ -101,11 +98,21 @@ class BackToFrontPacket(
     sequence_number: A zero-indexed integer sequence number identifying the
       packet's place among all the packets sent from back to front for this
       particular operation.
-    kind: One of Kind.CONTINUATION, Kind.COMPLETION, Kind.EXPIRATION,
-      Kind.SERVICER_FAILURE, Kind.RECEPTION_FAILURE, or
-      Kind.TRANSMISSION_FAILURE.
+    kind: A Kind value describing the overall kind of ticket.
     payload: A customer payload object. Must be present if kind is
-      Kind.CONTINUATION. May be None if kind is Kind.COMPLETION. Must be None if
-      kind is Kind.EXPIRATION, Kind.SERVICER_FAILURE, Kind.RECEPTION_FAILURE, or
-      Kind.TRANSMISSION_FAILURE.
+      Kind.CONTINUATION. May be None if kind is Kind.COMPLETION. Must be None
+      otherwise.
   """
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Identifies the overall kind of a BackToFrontPacket."""
+
+    # TODO(issue 752): Add CANCELLATION.
+    CONTINUATION = 'continuation'
+    COMPLETION = 'completion'
+    EXPIRATION = 'expiration'
+    SERVICER_FAILURE = 'servicer failure'
+    SERVICED_FAILURE = 'serviced failure'
+    RECEPTION_FAILURE = 'reception failure'
+    TRANSMISSION_FAILURE = 'transmission failure'

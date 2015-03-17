@@ -47,15 +47,33 @@ _BACK_TO_FRONT_NO_TRANSMISSION_OUTCOMES = (
     interfaces.Outcome.SERVICED_FAILURE,
     )
 
-_ABORTION_OUTCOME_TO_PACKET_KIND = {
-    interfaces.Outcome.CANCELLED: packets.Kind.CANCELLATION,
-    interfaces.Outcome.EXPIRED: packets.Kind.EXPIRATION,
-    interfaces.Outcome.RECEPTION_FAILURE: packets.Kind.RECEPTION_FAILURE,
-    interfaces.Outcome.TRANSMISSION_FAILURE: packets.Kind.TRANSMISSION_FAILURE,
-    interfaces.Outcome.SERVICED_FAILURE: packets.Kind.SERVICED_FAILURE,
-    interfaces.Outcome.SERVICER_FAILURE: packets.Kind.SERVICER_FAILURE,
+_ABORTION_OUTCOME_TO_FRONT_TO_BACK_PACKET_KIND = {
+    interfaces.Outcome.CANCELLED:
+        packets.FrontToBackPacket.Kind.CANCELLATION,
+    interfaces.Outcome.EXPIRED:
+        packets.FrontToBackPacket.Kind.EXPIRATION,
+    interfaces.Outcome.RECEPTION_FAILURE:
+        packets.FrontToBackPacket.Kind.RECEPTION_FAILURE,
+    interfaces.Outcome.TRANSMISSION_FAILURE:
+        packets.FrontToBackPacket.Kind.TRANSMISSION_FAILURE,
+    interfaces.Outcome.SERVICED_FAILURE:
+        packets.FrontToBackPacket.Kind.SERVICED_FAILURE,
+    interfaces.Outcome.SERVICER_FAILURE:
+        packets.FrontToBackPacket.Kind.SERVICER_FAILURE,
 }
 
+_ABORTION_OUTCOME_TO_BACK_TO_FRONT_PACKET_KIND = {
+    interfaces.Outcome.EXPIRED:
+        packets.BackToFrontPacket.Kind.EXPIRATION,
+    interfaces.Outcome.RECEPTION_FAILURE:
+        packets.BackToFrontPacket.Kind.RECEPTION_FAILURE,
+    interfaces.Outcome.TRANSMISSION_FAILURE:
+        packets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE,
+    interfaces.Outcome.SERVICED_FAILURE:
+        packets.BackToFrontPacket.Kind.SERVICED_FAILURE,
+    interfaces.Outcome.SERVICER_FAILURE:
+        packets.BackToFrontPacket.Kind.SERVICER_FAILURE,
+}
 
 
 class _Packetizer(object):
@@ -120,24 +138,28 @@ class _FrontPacketizer(_Packetizer):
   def packetize(self, operation_id, sequence_number, payload, complete):
     """See _Packetizer.packetize for specification."""
     if sequence_number:
+      if complete:
+        kind = packets.FrontToBackPacket.Kind.COMPLETION
+      else:
+        kind = packets.FrontToBackPacket.Kind.CONTINUATION
       return packets.FrontToBackPacket(
-          operation_id, sequence_number,
-          packets.Kind.COMPLETION if complete else packets.Kind.CONTINUATION,
-          self._name, self._subscription_kind, self._trace_id, payload,
-          self._timeout)
+          operation_id, sequence_number, kind, self._name,
+          self._subscription_kind, self._trace_id, payload, self._timeout)
     else:
+      if complete:
+        kind = packets.FrontToBackPacket.Kind.ENTIRE
+      else:
+        kind = packets.FrontToBackPacket.Kind.COMMENCEMENT
       return packets.FrontToBackPacket(
-          operation_id, 0,
-          packets.Kind.ENTIRE if complete else packets.Kind.COMMENCEMENT,
-          self._name, self._subscription_kind, self._trace_id, payload,
-          self._timeout)
+          operation_id, 0, kind, self._name, self._subscription_kind,
+          self._trace_id, payload, self._timeout)
 
   def packetize_abortion(self, operation_id, sequence_number, outcome):
     """See _Packetizer.packetize_abortion for specification."""
     if outcome in _FRONT_TO_BACK_NO_TRANSMISSION_OUTCOMES:
       return None
     else:
-      kind = _ABORTION_OUTCOME_TO_PACKET_KIND[outcome]
+      kind = _ABORTION_OUTCOME_TO_FRONT_TO_BACK_PACKET_KIND[outcome]
       return packets.FrontToBackPacket(
           operation_id, sequence_number, kind, None, None, None, None, None)
 
@@ -147,17 +169,19 @@ class _BackPacketizer(_Packetizer):
 
   def packetize(self, operation_id, sequence_number, payload, complete):
     """See _Packetizer.packetize for specification."""
+    if complete:
+      kind = packets.BackToFrontPacket.Kind.COMPLETION
+    else:
+      kind = packets.BackToFrontPacket.Kind.CONTINUATION
     return packets.BackToFrontPacket(
-        operation_id, sequence_number,
-        packets.Kind.COMPLETION if complete else packets.Kind.CONTINUATION,
-        payload)
+        operation_id, sequence_number, kind, payload)
 
   def packetize_abortion(self, operation_id, sequence_number, outcome):
     """See _Packetizer.packetize_abortion for specification."""
     if outcome in _BACK_TO_FRONT_NO_TRANSMISSION_OUTCOMES:
       return None
     else:
-      kind = _ABORTION_OUTCOME_TO_PACKET_KIND[outcome]
+      kind = _ABORTION_OUTCOME_TO_BACK_TO_FRONT_PACKET_KIND[outcome]
       return packets.BackToFrontPacket(
           operation_id, sequence_number, kind, None)
 
