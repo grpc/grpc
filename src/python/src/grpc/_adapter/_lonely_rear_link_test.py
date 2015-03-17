@@ -88,7 +88,6 @@ class LonelyRearLinkTest(unittest.TestCase):
           fore_link.tickets[-1].kind,
           packets.BackToFrontPacket.Kind.COMPLETION)
 
-  @unittest.skip('TODO(nathaniel): This seems to have broken in the last few weeks; fix it.')
   def testLonelyClientCommencementPacket(self):
     self._perform_lonely_client_test_with_ticket_kind(
         packets.FrontToBackPacket.Kind.COMMENCEMENT)
