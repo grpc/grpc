@@ -76,22 +76,26 @@ class LonelyRearLinkTest(unittest.TestCase):
     with fore_link.condition:
       while True:
         if (fore_link.tickets and
-            fore_link.tickets[-1].kind is not packets.Kind.CONTINUATION):
+            fore_link.tickets[-1].kind is not
+                packets.BackToFrontPacket.Kind.CONTINUATION):
           break
         fore_link.condition.wait()
 
     rear_link.stop()
 
     with fore_link.condition:
-      self.assertIsNot(fore_link.tickets[-1].kind, packets.Kind.COMPLETION)
+      self.assertIsNot(
+          fore_link.tickets[-1].kind,
+          packets.BackToFrontPacket.Kind.COMPLETION)
 
   @unittest.skip('TODO(nathaniel): This seems to have broken in the last few weeks; fix it.')
   def testLonelyClientCommencementPacket(self):
     self._perform_lonely_client_test_with_ticket_kind(
-        packets.Kind.COMMENCEMENT)
+        packets.FrontToBackPacket.Kind.COMMENCEMENT)
 
   def testLonelyClientEntirePacket(self):
-    self._perform_lonely_client_test_with_ticket_kind(packets.Kind.ENTIRE)
+    self._perform_lonely_client_test_with_ticket_kind(
+        packets.FrontToBackPacket.Kind.ENTIRE)
 
 
 if __name__ == '__main__':

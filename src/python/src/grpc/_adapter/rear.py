@@ -154,7 +154,7 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
       rpc_state.active = False
       ticket = tickets.BackToFrontPacket(
           operation_id, rpc_state.common.sequence_number,
-          tickets.Kind.TRANSMISSION_FAILURE, None)
+          tickets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE, None)
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -165,7 +165,8 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
 
       ticket = tickets.BackToFrontPacket(
           operation_id, rpc_state.common.sequence_number,
-          tickets.Kind.CONTINUATION, rpc_state.common.deserializer(event.bytes))
+          tickets.BackToFrontPacket.Kind.CONTINUATION,
+          rpc_state.common.deserializer(event.bytes))
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -175,7 +176,7 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
       rpc_state.active = False
       ticket = tickets.BackToFrontPacket(
           operation_id, rpc_state.common.sequence_number,
-          tickets.Kind.TRANSMISSION_FAILURE, None)
+          tickets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE, None)
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -188,17 +189,16 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     """Handle termination of an RPC."""
     # TODO(nathaniel): Cover all statuses.
     if event.status.code is _low.Code.OK:
-      category = tickets.Kind.COMPLETION
+      kind = tickets.BackToFrontPacket.Kind.COMPLETION
     elif event.status.code is _low.Code.CANCELLED:
       # TODO(issue 752): Use a CANCELLATION ticket kind here.
-      category = tickets.Kind.SERVICER_FAILURE
+      kind = tickets.BackToFrontPacket.Kind.SERVICER_FAILURE
     elif event.status.code is _low.Code.EXPIRED:
-      category = tickets.Kind.EXPIRATION
+      kind = tickets.BackToFrontPacket.Kind.EXPIRATION
     else:
-      category = tickets.Kind.TRANSMISSION_FAILURE
+      kind = tickets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE
     ticket = tickets.BackToFrontPacket(
-        operation_id, rpc_state.common.sequence_number, category,
-        None)
+        operation_id, rpc_state.common.sequence_number, kind, None)
     rpc_state.common.sequence_number += 1
     self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -372,17 +372,17 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
       if self._completion_queue is None:
         return
 
-      if ticket.kind is tickets.Kind.COMMENCEMENT:
+      if ticket.kind is tickets.FrontToBackPacket.Kind.COMMENCEMENT:
         self._commence(
             ticket.operation_id, ticket.name, ticket.payload, ticket.timeout)
-      elif ticket.kind is tickets.Kind.CONTINUATION:
+      elif ticket.kind is tickets.FrontToBackPacket.Kind.CONTINUATION:
         self._continue(ticket.operation_id, ticket.payload)
-      elif ticket.kind is tickets.Kind.COMPLETION:
+      elif ticket.kind is tickets.FrontToBackPacket.Kind.COMPLETION:
         self._complete(ticket.operation_id, ticket.payload)
-      elif ticket.kind is tickets.Kind.ENTIRE:
+      elif ticket.kind is tickets.FrontToBackPacket.Kind.ENTIRE:
         self._entire(
             ticket.operation_id, ticket.name, ticket.payload, ticket.timeout)
-      elif ticket.kind is tickets.Kind.CANCELLATION:
+      elif ticket.kind is tickets.FrontToBackPacket.Kind.CANCELLATION:
         self._cancel(ticket.operation_id)
       else:
         # NOTE(nathaniel): All other categories are treated as cancellation.
