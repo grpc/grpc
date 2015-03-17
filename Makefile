@@ -51,29 +51,29 @@ GENDIR = $(BUILDDIR)/gens
 # Configurations
 
 VALID_CONFIG_opt = 1
-CC_opt = gcc
-CXX_opt = g++
-LD_opt = gcc
-LDXX_opt = g++
+CC_opt = cc
+CXX_opt = c++
+LD_opt = cc
+LDXX_opt = c++
 CPPFLAGS_opt = -O2
 LDFLAGS_opt =
 DEFINES_opt = NDEBUG
 
 VALID_CONFIG_dbg = 1
-CC_dbg = gcc
-CXX_dbg = g++
-LD_dbg = gcc
-LDXX_dbg = g++
+CC_dbg = cc
+CXX_dbg = c++
+LD_dbg = cc
+LDXX_dbg = c++
 CPPFLAGS_dbg = -O0
 LDFLAGS_dbg =
 DEFINES_dbg = _DEBUG DEBUG
 
 VALID_CONFIG_valgrind = 1
 REQUIRE_CUSTOM_LIBRARIES_valgrind = 1
-CC_valgrind = gcc
-CXX_valgrind = g++
-LD_valgrind = gcc
-LDXX_valgrind = g++
+CC_valgrind = cc
+CXX_valgrind = c++
+LD_valgrind = cc
+LDXX_valgrind = c++
 CPPFLAGS_valgrind = -O0
 OPENSSL_CFLAGS_valgrind = -DPURIFY
 LDFLAGS_valgrind =
