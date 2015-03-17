@@ -33,7 +33,10 @@
 
 #import "GRPCChannel.h"
 
-#import <grpc/grpc.h>
+#include <grpc/grpc.h>
+
+#import "GRPCSecureChannel.h"
+#import "GRPCUnsecuredChannel.h"
 
 @implementation GRPCChannel
 
@@ -46,13 +49,25 @@
   return [self initWithHost:nil];
 }
 
-// Designated initializer
 - (instancetype)initWithHost:(NSString *)host {
-  if (!host) {
-    [NSException raise:NSInvalidArgumentException format:@"Host can't be nil."];
+  NSURL *hostURL = [NSURL URLWithString:host];
+  if (!hostURL) {
+    [NSException raise:NSInvalidArgumentException format:@"Invalid URL: %@", host];
   }
+  if (!hostURL.scheme || [hostURL.scheme isEqualToString:@"https"]) {
+    return [[GRPCSecureChannel alloc] initWithHost:host];
+  }
+  if ([hostURL.scheme isEqualToString:@"http"]) {
+    return [[GRPCUnsecuredChannel alloc] initWithHost:host];
+  }
+  [NSException raise:NSInvalidArgumentException
+              format:@"URL scheme %@ isn't supported.", hostURL.scheme];
+  return nil; // silence warning.
+}
+
+- (instancetype)initWithChannel:(struct grpc_channel *)unmanagedChannel {
   if ((self = [super init])) {
-    _unmanagedChannel = grpc_channel_create(host.UTF8String, NULL);
+    _unmanagedChannel = unmanagedChannel;
   }
   return self;
 }
