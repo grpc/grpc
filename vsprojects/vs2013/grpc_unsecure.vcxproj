@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</ProjectGuid>
+    <ProjectGuid>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,7 +41,12 @@
     <Import Project="global.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>grpc_unsecure</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>grpc_unsecure</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -73,24 +78,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\grpc\grpc_security.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h" />
     <ClInclude Include="..\..\include\grpc\grpc.h" />
     <ClInclude Include="..\..\include\grpc\status.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\security\auth.h" />
-    <ClInclude Include="..\..\src\core\security\base64.h" />
-    <ClInclude Include="..\..\src\core\security\credentials.h" />
-    <ClInclude Include="..\..\src\core\security\google_root_certs.h" />
-    <ClInclude Include="..\..\src\core\security\json_token.h" />
-    <ClInclude Include="..\..\src\core\security\secure_transport_setup.h" />
-    <ClInclude Include="..\..\src\core\security\security_context.h" />
-    <ClInclude Include="..\..\src\core\tsi\fake_transport_security.h" />
-    <ClInclude Include="..\..\src\core\tsi\ssl_transport_security.h" />
-    <ClInclude Include="..\..\src\core\tsi\transport_security.h" />
-    <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h" />
     <ClInclude Include="..\..\src\core\channel\census_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
@@ -105,16 +98,14 @@
     <ClInclude Include="..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\src\core\compression\algorithm.h" />
     <ClInclude Include="..\..\src\core\compression\message_compress.h" />
-    <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
-    <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
-    <ClInclude Include="..\..\src\core\httpcli\httpcli_security_context.h" />
-    <ClInclude Include="..\..\src\core\httpcli\parser.h" />
+    <ClInclude Include="..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_heap.h" />
     <ClInclude Include="..\..\src\core\iomgr\alarm_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\src\core\iomgr\endpoint_pair.h" />
     <ClInclude Include="..\..\src\core\iomgr\fd_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\iocp_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h" />
     <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h" />
@@ -130,9 +121,11 @@
     <ClInclude Include="..\..\src\core\iomgr\sockaddr_utils.h" />
     <ClInclude Include="..\..\src\core\iomgr\sockaddr_win32.h" />
     <ClInclude Include="..\..\src\core\iomgr\socket_utils_posix.h" />
+    <ClInclude Include="..\..\src\core\iomgr\socket_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_client.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_posix.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_server.h" />
+    <ClInclude Include="..\..\src\core\iomgr\tcp_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h" />
@@ -146,12 +139,13 @@
     <ClInclude Include="..\..\src\core\statistics\census_tracing.h" />
     <ClInclude Include="..\..\src\core\statistics\hash_table.h" />
     <ClInclude Include="..\..\src\core\statistics\window_stats.h" />
+    <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
     <ClInclude Include="..\..\src\core\surface\client.h" />
     <ClInclude Include="..\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="..\..\src\core\surface\event_string.h" />
-    <ClInclude Include="..\..\src\core\surface\lame_client.h" />
+    <ClInclude Include="..\..\src\core\surface\init.h" />
     <ClInclude Include="..\..\src\core\surface\server.h" />
     <ClInclude Include="..\..\src\core\surface\surface_trace.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h" />
@@ -178,31 +172,7 @@
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\core\security\auth.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\base64.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\credentials.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\factories.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\google_root_certs.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\json_token.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\secure_endpoint.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\secure_transport_setup.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\security_context.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\security\server_secure_chttp2.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\tsi\fake_transport_security.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\tsi\ssl_transport_security.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\tsi\transport_security.c">
+    <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\call_op_string.c">
     </ClCompile>
@@ -234,13 +204,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\compression\message_compress.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli_security_context.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\parser.c">
+    <ClCompile Include="..\..\src\core\debug\trace.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\alarm.c">
     </ClCompile>
@@ -252,11 +216,17 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iocp_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_kick.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
     </ClCompile>
@@ -264,7 +234,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\iomgr\resolve_address.c">
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\sockaddr_utils.c">
     </ClCompile>
@@ -274,11 +246,19 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\socket_utils_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_client_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_client_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\tcp_server_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_server_windows.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
     </ClCompile>
@@ -312,9 +292,13 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\byte_buffer_queue.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\byte_buffer_reader.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\call.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call_details.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
     </ClCompile>
@@ -330,15 +314,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\lame_client.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\surface\secure_server_create.c">
+    <ClCompile Include="..\..\src\core\surface\metadata_array.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server_chttp2.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\server_create.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\surface_trace.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
     </ClCompile>

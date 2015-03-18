@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -162,19 +162,6 @@ describe GRPC::RpcServer do
         RpcServer.new(**opts)
       end
       expect(&blk).to raise_error
-    end
-
-    it 'can be created with the creds as valid ServerCedentials' do
-      certs = load_test_certs
-      server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
-      blk = proc do
-        opts = {
-          a_channel_arg: 'an_arg',
-          creds: server_creds
-        }
-        RpcServer.new(**opts)
-      end
-      expect(&blk).to_not raise_error
     end
 
     it 'can be created with a server override' do

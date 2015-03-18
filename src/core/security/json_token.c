@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,10 +52,10 @@
 /* 1 hour max. */
 const gpr_timespec grpc_max_auth_token_lifetime = {3600, 0};
 
-#define GRPC_AUTH_JSON_KEY_TYPE_INVALID "invalid"
-#define GRPC_AUTH_JSON_KEY_TYPE_SERVICE_ACCOUNT "service_account"
+#define GRPC_AUTH_JSON_TYPE_INVALID "invalid"
+#define GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT "service_account"
+#define GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER "authorized_user"
 
-#define GRPC_JWT_AUDIENCE "https://www.googleapis.com/oauth2/v3/token"
 #define GRPC_JWT_RSA_SHA256_ALGORITHM "RS256"
 #define GRPC_JWT_TYPE "JWT"
 
@@ -88,7 +88,7 @@ static int set_json_key_string_property(grpc_json *json, const char *prop_name,
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key *json_key) {
   return (json_key != NULL) &&
-         strcmp(json_key->type, GRPC_AUTH_JSON_KEY_TYPE_INVALID);
+         strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID);
 }
 
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
@@ -101,7 +101,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
   int success = 0;
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
-  result.type = GRPC_AUTH_JSON_KEY_TYPE_INVALID;
+  result.type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json == NULL) {
     gpr_log(GPR_ERROR, "Invalid json string %s", json_string);
     goto end;
@@ -109,10 +109,10 @@ grpc_auth_json_key grpc_auth_json_key_create_from_string(
 
   prop_value = json_get_string_property(json, "type");
   if (prop_value == NULL ||
-      strcmp(prop_value, GRPC_AUTH_JSON_KEY_TYPE_SERVICE_ACCOUNT)) {
+      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT)) {
     goto end;
   }
-  result.type = GRPC_AUTH_JSON_KEY_TYPE_SERVICE_ACCOUNT;
+  result.type = GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT;
 
   if (!set_json_key_string_property(json, "private_key_id",
                                     &result.private_key_id) ||
@@ -149,7 +149,7 @@ end:
 
 void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key) {
   if (json_key == NULL) return;
-  json_key->type = GRPC_AUTH_JSON_KEY_TYPE_INVALID;
+  json_key->type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json_key->client_id != NULL) {
     gpr_free(json_key->client_id);
     json_key->client_id = NULL;
@@ -171,8 +171,8 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key *json_key) {
 /* --- jwt encoding and signature. --- */
 
 static grpc_json *create_child(grpc_json *brother, grpc_json *parent,
-                         const char *key, const char *value,
-                         grpc_json_type type) {
+                               const char *key, const char *value,
+                               grpc_json_type type) {
   grpc_json *child = grpc_json_create(type);
   if (brother) brother->next = child;
   if (!parent->child) parent->child = child;
@@ -182,14 +182,15 @@ static grpc_json *create_child(grpc_json *brother, grpc_json *parent,
   return child;
 }
 
-static char *encoded_jwt_header(const char *algorithm) {
+static char *encoded_jwt_header(const char *key_id, const char *algorithm) {
   grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
 
   child = create_child(NULL, json, "alg", algorithm, GRPC_JSON_STRING);
-  create_child(child, json, "typ", GRPC_JWT_TYPE, GRPC_JSON_STRING);
+  child = create_child(child, json, "typ", GRPC_JWT_TYPE, GRPC_JSON_STRING);
+  create_child(child, json, "kid", key_id, GRPC_JSON_STRING);
 
   json_str = grpc_json_dump_to_string(json, 0);
   result = grpc_base64_encode(json_str, strlen(json_str), 1, 0);
@@ -199,27 +200,34 @@ static char *encoded_jwt_header(const char *algorithm) {
 }
 
 static char *encoded_jwt_claim(const grpc_auth_json_key *json_key,
-                               const char *scope, gpr_timespec token_lifetime) {
+                               const char *audience,
+                               gpr_timespec token_lifetime, const char *scope) {
   grpc_json *json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json *child = NULL;
   char *json_str = NULL;
   char *result = NULL;
   gpr_timespec now = gpr_now();
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
-  /* log10(2^64) ~= 20 */
-  char now_str[24];
-  char expiration_str[24];
+  char now_str[GPR_LTOA_MIN_BUFSIZE];
+  char expiration_str[GPR_LTOA_MIN_BUFSIZE];
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime) > 0) {
     gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime);
   }
-  sprintf(now_str, "%ld", now.tv_sec);
-  sprintf(expiration_str, "%ld", expiration.tv_sec);
+  gpr_ltoa(now.tv_sec, now_str);
+  gpr_ltoa(expiration.tv_sec, expiration_str);
 
   child = create_child(NULL, json, "iss", json_key->client_email,
                        GRPC_JSON_STRING);
-  child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
-  child = create_child(child, json, "aud", GRPC_JWT_AUDIENCE, GRPC_JSON_STRING);
+  if (scope != NULL) {
+    child = create_child(child, json, "scope", scope, GRPC_JSON_STRING);
+  } else {
+    /* Unscoped JWTs need a sub field. */
+    child = create_child(child, json, "sub", json_key->client_email,
+                         GRPC_JSON_STRING);
+  }
+
+  child = create_child(child, json, "aud", audience, GRPC_JSON_STRING);
   child = create_child(child, json, "iat", now_str, GRPC_JSON_NUMBER);
   create_child(child, json, "exp", expiration_str, GRPC_JSON_NUMBER);
 
@@ -250,7 +258,7 @@ static char *dot_concat_and_free_strings(char *str1, char *str2) {
 }
 
 const EVP_MD *openssl_digest_from_algorithm(const char *algorithm) {
-  if (!strcmp(algorithm, GRPC_JWT_RSA_SHA256_ALGORITHM)) {
+  if (strcmp(algorithm, GRPC_JWT_RSA_SHA256_ALGORITHM) == 0) {
     return EVP_sha256();
   } else {
     gpr_log(GPR_ERROR, "Unknown algorithm %s.", algorithm);
@@ -301,14 +309,16 @@ end:
 }
 
 char *grpc_jwt_encode_and_sign(const grpc_auth_json_key *json_key,
-                               const char *scope, gpr_timespec token_lifetime) {
+                               const char *audience,
+                               gpr_timespec token_lifetime, const char *scope) {
   if (g_jwt_encode_and_sign_override != NULL) {
-    return g_jwt_encode_and_sign_override(json_key, scope, token_lifetime);
+    return g_jwt_encode_and_sign_override(json_key, audience, token_lifetime,
+                                          scope);
   } else {
     const char *sig_algo = GRPC_JWT_RSA_SHA256_ALGORITHM;
     char *to_sign = dot_concat_and_free_strings(
-        encoded_jwt_header(sig_algo),
-        encoded_jwt_claim(json_key, scope, token_lifetime));
+        encoded_jwt_header(json_key->private_key_id, sig_algo),
+        encoded_jwt_claim(json_key, audience, token_lifetime, scope));
     char *sig = compute_and_encode_signature(json_key, sig_algo, to_sign);
     if (sig == NULL) {
       gpr_free(to_sign);
@@ -322,3 +332,67 @@ void grpc_jwt_encode_and_sign_set_override(
     grpc_jwt_encode_and_sign_override func) {
   g_jwt_encode_and_sign_override = func;
 }
+
+/* --- grpc_auth_refresh_token --- */
+
+int grpc_auth_refresh_token_is_valid(
+    const grpc_auth_refresh_token *refresh_token) {
+  return (refresh_token != NULL) &&
+         strcmp(refresh_token->type, GRPC_AUTH_JSON_TYPE_INVALID);
+}
+
+grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
+    const char *json_string) {
+  grpc_auth_refresh_token result;
+  char *scratchpad = gpr_strdup(json_string);
+  grpc_json *json = grpc_json_parse_string(scratchpad);
+  const char *prop_value;
+  int success = 0;
+
+  memset(&result, 0, sizeof(grpc_auth_refresh_token));
+  result.type = GRPC_AUTH_JSON_TYPE_INVALID;
+  if (json == NULL) {
+    gpr_log(GPR_ERROR, "Invalid json string %s", json_string);
+    goto end;
+  }
+
+  prop_value = json_get_string_property(json, "type");
+  if (prop_value == NULL ||
+      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER)) {
+    goto end;
+  }
+  result.type = GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER;
+
+  if (!set_json_key_string_property(json, "client_secret",
+                                    &result.client_secret) ||
+      !set_json_key_string_property(json, "client_id", &result.client_id) ||
+      !set_json_key_string_property(json, "refresh_token",
+                                    &result.refresh_token)) {
+    goto end;
+  }
+  success = 1;
+
+end:
+  if (json != NULL) grpc_json_destroy(json);
+  if (!success) grpc_auth_refresh_token_destruct(&result);
+  gpr_free(scratchpad);
+  return result;
+}
+
+void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token) {
+  if (refresh_token == NULL) return;
+  refresh_token->type = GRPC_AUTH_JSON_TYPE_INVALID;
+  if (refresh_token->client_id != NULL) {
+    gpr_free(refresh_token->client_id);
+    refresh_token->client_id = NULL;
+  }
+  if (refresh_token->client_secret != NULL) {
+    gpr_free(refresh_token->client_secret);
+    refresh_token->client_secret = NULL;
+  }
+  if (refresh_token->refresh_token != NULL) {
+    gpr_free(refresh_token->refresh_token);
+    refresh_token->refresh_token = NULL;
+  }
+}
+

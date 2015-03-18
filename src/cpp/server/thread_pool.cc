@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,13 +35,13 @@
 
 namespace grpc {
 
-ThreadPool::ThreadPool(int num_threads) {
+ThreadPool::ThreadPool(int num_threads) : shutdown_(false) {
   for (int i = 0; i < num_threads; i++) {
-    threads_.push_back(std::thread([=]() {
+    threads_.push_back(std::thread([this]() {
       for (;;) {
-        std::unique_lock<std::mutex> lock(mu_);
         // Wait until work is available or we are shutting down.
-        auto have_work = [=]() { return shutdown_ || !callbacks_.empty(); };
+        auto have_work = [this]() { return shutdown_ || !callbacks_.empty(); };
+        std::unique_lock<std::mutex> lock(mu_);
         if (!have_work()) {
           cv_.wait(lock, have_work);
         }

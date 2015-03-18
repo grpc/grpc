@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,33 +31,24 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_TIME_H__
-#define __GRPC_SUPPORT_TIME_H__
+#ifndef GRPC_SUPPORT_TIME_H
+#define GRPC_SUPPORT_TIME_H
 /* Time support.
-   We use gpr_timespec, which is typedefed to struct timespec on platforms which
-   have it. On some machines, absolute times may be in local time.  */
-
-/* Platform specific header declares gpr_timespec.
-   gpr_timespec contains:
-      time_t tv_sec;  // seconds since start of 1970
-      int tv_nsec;    // nanoseconds;  always in 0..999999999; never negative.
- */
+   We use gpr_timespec, which is analogous to struct timespec.  On some
+   machines, absolute times may be in local time.  */
 
 #include <grpc/support/port_platform.h>
-
-#if defined(GPR_POSIX_TIME)
-#include <grpc/support/time_posix.h>
-#elif defined(GPR_WIN32)
-#include <grpc/support/time_win32.h>
-#else
-#error could not determine platform for time
-#endif
-
 #include <stddef.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct gpr_timespec {
+    time_t tv_sec;
+    int tv_nsec;
+} gpr_timespec;
 
 /* Time constants. */
 extern const gpr_timespec gpr_time_0;     /* The zero time interval. */
@@ -85,7 +76,7 @@ gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
 gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
-/* Return a timespec representing a given number of microseconds.  LONG_MIN is
+/* Return a timespec representing a given number of time units. LONG_MIN is
    interpreted as gpr_inf_past, and LONG_MAX as gpr_inf_future.  */
 gpr_timespec gpr_time_from_micros(long x);
 gpr_timespec gpr_time_from_nanos(long x);
@@ -103,14 +94,10 @@ int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);
 /* Sleep until at least 'until' - an absolute timeout */
 void gpr_sleep_until(gpr_timespec until);
 
-struct timeval gpr_timeval_from_timespec(gpr_timespec t);
-
-gpr_timespec gpr_timespec_from_timeval(struct timeval t);
-
 double gpr_timespec_to_micros(gpr_timespec t);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_TIME_H__ */
+#endif  /* GRPC_SUPPORT_TIME_H */

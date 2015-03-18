@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_STREAM_MAP_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_STREAM_MAP_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -78,4 +78,4 @@ void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map *map,
                                                void *value),
                                      void *user_data);
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_STREAM_MAP_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_MAP_H */

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_BYTE_BUFFER_H__
-#define __GRPC_BYTE_BUFFER_H__
+#ifndef GRPC_BYTE_BUFFER_H
+#define GRPC_BYTE_BUFFER_H
 
 #include <grpc/grpc.h>
 #include <grpc/support/slice_buffer.h>
@@ -47,4 +47,4 @@ struct grpc_byte_buffer {
   } data;
 };
 
-#endif /* __GRPC_BYTE_BUFFER_H__ */
+#endif  /* GRPC_BYTE_BUFFER_H */

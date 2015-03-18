@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/security/credentials.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -42,6 +41,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/security/credentials.h"
+#include "src/core/support/file.h"
 
 typedef struct {
   gpr_cv cv;
@@ -74,50 +76,50 @@ static void on_oauth2_response(void *user_data, grpc_mdelem **md_elems,
 
 static grpc_credentials *create_service_account_creds(
     const char *json_key_file_path, const char *scope) {
-  char json_key[8192]; /* Should be plenty. */
-  char *current = json_key;
-  FILE *json_key_file = fopen(json_key_file_path, "r");
-  if (json_key_file == NULL) {
-    gpr_log(GPR_ERROR, "Invalid path for json key file: %s.",
-            json_key_file_path);
+  int success;
+  gpr_slice json_key = gpr_load_file(json_key_file_path, &success);
+  if (!success) {
+    gpr_log(GPR_ERROR, "Could not read file %s.", json_key_file_path);
     exit(1);
   }
+  return grpc_service_account_credentials_create(
+      (const char *)GPR_SLICE_START_PTR(json_key), scope,
+      grpc_max_auth_token_lifetime);
+}
 
-  do {
-    size_t bytes_read = fread(
-        current, 1, sizeof(json_key) - (current - json_key), json_key_file);
-    if (bytes_read == 0) {
-      if (!feof(json_key_file)) {
-        gpr_log(GPR_ERROR, "Error occured while reading %s.",
-                json_key_file_path);
-        exit(1);
-      }
-      break;
-    }
-    current += bytes_read;
-  } while (sizeof(json_key) > (current - json_key));
-
-  if ((current - json_key) == sizeof(json_key)) {
-    gpr_log(GPR_ERROR, "Json key file %s exceeds size limit (%d bytes).",
-            json_key_file_path, (int)sizeof(json_key));
+static grpc_credentials *create_refresh_token_creds(
+    const char *json_refresh_token_file_path) {
+  int success;
+  gpr_slice refresh_token =
+      gpr_load_file(json_refresh_token_file_path, &success);
+  if (!success) {
+    gpr_log(GPR_ERROR, "Could not read file %s.", json_refresh_token_file_path);
     exit(1);
   }
-  fclose(json_key_file);
-
-  return grpc_service_account_credentials_create(json_key, scope,
-                                                 grpc_max_auth_token_lifetime);
+  return grpc_refresh_token_credentials_create(
+      (const char *)GPR_SLICE_START_PTR(refresh_token));
 }
 
 int main(int argc, char **argv) {
   synchronizer sync;
   grpc_credentials *creds = NULL;
   char *json_key_file_path = NULL;
+  char *json_refresh_token_file_path = NULL;
   int use_gce = 0;
   char *scope = NULL;
   gpr_cmdline *cl = gpr_cmdline_create("fetch_oauth2");
-  gpr_cmdline_add_string(cl, "json_key", "File path of the json key.",
+  gpr_cmdline_add_string(cl, "json_key",
+                         "File path of the json key. Mutually exclusive with "
+                         "--json_refresh_token.",
                          &json_key_file_path);
-  gpr_cmdline_add_string(cl, "scope", "Space delimited permissions.", &scope);
+  gpr_cmdline_add_string(cl, "json_refresh_token",
+                         "File path of the json refresh token. Mutually "
+                         "exclusive with --json_key.",
+                         &json_refresh_token_file_path);
+  gpr_cmdline_add_string(cl, "scope",
+                         "Space delimited permissions. Only used for "
+                         "--json_key, ignored otherwise.",
+                         &scope);
   gpr_cmdline_add_flag(
       cl, "gce",
       "Get a token from the GCE metadata server (only works in GCE).",
@@ -125,6 +127,12 @@ int main(int argc, char **argv) {
   gpr_cmdline_parse(cl, argc, argv);
 
   grpc_init();
+
+  if (json_key_file_path != NULL && json_refresh_token_file_path != NULL) {
+    gpr_log(GPR_ERROR,
+            "--json_key and --json_refresh_token are mutually exclusive.");
+    exit(1);
+  }
 
   if (use_gce) {
     if (json_key_file_path != NULL || scope != NULL) {
@@ -137,9 +145,18 @@ int main(int argc, char **argv) {
       gpr_log(GPR_ERROR, "Could not create gce credentials.");
       exit(1);
     }
+  } else if (json_refresh_token_file_path != NULL) {
+    creds = create_refresh_token_creds(json_refresh_token_file_path);
+    if (creds == NULL) {
+      gpr_log(GPR_ERROR,
+              "Could not create refresh token creds. %s does probably not "
+              "contain a valid json refresh token.",
+              json_refresh_token_file_path);
+      exit(1);
+    }
   } else {
     if (json_key_file_path == NULL) {
-      gpr_log(GPR_ERROR, "missing --json_key option.");
+      gpr_log(GPR_ERROR, "Missing --json_key option.");
       exit(1);
     }
     if (scope == NULL) {
@@ -162,7 +179,7 @@ int main(int argc, char **argv) {
   gpr_cv_init(&sync.cv);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, on_oauth2_response, &sync);
+  grpc_credentials_get_request_metadata(creds, "", on_oauth2_response, &sync);
 
   gpr_mu_lock(&sync.mu);
   while (!sync.is_done) gpr_cv_wait(&sync.cv, &sync.mu, gpr_inf_future);

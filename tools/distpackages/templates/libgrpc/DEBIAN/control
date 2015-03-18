@@ -1,0 +1,10 @@
+Package: libgrpc
+Version: 0.5.0
+Architecture: amd64
+Maintainer: Jan Tattermusch <jtattermusch@google.com>
+Depends: libc6
+Section: libs
+Priority: optional
+Homepage: https://github.com/grpc/grpc
+Description: gRPC C Core
+ Core C libraries for gRPC - An RPC library and framework.

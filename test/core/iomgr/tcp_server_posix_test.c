@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,7 @@ static void test_no_op(void) {
 static void test_no_op_with_start(void) {
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST();
-  grpc_tcp_server_start(s, NULL, on_connect, NULL);
+  grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_destroy(s);
 }
 
@@ -93,7 +93,7 @@ static void test_no_op_with_port_and_start(void) {
   GPR_ASSERT(
       grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
-  grpc_tcp_server_start(s, NULL, on_connect, NULL);
+  grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
 
   grpc_tcp_server_destroy(s);
 }
@@ -120,10 +120,10 @@ static void test_connect(int n) {
   GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
   GPR_ASSERT(addr_len <= sizeof(addr));
 
-  grpc_tcp_server_start(s, NULL, on_connect, NULL);
+  grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
 
   for (i = 0; i < n; i++) {
-    deadline = gpr_time_add(gpr_now(), gpr_time_from_micros(10000000));
+    deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
 
     nconnects_before = nconnects;
     clifd = socket(addr.ss_family, SOCK_STREAM, 0);

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -192,9 +192,10 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE method, VALUE host,
     rb_raise(rb_eRuntimeError, "closed!");
   }
 
-  call = grpc_channel_create_call(ch, method_chars, host_chars,
-                                  grpc_rb_time_timeval(deadline,
-                                                       /* absolute time */ 0));
+  call =
+      grpc_channel_create_call_old(ch, method_chars, host_chars,
+                                   grpc_rb_time_timeval(deadline,
+                                                        /* absolute time */ 0));
   if (call == NULL) {
     rb_raise(rb_eRuntimeError, "cannot create call with method %s",
              method_chars);
@@ -226,9 +227,9 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
 /* rb_cChannel is the ruby class that proxies grpc_channel. */
 VALUE rb_cChannel = Qnil;
 
-void Init_google_rpc_channel() {
+void Init_grpc_channel() {
   rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
-  rb_cChannel = rb_define_class_under(rb_mGoogleRpcCore, "Channel", rb_cObject);
+  rb_cChannel = rb_define_class_under(rb_mGrpcCore, "Channel", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cChannel, grpc_rb_channel_alloc);

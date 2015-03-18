@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,68 +31,32 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
-#define NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
+#ifndef GRPC_INTERNAL_COMPILER_CPP_GENERATOR_HELPERS_H
+#define GRPC_INTERNAL_COMPILER_CPP_GENERATOR_HELPERS_H
 
 #include <map>
-#include <string>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/descriptor.pb.h>
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 
 namespace grpc_cpp_generator {
 
-inline bool StripSuffix(std::string *filename, const std::string &suffix) {
-  if (filename->length() >= suffix.length()) {
-    size_t suffix_pos = filename->length() - suffix.length();
-    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
-      filename->resize(filename->size() - suffix.size());
-      return true;
-    }
-  }
-
-  return false;
+inline grpc::string DotsToColons(const grpc::string &name) {
+  return grpc_generator::StringReplace(name, ".", "::");
 }
 
-inline std::string StripProto(std::string filename) {
-  if (!StripSuffix(&filename, ".protodevel")) {
-    StripSuffix(&filename, ".proto");
-  }
-  return filename;
+inline grpc::string DotsToUnderscores(const grpc::string &name) {
+  return grpc_generator::StringReplace(name, ".", "_");
 }
 
-inline std::string StringReplace(std::string str, const std::string &from,
-                                 const std::string &to) {
-  size_t pos = 0;
-
-  for (;;) {
-    pos = str.find(from, pos);
-    if (pos == std::string::npos) {
-      break;
-    }
-    str.replace(pos, from.length(), to);
-    pos += to.length();
-  }
-
-  return str;
-}
-
-inline std::string DotsToColons(const std::string &name) {
-  return StringReplace(name, ".", "::");
-}
-
-inline std::string DotsToUnderscores(const std::string &name) {
-  return StringReplace(name, ".", "_");
-}
-
-inline std::string ClassName(const google::protobuf::Descriptor *descriptor,
-                             bool qualified) {
+inline grpc::string ClassName(const grpc::protobuf::Descriptor *descriptor,
+                              bool qualified) {
   // Find "outer", the descriptor of the top-level message in which
   // "descriptor" is embedded.
-  const google::protobuf::Descriptor *outer = descriptor;
+  const grpc::protobuf::Descriptor *outer = descriptor;
   while (outer->containing_type() != NULL) outer = outer->containing_type();
 
-  const std::string &outer_name = outer->full_name();
-  std::string inner_name = descriptor->full_name().substr(outer_name.size());
+  const grpc::string &outer_name = outer->full_name();
+  grpc::string inner_name = descriptor->full_name().substr(outer_name.size());
 
   if (qualified) {
     return "::" + DotsToColons(outer_name) + DotsToUnderscores(inner_name);
@@ -103,4 +67,4 @@ inline std::string ClassName(const google::protobuf::Descriptor *descriptor,
 
 }  // namespace grpc_cpp_generator
 
-#endif  // NET_GRPC_COMPILER_CPP_GENERATOR_HELPERS_H__
+#endif  // GRPC_INTERNAL_COMPILER_CPP_GENERATOR_HELPERS_H

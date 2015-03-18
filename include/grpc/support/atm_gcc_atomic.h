@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ATM_GCC_ATOMIC_H__
-#define __GRPC_SUPPORT_ATM_GCC_ATOMIC_H__
+#ifndef GRPC_SUPPORT_ATM_GCC_ATOMIC_H
+#define GRPC_SUPPORT_ATM_GCC_ATOMIC_H
 
 /* atm_platform.h for gcc and gcc-like compilers with the
    __atomic_* interface.  */
@@ -43,6 +43,7 @@ typedef gpr_intptr gpr_atm;
 #define gpr_atm_full_barrier() (__atomic_thread_fence(__ATOMIC_SEQ_CST))
 
 #define gpr_atm_acq_load(p) (__atomic_load_n((p), __ATOMIC_ACQUIRE))
+#define gpr_atm_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))
 #define gpr_atm_rel_store(p, value) \
   (__atomic_store_n((p), (gpr_intptr)(value), __ATOMIC_RELEASE))
 
@@ -66,4 +67,4 @@ static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
                                      __ATOMIC_RELAXED);
 }
 
-#endif /* __GRPC_SUPPORT_ATM_GCC_ATOMIC_H__ */
+#endif  /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */

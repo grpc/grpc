@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include "test/core/util/test_config.h"
 
 /*
    General test notes:
@@ -211,7 +212,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
                                 size_t num_bytes, size_t write_size,
                                 size_t slice_size, int shutdown) {
   struct read_and_write_test_state state;
-  gpr_timespec deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(20));
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
   grpc_endpoint_test_fixture f = begin_test(config, __FUNCTION__, slice_size);
 
   if (shutdown) {
@@ -290,7 +291,7 @@ static void shutdown_during_write_test_read_handler(
 
   if (error != GRPC_ENDPOINT_CB_OK) {
     grpc_endpoint_destroy(st->ep);
-    gpr_event_set(&st->ev, (void *)(gpr_intptr)error);
+    gpr_event_set(&st->ev, (void *)(gpr_intptr) error);
   } else {
     grpc_endpoint_notify_on_read(
         st->ep, shutdown_during_write_test_read_handler, user_data);
@@ -309,7 +310,7 @@ static void shutdown_during_write_test_write_handler(
     gpr_log(GPR_ERROR,
             "shutdown_during_write_test_write_handler completed unexpectedly");
   }
-  gpr_event_set(&st->ev, (void *)(gpr_intptr)1);
+  gpr_event_set(&st->ev, (void *)(gpr_intptr) 1);
 }
 
 static void shutdown_during_write_test(grpc_endpoint_test_config config,
@@ -345,8 +346,7 @@ static void shutdown_during_write_test(grpc_endpoint_test_config config,
         abort();
       case GRPC_ENDPOINT_WRITE_PENDING:
         grpc_endpoint_shutdown(write_st.ep);
-        deadline =
-            gpr_time_add(gpr_now(), gpr_time_from_micros(10 * GPR_US_PER_SEC));
+        deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
         GPR_ASSERT(gpr_event_wait(&write_st.ev, deadline));
         grpc_endpoint_destroy(write_st.ep);
         GPR_ASSERT(gpr_event_wait(&read_st.ev, deadline));

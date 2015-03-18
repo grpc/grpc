@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SRC_CORE_JSON_JSON_COMMON_H__
-#define __GRPC_SRC_CORE_JSON_JSON_COMMON_H__
+#ifndef GRPC_INTERNAL_CORE_JSON_JSON_COMMON_H
+#define GRPC_INTERNAL_CORE_JSON_JSON_COMMON_H
 
 /* The various json types. */
 typedef enum {
@@ -46,4 +46,4 @@ typedef enum {
   GRPC_JSON_TOP_LEVEL
 } grpc_json_type;
 
-#endif /* __GRPC_SRC_CORE_JSON_JSON_COMMON_H__ */
+#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_COMMON_H */

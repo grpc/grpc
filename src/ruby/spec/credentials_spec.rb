@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -66,12 +66,6 @@ describe Credentials do
       cred1 = Credentials.new(*certs)
       cred2 = Credentials.new(*certs)
       expect { cred1.compose(cred2) }.to_not raise_error
-    end
-  end
-
-  describe 'Credentials#default' do
-    it 'is not implemented yet' do
-      expect { Credentials.default }.to raise_error RuntimeError
     end
   end
 end

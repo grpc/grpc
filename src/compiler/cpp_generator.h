@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,31 +31,25 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_CPP_GENERATOR_H_
-#define NET_GRPC_COMPILER_CPP_GENERATOR_H_
+#ifndef GRPC_INTERNAL_COMPILER_CPP_GENERATOR_H
+#define GRPC_INTERNAL_COMPILER_CPP_GENERATOR_H
 
-#include <string>
-
-namespace google {
-namespace protobuf {
-class FileDescriptor;
-}  // namespace protobuf
-}  // namespace google
+#include "src/compiler/config.h"
 
 namespace grpc_cpp_generator {
 
 // Return the includes needed for generated header file.
-std::string GetHeaderIncludes(const google::protobuf::FileDescriptor *file);
+grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file);
 
 // Return the includes needed for generated source file.
-std::string GetSourceIncludes();
+grpc::string GetSourceIncludes();
 
 // Return the services for generated header file.
-std::string GetHeaderServices(const google::protobuf::FileDescriptor *file);
+grpc::string GetHeaderServices(const grpc::protobuf::FileDescriptor *file);
 
 // Return the services for generated source file.
-std::string GetSourceServices(const google::protobuf::FileDescriptor *file);
+grpc::string GetSourceServices(const grpc::protobuf::FileDescriptor *file);
 
 }  // namespace grpc_cpp_generator
 
-#endif  // NET_GRPC_COMPILER_CPP_GENERATOR_H_
+#endif  // GRPC_INTERNAL_COMPILER_CPP_GENERATOR_H

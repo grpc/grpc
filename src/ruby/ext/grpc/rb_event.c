@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -256,14 +256,6 @@ static VALUE grpc_rb_event_result(VALUE self) {
                event->data.finish_accepted);
       break;
 
-    case GRPC_INVOKE_ACCEPTED:
-      if (event->data.invoke_accepted == GRPC_OP_OK) {
-        return Qnil;
-      }
-      rb_raise(rb_eEventError, "invoke failed, not sure why (code=%d)",
-               event->data.invoke_accepted);
-      break;
-
     case GRPC_WRITE_ACCEPTED:
       if (event->data.write_accepted == GRPC_OP_OK) {
         return Qnil;
@@ -320,10 +312,10 @@ VALUE rb_cEvent = Qnil;
    rpc event processing. */
 VALUE rb_eEventError = Qnil;
 
-void Init_google_rpc_event() {
+void Init_grpc_event() {
   rb_eEventError =
-      rb_define_class_under(rb_mGoogleRpcCore, "EventError", rb_eStandardError);
-  rb_cEvent = rb_define_class_under(rb_mGoogleRpcCore, "Event", rb_cObject);
+      rb_define_class_under(rb_mGrpcCore, "EventError", rb_eStandardError);
+  rb_cEvent = rb_define_class_under(rb_mGrpcCore, "Event", rb_cObject);
 
   /* Prevent allocation or inialization from ruby. */
   rb_define_alloc_func(rb_cEvent, grpc_rb_cannot_alloc);
@@ -340,12 +332,11 @@ void Init_google_rpc_event() {
 
   /* Constants representing the completion types */
   rb_mCompletionType =
-      rb_define_module_under(rb_mGoogleRpcCore, "CompletionType");
+      rb_define_module_under(rb_mGrpcCore, "CompletionType");
   rb_define_const(rb_mCompletionType, "QUEUE_SHUTDOWN",
                   INT2NUM(GRPC_QUEUE_SHUTDOWN));
+  rb_define_const(rb_mCompletionType, "OP_COMPLETE", INT2NUM(GRPC_OP_COMPLETE));
   rb_define_const(rb_mCompletionType, "READ", INT2NUM(GRPC_READ));
-  rb_define_const(rb_mCompletionType, "INVOKE_ACCEPTED",
-                  INT2NUM(GRPC_INVOKE_ACCEPTED));
   rb_define_const(rb_mCompletionType, "WRITE_ACCEPTED",
                   INT2NUM(GRPC_WRITE_ACCEPTED));
   rb_define_const(rb_mCompletionType, "FINISH_ACCEPTED",

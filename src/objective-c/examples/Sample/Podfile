@@ -1,0 +1,13 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+pod 'RxLibrary', :path => "../../RxLibrary"
+pod 'GRPCClient', :path => "../../GRPCClient"
+
+target 'Sample' do
+
+end
+
+target 'SampleTests' do
+
+end

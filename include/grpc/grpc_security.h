@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_SECURITY_H_
-#define GRPC_SECURITY_H_
+#ifndef GRPC_GRPC_SECURITY_H
+#define GRPC_GRPC_SECURITY_H
 
 #include "grpc.h"
 #include "status.h"
@@ -51,8 +51,16 @@ typedef struct grpc_credentials grpc_credentials;
    The creator of the credentials object is responsible for its release. */
 void grpc_credentials_release(grpc_credentials *creds);
 
-/* Creates default credentials. */
-grpc_credentials *grpc_default_credentials_create(void);
+/* Creates default credentials to connect to a google gRPC service.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak. */
+grpc_credentials *grpc_google_default_credentials_create(void);
+
+/* Environment variable that points to the default SSL roots file. This file
+   must be a PEM encoded file with all the roots such as the one that can be
+   downloaded from https://pki.google.com/roots.pem.  */
+#define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR \
+  "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
 
 /* Object that holds a private key / certificate chain pair in PEM format. */
 typedef struct {
@@ -67,8 +75,11 @@ typedef struct {
 
 /* Creates an SSL credentials object.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding
-     of the server root certificates. If this parameter is NULL, the default
-     roots will be used.
+     of the server root certificates. If this parameter is NULL, the
+     implementation will first try to dereference the file pointed by the
+     GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable, and if that fails,
+     get the roots from a well-known place on disk (in the grpc install
+     directory).
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair.  */
@@ -79,13 +90,17 @@ grpc_credentials *grpc_ssl_credentials_create(
 grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
                                                     grpc_credentials *creds2);
 
-/* Creates a compute engine credentials object. */
+/* Creates a compute engine credentials object.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak. */
 grpc_credentials *grpc_compute_engine_credentials_create(void);
 
 extern const gpr_timespec grpc_max_auth_token_lifetime;
 
 /* Creates a service account credentials object. May return NULL if the input is
    invalid.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak.
    - json_key is the JSON key string containing the client's private key.
    - scope is a space-delimited list of the requested permissions.
    - token_lifetime is the lifetime of each token acquired through this service
@@ -93,6 +108,23 @@ extern const gpr_timespec grpc_max_auth_token_lifetime;
      or will be cropped to this value.  */
 grpc_credentials *grpc_service_account_credentials_create(
     const char *json_key, const char *scope, gpr_timespec token_lifetime);
+
+/* Creates a JWT credentials object. May return NULL if the input is invalid.
+   - json_key is the JSON key string containing the client's private key.
+   - token_lifetime is the lifetime of each Json Web Token (JWT) created with
+     this credentials.  It should not exceed grpc_max_auth_token_lifetime or
+     will be cropped to this value.  */
+grpc_credentials *grpc_jwt_credentials_create(const char *json_key,
+                                              gpr_timespec token_lifetime);
+
+/* Creates an Oauth2 Refresh Token crednetials object. May return NULL if the
+   input is invalid.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak.
+   - json_refresh_token is the JSON string containing the refresh token itself
+     along with a client_id and client_secret. */
+grpc_credentials *grpc_refresh_token_credentials_create(
+    const char *json_refresh_token);
 
 /* Creates a fake transport security credentials object for testing. */
 grpc_credentials *grpc_fake_transport_security_credentials_create(void);
@@ -111,11 +143,6 @@ grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
    channel). If this parameter is specified and the underlying is not an SSL
    channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
-
-/* Creates a default secure channel using the default credentials object using
-   the environment. */
-grpc_channel *grpc_default_secure_channel_create(const char *target,
-                                                 const grpc_channel_args *args);
 
 /* Creates a secure channel using the passed-in credentials. */
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
@@ -149,15 +176,16 @@ grpc_server_credentials *grpc_ssl_server_credentials_create(
 grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
     void);
 
-/* --- Secure server creation. --- */
+/* --- Server-side secure ports. --- */
 
-/* Creates a secure server using the passed-in server credentials. */
-grpc_server *grpc_secure_server_create(grpc_server_credentials *creds,
-                                       grpc_completion_queue *cq,
-                                       const grpc_channel_args *args);
+/* Add a HTTP2 over an encrypted link over tcp listener.
+   Returns bound port number on success, 0 on failure.
+   REQUIRES: server not started */
+int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
+                                      grpc_server_credentials *creds);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_SECURITY_H_ */
+#endif  /* GRPC_GRPC_SECURITY_H */

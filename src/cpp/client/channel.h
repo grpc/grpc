@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
-#define __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
+#ifndef GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
+#define GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
 
 #include <memory>
 
@@ -42,32 +42,27 @@
 struct grpc_channel;
 
 namespace grpc {
+class Call;
+class CallOpBuffer;
 class ChannelArguments;
+class CompletionQueue;
 class Credentials;
 class StreamContextInterface;
 
-class Channel : public ChannelInterface {
+class Channel GRPC_FINAL : public ChannelInterface {
  public:
-  Channel(const grpc::string &target, const ChannelArguments &args);
-  Channel(const grpc::string &target, const std::unique_ptr<Credentials> &creds,
-          const ChannelArguments &args);
+  Channel(const grpc::string &target, grpc_channel *c_channel);
+  ~Channel() GRPC_OVERRIDE;
 
-  ~Channel() override;
-
-  Status StartBlockingRpc(const RpcMethod &method, ClientContext *context,
-                          const google::protobuf::Message &request,
-                          google::protobuf::Message *result) override;
-
-  StreamContextInterface *CreateStream(
-      const RpcMethod &method, ClientContext *context,
-      const google::protobuf::Message *request,
-      google::protobuf::Message *result) override;
+  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
+                          CompletionQueue *cq) GRPC_OVERRIDE;
+  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) GRPC_OVERRIDE;
 
  private:
   const grpc::string target_;
-  grpc_channel *c_channel_;  // owned
+  grpc_channel *const c_channel_;  // owned
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_CLIENT_CHANNEL_H__
+#endif  // GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H

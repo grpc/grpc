@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,10 +77,10 @@ static void channel_func(grpc_channel_element *elem,
 }
 
 static void test_create_channel_stack(void) {
-  const grpc_channel_filter
-      filter = {call_func,         channel_func,         sizeof(int),
-                call_init_func,    call_destroy_func,    sizeof(int),
-                channel_init_func, channel_destroy_func, "some_test_filter" };
+  const grpc_channel_filter filter = {
+      call_func,         channel_func,         sizeof(int),
+      call_init_func,    call_destroy_func,    sizeof(int),
+      channel_init_func, channel_destroy_func, "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
   grpc_call_stack *call_stack;
@@ -128,7 +128,7 @@ static void test_create_channel_stack(void) {
   grpc_channel_stack_destroy(channel_stack);
   gpr_free(channel_stack);
 
-  grpc_mdctx_orphan(metadata_context);
+  grpc_mdctx_unref(metadata_context);
 }
 
 int main(int argc, char **argv) {

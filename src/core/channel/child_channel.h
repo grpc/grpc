@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_CHANNEL_CHILD_CHANNEL_H_
-#define __GRPC_INTERNAL_CHANNEL_CHILD_CHANNEL_H_
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CHILD_CHANNEL_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CHILD_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
 
@@ -61,4 +61,4 @@ grpc_child_call *grpc_child_channel_create_call(grpc_child_channel *channel,
 grpc_call_element *grpc_child_call_get_top_element(grpc_child_call *call);
 void grpc_child_call_destroy(grpc_child_call *call);
 
-#endif /* __GRPC_INTERNAL_CHANNEL_CHILD_CHANNEL_H_ */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHILD_CHANNEL_H */

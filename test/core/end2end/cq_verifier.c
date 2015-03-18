@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-/* Disable sprintf warnings on Windows (it's fine to do that for test code).
-   Also, cases where sprintf is called are crash sites anyway.
-   TODO(jtattermusch): b/18636890 */
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
 #include "test/core/end2end/cq_verifier.h"
 
@@ -70,6 +63,7 @@ typedef struct expectation {
   union {
     grpc_op_error finish_accepted;
     grpc_op_error write_accepted;
+    grpc_op_error op_complete;
     struct {
       const char *method;
       const char *host;
@@ -122,6 +116,11 @@ static int has_metadata(const grpc_metadata *md, size_t count, const char *key,
   return 0;
 }
 
+int contains_metadata(grpc_metadata_array *array, const char *key,
+                      const char *value) {
+  return has_metadata(array->metadata, array->count, key, value);
+}
+
 static void verify_and_destroy_metadata(metadata *md, grpc_metadata *elems,
                                         size_t count) {
   size_t i;
@@ -165,6 +164,10 @@ static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
   return ok;
 }
 
+int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
+  return byte_buffer_eq_slice(bb, gpr_slice_from_copied_string(str));
+}
+
 static int string_equivalent(const char *a, const char *b) {
   if (a == NULL) return b == NULL || b[0] == 0;
   if (b == NULL) return a[0] == 0;
@@ -179,9 +182,6 @@ static void verify_matches(expectation *e, grpc_event *ev) {
       break;
     case GRPC_WRITE_ACCEPTED:
       GPR_ASSERT(e->data.write_accepted == ev->data.write_accepted);
-      break;
-    case GRPC_INVOKE_ACCEPTED:
-      abort();
       break;
     case GRPC_SERVER_RPC_NEW:
       GPR_ASSERT(string_equivalent(e->data.server_rpc_new.method,
@@ -222,6 +222,9 @@ static void verify_matches(expectation *e, grpc_event *ev) {
         GPR_ASSERT(ev->data.read == NULL);
       }
       break;
+    case GRPC_OP_COMPLETE:
+      GPR_ASSERT(e->data.op_complete == ev->data.op_complete);
+      break;
     case GRPC_SERVER_SHUTDOWN:
       break;
     case GRPC_COMPLETION_DO_NOT_USE:
@@ -242,7 +245,9 @@ static void metadata_expectation(gpr_strvec *buf, metadata *md) {
       gpr_asprintf(&tmp, "%c%s:%s", i ? ',' : '{', md->keys[i], md->values[i]);
       gpr_strvec_add(buf, tmp);
     }
-    gpr_strvec_add(buf, gpr_strdup("}"));
+    if (md->count) {
+      gpr_strvec_add(buf, gpr_strdup("}"));
+    }
   }
 }
 
@@ -253,22 +258,23 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
   switch (e->type) {
     case GRPC_FINISH_ACCEPTED:
       gpr_asprintf(&tmp, "GRPC_FINISH_ACCEPTED result=%d",
-                     e->data.finish_accepted);
+                   e->data.finish_accepted);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_WRITE_ACCEPTED:
       gpr_asprintf(&tmp, "GRPC_WRITE_ACCEPTED result=%d",
-                     e->data.write_accepted);
+                   e->data.write_accepted);
       gpr_strvec_add(buf, tmp);
       break;
-    case GRPC_INVOKE_ACCEPTED:
-      gpr_strvec_add(buf, gpr_strdup("GRPC_INVOKE_ACCEPTED"));
+    case GRPC_OP_COMPLETE:
+      gpr_asprintf(&tmp, "GRPC_OP_COMPLETE result=%d", e->data.op_complete);
+      gpr_strvec_add(buf, tmp);
       break;
     case GRPC_SERVER_RPC_NEW:
       timeout = gpr_time_sub(e->data.server_rpc_new.deadline, gpr_now());
       gpr_asprintf(&tmp, "GRPC_SERVER_RPC_NEW method=%s host=%s timeout=%fsec",
-                     e->data.server_rpc_new.method, e->data.server_rpc_new.host,
-                     timeout.tv_sec + 1e-9 * timeout.tv_nsec);
+                   e->data.server_rpc_new.method, e->data.server_rpc_new.host,
+                   timeout.tv_sec + 1e-9 * timeout.tv_nsec);
       gpr_strvec_add(buf, tmp);
       break;
     case GRPC_CLIENT_METADATA_READ:
@@ -277,14 +283,16 @@ static void expectation_to_strvec(gpr_strvec *buf, expectation *e) {
       break;
     case GRPC_FINISHED:
       gpr_asprintf(&tmp, "GRPC_FINISHED status=%d details=%s ",
-                    e->data.finished.status, e->data.finished.details);
+                   e->data.finished.status, e->data.finished.details);
       gpr_strvec_add(buf, tmp);
       metadata_expectation(buf, e->data.finished.metadata);
       break;
     case GRPC_READ:
       gpr_strvec_add(buf, gpr_strdup("GRPC_READ data="));
-      gpr_strvec_add(buf, gpr_hexdump((char *)GPR_SLICE_START_PTR(*e->data.read),
-                        GPR_SLICE_LENGTH(*e->data.read), GPR_HEXDUMP_PLAINTEXT));
+      gpr_strvec_add(
+          buf,
+          gpr_hexdump((char *)GPR_SLICE_START_PTR(*e->data.read),
+                      GPR_SLICE_LENGTH(*e->data.read), GPR_HEXDUMP_PLAINTEXT));
       break;
     case GRPC_SERVER_SHUTDOWN:
       gpr_strvec_add(buf, gpr_strdup("GRPC_SERVER_SHUTDOWN"));
@@ -320,8 +328,7 @@ static void fail_no_event_received(cq_verifier *v) {
 }
 
 void cq_verify(cq_verifier *v) {
-  gpr_timespec deadline =
-      gpr_time_add(gpr_now(), gpr_time_from_micros(10 * GPR_US_PER_SEC));
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
   grpc_event *ev;
   expectation *e;
   char *s;
@@ -364,8 +371,7 @@ void cq_verify(cq_verifier *v) {
 }
 
 void cq_verify_empty(cq_verifier *v) {
-  gpr_timespec deadline =
-      gpr_time_add(gpr_now(), gpr_time_from_micros(3000000));
+  gpr_timespec deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(1));
   grpc_event *ev;
 
   GPR_ASSERT(v->expect.next == &v->expect && "expectation queue must be empty");
@@ -416,6 +422,10 @@ static metadata *metadata_from_args(va_list args) {
 
 void cq_expect_write_accepted(cq_verifier *v, void *tag, grpc_op_error result) {
   add(v, GRPC_WRITE_ACCEPTED, tag)->data.write_accepted = result;
+}
+
+void cq_expect_completion(cq_verifier *v, void *tag, grpc_op_error result) {
+  add(v, GRPC_OP_COMPLETE, tag)->data.op_complete = result;
 }
 
 void cq_expect_finish_accepted(cq_verifier *v, void *tag,

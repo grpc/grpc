@@ -5,12 +5,13 @@ require 'grpc/version'
 
 Gem::Specification.new do |s|
   s.name          = 'grpc'
-  s.version       = Google::RPC::VERSION
+  s.version       = GRPC::VERSION
   s.authors       = ['gRPC Authors']
-  s.email         = 'tbetbetbe@gmail.com'
+  s.email         = 'temiola@google.com'
   s.homepage      = 'https://github.com/google/grpc/tree/master/src/ruby'
-  s.summary       = 'Google RPC system in Ruby'
-  s.description   = 'Send RPCs from Ruby using Google\'s RPC system'
+  s.summary       = 'GRPC system in Ruby'
+  s.description   = 'Send RPCs from Ruby using GRPC'
+  s.license       = 'BSD-3-Clause'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- spec/*`.split("\n")
@@ -20,13 +21,10 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'faraday', '~> 0.9'
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'
+  s.add_dependency 'googleauth', '~> 0.1'
   s.add_dependency 'logging', '~> 1.8'
-  s.add_dependency 'jwt', '~> 1.2.1'
   s.add_dependency 'minitest', '~> 5.4'  # reqd for interop tests
-  s.add_dependency 'multijson', '1.10.1'
-  s.add_dependency 'signet', '~> 0.6.0'
   s.add_dependency 'xray', '~> 1.1'
 
   s.add_development_dependency 'bundler', '~> 1.7'

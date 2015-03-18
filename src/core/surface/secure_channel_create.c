@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,12 +97,15 @@ static void on_secure_transport_setup_done(void *rp,
   if (status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
     done(r, 0);
-  } else {
+  } else if (grpc_client_setup_cb_begin(r->cs_request)) {
     grpc_create_chttp2_transport(
         r->setup->setup_callback, r->setup->setup_user_data,
         grpc_client_setup_get_channel_args(r->cs_request), secure_endpoint,
         NULL, 0, grpc_client_setup_get_mdctx(r->cs_request), 1);
+    grpc_client_setup_cb_end(r->cs_request);
     done(r, 1);
+  } else {
+    done(r, 0);
   }
 }
 
@@ -189,8 +192,8 @@ static void done_setup(void *sp) {
 static grpc_transport_setup_result complete_setup(void *channel_stack,
                                                   grpc_transport *transport,
                                                   grpc_mdctx *mdctx) {
-  static grpc_channel_filter const *extra_filters[] = {&grpc_http_client_filter,
-                                                       &grpc_http_filter};
+  static grpc_channel_filter const *extra_filters[] = {
+      &grpc_client_auth_filter, &grpc_http_client_filter, &grpc_http_filter};
   return grpc_client_channel_transport_setup_complete(
       channel_stack, transport, extra_filters, GPR_ARRAY_SIZE(extra_filters),
       mdctx);
@@ -208,7 +211,7 @@ grpc_channel *grpc_secure_channel_create_internal(
   grpc_arg context_arg;
   grpc_channel_args *args_copy;
   grpc_mdctx *mdctx = grpc_mdctx_create();
-#define MAX_FILTERS 4
+#define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
   int n = 0;
   if (grpc_find_security_context_in_args(args) != NULL) {
@@ -222,7 +225,6 @@ grpc_channel *grpc_secure_channel_create_internal(
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
   }
-  filters[n++] = &grpc_client_auth_filter;
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
   channel = grpc_channel_create_from_filters(filters, n, args_copy, mdctx, 1);

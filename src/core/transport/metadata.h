@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_METADATA_H__
-#define __GRPC_INTERNAL_TRANSPORT_METADATA_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H
 
 #include <grpc/support/slice.h>
 #include <grpc/support/useful.h>
@@ -84,7 +84,8 @@ struct grpc_mdelem {
 /* Create/orphan a metadata context */
 grpc_mdctx *grpc_mdctx_create(void);
 grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed);
-void grpc_mdctx_orphan(grpc_mdctx *mdctx);
+void grpc_mdctx_ref(grpc_mdctx *mdctx);
+void grpc_mdctx_unref(grpc_mdctx *mdctx);
 
 /* Test only accessors to internal state - only for testing this code - do not
    rely on it outside of metadata_test.c */
@@ -136,4 +137,4 @@ const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_METADATA_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H */

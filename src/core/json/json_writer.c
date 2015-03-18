@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,7 @@ static void json_writer_output_string_with_len(grpc_json_writer* writer, const c
 
 void grpc_json_writer_init(grpc_json_writer* writer, int indent,
                            grpc_json_writer_vtable* vtable, void* userdata) {
-  memset(writer, 0, sizeof(grpc_json_writer));
+  memset(writer, 0, sizeof(*writer));
   writer->container_empty = 1;
   writer->indent = indent;
   writer->vtable = vtable;
@@ -77,7 +77,7 @@ static void json_writer_output_indent(
 
   while (spaces >= (sizeof(spacesstr) - 1)) {
     json_writer_output_string_with_len(writer, spacesstr,
-                                            sizeof(spacesstr) - 1);
+                                       sizeof(spacesstr) - 1);
     spaces -= (sizeof(spacesstr) - 1);
   }
 
@@ -117,10 +117,10 @@ static void json_writer_escape_string(grpc_json_writer* writer,
     gpr_uint8 c = (gpr_uint8)*string++;
     if (c == 0) {
       break;
-    } else if ((c >= 32) && (c <= 127)) {
+    } else if ((c >= 32) && (c <= 126)) {
       if ((c == '\\') || (c == '"')) json_writer_output_char(writer, '\\');
       json_writer_output_char(writer, c);
-    } else if (c < 32) {
+    } else if ((c < 32) || (c == 127)) {
       switch (c) {
         case '\b':
           json_writer_output_string_with_len(writer, "\\b", 2);
@@ -161,6 +161,7 @@ static void json_writer_escape_string(grpc_json_writer* writer,
       for (i = 0; i < extra; i++) {
         utf32 <<= 6;
         c = *string++;
+        /* Breaks out and bail on any invalid UTF-8 sequence, including \0. */
         if ((c & 0xc0) != 0x80) {
           valid = 0;
           break;

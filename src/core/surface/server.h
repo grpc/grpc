@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_SERVER_H__
-#define __GRPC_INTERNAL_SURFACE_SERVER_H__
+#ifndef GRPC_INTERNAL_CORE_SURFACE_SERVER_H
+#define GRPC_INTERNAL_CORE_SURFACE_SERVER_H
 
 #include "src/core/channel/channel_stack.h"
 #include <grpc/grpc.h>
@@ -48,7 +48,7 @@ grpc_server *grpc_server_create_from_filters(grpc_completion_queue *cq,
    and when it shuts down, it will call destroy */
 void grpc_server_add_listener(grpc_server *server, void *listener,
                               void (*start)(grpc_server *server, void *arg,
-                                            grpc_pollset *pollset),
+                                            grpc_pollset **pollsets, size_t npollsets),
                               void (*destroy)(grpc_server *server, void *arg));
 
 /* Setup a transport - creates a channel stack, binds the transport to the
@@ -60,4 +60,4 @@ grpc_transport_setup_result grpc_server_setup_transport(
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server);
 
-#endif /* __GRPC_INTERNAL_SURFACE_SERVER_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SURFACE_SERVER_H */

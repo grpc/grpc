@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -141,7 +141,7 @@ static void record_stats(census_ht* store, census_op_id op_id,
                          const census_rpc_stats* stats) {
   gpr_mu_lock(&g_mu);
   if (store != NULL) {
-    trace_obj* trace = NULL;
+    census_trace_obj* trace = NULL;
     census_internal_lock_trace_store();
     trace = census_get_trace_obj_locked(op_id);
     if (trace != NULL) {
@@ -222,7 +222,6 @@ void census_get_server_stats(census_aggregated_rpc_stats* data) {
 }
 
 void census_stats_store_init(void) {
-  gpr_log(GPR_INFO, "Initialize census stats store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);
   if (g_client_stats_store == NULL && g_server_stats_store == NULL) {
@@ -235,7 +234,6 @@ void census_stats_store_init(void) {
 }
 
 void census_stats_store_shutdown(void) {
-  gpr_log(GPR_INFO, "Shutdown census stats store.");
   init_mutex_once();
   gpr_mu_lock(&g_mu);
   if (g_client_stats_store != NULL) {

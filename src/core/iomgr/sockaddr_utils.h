@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_SOCKADDR_UTILS_H__
-#define __GRPC_INTERNAL_IOMGR_SOCKADDR_UTILS_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_UTILS_H
+#define GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_UTILS_H
 
 #include "src/core/iomgr/sockaddr.h"
 
@@ -57,6 +57,12 @@ int grpc_sockaddr_is_wildcard(const struct sockaddr *addr, int *port_out);
 void grpc_sockaddr_make_wildcards(int port, struct sockaddr_in *wild4_out,
                                   struct sockaddr_in6 *wild6_out);
 
+/* Writes 0.0.0.0:port. */
+void grpc_sockaddr_make_wildcard4(int port, struct sockaddr_in *wild_out);
+
+/* Writes [::]:port. */
+void grpc_sockaddr_make_wildcard6(int port, struct sockaddr_in6 *wild_out);
+
 /* Return the IP port number of a sockaddr */
 int grpc_sockaddr_get_port(const struct sockaddr *addr);
 
@@ -78,4 +84,4 @@ int grpc_sockaddr_set_port(const struct sockaddr *addr, int port);
 int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
                             int normalize);
 
-#endif /* __GRPC_INTERNAL_IOMGR_SOCKADDR_UTILS_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_UTILS_H */

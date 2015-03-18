@@ -1,3 +1,33 @@
+
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 // Message definitions to be used by integration test service definitions.
 
 syntax = "proto2";
@@ -19,7 +49,7 @@ enum PayloadType {
 // A block of data, to simply increase gRPC message size.
 message Payload {
   // The type of data in body.
-  optional PayloadType type = 1;
+  optional PayloadType type = 1 [default = COMPRESSABLE];
   // Primary contents of payload.
   optional bytes body = 2;
 }
@@ -28,7 +58,7 @@ message Payload {
 message SimpleRequest {
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, server randomly chooses one from other formats.
-  optional PayloadType response_type = 1;
+  optional PayloadType response_type = 1 [default = COMPRESSABLE];
 
   // Desired payload size in the response from the server.
   // If response_type is COMPRESSABLE, this denotes the size before compression.
@@ -36,6 +66,12 @@ message SimpleRequest {
 
   // Optional input payload sent along with the request.
   optional Payload payload = 3;
+
+  // Whether SimpleResponse should include username.
+  optional bool fill_username = 4;
+
+  // Whether SimpleResponse should include OAuth scope.
+  optional bool fill_oauth_scope = 5;
 }
 
 // Unary response, as configured by the request.
@@ -44,7 +80,9 @@ message SimpleResponse {
   optional Payload payload = 1;
   // The user the request came from, for verifying authentication was
   // successful when the client expected it.
-  optional int64 effective_gaia_user_id = 2;
+  optional string username = 2;
+  // OAuth scope.
+  optional string oauth_scope = 3;
 }
 
 // Client-streaming request.
@@ -78,7 +116,7 @@ message StreamingOutputCallRequest {
   // If response_type is RANDOM, the payload from each response in the stream
   // might be of different types. This is to simulate a mixed type of payload
   // stream.
-  optional PayloadType response_type = 1;
+  optional PayloadType response_type = 1 [default = COMPRESSABLE];
 
   // Configuration for each expected response message.
   repeated ResponseParameters response_parameters = 2;

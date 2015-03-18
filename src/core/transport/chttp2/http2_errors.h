@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_TRANSPORT_CHTTP2_HTTP2_ERRORS_H__
-#define __GRPC_INTERNAL_TRANSPORT_CHTTP2_HTTP2_ERRORS_H__
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HTTP2_ERRORS_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HTTP2_ERRORS_H
 
 /* error codes for RST_STREAM from http2 draft 14 section 7 */
 typedef enum {
@@ -53,4 +53,4 @@ typedef enum {
   GRPC_CHTTP2__ERROR_DO_NOT_USE = -1
 } grpc_chttp2_error_code;
 
-#endif /* __GRPC_INTERNAL_TRANSPORT_CHTTP2_HTTP2_ERRORS_H__ */
+#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HTTP2_ERRORS_H */

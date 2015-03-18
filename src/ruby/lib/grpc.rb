@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/auth/compute_engine.rb'
-require 'grpc/auth/service_account.rb'
 require 'grpc/errors'
 require 'grpc/grpc'
 require 'grpc/logconfig'
@@ -39,6 +37,3 @@ require 'grpc/generic/active_call'
 require 'grpc/generic/client_stub'
 require 'grpc/generic/service'
 require 'grpc/generic/rpc_server'
-
-# alias GRPC
-GRPC = Google::RPC

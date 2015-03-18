@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,14 +36,18 @@
 #include <sys/signal.h>
 #include <thread>
 
-#include <google/gflags.h>
+#include <unistd.h>
+
+#include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
+#include "src/cpp/server/thread_pool.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/qpstest.pb.h"
 
@@ -52,10 +56,12 @@
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
+DEFINE_int32(server_threads, 4, "Number of server threads.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
+using grpc::ThreadPool;
 using grpc::testing::Payload;
 using grpc::testing::PayloadType;
 using grpc::testing::ServerStats;
@@ -64,6 +70,13 @@ using grpc::testing::SimpleResponse;
 using grpc::testing::StatsRequest;
 using grpc::testing::TestService;
 using grpc::Status;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google { }
+namespace gflags { }
+using namespace google;
+using namespace gflags;
 
 static bool got_sigint = false;
 
@@ -87,7 +100,7 @@ static bool SetPayload(PayloadType type, int size, Payload* payload) {
 
 namespace {
 
-class TestServiceImpl final : public TestService::Service {
+class TestServiceImpl GRPC_FINAL : public TestService::Service {
  public:
   Status CollectServerStats(ServerContext* context, const StatsRequest*,
                             ServerStats* response) {
@@ -124,15 +137,19 @@ static void RunServer() {
   SimpleResponse response;
 
   ServerBuilder builder;
-  builder.AddPort(server_address);
-  builder.RegisterService(service.service());
+  builder.AddPort(server_address, grpc::InsecureServerCredentials());
+  builder.RegisterService(&service);
+
+  std::unique_ptr<ThreadPool> pool(new ThreadPool(FLAGS_server_threads));
+  builder.SetThreadPool(pool.get());
+
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s\n", server_address);
 
   grpc_profiler_start("qps_server.prof");
 
   while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    sleep(5);
   }
 
   grpc_profiler_stop();
@@ -142,10 +159,10 @@ static void RunServer() {
 
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   signal(SIGINT, sigint_handler);
-  
+
   GPR_ASSERT(FLAGS_port != 0);
   GPR_ASSERT(!FLAGS_enable_ssl);
   RunServer();
@@ -153,4 +170,3 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return 0;
 }
-

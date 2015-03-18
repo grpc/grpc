@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 #include "src/core/surface/client.h"
 
 #include "src/core/surface/call.h"
+#include "src/core/surface/channel.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -56,23 +57,23 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       grpc_call_next_op(elem, op);
       break;
     case GRPC_RECV_METADATA:
-      grpc_call_recv_metadata(elem, op);
+      grpc_call_recv_metadata(elem, op->data.metadata);
       break;
     case GRPC_RECV_DEADLINE:
       gpr_log(GPR_ERROR, "Deadline received by client (ignored)");
       break;
     case GRPC_RECV_MESSAGE:
-      grpc_call_recv_message(elem, op->data.message, op->done_cb,
-                             op->user_data);
+      grpc_call_recv_message(elem, op->data.message);
+      op->done_cb(op->user_data, GRPC_OP_OK);
       break;
     case GRPC_RECV_HALF_CLOSE:
-      grpc_call_recv_finish(elem, 0);
+      grpc_call_read_closed(elem);
       break;
     case GRPC_RECV_FINISH:
-      grpc_call_recv_finish(elem, 1);
+      grpc_call_stream_closed(elem);
       break;
     case GRPC_RECV_END_OF_INITIAL_METADATA:
-      grpc_call_client_initial_metadata_complete(elem);
+      grpc_call_initial_metadata_complete(elem);
       break;
     default:
       GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
@@ -87,7 +88,7 @@ static void channel_op(grpc_channel_element *elem,
       gpr_log(GPR_ERROR, "Client cannot accept new calls");
       break;
     case GRPC_TRANSPORT_CLOSED:
-      gpr_log(GPR_ERROR, "Transport closed");
+      grpc_client_channel_closed(elem);
       break;
     case GRPC_TRANSPORT_GOAWAY:
       gpr_slice_unref(op->data.goaway.message);

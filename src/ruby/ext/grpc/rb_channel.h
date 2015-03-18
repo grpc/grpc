@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 extern VALUE rb_cChannel;
 
 /* Initializes the Channel class. */
-void Init_google_rpc_channel();
+void Init_grpc_channel();
 
 /* Gets the wrapped channel from the ruby wrapper */
 grpc_channel* grpc_rb_get_wrapped_channel(VALUE v);

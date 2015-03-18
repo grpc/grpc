@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ALLOC_H__
-#define __GRPC_SUPPORT_ALLOC_H__
+#ifndef GRPC_SUPPORT_ALLOC_H
+#define GRPC_SUPPORT_ALLOC_H
 
 #include <stddef.h>
 
@@ -46,8 +46,8 @@ void *gpr_malloc(size_t size);
 void gpr_free(void *ptr);
 /* realloc, never returns NULL */
 void *gpr_realloc(void *p, size_t size);
-/* aligned malloc, never returns NULL, alignment must be power of 2 */
-void *gpr_malloc_aligned(size_t size, size_t alignment);
+/* aligned malloc, never returns NULL, will align to 1 << alignment_log */
+void *gpr_malloc_aligned(size_t size, size_t alignment_log);
 /* free memory allocated by gpr_malloc_aligned */
 void gpr_free_aligned(void *ptr);
 
@@ -55,4 +55,4 @@ void gpr_free_aligned(void *ptr);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_ALLOC_H__ */
+#endif  /* GRPC_SUPPORT_ALLOC_H */

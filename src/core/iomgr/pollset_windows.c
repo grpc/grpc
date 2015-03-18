@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,45 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINSOCK_SOCKET
 
-#endif /* GPR_WIN32 */
+#include <grpc/support/thd.h>
+
+#include "src/core/iomgr/alarm_internal.h"
+#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/pollset_windows.h"
+
+void grpc_pollset_init(grpc_pollset *pollset) {
+  gpr_mu_init(&pollset->mu);
+  gpr_cv_init(&pollset->cv);
+}
+
+void grpc_pollset_shutdown(grpc_pollset *pollset,
+                           void (*shutdown_done)(void *arg),
+                           void *shutdown_done_arg) {
+  shutdown_done(shutdown_done_arg);
+}
+
+void grpc_pollset_destroy(grpc_pollset *pollset) {
+  gpr_mu_destroy(&pollset->mu);
+  gpr_cv_destroy(&pollset->cv);
+}
+
+int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline) {
+  gpr_timespec now;
+  now = gpr_now();
+  if (gpr_time_cmp(now, deadline) > 0) {
+    return 0;
+  }
+  if (grpc_maybe_call_delayed_callbacks(NULL, 1)) {
+    return 1;
+  }
+  if (grpc_alarm_check(NULL, now, &deadline)) {
+    return 1;
+  }
+  return 0;
+}
+
+void grpc_pollset_kick(grpc_pollset *p) { }
+
+#endif  /* GPR_WINSOCK_SOCKET */

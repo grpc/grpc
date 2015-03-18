@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,11 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_HISTOGRAM_H__
-#define __GRPC_SUPPORT_HISTOGRAM_H__
+#ifndef GRPC_SUPPORT_HISTOGRAM_H
+#define GRPC_SUPPORT_HISTOGRAM_H
+
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,8 +62,15 @@ double gpr_histogram_count(gpr_histogram *histogram);
 double gpr_histogram_sum(gpr_histogram *histogram);
 double gpr_histogram_sum_of_squares(gpr_histogram *histogram);
 
+const gpr_uint32 *gpr_histogram_get_contents(gpr_histogram *histogram,
+                                             size_t *count);
+void gpr_histogram_merge_contents(gpr_histogram *histogram,
+                                  const gpr_uint32 *data, size_t data_count,
+                                  double min_seen, double max_seen, double sum,
+                                  double sum_of_squares, double count);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_HISTOGRAM_H__ */
+#endif  /* GRPC_SUPPORT_HISTOGRAM_H */

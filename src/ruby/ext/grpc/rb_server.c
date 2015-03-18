@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,35 +97,19 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
 /*
   call-seq:
     cq = CompletionQueue.new
-    insecure_server = Server.new(cq, {'arg1': 'value1'})
-    server_creds = ...
-    secure_server = Server.new(cq, {'arg1': 'value1'}, server_creds)
+    server = Server.new(cq, {'arg1': 'value1'})
 
   Initializes server instances. */
-static VALUE grpc_rb_server_init(int argc, VALUE *argv, VALUE self) {
-  VALUE cqueue = Qnil;
-  VALUE credentials = Qnil;
-  VALUE channel_args = Qnil;
+static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   grpc_completion_queue *cq = NULL;
-  grpc_server_credentials *creds = NULL;
   grpc_rb_server *wrapper = NULL;
   grpc_server *srv = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
-
-  /* "21" == 2 mandatory args, 1 (credentials) is optional */
-  rb_scan_args(argc, argv, "21", &cqueue, &channel_args, &credentials);
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
-
   Data_Get_Struct(self, grpc_rb_server, wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   srv = grpc_server_create(cq, &args);
-  if (credentials == Qnil) {
-    srv = grpc_server_create(cq, &args);
-  } else {
-    creds = grpc_rb_get_wrapped_server_credentials(credentials);
-    srv = grpc_secure_server_create(creds, cq, &args);
-  }
 
   if (args.args != NULL) {
     xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
@@ -175,7 +159,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE tag_new) {
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
   } else {
-    err = grpc_server_request_call(s->wrapped, ROBJECT(tag_new));
+    err = grpc_server_request_call_old(s->wrapped, ROBJECT(tag_new));
     if (err != GRPC_CALL_OK) {
       rb_raise(rb_eCallError, "server request failed: %s (code=%d)",
                grpc_call_error_detail_of(err), err);
@@ -215,33 +199,36 @@ static VALUE grpc_rb_server_destroy(VALUE self) {
 
     // secure port
     server_creds = ...
-    secure_server = Server.new(cq, {'arg1': 'value1'}, creds)
-    secure_server.add_http_port('mydomain:7575', True)
+    secure_server = Server.new(cq, {'arg1': 'value1'})
+    secure_server.add_http_port('mydomain:7575', server_creds)
 
     Adds a http2 port to server */
 static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
   VALUE port = Qnil;
-  VALUE is_secure = Qnil;
+  VALUE rb_creds = Qnil;
   grpc_rb_server *s = NULL;
+  grpc_server_credentials *creds = NULL;
   int recvd_port = 0;
 
-  /* "11" == 1 mandatory args, 1 (is_secure) is optional */
-  rb_scan_args(argc, argv, "11", &port, &is_secure);
+  /* "11" == 1 mandatory args, 1 (rb_creds) is optional */
+  rb_scan_args(argc, argv, "11", &port, &rb_creds);
 
   Data_Get_Struct(self, grpc_rb_server, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
-  } else if (is_secure == Qnil || TYPE(is_secure) != T_TRUE) {
+  } else if (rb_creds == Qnil) {
     recvd_port = grpc_server_add_http2_port(s->wrapped, StringValueCStr(port));
     if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add port %s to server, not sure why",
                StringValueCStr(port));
     }
-  } else if (TYPE(is_secure) != T_FALSE) {
+  } else {
+    creds = grpc_rb_get_wrapped_server_credentials(rb_creds);
     recvd_port =
-        grpc_server_add_secure_http2_port(s->wrapped, StringValueCStr(port));
+        grpc_server_add_secure_http2_port(s->wrapped, StringValueCStr(port),
+			                  creds);
     if (recvd_port == 0) {
       rb_raise(rb_eRuntimeError,
                "could not add secure port %s to server, not sure why",
@@ -251,14 +238,14 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
   return INT2NUM(recvd_port);
 }
 
-void Init_google_rpc_server() {
-  rb_cServer = rb_define_class_under(rb_mGoogleRpcCore, "Server", rb_cObject);
+void Init_grpc_server() {
+  rb_cServer = rb_define_class_under(rb_mGrpcCore, "Server", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(rb_cServer, grpc_rb_server_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cServer, "initialize", grpc_rb_server_init, -1);
+  rb_define_method(rb_cServer, "initialize", grpc_rb_server_init, 2);
   rb_define_method(rb_cServer, "initialize_copy", grpc_rb_server_init_copy, 1);
 
   /* Add the server methods. */

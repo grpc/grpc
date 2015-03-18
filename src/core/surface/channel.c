@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "src/core/iomgr/iomgr.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/client.h"
+#include "src/core/surface/init.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -51,7 +53,10 @@ struct grpc_channel {
   grpc_mdstr *authority_string;
 };
 
-#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
+#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c)+1))
+#define CHANNEL_FROM_CHANNEL_STACK(channel_stack) (((grpc_channel *)(channel_stack)) - 1)
+#define CHANNEL_FROM_TOP_ELEM(top_elem) \
+  CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
 grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t num_filters,
@@ -59,9 +64,10 @@ grpc_channel *grpc_channel_create_from_filters(
   size_t size =
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
   grpc_channel *channel = gpr_malloc(size);
+  GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
-  /* decremented by grpc_channel_destroy */
-  gpr_ref_init(&channel->refs, 1);
+  /* decremented by grpc_channel_destroy, and grpc_client_channel_closed if is_client */
+  gpr_ref_init(&channel->refs, 1 + is_client);
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
   channel->grpc_message_string = grpc_mdstr_from_string(mdctx, "grpc-message");
@@ -74,37 +80,44 @@ grpc_channel *grpc_channel_create_from_filters(
 
 static void do_nothing(void *ignored, grpc_op_error error) {}
 
-grpc_call *grpc_channel_create_call(grpc_channel *channel, const char *method,
-                                    const char *host,
+grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                    grpc_completion_queue *cq,
+                                    const char *method, const char *host,
                                     gpr_timespec absolute_deadline) {
   grpc_call *call;
   grpc_mdelem *path_mdelem;
   grpc_mdelem *authority_mdelem;
+  grpc_call_op op;
 
   if (!channel->is_client) {
     gpr_log(GPR_ERROR, "Cannot create a call on the server.");
     return NULL;
   }
 
-  call = grpc_call_create(channel, NULL);
+  call = grpc_call_create(channel, cq, NULL);
 
   /* Add :path and :authority headers. */
   /* TODO(klempner): Consider optimizing this by stashing mdelems for common
      values of method and host. */
-  grpc_mdstr_ref(channel->path_string);
   path_mdelem = grpc_mdelem_from_metadata_strings(
-      channel->metadata_context, channel->path_string,
+      channel->metadata_context, grpc_mdstr_ref(channel->path_string),
       grpc_mdstr_from_string(channel->metadata_context, method));
-  grpc_call_add_mdelem(call, path_mdelem, 0);
+  op.type = GRPC_SEND_METADATA;
+  op.dir = GRPC_CALL_DOWN;
+  op.flags = 0;
+  op.data.metadata = path_mdelem;
+  op.done_cb = do_nothing;
+  op.user_data = NULL;
+  grpc_call_execute_op(call, &op);
 
   grpc_mdstr_ref(channel->authority_string);
   authority_mdelem = grpc_mdelem_from_metadata_strings(
       channel->metadata_context, channel->authority_string,
       grpc_mdstr_from_string(channel->metadata_context, host));
-  grpc_call_add_mdelem(call, authority_mdelem, 0);
+  op.data.metadata = authority_mdelem;
+  grpc_call_execute_op(call, &op);
 
   if (0 != gpr_time_cmp(absolute_deadline, gpr_inf_future)) {
-    grpc_call_op op;
     op.type = GRPC_SEND_DEADLINE;
     op.dir = GRPC_CALL_DOWN;
     op.flags = 0;
@@ -117,19 +130,31 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel, const char *method,
   return call;
 }
 
+grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
+                                        const char *method, const char *host,
+                                        gpr_timespec absolute_deadline) {
+  return grpc_channel_create_call(channel, NULL, method, host,
+                                  absolute_deadline);
+}
+
 void grpc_channel_internal_ref(grpc_channel *channel) {
   gpr_ref(&channel->refs);
 }
 
+static void destroy_channel(void *p, int ok) {
+  grpc_channel *channel = p;
+  grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
+  grpc_mdstr_unref(channel->grpc_status_string);
+  grpc_mdstr_unref(channel->grpc_message_string);
+  grpc_mdstr_unref(channel->path_string);
+  grpc_mdstr_unref(channel->authority_string);
+  grpc_mdctx_unref(channel->metadata_context);
+  gpr_free(channel);
+}
+
 void grpc_channel_internal_unref(grpc_channel *channel) {
   if (gpr_unref(&channel->refs)) {
-    grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
-    grpc_mdstr_unref(channel->grpc_status_string);
-    grpc_mdstr_unref(channel->grpc_message_string);
-    grpc_mdstr_unref(channel->path_string);
-    grpc_mdstr_unref(channel->authority_string);
-    grpc_mdctx_orphan(channel->metadata_context);
-    gpr_free(channel);
+    grpc_iomgr_add_callback(destroy_channel, channel);
   }
 }
 
@@ -150,6 +175,10 @@ void grpc_channel_destroy(grpc_channel *channel) {
   elem->filter->channel_op(elem, NULL, &op);
 
   grpc_channel_internal_unref(channel);
+}
+
+void grpc_client_channel_closed(grpc_channel_element *elem) {
+  grpc_channel_internal_unref(CHANNEL_FROM_TOP_ELEM(elem));
 }
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,14 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H
 
+#include <windows.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/iomgr/pollset_kick.h"
+#include "src/core/iomgr/socket_windows.h"
 
 /* forward declare only in this file to avoid leaking impl details via
    pollset.h; real users of grpc_fd should always include 'fd_posix.h' and not
@@ -51,4 +53,4 @@ typedef struct grpc_pollset {
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 #define GRPC_POLLSET_CV(pollset) (&(pollset)->cv)
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_WINDOWS_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

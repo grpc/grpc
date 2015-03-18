@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,11 @@
  *
  */
 
-#ifndef __GRPC_TEST_END2END_DATA_SSL_TEST_DATA_H__
-#define __GRPC_TEST_END2END_DATA_SSL_TEST_DATA_H__
+#ifndef GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
+#define GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
 
 extern const char test_root_cert[];
 extern const char test_server1_cert[];
 extern const char test_server1_key[];
 
-extern const char prod_roots_certs[];
-
-#endif /* __GRPC_TEST_END2END_DATA_SSL_TEST_DATA_H__ */
+#endif  /* GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H */

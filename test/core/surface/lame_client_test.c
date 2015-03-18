@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/surface/lame_client.h"
+#include <grpc/grpc.h>
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
@@ -51,18 +51,17 @@ int main(int argc, char **argv) {
 
   chan = grpc_lame_client_channel_create();
   GPR_ASSERT(chan);
-  call = grpc_channel_create_call(
-      chan, "/Foo", "anywhere",
-      gpr_time_add(gpr_now(), gpr_time_from_seconds(100)));
+  call = grpc_channel_create_call_old(chan, "/Foo", "anywhere",
+                                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100));
   GPR_ASSERT(call);
   cq = grpc_completion_queue_create();
   cqv = cq_verifier_create(cq);
 
   /* we should be able to add metadata */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata(call, &md, 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_add_metadata_old(call, &md, 0));
 
   /* and invoke the call */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(call, cq, tag(2), tag(3), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke_old(call, cq, tag(2), tag(3), 0));
 
   /* the call should immediately fail */
   cq_expect_client_metadata_read(cqv, tag(2), NULL);

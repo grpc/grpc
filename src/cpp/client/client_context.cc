@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,10 @@ using std::chrono::system_clock;
 namespace grpc {
 
 ClientContext::ClientContext()
-    : call_(nullptr), cq_(nullptr), absolute_deadline_(gpr_inf_future) {}
+    : initial_metadata_received_(false),
+      call_(nullptr),
+      cq_(nullptr),
+      absolute_deadline_(gpr_inf_future) {}
 
 ClientContext::~ClientContext() {
   if (call_) {
@@ -72,9 +75,13 @@ system_clock::time_point ClientContext::absolute_deadline() {
 
 void ClientContext::AddMetadata(const grpc::string &meta_key,
                                 const grpc::string &meta_value) {
-  return;
+  send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::StartCancel() {}
+void ClientContext::TryCancel() {
+  if (call_) {
+    grpc_call_cancel(call_);
+  }
+}
 
 }  // namespace grpc

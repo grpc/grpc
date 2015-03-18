@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "src/cpp/proto/proto_utils.h"
-#include <google/protobuf/message.h>
+#include <grpc++/config.h>
 #include <grpc++/status.h>
 
 namespace grpc {
@@ -53,30 +53,31 @@ AsyncServerContext::AsyncServerContext(
 AsyncServerContext::~AsyncServerContext() { grpc_call_destroy(call_); }
 
 void AsyncServerContext::Accept(grpc_completion_queue *cq) {
-  GPR_ASSERT(grpc_call_server_accept(call_, cq, this) == GRPC_CALL_OK);
-  GPR_ASSERT(grpc_call_server_end_initial_metadata(call_, 0) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_server_accept_old(call_, cq, this) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_server_end_initial_metadata_old(
+                 call_, GRPC_WRITE_BUFFER_HINT) == GRPC_CALL_OK);
 }
 
-bool AsyncServerContext::StartRead(google::protobuf::Message *request) {
+bool AsyncServerContext::StartRead(grpc::protobuf::Message *request) {
   GPR_ASSERT(request);
   request_ = request;
-  grpc_call_error err = grpc_call_start_read(call_, this);
+  grpc_call_error err = grpc_call_start_read_old(call_, this);
   return err == GRPC_CALL_OK;
 }
 
-bool AsyncServerContext::StartWrite(const google::protobuf::Message &response,
+bool AsyncServerContext::StartWrite(const grpc::protobuf::Message &response,
                                     int flags) {
   grpc_byte_buffer *buffer = nullptr;
   if (!SerializeProto(response, &buffer)) {
     return false;
   }
-  grpc_call_error err = grpc_call_start_write(call_, buffer, this, flags);
+  grpc_call_error err = grpc_call_start_write_old(call_, buffer, this, flags);
   grpc_byte_buffer_destroy(buffer);
   return err == GRPC_CALL_OK;
 }
 
 bool AsyncServerContext::StartWriteStatus(const Status &status) {
-  grpc_call_error err = grpc_call_start_write_status(
+  grpc_call_error err = grpc_call_start_write_status_old(
       call_, static_cast<grpc_status_code>(status.code()),
       status.details().empty() ? nullptr
                                : const_cast<char *>(status.details().c_str()),

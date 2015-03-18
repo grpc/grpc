@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_BUILDER_H__
-#define __GRPCPP_SERVER_BUILDER_H__
+#ifndef GRPCXX_SERVER_BUILDER_H
+#define GRPCXX_SERVER_BUILDER_H
 
 #include <memory>
 #include <vector>
@@ -41,9 +41,13 @@
 
 namespace grpc {
 
+class AsyncGenericService;
+class AsynchronousService;
+class CompletionQueue;
 class RpcService;
 class Server;
 class ServerCredentials;
+class SynchronousService;
 class ThreadPoolInterface;
 
 class ServerBuilder {
@@ -53,14 +57,21 @@ class ServerBuilder {
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance returned by
   // BuildAndStart().
-  void RegisterService(RpcService* service);
+  void RegisterService(SynchronousService* service);
+
+  // Register an asynchronous service. New calls will be delevered to cq.
+  // This call does not take ownership of the service or completion queue.
+  // The service and completion queuemust exist for the lifetime of the Server
+  // instance returned by BuildAndStart().
+  void RegisterAsyncService(AsynchronousService* service);
+
+  // Register a generic service.
+  void RegisterAsyncGenericService(AsyncGenericService* service);
 
   // Add a listening port. Can be called multiple times.
-  void AddPort(const grpc::string& addr);
-
-  // Set a ServerCredentials. Can only be called once.
-  // TODO(yangg) move this to be part of AddPort
-  void SetCredentials(const std::shared_ptr<ServerCredentials>& creds);
+  void AddPort(const grpc::string& addr,
+               std::shared_ptr<ServerCredentials> creds,
+               int* selected_port = nullptr);
 
   // Set the thread pool used for running appliation rpc handlers.
   // Does not take ownership.
@@ -70,12 +81,20 @@ class ServerBuilder {
   std::unique_ptr<Server> BuildAndStart();
 
  private:
+  struct Port {
+    grpc::string addr;
+    std::shared_ptr<ServerCredentials> creds;
+    int* selected_port;
+  };
+
   std::vector<RpcService*> services_;
-  std::vector<grpc::string> ports_;
+  std::vector<AsynchronousService*> async_services_;
+  std::vector<Port> ports_;
   std::shared_ptr<ServerCredentials> creds_;
+  AsyncGenericService* generic_service_;
   ThreadPoolInterface* thread_pool_;
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_BUILDER_H__
+#endif  // GRPCXX_SERVER_BUILDER_H

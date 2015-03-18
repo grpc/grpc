@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -146,55 +146,4 @@ void grpc_metadata_buffer_flush(grpc_metadata_buffer *buffer,
   /* free data structures and reset to NULL: we can only flush once */
   gpr_free(impl);
   *buffer = NULL;
-}
-
-size_t grpc_metadata_buffer_count(const grpc_metadata_buffer *buffer) {
-  return *buffer ? (*buffer)->elems : 0;
-}
-
-typedef struct {
-  grpc_metadata_buffer_impl *impl;
-} elems_hdr;
-
-grpc_metadata *grpc_metadata_buffer_extract_elements(
-    grpc_metadata_buffer *buffer) {
-  grpc_metadata_buffer_impl *impl;
-  elems_hdr *hdr;
-  qelem *src;
-  grpc_metadata *out;
-  size_t i;
-
-  impl = *buffer;
-
-  if (!impl) {
-    return NULL;
-  }
-
-  hdr = gpr_malloc(sizeof(elems_hdr) + impl->elems * sizeof(grpc_metadata));
-  src = ELEMS(impl);
-  out = (grpc_metadata *)(hdr + 1);
-
-  hdr->impl = impl;
-  for (i = 0; i < impl->elems; i++) {
-    out[i].key = (char *)grpc_mdstr_as_c_string(src[i].md->key);
-    out[i].value = (char *)grpc_mdstr_as_c_string(src[i].md->value);
-    out[i].value_length = GPR_SLICE_LENGTH(src[i].md->value->slice);
-  }
-
-  /* clear out buffer (it's not possible to extract elements twice */
-  *buffer = NULL;
-
-  return out;
-}
-
-void grpc_metadata_buffer_cleanup_elements(void *elements,
-                                           grpc_op_error error) {
-  elems_hdr *hdr = ((elems_hdr *)elements) - 1;
-
-  if (!elements) {
-    return;
-  }
-
-  grpc_metadata_buffer_destroy(&hdr->impl, error);
-  gpr_free(hdr);
 }

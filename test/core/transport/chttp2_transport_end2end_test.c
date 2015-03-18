@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -100,7 +100,8 @@ grpc_transport_test_config fixture_configs[] = {
     {"chttp2_on_socketpair/medium",
      create_http2_transport_for_test_medium_slices},
     {"chttp2_on_socketpair/large",
-     create_http2_transport_for_test_large_slices}, };
+     create_http2_transport_for_test_large_slices},
+};
 
 /* Driver function: run the test suite for each test configuration */
 int main(int argc, char **argv) {

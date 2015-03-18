@@ -1,9 +1,39 @@
+# Copyright 2015, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 """Run a group of subprocesses and then finish."""
 
 import hashlib
 import multiprocessing
 import os
 import random
+import signal
 import subprocess
 import sys
 import tempfile
@@ -11,6 +41,19 @@ import time
 
 
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
+
+
+have_alarm = False
+def alarm_handler(unused_signum, unused_frame):
+  global have_alarm
+  have_alarm = False
+
+
+# setup a signal handler so that signal.pause registers 'something'
+# when a child finishes
+# not using futures and threading to avoid a dependency on subprocess32
+signal.signal(signal.SIGCHLD, lambda unused_signum, unused_frame: None)
+signal.signal(signal.SIGALRM, alarm_handler)
 
 
 def shuffle_iteratable(it):
@@ -56,6 +99,7 @@ _CLEAR_LINE = '\x1b[2K'
 
 _TAG_COLOR = {
     'FAILED': 'red',
+    'TIMEOUT': 'red',
     'PASSED': 'green',
     'START': 'gray',
     'WAITING': 'yellow',
@@ -65,16 +109,19 @@ _TAG_COLOR = {
 
 
 def message(tag, message, explanatory_text=None, do_newline=False):
-  sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
-      _BEGINNING_OF_LINE,
-      _CLEAR_LINE,
-      '\n%s' % explanatory_text if explanatory_text is not None else '',
-      _COLORS[_TAG_COLOR[tag]][1],
-      _COLORS[_TAG_COLOR[tag]][0],
-      tag,
-      message,
-      '\n' if do_newline or explanatory_text is not None else ''))
-  sys.stdout.flush()
+  try:
+    sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
+        _BEGINNING_OF_LINE,
+        _CLEAR_LINE,
+        '\n%s' % explanatory_text if explanatory_text is not None else '',
+        _COLORS[_TAG_COLOR[tag]][1],
+        _COLORS[_TAG_COLOR[tag]][0],
+        tag,
+        message,
+        '\n' if do_newline or explanatory_text is not None else ''))
+    sys.stdout.flush()
+  except:
+    pass
 
 
 def which(filename):
@@ -89,7 +136,7 @@ def which(filename):
 class JobSpec(object):
   """Specifies what to run for a job."""
 
-  def __init__(self, cmdline, shortname=None, environ={}, hash_targets=[]):
+  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -97,6 +144,10 @@ class JobSpec(object):
       hash_targets: which files to include in the hash representing the jobs version
                     (or empty, indicating the job should not be hashed)
     """
+    if environ is None:
+      environ = {}
+    if hash_targets is None:
+      hash_targets = []
     self.cmdline = cmdline
     self.environ = environ
     self.shortname = cmdline[0] if shortname is None else shortname
@@ -115,36 +166,42 @@ class JobSpec(object):
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, spec, bin_hash, newline_on_success):
+  def __init__(self, spec, bin_hash, newline_on_success, travis):
     self._spec = spec
     self._bin_hash = bin_hash
     self._tempfile = tempfile.TemporaryFile()
     env = os.environ.copy()
     for k, v in spec.environ.iteritems():
       env[k] = v
+    self._start = time.time()
     self._process = subprocess.Popen(args=spec.cmdline,
                                      stderr=subprocess.STDOUT,
                                      stdout=self._tempfile,
                                      env=env)
     self._state = _RUNNING
     self._newline_on_success = newline_on_success
-    message('START', spec.shortname)
+    self._travis = travis
+    message('START', spec.shortname, do_newline=self._travis)
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
     if self._state == _RUNNING and self._process.poll() is not None:
+      elapsed = time.time() - self._start
       if self._process.returncode != 0:
         self._state = _FAILURE
         self._tempfile.seek(0)
         stdout = self._tempfile.read()
         message('FAILED', '%s [ret=%d]' % (
-            self._spec.shortname, self._process.returncode), stdout)
+            self._spec.shortname, self._process.returncode), stdout, do_newline=True)
       else:
         self._state = _SUCCESS
-        message('PASSED', self._spec.shortname,
-                do_newline=self._newline_on_success)
+        message('PASSED', '%s [time=%.1fsec]' % (self._spec.shortname, elapsed),
+                do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
+    elif self._state == _RUNNING and time.time() - self._start > 300:
+      message('TIMEOUT', self._spec.shortname, do_newline=True)
+      self.kill()
     return self._state
 
   def kill(self):
@@ -156,7 +213,7 @@ class Job(object):
 class Jobset(object):
   """Manages one run of jobs."""
 
-  def __init__(self, check_cancelled, maxjobs, newline_on_success, cache):
+  def __init__(self, check_cancelled, maxjobs, newline_on_success, travis, cache):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -164,6 +221,7 @@ class Jobset(object):
     self._completed = 0
     self._maxjobs = maxjobs
     self._newline_on_success = newline_on_success
+    self._travis = travis
     self._cache = cache
 
   def start(self, spec):
@@ -185,7 +243,8 @@ class Jobset(object):
     if should_run:
       self._running.add(Job(spec,
                             bin_hash,
-                            self._newline_on_success))
+                            self._newline_on_success,
+                            self._travis))
     return True
 
   def reap(self):
@@ -196,14 +255,20 @@ class Jobset(object):
         st = job.state(self._cache)
         if st == _RUNNING: continue
         if st == _FAILURE: self._failures += 1
+        if st == _KILLED: self._failures += 1
         dead.add(job)
       for job in dead:
         self._completed += 1
         self._running.remove(job)
       if dead: return
-      message('WAITING', '%d jobs running, %d complete, %d failed' % (
-          len(self._running), self._completed, self._failures))
-      time.sleep(0.1)
+      if (not self._travis):
+        message('WAITING', '%d jobs running, %d complete, %d failed' % (
+            len(self._running), self._completed, self._failures))
+      global have_alarm
+      if not have_alarm:
+        have_alarm = True
+        signal.alarm(10)
+      signal.pause()
 
   def cancelled(self):
     """Poll for cancellation."""
@@ -238,12 +303,17 @@ def run(cmdlines,
         check_cancelled=_never_cancelled,
         maxjobs=None,
         newline_on_success=False,
+        travis=False,
         cache=None):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-              newline_on_success,
+              newline_on_success, travis,
               cache if cache is not None else NoCache())
-  for cmdline in shuffle_iteratable(cmdlines):
+  if not travis:
+    cmdlines = shuffle_iteratable(cmdlines)
+  else:
+    cmdlines = sorted(cmdlines, key=lambda x: x.shortname)
+  for cmdline in cmdlines:
     if not js.start(cmdline):
       break
   return js.finish()

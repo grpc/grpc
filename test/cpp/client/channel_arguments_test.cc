@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,14 +52,14 @@ TEST_F(ChannelArgumentsTest, SetInt) {
   ChannelArguments channel_args;
   // Empty arguments.
   SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(0, args.num_args);
+  EXPECT_EQ(static_cast<size_t>(0), args.num_args);
 
   grpc::string key("key0");
   channel_args.SetInt(key, 0);
   // Clear key early to make sure channel_args takes a copy
   key = "";
   SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(1, args.num_args);
+  EXPECT_EQ(static_cast<size_t>(1), args.num_args);
   EXPECT_EQ(GRPC_ARG_INTEGER, args.args[0].type);
   EXPECT_STREQ("key0", args.args[0].key);
   EXPECT_EQ(0, args.args[0].value.integer);
@@ -68,7 +68,7 @@ TEST_F(ChannelArgumentsTest, SetInt) {
   channel_args.SetInt(key, 1);
   key = "";
   SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(2, args.num_args);
+  EXPECT_EQ(static_cast<size_t>(2), args.num_args);
   // We do not enforce order on the arguments.
   for (size_t i = 0; i < args.num_args; i++) {
     EXPECT_EQ(GRPC_ARG_INTEGER, args.args[i].type);
@@ -85,7 +85,7 @@ TEST_F(ChannelArgumentsTest, SetString) {
   ChannelArguments channel_args;
   // Empty arguments.
   SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(0, args.num_args);
+  EXPECT_EQ(static_cast<size_t>(0), args.num_args);
 
   grpc::string key("key0");
   grpc::string val("val0");
@@ -94,7 +94,7 @@ TEST_F(ChannelArgumentsTest, SetString) {
   key = "";
   val = "";
   SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(1, args.num_args);
+  EXPECT_EQ(static_cast<size_t>(1), args.num_args);
   EXPECT_EQ(GRPC_ARG_STRING, args.args[0].type);
   EXPECT_STREQ("key0", args.args[0].key);
   EXPECT_STREQ("val0", args.args[0].value.string);
@@ -103,7 +103,7 @@ TEST_F(ChannelArgumentsTest, SetString) {
   val = "val1";
   channel_args.SetString(key, val);
   SetChannelArgs(channel_args, &args);
-  EXPECT_EQ(2, args.num_args);
+  EXPECT_EQ(static_cast<size_t>(2), args.num_args);
   // We do not enforce order on the arguments.
   for (size_t i = 0; i < args.num_args; i++) {
     EXPECT_EQ(GRPC_ARG_STRING, args.args[i].type);

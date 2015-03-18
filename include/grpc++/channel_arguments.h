@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CHANNEL_ARGUMENTS_H_
-#define __GRPCPP_CHANNEL_ARGUMENTS_H_
+#ifndef GRPCXX_CHANNEL_ARGUMENTS_H
+#define GRPCXX_CHANNEL_ARGUMENTS_H
 
 #include <vector>
 #include <list>
@@ -62,8 +62,11 @@ class ChannelArguments {
   void SetInt(const grpc::string& key, int value);
   void SetString(const grpc::string& key, const grpc::string& value);
 
+  // Populates given channel_args with args_, does not take ownership.
+  void SetChannelArgs(grpc_channel_args* channel_args) const;
+
  private:
-  friend class Channel;
+  friend class SecureCredentials;
   friend class testing::ChannelArgumentsTest;
 
   // TODO(yangg) implement copy and assign
@@ -73,13 +76,10 @@ class ChannelArguments {
   // Returns empty string when it is not set.
   grpc::string GetSslTargetNameOverride() const;
 
-  // Populates given channel_args with args_, does not take ownership.
-  void SetChannelArgs(grpc_channel_args* channel_args) const;
-
   std::vector<grpc_arg> args_;
   std::list<grpc::string> strings_;
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CHANNEL_ARGUMENTS_H_
+#endif  // GRPCXX_CHANNEL_ARGUMENTS_H

@@ -1,3 +1,36 @@
+/*
+ *
+ * Copyright 2015, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #include "call.h"
 
 #ifdef HAVE_CONFIG_H
@@ -22,6 +55,8 @@
 #include "completion_queue.h"
 #include "channel.h"
 #include "server_credentials.h"
+
+zend_class_entry *grpc_ce_server;
 
 /* Frees and destroys an instance of wrapped_grpc_server */
 void free_wrapped_grpc_server(void *object TSRMLS_DC) {
@@ -63,9 +98,6 @@ PHP_METHOD(Server, __construct) {
   zval *queue_obj;
   zval *args_array = NULL;
   grpc_channel_args args;
-  HashTable *array_hash;
-  zval **creds_obj = NULL;
-  wrapped_grpc_server_credentials *creds = NULL;
   /* "O|a" == 1 Object, 1 optional array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|a", &queue_obj,
                             grpc_ce_completion_queue, &args_array) == FAILURE) {
@@ -81,28 +113,8 @@ PHP_METHOD(Server, __construct) {
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(queue->wrapped, NULL);
   } else {
-    array_hash = Z_ARRVAL_P(args_array);
-    if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
-                       (void **)&creds_obj) == SUCCESS) {
-      if (zend_get_class_entry(*creds_obj TSRMLS_CC) !=
-          grpc_ce_server_credentials) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "credentials must be a ServerCredentials object",
-                             1 TSRMLS_CC);
-        return;
-      }
-      creds = (wrapped_grpc_server_credentials *)zend_object_store_get_object(
-          *creds_obj TSRMLS_CC);
-      zend_hash_del(array_hash, "credentials", sizeof("credentials"));
-    }
     php_grpc_read_args_array(args_array, &args);
-    if (creds == NULL) {
-      server->wrapped = grpc_server_create(queue->wrapped, &args);
-    } else {
-      gpr_log(GPR_DEBUG, "Initialized secure server");
-      server->wrapped =
-          grpc_secure_server_create(creds->wrapped, queue->wrapped, &args);
-    }
+    server->wrapped = grpc_server_create(queue->wrapped, &args);
     efree(args.args);
   }
 }
@@ -125,7 +137,7 @@ PHP_METHOD(Server, request_call) {
                          "request_call expects a long", 1 TSRMLS_CC);
     return;
   }
-  error_code = grpc_server_request_call(server->wrapped, (void *)tag_new);
+  error_code = grpc_server_request_call_old(server->wrapped, (void *)tag_new);
   MAYBE_THROW_CALL_ERROR(request_call, error_code);
 }
 
@@ -146,7 +158,7 @@ PHP_METHOD(Server, add_http2_port) {
                          "add_http2_port expects a string", 1 TSRMLS_CC);
     return;
   }
-  RETURN_BOOL(grpc_server_add_http2_port(server->wrapped, addr));
+  RETURN_LONG(grpc_server_add_http2_port(server->wrapped, addr));
 }
 
 PHP_METHOD(Server, add_secure_http2_port) {
@@ -154,14 +166,21 @@ PHP_METHOD(Server, add_secure_http2_port) {
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
   int addr_len;
-  /* "s" == 1 string */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len) ==
+  zval *creds_obj;
+  /* "sO" == 1 string, 1 object */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len,
+                            &creds_obj, grpc_ce_server_credentials) ==
       FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "add_http2_port expects a string", 1 TSRMLS_CC);
+    zend_throw_exception(
+        spl_ce_InvalidArgumentException,
+        "add_http2_port expects a string and a ServerCredentials", 1 TSRMLS_CC);
     return;
   }
-  RETURN_BOOL(grpc_server_add_secure_http2_port(server->wrapped, addr));
+  wrapped_grpc_server_credentials *creds =
+      (wrapped_grpc_server_credentials *)zend_object_store_get_object(
+          creds_obj TSRMLS_CC);
+  RETURN_LONG(grpc_server_add_secure_http2_port(server->wrapped, addr,
+                                                creds->wrapped));
 }
 
 /**

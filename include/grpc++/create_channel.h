@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_CREATE_CHANNEL_H__
-#define __GRPCPP_CREATE_CHANNEL_H__
+#ifndef GRPCXX_CREATE_CHANNEL_H
+#define GRPCXX_CREATE_CHANNEL_H
 
 #include <memory>
 
@@ -43,9 +43,6 @@ namespace grpc {
 class ChannelArguments;
 class ChannelInterface;
 
-std::shared_ptr<ChannelInterface> CreateChannel(const grpc::string& target,
-                                                const ChannelArguments& args);
-
 // If creds does not hold an object or is invalid, a lame channel is returned.
 std::shared_ptr<ChannelInterface> CreateChannel(
     const grpc::string& target, const std::unique_ptr<Credentials>& creds,
@@ -53,4 +50,4 @@ std::shared_ptr<ChannelInterface> CreateChannel(
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CREATE_CHANNEL_H__
+#endif  // GRPCXX_CREATE_CHANNEL_H

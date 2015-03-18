@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,7 @@ require 'minitest'
 require 'minitest/assertions'
 
 require 'grpc'
+require 'googleauth'
 require 'google/protobuf'
 
 require 'test/cpp/interop/test_services'
@@ -56,7 +57,7 @@ require 'test/cpp/interop/empty'
 
 require 'signet/ssl_config'
 
-include Google::RPC::Auth
+AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
 # loads the certificates used to access the test server securely.
 def load_test_certs
@@ -101,19 +102,11 @@ def create_stub(opts)
     }
 
     # Add service account creds if specified
-    if %w(all service_account_creds).include?(opts.test_case)
+    wants_creds = %w(all compute_engine_creds service_account_creds)
+    if wants_creds.include?(opts.test_case)
       unless opts.oauth_scope.nil?
-        fd = StringIO.new(File.read(opts.oauth_key_file))
-        logger.info("loading oauth certs from #{opts.oauth_key_file}")
-        auth_creds = ServiceAccountCredentials.new(opts.oauth_scope, fd)
+        auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
         stub_opts[:update_metadata] = auth_creds.updater_proc
-      end
-    end
-
-    # Add compute engine creds if specified
-    if %w(all compute_engine_creds).include?(opts.test_case)
-      unless opts.oauth_scope.nil?
-        stub_opts[:update_metadata] = GCECredentials.new.update_proc
       end
     end
 
@@ -193,11 +186,11 @@ class NamedTests
 
   def service_account_creds
     # ignore this test if the oauth options are not set
-    if @args.oauth_scope.nil? || @args.oauth_key_file.nil?
+    if @args.oauth_scope.nil?
       p 'NOT RUN: service_account_creds; no service_account settings'
       return
     end
-    json_key = File.read(@args.oauth_key_file)
+    json_key = File.read(ENV[AUTH_ENV])
     wanted_email = MultiJson.load(json_key)['client_email']
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true)
@@ -211,10 +204,8 @@ class NamedTests
   def compute_engine_creds
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true)
-    assert(@args.oauth_scope.include?(resp.oauth_scope),
-           'service_account_creds: incorrect oauth_scope')
     assert_equal(@args.default_service_account, resp.username,
-                 'service_account_creds: incorrect username')
+                 'compute_engine_creds: incorrect username')
     p 'OK: compute_engine_creds'
   end
 
@@ -287,13 +278,13 @@ end
 
 # Args is used to hold the command line info.
 Args = Struct.new(:default_service_account, :host, :host_override,
-                  :oauth_scope, :oauth_key_file, :port, :secure, :test_case,
+                  :oauth_scope, :port, :secure, :test_case,
                   :use_test_ca)
 
 # validates the the command line options, returning them as a Hash.
 def parse_args
   args = Args.new
-  args.host_override = 'foo.test.google.com'
+  args.host_override = 'foo.test.google.fr'
   OptionParser.new do |opts|
     opts.on('--oauth_scope scope',
             'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }
@@ -303,10 +294,6 @@ def parse_args
     opts.on('--default_service_account email_address',
             'email address of the default service account') do |v|
       args['default_service_account'] = v
-    end
-    opts.on('--service_account_key_file PATH',
-            'Path to the service account json key file') do |v|
-      args['oauth_key_file'] = v
     end
     opts.on('--server_host_override HOST_OVERRIDE',
             'override host via a HTTP header') do |v|
@@ -334,10 +321,6 @@ def _check_args(args)
     if args[a].nil?
       fail(OptionParser::MissingArgument, "please specify --#{arg}")
     end
-  end
-  if args['oauth_key_file'].nil? ^ args['oauth_scope'].nil?
-    fail(OptionParser::MissingArgument,
-         'please specify both of --service_account_key_file and --oauth_scope')
   end
   args
 end

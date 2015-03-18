@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_RESOLVE_ADDRESS_H__
-#define __GRPC_INTERNAL_IOMGR_RESOLVE_ADDRESS_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
+#define GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
 
 #include <stddef.h>
 
@@ -66,4 +66,4 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
 grpc_resolved_addresses *grpc_blocking_resolve_address(
     const char *addr, const char *default_port);
 
-#endif /* __GRPC_INTERNAL_IOMGR_RESOLVE_ADDRESS_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H */

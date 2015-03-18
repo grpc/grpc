@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,8 +49,11 @@ struct grpc_client_setup {
   grpc_alarm backoff_alarm;
   gpr_timespec current_backoff_interval;
   int in_alarm;
+  int in_cb;
+  int cancelled;
 
   gpr_mu mu;
+  gpr_cv cv;
   grpc_client_setup_request *active_request;
   int refs;
 };
@@ -67,6 +70,7 @@ gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r) {
 
 static void destroy_setup(grpc_client_setup *s) {
   gpr_mu_destroy(&s->mu);
+  gpr_cv_destroy(&s->cv);
   s->done(s->user_data);
   grpc_channel_args_destroy(s->args);
   gpr_free(s);
@@ -111,6 +115,10 @@ static void setup_cancel(grpc_transport_setup *sp) {
   int cancel_alarm = 0;
 
   gpr_mu_lock(&s->mu);
+  s->cancelled = 1;
+  while (s->in_cb) {
+    gpr_cv_wait(&s->cv, &s->mu, gpr_inf_future);
+  }
 
   GPR_ASSERT(s->refs > 0);
   /* effectively cancels the current request (if any) */
@@ -129,6 +137,24 @@ static void setup_cancel(grpc_transport_setup *sp) {
   }
 }
 
+int grpc_client_setup_cb_begin(grpc_client_setup_request *r) {
+  gpr_mu_lock(&r->setup->mu);
+  if (r->setup->cancelled) {
+    gpr_mu_unlock(&r->setup->mu);
+    return 0;
+  }
+  r->setup->in_cb++;
+  gpr_mu_unlock(&r->setup->mu);
+  return 1;
+}
+
+void grpc_client_setup_cb_end(grpc_client_setup_request *r) {
+  gpr_mu_lock(&r->setup->mu);
+  r->setup->in_cb--;
+  if (r->setup->cancelled) gpr_cv_signal(&r->setup->cv);
+  gpr_mu_unlock(&r->setup->mu);
+}
+
 /* vtable for transport setup */
 static const grpc_transport_setup_vtable setup_vtable = {setup_initiate,
                                                          setup_cancel};
@@ -142,6 +168,7 @@ void grpc_client_setup_create_and_attach(
 
   s->base.vtable = &setup_vtable;
   gpr_mu_init(&s->mu);
+  gpr_cv_init(&s->cv);
   s->refs = 1;
   s->mdctx = mdctx;
   s->initiate = initiate;
@@ -151,6 +178,8 @@ void grpc_client_setup_create_and_attach(
   s->args = grpc_channel_args_copy(args);
   s->current_backoff_interval = gpr_time_from_micros(1000000);
   s->in_alarm = 0;
+  s->in_cb = 0;
+  s->cancelled = 0;
 
   grpc_client_channel_set_transport_setup(newly_minted_channel, &s->base);
 }

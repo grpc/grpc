@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,8 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
       grpc_base64_encode(hello, strlen(hello), url_safe, multiline);
   gpr_slice hello_slice = grpc_base64_decode(hello_b64, url_safe);
   GPR_ASSERT(GPR_SLICE_LENGTH(hello_slice) == strlen(hello));
-  GPR_ASSERT(!strncmp((const char *)GPR_SLICE_START_PTR(hello_slice), hello,
-                      GPR_SLICE_LENGTH(hello_slice)));
+  GPR_ASSERT(strncmp((const char *)GPR_SLICE_START_PTR(hello_slice), hello,
+                     GPR_SLICE_LENGTH(hello_slice)) == 0);
 
   gpr_slice_unref(hello_slice);
   gpr_free(hello_b64);
@@ -141,31 +141,31 @@ static void test_rfc4648_test_vectors(void) {
   char *b64;
 
   b64 = grpc_base64_encode("", 0, 0, 0);
-  GPR_ASSERT(!strcmp("", b64));
+  GPR_ASSERT(strcmp("", b64) == 0);
   gpr_free(b64);
 
   b64 = grpc_base64_encode("f", 1, 0, 0);
-  GPR_ASSERT(!strcmp("Zg==", b64));
+  GPR_ASSERT(strcmp("Zg==", b64) == 0);
   gpr_free(b64);
 
   b64 = grpc_base64_encode("fo", 2, 0, 0);
-  GPR_ASSERT(!strcmp("Zm8=", b64));
+  GPR_ASSERT(strcmp("Zm8=", b64) == 0);
   gpr_free(b64);
 
   b64 = grpc_base64_encode("foo", 3, 0, 0);
-  GPR_ASSERT(!strcmp("Zm9v", b64));
+  GPR_ASSERT(strcmp("Zm9v", b64) == 0);
   gpr_free(b64);
 
   b64 = grpc_base64_encode("foob", 4, 0, 0);
-  GPR_ASSERT(!strcmp("Zm9vYg==", b64));
+  GPR_ASSERT(strcmp("Zm9vYg==", b64) == 0);
   gpr_free(b64);
 
   b64 = grpc_base64_encode("fooba", 5, 0, 0);
-  GPR_ASSERT(!strcmp("Zm9vYmE=", b64));
+  GPR_ASSERT(strcmp("Zm9vYmE=", b64) == 0);
   gpr_free(b64);
 
   b64 = grpc_base64_encode("foobar", 6, 0, 0);
-  GPR_ASSERT(!strcmp("Zm9vYmFy", b64));
+  GPR_ASSERT(strcmp("Zm9vYmFy", b64) == 0);
   gpr_free(b64);
 }
 

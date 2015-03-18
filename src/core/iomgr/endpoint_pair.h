@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_ENDPOINT_PAIR_H_
-#define __GRPC_INTERNAL_IOMGR_ENDPOINT_PAIR_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_PAIR_H
+#define GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_PAIR_H
 
 #include "src/core/iomgr/endpoint.h"
 
@@ -43,4 +43,4 @@ typedef struct {
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(size_t read_slice_size);
 
-#endif /* __GRPC_INTERNAL_IOMGR_ENDPOINT_PAIR_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_PAIR_H */

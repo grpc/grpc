@@ -1,0 +1,8 @@
+# OPENSSL_cleanse does racy access to a global
+race:OPENSSL_cleanse
+race:cleanse_ctr
+# these are legitimate races in OpenSSL, and it appears those folks are looking at it
+# https://www.mail-archive.com/openssl-dev@openssl.org/msg09019.html
+race:ssleay_rand_add
+race:ssleay_rand_bytes
+

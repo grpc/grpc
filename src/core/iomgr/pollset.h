@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -52,8 +52,13 @@
 #include "src/core/iomgr/pollset_windows.h"
 #endif
 
+
 void grpc_pollset_init(grpc_pollset *pollset);
+void grpc_pollset_shutdown(grpc_pollset *pollset,
+                           void (*shutdown_done)(void *arg),
+                           void *shutdown_done_arg);
 void grpc_pollset_destroy(grpc_pollset *pollset);
+
 
 /* Do some work on a pollset.
    May involve invoking asynchronous callbacks, or actually polling file
@@ -66,4 +71,4 @@ int grpc_pollset_work(grpc_pollset *pollset, gpr_timespec deadline);
    Requires GRPC_POLLSET_MU(pollset) locked. */
 void grpc_pollset_kick(grpc_pollset *pollset);
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

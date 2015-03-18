@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,6 @@
 namespace grpc {
 namespace node {
 
-using v8::Arguments;
 using v8::Array;
 using v8::Exception;
 using v8::Function;
@@ -59,7 +58,7 @@ using v8::Persistent;
 using v8::String;
 using v8::Value;
 
-Persistent<Function> Channel::constructor;
+NanCallback *Channel::constructor;
 Persistent<FunctionTemplate> Channel::fun_tpl;
 
 Channel::Channel(grpc_channel *channel, NanUtf8String *host)
@@ -74,14 +73,15 @@ Channel::~Channel() {
 
 void Channel::Init(Handle<Object> exports) {
   NanScope();
-  Local<FunctionTemplate> tpl = FunctionTemplate::New(New);
+  Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
   tpl->SetClassName(NanNew("Channel"));
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   NanSetPrototypeTemplate(tpl, "close",
-                          FunctionTemplate::New(Close)->GetFunction());
+                          NanNew<FunctionTemplate>(Close)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
-  NanAssignPersistent(constructor, tpl->GetFunction());
-  exports->Set(NanNew("Channel"), constructor);
+  Handle<Function> ctr = tpl->GetFunction();
+  constructor = new NanCallback(ctr);
+  exports->Set(NanNew("Channel"), ctr);
 }
 
 bool Channel::HasInstance(Handle<Value> val) {
@@ -103,11 +103,15 @@ NAN_METHOD(Channel::New) {
     grpc_channel *wrapped_channel;
     // Owned by the Channel object
     NanUtf8String *host = new NanUtf8String(args[0]);
+    NanUtf8String *host_override = NULL;
     if (args[1]->IsUndefined()) {
       wrapped_channel = grpc_channel_create(**host, NULL);
     } else if (args[1]->IsObject()) {
       grpc_credentials *creds = NULL;
       Handle<Object> args_hash(args[1]->ToObject()->Clone());
+      if (args_hash->HasOwnProperty(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG))) {
+        host_override = new NanUtf8String(args_hash->Get(NanNew(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
+      }
       if (args_hash->HasOwnProperty(NanNew("credentials"))) {
         Handle<Value> creds_value = args_hash->Get(NanNew("credentials"));
         if (!Credentials::HasInstance(creds_value)) {
@@ -155,13 +159,18 @@ NAN_METHOD(Channel::New) {
     } else {
       return NanThrowTypeError("Channel expects a string and an object");
     }
-    Channel *channel = new Channel(wrapped_channel, host);
+    Channel *channel;
+    if (host_override == NULL) {
+      channel = new Channel(wrapped_channel, host);
+    } else {
+      channel = new Channel(wrapped_channel, host_override);
+    }
     channel->Wrap(args.This());
     NanReturnValue(args.This());
   } else {
     const int argc = 2;
     Local<Value> argv[argc] = {args[0], args[1]};
-    NanReturnValue(constructor->NewInstance(argc, argv));
+    NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
   }
 }
 

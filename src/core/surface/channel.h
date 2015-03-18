@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SURFACE_CHANNEL_H__
-#define __GRPC_INTERNAL_SURFACE_CHANNEL_H__
+#ifndef GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
+#define GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H
 
 #include "src/core/channel/channel_stack.h"
 
@@ -45,7 +45,9 @@ grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 
+void grpc_client_channel_closed(grpc_channel_element *elem);
+
 void grpc_channel_internal_ref(grpc_channel *channel);
 void grpc_channel_internal_unref(grpc_channel *channel);
 
-#endif /* __GRPC_INTERNAL_SURFACE_CHANNEL_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H */

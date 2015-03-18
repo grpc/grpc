@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,12 @@
  *
  */
 
-/* Posix gpr synchroization support code. */
-
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SYNC
 
 #include <errno.h>
+#include <time.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -67,7 +66,10 @@ int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
   if (gpr_time_cmp(abs_deadline, gpr_inf_future) == 0) {
     err = pthread_cond_wait(cv, mu);
   } else {
-    err = pthread_cond_timedwait(cv, mu, &abs_deadline);
+    struct timespec abs_deadline_ts;
+    abs_deadline_ts.tv_sec = abs_deadline.tv_sec;
+    abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;
+    err = pthread_cond_timedwait(cv, mu, &abs_deadline_ts);
   }
   GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
   return err == ETIMEDOUT;

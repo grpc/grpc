@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 static void *tag(gpr_intptr i) { return (void *)i; }
 
 static gpr_timespec ms_from_now(int ms) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_MS * ms));
+  return GRPC_TIMEOUT_MILLIS_TO_DEADLINE(ms);
 }
 
 static void drain_cq(grpc_completion_queue *cq) {
@@ -74,6 +74,10 @@ void test_connect(const char *server_host, const char *client_host, int port,
   cq_verifier *v_server;
   gpr_timespec deadline;
   int got_port;
+
+  if (port == 0) {
+    port = grpc_pick_unused_port_or_die();
+  }
 
   gpr_join_host_port(&server_hostport, server_host, port);
 
@@ -112,35 +116,37 @@ void test_connect(const char *server_host, const char *client_host, int port,
   }
 
   /* Send a trivial request. */
-  c = grpc_channel_create_call(client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call_old(client, "/foo", "foo.test.google.fr",
+                                   deadline);
   GPR_ASSERT(c);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_invoke(c, client_cq, tag(2), tag(3), 0));
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done(c, tag(4)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_invoke_old(c, client_cq, tag(2), tag(3), 0));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_writes_done_old(c, tag(4)));
   if (expect_ok) {
     /* Check for a successful request. */
     cq_expect_finish_accepted(v_client, tag(4), GRPC_OP_OK);
     cq_verify(v_client);
 
-    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server, tag(100)));
-    cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo", "test.google.com",
-                             deadline, NULL);
+    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call_old(server, tag(100)));
+    cq_expect_server_rpc_new(v_server, &s, tag(100), "/foo",
+                             "foo.test.google.fr", deadline, NULL);
     cq_verify(v_server);
 
-    GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_accept(s, server_cq, tag(102)));
-    GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata(s, 0));
+    GPR_ASSERT(GRPC_CALL_OK ==
+               grpc_call_server_accept_old(s, server_cq, tag(102)));
+    GPR_ASSERT(GRPC_CALL_OK == grpc_call_server_end_initial_metadata_old(s, 0));
     cq_expect_client_metadata_read(v_client, tag(2), NULL);
     cq_verify(v_client);
 
     GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_write_status(s, GRPC_STATUS_UNIMPLEMENTED, "xyz",
-                                            tag(5)));
+               grpc_call_start_write_status_old(s, GRPC_STATUS_UNIMPLEMENTED,
+                                                "xyz", tag(5)));
     cq_expect_finished_with_status(v_client, tag(3), GRPC_STATUS_UNIMPLEMENTED,
                                    "xyz", NULL);
     cq_verify(v_client);
 
     cq_expect_finish_accepted(v_server, tag(5), GRPC_OP_OK);
-    cq_verify(v_server);
     cq_expect_finished(v_server, tag(102), NULL);
     cq_verify(v_server);
 
@@ -177,7 +183,6 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
 int main(int argc, char **argv) {
   int do_ipv6 = 1;
-  int fixed_port;
 
   grpc_test_init(argc, argv);
   grpc_init();
@@ -187,32 +192,28 @@ int main(int argc, char **argv) {
     do_ipv6 = 0;
   }
 
-  for (fixed_port = 0; fixed_port <= 1; fixed_port++) {
-    int port = fixed_port ? grpc_pick_unused_port_or_die() : 0;
-
     /* For coverage, test with and without dualstack sockets. */
-    for (grpc_forbid_dualstack_sockets_for_testing = 0;
-         grpc_forbid_dualstack_sockets_for_testing <= 1;
-         grpc_forbid_dualstack_sockets_for_testing++) {
-      /* :: and 0.0.0.0 are handled identically. */
-      test_connect("::", "127.0.0.1", port, 1);
-      test_connect("::", "::ffff:127.0.0.1", port, 1);
-      test_connect("::", "localhost", port, 1);
-      test_connect("0.0.0.0", "127.0.0.1", port, 1);
-      test_connect("0.0.0.0", "::ffff:127.0.0.1", port, 1);
-      test_connect("0.0.0.0", "localhost", port, 1);
-      if (do_ipv6) {
-        test_connect("::", "::1", port, 1);
-        test_connect("0.0.0.0", "::1", port, 1);
-      }
+  for (grpc_forbid_dualstack_sockets_for_testing = 0;
+       grpc_forbid_dualstack_sockets_for_testing <= 1;
+       grpc_forbid_dualstack_sockets_for_testing++) {
+    /* :: and 0.0.0.0 are handled identically. */
+    test_connect("::", "127.0.0.1", 0, 1);
+    test_connect("::", "::ffff:127.0.0.1", 0, 1);
+    test_connect("::", "localhost", 0, 1);
+    test_connect("0.0.0.0", "127.0.0.1", 0, 1);
+    test_connect("0.0.0.0", "::ffff:127.0.0.1", 0, 1);
+    test_connect("0.0.0.0", "localhost", 0, 1);
+    if (do_ipv6) {
+      test_connect("::", "::1", 0, 1);
+      test_connect("0.0.0.0", "::1", 0, 1);
+    }
 
-      /* These only work when the families agree. */
-      test_connect("127.0.0.1", "127.0.0.1", port, 1);
-      if (do_ipv6) {
-        test_connect("::1", "::1", port, 1);
-        test_connect("::1", "127.0.0.1", port, 0);
-        test_connect("127.0.0.1", "::1", port, 0);
-      }
+    /* These only work when the families agree. */
+    test_connect("127.0.0.1", "127.0.0.1", 0, 1);
+    if (do_ipv6) {
+      test_connect("::1", "::1", 0, 1);
+      test_connect("::1", "127.0.0.1", 0, 0);
+      test_connect("127.0.0.1", "::1", 0, 0);
     }
   }
 

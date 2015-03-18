@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,11 @@
 #include <string>
 #include <thread>
 
+#include <unistd.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <google/gflags.h>
+#include <gflags/gflags.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -57,7 +59,7 @@ DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
-DEFINE_string(server_host_override, "foo.test.google.com",
+DEFINE_string(server_host_override, "foo.test.google.fr",
               "Override the server host which is sent in HTTP header");
 DEFINE_string(test_case, "large_unary",
               "Configure different test cases. Valid options are: "
@@ -71,6 +73,7 @@ DEFINE_string(test_case, "large_unary",
               "ping_pong : full-duplex streaming; "
               "service_account_creds : large_unary with service_account auth; "
               "compute_engine_creds: large_unary with compute engine auth; "
+              "jwt_token_creds: large_unary with JWT token auth; "
               "all : all of above.");
 DEFINE_string(default_service_account, "",
               "Email of GCE default service account");
@@ -80,9 +83,11 @@ DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
 
 using grpc::ChannelInterface;
 using grpc::ClientContext;
+using grpc::ComputeEngineCredentials;
 using grpc::CreateTestChannel;
 using grpc::Credentials;
-using grpc::CredentialsFactory;
+using grpc::JWTCredentials;
+using grpc::ServiceAccountCredentials;
 using grpc::testing::ResponseParameters;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
@@ -91,6 +96,13 @@ using grpc::testing::StreamingInputCallResponse;
 using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 namespace {
 // The same value is defined by the Java client.
@@ -126,14 +138,21 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
-    creds = CredentialsFactory::ServiceAccountCredentials(
-        json_key, FLAGS_oauth_scope, std::chrono::hours(1));
+    creds = ServiceAccountCredentials(json_key, FLAGS_oauth_scope,
+                                      std::chrono::hours(1));
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else if (test_case == "compute_engine_creds") {
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
-    creds = CredentialsFactory::ComputeEngineCredentials();
+    creds = ComputeEngineCredentials();
+    return CreateTestChannel(host_port, FLAGS_server_host_override,
+                             FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
+  } else if (test_case == "jwt_token_creds") {
+    std::unique_ptr<Credentials> creds;
+    GPR_ASSERT(FLAGS_enable_ssl);
+    grpc::string json_key = GetServiceAccountJsonKey();
+    creds = JWTCredentials(json_key, std::chrono::hours(1));
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {
@@ -191,10 +210,10 @@ void DoComputeEngineCreds() {
   gpr_log(GPR_INFO, "Got username %s", response.username().c_str());
   gpr_log(GPR_INFO, "Got oauth_scope %s", response.oauth_scope().c_str());
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(response.username() == FLAGS_default_service_account);
+  GPR_ASSERT(response.username().c_str() == FLAGS_default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(
-      FLAGS_oauth_scope.find(response.oauth_scope()) != grpc::string::npos);
+  const char* oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with compute engine creds done.");
 }
 
@@ -212,9 +231,24 @@ void DoServiceAccountCreds() {
   GPR_ASSERT(!response.oauth_scope().empty());
   grpc::string json_key = GetServiceAccountJsonKey();
   GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
-  GPR_ASSERT(FLAGS_oauth_scope.find(response.oauth_scope()) !=
-             grpc::string::npos);
+  const char* oauth_scope_str = response.oauth_scope().c_str();
+  GPR_ASSERT(FLAGS_oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Large unary with service account creds done.");
+}
+
+void DoJwtTokenCreds() {
+  gpr_log(GPR_INFO,
+          "Sending a large unary rpc with JWT token credentials ...");
+  std::shared_ptr<ChannelInterface> channel =
+      CreateChannelForTestCase("jwt_token_creds");
+  SimpleRequest request;
+  SimpleResponse response;
+  request.set_fill_username(true);
+  PerformLargeUnary(channel, &request, &response);
+  GPR_ASSERT(!response.username().empty());
+  grpc::string json_key = GetServiceAccountJsonKey();
+  GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
+  gpr_log(GPR_INFO, "Large unary with JWT token creds done.");
 }
 
 void DoLargeUnary() {
@@ -248,7 +282,7 @@ void DoRequestStreaming() {
     aggregated_payload_size += request_stream_sizes[i];
   }
   stream->WritesDone();
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
 
   GPR_ASSERT(response.aggregated_payload_size() == aggregated_payload_size);
   GPR_ASSERT(s.IsOk());
@@ -269,7 +303,7 @@ void DoResponseStreaming() {
   }
   StreamingOutputCallResponse response;
   std::unique_ptr<grpc::ClientReader<StreamingOutputCallResponse>> stream(
-      stub->StreamingOutputCall(&context, &request));
+      stub->StreamingOutputCall(&context, request));
 
   unsigned int i = 0;
   while (stream->Read(&response)) {
@@ -278,7 +312,7 @@ void DoResponseStreaming() {
     ++i;
   }
   GPR_ASSERT(response_stream_sizes.size() == i);
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
 
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Response streaming done.");
@@ -299,19 +333,18 @@ void DoResponseStreamingWithSlowConsumer() {
   }
   StreamingOutputCallResponse response;
   std::unique_ptr<grpc::ClientReader<StreamingOutputCallResponse>> stream(
-      stub->StreamingOutputCall(&context, &request));
+      stub->StreamingOutputCall(&context, request));
 
   int i = 0;
   while (stream->Read(&response)) {
     GPR_ASSERT(response.payload().body() ==
                grpc::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_INFO, "received message %d", i);
-    std::this_thread::sleep_for(
-        std::chrono::milliseconds(kReceiveDelayMilliSeconds));
+    usleep(kReceiveDelayMilliSeconds * 1000);
     ++i;
   }
   GPR_ASSERT(kNumResponseMessages == i);
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
 
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Response streaming done.");
@@ -345,7 +378,7 @@ void DoHalfDuplex() {
     ++i;
   }
   GPR_ASSERT(response_stream_sizes.size() == i);
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Half-duplex streaming rpc done.");
 }
@@ -378,7 +411,7 @@ void DoPingPong() {
 
   stream->WritesDone();
   GPR_ASSERT(!stream->Read(&response));
-  grpc::Status s = stream->Wait();
+  grpc::Status s = stream->Finish();
   GPR_ASSERT(s.IsOk());
   gpr_log(GPR_INFO, "Ping pong streaming done.");
 }
@@ -386,7 +419,7 @@ void DoPingPong() {
 int main(int argc, char** argv) {
   grpc_init();
 
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
 
   if (FLAGS_test_case == "empty_unary") {
     DoEmpty();
@@ -406,6 +439,8 @@ int main(int argc, char** argv) {
     DoServiceAccountCreds();
   } else if (FLAGS_test_case == "compute_engine_creds") {
     DoComputeEngineCreds();
+  } else if (FLAGS_test_case == "jwt_token_creds") {
+    DoJwtTokenCreds();
   } else if (FLAGS_test_case == "all") {
     DoEmpty();
     DoLargeUnary();
@@ -413,9 +448,10 @@ int main(int argc, char** argv) {
     DoResponseStreaming();
     DoHalfDuplex();
     DoPingPong();
-    // service_account_creds can only run with ssl.
+    // service_account_creds and jwt_token_creds can only run with ssl.
     if (FLAGS_enable_ssl) {
       DoServiceAccountCreds();
+      DoJwtTokenCreds();
     }
     // compute_engine_creds only runs in GCE.
   } else {
@@ -423,7 +459,7 @@ int main(int argc, char** argv) {
         GPR_ERROR,
         "Unsupported test case %s. Valid options are all|empty_unary|"
         "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
-        "service_account_creds|compute_engine_creds",
+        "service_account_creds|compute_engine_creds|jwt_token_creds",
         FLAGS_test_case.c_str());
   }
 

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SRC_CORE_JSON_JSON_H__
-#define __GRPC_SRC_CORE_JSON_JSON_H__
+#ifndef GRPC_INTERNAL_CORE_JSON_JSON_H
+#define GRPC_INTERNAL_CORE_JSON_JSON_H
 
 #include <stdlib.h>
 
@@ -85,4 +85,4 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
 grpc_json* grpc_json_create(grpc_json_type type);
 void grpc_json_destroy(grpc_json* json);
 
-#endif /* __GRPC_SRC_CORE_JSON_JSON_H__ */
+#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_H */

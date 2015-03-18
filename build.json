@@ -3,12 +3,73 @@
     "#": "The public version number of the library.",
     "version": {
       "major": 0,
-      "minor": 8,
+      "minor": 5,
       "micro": 0,
       "build": 0
     }
   },
   "filegroups": [
+    {
+      "name": "grpc++_base",
+      "public_headers": [
+        "include/grpc++/async_generic_service.h",
+        "include/grpc++/async_unary_call.h",
+        "include/grpc++/byte_buffer.h",
+        "include/grpc++/channel_arguments.h",
+        "include/grpc++/channel_interface.h",
+        "include/grpc++/client_context.h",
+        "include/grpc++/completion_queue.h",
+        "include/grpc++/config.h",
+        "include/grpc++/create_channel.h",
+        "include/grpc++/credentials.h",
+        "include/grpc++/impl/call.h",
+        "include/grpc++/impl/client_unary_call.h",
+        "include/grpc++/impl/internal_stub.h",
+        "include/grpc++/impl/rpc_method.h",
+        "include/grpc++/impl/rpc_service_method.h",
+        "include/grpc++/impl/service_type.h",
+        "include/grpc++/server.h",
+        "include/grpc++/server_builder.h",
+        "include/grpc++/server_context.h",
+        "include/grpc++/server_credentials.h",
+        "include/grpc++/slice.h",
+        "include/grpc++/status.h",
+        "include/grpc++/status_code_enum.h",
+        "include/grpc++/stream.h",
+        "include/grpc++/thread_pool_interface.h"
+      ],
+      "headers": [
+        "src/cpp/client/channel.h",
+        "src/cpp/proto/proto_utils.h",
+        "src/cpp/server/thread_pool.h",
+        "src/cpp/util/time.h"
+      ],
+      "src": [
+        "src/cpp/client/channel.cc",
+        "src/cpp/client/channel_arguments.cc",
+        "src/cpp/client/client_context.cc",
+        "src/cpp/client/client_unary_call.cc",
+        "src/cpp/client/create_channel.cc",
+        "src/cpp/client/credentials.cc",
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/client/internal_stub.cc",
+        "src/cpp/common/call.cc",
+        "src/cpp/common/completion_queue.cc",
+        "src/cpp/common/rpc_method.cc",
+        "src/cpp/proto/proto_utils.cc",
+        "src/cpp/server/async_generic_service.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+        "src/cpp/server/server.cc",
+        "src/cpp/server/server_builder.cc",
+        "src/cpp/server/server_context.cc",
+        "src/cpp/server/server_credentials.cc",
+        "src/cpp/server/thread_pool.cc",
+        "src/cpp/util/byte_buffer.cc",
+        "src/cpp/util/slice.cc",
+        "src/cpp/util/status.cc",
+        "src/cpp/util/time.cc"
+      ]
+    },
     {
       "name": "grpc_base",
       "public_headers": [
@@ -32,16 +93,14 @@
         "src/core/channel/noop_filter.h",
         "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
-        "src/core/httpcli/format_request.h",
-        "src/core/httpcli/httpcli.h",
-        "src/core/httpcli/httpcli_security_context.h",
-        "src/core/httpcli/parser.h",
+        "src/core/debug/trace.h",
         "src/core/iomgr/alarm.h",
         "src/core/iomgr/alarm_heap.h",
         "src/core/iomgr/alarm_internal.h",
         "src/core/iomgr/endpoint.h",
         "src/core/iomgr/endpoint_pair.h",
         "src/core/iomgr/fd_posix.h",
+        "src/core/iomgr/iocp_windows.h",
         "src/core/iomgr/iomgr.h",
         "src/core/iomgr/iomgr_internal.h",
         "src/core/iomgr/iomgr_posix.h",
@@ -57,9 +116,11 @@
         "src/core/iomgr/sockaddr_utils.h",
         "src/core/iomgr/sockaddr_win32.h",
         "src/core/iomgr/socket_utils_posix.h",
+        "src/core/iomgr/socket_windows.h",
         "src/core/iomgr/tcp_client.h",
         "src/core/iomgr/tcp_posix.h",
         "src/core/iomgr/tcp_server.h",
+        "src/core/iomgr/tcp_windows.h",
         "src/core/iomgr/time_averaged_stats.h",
         "src/core/iomgr/wakeup_fd_pipe.h",
         "src/core/iomgr/wakeup_fd_posix.h",
@@ -73,12 +134,13 @@
         "src/core/statistics/census_tracing.h",
         "src/core/statistics/hash_table.h",
         "src/core/statistics/window_stats.h",
+        "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
         "src/core/surface/client.h",
         "src/core/surface/completion_queue.h",
         "src/core/surface/event_string.h",
-        "src/core/surface/lame_client.h",
+        "src/core/surface/init.h",
         "src/core/surface/server.h",
         "src/core/surface/surface_trace.h",
         "src/core/transport/chttp2/bin_encoder.h",
@@ -120,29 +182,34 @@
         "src/core/channel/noop_filter.c",
         "src/core/compression/algorithm.c",
         "src/core/compression/message_compress.c",
-        "src/core/httpcli/format_request.c",
-        "src/core/httpcli/httpcli.c",
-        "src/core/httpcli/httpcli_security_context.c",
-        "src/core/httpcli/parser.c",
+        "src/core/debug/trace.c",
         "src/core/iomgr/alarm.c",
         "src/core/iomgr/alarm_heap.c",
         "src/core/iomgr/endpoint.c",
         "src/core/iomgr/endpoint_pair_posix.c",
         "src/core/iomgr/fd_posix.c",
+        "src/core/iomgr/iocp_windows.c",
         "src/core/iomgr/iomgr.c",
         "src/core/iomgr/iomgr_posix.c",
+        "src/core/iomgr/iomgr_windows.c",
         "src/core/iomgr/pollset_kick.c",
+        "src/core/iomgr/pollset_multipoller_with_epoll.c",
         "src/core/iomgr/pollset_multipoller_with_poll_posix.c",
         "src/core/iomgr/pollset_posix.c",
         "src/core/iomgr/pollset_windows.c",
-        "src/core/iomgr/resolve_address.c",
+        "src/core/iomgr/resolve_address_posix.c",
+        "src/core/iomgr/resolve_address_windows.c",
         "src/core/iomgr/sockaddr_utils.c",
         "src/core/iomgr/socket_utils_common_posix.c",
         "src/core/iomgr/socket_utils_linux.c",
         "src/core/iomgr/socket_utils_posix.c",
+        "src/core/iomgr/socket_windows.c",
         "src/core/iomgr/tcp_client_posix.c",
+        "src/core/iomgr/tcp_client_windows.c",
         "src/core/iomgr/tcp_posix.c",
         "src/core/iomgr/tcp_server_posix.c",
+        "src/core/iomgr/tcp_server_windows.c",
+        "src/core/iomgr/tcp_windows.c",
         "src/core/iomgr/time_averaged_stats.c",
         "src/core/iomgr/wakeup_fd_eventfd.c",
         "src/core/iomgr/wakeup_fd_nospecial.c",
@@ -159,8 +226,10 @@
         "src/core/statistics/hash_table.c",
         "src/core/statistics/window_stats.c",
         "src/core/surface/byte_buffer.c",
+        "src/core/surface/byte_buffer_queue.c",
         "src/core/surface/byte_buffer_reader.c",
         "src/core/surface/call.c",
+        "src/core/surface/call_details.c",
         "src/core/surface/channel.c",
         "src/core/surface/channel_create.c",
         "src/core/surface/client.c",
@@ -168,11 +237,11 @@
         "src/core/surface/event_string.c",
         "src/core/surface/init.c",
         "src/core/surface/lame_client.c",
-        "src/core/surface/secure_channel_create.c",
-        "src/core/surface/secure_server_create.c",
+        "src/core/surface/metadata_array.c",
         "src/core/surface/server.c",
         "src/core/surface/server_chttp2.c",
         "src/core/surface/server_create.c",
+        "src/core/surface/surface_trace.c",
         "src/core/transport/chttp2/alpn.c",
         "src/core/transport/chttp2/bin_encoder.c",
         "src/core/transport/chttp2/frame_data.c",
@@ -212,6 +281,7 @@
         "include/grpc/support/histogram.h",
         "include/grpc/support/host_port.h",
         "include/grpc/support/log.h",
+        "include/grpc/support/log_win32.h",
         "include/grpc/support/port_platform.h",
         "include/grpc/support/slice.h",
         "include/grpc/support/slice_buffer.h",
@@ -220,17 +290,15 @@
         "include/grpc/support/sync_posix.h",
         "include/grpc/support/sync_win32.h",
         "include/grpc/support/thd.h",
-        "include/grpc/support/thd_posix.h",
-        "include/grpc/support/thd_win32.h",
         "include/grpc/support/time.h",
-        "include/grpc/support/time_posix.h",
-        "include/grpc/support/time_win32.h",
         "include/grpc/support/useful.h"
       ],
       "headers": [
-        "src/core/support/cpu.h",
+        "src/core/support/env.h",
+        "src/core/support/file.h",
         "src/core/support/murmur_hash.h",
         "src/core/support/string.h",
+        "src/core/support/string_win32.h",
         "src/core/support/thd_internal.h"
       ],
       "src": [
@@ -239,6 +307,13 @@
         "src/core/support/cmdline.c",
         "src/core/support/cpu_linux.c",
         "src/core/support/cpu_posix.c",
+        "src/core/support/cpu_windows.c",
+        "src/core/support/env_linux.c",
+        "src/core/support/env_posix.c",
+        "src/core/support/env_win32.c",
+        "src/core/support/file.c",
+        "src/core/support/file_posix.c",
+        "src/core/support/file_win32.c",
         "src/core/support/histogram.c",
         "src/core/support/host_port.c",
         "src/core/support/log.c",
@@ -261,7 +336,7 @@
         "src/core/support/time_posix.c",
         "src/core/support/time_win32.c"
       ],
-      "secure": false,
+      "secure": "no",
       "vs_project_guid": "{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}"
     },
     {
@@ -270,6 +345,9 @@
       "language": "c",
       "src": [
         "test/core/util/test_config.c"
+      ],
+      "deps": [
+        "gpr"
       ],
       "vs_project_guid": "{EAB0A629-17A9-44DB-B5FF-E91A721FE037}"
     },
@@ -281,10 +359,13 @@
         "include/grpc/grpc_security.h"
       ],
       "headers": [
+        "src/core/httpcli/format_request.h",
+        "src/core/httpcli/httpcli.h",
+        "src/core/httpcli/httpcli_security_context.h",
+        "src/core/httpcli/parser.h",
         "src/core/security/auth.h",
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
-        "src/core/security/google_root_certs.h",
         "src/core/security/json_token.h",
         "src/core/security/secure_transport_setup.h",
         "src/core/security/security_context.h",
@@ -294,16 +375,24 @@
         "src/core/tsi/transport_security_interface.h"
       ],
       "src": [
+        "src/core/httpcli/format_request.c",
+        "src/core/httpcli/httpcli.c",
+        "src/core/httpcli/httpcli_security_context.c",
+        "src/core/httpcli/parser.c",
         "src/core/security/auth.c",
         "src/core/security/base64.c",
         "src/core/security/credentials.c",
+        "src/core/security/credentials_posix.c",
+        "src/core/security/credentials_win32.c",
         "src/core/security/factories.c",
-        "src/core/security/google_root_certs.c",
+        "src/core/security/google_default_credentials.c",
         "src/core/security/json_token.c",
         "src/core/security/secure_endpoint.c",
         "src/core/security/secure_transport_setup.c",
         "src/core/security/security_context.c",
         "src/core/security/server_secure_chttp2.c",
+        "src/core/surface/init_secure.c",
+        "src/core/surface/secure_channel_create.c",
         "src/core/tsi/fake_transport_security.c",
         "src/core/tsi/ssl_transport_security.c",
         "src/core/tsi/transport_security.c"
@@ -315,7 +404,7 @@
       "filegroups": [
         "grpc_base"
       ],
-      "secure": true,
+      "secure": "yes",
       "vs_project_guid": "{29D16885-7228-4C31-81ED-5F9187C7F2A9}"
     },
     {
@@ -324,7 +413,6 @@
       "language": "c",
       "src": [
         "test/core/end2end/cq_verifier.c",
-        "test/core/end2end/data/prod_roots_certs.c",
         "test/core/end2end/data/server1_cert.c",
         "test/core/end2end/data/server1_key.c",
         "test/core/end2end/data/test_root_cert.c",
@@ -336,12 +424,19 @@
         "test/core/util/port_posix.c",
         "test/core/util/slice_splitter.c"
       ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ],
       "vs_project_guid": "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
     },
     {
       "name": "grpc_unsecure",
       "build": "all",
       "language": "c",
+      "src": [
+        "src/core/surface/init_unsecure.c"
+      ],
       "deps": [
         "gpr"
       ],
@@ -349,68 +444,26 @@
       "filegroups": [
         "grpc_base"
       ],
-      "secure": false,
+      "secure": "no",
       "vs_project_guid": "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
     },
     {
       "name": "grpc++",
       "build": "all",
       "language": "c++",
-      "public_headers": [
-        "include/grpc++/async_server.h",
-        "include/grpc++/async_server_context.h",
-        "include/grpc++/channel_arguments.h",
-        "include/grpc++/channel_interface.h",
-        "include/grpc++/client_context.h",
-        "include/grpc++/completion_queue.h",
-        "include/grpc++/config.h",
-        "include/grpc++/create_channel.h",
-        "include/grpc++/credentials.h",
-        "include/grpc++/impl/internal_stub.h",
-        "include/grpc++/impl/rpc_method.h",
-        "include/grpc++/impl/rpc_service_method.h",
-        "include/grpc++/server.h",
-        "include/grpc++/server_builder.h",
-        "include/grpc++/server_context.h",
-        "include/grpc++/server_credentials.h",
-        "include/grpc++/status.h",
-        "include/grpc++/stream.h",
-        "include/grpc++/stream_context_interface.h"
-      ],
-      "headers": [
-        "src/cpp/client/channel.h",
-        "src/cpp/proto/proto_utils.h",
-        "src/cpp/server/server_rpc_handler.h",
-        "src/cpp/server/thread_pool.h",
-        "src/cpp/stream/stream_context.h",
-        "src/cpp/util/time.h"
-      ],
       "src": [
-        "src/cpp/client/channel.cc",
-        "src/cpp/client/channel_arguments.cc",
-        "src/cpp/client/client_context.cc",
-        "src/cpp/client/create_channel.cc",
-        "src/cpp/client/credentials.cc",
-        "src/cpp/client/internal_stub.cc",
-        "src/cpp/common/rpc_method.cc",
-        "src/cpp/proto/proto_utils.cc",
-        "src/cpp/server/async_server.cc",
-        "src/cpp/server/async_server_context.cc",
-        "src/cpp/server/completion_queue.cc",
-        "src/cpp/server/server.cc",
-        "src/cpp/server/server_builder.cc",
-        "src/cpp/server/server_context_impl.cc",
-        "src/cpp/server/server_credentials.cc",
-        "src/cpp/server/server_rpc_handler.cc",
-        "src/cpp/server/thread_pool.cc",
-        "src/cpp/stream/stream_context.cc",
-        "src/cpp/util/status.cc",
-        "src/cpp/util/time.cc"
+        "src/cpp/client/secure_credentials.cc",
+        "src/cpp/server/secure_server_credentials.cc"
       ],
       "deps": [
+        "gpr",
         "grpc"
       ],
-      "secure": true,
+      "baselib": true,
+      "filegroups": [
+        "grpc++_base"
+      ],
+      "secure": "check",
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
     },
     {
@@ -421,25 +474,66 @@
         "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
-        "test/cpp/end2end/async_test_server.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
     },
     {
-      "name": "tips_client_lib",
+      "name": "grpc++_unsecure",
+      "build": "all",
+      "language": "c++",
+      "deps": [
+        "gpr",
+        "grpc_unsecure"
+      ],
+      "baselib": true,
+      "filegroups": [
+        "grpc++_base"
+      ],
+      "secure": "no"
+    },
+    {
+      "name": "pubsub_client_lib",
       "build": "private",
       "language": "c++",
       "src": [
-        "examples/tips/label.proto",
-        "examples/tips/empty.proto",
-        "examples/tips/pubsub.proto",
-        "examples/tips/client.cc"
+        "examples/pubsub/label.proto",
+        "examples/pubsub/empty.proto",
+        "examples/pubsub/pubsub.proto",
+        "examples/pubsub/publisher.cc",
+        "examples/pubsub/subscriber.cc"
       ],
       "deps": [
         "grpc++",
         "grpc",
         "gpr"
       ]
+    },
+    {
+      "name": "qps",
+      "build": "private",
+      "language": "c++",
+      "headers": [
+        "test/cpp/qps/driver.h",
+        "test/cpp/qps/timer.h"
+      ],
+      "src": [
+        "test/cpp/qps/qpstest.proto",
+        "test/cpp/qps/driver.cc",
+        "test/cpp/qps/timer.cc"
+      ]
+    },
+    {
+      "name": "grpc_csharp_ext",
+      "build": "all",
+      "language": "csharp",
+      "src": [
+        "src/csharp/ext/grpc_csharp_ext.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ],
+      "vs_project_guid": "{D64C6D63-4458-4A88-AB38-35678384A7E4}"
     }
   ],
   "targets": [
@@ -529,6 +623,7 @@
     },
     {
       "name": "census_statistics_multiple_writers_circular_buffer_test",
+      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -585,6 +680,7 @@
     },
     {
       "name": "census_statistics_small_log_test",
+      "flaky": true,
       "build": "test",
       "language": "c",
       "src": [
@@ -726,6 +822,7 @@
     {
       "name": "echo_client",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/echo/client.c"
@@ -735,12 +832,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "echo_server",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/echo/server.c"
@@ -750,8 +847,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "echo_test",
@@ -784,6 +880,7 @@
     {
       "name": "fling_client",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/fling/client.c"
@@ -793,12 +890,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "fling_server",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/fling/server.c"
@@ -808,8 +905,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "fling_stream_test",
@@ -870,6 +966,30 @@
       "language": "c",
       "src": [
         "test/core/support/cmdline_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_env_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/env_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_file_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/file_test.c"
       ],
       "deps": [
         "gpr_test_util",
@@ -1067,6 +1187,20 @@
       ]
     },
     {
+      "name": "grpc_create_jwt",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "test/core/security/create_jwt.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_credentials_test",
       "build": "test",
       "language": "c",
@@ -1100,6 +1234,20 @@
       "language": "c",
       "src": [
         "test/core/security/json_token_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_print_google_default_creds_token",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "test/core/security/print_google_default_creds_token.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1181,6 +1329,7 @@
     {
       "name": "httpcli_test",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/httpcli/httpcli_test.c"
@@ -1195,6 +1344,7 @@
     {
       "name": "json_rewrite",
       "build": "test",
+      "run": false,
       "language": "c",
       "src": [
         "test/core/json/json_rewrite.c"
@@ -1202,8 +1352,7 @@
       "deps": [
         "grpc",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "json_rewrite_test",
@@ -1217,8 +1366,7 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "json_test",
@@ -1282,6 +1430,20 @@
       "language": "c",
       "src": [
         "test/core/channel/metadata_buffer_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "multi_init_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/surface/multi_init_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1471,6 +1633,36 @@
       ]
     },
     {
+      "name": "transport_security_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/tsi/transport_security_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "async_end2end_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/async_end2end_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "channel_arguments_test",
       "build": "test",
       "language": "c++",
@@ -1482,21 +1674,6 @@
         "grpc",
         "gpr"
       ]
-    },
-    {
-      "name": "cpp_plugin",
-      "build": "protoc",
-      "language": "c++",
-      "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers.h"
-      ],
-      "src": [
-        "src/compiler/cpp_generator.cc",
-        "src/compiler/cpp_plugin.cc"
-      ],
-      "deps": [],
-      "secure": false
     },
     {
       "name": "credentials_test",
@@ -1528,8 +1705,65 @@
       ]
     },
     {
+      "name": "generic_end2end_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/generic_end2end_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_cpp_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "headers": [
+        "src/compiler/cpp_generator.h",
+        "src/compiler/cpp_generator_helpers.h"
+      ],
+      "src": [
+        "src/compiler/cpp_generator.cc",
+        "src/compiler/cpp_plugin.cc"
+      ],
+      "deps": [],
+      "secure": "no"
+    },
+    {
+      "name": "grpc_python_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "headers": [
+        "src/compiler/python_generator.h"
+      ],
+      "src": [
+        "src/compiler/python_generator.cc",
+        "src/compiler/python_plugin.cc"
+      ],
+      "deps": [],
+      "secure": "no"
+    },
+    {
+      "name": "grpc_ruby_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "src": [
+        "src/compiler/ruby_generator.cc",
+        "src/compiler/ruby_plugin.cc"
+      ],
+      "deps": [],
+      "secure": "no"
+    },
+    {
       "name": "interop_client",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/interop/empty.proto",
@@ -1544,12 +1778,12 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
       "name": "interop_server",
       "build": "test",
+      "run": false,
       "language": "c++",
       "src": [
         "test/cpp/interop/empty.proto",
@@ -1564,18 +1798,48 @@
         "grpc",
         "gpr_test_util",
         "gpr"
-      ],
-      "run": false
+      ]
     },
     {
-      "name": "qps_client",
+      "name": "interop_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/client.cc"
+        "test/cpp/interop/interop_test.cc"
       ],
       "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_client",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "examples/pubsub/main.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "pubsub_publisher_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "examples/pubsub/publisher_test.cc"
+      ],
+      "deps": [
+        "pubsub_client_lib",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1585,14 +1849,14 @@
       ]
     },
     {
-      "name": "qps_server",
+      "name": "pubsub_subscriber_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "test/cpp/qps/qpstest.proto",
-        "test/cpp/qps/server.cc"
+        "examples/pubsub/subscriber_test.cc"
       ],
       "deps": [
+        "pubsub_client_lib",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1602,21 +1866,48 @@
       ]
     },
     {
-      "name": "ruby_plugin",
-      "build": "protoc",
+      "name": "qps_driver",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/qps_driver.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "qps_worker",
+      "build": "test",
+      "run": false,
       "language": "c++",
       "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers-inl.h",
-        "src/compiler/cpp_generator_map-inl.h",
-        "src/compiler/cpp_generator_string-inl.h"
+        "test/cpp/qps/client.h",
+        "test/cpp/qps/server.h"
       ],
       "src": [
-        "src/compiler/ruby_generator.cc",
-        "src/compiler/ruby_plugin.cc"
+        "test/cpp/qps/client_async.cc",
+        "test/cpp/qps/client_sync.cc",
+        "test/cpp/qps/server_async.cc",
+        "test/cpp/qps/server_sync.cc",
+        "test/cpp/qps/worker.cc"
       ],
-      "deps": [],
-      "secure": false
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
     },
     {
       "name": "status_test",
@@ -1634,22 +1925,6 @@
       ]
     },
     {
-      "name": "sync_client_async_server_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "test/cpp/end2end/sync_client_async_server_test.cc"
-      ],
-      "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
       "name": "thread_pool_test",
       "build": "test",
       "language": "c++",
@@ -1657,41 +1932,6 @@
         "test/cpp/server/thread_pool_test.cc"
       ],
       "deps": [
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "tips_client",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/client_main.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ],
-      "run": false
-    },
-    {
-      "name": "tips_client_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "examples/tips/client_test.cc"
-      ],
-      "deps": [
-        "tips_client_lib",
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",

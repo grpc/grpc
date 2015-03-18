@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,7 @@
 #include "src/core/json/json_reader.h"
 #include "src/core/json/json_writer.h"
 
-typedef struct json_writer_userdata {
-  FILE* out;
-} json_writer_userdata;
+typedef struct json_writer_userdata { FILE* out; } json_writer_userdata;
 
 typedef struct stacked_container {
   grpc_json_type type;
@@ -76,11 +74,9 @@ static void json_writer_output_string_with_len(void* userdata, const char* str,
   fwrite(str, len, 1, state->out);
 }
 
-grpc_json_writer_vtable writer_vtable = {
-  json_writer_output_char,
-  json_writer_output_string,
-  json_writer_output_string_with_len
-};
+grpc_json_writer_vtable writer_vtable = {json_writer_output_char,
+                                         json_writer_output_string,
+                                         json_writer_output_string_with_len};
 
 static void check_string(json_reader_userdata* state, size_t needed) {
   if (state->free_space >= needed) return;
@@ -202,19 +198,12 @@ static void json_reader_set_null(void* userdata) {
 }
 
 static grpc_json_reader_vtable reader_vtable = {
-  json_reader_string_clear,
-  json_reader_string_add_char,
-  json_reader_string_add_utf32,
-  json_reader_read_char,
-  json_reader_container_begins,
-  json_reader_container_ends,
-  json_reader_set_key,
-  json_reader_set_string,
-  json_reader_set_number,
-  json_reader_set_true,
-  json_reader_set_false,
-  json_reader_set_null
-};
+    json_reader_string_clear,     json_reader_string_add_char,
+    json_reader_string_add_utf32, json_reader_read_char,
+    json_reader_container_begins, json_reader_container_ends,
+    json_reader_set_key,          json_reader_set_string,
+    json_reader_set_number,       json_reader_set_true,
+    json_reader_set_false,        json_reader_set_null};
 
 int rewrite(FILE* in, FILE* out, int indent) {
   grpc_json_writer writer;

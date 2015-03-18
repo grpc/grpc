@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,6 @@
  *
  */
 
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200112L
-#endif
-
-#define _GNU_SOURCE
 #include <grpc/support/port_platform.h>
 
 #if defined(GPR_POSIX_LOG)
@@ -69,7 +64,7 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   } else {
     message = allocated = gpr_malloc(ret + 1);
     va_start(args, format);
-    vsnprintf(message, ret, format, args);
+    vsnprintf(message, ret + 1, format, args);
     va_end(args);
   }
   gpr_log_message(file, line, severity, message);

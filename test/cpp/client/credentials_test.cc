@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,8 +47,7 @@ class CredentialsTest : public ::testing::Test {
 
 TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
   std::unique_ptr<Credentials> bad1 =
-      CredentialsFactory::ServiceAccountCredentials("", "",
-                                                    std::chrono::seconds(1));
+      ServiceAccountCredentials("", "", std::chrono::seconds(1));
   EXPECT_EQ(nullptr, bad1.get());
 }
 

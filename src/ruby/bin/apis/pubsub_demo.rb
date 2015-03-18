@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,9 @@
 
 # pubsub_demo demos accesses the Google PubSub API via its gRPC interface
 #
-# TODO: update the Usage once the usable auth gem is available
-# $ SSL_CERT_FILE=<path/to/ssl/certs> \
+# $ GOOGLE_APPLICATION_CREDENTIALS=<path_to_service_account_key_file> \
+#   SSL_CERT_FILE=<path/to/ssl/certs> \
 #   path/to/pubsub_demo.rb \
-#   --service_account_key_file=<path_to_service_account> \
 #   [--action=<chosen_demo_action> ]
 #
 # There are options related to the chosen action, see #parse_args below.
@@ -49,6 +48,7 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 require 'optparse'
 
 require 'grpc'
+require 'googleauth'
 require 'google/protobuf'
 
 require 'google/protobuf/empty'
@@ -59,7 +59,9 @@ require 'tech/pubsub/proto/pubsub_services'
 def load_prod_cert
   fail 'could not find a production cert' if ENV['SSL_CERT_FILE'].nil?
   p "loading prod certs from #{ENV['SSL_CERT_FILE']}"
-  File.open(ENV['SSL_CERT_FILE']).read
+  File.open(ENV['SSL_CERT_FILE']) do |f|
+    return f.read
+  end
 end
 
 # creates a SSL Credentials from the production certificates.
@@ -68,14 +70,9 @@ def ssl_creds
 end
 
 # Builds the metadata authentication update proc.
-#
-# TODO: replace this once the ruby usable auth repo is available.
 def auth_proc(opts)
-  if GRPC::Auth::GCECredentials.on_gce?
-    return GRPC::Auth::GCECredentials.new.updater_proc
-  end
-  fd = StringIO.new(File.read(opts.oauth_key_file))
-  GRPC::Auth::ServiceAccountCredentials.new(opts.oauth_scope, fd).updater_proc
+  auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
+  return auth_creds.updater_proc
 end
 
 # Creates a stub for accessing the publisher service.
@@ -216,14 +213,14 @@ class NamedActions
 end
 
 # Args is used to hold the command line info.
-Args = Struct.new(:host, :oauth_scope, :oauth_key_file, :port, :action,
-                  :project_id, :topic_name, :sub_name)
+Args = Struct.new(:host, :oauth_scope, :port, :action, :project_id, :topic_name,
+                  :sub_name)
 
 # validates the the command line options, returning them as an Arg.
 def parse_args
   args = Args.new('pubsub-staging.googleapis.com',
                   'https://www.googleapis.com/auth/pubsub',
-                  nil, 443, 'list_some_topics', 'stoked-keyword-656')
+                   443, 'list_some_topics', 'stoked-keyword-656')
   OptionParser.new do |opts|
     opts.on('--oauth_scope scope',
             'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }
@@ -232,10 +229,6 @@ def parse_args
     end
     opts.on('--server_port SERVER_PORT', 'server port') do |v|
       args.port = v
-    end
-    opts.on('--service_account_key_file PATH',
-            'Path to the service account json key file') do |v|
-      args.oauth_key_file = v
     end
 
     # instance_methods(false) gives only the methods defined in that class.
@@ -257,14 +250,10 @@ def parse_args
 end
 
 def _check_args(args)
-  %w(host port action).each do |a|
+  %w(host port action oauth_scope).each do |a|
     if args[a].nil?
       raise OptionParser::MissingArgument.new("please specify --#{a}")
     end
-  end
-  if args['oauth_key_file'].nil? || args['oauth_scope'].nil?
-    fail(OptionParser::MissingArgument,
-         'please specify both of --service_account_key_file and --oauth_scope')
   end
   args
 end

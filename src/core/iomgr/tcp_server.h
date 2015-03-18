@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__
-#define __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__
+#ifndef GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H
+#define GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H
 
 #include "src/core/iomgr/endpoint.h"
 
@@ -46,8 +46,9 @@ typedef void (*grpc_tcp_server_cb)(void *arg, grpc_endpoint *ep);
 grpc_tcp_server *grpc_tcp_server_create(void);
 
 /* Start listening to bound ports */
-void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset *pollset,
-                           grpc_tcp_server_cb cb, void *cb_arg);
+void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
+                           size_t pollset_count, grpc_tcp_server_cb cb,
+                           void *cb_arg);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.
@@ -72,4 +73,4 @@ int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index);
 
 void grpc_tcp_server_destroy(grpc_tcp_server *server);
 
-#endif /* __GRPC_INTERNAL_IOMGR_TCP_SERVER_H__ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */

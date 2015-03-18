@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,10 +113,10 @@ static void test_grpc_alarm(void) {
   gpr_cv_init(&arg.cv);
   gpr_event_init(&arg.fcb_arg);
 
-  grpc_alarm_init(&alarm, gpr_time_add(gpr_time_from_millis(100), gpr_now()),
-                  alarm_cb, &arg, gpr_now());
+  grpc_alarm_init(&alarm, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100), alarm_cb, &arg,
+                  gpr_now());
 
-  alarm_deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(1));
+  alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
   gpr_mu_lock(&arg.mu);
   while (arg.done == 0) {
     if (gpr_cv_wait(&arg.cv, &arg.mu, alarm_deadline)) {
@@ -126,7 +126,7 @@ static void test_grpc_alarm(void) {
   }
   gpr_mu_unlock(&arg.mu);
 
-  followup_deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(5));
+  followup_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
   fdone = gpr_event_wait(&arg.fcb_arg, followup_deadline);
 
   if (arg.counter != 1) {
@@ -162,12 +162,11 @@ static void test_grpc_alarm(void) {
   gpr_cv_init(&arg2.cv);
   gpr_event_init(&arg2.fcb_arg);
 
-  grpc_alarm_init(&alarm_to_cancel,
-                  gpr_time_add(gpr_time_from_millis(100), gpr_now()), alarm_cb,
-                  &arg2, gpr_now());
+  grpc_alarm_init(&alarm_to_cancel, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100),
+                  alarm_cb, &arg2, gpr_now());
   grpc_alarm_cancel(&alarm_to_cancel);
 
-  alarm_deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(1));
+  alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
   gpr_mu_lock(&arg2.mu);
   while (arg2.done == 0) {
     gpr_cv_wait(&arg2.cv, &arg2.mu, alarm_deadline);
@@ -176,7 +175,7 @@ static void test_grpc_alarm(void) {
 
   gpr_log(GPR_INFO, "alarm done = %d", arg2.done);
 
-  followup_deadline = gpr_time_add(gpr_now(), gpr_time_from_seconds(5));
+  followup_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
   fdone = gpr_event_wait(&arg2.fcb_arg, followup_deadline);
 
   if (arg2.counter != arg2.done_success_ctr) {

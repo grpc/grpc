@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,45 +36,157 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/cpp/server/server_rpc_handler.h"
-#include "src/cpp/server/thread_pool.h"
-#include <grpc++/async_server_context.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
+#include <grpc++/impl/service_type.h>
+#include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
+#include <grpc++/thread_pool_interface.h>
+
+#include "src/cpp/proto/proto_utils.h"
+#include "src/cpp/util/time.h"
 
 namespace grpc {
 
-// TODO(rocking): consider a better default value like num of cores.
-static const int kNumThreads = 4;
+class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
+ public:
+  SyncRequest(RpcServiceMethod* method, void* tag)
+      : method_(method),
+        tag_(tag),
+        in_flight_(false),
+        has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
+                             method->method_type() ==
+                                 RpcMethod::SERVER_STREAMING),
+        has_response_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
+                              method->method_type() ==
+                                  RpcMethod::CLIENT_STREAMING) {
+    grpc_metadata_array_init(&request_metadata_);
+  }
 
-Server::Server(ThreadPoolInterface *thread_pool, ServerCredentials *creds)
+  static SyncRequest* Wait(CompletionQueue* cq, bool* ok) {
+    void* tag = nullptr;
+    *ok = false;
+    if (!cq->Next(&tag, ok)) {
+      return nullptr;
+    }
+    auto* mrd = static_cast<SyncRequest*>(tag);
+    GPR_ASSERT(mrd->in_flight_);
+    return mrd;
+  }
+
+  void Request(grpc_server* server) {
+    GPR_ASSERT(!in_flight_);
+    in_flight_ = true;
+    cq_ = grpc_completion_queue_create();
+    GPR_ASSERT(GRPC_CALL_OK ==
+               grpc_server_request_registered_call(
+                   server, tag_, &call_, &deadline_, &request_metadata_,
+                   has_request_payload_ ? &request_payload_ : nullptr, cq_,
+                   this));
+  }
+
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    if (!*status) {
+      grpc_completion_queue_destroy(cq_);
+    }
+    return true;
+  }
+
+  class CallData GRPC_FINAL {
+   public:
+    explicit CallData(Server* server, SyncRequest* mrd)
+        : cq_(mrd->cq_),
+          call_(mrd->call_, server, &cq_),
+          ctx_(mrd->deadline_, mrd->request_metadata_.metadata,
+               mrd->request_metadata_.count),
+          has_request_payload_(mrd->has_request_payload_),
+          has_response_payload_(mrd->has_response_payload_),
+          request_payload_(mrd->request_payload_),
+          method_(mrd->method_) {
+      ctx_.call_ = mrd->call_;
+      GPR_ASSERT(mrd->in_flight_);
+      mrd->in_flight_ = false;
+      mrd->request_metadata_.count = 0;
+    }
+
+    ~CallData() {
+      if (has_request_payload_ && request_payload_) {
+        grpc_byte_buffer_destroy(request_payload_);
+      }
+    }
+
+    void Run() {
+      std::unique_ptr<grpc::protobuf::Message> req;
+      std::unique_ptr<grpc::protobuf::Message> res;
+      if (has_request_payload_) {
+        req.reset(method_->AllocateRequestProto());
+        if (!DeserializeProto(request_payload_, req.get())) {
+          abort();  // for now
+        }
+      }
+      if (has_response_payload_) {
+        res.reset(method_->AllocateResponseProto());
+      }
+      ctx_.BeginCompletionOp(&call_);
+      auto status = method_->handler()->RunHandler(
+          MethodHandler::HandlerParameter(&call_, &ctx_, req.get(), res.get()));
+      CallOpBuffer buf;
+      if (!ctx_.sent_initial_metadata_) {
+        buf.AddSendInitialMetadata(&ctx_.initial_metadata_);
+      }
+      if (has_response_payload_) {
+        buf.AddSendMessage(*res);
+      }
+      buf.AddServerSendStatus(&ctx_.trailing_metadata_, status);
+      call_.PerformOps(&buf);
+      GPR_ASSERT(cq_.Pluck(&buf));
+      void* ignored_tag;
+      bool ignored_ok;
+      cq_.Shutdown();
+      GPR_ASSERT(cq_.Next(&ignored_tag, &ignored_ok) == false);
+    }
+
+   private:
+    CompletionQueue cq_;
+    Call call_;
+    ServerContext ctx_;
+    const bool has_request_payload_;
+    const bool has_response_payload_;
+    grpc_byte_buffer* request_payload_;
+    RpcServiceMethod* const method_;
+  };
+
+ private:
+  RpcServiceMethod* const method_;
+  void* const tag_;
+  bool in_flight_;
+  const bool has_request_payload_;
+  const bool has_response_payload_;
+  grpc_call* call_;
+  gpr_timespec deadline_;
+  grpc_metadata_array request_metadata_;
+  grpc_byte_buffer* request_payload_;
+  grpc_completion_queue* cq_;
+};
+
+Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned)
     : started_(false),
       shutdown_(false),
       num_running_cb_(0),
-      thread_pool_(thread_pool == nullptr ? new ThreadPool(kNumThreads)
-                                          : thread_pool),
-      thread_pool_owned_(thread_pool == nullptr),
-      secure_(creds != nullptr) {
-  if (creds) {
-    server_ =
-        grpc_secure_server_create(creds->GetRawCreds(), cq_.cq(), nullptr);
-  } else {
-    server_ = grpc_server_create(cq_.cq(), nullptr);
-  }
-}
-
-Server::Server() {
-  // Should not be called.
-  GPR_ASSERT(false);
-}
+      server_(grpc_server_create(cq_.cq(), nullptr)),
+      thread_pool_(thread_pool),
+      thread_pool_owned_(thread_pool_owned) {}
 
 Server::~Server() {
-  std::unique_lock<std::mutex> lock(mu_);
-  if (started_ && !shutdown_) {
-    lock.unlock();
-    Shutdown();
+  {
+    std::unique_lock<std::mutex> lock(mu_);
+    if (started_ && !shutdown_) {
+      lock.unlock();
+      Shutdown();
+    }
   }
   grpc_server_destroy(server_);
   if (thread_pool_owned_) {
@@ -82,58 +194,211 @@ Server::~Server() {
   }
 }
 
-void Server::RegisterService(RpcService *service) {
+bool Server::RegisterService(RpcService* service) {
   for (int i = 0; i < service->GetMethodCount(); ++i) {
-    RpcServiceMethod *method = service->GetMethod(i);
-    method_map_.insert(std::make_pair(method->name(), method));
+    RpcServiceMethod* method = service->GetMethod(i);
+    void* tag =
+        grpc_server_register_method(server_, method->name(), nullptr, cq_.cq());
+    if (!tag) {
+      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
+              method->name());
+      return false;
+    }
+    sync_methods_.emplace_back(method, tag);
   }
+  return true;
 }
 
-void Server::AddPort(const grpc::string &addr) {
+bool Server::RegisterAsyncService(AsynchronousService* service) {
+  GPR_ASSERT(service->dispatch_impl_ == nullptr &&
+             "Can only register an asynchronous service against one server.");
+  service->dispatch_impl_ = this;
+  service->request_args_ = new void* [service->method_count_];
+  for (size_t i = 0; i < service->method_count_; ++i) {
+    void* tag =
+        grpc_server_register_method(server_, service->method_names_[i], nullptr,
+                                    service->completion_queue()->cq());
+    if (!tag) {
+      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
+              service->method_names_[i]);
+      return false;
+    }
+    service->request_args_[i] = tag;
+  }
+  return true;
+}
+
+void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
+  GPR_ASSERT(service->server_ == nullptr &&
+             "Can only register an async generic service against one server.");
+  service->server_ = this;
+}
+
+int Server::AddPort(const grpc::string& addr, ServerCredentials* creds) {
   GPR_ASSERT(!started_);
-  int success;
-  if (secure_) {
-    success = grpc_server_add_secure_http2_port(server_, addr.c_str());
-  } else {
-    success = grpc_server_add_http2_port(server_, addr.c_str());
-  }
-  GPR_ASSERT(success);
+  return creds->AddPortToServer(addr, server_);
 }
 
-void Server::Start() {
+bool Server::Start() {
   GPR_ASSERT(!started_);
   started_ = true;
   grpc_server_start(server_);
 
   // Start processing rpcs.
-  ScheduleCallback();
-}
+  if (!sync_methods_.empty()) {
+    for (auto& m : sync_methods_) {
+      m.Request(server_);
+    }
 
-void Server::AllowOneRpc() {
-  GPR_ASSERT(started_);
-  grpc_call_error err = grpc_server_request_call(server_, nullptr);
-  GPR_ASSERT(err == GRPC_CALL_OK);
+    ScheduleCallback();
+  }
+
+  return true;
 }
 
 void Server::Shutdown() {
-  {
-    std::unique_lock<std::mutex> lock(mu_);
-    if (started_ && !shutdown_) {
-      shutdown_ = true;
-      grpc_server_shutdown(server_);
+  std::unique_lock<std::mutex> lock(mu_);
+  if (started_ && !shutdown_) {
+    shutdown_ = true;
+    grpc_server_shutdown(server_);
+    cq_.Shutdown();
 
-      // Wait for running callbacks to finish.
-      while (num_running_cb_ != 0) {
-        callback_cv_.wait(lock);
-      }
+    // Wait for running callbacks to finish.
+    while (num_running_cb_ != 0) {
+      callback_cv_.wait(lock);
     }
   }
+}
 
-  // Shutdown the completion queue.
-  cq_.Shutdown();
-  void *tag = nullptr;
-  CompletionQueue::CompletionType t = cq_.Next(&tag);
-  GPR_ASSERT(t == CompletionQueue::QUEUE_CLOSED);
+void Server::Wait() {
+  std::unique_lock<std::mutex> lock(mu_);
+  while (num_running_cb_ != 0) {
+    callback_cv_.wait(lock);
+  }
+}
+
+void Server::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
+  static const size_t MAX_OPS = 8;
+  size_t nops = MAX_OPS;
+  grpc_op ops[MAX_OPS];
+  buf->FillOps(ops, &nops);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call->call(), ops, nops, buf));
+}
+
+class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
+ public:
+  AsyncRequest(Server* server, void* registered_method, ServerContext* ctx,
+               grpc::protobuf::Message* request,
+               ServerAsyncStreamingInterface* stream, CompletionQueue* cq,
+               void* tag)
+      : tag_(tag),
+        request_(request),
+        stream_(stream),
+        cq_(cq),
+        ctx_(ctx),
+        generic_ctx_(nullptr),
+        server_(server),
+        call_(nullptr),
+        payload_(nullptr) {
+    memset(&array_, 0, sizeof(array_));
+    grpc_call_details_init(&call_details_);
+    grpc_server_request_registered_call(
+        server->server_, registered_method, &call_, &call_details_.deadline,
+        &array_, request ? &payload_ : nullptr, cq->cq(), this);
+  }
+
+  AsyncRequest(Server* server, GenericServerContext* ctx,
+               ServerAsyncStreamingInterface* stream, CompletionQueue* cq,
+               void* tag)
+      : tag_(tag),
+        request_(nullptr),
+        stream_(stream),
+        cq_(cq),
+        ctx_(nullptr),
+        generic_ctx_(ctx),
+        server_(server),
+        call_(nullptr),
+        payload_(nullptr) {
+    memset(&array_, 0, sizeof(array_));
+    grpc_call_details_init(&call_details_);
+    grpc_server_request_call(
+        server->server_, &call_, &call_details_, &array_, cq->cq(), this);
+  }
+
+
+  ~AsyncRequest() {
+    if (payload_) {
+      grpc_byte_buffer_destroy(payload_);
+    }
+    grpc_metadata_array_destroy(&array_);
+  }
+
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    *tag = tag_;
+    bool orig_status = *status;
+    if (*status && request_) {
+      if (payload_) {
+        *status = DeserializeProto(payload_, request_);
+      } else {
+        *status = false;
+      }
+    }
+    ServerContext* ctx = ctx_ ? ctx_ : generic_ctx_;
+    GPR_ASSERT(ctx);
+    if (*status) {
+      ctx->deadline_ = Timespec2Timepoint(call_details_.deadline);
+      for (size_t i = 0; i < array_.count; i++) {
+        ctx->client_metadata_.insert(std::make_pair(
+            grpc::string(array_.metadata[i].key),
+            grpc::string(
+                array_.metadata[i].value,
+                array_.metadata[i].value + array_.metadata[i].value_length)));
+      }
+      if (generic_ctx_) {
+        // TODO(yangg) remove the copy here.
+        generic_ctx_->method_ = call_details_.method;
+        generic_ctx_->host_ = call_details_.host;
+        gpr_free(call_details_.method);
+        gpr_free(call_details_.host);
+      }
+    }
+    ctx->call_ = call_;
+    Call call(call_, server_, cq_);
+    if (orig_status && call_) {
+      ctx->BeginCompletionOp(&call);
+    }
+    // just the pointers inside call are copied here
+    stream_->BindCall(&call);
+    delete this;
+    return true;
+  }
+
+ private:
+  void* const tag_;
+  grpc::protobuf::Message* const request_;
+  ServerAsyncStreamingInterface* const stream_;
+  CompletionQueue* const cq_;
+  ServerContext* const ctx_;
+  GenericServerContext* const generic_ctx_;
+  Server* const server_;
+  grpc_call* call_;
+  grpc_call_details call_details_;
+  grpc_metadata_array array_;
+  grpc_byte_buffer* payload_;
+};
+
+void Server::RequestAsyncCall(void* registered_method, ServerContext* context,
+                              grpc::protobuf::Message* request,
+                              ServerAsyncStreamingInterface* stream,
+                              CompletionQueue* cq, void* tag) {
+  new AsyncRequest(this, registered_method, context, request, stream, cq, tag);
+}
+
+void Server::RequestAsyncGenericCall(GenericServerContext* context,
+                                     ServerAsyncStreamingInterface* stream,
+                                     CompletionQueue* cq, void* tag) {
+  new AsyncRequest(this, context, stream, cq, tag);
 }
 
 void Server::ScheduleCallback() {
@@ -141,30 +406,21 @@ void Server::ScheduleCallback() {
     std::unique_lock<std::mutex> lock(mu_);
     num_running_cb_++;
   }
-  std::function<void()> callback = std::bind(&Server::RunRpc, this);
-  thread_pool_->ScheduleCallback(callback);
+  thread_pool_->ScheduleCallback(std::bind(&Server::RunRpc, this));
 }
 
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
-  void *tag = nullptr;
-  AllowOneRpc();
-  CompletionQueue::CompletionType t = cq_.Next(&tag);
-  GPR_ASSERT(t == CompletionQueue::SERVER_RPC_NEW);
-
-  AsyncServerContext *server_context = static_cast<AsyncServerContext *>(tag);
-  // server_context could be nullptr during server shutdown.
-  if (server_context != nullptr) {
-    // Schedule a new callback to handle more rpcs.
+  bool ok;
+  auto* mrd = SyncRequest::Wait(&cq_, &ok);
+  if (mrd) {
     ScheduleCallback();
+    if (ok) {
+      SyncRequest::CallData cd(this, mrd);
+      mrd->Request(server_);
 
-    RpcServiceMethod *method = nullptr;
-    auto iter = method_map_.find(server_context->method());
-    if (iter != method_map_.end()) {
-      method = iter->second;
+      cd.Run();
     }
-    ServerRpcHandler rpc_handler(server_context, method);
-    rpc_handler.StartRpc();
   }
 
   {

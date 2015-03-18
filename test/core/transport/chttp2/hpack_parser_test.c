@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,9 +42,7 @@
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
-typedef struct {
-  va_list args;
-} test_checker;
+typedef struct { va_list args; } test_checker;
 
 static void onhdr(void *ud, grpc_mdelem *md) {
   const char *ekey, *evalue;
@@ -214,7 +212,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
-  grpc_mdctx_orphan(mdctx);
+  grpc_mdctx_unref(mdctx);
 }
 
 int main(int argc, char **argv) {

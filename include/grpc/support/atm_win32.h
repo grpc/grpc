@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ATM_WIN32_H__
-#define __GRPC_SUPPORT_ATM_WIN32_H__
+#ifndef GRPC_SUPPORT_ATM_WIN32_H
+#define GRPC_SUPPORT_ATM_WIN32_H
 
 /* Win32 variant of atm_platform.h */
 #include <grpc/support/port_platform.h>
@@ -47,6 +47,11 @@ static __inline gpr_atm gpr_atm_acq_load(const gpr_atm *p) {
   gpr_atm result = *p;
   gpr_atm_full_barrier();
   return result;
+}
+
+static __inline gpr_atm gpr_atm_no_barrier_load(const gpr_atm *p) {
+  /* TODO(dklempner): Can we implement something better here? */
+  gpr_atm_acq_load(p);
 }
 
 static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
@@ -93,14 +98,16 @@ static __inline gpr_atm gpr_atm_no_barrier_fetch_add(gpr_atm *p,
 static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm *p, gpr_atm delta) {
   /* Use a CAS operation to get pointer-sized fetch and add */
   gpr_atm old;
+#ifdef GPR_ARCH_64
   do {
     old = *p;
-#ifdef GPR_ARCH_64
   } while (old != (gpr_atm)InterlockedCompareExchange64(p, old + delta, old));
 #else
+  do {
+    old = *p;
   } while (old != (gpr_atm)InterlockedCompareExchange(p, old + delta, old));
 #endif
   return old;
 }
 
-#endif /* __GRPC_SUPPORT_ATM_WIN32_H__ */
+#endif  /* GRPC_SUPPORT_ATM_WIN32_H */

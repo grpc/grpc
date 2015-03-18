@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{CCC4440E-49F7-4790-B0AF-FEABB0837AE7}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Grpc.Core</RootNamespace>
+    <AssemblyName>Grpc.Core</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>..\packages\System.Collections.Immutable.1.1.34-rc\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Internal\GrpcLog.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RpcException.cs" />
+    <Compile Include="Calls.cs" />
+    <Compile Include="Call.cs" />
+    <Compile Include="ClientStreamingAsyncResult.cs" />
+    <Compile Include="GrpcEnvironment.cs" />
+    <Compile Include="Status.cs" />
+    <Compile Include="StatusCode.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="Channel.cs" />
+    <Compile Include="Internal\CallSafeHandle.cs" />
+    <Compile Include="Internal\ChannelSafeHandle.cs" />
+    <Compile Include="Internal\CompletionQueueSafeHandle.cs" />
+    <Compile Include="Internal\Enums.cs" />
+    <Compile Include="Internal\SafeHandleZeroIsInvalid.cs" />
+    <Compile Include="Internal\Timespec.cs" />
+    <Compile Include="Internal\GrpcThreadPool.cs" />
+    <Compile Include="Internal\ServerSafeHandle.cs" />
+    <Compile Include="Method.cs" />
+    <Compile Include="ServerCalls.cs" />
+    <Compile Include="Internal\ServerCallHandler.cs" />
+    <Compile Include="Marshaller.cs" />
+    <Compile Include="ServerServiceDefinition.cs" />
+    <Compile Include="Utils\RecordingObserver.cs" />
+    <Compile Include="Utils\RecordingQueue.cs" />
+    <Compile Include="Internal\ClientStreamingInputObserver.cs" />
+    <Compile Include="Internal\ServerStreamingOutputObserver.cs" />
+    <Compile Include="Internal\BatchContextSafeHandleNotOwned.cs" />
+    <Compile Include="Utils\BenchmarkUtil.cs" />
+    <Compile Include="Utils\ExceptionHelper.cs" />
+    <Compile Include="Internal\CredentialsSafeHandle.cs" />
+    <Compile Include="Credentials.cs" />
+    <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
+    <Compile Include="ChannelArgs.cs" />
+    <Compile Include="Internal\AsyncCompletion.cs" />
+    <Compile Include="Internal\AsyncCallBase.cs" />
+    <Compile Include="Internal\AsyncCallServer.cs" />
+    <Compile Include="OperationFailedException.cs" />
+    <Compile Include="Internal\AsyncCall.cs" />
+    <Compile Include="Utils\Preconditions.cs" />
+    <Compile Include="Internal\ServerCredentialsSafeHandle.cs" />
+    <Compile Include="ServerCredentials.cs" />
+    <Compile Include="Metadata.cs" />
+    <Compile Include="Internal\MetadataArraySafeHandle.cs" />
+    <Compile Include="Stub\AbstractStub.cs" />
+    <Compile Include="Stub\StubConfiguration.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Choose>
+    <!-- Under older versions of Monodevelop, Choose is not supported and is just
+         ignored, which gives us the desired effect. -->
+    <When Condition=" '$(OS)' != 'Unix' ">
+      <ItemGroup>
+        <Content Include="..\..\..\vsprojects\vs2013\Debug\grpc_csharp_ext.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+      </ItemGroup>
+    </When>
+    <Otherwise />
+  </Choose>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Folder Include="Stub\" />
+  </ItemGroup>
+</Project>

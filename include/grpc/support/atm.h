@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_ATM_H__
-#define __GRPC_SUPPORT_ATM_H__
+#ifndef GRPC_SUPPORT_ATM_H
+#define GRPC_SUPPORT_ATM_H
 
 /* This interface provides atomic operations and barriers.
    It is internal to gpr support code and should not be used outside it.
@@ -51,12 +51,12 @@
 
    The routines may be implemented as macros.
 
-   // Atomic operations acton an intergral_type gpr_atm that is guaranteed to
+   // Atomic operations act on an intergral_type gpr_atm that is guaranteed to
    // be the same size as a pointer.
    typedef gpr_intptr gpr_atm;
 
    // A memory barrier, providing both acquire and release semantics, but not
-   // otherwise acting no memory.
+   // otherwise acting on memory.
    void gpr_atm_full_barrier(void);
 
    // Atomically return *p, with acquire semantics.
@@ -89,4 +89,4 @@
 #error could not determine platform for atm
 #endif
 
-#endif /* __GRPC_SUPPORT_ATM_H__ */
+#endif  /* GRPC_SUPPORT_ATM_H */

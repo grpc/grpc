@@ -1,29 +1,27 @@
 {
-  "variables" : {
-    'no_install': "<!(echo $GRPC_NO_INSTALL)",
-    'grpc_root': "<!(echo $GRPC_ROOT)",
-    'grpc_lib_subdir': "<!(echo $GRPC_LIB_SUBDIR)"
-    },
   "targets" : [
     {
       'include_dirs': [
-        "<!(nodejs -e \"require('nan')\")"
+        "<!(node -e \"require('nan')\")"
       ],
-      'cxxflags': [
+      'cflags': [
+        '-std=c++0x',
         '-Wall',
         '-pthread',
         '-pedantic',
         '-g',
         '-zdefs'
-        '-Werror',
-        ],
+        '-Werror'
+      ],
       'ldflags': [
         '-g'
       ],
       'link_settings': {
         'libraries': [
           '-lrt',
-          '-lpthread'
+          '-lpthread',
+          '-lgrpc',
+          '-lgpr'
         ],
       },
       "target_name": "grpc",
@@ -33,33 +31,10 @@
         "ext/channel.cc",
         "ext/completion_queue_async_worker.cc",
         "ext/credentials.cc",
-        "ext/event.cc",
         "ext/node_grpc.cc",
         "ext/server.cc",
         "ext/server_credentials.cc",
-        "ext/tag.cc",
         "ext/timeval.cc"
-      ],
-      'conditions' : [
-        ['no_install=="yes"', {
-          'include_dirs': [
-            "<(grpc_root)/include"
-          ],
-          'link_settings': {
-            'libraries': [
-              '<(grpc_root)/<(grpc_lib_subdir)/libgrpc.a',
-              '<(grpc_root)/<(grpc_lib_subdir)/libgpr.a'
-            ]
-          }
-        }],
-        ['no_install!="yes"', {
-            'link_settings': {
-              'libraries': [
-                '-lgrpc',
-                '-lgpr'
-              ]
-            }
-          }]
       ]
     }
   ]

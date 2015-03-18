@@ -1,4 +1,32 @@
 #!/bin/bash
+# Copyright 2015, Google Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+#     * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following disclaimer
+# in the documentation and/or other materials provided with the
+# distribution.
+#     * Neither the name of Google Inc. nor the names of its
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # Contains common funcs shared by instance startup scripts.
 #
 # The funcs assume that the code is being run on a GCE instance during instance
@@ -251,37 +279,6 @@ update_address_to() {
   }
 }
 
-# Allows instances to checkout repos on git-on-borg.
-#
-install_gob_daemon() {
-  local gob_dir=$1
-  [[ -n $gob_dir ]] || { echo "missing args: gob_dir" >&2; return 1;  }
-
-  local gob_repo=$2
-  [[ -n $gob_repo ]] || gob_repo='https://gerrit.googlesource.com/gcompute-tools/'
-
-  if [[ -e $gob_dir ]]
-  then
-    rm -fv $gob_dir || {
-      echo "could not remove existing git repo at $gob_dir" >&2
-      return 1
-    }
-  fi
-
-  git clone $gob_repo $gob_dir || { echo "failed to pull gerrit cookie repo" >&2; return 1; }
-  local startup_script=/etc/profile.d/gob_cookie_daemon.sh
-
-  cat <<EOF >> $startup_script
-#!/bin/bash
-
-$gob_dir/git-cookie-authdaemon
-
-EOF
-
-  chmod 755 $startup_script
-  $startup_script
-}
-
 # grpc_docker_add_docker_group
 #
 # Adds a docker group, restarts docker, relaunches the docker registry
@@ -367,7 +364,7 @@ grpc_docker_launch_registry() {
 grpc_docker_pull_known() {
   local addr=$1
   [[ -n $addr ]] || addr="0.0.0.0:5000"
-  local known="base cxx php_base php ruby_base ruby java_base java go node_base node"
+  local known="base cxx php_base php ruby_base ruby java_base java go node_base node python_base python csharp_mono_base csharp_mono"
   echo "... pulling docker images for '$known'"
   for i in $known
   do
@@ -403,23 +400,39 @@ grpc_dockerfile_install() {
 
   [[ -d $dockerfile_dir ]] || { echo "$FUNCNAME: not a valid dir: $dockerfile_dir"; return 1; }
 
-  # For specific base images, sync the ssh key into the .ssh dir in the dockerfile context
+  # For specific base images, sync private files.
+  #
+  # - the ssh key, ssh certs and/or service account info.
   [[ $image_label == "grpc/base" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'base_ssh_key' || return 1;
   }
   [[ $image_label == "grpc/go" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'go_ssh_key' || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
   [[ $image_label == "grpc/java_base" ]] && {
     grpc_docker_sync_github_key $dockerfile_dir/.ssh 'java_base_ssh_key' || return 1;
   }
   [[ $image_label == "grpc/ruby" ]] && {
     grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
-  }
-  [[ $image_label == "grpc/cxx" ]] && {
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
-
+  [[ $image_label == "grpc/node" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
+  [[ $image_label == "grpc/cxx" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
+  [[ $image_label == "grpc/python" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
+  [[ $image_label == "grpc/csharp_mono" ]] && {
+    grpc_docker_sync_roots_pem $dockerfile_dir/cacerts || return 1;
+    grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
+  }
 
   # TODO(temiola): maybe make cache/no-cache a func option?
   sudo docker build $cache_opt -t $image_label $dockerfile_dir || {

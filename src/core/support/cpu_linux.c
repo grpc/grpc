@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,60 +31,36 @@
  *
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif  /* _GNU_SOURCE */
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_CPU_LINUX
 
-#include "src/core/support/cpu.h"
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#define GRPC_GNU_SOURCE
-#endif
-
-#ifndef __USE_GNU
-#define __USE_GNU
-#define GRPC_USE_GNU
-#endif
-
-#ifndef __USE_MISC
-#define __USE_MISC
-#define GRPC_USE_MISC
-#endif
-
 #include <sched.h>
-
-#ifdef GRPC_GNU_SOURCE
-#undef _GNU_SOURCE
-#undef GRPC_GNU_SOURCE
-#endif
-
-#ifdef GRPC_USE_GNU
-#undef __USE_GNU
-#undef GRPC_USE_GNU
-#endif
-
-#ifdef GRPC_USE_MISC
-#undef __USE_MISC
-#undef GRPC_USE_MISC
-#endif
-
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
 
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
+static int ncpus = 0;
+
+static void init_num_cpus() {
+  ncpus = sysconf(_SC_NPROCESSORS_ONLN);
+  if (ncpus < 1) {
+    gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
+    ncpus = 1;
+  }
+}
 
 unsigned gpr_cpu_num_cores(void) {
-  static int ncpus = 0;
-  /* FIXME: !threadsafe */
-  if (ncpus == 0) {
-    ncpus = sysconf(_SC_NPROCESSORS_ONLN);
-    if (ncpus < 1) {
-      gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
-      ncpus = 1;
-    }
-  }
+  static gpr_once once = GPR_ONCE_INIT;
+  gpr_once_init(&once, init_num_cpus);
   return ncpus;
 }
 

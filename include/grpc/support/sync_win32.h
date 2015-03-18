@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +31,11 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_SYNC_WIN32_H__
-#define __GRPC_SUPPORT_SYNC_WIN32_H__
+#ifndef GRPC_SUPPORT_SYNC_WIN32_H
+#define GRPC_SUPPORT_SYNC_WIN32_H
 
 #include <grpc/support/sync_generic.h>
 
-/* Win32 variant of gpr_sync_platform.h */
 #include <windows.h>
 
 typedef struct {
@@ -49,4 +48,4 @@ typedef CONDITION_VARIABLE gpr_cv;
 typedef INIT_ONCE gpr_once;
 #define GPR_ONCE_INIT INIT_ONCE_STATIC_INIT
 
-#endif /* __GRPC_SUPPORT_SYNC_WIN32_H__ */
+#endif  /* GRPC_SUPPORT_SYNC_WIN32_H */

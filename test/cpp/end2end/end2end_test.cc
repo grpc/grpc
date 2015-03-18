@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 #include "test/cpp/util/echo_duplicate.pb.h"
 #include "test/cpp/util/echo.pb.h"
 #include "src/cpp/util/time.h"
+#include "src/cpp/server/thread_pool.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -46,6 +47,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/core/util/port.h"
@@ -76,12 +78,13 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
     response->mutable_param()->set_request_deadline(deadline.tv_sec);
   }
 }
+
 }  // namespace
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+              EchoResponse* response) GRPC_OVERRIDE {
     response->set_message(request->message());
     MaybeEchoDeadline(context, request, response);
     return Status::OK;
@@ -91,7 +94,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
 
   Status RequestStream(ServerContext* context,
                        ServerReader<EchoRequest>* reader,
-                       EchoResponse* response) override {
+                       EchoResponse* response) GRPC_OVERRIDE {
     EchoRequest request;
     response->set_message("");
     while (reader->Read(&request)) {
@@ -103,7 +106,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
   // Return 3 messages.
   // TODO(yangg) make it generic by adding a parameter into EchoRequest
   Status ResponseStream(ServerContext* context, const EchoRequest* request,
-                        ServerWriter<EchoResponse>* writer) override {
+                        ServerWriter<EchoResponse>* writer) GRPC_OVERRIDE {
     EchoResponse response;
     response.set_message(request->message() + "0");
     writer->Write(response);
@@ -115,9 +118,9 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(
-      ServerContext* context,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+  Status BidiStream(ServerContext* context,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream)
+      GRPC_OVERRIDE {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -133,7 +136,7 @@ class TestServiceImplDupPkg
     : public ::grpc::cpp::test::util::duplicate::TestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+              EchoResponse* response) GRPC_OVERRIDE {
     response->set_message("no package");
     return Status::OK;
   }
@@ -141,23 +144,26 @@ class TestServiceImplDupPkg
 
 class End2endTest : public ::testing::Test {
  protected:
-  void SetUp() override {
+  End2endTest() : thread_pool_(2) {}
+
+  void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str());
-    builder.RegisterService(service_.service());
-    builder.RegisterService(dup_pkg_service_.service());
+    builder.AddPort(server_address_.str(), InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    builder.RegisterService(&dup_pkg_service_);
+    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override { server_->Shutdown(); }
+  void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), ChannelArguments());
-    stub_.reset(grpc::cpp::test::util::TestService::NewStub(channel));
+    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+        server_address_.str(), InsecureCredentials(), ChannelArguments());
+    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
@@ -165,6 +171,7 @@ class End2endTest : public ::testing::Test {
   std::ostringstream server_address_;
   TestServiceImpl service_;
   TestServiceImplDupPkg dup_pkg_service_;
+  ThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
@@ -286,15 +293,13 @@ TEST_F(End2endTest, RequestStreamOneRequest) {
   EchoResponse response;
   ClientContext context;
 
-  ClientWriter<EchoRequest>* stream = stub_->RequestStream(&context, &response);
+  auto stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   stream->WritesDone();
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 TEST_F(End2endTest, RequestStreamTwoRequests) {
@@ -303,16 +308,14 @@ TEST_F(End2endTest, RequestStreamTwoRequests) {
   EchoResponse response;
   ClientContext context;
 
-  ClientWriter<EchoRequest>* stream = stub_->RequestStream(&context, &response);
+  auto stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   EXPECT_TRUE(stream->Write(request));
   EXPECT_TRUE(stream->Write(request));
   stream->WritesDone();
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_EQ(response.message(), "hellohello");
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 TEST_F(End2endTest, ResponseStream) {
@@ -322,8 +325,7 @@ TEST_F(End2endTest, ResponseStream) {
   ClientContext context;
   request.set_message("hello");
 
-  ClientReader<EchoResponse>* stream =
-      stub_->ResponseStream(&context, &request);
+  auto stream = stub_->ResponseStream(&context, request);
   EXPECT_TRUE(stream->Read(&response));
   EXPECT_EQ(response.message(), request.message() + "0");
   EXPECT_TRUE(stream->Read(&response));
@@ -332,10 +334,8 @@ TEST_F(End2endTest, ResponseStream) {
   EXPECT_EQ(response.message(), request.message() + "2");
   EXPECT_FALSE(stream->Read(&response));
 
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 TEST_F(End2endTest, BidiStream) {
@@ -345,8 +345,7 @@ TEST_F(End2endTest, BidiStream) {
   ClientContext context;
   grpc::string msg("hello");
 
-  ClientReaderWriter<EchoRequest, EchoResponse>* stream =
-      stub_->BidiStream(&context);
+  auto stream = stub_->BidiStream(&context);
 
   request.set_message(msg + "0");
   EXPECT_TRUE(stream->Write(request));
@@ -366,17 +365,15 @@ TEST_F(End2endTest, BidiStream) {
   stream->WritesDone();
   EXPECT_FALSE(stream->Read(&response));
 
-  Status s = stream->Wait();
+  Status s = stream->Finish();
   EXPECT_TRUE(s.IsOk());
-
-  delete stream;
 }
 
 // Talk to the two services with the same name but different package names.
 // The two stubs are created on the same channel.
 TEST_F(End2endTest, DiffPackageServices) {
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), ChannelArguments());
+  std::shared_ptr<ChannelInterface> channel = CreateChannel(
+      server_address_.str(), InsecureCredentials(), ChannelArguments());
 
   EchoRequest request;
   EchoResponse response;
@@ -401,8 +398,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
   std::unique_ptr<Credentials> bad_creds =
-      CredentialsFactory::ServiceAccountCredentials("", "",
-                                                    std::chrono::seconds(1));
+      ServiceAccountCredentials("", "", std::chrono::seconds(1));
   EXPECT_EQ(nullptr, bad_creds.get());
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
@@ -420,14 +416,11 @@ TEST_F(End2endTest, BadCredentials) {
   EXPECT_EQ("Rpc sent on a lame channel.", s.details());
 
   ClientContext context2;
-  ClientReaderWriter<EchoRequest, EchoResponse>* stream =
-      stub->BidiStream(&context2);
-  s = stream->Wait();
+  auto stream = stub->BidiStream(&context2);
+  s = stream->Finish();
   EXPECT_FALSE(s.IsOk());
   EXPECT_EQ(StatusCode::UNKNOWN, s.code());
   EXPECT_EQ("Rpc sent on a lame channel.", s.details());
-
-  delete stream;
 }
 
 }  // namespace testing
@@ -439,5 +432,6 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
   grpc_shutdown();
+  google::protobuf::ShutdownProtobufLibrary();
   return result;
 }

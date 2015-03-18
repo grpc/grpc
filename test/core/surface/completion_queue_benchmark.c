@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,23 +53,23 @@ static void producer_thread(void *arg) {
   test_thread_options *opt = arg;
   int i;
 
-  gpr_event_set(&opt->on_started, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_started, (void *)(gpr_intptr) 1);
   GPR_ASSERT(gpr_event_wait(opt->start, gpr_inf_future));
 
   for (i = 0; i < opt->iterations; i++) {
     grpc_cq_begin_op(opt->cc, NULL, GRPC_WRITE_ACCEPTED);
-    grpc_cq_end_write_accepted(opt->cc, (void *)(gpr_intptr)1, NULL, NULL, NULL,
-                               GRPC_OP_OK);
+    grpc_cq_end_write_accepted(opt->cc, (void *)(gpr_intptr) 1, NULL, NULL,
+                               NULL, GRPC_OP_OK);
   }
 
-  gpr_event_set(&opt->on_finished, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_finished, (void *)(gpr_intptr) 1);
 }
 
 static void consumer_thread(void *arg) {
   test_thread_options *opt = arg;
   grpc_event *ev;
 
-  gpr_event_set(&opt->on_started, (void *)(gpr_intptr)1);
+  gpr_event_set(&opt->on_started, (void *)(gpr_intptr) 1);
   GPR_ASSERT(gpr_event_wait(opt->start, gpr_inf_future));
 
   for (;;) {
@@ -78,7 +78,7 @@ static void consumer_thread(void *arg) {
       case GRPC_WRITE_ACCEPTED:
         break;
       case GRPC_QUEUE_SHUTDOWN:
-        gpr_event_set(&opt->on_finished, (void *)(gpr_intptr)1);
+        gpr_event_set(&opt->on_finished, (void *)(gpr_intptr) 1);
         return;
       default:
         gpr_log(GPR_ERROR, "Invalid event received: %d", ev->type);
@@ -112,7 +112,7 @@ double ops_per_second(int consumers, int producers, int iterations) {
 
   /* start the benchmark */
   t_start = gpr_now();
-  gpr_event_set(&start, (void *)(gpr_intptr)1);
+  gpr_event_set(&start, (void *)(gpr_intptr) 1);
 
   /* wait for producers to finish */
   for (i = 0; i < producers; i++) {

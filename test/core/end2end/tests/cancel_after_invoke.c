@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
 }
 
 static gpr_timespec n_seconds_time(int n) {
-  return gpr_time_add(gpr_now(), gpr_time_from_micros(GPR_US_PER_SEC * n));
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
 }
 
 static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
@@ -105,24 +105,73 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel after invoke, no payload */
 static void test_cancel_after_invoke(grpc_end2end_test_config config,
-                                     cancellation_mode mode) {
+                                     cancellation_mode mode, int test_ops) {
+  grpc_op ops[6];
+  grpc_op *op;
   grpc_call *c;
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  char *details = NULL;
+  size_t details_capacity = 0;
+  grpc_byte_buffer *response_payload_recv = NULL;
+  gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
+  grpc_byte_buffer *request_payload =
+      grpc_byte_buffer_create(&request_payload_slice, 1);
 
-  c = grpc_channel_create_call(f.client, "/foo", "test.google.com", deadline);
+  c = grpc_channel_create_call(f.client, f.client_cq, "/foo",
+                               "foo.test.google.fr", deadline);
   GPR_ASSERT(c);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_invoke(c, f.client_cq, tag(2), tag(3), 0));
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  op = ops;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+  op++;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message = request_payload;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
+  op++;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message = &response_payload_recv;
+  op++;
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, test_ops, tag(1)));
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c));
 
-  cq_expect_client_metadata_read(v_client, tag(2), NULL);
-  cq_expect_finished_with_status(v_client, tag(3), mode.expect_status,
-                                 mode.expect_details, NULL);
+  cq_expect_completion(v_client, tag(1), GRPC_OP_OK);
   cq_verify(v_client);
+
+  GPR_ASSERT(status == mode.expect_status);
+  GPR_ASSERT(0 == strcmp(details, mode.expect_details));
+
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+
+  grpc_byte_buffer_destroy(request_payload);
+  grpc_byte_buffer_destroy(response_payload_recv);
+  gpr_free(details);
 
   grpc_call_destroy(c);
 
@@ -132,9 +181,11 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  unsigned i;
+  unsigned i, j;
 
-  for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
-    test_cancel_after_invoke(config, cancellation_modes[i]);
+  for (j = 2; j < 6; j++) {
+    for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
+      test_cancel_after_invoke(config, cancellation_modes[i], j);
+    }
   }
 }

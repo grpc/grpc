@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,6 +71,7 @@ struct grpc_completion_queue {
   grpc_pollset pollset;
   /* 0 initially, 1 once we've begun shutting down */
   int shutdown;
+  int shutdown_called;
   /* Head of a linked list of queued events (prev points to the last element) */
   event *queue;
   /* Fixed size chained hash table of events for pluck() */
@@ -107,7 +108,6 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
                          grpc_event_finish_func on_finish, void *user_data) {
   event *ev = gpr_malloc(sizeof(event));
   gpr_uintptr bucket = ((gpr_uintptr)tag) % NUM_TAG_BUCKETS;
-  GPR_ASSERT(!cc->shutdown);
   ev->base.type = type;
   ev->base.tag = tag;
   ev->base.call = call;
@@ -150,6 +150,7 @@ static void end_op_locked(grpc_completion_queue *cc,
 #endif
   if (gpr_unref(&cc->refs)) {
     GPR_ASSERT(!cc->shutdown);
+    GPR_ASSERT(cc->shutdown_called);
     cc->shutdown = 1;
     gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
   }
@@ -173,18 +174,6 @@ void grpc_cq_end_read(grpc_completion_queue *cc, void *tag, grpc_call *call,
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 
-void grpc_cq_end_invoke_accepted(grpc_completion_queue *cc, void *tag,
-                                 grpc_call *call,
-                                 grpc_event_finish_func on_finish,
-                                 void *user_data, grpc_op_error error) {
-  event *ev;
-  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
-  ev = add_locked(cc, GRPC_INVOKE_ACCEPTED, tag, call, on_finish, user_data);
-  ev->base.data.invoke_accepted = error;
-  end_op_locked(cc, GRPC_INVOKE_ACCEPTED);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-}
-
 void grpc_cq_end_write_accepted(grpc_completion_queue *cc, void *tag,
                                 grpc_call *call,
                                 grpc_event_finish_func on_finish,
@@ -194,6 +183,28 @@ void grpc_cq_end_write_accepted(grpc_completion_queue *cc, void *tag,
   ev = add_locked(cc, GRPC_WRITE_ACCEPTED, tag, call, on_finish, user_data);
   ev->base.data.write_accepted = error;
   end_op_locked(cc, GRPC_WRITE_ACCEPTED);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+}
+
+void grpc_cq_end_op_complete(grpc_completion_queue *cc, void *tag,
+                             grpc_call *call, grpc_event_finish_func on_finish,
+                             void *user_data, grpc_op_error error) {
+  event *ev;
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  ev = add_locked(cc, GRPC_OP_COMPLETE, tag, call, on_finish, user_data);
+  ev->base.data.write_accepted = error;
+  end_op_locked(cc, GRPC_OP_COMPLETE);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+}
+
+void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, grpc_call *call,
+                    grpc_event_finish_func on_finish, void *user_data,
+                    grpc_op_error error) {
+  event *ev;
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  ev = add_locked(cc, GRPC_OP_COMPLETE, tag, call, on_finish, user_data);
+  ev->base.data.write_accepted = error;
+  end_op_locked(cc, GRPC_OP_COMPLETE);
   gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
 }
 
@@ -370,6 +381,10 @@ grpc_event *grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
 /* Shutdown simply drops a ref that we reserved at creation time; if we drop
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  cc->shutdown_called = 1;
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+
   if (gpr_unref(&cc->refs)) {
     gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
     GPR_ASSERT(!cc->shutdown);
@@ -379,17 +394,22 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   }
 }
 
-void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
-  GPR_ASSERT(cc->queue == NULL);
+static void on_pollset_destroy_done(void *arg) {
+  grpc_completion_queue *cc = arg;
   grpc_pollset_destroy(&cc->pollset);
   gpr_free(cc);
+}
+
+void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
+  GPR_ASSERT(cc->queue == NULL);
+  grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
 }
 
 void grpc_event_finish(grpc_event *base) {
   event *ev = (event *)base;
   ev->on_finish(ev->on_finish_user_data, GRPC_OP_OK);
   if (ev->base.call) {
-    grpc_call_internal_unref(ev->base.call);
+    grpc_call_internal_unref(ev->base.call, 1);
   }
   gpr_free(ev);
 }

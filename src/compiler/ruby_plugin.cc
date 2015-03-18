@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,12 +50,12 @@
 class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
  public:
   RubyGrpcGenerator() {}
-  ~RubyGrpcGenerator() override {}
+  ~RubyGrpcGenerator() {}
 
   bool Generate(const google::protobuf::FileDescriptor *file,
                 const std::string &parameter,
                 google::protobuf::compiler::GeneratorContext *context,
-                std::string *error) const override {
+                std::string *error) const {
     std::string code = grpc_ruby_generator::GetServices(file);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services

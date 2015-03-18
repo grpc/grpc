@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,22 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_
-#define __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
+#define GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
 
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 /* iomgr internal api for dealing with alarms */
+
+/* Check for alarms to be run, and run them.
+   Return non zero if alarm callbacks were executed.
+   Drops drop_mu if it is non-null before executing callbacks.
+   If next is non-null, TRY to update *next with the next running alarm
+   IF that alarm occurs before *next current value.
+   *next is never guaranteed to be updated on any given execution; however,
+   with high probability at least one thread in the system will see an update
+   at any time slice. */
 
 int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next);
 
@@ -50,4 +59,4 @@ gpr_timespec grpc_alarm_list_next_timeout(void);
 
 void grpc_kick_poller(void);
 
-#endif /* __GRPC_INTERNAL_IOMGR_ALARM_INTERNAL_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H */

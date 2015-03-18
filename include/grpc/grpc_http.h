@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_GRPC_HTTP_H__
-#define __GRPC_GRPC_HTTP_H__
+#ifndef GRPC_GRPC_HTTP_H
+#define GRPC_GRPC_HTTP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,4 +64,4 @@ typedef struct {
 }
 #endif
 
-#endif /* __GRPC_GRPC_HTTP_H__ */
+#endif  /* GRPC_GRPC_HTTP_H */

@@ -1,0 +1,2 @@
+<%namespace file="vcxproj_defs.include" import="gen_project"/>\
+${gen_project('grpc', libs, targets, configuration_type = 'DynamicLibrary', project_guid = '{F2EE8FDB-F1E0-43A0-A297-6F255BB52AAA}', additional_props = ['ssl', 'winsock'], depends_on_zlib = True)}

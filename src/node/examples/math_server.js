@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,9 +31,8 @@
  *
  */
 
-var _ = require('underscore');
-var ProtoBuf = require('protobufjs');
-var fs = require('fs');
+'use strict';
+
 var util = require('util');
 
 var Transform = require('stream').Transform;
@@ -128,7 +127,8 @@ var server = new Server({
 });
 
 if (require.main === module) {
-  server.bind('localhost:7070').listen();
+  server.bind('0.0.0.0:7070');
+  server.listen();
 }
 
 /**

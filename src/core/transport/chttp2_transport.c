@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,8 +63,16 @@
 #define CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 #define CLIENT_CONNECT_STRLEN 24
 
+int grpc_http_trace = 0;
+
 typedef struct transport transport;
 typedef struct stream stream;
+
+#define IF_TRACING(stmt)                    \
+  if (!(grpc_http_trace))                   \
+    ;                                       \
+  else                                      \
+  stmt
 
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
@@ -190,6 +198,8 @@ struct transport {
   gpr_uint8 reading;
   gpr_uint8 writing;
   gpr_uint8 calling_back;
+  gpr_uint8 destroying;
+  gpr_uint8 closed;
   error_state error_state;
 
   /* stream indexing */
@@ -299,7 +309,8 @@ static void push_setting(transport *t, grpc_chttp2_setting_id id,
                          gpr_uint32 value);
 
 static int prepare_callbacks(transport *t);
-static void run_callbacks(transport *t);
+static void run_callbacks(transport *t, const grpc_transport_callbacks *cb);
+static void call_cb_closed(transport *t, const grpc_transport_callbacks *cb);
 
 static int prepare_write(transport *t);
 static void perform_write(transport *t, grpc_endpoint *ep);
@@ -328,14 +339,15 @@ static void maybe_start_some_streams(transport *t);
 
 static void become_skip_parser(transport *t);
 
+static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
+                      grpc_endpoint_cb_status error);
+
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
 
-static void unref_transport(transport *t) {
+static void destruct_transport(transport *t) {
   size_t i;
-
-  if (!gpr_unref(&t->refs)) return;
 
   gpr_mu_lock(&t->mu);
 
@@ -360,6 +372,7 @@ static void unref_transport(transport *t) {
 
   gpr_mu_unlock(&t->mu);
   gpr_mu_destroy(&t->mu);
+  gpr_cv_destroy(&t->cv);
 
   /* callback remaining pings: they're not allowed to call into the transpot,
      and maybe they hold resources that need to be freed */
@@ -375,15 +388,22 @@ static void unref_transport(transport *t) {
 
   grpc_sopb_destroy(&t->nuke_later_sopb);
 
+  grpc_mdctx_unref(t->metadata_context);
+
   gpr_free(t);
+}
+
+static void unref_transport(transport *t) {
+  if (!gpr_unref(&t->refs)) return;
+  destruct_transport(t);
 }
 
 static void ref_transport(transport *t) { gpr_ref(&t->refs); }
 
 static void init_transport(transport *t, grpc_transport_setup_callback setup,
                            void *arg, const grpc_channel_args *channel_args,
-                           grpc_endpoint *ep, grpc_mdctx *mdctx,
-                           int is_client) {
+                           grpc_endpoint *ep, gpr_slice *slices, size_t nslices,
+                           grpc_mdctx *mdctx, int is_client) {
   size_t i;
   int j;
   grpc_transport_setup_result sr;
@@ -396,6 +416,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   gpr_ref_init(&t->refs, 2);
   gpr_mu_init(&t->mu);
   gpr_cv_init(&t->cv);
+  grpc_mdctx_ref(mdctx);
   t->metadata_context = mdctx;
   t->str_grpc_timeout =
       grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
@@ -404,6 +425,8 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   t->error_state = ERROR_STATE_NONE;
   t->next_stream_id = is_client ? 1 : 2;
   t->last_incoming_stream_id = 0;
+  t->destroying = 0;
+  t->closed = 0;
   t->is_client = is_client;
   t->outgoing_window = DEFAULT_WINDOW;
   t->incoming_window = DEFAULT_WINDOW;
@@ -422,6 +445,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   gpr_slice_buffer_init(&t->outbuf);
   gpr_slice_buffer_init(&t->qbuf);
   grpc_sopb_init(&t->nuke_later_sopb);
+  grpc_chttp2_hpack_parser_init(&t->hpack_parser, t->metadata_context);
   if (is_client) {
     gpr_slice_buffer_add(&t->qbuf,
                          gpr_slice_from_copied_string(CLIENT_CONNECT_STRING));
@@ -481,22 +505,42 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   lock(t);
   t->cb = sr.callbacks;
   t->cb_user_data = sr.user_data;
-  grpc_chttp2_hpack_parser_init(&t->hpack_parser, t->metadata_context);
   t->calling_back = 0;
-  gpr_cv_broadcast(&t->cv);
+  if (t->destroying) gpr_cv_signal(&t->cv);
   unlock(t);
+
+  ref_transport(t);
+  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
+
   unref_transport(t);
 }
 
 static void destroy_transport(grpc_transport *gt) {
   transport *t = (transport *)gt;
 
-  gpr_mu_lock(&t->mu);
-  while (t->calling_back) {
+  lock(t);
+  t->destroying = 1;
+  /* Wait for pending stuff to finish.
+     We need to be not calling back to ensure that closed() gets a chance to
+     trigger if needed during unlock() before we die.
+     We need to be not writing as cancellation finalization may produce some
+     callbacks that NEED to be made to close out some streams when t->writing
+     becomes 0. */
+  while (t->calling_back || t->writing) {
     gpr_cv_wait(&t->cv, &t->mu, gpr_inf_future);
   }
-  t->cb = NULL;
-  gpr_mu_unlock(&t->mu);
+  drop_connection(t);
+  unlock(t);
+
+  /* The drop_connection() above puts the transport into an error state, and
+     the follow-up unlock should then (as part of the cleanup work it does)
+     ensure that cb is NULL, and therefore not call back anything further.
+     This check validates this very subtle behavior.
+     It's shutdown path, so I don't believe an extra lock pair is going to be
+     problematic for performance. */
+  lock(t);
+  GPR_ASSERT(!t->cb);
+  unlock(t);
 
   unref_transport(t);
 }
@@ -504,6 +548,8 @@ static void destroy_transport(grpc_transport *gt) {
 static void close_transport(grpc_transport *gt) {
   transport *t = (transport *)gt;
   gpr_mu_lock(&t->mu);
+  GPR_ASSERT(!t->closed);
+  t->closed = 1;
   if (t->ep) {
     grpc_endpoint_shutdown(t->ep);
   }
@@ -531,7 +577,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     lock(t);
     s->id = 0;
   } else {
-    s->id = (gpr_uint32)(gpr_uintptr)server_data;
+    s->id = (gpr_uint32)(gpr_uintptr) server_data;
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
@@ -573,13 +619,6 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
 
   gpr_mu_lock(&t->mu);
 
-  /* await pending callbacks
-     TODO(ctiller): this could be optimized to check if this stream is getting
-     callbacks */
-  while (t->calling_back) {
-    gpr_cv_wait(&t->cv, &t->mu, gpr_inf_future);
-  }
-
   /* stop parsing if we're currently parsing this stream */
   if (t->deframe_state == DTS_FRAME && t->incoming_stream_id == s->id &&
       s->id != 0) {
@@ -591,7 +630,6 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   }
   remove_from_stream_map(t, s);
 
-  gpr_cv_broadcast(&t->cv);
   gpr_mu_unlock(&t->mu);
 
   grpc_sopb_destroy(&s->outgoing_sopb);
@@ -660,6 +698,7 @@ static void stream_list_add_tail(transport *t, stream *s, stream_list_id id) {
 }
 
 static void stream_list_join(transport *t, stream *s, stream_list_id id) {
+  if (id == PENDING_CALLBACKS) GPR_ASSERT(t->cb != NULL || t->error_state == ERROR_STATE_NONE);
   if (s->included[id]) {
     return;
   }
@@ -692,10 +731,12 @@ static void unlock(transport *t) {
   int i;
   pending_goaway *goaways = NULL;
   grpc_endpoint *ep = t->ep;
-  grpc_stream_op_buffer nuke_now = t->nuke_later_sopb;
+  grpc_stream_op_buffer nuke_now;
+  const grpc_transport_callbacks *cb = t->cb;
 
-  if (nuke_now.nops) {
-    memset(&t->nuke_later_sopb, 0, sizeof(t->nuke_later_sopb));
+  grpc_sopb_init(&nuke_now);
+  if (t->nuke_later_sopb.nops) {
+    grpc_sopb_swap(&nuke_now, &t->nuke_later_sopb);
   }
 
   /* see if we need to trigger a write - and if so, get the data ready */
@@ -711,14 +752,15 @@ static void unlock(transport *t) {
   }
 
   /* gather any callbacks that need to be made */
-  if (!t->calling_back && t->cb) {
+  if (!t->calling_back && cb) {
     perform_callbacks = prepare_callbacks(t);
     if (perform_callbacks) {
       t->calling_back = 1;
     }
-    if (t->error_state == ERROR_STATE_SEEN) {
+    if (t->error_state == ERROR_STATE_SEEN && !t->writing) {
       call_closed = 1;
       t->calling_back = 1;
+      t->cb = NULL;  /* no more callbacks */
       t->error_state = ERROR_STATE_NOTIFIED;
     }
     if (t->num_pending_goaways) {
@@ -740,16 +782,16 @@ static void unlock(transport *t) {
 
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
-    t->cb->goaway(t->cb_user_data, &t->base, goaways[i].status,
-                  goaways[i].debug);
+    cb->goaway(t->cb_user_data, &t->base, goaways[i].status,
+               goaways[i].debug);
   }
 
   if (perform_callbacks) {
-    run_callbacks(t);
+    run_callbacks(t, cb);
   }
 
   if (call_closed) {
-    t->cb->closed(t->cb_user_data, &t->base);
+    call_cb_closed(t, cb);
   }
 
   /* write some bytes if necessary */
@@ -761,14 +803,12 @@ static void unlock(transport *t) {
   if (perform_callbacks || call_closed || num_goaways) {
     lock(t);
     t->calling_back = 0;
-    gpr_cv_broadcast(&t->cv);
+    if (t->destroying) gpr_cv_signal(&t->cv);
     unlock(t);
     unref_transport(t);
   }
 
-  if (nuke_now.nops) {
-    grpc_sopb_destroy(&nuke_now);
-  }
+  grpc_sopb_destroy(&nuke_now);
 
   gpr_free(goaways);
 }
@@ -882,17 +922,19 @@ static void finish_write_common(transport *t, int success) {
   }
   while ((s = stream_list_remove_head(t, WRITTEN_CLOSED))) {
     s->sent_write_closed = 1;
-    stream_list_join(t, s, PENDING_CALLBACKS);
+    if (!s->cancelled) stream_list_join(t, s, PENDING_CALLBACKS);
   }
   t->outbuf.count = 0;
   t->outbuf.length = 0;
   /* leave the writing flag up on shutdown to prevent further writes in unlock()
      from starting */
   t->writing = 0;
+  if (t->destroying) {
+    gpr_cv_signal(&t->cv);
+  }
   if (!t->reading) {
     grpc_endpoint_destroy(t->ep);
     t->ep = NULL;
-    gpr_cv_broadcast(&t->cv);
     unref_transport(t); /* safe because we'll still have the ref for write */
   }
   unlock(t);
@@ -957,9 +999,10 @@ static void send_batch(grpc_transport *gt, grpc_stream *gs, grpc_stream_op *ops,
       stream_list_join(t, s, WRITABLE);
     }
   } else {
-    grpc_stream_ops_unref_owned_objects(ops, ops_count);
+    grpc_sopb_append(&t->nuke_later_sopb, ops, ops_count);
   }
-  if (is_last && s->outgoing_sopb.nops == 0 && s->read_closed) {
+  if (is_last && s->outgoing_sopb.nops == 0 && s->read_closed &&
+      !s->published_close) {
     stream_list_join(t, s, PENDING_CALLBACKS);
   }
 
@@ -1195,6 +1238,11 @@ static void on_header(void *tp, grpc_mdelem *md) {
   stream *s = t->incoming_stream;
 
   GPR_ASSERT(s);
+
+  IF_TRACING(gpr_log(GPR_INFO, "HTTP:%d:HDR: %s: %s", s->id,
+                     grpc_mdstr_as_c_string(md->key),
+                     grpc_mdstr_as_c_string(md->value)));
+
   stream_list_join(t, s, PENDING_CALLBACKS);
   if (md->key == t->str_grpc_timeout) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
@@ -1258,7 +1306,7 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
     t->incoming_stream = NULL;
     /* if stream is accepted, we set incoming_stream in init_stream */
     t->cb->accept_stream(t->cb_user_data, &t->base,
-                         (void *)(gpr_uintptr)t->incoming_stream_id);
+                         (void *)(gpr_uintptr) t->incoming_stream_id);
     s = t->incoming_stream;
     if (!s) {
       gpr_log(GPR_ERROR, "stream not accepted");
@@ -1523,8 +1571,8 @@ static int process_read(transport *t, gpr_slice slice) {
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   CLIENT_CONNECT_STRING[t->deframe_state],
-                  (int)(gpr_uint8)CLIENT_CONNECT_STRING[t->deframe_state], *cur,
-                  (int)*cur, t->deframe_state);
+                  (int)(gpr_uint8) CLIENT_CONNECT_STRING[t->deframe_state],
+                  *cur, (int)*cur, t->deframe_state);
           drop_connection(t);
           return 0;
         }
@@ -1607,7 +1655,15 @@ static int process_read(transport *t, gpr_slice slice) {
       if (!init_frame_parser(t)) {
         return 0;
       }
-      t->last_incoming_stream_id = t->incoming_stream_id;
+      /* t->last_incoming_stream_id is used as last-stream-id when
+         sending GOAWAY frame.
+         https://tools.ietf.org/html/draft-ietf-httpbis-http2-17#section-6.8
+         says that last-stream-id is peer-initiated stream ID.  So,
+         since we don't have server pushed streams, client should send
+         GOAWAY last-stream-id=0 in this case. */
+      if (!t->is_client) {
+        t->last_incoming_stream_id = t->incoming_stream_id;
+      }
       if (t->incoming_frame_size == 0) {
         if (!parse_frame_slice(t, gpr_empty_slice(), 1)) {
           return 0;
@@ -1624,7 +1680,7 @@ static int process_read(transport *t, gpr_slice slice) {
     /* fallthrough */
     case DTS_FRAME:
       GPR_ASSERT(cur < end);
-      if (end - cur == t->incoming_frame_size) {
+      if ((gpr_uint32)(end - cur) == t->incoming_frame_size) {
         if (!parse_frame_slice(
                 t, gpr_slice_sub_no_ref(slice, cur - beg, end - beg), 1)) {
           return 0;
@@ -1673,7 +1729,6 @@ static void recv_data(void *tp, gpr_slice *slices, size_t nslices,
       if (!t->writing && t->ep) {
         grpc_endpoint_destroy(t->ep);
         t->ep = NULL;
-        gpr_cv_broadcast(&t->cv);
         unref_transport(t); /* safe as we still have a ref for read */
       }
       unlock(t);
@@ -1709,13 +1764,10 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
 
 static int prepare_callbacks(transport *t) {
   stream *s;
-  grpc_stream_op_buffer temp_sopb;
   int n = 0;
   while ((s = stream_list_remove_head(t, PENDING_CALLBACKS))) {
     int execute = 1;
-    temp_sopb = s->parser.incoming_sopb;
-    s->parser.incoming_sopb = s->callback_sopb;
-    s->callback_sopb = temp_sopb;
+    grpc_sopb_swap(&s->parser.incoming_sopb, &s->callback_sopb);
 
     s->callback_state = compute_state(s->sent_write_closed, s->read_closed);
     if (s->callback_state == GRPC_STREAM_CLOSED) {
@@ -1734,14 +1786,18 @@ static int prepare_callbacks(transport *t) {
   return n;
 }
 
-static void run_callbacks(transport *t) {
+static void run_callbacks(transport *t, const grpc_transport_callbacks *cb) {
   stream *s;
   while ((s = stream_list_remove_head(t, EXECUTING_CALLBACKS))) {
     size_t nops = s->callback_sopb.nops;
     s->callback_sopb.nops = 0;
-    t->cb->recv_batch(t->cb_user_data, &t->base, (grpc_stream *)s,
-                      s->callback_sopb.ops, nops, s->callback_state);
+    cb->recv_batch(t->cb_user_data, &t->base, (grpc_stream *)s,
+                   s->callback_sopb.ops, nops, s->callback_state);
   }
+}
+
+static void call_cb_closed(transport *t, const grpc_transport_callbacks *cb) {
+  cb->closed(t->cb_user_data, &t->base);
 }
 
 static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
@@ -1758,9 +1814,9 @@ static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
  */
 
 static const grpc_transport_vtable vtable = {
-    sizeof(stream), init_stream, send_batch, set_allow_window_updates,
-    add_to_pollset, destroy_stream, abort_stream, goaway, close_transport,
-    send_ping, destroy_transport};
+    sizeof(stream),  init_stream,    send_batch,       set_allow_window_updates,
+    add_to_pollset,  destroy_stream, abort_stream,     goaway,
+    close_transport, send_ping,      destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,
@@ -1769,7 +1825,6 @@ void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   size_t nslices, grpc_mdctx *mdctx,
                                   int is_client) {
   transport *t = gpr_malloc(sizeof(transport));
-  init_transport(t, setup, arg, channel_args, ep, mdctx, is_client);
-  ref_transport(t);
-  recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
+  init_transport(t, setup, arg, channel_args, ep, slices, nslices, mdctx,
+                 is_client);
 }

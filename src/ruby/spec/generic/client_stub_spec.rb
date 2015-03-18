@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -116,7 +116,7 @@ describe 'ClientStub' do
       host = FAKE_HOST
       blk = proc do
         opts = {
-          GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.com',
+          GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr',
           a_channel_arg: 'an_arg',
           creds: GRPC::Core::Credentials.new(certs[0], nil, nil)
         }
@@ -434,7 +434,7 @@ describe 'ClientStub' do
       end
       expect(c.remote_read).to eq(expected_input)
       replys.each { |r| c.remote_send(r) }
-      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
+      c.send_status(status, status == @pass ? 'OK' : 'NOK')
     end
   end
 
@@ -444,7 +444,7 @@ describe 'ClientStub' do
       c = expect_server_to_be_invoked(mtx, cnd)
       expected_inputs.each { |i| expect(c.remote_read).to eq(i) }
       replys.each { |r| c.remote_send(r) }
-      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
+      c.send_status(status, status == @pass ? 'OK' : 'NOK')
     end
   end
 
@@ -460,7 +460,7 @@ describe 'ClientStub' do
           expect(c.remote_read).to eq(i)
         end
       end
-      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
+      c.send_status(status, status == @pass ? 'OK' : 'NOK')
     end
   end
 
@@ -473,7 +473,7 @@ describe 'ClientStub' do
         expect(c.metadata[k.to_s]).to eq(v)
       end
       c.remote_send(resp)
-      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
+      c.send_status(status, status == @pass ? 'OK' : 'NOK')
     end
   end
 
@@ -486,7 +486,7 @@ describe 'ClientStub' do
         expect(c.metadata[k.to_s]).to eq(v)
       end
       c.remote_send(resp)
-      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
+      c.send_status(status, status == @pass ? 'OK' : 'NOK')
     end
   end
 

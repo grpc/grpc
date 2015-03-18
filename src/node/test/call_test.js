@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+'use strict';
 
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
@@ -98,104 +100,80 @@ describe('call', function() {
       }, TypeError);
     });
   });
-  describe('addMetadata', function() {
-    it('should succeed with a map from strings to string arrays', function() {
+  describe('startBatch', function() {
+    it('should fail without an object and a function', function() {
       var call = new grpc.Call(channel, 'method', getDeadline(1));
-      assert.doesNotThrow(function() {
-        call.addMetadata({'key': ['value']});
+      assert.throws(function() {
+        call.startBatch();
       });
-      assert.doesNotThrow(function() {
-        call.addMetadata({'key1': ['value1'], 'key2': ['value2']});
+      assert.throws(function() {
+        call.startBatch({});
+      });
+      assert.throws(function() {
+        call.startBatch(null, function(){});
       });
     });
-    it('should succeed with a map from strings to buffer arrays', function() {
+    it('should succeed with an empty object', function(done) {
       var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.doesNotThrow(function() {
-        call.addMetadata({'key': [new Buffer('value')]});
+        call.startBatch({}, function(err) {
+          assert.ifError(err);
+          done();
+        });
       });
+    });
+  });
+  describe('startBatch with metadata', function() {
+    it('should succeed with a map of strings to string arrays', function(done) {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.doesNotThrow(function() {
-        call.addMetadata({'key1': [new Buffer('value1')],
-                          'key2': [new Buffer('value2')]});
+        var batch = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = {'key1': ['value1'],
+                                                    'key2': ['value2']};
+        call.startBatch(batch, function(err, resp) {
+          assert.ifError(err);
+          assert.deepEqual(resp, {'send metadata': true});
+          done();
+        });
+      });
+    });
+    it('should succeed with a map of strings to buffer arrays', function(done) {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      assert.doesNotThrow(function() {
+        var batch = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = {
+          'key1': [new Buffer('value1')],
+          'key2': [new Buffer('value2')]
+        };
+        call.startBatch(batch, function(err, resp) {
+          assert.ifError(err);
+          assert.deepEqual(resp, {'send metadata': true});
+          done();
+        });
       });
     });
     it('should fail with other parameter types', function() {
       var call = new grpc.Call(channel, 'method', getDeadline(1));
       assert.throws(function() {
-        call.addMetadata();
+        var batch = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = undefined;
+        call.startBatch(batch, function(){});
       });
       assert.throws(function() {
-        call.addMetadata(null);
+        var batch = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = null;
+        call.startBatch(batch, function(){});
       }, TypeError);
       assert.throws(function() {
-        call.addMetadata('value');
+        var batch = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = 'value';
+        call.startBatch(batch, function(){});
       }, TypeError);
       assert.throws(function() {
-        call.addMetadata(5);
+        var batch = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] = 5;
+        call.startBatch(batch, function(){});
       }, TypeError);
-    });
-    it('should fail if invoke was already called', function(done) {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
-      call.invoke(function() {},
-                  function() {done();},
-                  0);
-      assert.throws(function() {
-        call.addMetadata({'key': ['value']});
-      }, function(err) {
-        return err.code === grpc.callError.ALREADY_INVOKED;
-      });
-      // Cancel to speed up the test
-      call.cancel();
-    });
-  });
-  describe('invoke', function() {
-    it('should fail with fewer than 3 arguments', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
-      assert.throws(function() {
-        call.invoke();
-      }, TypeError);
-      assert.throws(function() {
-        call.invoke(function() {});
-      }, TypeError);
-      assert.throws(function() {
-        call.invoke(function() {},
-                    function() {});
-      }, TypeError);
-    });
-    it('should work with 2 args and an int', function(done) {
-      assert.doesNotThrow(function() {
-        var call = new grpc.Call(channel, 'method', getDeadline(1));
-        call.invoke(function() {},
-                    function() {done();},
-                    0);
-        // Cancel to speed up the test
-        call.cancel();
-      });
-    });
-    it('should reject incorrectly typed arguments', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
-      assert.throws(function() {
-        call.invoke(0, 0, 0);
-      }, TypeError);
-      assert.throws(function() {
-        call.invoke(function() {},
-                    function() {}, 'test');
-      });
-    });
-  });
-  describe('serverAccept', function() {
-    it('should fail with fewer than 1 argument1', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
-      assert.throws(function() {
-        call.serverAccept();
-      }, TypeError);
-    });
-    it('should return an error when called on a client Call', function() {
-      var call = new grpc.Call(channel, 'method', getDeadline(1));
-      assert.throws(function() {
-        call.serverAccept(function() {});
-      }, function(err) {
-        return err.code === grpc.callError.NOT_ON_CLIENT;
-      });
     });
   });
   describe('cancel', function() {

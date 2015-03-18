@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -118,10 +118,11 @@ describe Server do
     end
 
     describe 'for secure servers' do
+      let(:cert) { create_test_cert }
       it 'runs without failing' do
         blk = proc do
           s = Server.new(@cq, nil)
-          s.add_http2_port('localhost:0', true)
+          s.add_http2_port('localhost:0', cert)
           s.close
         end
         expect(&blk).to_not raise_error
@@ -130,7 +131,7 @@ describe Server do
       it 'fails if the server is closed' do
         s = Server.new(@cq, nil)
         s.close
-        blk = proc { s.add_http2_port('localhost:0', true) }
+        blk = proc { s.add_http2_port('localhost:0', cert) }
         expect(&blk).to raise_error(RuntimeError)
       end
     end
@@ -138,7 +139,7 @@ describe Server do
 
   shared_examples '#new' do
     it 'takes a completion queue with nil channel args' do
-      expect { Server.new(@cq, nil, create_test_cert) }.to_not raise_error
+      expect { Server.new(@cq, nil) }.to_not raise_error
     end
 
     it 'does not take a hash with bad keys as channel args' do
@@ -190,14 +191,6 @@ describe Server do
   describe '#new with an insecure channel' do
     def construct_with_args(a)
       proc { Server.new(@cq, a) }
-    end
-
-    it_behaves_like '#new'
-  end
-
-  describe '#new with a secure channel' do
-    def construct_with_args(a)
-      proc { Server.new(@cq, a, create_test_cert) }
     end
 
     it_behaves_like '#new'

@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_KICK_POSIX_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_KICK_POSIX_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_POSIX_H
 
 #include "src/core/iomgr/wakeup_fd_posix.h"
 #include <grpc/support/sync.h>
@@ -48,4 +48,4 @@ typedef struct grpc_pollset_kick_state {
   struct grpc_kick_fd_info *fd_info;
 } grpc_pollset_kick_state;
 
-#endif  /* __GRPC_INTERNALIOMGR_POLLSET_KICK_POSIX_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_KICK_POSIX_H */

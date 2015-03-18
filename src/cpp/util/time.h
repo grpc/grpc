@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_INTERNAL_UTIL_TIME_H__
-#define __GRPCPP_INTERNAL_UTIL_TIME_H__
+#ifndef GRPC_INTERNAL_CPP_UTIL_TIME_H
+#define GRPC_INTERNAL_CPP_UTIL_TIME_H
 
 #include <chrono>
 
@@ -48,4 +48,4 @@ std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_INTERNAL_UTIL_TIME_H__
+#endif  // GRPC_INTERNAL_CPP_UTIL_TIME_H

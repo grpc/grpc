@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,14 +31,8 @@
  *
  */
 
-#ifndef __GRPCPP_IMPL_RPC_METHOD_H__
-#define __GRPCPP_IMPL_RPC_METHOD_H__
-
-namespace google {
-namespace protobuf {
-class Message;
-}
-}
+#ifndef GRPCXX_IMPL_RPC_METHOD_H
+#define GRPCXX_IMPL_RPC_METHOD_H
 
 namespace grpc {
 
@@ -66,4 +60,4 @@ class RpcMethod {
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_IMPL_RPC_METHOD_H__
+#endif  // GRPCXX_IMPL_RPC_METHOD_H

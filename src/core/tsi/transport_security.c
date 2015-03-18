@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+/* --- Tracing. --- */
+
+int tsi_tracing_enabled = 0;
 
 /* --- Utils. --- */
 
@@ -204,7 +208,7 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* self,
       return property;
     }
     if (name != NULL && property->name != NULL &&
-        !strcmp(property->name, name)) {
+        strcmp(property->name, name) == 0) {
       return property;
     }
   }

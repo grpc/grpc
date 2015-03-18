@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_FD_POSIX_H_
-#define __GRPC_INTERNAL_IOMGR_FD_POSIX_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_FD_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_FD_POSIX_H
 
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/pollset.h"
@@ -43,11 +43,18 @@
 typedef struct {
   grpc_iomgr_cb_func cb;
   void *cb_arg;
-  int success;
-  gpr_atm state;
-} grpc_fd_state;
+} grpc_iomgr_closure;
 
-typedef struct grpc_fd {
+typedef struct grpc_fd grpc_fd;
+
+typedef struct grpc_fd_watcher {
+  struct grpc_fd_watcher *next;
+  struct grpc_fd_watcher *prev;
+  grpc_pollset *pollset;
+  grpc_fd *fd;
+} grpc_fd_watcher;
+
+struct grpc_fd {
   int fd;
   /* refst format:
        bit0:   1=active/0=orphaned
@@ -60,17 +67,15 @@ typedef struct grpc_fd {
   gpr_atm shutdown;
 
   gpr_mu watcher_mu;
-  grpc_pollset **watchers;
-  size_t watcher_count;
-  size_t watcher_capacity;
+  grpc_fd_watcher watcher_root;
 
-  grpc_fd_state readst;
-  grpc_fd_state writest;
+  gpr_atm readst;
+  gpr_atm writest;
 
   grpc_iomgr_cb_func on_done;
   void *on_done_user_data;
   struct grpc_fd *freelist_next;
-} grpc_fd;
+};
 
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
@@ -95,9 +100,10 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_cb_func on_done, void *user_data);
    Polling strategies that do not need to alter their behavior depending on the
    fd's current interest (such as epoll) do not need to call this function. */
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              gpr_uint32 read_mask, gpr_uint32 write_mask);
+                              gpr_uint32 read_mask, gpr_uint32 write_mask,
+                              grpc_fd_watcher *rec);
 /* Complete polling previously started with grpc_fd_begin_poll */
-void grpc_fd_end_poll(grpc_fd *fd, grpc_pollset *pollset);
+void grpc_fd_end_poll(grpc_fd_watcher *rec);
 
 /* Return 1 if this fd is orphaned, 0 otherwise */
 int grpc_fd_is_orphaned(grpc_fd *fd);
@@ -118,12 +124,10 @@ void grpc_fd_shutdown(grpc_fd *fd);
    underlying platform. This means that users must drain fd in read_cb before
    calling notify_on_read again. Users are also expected to handle spurious
    events, i.e read_cb is called while nothing can be readable from fd  */
-void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_cb_func read_cb,
-                            void *read_cb_arg);
+void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure);
 
 /* Exactly the same semantics as above, except based on writable events.  */
-void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_cb_func write_cb,
-                             void *write_cb_arg);
+void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_closure *closure);
 
 /* Notification from the poller to an fd that it has become readable or
    writable.
@@ -139,4 +143,4 @@ void grpc_fd_unref(grpc_fd *fd);
 void grpc_fd_global_init(void);
 void grpc_fd_global_shutdown(void);
 
-#endif /* __GRPC_INTERNAL_IOMGR_FD_POSIX_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_FD_POSIX_H */

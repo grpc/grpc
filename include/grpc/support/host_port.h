@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_HOST_PORT_H__
-#define __GRPC_SUPPORT_HOST_PORT_H__
+#ifndef GRPC_SUPPORT_HOST_PORT_H
+#define GRPC_SUPPORT_HOST_PORT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,8 +50,13 @@ extern "C" {
    In the unlikely event of an error, returns -1 and sets *out to NULL. */
 int gpr_join_host_port(char **out, const char *host, int port);
 
+/* Given a name in the form "host:port" or "[ho:st]:port", split into hostname
+   and port number, into newly allocated strings, which must later be
+   destroyed using gpr_free(). */
+void gpr_split_host_port(const char *name, char **host, char **port);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_HOST_PORT_H__ */
+#endif  /* GRPC_SUPPORT_HOST_PORT_H */

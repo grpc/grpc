@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -164,7 +164,21 @@ void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
                           GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   /* we can't add elements bigger than the max table size */
-  assert(elem_bytes <= tbl->max_bytes);
+  if (elem_bytes > tbl->max_bytes) {
+    /* HPACK draft 10 section 4.4 states:
+     * If the size of the new entry is less than or equal to the maximum
+     * size, that entry is added to the table.  It is not an error to
+     * attempt to add an entry that is larger than the maximum size; an
+     * attempt to add an entry larger than the entire table causes
+     * the table
+     * to be emptied of all existing entries, and results in an
+     * empty table.
+     */
+    while (tbl->num_ents) {
+      evict1(tbl);
+    }
+    return;
+  }
 
   /* evict entries to ensure no overflow */
   while (elem_bytes > tbl->max_bytes - tbl->mem_used) {

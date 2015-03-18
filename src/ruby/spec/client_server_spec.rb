@@ -1,4 +1,4 @@
-# Copyright 2014, Google Inc.
+# Copyright 2015, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -95,7 +95,7 @@ shared_context 'setup: tags' do
   end
 
   def new_client_call
-    @ch.create_call('/method', 'localhost', deadline)
+    @ch.create_call('/method', 'foo.test.google.fr', deadline)
   end
 end
 
@@ -292,10 +292,10 @@ shared_examples 'GRPC metadata delivery works OK' do
       # TODO: update this with the bug number to be resolved
       ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ,
                                 @client_metadata_tag)
-      expect(ev.result).to eq(':status' => '200')
+      expect(ev.result).to eq({})
     end
 
-    it 'sends all the pairs and status:200 when keys and values are valid' do
+    it 'sends all the pairs when keys and values are valid' do
       @valid_metadata.each do |md|
         call = new_client_call
         call.invoke(@client_queue, @client_metadata_tag, @client_finished_tag)
@@ -314,7 +314,6 @@ shared_examples 'GRPC metadata delivery works OK' do
         ev = expect_next_event_on(@client_queue, CLIENT_METADATA_READ,
                                   @client_metadata_tag)
         replace_symbols = Hash[md.each_pair.collect { |x, y| [x.to_s, y] }]
-        replace_symbols[':status'] = '200'
         expect(ev.result).to eq(replace_symbols)
       end
     end
@@ -347,14 +346,14 @@ end
 describe 'the secure http client/server' do
   before(:example) do
     certs = load_test_certs
-    server_host = 'localhost:0'
+    server_host = '0.0.0.0:0'
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
-    @server = GRPC::Core::Server.new(@server_queue, nil, server_creds)
-    server_port = @server.add_http2_port(server_host, true)
+    @server = GRPC::Core::Server.new(@server_queue, nil)
+    server_port = @server.add_http2_port(server_host, server_creds)
     @server.start
-    args = { Channel::SSL_TARGET => 'foo.test.google.com' }
+    args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
     @ch = Channel.new("0.0.0.0:#{server_port}", args,
                       GRPC::Core::Credentials.new(certs[0], nil, nil))
   end

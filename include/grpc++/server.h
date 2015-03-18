@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,59 +31,80 @@
  *
  */
 
-#ifndef __GRPCPP_SERVER_H__
-#define __GRPCPP_SERVER_H__
+#ifndef GRPCXX_SERVER_H
+#define GRPCXX_SERVER_H
 
 #include <condition_variable>
-#include <map>
+#include <list>
 #include <memory>
 #include <mutex>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
+#include <grpc++/impl/call.h>
+#include <grpc++/impl/service_type.h>
 #include <grpc++/status.h>
 
 struct grpc_server;
 
-namespace google {
-namespace protobuf {
-class Message;
-}
-}
-
 namespace grpc {
-class AsyncServerContext;
+class AsynchronousService;
+class GenericServerContext;
+class AsyncGenericService;
 class RpcService;
 class RpcServiceMethod;
 class ServerCredentials;
 class ThreadPoolInterface;
 
 // Currently it only supports handling rpcs in a single thread.
-class Server {
+class Server GRPC_FINAL : private CallHook,
+                          private AsynchronousService::DispatchImpl {
  public:
   ~Server();
 
   // Shutdown the server, block until all rpc processing finishes.
   void Shutdown();
 
+  // Block waiting for all work to complete (the server must either
+  // be shutting down or some other thread must call Shutdown for this
+  // function to ever return)
+  void Wait();
+
  private:
+  friend class AsyncGenericService;
   friend class ServerBuilder;
 
+  class SyncRequest;
+  class AsyncRequest;
+
   // ServerBuilder use only
-  Server(ThreadPoolInterface* thread_pool, ServerCredentials* creds);
-  Server();
+  Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned);
+  Server() = delete;
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
-  void RegisterService(RpcService* service);
+  bool RegisterService(RpcService* service);
+  bool RegisterAsyncService(AsynchronousService* service);
+  void RegisterAsyncGenericService(AsyncGenericService* service);
   // Add a listening port. Can be called multiple times.
-  void AddPort(const grpc::string& addr);
+  int AddPort(const grpc::string& addr, ServerCredentials* creds);
   // Start the server.
-  void Start();
+  bool Start();
 
-  void AllowOneRpc();
   void HandleQueueClosed();
   void RunRpc();
   void ScheduleCallback();
+
+  void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;
+
+  // DispatchImpl
+  void RequestAsyncCall(void* registered_method, ServerContext* context,
+                        grpc::protobuf::Message* request,
+                        ServerAsyncStreamingInterface* stream,
+                        CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
+
+  void RequestAsyncGenericCall(GenericServerContext* context,
+                               ServerAsyncStreamingInterface* stream,
+                               CompletionQueue* cq, void* tag);
 
   // Completion queue.
   CompletionQueue cq_;
@@ -96,19 +117,16 @@ class Server {
   int num_running_cb_;
   std::condition_variable callback_cv_;
 
-  // Pointer to the c grpc server.
-  grpc_server* server_;
+  std::list<SyncRequest> sync_methods_;
 
-  // A map for all method information.
-  std::map<grpc::string, RpcServiceMethod*> method_map_;
+  // Pointer to the c grpc server.
+  grpc_server* const server_;
 
   ThreadPoolInterface* thread_pool_;
   // Whether the thread pool is created and owned by the server.
   bool thread_pool_owned_;
-  // Whether the server is created with credentials.
-  bool secure_;
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_SERVER_H__
+#endif  // GRPCXX_SERVER_H

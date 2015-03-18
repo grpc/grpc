@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,92 +31,64 @@
  *
  */
 
+'use strict';
+
 var assert = require('assert');
 var grpc = require('bindings')('grpc.node');
-var Server = require('../src/server');
 
-/**
- * This is used for testing functions with multiple asynchronous calls that
- * can happen in different orders. This should be passed the number of async
- * function invocations that can occur last, and each of those should call this
- * function's return value
- * @param {function()} done The function that should be called when a test is
- *     complete.
- * @param {number} count The number of calls to the resulting function if the
- *     test passes.
- * @return {function()} The function that should be called at the end of each
- *     sequence of asynchronous functions.
- */
-function multiDone(done, count) {
-  return function() {
-    count -= 1;
-    if (count <= 0) {
-      done();
-    }
-  };
-}
-
-/**
- * Responds to every request with the same data as a response
- * @param {Stream} stream
- */
-function echoHandler(stream) {
-  stream.pipe(stream);
-}
-
-describe('echo server', function() {
-  var server;
-  var channel;
-  before(function() {
-    server = new Server();
-    var port_num = server.bind('[::]:0');
-    server.register('echo', echoHandler);
-    server.start();
-
-    channel = new grpc.Channel('localhost:' + port_num);
+describe('server', function() {
+  describe('constructor', function() {
+    it('should work with no arguments', function() {
+      assert.doesNotThrow(function() {
+        new grpc.Server();
+      });
+    });
+    it('should work with an empty list argument', function() {
+      assert.doesNotThrow(function() {
+        new grpc.Server([]);
+      });
+    });
   });
-  after(function() {
-    server.shutdown();
+  describe('addHttp2Port', function() {
+    var server;
+    before(function() {
+      server = new grpc.Server();
+    });
+    it('should bind to an unused port', function() {
+      var port;
+      assert.doesNotThrow(function() {
+        port = server.addHttp2Port('0.0.0.0:0');
+      });
+      assert(port > 0);
+    });
   });
-  it('should echo inputs as responses', function(done) {
-    done = multiDone(done, 4);
-
-    var req_text = 'echo test string';
-    var status_text = 'OK';
-
-    var deadline = new Date();
-    deadline.setSeconds(deadline.getSeconds() + 3);
-    var call = new grpc.Call(channel,
-                             'echo',
-                             deadline);
-    call.invoke(function(event) {
-      assert.strictEqual(event.type,
-                         grpc.completionType.CLIENT_METADATA_READ);
-      done();
-    },function(event) {
-      assert.strictEqual(event.type, grpc.completionType.FINISHED);
-      var status = event.data;
-      assert.strictEqual(status.code, grpc.status.OK);
-      assert.strictEqual(status.details, status_text);
-      done();
-    }, 0);
-    call.startWrite(
-        new Buffer(req_text),
-        function(event) {
-          assert.strictEqual(event.type,
-                             grpc.completionType.WRITE_ACCEPTED);
-          assert.strictEqual(event.data, grpc.opError.OK);
-          call.writesDone(function(event) {
-            assert.strictEqual(event.type,
-                               grpc.completionType.FINISH_ACCEPTED);
-            assert.strictEqual(event.data, grpc.opError.OK);
-            done();
-          });
-        }, 0);
-    call.startRead(function(event) {
-      assert.strictEqual(event.type, grpc.completionType.READ);
-      assert.strictEqual(event.data.toString(), req_text);
-      done();
+  describe('addSecureHttp2Port', function() {
+    var server;
+    before(function() {
+      server = new grpc.Server();
+    });
+    it('should bind to an unused port with fake credentials', function() {
+      var port;
+      var creds = grpc.ServerCredentials.createFake();
+      assert.doesNotThrow(function() {
+        port = server.addSecureHttp2Port('0.0.0.0:0', creds);
+      });
+      assert(port > 0);
+    });
+  });
+  describe('listen', function() {
+    var server;
+    before(function() {
+      server = new grpc.Server();
+      server.addHttp2Port('0.0.0.0:0');
+    });
+    after(function() {
+      server.shutdown();
+    });
+    it('should listen without error', function() {
+      assert.doesNotThrow(function() {
+        server.start();
+      });
     });
   });
 });

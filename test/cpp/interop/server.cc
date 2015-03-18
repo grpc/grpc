@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,10 @@
 #include <sstream>
 #include <thread>
 
-#include <google/gflags.h>
+#include <signal.h>
+#include <unistd.h>
+
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -57,7 +60,6 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::ServerCredentials;
-using grpc::ServerCredentialsFactory;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
@@ -72,6 +74,15 @@ using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 using grpc::Status;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+static bool got_sigint = false;
 
 bool SetPayload(PayloadType type, int size, Payload* payload) {
   PayloadType response_type = type;
@@ -199,25 +210,27 @@ void RunServer() {
   SimpleResponse response;
 
   ServerBuilder builder;
-  builder.AddPort(server_address.str());
-  builder.RegisterService(service.service());
+  builder.RegisterService(&service);
+  std::shared_ptr<ServerCredentials> creds = grpc::InsecureServerCredentials();
   if (FLAGS_enable_ssl) {
     SslServerCredentialsOptions ssl_opts = {
         "", {{test_server1_key, test_server1_cert}}};
-    std::shared_ptr<ServerCredentials> creds =
-        ServerCredentialsFactory::SslCredentials(ssl_opts);
-    builder.SetCredentials(creds);
+    creds = grpc::SslServerCredentials(ssl_opts);
   }
+  builder.AddPort(server_address.str(), creds);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
-  while (true) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+  while (!got_sigint) {
+    sleep(5);
   }
 }
 
+static void sigint_handler(int x) { got_sigint = true; }
+
 int main(int argc, char** argv) {
   grpc_init();
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
+  signal(SIGINT, sigint_handler);
 
   GPR_ASSERT(FLAGS_port != 0);
   RunServer();

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_IOMGR_INTERNAL_H_
-#define __GRPC_INTERNAL_IOMGR_IOMGR_INTERNAL_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
+#define GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H
 
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/iomgr_internal.h"
@@ -48,4 +48,4 @@ void grpc_iomgr_unref(void);
 void grpc_iomgr_platform_init(void);
 void grpc_iomgr_platform_shutdown(void);
 
-#endif /* __GRPC_INTERNAL_IOMGR_IOMGR_INTERNAL_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */

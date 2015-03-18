@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -140,6 +140,13 @@ void gpr_slice_buffer_addn(gpr_slice_buffer *sb, gpr_slice *s, size_t n) {
   size_t i;
   for (i = 0; i < n; i++) {
     gpr_slice_buffer_add(sb, s[i]);
+  }
+}
+
+void gpr_slice_buffer_pop(gpr_slice_buffer *sb) {
+  if (sb->count != 0) {
+    size_t count = --sb->count;
+    sb->length -= GPR_SLICE_LENGTH(sb->slices[count]);
   }
 }
 

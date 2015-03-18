@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_BYTE_BUFFER_READER_H__
-#define __GRPC_BYTE_BUFFER_READER_H__
+#ifndef GRPC_BYTE_BUFFER_READER_H
+#define GRPC_BYTE_BUFFER_READER_H
 
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
@@ -46,4 +46,4 @@ struct grpc_byte_buffer_reader {
   } current;
 };
 
-#endif /* __GRPC_BYTE_BUFFER_READER_H__ */
+#endif  /* GRPC_BYTE_BUFFER_READER_H */

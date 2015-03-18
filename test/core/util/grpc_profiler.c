@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ void grpc_profiler_stop() { ProfilerStop(); }
 
 void grpc_profiler_start(const char *filename) {
   gpr_log(GPR_DEBUG,
-          "You do not have google-perftools installed, profiling is disabled");
+          "You do not have google-perftools installed, profiling is disabled [for %s]", filename);
   gpr_log(GPR_DEBUG,
           "To install on ubuntu: sudo apt-get install google-perftools "
           "libgoogle-perftools-dev");

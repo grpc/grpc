@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,38 +31,30 @@
  *
  */
 
-#ifndef __GRPCPP_CHANNEL_INTERFACE_H__
-#define __GRPCPP_CHANNEL_INTERFACE_H__
+#ifndef GRPCXX_CHANNEL_INTERFACE_H
+#define GRPCXX_CHANNEL_INTERFACE_H
 
 #include <grpc++/status.h>
+#include <grpc++/impl/call.h>
 
-namespace google {
-namespace protobuf {
-class Message;
-}
-}
+struct grpc_call;
 
 namespace grpc {
-
+class Call;
+class CallOpBuffer;
 class ClientContext;
+class CompletionQueue;
 class RpcMethod;
-class StreamContextInterface;
+class CallInterface;
 
-class ChannelInterface {
+class ChannelInterface : public CallHook {
  public:
   virtual ~ChannelInterface() {}
 
-  virtual Status StartBlockingRpc(const RpcMethod& method,
-                                  ClientContext* context,
-                                  const google::protobuf::Message& request,
-                                  google::protobuf::Message* result) = 0;
-
-  virtual StreamContextInterface* CreateStream(
-      const RpcMethod& method, ClientContext* context,
-      const google::protobuf::Message* request,
-      google::protobuf::Message* result) = 0;
+  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
+                          CompletionQueue *cq) = 0;
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_CHANNEL_INTERFACE_H__
+#endif  // GRPCXX_CHANNEL_INTERFACE_H

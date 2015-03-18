@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,10 +87,10 @@ char *grpc_event_string(grpc_event *ev) {
         gpr_strvec_add(&buf, gpr_strdup(" end-of-stream"));
       }
       break;
-    case GRPC_INVOKE_ACCEPTED:
-      gpr_strvec_add(&buf, gpr_strdup("INVOKE_ACCEPTED: "));
+    case GRPC_OP_COMPLETE:
+      gpr_strvec_add(&buf, gpr_strdup("OP_COMPLETE: "));
       addhdr(&buf, ev);
-      adderr(&buf, ev->data.invoke_accepted);
+      adderr(&buf, ev->data.op_complete);
       break;
     case GRPC_WRITE_ACCEPTED:
       gpr_strvec_add(&buf, gpr_strdup("WRITE_ACCEPTED: "));

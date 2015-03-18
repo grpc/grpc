@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__
-#define __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__
+#ifndef GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
+#define GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
 
 #include "src/core/transport/stream_op.h"
 #include <grpc/grpc.h>
@@ -50,6 +50,7 @@ typedef enum {
 
 #define GRPC_CREDENTIALS_TYPE_SSL "Ssl"
 #define GRPC_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
+#define GRPC_CREDENTIALS_TYPE_JWT "Jwt"
 #define GRPC_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CREDENTIALS_TYPE_COMPOSITE "Composite"
 #define GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY "FakeTransportSecurity"
@@ -59,7 +60,30 @@ typedef enum {
   "x-goog-iam-authorization-token"
 #define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
 
+#define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
+#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
+  "application_default_credentials.json"
+
+#define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
+
+#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata"
+#define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
+  "/computeMetadata/v1/instance/service-accounts/default/token"
+
+#define GRPC_GOOGLE_OAUTH2_SERVICE_HOST "www.googleapis.com"
+#define GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH "/oauth2/v3/token"
+
+#define GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX                         \
+  "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&" \
+  "assertion="
+
+#define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING \
+  "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
+
 /* --- grpc_credentials. --- */
+
+/* It is the caller's responsibility to gpr_free the result if not NULL. */
+char *grpc_get_well_known_google_credentials_file_path(void);
 
 typedef void (*grpc_credentials_metadata_cb)(void *user_data,
                                              grpc_mdelem **md_elems,
@@ -71,6 +95,7 @@ typedef struct {
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c,
+                               const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
 } grpc_credentials_vtable;
@@ -86,6 +111,7 @@ void grpc_credentials_unref(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata(grpc_credentials *creds);
 int grpc_credentials_has_request_metadata_only(grpc_credentials *creds);
 void grpc_credentials_get_request_metadata(grpc_credentials *creds,
+                                           const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
 typedef struct {
@@ -150,4 +176,4 @@ typedef struct {
 const grpc_ssl_server_config *grpc_ssl_server_credentials_get_config(
     const grpc_server_credentials *ssl_creds);
 
-#endif /* __GRPC_INTERNAL_SECURITY_CREDENTIALS_H__ */
+#endif  /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */

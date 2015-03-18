@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,15 +32,54 @@
  */
 
 #include <grpc/grpc.h>
-#include "src/core/statistics/census_interface.h"
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/debug/trace.h"
+#include "src/core/statistics/census_interface.h"
+#include "src/core/channel/channel_stack.h"
+#include "src/core/surface/init.h"
+#include "src/core/surface/surface_trace.h"
+#include "src/core/transport/chttp2_transport.h"
+
+static gpr_once g_basic_init = GPR_ONCE_INIT;
+static gpr_mu g_init_mu;
+static int g_initializations;
+
+static void do_basic_init(void) {
+  gpr_mu_init(&g_init_mu);
+  g_initializations = 0;
+}
 
 void grpc_init(void) {
-  grpc_iomgr_init();
-  census_init();
+  gpr_once_init(&g_basic_init, do_basic_init);
+
+  gpr_mu_lock(&g_init_mu);
+  if (++g_initializations == 1) {
+    grpc_register_tracer("channel", &grpc_trace_channel);
+    grpc_register_tracer("surface", &grpc_surface_trace);
+    grpc_register_tracer("http", &grpc_http_trace);
+    grpc_security_pre_init();
+    grpc_tracer_init("GRPC_TRACE");
+    grpc_iomgr_init();
+    census_init();
+  }
+  gpr_mu_unlock(&g_init_mu);
 }
 
 void grpc_shutdown(void) {
-  grpc_iomgr_shutdown();
-  census_shutdown();
+  gpr_mu_lock(&g_init_mu);
+  if (--g_initializations == 0) {
+    grpc_iomgr_shutdown();
+    census_shutdown();
+  }
+  gpr_mu_unlock(&g_init_mu);
 }
+
+int grpc_is_initialized(void) {
+  int r;
+  gpr_once_init(&g_basic_init, do_basic_init);
+  gpr_mu_lock(&g_init_mu);
+  r = g_initializations > 0;
+  gpr_mu_unlock(&g_init_mu);
+  return r;
+}
+

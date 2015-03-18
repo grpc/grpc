@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ class Credentials : public ::node::ObjectWrap {
   static NAN_METHOD(CreateGce);
   static NAN_METHOD(CreateFake);
   static NAN_METHOD(CreateIam);
-  static v8::Persistent<v8::Function> constructor;
+  static NanCallback *constructor;
   // Used for typechecking instances of this javascript class
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;
 

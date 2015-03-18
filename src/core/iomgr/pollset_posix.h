@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_IOMGR_POLLSET_POSIX_H_
-#define __GRPC_INTERNAL_IOMGR_POLLSET_POSIX_H_
+#ifndef GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H
+#define GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H
 
 #include <grpc/support/sync.h>
 
@@ -55,6 +55,10 @@ typedef struct grpc_pollset {
   gpr_cv cv;
   grpc_pollset_kick_state kick_state;
   int counter;
+  int in_flight_cbs;
+  int shutting_down;
+  void (*shutdown_done_cb)(void *arg);
+  void *shutdown_done_arg;
   union {
     int fd;
     void *ptr;
@@ -66,6 +70,7 @@ struct grpc_pollset_vtable {
   void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd);
   int (*maybe_work)(grpc_pollset *pollset, gpr_timespec deadline,
                     gpr_timespec now, int allow_synchronous_callback);
+  void (*kick)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
 
@@ -99,4 +104,4 @@ grpc_pollset *grpc_backup_pollset(void);
 void grpc_platform_become_multipoller(grpc_pollset *pollset,
                                       struct grpc_fd **fds, size_t fd_count);
 
-#endif /* __GRPC_INTERNAL_IOMGR_POLLSET_POSIX_H_ */
+#endif  /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */

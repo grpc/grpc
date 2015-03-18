@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,10 +35,15 @@
 
 #ifdef GPR_WIN32
 
-#include <grpc/support/log.h>
-#include <grpc/support/alloc.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_win32.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/support/string_win32.h"
 
 void gpr_log(const char *file, int line, gpr_log_severity severity,
              const char *format, ...) {
@@ -74,8 +79,35 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
 
 /* Simple starter implementation */
 void gpr_default_log(gpr_log_func_args *args) {
-  fprintf(stderr, "%s %s:%d: %s\n", gpr_log_severity_string(args->severity),
+  char time_buffer[64];
+  gpr_timespec now = gpr_now();
+  struct tm tm;
+
+  if (localtime_s(&tm, &now.tv_sec)) {
+    strcpy(time_buffer, "error:localtime");
+  } else if (0 ==
+             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+    strcpy(time_buffer, "error:strftime");
+  }
+
+  fprintf(stderr, "%s%s.%09u %5u %s:%d] %s\n",
+          gpr_log_severity_string(args->severity), time_buffer,
+          (int)(now.tv_nsec), GetCurrentThreadId(),
           args->file, args->line, args->message);
 }
 
-#endif
+char *gpr_format_message(DWORD messageid) {
+  LPTSTR tmessage;
+  char *message;
+  DWORD status = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                               FORMAT_MESSAGE_FROM_SYSTEM |
+                               FORMAT_MESSAGE_IGNORE_INSERTS,
+                               NULL, messageid,
+                               MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                               (LPTSTR)(&tmessage), 0, NULL);
+  message = gpr_tchar_to_char(tmessage);
+  LocalFree(tmessage);
+  return message;
+}
+
+#endif  /* GPR_WIN32 */

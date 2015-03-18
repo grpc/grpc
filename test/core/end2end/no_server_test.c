@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,7 @@ static void *tag(gpr_intptr i) { return (void *)i; }
 int main(int argc, char **argv) {
   grpc_channel *chan;
   grpc_call *call;
-  gpr_timespec timeout = gpr_time_from_seconds(4);
-  gpr_timespec deadline = gpr_time_add(gpr_now(), timeout);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
   grpc_completion_queue *cq;
   cq_verifier *cqv;
   grpc_event *ev;
@@ -56,8 +55,8 @@ int main(int argc, char **argv) {
 
   /* create a call, channel to a non existant server */
   chan = grpc_channel_create("nonexistant:54321", NULL);
-  call = grpc_channel_create_call(chan, "/foo", "nonexistant", deadline);
-  GPR_ASSERT(grpc_call_invoke(call, cq, tag(2), tag(3), 0) == GRPC_CALL_OK);
+  call = grpc_channel_create_call_old(chan, "/foo", "nonexistant", deadline);
+  GPR_ASSERT(grpc_call_invoke_old(call, cq, tag(2), tag(3), 0) == GRPC_CALL_OK);
   /* verify that all tags get completed */
   cq_expect_client_metadata_read(cqv, tag(2), NULL);
   cq_expect_finished_with_status(cqv, tag(3), GRPC_STATUS_DEADLINE_EXCEEDED,

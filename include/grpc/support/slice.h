@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_SUPPORT_SLICE_H__
-#define __GRPC_SUPPORT_SLICE_H__
+#ifndef GRPC_SUPPORT_SLICE_H
+#define GRPC_SUPPORT_SLICE_H
 
 #include <grpc/support/sync.h>
 
@@ -165,7 +165,9 @@ gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split);
 
 gpr_slice gpr_empty_slice(void);
 
-/* Returns <0 if a < b, ==0 if a == b, >0 if a > b */
+/* Returns <0 if a < b, ==0 if a == b, >0 if a > b
+   The order is arbitrary, and is not guaranteed to be stable across different
+   versions of the API. */
 int gpr_slice_cmp(gpr_slice a, gpr_slice b);
 int gpr_slice_str_cmp(gpr_slice a, const char *b);
 
@@ -173,4 +175,4 @@ int gpr_slice_str_cmp(gpr_slice a, const char *b);
 }
 #endif
 
-#endif /* __GRPC_SUPPORT_SLICE_H__ */
+#endif  /* GRPC_SUPPORT_SLICE_H */

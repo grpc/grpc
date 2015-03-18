@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,24 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_POSIX_SOCKET
+
 #include "src/core/iomgr/iomgr_posix.h"
+#include "src/core/debug/trace.h"
 #include "src/core/iomgr/fd_posix.h"
+#include "src/core/iomgr/tcp_posix.h"
 
 void grpc_iomgr_platform_init(void) {
   grpc_fd_global_init();
   grpc_pollset_global_init();
+  grpc_register_tracer("tcp", &grpc_tcp_trace);
 }
 
 void grpc_iomgr_platform_shutdown(void) {
   grpc_pollset_global_shutdown();
   grpc_fd_global_shutdown();
 }
+
+#endif  /* GRPC_POSIX_SOCKET */

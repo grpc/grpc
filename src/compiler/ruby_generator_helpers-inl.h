@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef NET_GRPC_COMPILER_RUBY_GENERATOR_HELPERS_INL_H_
-#define NET_GRPC_COMPILER_RUBY_GENERATOR_HELPERS_INL_H_
+#ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_HELPERS_INL_H
+#define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_HELPERS_INL_H
 
 #include <string>
 
@@ -64,4 +64,4 @@ inline std::string MessagesRequireName(
 
 }  // namespace grpc_ruby_generator
 
-#endif  // NET_GRPC_COMPILER_RUBY_GENERATOR_HELPERS_INL_H_
+#endif  // GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_HELPERS_INL_H

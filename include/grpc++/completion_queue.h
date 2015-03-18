@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,57 +31,106 @@
  *
  */
 
-#ifndef __GRPCPP_COMPLETION_QUEUE_H__
-#define __GRPCPP_COMPLETION_QUEUE_H__
+#ifndef GRPCXX_COMPLETION_QUEUE_H
+#define GRPCXX_COMPLETION_QUEUE_H
+
+#include <chrono>
+#include <grpc++/impl/client_unary_call.h>
 
 struct grpc_completion_queue;
 
 namespace grpc {
 
+template <class R>
+class ClientReader;
+template <class W>
+class ClientWriter;
+template <class R, class W>
+class ClientReaderWriter;
+template <class R>
+class ServerReader;
+template <class W>
+class ServerWriter;
+template <class R, class W>
+class ServerReaderWriter;
+
+class CompletionQueue;
+class Server;
+class ServerContext;
+
+class CompletionQueueTag {
+ public:
+  virtual ~CompletionQueueTag() {}
+  // Called prior to returning from Next(), return value
+  // is the status of the operation (return status is the default thing
+  // to do)
+  // If this function returns false, the tag is dropped and not returned
+  // from the completion queue
+  virtual bool FinalizeResult(void **tag, bool *status) = 0;
+};
+
 // grpc_completion_queue wrapper class
 class CompletionQueue {
  public:
   CompletionQueue();
+  explicit CompletionQueue(grpc_completion_queue *take);
   ~CompletionQueue();
 
-  enum CompletionType {
-    QUEUE_CLOSED = 0,       // Shutting down.
-    RPC_END = 1,            // An RPC finished. Either at client or server.
-    CLIENT_READ_OK = 2,     // A client-side read has finished successfully.
-    CLIENT_READ_ERROR = 3,  // A client-side read has finished with error.
-    CLIENT_WRITE_OK = 4,
-    CLIENT_WRITE_ERROR = 5,
-    SERVER_RPC_NEW = 6,     // A new RPC just arrived at the server.
-    SERVER_READ_OK = 7,     // A server-side read has finished successfully.
-    SERVER_READ_ERROR = 8,  // A server-side read has finished with error.
-    SERVER_WRITE_OK = 9,
-    SERVER_WRITE_ERROR = 10,
-    // Client or server has sent half close successfully.
-    HALFCLOSE_OK = 11,
-    // New CompletionTypes may be added in the future, so user code should
-    // always
-    // handle the default case of a CompletionType that appears after such code
-    // was
-    // written.
-    DO_NOT_USE = 20,
-  };
+  // Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT
+  enum NextStatus {SHUTDOWN, GOT_EVENT, TIMEOUT};
 
-  // Blocking read from queue.
-  // For QUEUE_CLOSED, *tag is not changed.
-  // For SERVER_RPC_NEW, *tag will be a newly allocated AsyncServerContext.
-  // For others, *tag will be the AsyncServerContext of this rpc.
-  CompletionType Next(void** tag);
+  // Nonblocking (until deadline) read from queue.
+  // Cannot rely on result of tag or ok if return is TIMEOUT
+  NextStatus AsyncNext(void **tag, bool *ok,
+		       std::chrono::system_clock::time_point deadline);
+
+  // Blocking (until deadline) read from queue.
+  // Returns false if the queue is ready for destruction, true if event
+  bool Next(void **tag, bool *ok) {
+    return (AsyncNext(tag,ok,
+		      std::chrono::system_clock::time_point::max()) !=
+	    SHUTDOWN);
+  }
 
   // Shutdown has to be called, and the CompletionQueue can only be
-  // destructed when the QUEUE_CLOSED message has been read with Next().
+  // destructed when false is returned from Next().
   void Shutdown();
 
-  grpc_completion_queue* cq() { return cq_; }
+  grpc_completion_queue *cq() { return cq_; }
 
  private:
-  grpc_completion_queue* cq_;  // owned
+  // Friend synchronous wrappers so that they can access Pluck(), which is
+  // a semi-private API geared towards the synchronous implementation.
+  template <class R>
+  friend class ::grpc::ClientReader;
+  template <class W>
+  friend class ::grpc::ClientWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientReaderWriter;
+  template <class R>
+  friend class ::grpc::ServerReader;
+  template <class W>
+  friend class ::grpc::ServerWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerReaderWriter;
+  friend class ::grpc::Server;
+  friend class ::grpc::ServerContext;
+  friend Status BlockingUnaryCall(ChannelInterface *channel,
+                                  const RpcMethod &method,
+                                  ClientContext *context,
+                                  const grpc::protobuf::Message &request,
+                                  grpc::protobuf::Message *result);
+
+  // Wraps grpc_completion_queue_pluck.
+  // Cannot be mixed with calls to Next().
+  bool Pluck(CompletionQueueTag *tag);
+
+  // Does a single polling pluck on tag
+  void TryPluck(CompletionQueueTag *tag);
+
+  grpc_completion_queue *cq_;  // owned
 };
 
 }  // namespace grpc
 
-#endif  // __GRPCPP_COMPLETION_QUEUE_H__
+#endif  // GRPCXX_COMPLETION_QUEUE_H

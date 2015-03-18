@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2014, Google Inc.
+ * Copyright 2015, Google Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__
-#define __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__
+#ifndef GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H
+#define GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H
 
 #include "src/core/channel/client_channel.h"
 #include "src/core/transport/metadata.h"
@@ -58,10 +58,16 @@ void grpc_client_setup_request_finish(grpc_client_setup_request *r,
 const grpc_channel_args *grpc_client_setup_get_channel_args(
     grpc_client_setup_request *r);
 
+/* Call before calling back into the setup listener, and call only if
+   this function returns 1. If it returns 1, also promise to call
+   grpc_client_setup_cb_end */
+int grpc_client_setup_cb_begin(grpc_client_setup_request *r);
+void grpc_client_setup_cb_end(grpc_client_setup_request *r);
+
 /* Get the deadline for a request passed in to initiate. Implementations should
    make a best effort to honor this deadline. */
 gpr_timespec grpc_client_setup_request_deadline(grpc_client_setup_request *r);
 
 grpc_mdctx *grpc_client_setup_get_mdctx(grpc_client_setup_request *r);
 
-#endif /* __GRPC_INTERNAL_CHANNEL_CLIENT_SETUP_H__ */
+#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_SETUP_H */
