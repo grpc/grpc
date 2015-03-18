@@ -31,8 +31,8 @@
 
 import time
 
-from grpc.framework.base import interfaces as base_interfaces
-from grpc.framework.base.packets import _interfaces
+from grpc.framework.base import _interfaces
+from grpc.framework.base import interfaces
 from grpc.framework.foundation import later
 
 
@@ -73,8 +73,8 @@ class _ExpirationManager(_interfaces.ExpirationManager):
     with self._lock:
       if self._future is not None and index == self._index:
         self._future = None
-        self._termination_manager.abort(base_interfaces.Outcome.EXPIRED)
-        self._transmission_manager.abort(base_interfaces.Outcome.EXPIRED)
+        self._termination_manager.abort(interfaces.Outcome.EXPIRED)
+        self._transmission_manager.abort(interfaces.Outcome.EXPIRED)
         self._ingestion_manager.abort()
 
   def start(self):

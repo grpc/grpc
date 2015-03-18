@@ -31,10 +31,9 @@
 
 import abc
 
+from grpc.framework.base import _constants
+from grpc.framework.base import _interfaces
 from grpc.framework.base import interfaces
-from grpc.framework.base.packets import _constants
-from grpc.framework.base.packets import _interfaces
-from grpc.framework.base.packets import packets
 from grpc.framework.foundation import callable_util
 
 _TRANSMISSION_EXCEPTION_LOG_MESSAGE = 'Exception during transmission!'
@@ -49,32 +48,32 @@ _BACK_TO_FRONT_NO_TRANSMISSION_OUTCOMES = (
 
 _ABORTION_OUTCOME_TO_FRONT_TO_BACK_PACKET_KIND = {
     interfaces.Outcome.CANCELLED:
-        packets.FrontToBackPacket.Kind.CANCELLATION,
+        interfaces.FrontToBackPacket.Kind.CANCELLATION,
     interfaces.Outcome.EXPIRED:
-        packets.FrontToBackPacket.Kind.EXPIRATION,
+        interfaces.FrontToBackPacket.Kind.EXPIRATION,
     interfaces.Outcome.RECEPTION_FAILURE:
-        packets.FrontToBackPacket.Kind.RECEPTION_FAILURE,
+        interfaces.FrontToBackPacket.Kind.RECEPTION_FAILURE,
     interfaces.Outcome.TRANSMISSION_FAILURE:
-        packets.FrontToBackPacket.Kind.TRANSMISSION_FAILURE,
+        interfaces.FrontToBackPacket.Kind.TRANSMISSION_FAILURE,
     interfaces.Outcome.SERVICED_FAILURE:
-        packets.FrontToBackPacket.Kind.SERVICED_FAILURE,
+        interfaces.FrontToBackPacket.Kind.SERVICED_FAILURE,
     interfaces.Outcome.SERVICER_FAILURE:
-        packets.FrontToBackPacket.Kind.SERVICER_FAILURE,
+        interfaces.FrontToBackPacket.Kind.SERVICER_FAILURE,
 }
 
 _ABORTION_OUTCOME_TO_BACK_TO_FRONT_PACKET_KIND = {
     interfaces.Outcome.CANCELLED:
-        packets.BackToFrontPacket.Kind.CANCELLATION,
+        interfaces.BackToFrontPacket.Kind.CANCELLATION,
     interfaces.Outcome.EXPIRED:
-        packets.BackToFrontPacket.Kind.EXPIRATION,
+        interfaces.BackToFrontPacket.Kind.EXPIRATION,
     interfaces.Outcome.RECEPTION_FAILURE:
-        packets.BackToFrontPacket.Kind.RECEPTION_FAILURE,
+        interfaces.BackToFrontPacket.Kind.RECEPTION_FAILURE,
     interfaces.Outcome.TRANSMISSION_FAILURE:
-        packets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE,
+        interfaces.BackToFrontPacket.Kind.TRANSMISSION_FAILURE,
     interfaces.Outcome.SERVICED_FAILURE:
-        packets.BackToFrontPacket.Kind.SERVICED_FAILURE,
+        interfaces.BackToFrontPacket.Kind.SERVICED_FAILURE,
     interfaces.Outcome.SERVICER_FAILURE:
-        packets.BackToFrontPacket.Kind.SERVICER_FAILURE,
+        interfaces.BackToFrontPacket.Kind.SERVICER_FAILURE,
 }
 
 
@@ -141,18 +140,18 @@ class _FrontPacketizer(_Packetizer):
     """See _Packetizer.packetize for specification."""
     if sequence_number:
       if complete:
-        kind = packets.FrontToBackPacket.Kind.COMPLETION
+        kind = interfaces.FrontToBackPacket.Kind.COMPLETION
       else:
-        kind = packets.FrontToBackPacket.Kind.CONTINUATION
-      return packets.FrontToBackPacket(
+        kind = interfaces.FrontToBackPacket.Kind.CONTINUATION
+      return interfaces.FrontToBackPacket(
           operation_id, sequence_number, kind, self._name,
           self._subscription_kind, self._trace_id, payload, self._timeout)
     else:
       if complete:
-        kind = packets.FrontToBackPacket.Kind.ENTIRE
+        kind = interfaces.FrontToBackPacket.Kind.ENTIRE
       else:
-        kind = packets.FrontToBackPacket.Kind.COMMENCEMENT
-      return packets.FrontToBackPacket(
+        kind = interfaces.FrontToBackPacket.Kind.COMMENCEMENT
+      return interfaces.FrontToBackPacket(
           operation_id, 0, kind, self._name, self._subscription_kind,
           self._trace_id, payload, self._timeout)
 
@@ -162,7 +161,7 @@ class _FrontPacketizer(_Packetizer):
       return None
     else:
       kind = _ABORTION_OUTCOME_TO_FRONT_TO_BACK_PACKET_KIND[outcome]
-      return packets.FrontToBackPacket(
+      return interfaces.FrontToBackPacket(
           operation_id, sequence_number, kind, None, None, None, None, None)
 
 
@@ -172,10 +171,10 @@ class _BackPacketizer(_Packetizer):
   def packetize(self, operation_id, sequence_number, payload, complete):
     """See _Packetizer.packetize for specification."""
     if complete:
-      kind = packets.BackToFrontPacket.Kind.COMPLETION
+      kind = interfaces.BackToFrontPacket.Kind.COMPLETION
     else:
-      kind = packets.BackToFrontPacket.Kind.CONTINUATION
-    return packets.BackToFrontPacket(
+      kind = interfaces.BackToFrontPacket.Kind.CONTINUATION
+    return interfaces.BackToFrontPacket(
         operation_id, sequence_number, kind, payload)
 
   def packetize_abortion(self, operation_id, sequence_number, outcome):
@@ -184,7 +183,7 @@ class _BackPacketizer(_Packetizer):
       return None
     else:
       kind = _ABORTION_OUTCOME_TO_BACK_TO_FRONT_PACKET_KIND[outcome]
-      return packets.BackToFrontPacket(
+      return interfaces.BackToFrontPacket(
           operation_id, sequence_number, kind, None)
 
 

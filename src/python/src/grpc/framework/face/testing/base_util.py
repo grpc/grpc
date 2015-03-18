@@ -33,9 +33,9 @@ import abc
 
 # interfaces is referenced from specification in this module.
 from grpc.framework.base import util as _base_util
-from grpc.framework.base.packets import implementations
-from grpc.framework.base.packets import in_memory
-from grpc.framework.base.packets import interfaces  # pylint: disable=unused-import
+from grpc.framework.base import implementations
+from grpc.framework.base import in_memory
+from grpc.framework.base import interfaces  # pylint: disable=unused-import
 from grpc.framework.foundation import logging_pool
 
 _POOL_SIZE_LIMIT = 20
@@ -89,9 +89,9 @@ def linked_pair(servicer, default_timeout):
       back_work_pool, back_transmission_pool, back_utility_pool)
 
   link = in_memory.Link(link_pool)
-  front = implementations.front(
+  front = implementations.front_link(
       front_work_pool, front_transmission_pool, front_utility_pool)
-  back = implementations.back(
+  back = implementations.back_link(
       servicer, back_work_pool, back_transmission_pool, back_utility_pool,
       default_timeout, _MAXIMUM_TIMEOUT)
   front.join_rear_link(link)

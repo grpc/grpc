@@ -31,13 +31,12 @@
 
 import abc
 
-from grpc.framework.base import interfaces as base_interfaces
-from grpc.framework.base.packets import _interfaces
-from grpc.framework.base.packets import packets
+from grpc.framework.base import interfaces
+from grpc.framework.base import _interfaces
 
 _INITIAL_FRONT_TO_BACK_PACKET_KINDS = (
-    packets.FrontToBackPacket.Kind.COMMENCEMENT,
-    packets.FrontToBackPacket.Kind.ENTIRE,
+    interfaces.FrontToBackPacket.Kind.COMMENCEMENT,
+    interfaces.FrontToBackPacket.Kind.ENTIRE,
 )
 
 
@@ -94,9 +93,9 @@ def _abort_if_abortive(
 
   Args:
     packet: A just-arrived packet.
-    abortive: A callable that takes a packet and returns a
-      base_interfaces.Outcome indicating that the operation should be aborted
-      or None indicating that the operation should not be aborted.
+    abortive: A callable that takes a packet and returns an interfaces.Outcome
+      indicating that the operation should be aborted or None indicating that
+      the operation should not be aborted.
     termination_manager: The operation's _interfaces.TerminationManager.
     transmission_manager: The operation's _interfaces.TransmissionManager.
     ingestion_manager: The operation's _interfaces.IngestionManager.
@@ -120,7 +119,7 @@ def _reception_failure(
     expiration_manager):
   """Aborts the operation with an indication of reception failure."""
   _abort(
-      base_interfaces.Outcome.RECEPTION_FAILURE, termination_manager,
+      interfaces.Outcome.RECEPTION_FAILURE, termination_manager,
       transmission_manager, ingestion_manager, expiration_manager)
 
 
@@ -153,22 +152,22 @@ class _BackReceiver(_Receiver):
       packet: A just-arrived packet.
 
     Returns:
-      A base_interfaces.Outcome value describing operation abortion if the
+      An interfaces.Outcome value describing operation abortion if the
         packet is abortive or None if the packet is not abortive.
     """
-    if packet.kind is packets.FrontToBackPacket.Kind.CANCELLATION:
-      return base_interfaces.Outcome.CANCELLED
-    elif packet.kind is packets.FrontToBackPacket.Kind.EXPIRATION:
-      return base_interfaces.Outcome.EXPIRED
-    elif packet.kind is packets.FrontToBackPacket.Kind.SERVICED_FAILURE:
-      return base_interfaces.Outcome.SERVICED_FAILURE
-    elif packet.kind is packets.FrontToBackPacket.Kind.RECEPTION_FAILURE:
-      return base_interfaces.Outcome.SERVICED_FAILURE
+    if packet.kind is interfaces.FrontToBackPacket.Kind.CANCELLATION:
+      return interfaces.Outcome.CANCELLED
+    elif packet.kind is interfaces.FrontToBackPacket.Kind.EXPIRATION:
+      return interfaces.Outcome.EXPIRED
+    elif packet.kind is interfaces.FrontToBackPacket.Kind.SERVICED_FAILURE:
+      return interfaces.Outcome.SERVICED_FAILURE
+    elif packet.kind is interfaces.FrontToBackPacket.Kind.RECEPTION_FAILURE:
+      return interfaces.Outcome.SERVICED_FAILURE
     elif (packet.kind in _INITIAL_FRONT_TO_BACK_PACKET_KINDS and
           self._first_packet_seen):
-      return base_interfaces.Outcome.RECEPTION_FAILURE
+      return interfaces.Outcome.RECEPTION_FAILURE
     elif self._last_packet_seen:
-      return base_interfaces.Outcome.RECEPTION_FAILURE
+      return interfaces.Outcome.RECEPTION_FAILURE
     else:
       return None
 
@@ -184,14 +183,14 @@ class _BackReceiver(_Receiver):
     if packet.timeout is not None:
       self._expiration_manager.change_timeout(packet.timeout)
 
-    if packet.kind is packets.FrontToBackPacket.Kind.COMMENCEMENT:
+    if packet.kind is interfaces.FrontToBackPacket.Kind.COMMENCEMENT:
       self._first_packet_seen = True
       self._ingestion_manager.start(packet.name)
       if packet.payload is not None:
         self._ingestion_manager.consume(packet.payload)
-    elif packet.kind is packets.FrontToBackPacket.Kind.CONTINUATION:
+    elif packet.kind is interfaces.FrontToBackPacket.Kind.CONTINUATION:
       self._ingestion_manager.consume(packet.payload)
-    elif packet.kind is packets.FrontToBackPacket.Kind.COMPLETION:
+    elif packet.kind is interfaces.FrontToBackPacket.Kind.COMPLETION:
       self._last_packet_seen = True
       if packet.payload is None:
         self._ingestion_manager.terminate()
@@ -241,19 +240,19 @@ class _FrontReceiver(_Receiver):
       packet: A just-arrived packet.
 
     Returns:
-      A base_interfaces.Outcome value describing operation abortion if the
-        packet is abortive or None if the packet is not abortive.
+      An interfaces.Outcome value describing operation abortion if the packet
+        is abortive or None if the packet is not abortive.
     """
-    if packet.kind is packets.BackToFrontPacket.Kind.CANCELLATION:
-      return base_interfaces.Outcome.CANCELLED
-    elif packet.kind is packets.BackToFrontPacket.Kind.EXPIRATION:
-      return base_interfaces.Outcome.EXPIRED
-    elif packet.kind is packets.BackToFrontPacket.Kind.SERVICER_FAILURE:
-      return base_interfaces.Outcome.SERVICER_FAILURE
-    elif packet.kind is packets.BackToFrontPacket.Kind.RECEPTION_FAILURE:
-      return base_interfaces.Outcome.SERVICER_FAILURE
+    if packet.kind is interfaces.BackToFrontPacket.Kind.CANCELLATION:
+      return interfaces.Outcome.CANCELLED
+    elif packet.kind is interfaces.BackToFrontPacket.Kind.EXPIRATION:
+      return interfaces.Outcome.EXPIRED
+    elif packet.kind is interfaces.BackToFrontPacket.Kind.SERVICER_FAILURE:
+      return interfaces.Outcome.SERVICER_FAILURE
+    elif packet.kind is interfaces.BackToFrontPacket.Kind.RECEPTION_FAILURE:
+      return interfaces.Outcome.SERVICER_FAILURE
     elif self._last_packet_seen:
-      return base_interfaces.Outcome.RECEPTION_FAILURE
+      return interfaces.Outcome.RECEPTION_FAILURE
     else:
       return None
 
@@ -266,9 +265,9 @@ class _FrontReceiver(_Receiver):
 
   def receive(self, packet):
     """See _Receiver.receive for specification."""
-    if packet.kind is packets.BackToFrontPacket.Kind.CONTINUATION:
+    if packet.kind is interfaces.BackToFrontPacket.Kind.CONTINUATION:
       self._ingestion_manager.consume(packet.payload)
-    elif packet.kind is packets.BackToFrontPacket.Kind.COMPLETION:
+    elif packet.kind is interfaces.BackToFrontPacket.Kind.COMPLETION:
       self._last_packet_seen = True
       if packet.payload is None:
         self._ingestion_manager.terminate()
