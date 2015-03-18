@@ -381,7 +381,7 @@ bool PrintStubFactory(const std::string& package_qualified_service_name,
 bool PrintPreamble(const FileDescriptor* file, Printer* out) {
   out->Print("import abc\n");
   out->Print("from grpc.early_adopter import implementations\n");
-  out->Print("from grpc.early_adopter import utilities\n");
+  out->Print("from grpc.framework.alpha import utilities\n");
   return true;
 }
 
