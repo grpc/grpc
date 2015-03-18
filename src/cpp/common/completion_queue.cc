@@ -95,8 +95,8 @@ bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
 void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
 
-  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_past));
   if (!ev) return;
+  ev.reset(grpc_completion_queue_pluck(cq_, tag, gpr_inf_past));
   bool ok = ev->data.op_complete == GRPC_OP_OK;
   void* ignored = tag;
   // the tag must be swallowed if using TryPluck
