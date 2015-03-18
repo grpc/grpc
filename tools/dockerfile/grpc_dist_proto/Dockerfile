@@ -30,6 +30,9 @@
 # Dockerfile to build protoc and plugins for inclusion in a release.
 FROM grpc/base
 
+# Add the file containing the gRPC version
+ADD version.txt version.txt
+
 # Install tools needed for building protoc.
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev
 
@@ -56,16 +59,16 @@ WORKDIR /var/local/git/grpc
 RUN LDFLAGS=-static make plugins
 
 # Create an archive containing all the generated binaries.
-RUN mkdir /tmp/proto_bins_root
-RUN cp -v bins/opt/* /tmp/proto_bins_root
-RUN cp -v /tmp/protoc_static/bin/protoc /tmp/proto_bins_root
-RUN cd /tmp/proto_bins_root && \
-    tar -czf /tmp/proto-bins-linux-$(uname -m).tar.gz *
+RUN mkdir /tmp/proto-bins_$(cat /version.txt)_linux-$(uname -m)
+RUN cp -v bins/opt/* /tmp/proto-bins_$(cat /version.txt)_linux-$(uname -m)
+RUN cp -v /tmp/protoc_static/bin/protoc /tmp/proto-bins_$(cat /version.txt)_linux-$(uname -m)
+RUN cd /tmp && \
+    tar -czf proto-bins_$(cat /version.txt)_linux-$(uname -m).tar.gz proto-bins_$(cat /version.txt)_linux-$(uname -m)
 
 # List the tar contents: provides a way to visually confirm that the contents
 # are correct.
-RUN echo 'proto-bins-linux-tar-$(uname -m) contents:' && \
-    tar -ztf /tmp/proto-bins-linux-$(uname -m).tar.gz
+RUN echo 'proto-bins_$(cat /version.txt)_linux-tar-$(uname -m) contents:' && \
+    tar -ztf /tmp/proto-bins_$(cat /version.txt)_linux-$(uname -m).tar.gz
 
 
 

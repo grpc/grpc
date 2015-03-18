@@ -698,10 +698,10 @@ grpc_build_proto_bins() {
   local label='dist_proto'
   grpc_update_image -- -h $host $label || return 1
  
-  # run a command to copy the generated output to the local machine
+  # run a command to copy the generated archive to the docker host
   local docker_prefix='sudo docker run -v /tmp:/tmp/proto_bins_out'
-  local tar_name='proto-bins-linux-x86_64.tar.gz'
-  local cp_cmd="cp /tmp/$tar_name /tmp/proto_bins_out"
+  local tar_name='proto-bins*.tar.gz'
+  local cp_cmd="/bin/bash -c 'cp -v /tmp/$tar_name /tmp/proto_bins_out'"
   local cmd="$docker_prefix grpc/$label $cp_cmd"
   local ssh_cmd="bash -l -c \"$cmd\""
   echo "will run:"
@@ -711,7 +711,7 @@ grpc_build_proto_bins() {
 
   # copy the tar.gz locally
   local rmt_tar="$host:/tmp/$tar_name"
-  local local_copy="$(pwd)/$tar_name"
+  local local_copy="$(pwd)"
   gcloud compute copy-files $rmt_tar $local_copy $project_opt $zone_opt || return 1
 }
 
