@@ -492,6 +492,19 @@
       "secure": "no"
     },
     {
+      "name": "grpc_python_plugin_support",
+      "build": "protoc",
+      "language": "c++",
+      "public_headers": [
+        "src/compiler/python_generator.h"
+      ],
+      "src": [
+        "src/compiler/python_generator.cc"
+      ],
+      "deps": [],
+      "secure": "no"
+    },
+    {
       "name": "pubsub_client_lib",
       "build": "private",
       "language": "c++",
@@ -1739,14 +1752,12 @@
       "name": "grpc_python_plugin",
       "build": "protoc",
       "language": "c++",
-      "headers": [
-        "src/compiler/python_generator.h"
-      ],
       "src": [
-        "src/compiler/python_generator.cc",
         "src/compiler/python_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_python_plugin_support"
+      ],
       "secure": "no"
     },
     {
