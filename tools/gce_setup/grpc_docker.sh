@@ -560,7 +560,7 @@ grpc_sync_scripts() {
   _grpc_ensure_gcloud_ssh || return 1;
 
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   local grpc_hosts grpc_gce_script_root
 
@@ -600,7 +600,7 @@ grpc_sync_images() {
   _grpc_ensure_gcloud_ssh || return 1;
 
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   local grpc_hosts
 
@@ -645,7 +645,7 @@ _grpc_show_servers_args() {
 # Shows the grpc servers on the GCE instance <server_name>
 grpc_show_servers() {
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   # set by _grpc_show_servers
   local host
@@ -683,7 +683,7 @@ grpc_build_proto_bins() {
   _grpc_ensure_gcloud_ssh || return 1;
 
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   # set by _grpc_build_proto_bins_args
   local host
@@ -742,7 +742,7 @@ _grpc_launch_servers_args() {
 # If no servers are specified, it launches all known servers
 grpc_launch_servers() {
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   # set by _grpc_launch_servers_args
   local host servers
@@ -825,7 +825,7 @@ grpc_launch_servers() {
 grpc_interop_test() {
   _grpc_ensure_gcloud_ssh || return 1;
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
 
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_interop_test_args
@@ -874,7 +874,7 @@ grpc_interop_test() {
 grpc_cloud_prod_test() {
   _grpc_ensure_gcloud_ssh || return 1;
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
 
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_cloud_prod_test_args
@@ -920,7 +920,7 @@ grpc_cloud_prod_test() {
 grpc_cloud_prod_auth_test() {
   _grpc_ensure_gcloud_ssh || return 1;
   # declare vars local so that they don't pollute the shell environment
-  # where they this func is used.
+  # where this func is used.
 
   local grpc_zone grpc_project dry_run  # set by _grpc_set_project_and_zone
   #  grpc_cloud_prod_test_args
