@@ -34,7 +34,7 @@ import unittest
 from grpc._adapter import fore
 from grpc._adapter import rear
 from grpc.framework.base import util
-from grpc.framework.base.packets import implementations as tickets_implementations
+from grpc.framework.base import implementations as base_implementations
 from grpc.framework.face import implementations as face_implementations
 from grpc.framework.face.testing import coverage
 from grpc.framework.face.testing import serial
@@ -69,8 +69,8 @@ class FaceTestCase(test_case.FaceTestCase, coverage.BlockingCoverage):
         serialization.request_serializers,
         serialization.response_deserializers, False, None, None, None)
     rear_link.start()
-    front = tickets_implementations.front(pool, pool, pool)
-    back = tickets_implementations.back(
+    front = base_implementations.front_link(pool, pool, pool)
+    back = base_implementations.back_link(
         servicer, pool, pool, pool, _TIMEOUT, _MAXIMUM_TIMEOUT)
     fore_link.join_rear_link(back)
     back.join_fore_link(fore_link)

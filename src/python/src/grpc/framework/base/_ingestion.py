@@ -32,11 +32,10 @@
 import abc
 import collections
 
+from grpc.framework.base import _constants
+from grpc.framework.base import _interfaces
 from grpc.framework.base import exceptions
 from grpc.framework.base import interfaces
-from grpc.framework.base.packets import _constants
-from grpc.framework.base.packets import _interfaces
-from grpc.framework.base.packets import packets
 from grpc.framework.foundation import abandonment
 from grpc.framework.foundation import callable_util
 from grpc.framework.foundation import stream

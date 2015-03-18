@@ -31,9 +31,9 @@
 
 import enum
 
+from grpc.framework.base import _constants
+from grpc.framework.base import _interfaces
 from grpc.framework.base import interfaces
-from grpc.framework.base.packets import _constants
-from grpc.framework.base.packets import _interfaces
 from grpc.framework.foundation import callable_util
 
 _CALLBACK_EXCEPTION_LOG_MESSAGE = 'Exception calling termination callback!'

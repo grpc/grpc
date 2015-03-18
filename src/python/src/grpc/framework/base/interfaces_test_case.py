@@ -164,7 +164,7 @@ class FrontAndBackTest(object):
   # pylint: disable=invalid-name
 
   def testSimplestCall(self):
-    """Tests the absolute simplest call - a one-packet fire-and-forget."""
+    """Tests the absolute simplest call - a one-ticket fire-and-forget."""
     self.front.operate(
         SYNCHRONOUS_ECHO, None, True, SMALL_TIMEOUT,
         util.none_serviced_subscription(), 'test trace ID')
@@ -175,25 +175,25 @@ class FrontAndBackTest(object):
     # Assuming nothing really pathological (such as pauses on the order of
     # SMALL_TIMEOUT interfering with this test) there are a two different ways
     # the back could have experienced execution up to this point:
-    # (1) The packet is still either in the front waiting to be transmitted
+    # (1) The ticket is still either in the front waiting to be transmitted
     # or is somewhere on the link between the front and the back. The back has
     # no idea that this test is even happening. Calling wait_for_idle on it
     # would do no good because in this case the back is idle and the call would
-    # return with the packet bound for it still in the front or on the link.
+    # return with the ticket bound for it still in the front or on the link.
     back_operation_stats = self.back.operation_stats()
     first_back_possibility = EMPTY_OUTCOME_DICT
-    # (2) The packet arrived at the back and the back completed the operation.
+    # (2) The ticket arrived at the back and the back completed the operation.
     second_back_possibility = dict(EMPTY_OUTCOME_DICT)
     second_back_possibility[interfaces.Outcome.COMPLETED] = 1
     self.assertIn(
         back_operation_stats, (first_back_possibility, second_back_possibility))
-    # It's true that if the packet had arrived at the back and the back had
+    # It's true that if the ticket had arrived at the back and the back had
     # begun processing that wait_for_idle could hold test execution until the
     # back completed the operation, but that doesn't really collapse the
     # possibility space down to one solution.
 
   def testEntireEcho(self):
-    """Tests a very simple one-packet-each-way round-trip."""
+    """Tests a very simple one-ticket-each-way round-trip."""
     test_payload = 'test payload'
     test_consumer = stream_testing.TestConsumer()
     subscription = util.full_serviced_subscription(
@@ -212,7 +212,7 @@ class FrontAndBackTest(object):
     self.assertListEqual([(test_payload, True)], test_consumer.calls)
 
   def testBidirectionalStreamingEcho(self):
-    """Tests sending multiple packets each way."""
+    """Tests sending multiple tickets each way."""
     test_payload_template = 'test_payload: %03d'
     test_payloads = [test_payload_template % i for i in range(STREAM_LENGTH)]
     test_consumer = stream_testing.TestConsumer()
@@ -255,16 +255,16 @@ class FrontAndBackTest(object):
     # Assuming nothing really pathological (such as pauses on the order of
     # SMALL_TIMEOUT interfering with this test) there are a two different ways
     # the back could have experienced execution up to this point:
-    # (1) Both packets are still either in the front waiting to be transmitted
+    # (1) Both tickets are still either in the front waiting to be transmitted
     # or are somewhere on the link between the front and the back. The back has
     # no idea that this test is even happening. Calling wait_for_idle on it
     # would do no good because in this case the back is idle and the call would
-    # return with the packets bound for it still in the front or on the link.
+    # return with the tickets bound for it still in the front or on the link.
     back_operation_stats = self.back.operation_stats()
     first_back_possibility = EMPTY_OUTCOME_DICT
-    # (2) Both packets arrived within SMALL_TIMEOUT of one another at the back.
-    # The back started processing based on the first packet and then stopped
-    # upon receiving the cancellation packet.
+    # (2) Both tickets arrived within SMALL_TIMEOUT of one another at the back.
+    # The back started processing based on the first ticket and then stopped
+    # upon receiving the cancellation ticket.
     second_back_possibility = dict(EMPTY_OUTCOME_DICT)
     second_back_possibility[interfaces.Outcome.CANCELLED] = 1
     self.assertIn(

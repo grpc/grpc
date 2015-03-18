@@ -37,7 +37,6 @@ from grpc._adapter import _test_links
 from grpc._adapter import fore
 from grpc._adapter import rear
 from grpc.framework.base import interfaces
-from grpc.framework.base.packets import packets as tickets
 from grpc.framework.foundation import logging_pool
 
 _IDENTITY = lambda x: x
@@ -60,11 +59,11 @@ class RoundTripTest(unittest.TestCase):
     test_fore_link = _test_links.ForeLink(None, None)
     def rear_action(front_to_back_ticket, fore_link):
       if front_to_back_ticket.kind in (
-          tickets.FrontToBackPacket.Kind.COMPLETION,
-          tickets.FrontToBackPacket.Kind.ENTIRE):
-        back_to_front_ticket = tickets.BackToFrontPacket(
+          interfaces.FrontToBackTicket.Kind.COMPLETION,
+          interfaces.FrontToBackTicket.Kind.ENTIRE):
+        back_to_front_ticket = interfaces.BackToFrontTicket(
             front_to_back_ticket.operation_id, 0,
-            tickets.BackToFrontPacket.Kind.COMPLETION, None)
+            interfaces.BackToFrontTicket.Kind.COMPLETION, None)
         fore_link.accept_back_to_front_ticket(back_to_front_ticket)
     test_rear_link = _test_links.RearLink(rear_action, None)
 
@@ -82,8 +81,8 @@ class RoundTripTest(unittest.TestCase):
     test_fore_link.join_rear_link(rear_link)
     rear_link.start()
 
-    front_to_back_ticket = tickets.FrontToBackPacket(
-        test_operation_id, 0, tickets.FrontToBackPacket.Kind.ENTIRE,
+    front_to_back_ticket = interfaces.FrontToBackTicket(
+        test_operation_id, 0, interfaces.FrontToBackTicket.Kind.ENTIRE,
         test_method, interfaces.ServicedSubscription.Kind.FULL, None, None,
         _TIMEOUT)
     rear_link.accept_front_to_back_ticket(front_to_back_ticket)
@@ -91,7 +90,7 @@ class RoundTripTest(unittest.TestCase):
     with test_fore_link.condition:
       while (not test_fore_link.tickets or
              test_fore_link.tickets[-1].kind is
-                 tickets.BackToFrontPacket.Kind.CONTINUATION):
+                 interfaces.BackToFrontTicket.Kind.CONTINUATION):
         test_fore_link.condition.wait()
 
     rear_link.stop()
@@ -100,7 +99,7 @@ class RoundTripTest(unittest.TestCase):
     with test_fore_link.condition:
       self.assertIs(
           test_fore_link.tickets[-1].kind,
-          tickets.BackToFrontPacket.Kind.COMPLETION)
+          interfaces.BackToFrontTicket.Kind.COMPLETION)
 
   def testEntireRoundTrip(self):
     test_operation_id = object()
@@ -115,14 +114,14 @@ class RoundTripTest(unittest.TestCase):
       else:
         payload = test_back_to_front_datum
       terminal = front_to_back_ticket.kind in (
-          tickets.FrontToBackPacket.Kind.COMPLETION,
-          tickets.FrontToBackPacket.Kind.ENTIRE)
+          interfaces.FrontToBackTicket.Kind.COMPLETION,
+          interfaces.FrontToBackTicket.Kind.ENTIRE)
       if payload is not None or terminal:
         if terminal:
-          kind = tickets.BackToFrontPacket.Kind.COMPLETION
+          kind = interfaces.BackToFrontTicket.Kind.COMPLETION
         else:
-          kind = tickets.BackToFrontPacket.Kind.CONTINUATION
-        back_to_front_ticket = tickets.BackToFrontPacket(
+          kind = interfaces.BackToFrontTicket.Kind.CONTINUATION
+        back_to_front_ticket = interfaces.BackToFrontTicket(
             front_to_back_ticket.operation_id, rear_sequence_number[0], kind,
             payload)
         rear_sequence_number[0] += 1
@@ -144,8 +143,8 @@ class RoundTripTest(unittest.TestCase):
     test_fore_link.join_rear_link(rear_link)
     rear_link.start()
 
-    front_to_back_ticket = tickets.FrontToBackPacket(
-        test_operation_id, 0, tickets.FrontToBackPacket.Kind.ENTIRE,
+    front_to_back_ticket = interfaces.FrontToBackTicket(
+        test_operation_id, 0, interfaces.FrontToBackTicket.Kind.ENTIRE,
         test_method, interfaces.ServicedSubscription.Kind.FULL, None,
         test_front_to_back_datum, _TIMEOUT)
     rear_link.accept_front_to_back_ticket(front_to_back_ticket)
@@ -153,7 +152,7 @@ class RoundTripTest(unittest.TestCase):
     with test_fore_link.condition:
       while (not test_fore_link.tickets or
              test_fore_link.tickets[-1].kind is not
-                 tickets.BackToFrontPacket.Kind.COMPLETION):
+                 interfaces.BackToFrontTicket.Kind.COMPLETION):
         test_fore_link.condition.wait()
 
     rear_link.stop()
@@ -183,14 +182,14 @@ class RoundTripTest(unittest.TestCase):
         else:
           response = None
       terminal = front_to_back_ticket.kind in (
-          tickets.FrontToBackPacket.Kind.COMPLETION,
-          tickets.FrontToBackPacket.Kind.ENTIRE)
+          interfaces.FrontToBackTicket.Kind.COMPLETION,
+          interfaces.FrontToBackTicket.Kind.ENTIRE)
       if response is not None or terminal:
         if terminal:
-          kind = tickets.BackToFrontPacket.Kind.COMPLETION
+          kind = interfaces.BackToFrontTicket.Kind.COMPLETION
         else:
-          kind = tickets.BackToFrontPacket.Kind.CONTINUATION
-        back_to_front_ticket = tickets.BackToFrontPacket(
+          kind = interfaces.BackToFrontTicket.Kind.CONTINUATION
+        back_to_front_ticket = interfaces.BackToFrontTicket(
             front_to_back_ticket.operation_id, rear_sequence_number[0], kind,
             response)
         rear_sequence_number[0] += 1
@@ -213,22 +212,23 @@ class RoundTripTest(unittest.TestCase):
     test_fore_link.join_rear_link(rear_link)
     rear_link.start()
 
-    commencement_ticket = tickets.FrontToBackPacket(
-        test_operation_id, 0, tickets.FrontToBackPacket.Kind.COMMENCEMENT,
-        test_method, interfaces.ServicedSubscription.Kind.FULL, None, None,
+    commencement_ticket = interfaces.FrontToBackTicket(
+        test_operation_id, 0,
+        interfaces.FrontToBackTicket.Kind.COMMENCEMENT, test_method,
+        interfaces.ServicedSubscription.Kind.FULL, None, None,
         _TIMEOUT)
     fore_sequence_number = 1
     rear_link.accept_front_to_back_ticket(commencement_ticket)
     for request in scenario.requests():
-      continuation_ticket = tickets.FrontToBackPacket(
+      continuation_ticket = interfaces.FrontToBackTicket(
           test_operation_id, fore_sequence_number,
-          tickets.FrontToBackPacket.Kind.CONTINUATION, None, None, None,
+          interfaces.FrontToBackTicket.Kind.CONTINUATION, None, None, None,
           request, None)
       fore_sequence_number += 1
       rear_link.accept_front_to_back_ticket(continuation_ticket)
-    completion_ticket = tickets.FrontToBackPacket(
+    completion_ticket = interfaces.FrontToBackTicket(
         test_operation_id, fore_sequence_number,
-        tickets.FrontToBackPacket.Kind.COMPLETION, None, None, None, None,
+        interfaces.FrontToBackTicket.Kind.COMPLETION, None, None, None, None,
         None)
     fore_sequence_number += 1
     rear_link.accept_front_to_back_ticket(completion_ticket)
@@ -236,7 +236,7 @@ class RoundTripTest(unittest.TestCase):
     with test_fore_link.condition:
       while (not test_fore_link.tickets or
              test_fore_link.tickets[-1].kind is not
-                 tickets.BackToFrontPacket.Kind.COMPLETION):
+                 interfaces.BackToFrontTicket.Kind.COMPLETION):
         test_fore_link.condition.wait()
 
     rear_link.stop()

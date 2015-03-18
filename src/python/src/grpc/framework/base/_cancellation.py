@@ -27,30 +27,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Null links that ignore tickets passed to them."""
+"""State and behavior for operation cancellation."""
 
-from grpc.framework.base.packets import interfaces
-
-
-class _NullForeLink(interfaces.ForeLink):
-  """A do-nothing ForeLink."""
-
-  def accept_back_to_front_ticket(self, ticket):
-    pass
-
-  def join_rear_link(self, rear_link):
-    raise NotImplementedError()
+from grpc.framework.base import _interfaces
+from grpc.framework.base import interfaces
 
 
-class _NullRearLink(interfaces.RearLink):
-  """A do-nothing RearLink."""
+class CancellationManager(_interfaces.CancellationManager):
+  """An implementation of _interfaces.CancellationManager."""
 
-  def accept_front_to_back_ticket(self, ticket):
-    pass
+  def __init__(
+      self, lock, termination_manager, transmission_manager, ingestion_manager,
+      expiration_manager):
+    """Constructor.
 
-  def join_fore_link(self, fore_link):
-    raise NotImplementedError()
+    Args:
+      lock: The operation-wide lock.
+      termination_manager: The _interfaces.TerminationManager for the operation.
+      transmission_manager: The _interfaces.TransmissionManager for the
+        operation.
+      ingestion_manager: The _interfaces.IngestionManager for the operation.
+      expiration_manager: The _interfaces.ExpirationManager for the operation.
+    """
+    self._lock = lock
+    self._termination_manager = termination_manager
+    self._transmission_manager = transmission_manager
+    self._ingestion_manager = ingestion_manager
+    self._expiration_manager = expiration_manager
 
-
-NULL_FORE_LINK = _NullForeLink()
-NULL_REAR_LINK = _NullRearLink()
+  def cancel(self):
+    """See _interfaces.CancellationManager.cancel for specification."""
+    with self._lock:
+      self._termination_manager.abort(interfaces.Outcome.CANCELLED)
+      self._transmission_manager.abort(interfaces.Outcome.CANCELLED)
+      self._ingestion_manager.abort()
+      self._expiration_manager.abort()
