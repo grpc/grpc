@@ -68,7 +68,7 @@ class AsyncQpsServerTest : public Server {
     gpr_join_host_port(&server_address, "::", port);
 
     ServerBuilder builder;
-    builder.AddPort(server_address, InsecureServerCredentials());
+    builder.AddListeningPort(server_address, InsecureServerCredentials());
     gpr_free(server_address);
 
     builder.RegisterAsyncService(&async_service_);

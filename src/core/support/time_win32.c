@@ -42,8 +42,8 @@
 
 gpr_timespec gpr_now(void) {
   gpr_timespec now_tv;
-  struct __timeb32 now_tb;
-  _ftime32_s(&now_tb);
+  struct _timeb now_tb;
+  _ftime_s(&now_tb);
   now_tv.tv_sec = now_tb.time;
   now_tv.tv_nsec = now_tb.millitm * 1000000;
   return now_tv;

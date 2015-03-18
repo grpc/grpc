@@ -69,9 +69,9 @@ class ServerBuilder {
   void RegisterAsyncGenericService(AsyncGenericService* service);
 
   // Add a listening port. Can be called multiple times.
-  void AddPort(const grpc::string& addr,
-               std::shared_ptr<ServerCredentials> creds,
-               int* selected_port = nullptr);
+  void AddListeningPort(const grpc::string& addr,
+                        std::shared_ptr<ServerCredentials> creds,
+                        int* selected_port = nullptr);
 
   // Set the thread pool used for running appliation rpc handlers.
   // Does not take ownership.

@@ -172,7 +172,7 @@ static void win_notify_on_read(grpc_endpoint *ep,
   tcp->read_slice = gpr_slice_malloc(8192);
 
   buffer.len = GPR_SLICE_LENGTH(tcp->read_slice);
-  buffer.buf = GPR_SLICE_START_PTR(tcp->read_slice);
+  buffer.buf = (char *)GPR_SLICE_START_PTR(tcp->read_slice);
 
   gpr_log(GPR_DEBUG, "win_notify_on_read: calling WSARecv without overlap");
   status = WSARecv(tcp->socket->socket, &buffer, 1, &bytes_read, &flags,
@@ -284,7 +284,7 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
 
   for (i = 0; i < tcp->write_slices.count; i++) {
     buffers[i].len = GPR_SLICE_LENGTH(tcp->write_slices.slices[i]);
-    buffers[i].buf = GPR_SLICE_START_PTR(tcp->write_slices.slices[i]);
+    buffers[i].buf = (char *)GPR_SLICE_START_PTR(tcp->write_slices.slices[i]);
   }
 
   gpr_log(GPR_DEBUG, "win_write: calling WSASend without overlap");

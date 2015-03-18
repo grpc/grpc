@@ -74,7 +74,7 @@ namespace Grpc.Core.Tests
                 ServerServiceDefinition.CreateBuilder(serviceName)
                     .AddMethod(unaryEchoStringMethod, HandleUnaryEchoString).Build());
 
-            int port = server.AddPort(host + ":0");
+            int port = server.AddListeningPort(host + ":0");
             server.Start();
 
             using (Channel channel = new Channel(host + ":" + port))
@@ -97,7 +97,7 @@ namespace Grpc.Core.Tests
                 ServerServiceDefinition.CreateBuilder(serviceName)
                 .AddMethod(unaryEchoStringMethod, HandleUnaryEchoString).Build());
 
-            int port = server.AddPort(host + ":0");
+            int port = server.AddListeningPort(host + ":0");
             server.Start();
 
             using (Channel channel = new Channel(host + ":" + port))
@@ -117,7 +117,7 @@ namespace Grpc.Core.Tests
             server.AddServiceDefinition(
                 ServerServiceDefinition.CreateBuilder(serviceName).Build());
 
-            int port = server.AddPort(host + ":0");
+            int port = server.AddListeningPort(host + ":0");
             server.Start();
 
             using (Channel channel = new Channel(host + ":" + port))

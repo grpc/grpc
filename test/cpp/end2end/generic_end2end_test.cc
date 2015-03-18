@@ -98,7 +98,7 @@ class GenericEnd2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str(), InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
     server_ = builder.BuildAndStart();
   }

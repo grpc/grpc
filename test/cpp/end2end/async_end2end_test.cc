@@ -99,7 +99,7 @@ class AsyncEnd2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str(), grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), grpc::InsecureServerCredentials());
     builder.RegisterAsyncService(&service_);
     server_ = builder.BuildAndStart();
   }

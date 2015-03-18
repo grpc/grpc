@@ -137,7 +137,7 @@ static void RunServer() {
   SimpleResponse response;
 
   ServerBuilder builder;
-  builder.AddPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
 
   std::unique_ptr<ThreadPool> pool(new ThreadPool(FLAGS_server_threads));
