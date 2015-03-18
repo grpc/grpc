@@ -33,7 +33,7 @@ import abc
 import enum
 
 # exceptions is referenced from specification in this module.
-from grpc.early_adopter import exceptions  # pylint: disable=unused-import
+from grpc.framework.alpha import exceptions  # pylint: disable=unused-import
 from grpc.framework.foundation import activated
 from grpc.framework.foundation import future
 

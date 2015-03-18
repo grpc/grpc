@@ -33,9 +33,9 @@ import threading
 
 from grpc._adapter import fore as _fore
 from grpc._adapter import rear as _rear
-from grpc.early_adopter import _face_utilities
-from grpc.early_adopter import _reexport
-from grpc.early_adopter import interfaces
+from grpc.framework.alpha import _face_utilities
+from grpc.framework.alpha import _reexport
+from grpc.framework.alpha import interfaces
 from grpc.framework.base import implementations as _base_implementations
 from grpc.framework.base import util as _base_utilities
 from grpc.framework.face import implementations as _face_implementations

@@ -34,7 +34,7 @@
 import unittest
 
 from grpc.early_adopter import implementations
-from grpc.early_adopter import utilities
+from grpc.framework.alpha import utilities
 from grpc._junkdrawer import math_pb2
 
 SERVICE_NAME = 'math.Math'

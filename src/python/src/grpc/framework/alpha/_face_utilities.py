@@ -34,8 +34,8 @@ import collections
 from grpc.framework.common import cardinality
 from grpc.framework.face import interfaces as face_interfaces  # pylint: disable=unused-import
 from grpc.framework.face import utilities as face_utilities
-from grpc.early_adopter import _reexport
-from grpc.early_adopter import interfaces
+from grpc.framework.alpha import _reexport
+from grpc.framework.alpha import interfaces
 
 
 def _qualified_name(service_name, method_name):
