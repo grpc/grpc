@@ -1192,6 +1192,20 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_cxx_cmd() {
     echo $the_cmd
 }
 
+# constructs the full dockerized cpp jwt_token auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_jwt_token_creds_gen_cxx_cmd() {
+    local cmd_prefix="sudo docker run grpc/cxx";
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots";
+    local gfe_flags=$(_grpc_prod_gfe_flags)
+    local added_gfe_flags=$(_grpc_jwt_token_test_flags)
+    local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
+    echo $the_cmd
+}
+
 # constructs the full dockerized csharp-mono interop test cmd.
 #
 # call-seq:
@@ -1228,6 +1242,11 @@ _grpc_prod_gfe_flags() {
 # outputs the flags passed to the service account auth tests
 _grpc_svc_acc_test_flags() {
   echo " --service_account_key_file=/service_account/stubbyCloudTestingTest-7dd63462c60c.json --oauth_scope=https://www.googleapis.com/auth/xapi.zoo"
+}
+
+# outputs the flags passed to the service account auth tests
+_grpc_jwt_token_test_flags() {
+  echo " --service_account_key_file=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
 }
 
 # default credentials test flag
