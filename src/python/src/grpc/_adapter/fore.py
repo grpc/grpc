@@ -125,8 +125,8 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
         self._request_deserializers[method],
         self._response_serializers[method])
 
-    ticket = base_interfaces.FrontToBackPacket(
-        call, 0, base_interfaces.FrontToBackPacket.Kind.COMMENCEMENT, method,
+    ticket = base_interfaces.FrontToBackTicket(
+        call, 0, base_interfaces.FrontToBackTicket.Kind.COMMENCEMENT, method,
         base_interfaces.ServicedSubscription.Kind.FULL, None, None,
         service_acceptance.deadline - time.time())
     self._rear_link.accept_front_to_back_ticket(ticket)
@@ -143,15 +143,15 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
     sequence_number = rpc_state.sequence_number
     rpc_state.sequence_number += 1
     if event.bytes is None:
-      ticket = base_interfaces.FrontToBackPacket(
+      ticket = base_interfaces.FrontToBackTicket(
           call, sequence_number,
-          base_interfaces.FrontToBackPacket.Kind.COMPLETION, None, None, None,
+          base_interfaces.FrontToBackTicket.Kind.COMPLETION, None, None, None,
           None, None)
     else:
       call.read(call)
-      ticket = base_interfaces.FrontToBackPacket(
+      ticket = base_interfaces.FrontToBackTicket(
           call, sequence_number,
-          base_interfaces.FrontToBackPacket.Kind.CONTINUATION, None, None,
+          base_interfaces.FrontToBackTicket.Kind.CONTINUATION, None, None,
           None, rpc_state.deserializer(event.bytes), None)
 
     self._rear_link.accept_front_to_back_ticket(ticket)
@@ -180,9 +180,9 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
 
       sequence_number = rpc_state.sequence_number
       rpc_state.sequence_number += 1
-      ticket = base_interfaces.FrontToBackPacket(
+      ticket = base_interfaces.FrontToBackTicket(
           call, sequence_number,
-          base_interfaces.FrontToBackPacket.Kind.TRANSMISSION_FAILURE, None,
+          base_interfaces.FrontToBackTicket.Kind.TRANSMISSION_FAILURE, None,
           None, None, None, None)
       self._rear_link.accept_front_to_back_ticket(ticket)
 
@@ -200,20 +200,20 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
     sequence_number = rpc_state.sequence_number
     rpc_state.sequence_number += 1
     if code is _low.Code.CANCELLED:
-      ticket = base_interfaces.FrontToBackPacket(
+      ticket = base_interfaces.FrontToBackTicket(
           call, sequence_number,
-          base_interfaces.FrontToBackPacket.Kind.CANCELLATION, None, None,
+          base_interfaces.FrontToBackTicket.Kind.CANCELLATION, None, None,
           None, None, None)
     elif code is _low.Code.EXPIRED:
-      ticket = base_interfaces.FrontToBackPacket(
+      ticket = base_interfaces.FrontToBackTicket(
           call, sequence_number,
-          base_interfaces.FrontToBackPacket.Kind.EXPIRATION, None, None, None,
+          base_interfaces.FrontToBackTicket.Kind.EXPIRATION, None, None, None,
           None, None)
     else:
       # TODO(nathaniel): Better mapping of codes to ticket-categories
-      ticket = base_interfaces.FrontToBackPacket(
+      ticket = base_interfaces.FrontToBackTicket(
           call, sequence_number,
-          base_interfaces.FrontToBackPacket.Kind.TRANSMISSION_FAILURE, None,
+          base_interfaces.FrontToBackTicket.Kind.TRANSMISSION_FAILURE, None,
           None, None, None, None)
     self._rear_link.accept_front_to_back_ticket(ticket)
 
@@ -355,9 +355,9 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
       if self._server is None:
         return
 
-      if ticket.kind is base_interfaces.BackToFrontPacket.Kind.CONTINUATION:
+      if ticket.kind is base_interfaces.BackToFrontTicket.Kind.CONTINUATION:
         self._continue(ticket.operation_id, ticket.payload)
-      elif ticket.kind is base_interfaces.BackToFrontPacket.Kind.COMPLETION:
+      elif ticket.kind is base_interfaces.BackToFrontTicket.Kind.COMPLETION:
         self._complete(ticket.operation_id, ticket.payload)
       else:
         self._cancel(ticket.operation_id)

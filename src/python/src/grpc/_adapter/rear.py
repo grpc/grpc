@@ -151,9 +151,9 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
     else:
       logging.error('RPC write not accepted! Event: %s', (event,))
       rpc_state.active = False
-      ticket = base_interfaces.BackToFrontPacket(
+      ticket = base_interfaces.BackToFrontTicket(
           operation_id, rpc_state.common.sequence_number,
-          base_interfaces.BackToFrontPacket.Kind.TRANSMISSION_FAILURE, None)
+          base_interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE, None)
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -162,9 +162,9 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
       rpc_state.call.read(operation_id)
       rpc_state.outstanding.add(_low.Event.Kind.READ_ACCEPTED)
 
-      ticket = base_interfaces.BackToFrontPacket(
+      ticket = base_interfaces.BackToFrontTicket(
           operation_id, rpc_state.common.sequence_number,
-          base_interfaces.BackToFrontPacket.Kind.CONTINUATION,
+          base_interfaces.BackToFrontTicket.Kind.CONTINUATION,
           rpc_state.common.deserializer(event.bytes))
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
@@ -173,9 +173,9 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
     if not event.complete_accepted:
       logging.error('RPC complete not accepted! Event: %s', (event,))
       rpc_state.active = False
-      ticket = base_interfaces.BackToFrontPacket(
+      ticket = base_interfaces.BackToFrontTicket(
           operation_id, rpc_state.common.sequence_number,
-          base_interfaces.BackToFrontPacket.Kind.TRANSMISSION_FAILURE, None)
+          base_interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE, None)
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -188,14 +188,14 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
     """Handle termination of an RPC."""
     # TODO(nathaniel): Cover all statuses.
     if event.status.code is _low.Code.OK:
-      kind = base_interfaces.BackToFrontPacket.Kind.COMPLETION
+      kind = base_interfaces.BackToFrontTicket.Kind.COMPLETION
     elif event.status.code is _low.Code.CANCELLED:
-      kind = base_interfaces.BackToFrontPacket.Kind.CANCELLATION
+      kind = base_interfaces.BackToFrontTicket.Kind.CANCELLATION
     elif event.status.code is _low.Code.EXPIRED:
-      kind = base_interfaces.BackToFrontPacket.Kind.EXPIRATION
+      kind = base_interfaces.BackToFrontTicket.Kind.EXPIRATION
     else:
-      kind = base_interfaces.BackToFrontPacket.Kind.TRANSMISSION_FAILURE
-    ticket = base_interfaces.BackToFrontPacket(
+      kind = base_interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE
+    ticket = base_interfaces.BackToFrontTicket(
         operation_id, rpc_state.common.sequence_number, kind, None)
     rpc_state.common.sequence_number += 1
     self._fore_link.accept_back_to_front_ticket(ticket)
@@ -370,17 +370,17 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
       if self._completion_queue is None:
         return
 
-      if ticket.kind is base_interfaces.FrontToBackPacket.Kind.COMMENCEMENT:
+      if ticket.kind is base_interfaces.FrontToBackTicket.Kind.COMMENCEMENT:
         self._commence(
             ticket.operation_id, ticket.name, ticket.payload, ticket.timeout)
-      elif ticket.kind is base_interfaces.FrontToBackPacket.Kind.CONTINUATION:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.CONTINUATION:
         self._continue(ticket.operation_id, ticket.payload)
-      elif ticket.kind is base_interfaces.FrontToBackPacket.Kind.COMPLETION:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.COMPLETION:
         self._complete(ticket.operation_id, ticket.payload)
-      elif ticket.kind is base_interfaces.FrontToBackPacket.Kind.ENTIRE:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.ENTIRE:
         self._entire(
             ticket.operation_id, ticket.name, ticket.payload, ticket.timeout)
-      elif ticket.kind is base_interfaces.FrontToBackPacket.Kind.CANCELLATION:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.CANCELLATION:
         self._cancel(ticket.operation_id)
       else:
         # NOTE(nathaniel): All other categories are treated as cancellation.

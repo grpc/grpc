@@ -150,7 +150,7 @@ def _front_operate(
   """Constructs objects necessary for front-side operation management.
 
   Args:
-    callback: A callable that accepts interfaces.FrontToBackPackets and
+    callback: A callable that accepts interfaces.FrontToBackTickets and
       delivers them to the other side of the operation. Execution of this
       callable may take any arbitrary length of time.
     work_pool: A thread pool in which to execute customer code.
@@ -276,7 +276,7 @@ class FrontLink(interfaces.FrontLink):
     with self._endlette:
       reception_manager = self._endlette.get_operation(ticket.operation_id)
     if reception_manager:
-      reception_manager.receive_packet(ticket)
+      reception_manager.receive_ticket(ticket)
 
 
 def _back_operate(
@@ -289,7 +289,7 @@ def _back_operate(
 
   Args:
     servicer: An interfaces.Servicer for servicing operations.
-    callback: A callable that accepts interfaces.BackToFrontPackets and
+    callback: A callable that accepts interfaces.BackToFrontTickets and
       delivers them to the other side of the operation. Execution of this
       callable may take any arbitrary length of time.
     work_pool: A thread pool in which to execute customer code.
@@ -298,7 +298,7 @@ def _back_operate(
     utility_pool: A thread pool for utility tasks.
     termination_action: A no-arg behavior to be called upon operation
       completion.
-    ticket: The first interfaces.FrontToBackPacket received for the operation.
+    ticket: The first interfaces.FrontToBackTicket received for the operation.
     default_timeout: A length of time in seconds to be used as the default
       time alloted for a single operation.
     maximum_timeout: A length of time in seconds to be used as the maximum
@@ -338,7 +338,7 @@ def _back_operate(
         ingestion_manager, expiration_manager)
     ingestion_manager.set_expiration_manager(expiration_manager)
 
-  reception_manager.receive_packet(ticket)
+  reception_manager.receive_ticket(ticket)
 
   return reception_manager
 
@@ -388,7 +388,7 @@ class BackLink(interfaces.BackLink):
             self._default_timeout, self._maximum_timeout)
         self._endlette.add_operation(ticket.operation_id, reception_manager)
       else:
-        reception_manager.receive_packet(ticket)
+        reception_manager.receive_ticket(ticket)
 
   def operation_stats(self):
     """See interfaces.End.operation_stats for specification."""

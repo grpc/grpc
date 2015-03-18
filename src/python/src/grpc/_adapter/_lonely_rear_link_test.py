@@ -67,7 +67,7 @@ class LonelyRearLinkTest(unittest.TestCase):
     rear_link.join_fore_link(fore_link)
     rear_link.start()
 
-    front_to_back_ticket = interfaces.FrontToBackPacket(
+    front_to_back_ticket = interfaces.FrontToBackTicket(
         test_operation_id, 0, front_to_back_ticket_kind, test_method,
         interfaces.ServicedSubscription.Kind.FULL, None, None, _TIMEOUT)
     rear_link.accept_front_to_back_ticket(front_to_back_ticket)
@@ -76,7 +76,7 @@ class LonelyRearLinkTest(unittest.TestCase):
       while True:
         if (fore_link.tickets and
             fore_link.tickets[-1].kind is not
-                interfaces.BackToFrontPacket.Kind.CONTINUATION):
+                interfaces.BackToFrontTicket.Kind.CONTINUATION):
           break
         fore_link.condition.wait()
 
@@ -85,15 +85,15 @@ class LonelyRearLinkTest(unittest.TestCase):
     with fore_link.condition:
       self.assertIsNot(
           fore_link.tickets[-1].kind,
-          interfaces.BackToFrontPacket.Kind.COMPLETION)
+          interfaces.BackToFrontTicket.Kind.COMPLETION)
 
-  def testLonelyClientCommencementPacket(self):
+  def testLonelyClientCommencementTicket(self):
     self._perform_lonely_client_test_with_ticket_kind(
-        interfaces.FrontToBackPacket.Kind.COMMENCEMENT)
+        interfaces.FrontToBackTicket.Kind.COMMENCEMENT)
 
-  def testLonelyClientEntirePacket(self):
+  def testLonelyClientEntireTicket(self):
     self._perform_lonely_client_test_with_ticket_kind(
-        interfaces.FrontToBackPacket.Kind.ENTIRE)
+        interfaces.FrontToBackTicket.Kind.ENTIRE)
 
 
 if __name__ == '__main__':

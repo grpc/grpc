@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Entry points into the packet-exchange-based implementation the base layer."""
+"""In-memory implementations of base layer interfaces."""
 
 import threading
 

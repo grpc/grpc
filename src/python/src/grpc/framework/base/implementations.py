@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Entry points into the packet-exchange-based implementation the base layer."""
+"""Entry points into the ticket-exchange-based base layer implementation."""
 
 # interfaces is referenced from specification in this module.
 from grpc.framework.base import _ends

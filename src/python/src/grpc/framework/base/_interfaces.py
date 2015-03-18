@@ -247,15 +247,15 @@ class ExpirationManager(object):
 
 
 class ReceptionManager(object):
-  """A manager responsible for receiving packets from the other end."""
+  """A manager responsible for receiving tickets from the other end."""
   __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
-  def receive_packet(self, packet):
-    """Handle a packet from the other side of the operation.
+  def receive_ticket(self, ticket):
+    """Handle a ticket from the other side of the operation.
 
     Args:
-      packet: An interfaces.BackToFrontPacket or interfaces.FrontToBackPacket
+      ticket: An interfaces.BackToFrontTicket or interfaces.FrontToBackTicket
         appropriate to this end of the operation and this object.
     """
     raise NotImplementedError()

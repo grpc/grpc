@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""State and behavior for packet transmission during an operation."""
+"""State and behavior for ticket transmission during an operation."""
 
 import abc
 
@@ -46,53 +46,53 @@ _BACK_TO_FRONT_NO_TRANSMISSION_OUTCOMES = (
     interfaces.Outcome.SERVICED_FAILURE,
     )
 
-_ABORTION_OUTCOME_TO_FRONT_TO_BACK_PACKET_KIND = {
+_ABORTION_OUTCOME_TO_FRONT_TO_BACK_TICKET_KIND = {
     interfaces.Outcome.CANCELLED:
-        interfaces.FrontToBackPacket.Kind.CANCELLATION,
+        interfaces.FrontToBackTicket.Kind.CANCELLATION,
     interfaces.Outcome.EXPIRED:
-        interfaces.FrontToBackPacket.Kind.EXPIRATION,
+        interfaces.FrontToBackTicket.Kind.EXPIRATION,
     interfaces.Outcome.RECEPTION_FAILURE:
-        interfaces.FrontToBackPacket.Kind.RECEPTION_FAILURE,
+        interfaces.FrontToBackTicket.Kind.RECEPTION_FAILURE,
     interfaces.Outcome.TRANSMISSION_FAILURE:
-        interfaces.FrontToBackPacket.Kind.TRANSMISSION_FAILURE,
+        interfaces.FrontToBackTicket.Kind.TRANSMISSION_FAILURE,
     interfaces.Outcome.SERVICED_FAILURE:
-        interfaces.FrontToBackPacket.Kind.SERVICED_FAILURE,
+        interfaces.FrontToBackTicket.Kind.SERVICED_FAILURE,
     interfaces.Outcome.SERVICER_FAILURE:
-        interfaces.FrontToBackPacket.Kind.SERVICER_FAILURE,
+        interfaces.FrontToBackTicket.Kind.SERVICER_FAILURE,
 }
 
-_ABORTION_OUTCOME_TO_BACK_TO_FRONT_PACKET_KIND = {
+_ABORTION_OUTCOME_TO_BACK_TO_FRONT_TICKET_KIND = {
     interfaces.Outcome.CANCELLED:
-        interfaces.BackToFrontPacket.Kind.CANCELLATION,
+        interfaces.BackToFrontTicket.Kind.CANCELLATION,
     interfaces.Outcome.EXPIRED:
-        interfaces.BackToFrontPacket.Kind.EXPIRATION,
+        interfaces.BackToFrontTicket.Kind.EXPIRATION,
     interfaces.Outcome.RECEPTION_FAILURE:
-        interfaces.BackToFrontPacket.Kind.RECEPTION_FAILURE,
+        interfaces.BackToFrontTicket.Kind.RECEPTION_FAILURE,
     interfaces.Outcome.TRANSMISSION_FAILURE:
-        interfaces.BackToFrontPacket.Kind.TRANSMISSION_FAILURE,
+        interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE,
     interfaces.Outcome.SERVICED_FAILURE:
-        interfaces.BackToFrontPacket.Kind.SERVICED_FAILURE,
+        interfaces.BackToFrontTicket.Kind.SERVICED_FAILURE,
     interfaces.Outcome.SERVICER_FAILURE:
-        interfaces.BackToFrontPacket.Kind.SERVICER_FAILURE,
+        interfaces.BackToFrontTicket.Kind.SERVICER_FAILURE,
 }
 
 
-class _Packetizer(object):
-  """Common specification of different packet-creating behavior."""
+class _Ticketizer(object):
+  """Common specification of different ticket-creating behavior."""
   __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
-  def packetize(self, operation_id, sequence_number, payload, complete):
-    """Creates a packet indicating ordinary operation progress.
+  def ticketize(self, operation_id, sequence_number, payload, complete):
+    """Creates a ticket indicating ordinary operation progress.
 
     Args:
       operation_id: The operation ID for the current operation.
-      sequence_number: A sequence number for the packet.
+      sequence_number: A sequence number for the ticket.
       payload: A customer payload object. May be None if sequence_number is
         zero or complete is true.
-      complete: A boolean indicating whether or not the packet should describe
+      complete: A boolean indicating whether or not the ticket should describe
         itself as (but for a later indication of operation abortion) the last
-        packet to be sent.
+        ticket to be sent.
 
     Returns:
       An object of an appropriate type suitable for transmission to the other
@@ -101,12 +101,12 @@ class _Packetizer(object):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def packetize_abortion(self, operation_id, sequence_number, outcome):
-    """Creates a packet indicating that the operation is aborted.
+  def ticketize_abortion(self, operation_id, sequence_number, outcome):
+    """Creates a ticket indicating that the operation is aborted.
 
     Args:
       operation_id: The operation ID for the current operation.
-      sequence_number: A sequence number for the packet.
+      sequence_number: A sequence number for the ticket.
       outcome: An interfaces.Outcome value describing the operation abortion.
 
     Returns:
@@ -117,8 +117,8 @@ class _Packetizer(object):
     raise NotImplementedError()
 
 
-class _FrontPacketizer(_Packetizer):
-  """Front-side packet-creating behavior."""
+class _FrontTicketizer(_Ticketizer):
+  """Front-side ticket-creating behavior."""
 
   def __init__(self, name, subscription_kind, trace_id, timeout):
     """Constructor.
@@ -126,7 +126,7 @@ class _FrontPacketizer(_Packetizer):
     Args:
       name: The name of the operation.
       subscription_kind: An interfaces.ServicedSubscription.Kind value
-        describing the interest the front has in packets sent from the back.
+        describing the interest the front has in tickets sent from the back.
       trace_id: A uuid.UUID identifying a set of related operations to which
         this operation belongs.
       timeout: A length of time in seconds to allow for the entire operation.
@@ -136,54 +136,54 @@ class _FrontPacketizer(_Packetizer):
     self._trace_id = trace_id
     self._timeout = timeout
 
-  def packetize(self, operation_id, sequence_number, payload, complete):
-    """See _Packetizer.packetize for specification."""
+  def ticketize(self, operation_id, sequence_number, payload, complete):
+    """See _Ticketizer.ticketize for specification."""
     if sequence_number:
       if complete:
-        kind = interfaces.FrontToBackPacket.Kind.COMPLETION
+        kind = interfaces.FrontToBackTicket.Kind.COMPLETION
       else:
-        kind = interfaces.FrontToBackPacket.Kind.CONTINUATION
-      return interfaces.FrontToBackPacket(
+        kind = interfaces.FrontToBackTicket.Kind.CONTINUATION
+      return interfaces.FrontToBackTicket(
           operation_id, sequence_number, kind, self._name,
           self._subscription_kind, self._trace_id, payload, self._timeout)
     else:
       if complete:
-        kind = interfaces.FrontToBackPacket.Kind.ENTIRE
+        kind = interfaces.FrontToBackTicket.Kind.ENTIRE
       else:
-        kind = interfaces.FrontToBackPacket.Kind.COMMENCEMENT
-      return interfaces.FrontToBackPacket(
+        kind = interfaces.FrontToBackTicket.Kind.COMMENCEMENT
+      return interfaces.FrontToBackTicket(
           operation_id, 0, kind, self._name, self._subscription_kind,
           self._trace_id, payload, self._timeout)
 
-  def packetize_abortion(self, operation_id, sequence_number, outcome):
-    """See _Packetizer.packetize_abortion for specification."""
+  def ticketize_abortion(self, operation_id, sequence_number, outcome):
+    """See _Ticketizer.ticketize_abortion for specification."""
     if outcome in _FRONT_TO_BACK_NO_TRANSMISSION_OUTCOMES:
       return None
     else:
-      kind = _ABORTION_OUTCOME_TO_FRONT_TO_BACK_PACKET_KIND[outcome]
-      return interfaces.FrontToBackPacket(
+      kind = _ABORTION_OUTCOME_TO_FRONT_TO_BACK_TICKET_KIND[outcome]
+      return interfaces.FrontToBackTicket(
           operation_id, sequence_number, kind, None, None, None, None, None)
 
 
-class _BackPacketizer(_Packetizer):
-  """Back-side packet-creating behavior."""
+class _BackTicketizer(_Ticketizer):
+  """Back-side ticket-creating behavior."""
 
-  def packetize(self, operation_id, sequence_number, payload, complete):
-    """See _Packetizer.packetize for specification."""
+  def ticketize(self, operation_id, sequence_number, payload, complete):
+    """See _Ticketizer.ticketize for specification."""
     if complete:
-      kind = interfaces.BackToFrontPacket.Kind.COMPLETION
+      kind = interfaces.BackToFrontTicket.Kind.COMPLETION
     else:
-      kind = interfaces.BackToFrontPacket.Kind.CONTINUATION
-    return interfaces.BackToFrontPacket(
+      kind = interfaces.BackToFrontTicket.Kind.CONTINUATION
+    return interfaces.BackToFrontTicket(
         operation_id, sequence_number, kind, payload)
 
-  def packetize_abortion(self, operation_id, sequence_number, outcome):
-    """See _Packetizer.packetize_abortion for specification."""
+  def ticketize_abortion(self, operation_id, sequence_number, outcome):
+    """See _Ticketizer.ticketize_abortion for specification."""
     if outcome in _BACK_TO_FRONT_NO_TRANSMISSION_OUTCOMES:
       return None
     else:
-      kind = _ABORTION_OUTCOME_TO_BACK_TO_FRONT_PACKET_KIND[outcome]
-      return interfaces.BackToFrontPacket(
+      kind = _ABORTION_OUTCOME_TO_BACK_TO_FRONT_TICKET_KIND[outcome]
+      return interfaces.BackToFrontTicket(
           operation_id, sequence_number, kind, None)
 
 
@@ -220,21 +220,21 @@ class _EmptyTransmissionManager(TransmissionManager):
 
 
 class _TransmittingTransmissionManager(TransmissionManager):
-  """A TransmissionManager implementation that sends packets."""
+  """A TransmissionManager implementation that sends tickets."""
 
   def __init__(
-      self, lock, pool, callback, operation_id, packetizer,
+      self, lock, pool, callback, operation_id, ticketizer,
       termination_manager):
     """Constructor.
 
     Args:
       lock: The operation-servicing-wide lock object.
-      pool: A thread pool in which the work of transmitting packets will be
+      pool: A thread pool in which the work of transmitting tickets will be
         performed.
-      callback: A callable that accepts packets and sends them to the other side
+      callback: A callable that accepts tickets and sends them to the other side
         of the operation.
       operation_id: The operation's ID.
-      packetizer: A _Packetizer for packet creation.
+      ticketizer: A _Ticketizer for ticket creation.
       termination_manager: The _interfaces.TerminationManager associated with
         this operation.
     """
@@ -242,7 +242,7 @@ class _TransmittingTransmissionManager(TransmissionManager):
     self._pool = pool
     self._callback = callback
     self._operation_id = operation_id
-    self._packetizer = packetizer
+    self._ticketizer = ticketizer
     self._termination_manager = termination_manager
     self._ingestion_manager = None
     self._expiration_manager = None
@@ -259,8 +259,8 @@ class _TransmittingTransmissionManager(TransmissionManager):
     self._ingestion_manager = ingestion_manager
     self._expiration_manager = expiration_manager
 
-  def _lead_packet(self, emission, complete):
-    """Creates a packet suitable for leading off the transmission loop.
+  def _lead_ticket(self, emission, complete):
+    """Creates a ticket suitable for leading off the transmission loop.
 
     Args:
       emission: A customer payload object to be sent to the other side of the
@@ -269,37 +269,37 @@ class _TransmittingTransmissionManager(TransmissionManager):
         the passed object.
 
     Returns:
-      A packet with which to lead off the transmission loop.
+      A ticket with which to lead off the transmission loop.
     """
     sequence_number = self._lowest_unused_sequence_number
     self._lowest_unused_sequence_number += 1
-    return self._packetizer.packetize(
+    return self._ticketizer.ticketize(
         self._operation_id, sequence_number, emission, complete)
 
-  def _abortive_response_packet(self, outcome):
-    """Creates a packet indicating operation abortion.
+  def _abortive_response_ticket(self, outcome):
+    """Creates a ticket indicating operation abortion.
 
     Args:
       outcome: An interfaces.Outcome value describing operation abortion.
 
     Returns:
-      A packet indicating operation abortion.
+      A ticket indicating operation abortion.
     """
-    packet = self._packetizer.packetize_abortion(
+    ticket = self._ticketizer.ticketize_abortion(
         self._operation_id, self._lowest_unused_sequence_number, outcome)
-    if packet is None:
+    if ticket is None:
       return None
     else:
       self._lowest_unused_sequence_number += 1
-      return packet
+      return ticket
 
-  def _next_packet(self):
-    """Creates the next packet to be sent to the other side of the operation.
+  def _next_ticket(self):
+    """Creates the next ticket to be sent to the other side of the operation.
 
     Returns:
-      A (completed, packet) tuple comprised of a boolean indicating whether or
-        not the sequence of packets has completed normally and a packet to send
-        to the other side if the sequence of packets hasn't completed. The tuple
+      A (completed, ticket) tuple comprised of a boolean indicating whether or
+        not the sequence of tickets has completed normally and a ticket to send
+        to the other side if the sequence of tickets hasn't completed. The tuple
         will never have both a True first element and a non-None second element.
     """
     if self._emissions is None:
@@ -310,29 +310,29 @@ class _TransmittingTransmissionManager(TransmissionManager):
         complete = self._emission_complete and not self._emissions
         sequence_number = self._lowest_unused_sequence_number
         self._lowest_unused_sequence_number += 1
-        return complete, self._packetizer.packetize(
+        return complete, self._ticketizer.ticketize(
             self._operation_id, sequence_number, payload, complete)
       else:
         return self._emission_complete, None
     else:
-      packet = self._abortive_response_packet(self._outcome)
+      ticket = self._abortive_response_ticket(self._outcome)
       self._emissions = None
-      return False, None if packet is None else packet
+      return False, None if ticket is None else ticket
 
-  def _transmit(self, packet):
-    """Commences the transmission loop sending packets.
+  def _transmit(self, ticket):
+    """Commences the transmission loop sending tickets.
 
     Args:
-      packet: A packet to be sent to the other side of the operation.
+      ticket: A ticket to be sent to the other side of the operation.
     """
-    def transmit(packet):
+    def transmit(ticket):
       while True:
         transmission_outcome = callable_util.call_logging_exceptions(
-            self._callback, _TRANSMISSION_EXCEPTION_LOG_MESSAGE, packet)
+            self._callback, _TRANSMISSION_EXCEPTION_LOG_MESSAGE, ticket)
         if transmission_outcome.exception is None:
           with self._lock:
-            complete, packet = self._next_packet()
-            if packet is None:
+            complete, ticket = self._next_ticket()
+            if ticket is None:
               if complete:
                 self._termination_manager.transmission_complete()
               self._transmitting = False
@@ -348,7 +348,7 @@ class _TransmittingTransmissionManager(TransmissionManager):
             return
 
     self._pool.submit(callable_util.with_exceptions_logged(
-        transmit, _constants.INTERNAL_ERROR_LOG_MESSAGE), packet)
+        transmit, _constants.INTERNAL_ERROR_LOG_MESSAGE), ticket)
     self._transmitting = True
 
   def inmit(self, emission, complete):
@@ -358,17 +358,17 @@ class _TransmittingTransmissionManager(TransmissionManager):
       if self._transmitting:
         self._emissions.append(emission)
       else:
-        self._transmit(self._lead_packet(emission, complete))
+        self._transmit(self._lead_ticket(emission, complete))
 
   def abort(self, outcome):
     """See _interfaces.TransmissionManager.abort for specification."""
     if self._emissions is not None and self._outcome is None:
       self._outcome = outcome
       if not self._transmitting:
-        packet = self._abortive_response_packet(outcome)
+        ticket = self._abortive_response_ticket(outcome)
         self._emissions = None
-        if packet is not None:
-          self._transmit(packet)
+        if ticket is not None:
+          self._transmit(ticket)
 
 
 def front_transmission_manager(
@@ -378,14 +378,14 @@ def front_transmission_manager(
 
   Args:
     lock: The operation-servicing-wide lock object.
-    pool: A thread pool in which the work of transmitting packets will be
+    pool: A thread pool in which the work of transmitting tickets will be
       performed.
-    callback: A callable that accepts packets and sends them to the other side
+    callback: A callable that accepts tickets and sends them to the other side
       of the operation.
     operation_id: The operation's ID.
     name: The name of the operation.
     subscription_kind: An interfaces.ServicedSubscription.Kind value
-      describing the interest the front has in packets sent from the back.
+      describing the interest the front has in tickets sent from the back.
     trace_id: A uuid.UUID identifying a set of related operations to which
       this operation belongs.
     timeout: A length of time in seconds to allow for the entire operation.
@@ -396,7 +396,7 @@ def front_transmission_manager(
     A TransmissionManager appropriate for front-side use.
   """
   return _TransmittingTransmissionManager(
-      lock, pool, callback, operation_id, _FrontPacketizer(
+      lock, pool, callback, operation_id, _FrontTicketizer(
           name, subscription_kind, trace_id, timeout),
       termination_manager)
 
@@ -408,15 +408,15 @@ def back_transmission_manager(
 
   Args:
     lock: The operation-servicing-wide lock object.
-    pool: A thread pool in which the work of transmitting packets will be
+    pool: A thread pool in which the work of transmitting tickets will be
       performed.
-    callback: A callable that accepts packets and sends them to the other side
+    callback: A callable that accepts tickets and sends them to the other side
       of the operation.
     operation_id: The operation's ID.
     termination_manager: The _interfaces.TerminationManager associated with
       this operation.
     subscription_kind: An interfaces.ServicedSubscription.Kind value
-      describing the interest the front has in packets sent from the back.
+      describing the interest the front has in tickets sent from the back.
 
   Returns:
     A TransmissionManager appropriate for back-side use.
@@ -425,5 +425,5 @@ def back_transmission_manager(
     return _EmptyTransmissionManager()
   else:
     return _TransmittingTransmissionManager(
-        lock, pool, callback, operation_id, _BackPacketizer(),
+        lock, pool, callback, operation_id, _BackTicketizer(),
         termination_manager)

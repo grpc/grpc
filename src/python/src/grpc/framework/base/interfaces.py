@@ -233,9 +233,9 @@ class Back(End):
   __metaclass__ = abc.ABCMeta
 
 
-class FrontToBackPacket(
+class FrontToBackTicket(
     collections.namedtuple(
-        'FrontToBackPacket',
+        'FrontToBackTicket',
         ['operation_id', 'sequence_number', 'kind', 'name', 'subscription',
          'trace_id', 'payload', 'timeout'])):
   """A sum type for all values sent from a front to a back.
@@ -244,14 +244,14 @@ class FrontToBackPacket(
     operation_id: A unique-with-respect-to-equality hashable object identifying
       a particular operation.
     sequence_number: A zero-indexed integer sequence number identifying the
-      packet's place among all the packets sent from front to back for this
+      ticket's place among all the tickets sent from front to back for this
       particular operation. Must be zero if kind is Kind.COMMENCEMENT or
       Kind.ENTIRE. Must be positive for any other kind.
     kind: A Kind value describing the overall kind of ticket.
     name: The name of an operation. Must be present if kind is Kind.COMMENCEMENT
       or Kind.ENTIRE. Must be None for any other kind.
     subscription: An ServicedSubscription.Kind value describing the interest
-      the front has in packets sent from the back. Must be present if
+      the front has in tickets sent from the back. Must be present if
       kind is Kind.COMMENCEMENT or Kind.ENTIRE. Must be None for any other kind.
     trace_id: A uuid.UUID identifying a set of related operations to which this
       operation belongs. May be None.
@@ -269,7 +269,7 @@ class FrontToBackPacket(
 
   @enum.unique
   class Kind(enum.Enum):
-    """Identifies the overall kind of a FrontToBackPacket."""
+    """Identifies the overall kind of a FrontToBackTicket."""
 
     COMMENCEMENT = 'commencement'
     CONTINUATION = 'continuation'
@@ -283,9 +283,9 @@ class FrontToBackPacket(
     TRANSMISSION_FAILURE = 'transmission failure'
 
 
-class BackToFrontPacket(
+class BackToFrontTicket(
     collections.namedtuple(
-        'BackToFrontPacket',
+        'BackToFrontTicket',
         ['operation_id', 'sequence_number', 'kind', 'payload'])):
   """A sum type for all values sent from a back to a front.
 
@@ -293,7 +293,7 @@ class BackToFrontPacket(
     operation_id: A unique-with-respect-to-equality hashable object identifying
       a particular operation.
     sequence_number: A zero-indexed integer sequence number identifying the
-      packet's place among all the packets sent from back to front for this
+      ticket's place among all the tickets sent from back to front for this
       particular operation.
     kind: A Kind value describing the overall kind of ticket.
     payload: A customer payload object. Must be present if kind is
@@ -303,7 +303,7 @@ class BackToFrontPacket(
 
   @enum.unique
   class Kind(enum.Enum):
-    """Identifies the overall kind of a BackToFrontPacket."""
+    """Identifies the overall kind of a BackToFrontTicket."""
 
     CONTINUATION = 'continuation'
     COMPLETION = 'completion'
@@ -321,10 +321,10 @@ class ForeLink(object):
 
   @abc.abstractmethod
   def accept_back_to_front_ticket(self, ticket):
-    """Accept a BackToFrontPacket.
+    """Accept a BackToFrontTicket.
 
     Args:
-      ticket: Any BackToFrontPacket.
+      ticket: Any BackToFrontTicket.
     """
     raise NotImplementedError()
 
@@ -340,10 +340,10 @@ class RearLink(object):
 
   @abc.abstractmethod
   def accept_front_to_back_ticket(self, ticket):
-    """Accepts a FrontToBackPacket.
+    """Accepts a FrontToBackTicket.
 
     Args:
-      ticket: Any FrontToBackPacket.
+      ticket: Any FrontToBackTicket.
     """
     raise NotImplementedError()
 
