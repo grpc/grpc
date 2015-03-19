@@ -27,13 +27,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests for _framework.base.packets.implementations."""
+"""Tests for grpc.framework.base.implementations."""
 
 import unittest
 
+from grpc.framework.base import implementations
 from grpc.framework.base import interfaces_test_case
 from grpc.framework.base import util
-from grpc.framework.base.packets import implementations
 from grpc.framework.foundation import logging_pool
 
 POOL_MAX_WORKERS = 100
@@ -54,10 +54,10 @@ class ImplementationsTest(
     self.back_utility_pool = logging_pool.pool(POOL_MAX_WORKERS)
     self.test_pool = logging_pool.pool(POOL_MAX_WORKERS)
     self.test_servicer = interfaces_test_case.TestServicer(self.test_pool)
-    self.front = implementations.front(
+    self.front = implementations.front_link(
         self.front_work_pool, self.front_transmission_pool,
         self.front_utility_pool)
-    self.back = implementations.back(
+    self.back = implementations.back_link(
         self.test_servicer, self.back_work_pool, self.back_transmission_pool,
         self.back_utility_pool, DEFAULT_TIMEOUT, MAXIMUM_TIMEOUT)
     self.front.join_rear_link(self.back)

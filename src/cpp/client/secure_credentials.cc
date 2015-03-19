@@ -123,6 +123,13 @@ std::unique_ptr<Credentials> JWTCredentials(
       grpc_jwt_credentials_create(json_key.c_str(), lifetime));
 }
 
+// Builds refresh token credentials.
+std::unique_ptr<Credentials> RefreshTokenCredentials(
+    const grpc::string& json_refresh_token) {
+  return WrapCredentials(
+      grpc_refresh_token_credentials_create(json_refresh_token.c_str()));
+}
+
 // Builds IAM credentials.
 std::unique_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,

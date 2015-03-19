@@ -66,6 +66,10 @@ typedef struct channel_data {
   grpc_mdelem *status_ok;
   grpc_mdelem *status_not_found;
   grpc_mdstr *path_key;
+  grpc_mdstr *authority_key;
+  grpc_mdstr *host_key;
+
+  grpc_mdctx *mdctx;
 
   size_t gettable_count;
   gettable *gettables;
@@ -181,6 +185,15 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         }
         calld->path = op->data.metadata;
         op->done_cb(op->user_data, GRPC_OP_OK);
+      } else if (op->data.metadata->key == channeld->host_key) {
+        /* translate host to :authority since :authority may be
+           omitted */
+        grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
+            channeld->mdctx, channeld->authority_key, op->data.metadata->value);
+        grpc_mdelem_unref(op->data.metadata);
+        op->data.metadata = authority;
+        /* pass the event up */
+        grpc_call_next_op(elem, op);
       } else {
         /* pass the event up */
         grpc_call_next_op(elem, op);
@@ -305,8 +318,12 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->https_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "https");
   channeld->grpc_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
   channeld->path_key = grpc_mdstr_from_string(mdctx, ":path");
+  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority");
+  channeld->host_key = grpc_mdstr_from_string(mdctx, "host");
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
+
+  channeld->mdctx = mdctx;
 
   /* initialize http download support */
   channeld->gettable_count = 0;
@@ -357,6 +374,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   grpc_mdelem_unref(channeld->grpc_scheme);
   grpc_mdelem_unref(channeld->content_type);
   grpc_mdstr_unref(channeld->path_key);
+  grpc_mdstr_unref(channeld->authority_key);
+  grpc_mdstr_unref(channeld->host_key);
 }
 
 const grpc_channel_filter grpc_http_server_filter = {

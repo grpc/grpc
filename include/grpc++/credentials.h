@@ -113,6 +113,12 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
 std::unique_ptr<Credentials> JWTCredentials(
     const grpc::string& json_key, std::chrono::seconds token_lifetime);
 
+// Builds refresh token credentials.
+// json_refresh_token is the JSON string containing the refresh token along
+// with a client_id and client_secret.
+std::unique_ptr<Credentials> RefreshTokenCredentials(
+    const grpc::string& json_refresh_token);
+
 // Builds IAM credentials.
 std::unique_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,

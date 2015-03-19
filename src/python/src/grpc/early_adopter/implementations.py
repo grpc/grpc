@@ -33,11 +33,11 @@ import threading
 
 from grpc._adapter import fore as _fore
 from grpc._adapter import rear as _rear
-from grpc.early_adopter import _face_utilities
-from grpc.early_adopter import _reexport
-from grpc.early_adopter import interfaces
+from grpc.framework.alpha import _face_utilities
+from grpc.framework.alpha import _reexport
+from grpc.framework.alpha import interfaces
+from grpc.framework.base import implementations as _base_implementations
 from grpc.framework.base import util as _base_utilities
-from grpc.framework.base.packets import implementations as _tickets_implementations
 from grpc.framework.face import implementations as _face_implementations
 from grpc.framework.foundation import logging_pool
 
@@ -66,7 +66,7 @@ class _Server(interfaces.Server):
         self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
         servicer = _face_implementations.servicer(
             self._pool, self._breakdown.implementations, None)
-        self._back = _tickets_implementations.back(
+        self._back = _base_implementations.back_link(
             servicer, self._pool, self._pool, self._pool, _ONE_DAY_IN_SECONDS,
             _ONE_DAY_IN_SECONDS)
         self._fore_link = _fore.ForeLink(
@@ -134,7 +134,7 @@ class _Stub(interfaces.Stub):
     with self._lock:
       if self._pool is None:
         self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
-        self._front = _tickets_implementations.front(
+        self._front = _base_implementations.front_link(
             self._pool, self._pool, self._pool)
         self._rear_link = _rear.RearLink(
             self._host, self._port, self._pool,

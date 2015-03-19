@@ -43,11 +43,21 @@
 #define GPR_ARCH_64 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
+#ifdef __GNUC__
+#define GPR_GCC_ATOMIC 1
+#else
+#define GPR_WIN32_ATOMIC 1
+#endif
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_ARCH_32 1
 #define GPR_WIN32 1
 #define GPR_GETPID_IN_PROCESS_H 1
 #define GPR_WINSOCK_SOCKET 1
+#ifdef __GNUC__
+#define GPR_GCC_ATOMIC 1
+#else
+#define GPR_WIN32_ATOMIC 1
+#endif
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_ANDROID 1
 #define GPR_ARCH_32 1
@@ -167,8 +177,8 @@
 #endif
 
 /* Validate platform combinations */
-#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + defined(GPR_WIN32) != 1
-#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WIN32
+#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + defined(GPR_WIN32_ATOMIC) != 1
+#error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WIN32_ATOMIC
 #endif
 
 #if defined(GPR_ARCH_32) + defined(GPR_ARCH_64) != 1

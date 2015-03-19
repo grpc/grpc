@@ -26,31 +26,3 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-"""Null links that ignore tickets passed to them."""
-
-from grpc.framework.base.packets import interfaces
-
-
-class _NullForeLink(interfaces.ForeLink):
-  """A do-nothing ForeLink."""
-
-  def accept_back_to_front_ticket(self, ticket):
-    pass
-
-  def join_rear_link(self, rear_link):
-    raise NotImplementedError()
-
-
-class _NullRearLink(interfaces.RearLink):
-  """A do-nothing RearLink."""
-
-  def accept_front_to_back_ticket(self, ticket):
-    pass
-
-  def join_fore_link(self, fore_link):
-    raise NotImplementedError()
-
-
-NULL_FORE_LINK = _NullForeLink()
-NULL_REAR_LINK = _NullRearLink()

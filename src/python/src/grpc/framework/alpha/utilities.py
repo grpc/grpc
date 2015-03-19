@@ -29,7 +29,7 @@
 
 """Utilities for use with GRPC."""
 
-from grpc.early_adopter import interfaces
+from grpc.framework.alpha import interfaces
 
 
 class _RpcMethodDescription(

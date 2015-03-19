@@ -51,7 +51,7 @@ static __inline gpr_atm gpr_atm_acq_load(const gpr_atm *p) {
 
 static __inline gpr_atm gpr_atm_no_barrier_load(const gpr_atm *p) {
   /* TODO(dklempner): Can we implement something better here? */
-  gpr_atm_acq_load(p);
+  return gpr_atm_acq_load(p);
 }
 
 static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {

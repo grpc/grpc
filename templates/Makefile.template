@@ -653,6 +653,11 @@ test_cxx: buildtests_cxx
 % endfor
 
 
+test_python: static_c
+	$(E) "[RUN]     Testing python code"
+	$(Q) tools/run_tests/run_tests.py -lpython -c$(CONFIG)
+
+
 tools: privatelibs\
 % for tgt in targets:
 % if tgt.build == 'tool':

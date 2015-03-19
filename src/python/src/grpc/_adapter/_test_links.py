@@ -31,7 +31,7 @@
 
 import threading
 
-from grpc.framework.base.packets import interfaces
+from grpc.framework.base import interfaces
 
 
 class ForeLink(interfaces.ForeLink):

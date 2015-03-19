@@ -36,9 +36,8 @@ import time
 
 from grpc._adapter import _common
 from grpc._adapter import _low
-from grpc.framework.base.packets import interfaces as ticket_interfaces
-from grpc.framework.base.packets import null
-from grpc.framework.base.packets import packets as tickets
+from grpc.framework.base import interfaces as base_interfaces
+from grpc.framework.base import null
 from grpc.framework.foundation import activated
 from grpc.framework.foundation import logging_pool
 
@@ -88,7 +87,7 @@ def _write(operation_id, call, outstanding, write_state, serialized_payload):
     raise ValueError('Write attempted after writes completed!')
 
 
-class RearLink(ticket_interfaces.RearLink, activated.Activated):
+class RearLink(base_interfaces.RearLink, activated.Activated):
   """An invocation-side bridge between RPC Framework and the C-ish _low code."""
 
   def __init__(
@@ -152,9 +151,9 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     else:
       logging.error('RPC write not accepted! Event: %s', (event,))
       rpc_state.active = False
-      ticket = tickets.BackToFrontPacket(
+      ticket = base_interfaces.BackToFrontTicket(
           operation_id, rpc_state.common.sequence_number,
-          tickets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE, None)
+          base_interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE, None)
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -163,9 +162,9 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
       rpc_state.call.read(operation_id)
       rpc_state.outstanding.add(_low.Event.Kind.READ_ACCEPTED)
 
-      ticket = tickets.BackToFrontPacket(
+      ticket = base_interfaces.BackToFrontTicket(
           operation_id, rpc_state.common.sequence_number,
-          tickets.BackToFrontPacket.Kind.CONTINUATION,
+          base_interfaces.BackToFrontTicket.Kind.CONTINUATION,
           rpc_state.common.deserializer(event.bytes))
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
@@ -174,9 +173,9 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     if not event.complete_accepted:
       logging.error('RPC complete not accepted! Event: %s', (event,))
       rpc_state.active = False
-      ticket = tickets.BackToFrontPacket(
+      ticket = base_interfaces.BackToFrontTicket(
           operation_id, rpc_state.common.sequence_number,
-          tickets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE, None)
+          base_interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE, None)
       rpc_state.common.sequence_number += 1
       self._fore_link.accept_back_to_front_ticket(ticket)
 
@@ -189,14 +188,14 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     """Handle termination of an RPC."""
     # TODO(nathaniel): Cover all statuses.
     if event.status.code is _low.Code.OK:
-      kind = tickets.BackToFrontPacket.Kind.COMPLETION
+      kind = base_interfaces.BackToFrontTicket.Kind.COMPLETION
     elif event.status.code is _low.Code.CANCELLED:
-      kind = tickets.BackToFrontPacket.Kind.CANCELLATION
+      kind = base_interfaces.BackToFrontTicket.Kind.CANCELLATION
     elif event.status.code is _low.Code.EXPIRED:
-      kind = tickets.BackToFrontPacket.Kind.EXPIRATION
+      kind = base_interfaces.BackToFrontTicket.Kind.EXPIRATION
     else:
-      kind = tickets.BackToFrontPacket.Kind.TRANSMISSION_FAILURE
-    ticket = tickets.BackToFrontPacket(
+      kind = base_interfaces.BackToFrontTicket.Kind.TRANSMISSION_FAILURE
+    ticket = base_interfaces.BackToFrontTicket(
         operation_id, rpc_state.common.sequence_number, kind, None)
     rpc_state.common.sequence_number += 1
     self._fore_link.accept_back_to_front_ticket(ticket)
@@ -317,7 +316,7 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
       rpc_state.active = False
 
   def join_fore_link(self, fore_link):
-    """See ticket_interfaces.RearLink.join_fore_link for specification."""
+    """See base_interfaces.RearLink.join_fore_link for specification."""
     with self._condition:
       self._fore_link = null.NULL_FORE_LINK if fore_link is None else fore_link
 
@@ -366,22 +365,22 @@ class RearLink(ticket_interfaces.RearLink, activated.Activated):
     self._stop()
 
   def accept_front_to_back_ticket(self, ticket):
-    """See ticket_interfaces.RearLink.accept_front_to_back_ticket for spec."""
+    """See base_interfaces.RearLink.accept_front_to_back_ticket for spec."""
     with self._condition:
       if self._completion_queue is None:
         return
 
-      if ticket.kind is tickets.FrontToBackPacket.Kind.COMMENCEMENT:
+      if ticket.kind is base_interfaces.FrontToBackTicket.Kind.COMMENCEMENT:
         self._commence(
             ticket.operation_id, ticket.name, ticket.payload, ticket.timeout)
-      elif ticket.kind is tickets.FrontToBackPacket.Kind.CONTINUATION:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.CONTINUATION:
         self._continue(ticket.operation_id, ticket.payload)
-      elif ticket.kind is tickets.FrontToBackPacket.Kind.COMPLETION:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.COMPLETION:
         self._complete(ticket.operation_id, ticket.payload)
-      elif ticket.kind is tickets.FrontToBackPacket.Kind.ENTIRE:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.ENTIRE:
         self._entire(
             ticket.operation_id, ticket.name, ticket.payload, ticket.timeout)
-      elif ticket.kind is tickets.FrontToBackPacket.Kind.CANCELLATION:
+      elif ticket.kind is base_interfaces.FrontToBackTicket.Kind.CANCELLATION:
         self._cancel(ticket.operation_id)
       else:
         # NOTE(nathaniel): All other categories are treated as cancellation.

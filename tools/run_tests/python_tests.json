@@ -27,7 +27,7 @@
     "module": "grpc.early_adopter.implementations_test"
   },
   {
-    "module": "grpc.framework.base.packets.implementations_test"
+    "module": "grpc.framework.base.implementations_test"
   },
   {
     "module": "grpc.framework.face.blocking_invocation_inline_service_test"

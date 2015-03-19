@@ -31,9 +31,8 @@
 
 import abc
 
-# base_interfaces and packets are referenced from specification in this module.
-from grpc.framework.base import interfaces as base_interfaces  # pylint: disable=unused-import
-from grpc.framework.base.packets import packets  # pylint: disable=unused-import
+# interfaces is referenced from specification in this module.
+from grpc.framework.base import interfaces  # pylint: disable=unused-import
 from grpc.framework.foundation import stream
 
 
@@ -63,7 +62,7 @@ class TerminationManager(object):
     immediately.
 
     Args:
-      callback: A callable that will be passed a base_interfaces.Outcome value.
+      callback: A callable that will be passed an interfaces.Outcome value.
     """
     raise NotImplementedError()
 
@@ -87,7 +86,7 @@ class TerminationManager(object):
     """Indicates that the operation must abort for the indicated reason.
 
     Args:
-      outcome: A base_interfaces.Outcome indicating operation abortion.
+      outcome: An interfaces.Outcome indicating operation abortion.
     """
     raise NotImplementedError()
 
@@ -113,7 +112,7 @@ class TransmissionManager(object):
     """Indicates that the operation has aborted for the indicated reason.
 
     Args:
-      outcome: A base_interfaces.Outcome indicating operation abortion.
+      outcome: An interfaces.Outcome indicating operation abortion.
     """
     raise NotImplementedError()
 
@@ -248,15 +247,15 @@ class ExpirationManager(object):
 
 
 class ReceptionManager(object):
-  """A manager responsible for receiving packets from the other end."""
+  """A manager responsible for receiving tickets from the other end."""
   __metaclass__ = abc.ABCMeta
 
   @abc.abstractmethod
-  def receive_packet(self, packet):
-    """Handle a packet from the other side of the operation.
+  def receive_ticket(self, ticket):
+    """Handle a ticket from the other side of the operation.
 
     Args:
-      packet: A packets.BackToFrontPacket or packets.FrontToBackPacket
+      ticket: An interfaces.BackToFrontTicket or interfaces.FrontToBackTicket
         appropriate to this end of the operation and this object.
     """
     raise NotImplementedError()

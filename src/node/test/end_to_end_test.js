@@ -138,21 +138,21 @@ describe('end-to-end', function() {
     client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
     call.startBatch(client_batch, function(err, response) {
       assert.ifError(err);
-      assert(response['send metadata']);
-      assert(response['client close']);
-      assert(response.hasOwnProperty('metadata'));
-      assert.strictEqual(response.metadata.server_key[0].toString(),
-                         'server_value');
-      assert.deepEqual(response.status, {'code': grpc.status.OK,
-                                         'details': status_text,
-                                         'metadata': {}});
+      assert.deepEqual(response,{
+        'send metadata': true,
+        'client close': true,
+        metadata: {server_key: ['server_value']},
+        status: {'code': grpc.status.OK,
+                 'details': status_text,
+                 'metadata': {}}
+      });
       done();
     });
 
     server.requestCall(function(err, call_details) {
       var new_call = call_details['new call'];
       assert.notEqual(new_call, null);
-      assert.strictEqual(new_call.metadata.client_key[0].toString(),
+      assert.strictEqual(new_call.metadata.client_key[0],
                          'client_value');
       var server_call = new_call.call;
       assert.notEqual(server_call, null);

@@ -27,4 +27,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""State and behavior for operation cancellation."""
 
+from grpc.framework.base import _interfaces
+from grpc.framework.base import interfaces
+
+
+class CancellationManager(_interfaces.CancellationManager):
+  """An implementation of _interfaces.CancellationManager."""
+
+  def __init__(
+      self, lock, termination_manager, transmission_manager, ingestion_manager,
+      expiration_manager):
+    """Constructor.
+
+    Args:
+      lock: The operation-wide lock.
+      termination_manager: The _interfaces.TerminationManager for the operation.
+      transmission_manager: The _interfaces.TransmissionManager for the
+        operation.
+      ingestion_manager: The _interfaces.IngestionManager for the operation.
+      expiration_manager: The _interfaces.ExpirationManager for the operation.
+    """
+    self._lock = lock
+    self._termination_manager = termination_manager
+    self._transmission_manager = transmission_manager
+    self._ingestion_manager = ingestion_manager
+    self._expiration_manager = expiration_manager
+
+  def cancel(self):
+    """See _interfaces.CancellationManager.cancel for specification."""
+    with self._lock:
+      self._termination_manager.abort(interfaces.Outcome.CANCELLED)
+      self._transmission_manager.abort(interfaces.Outcome.CANCELLED)
+      self._ingestion_manager.abort()
+      self._expiration_manager.abort()

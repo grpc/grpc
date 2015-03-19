@@ -29,8 +29,8 @@
 
 """State and behavior for handling emitted values."""
 
-from grpc.framework.base import interfaces as base_interfaces
-from grpc.framework.base.packets import _interfaces
+from grpc.framework.base import interfaces
+from grpc.framework.base import _interfaces
 
 
 class _EmissionManager(_interfaces.EmissionManager):
@@ -42,10 +42,9 @@ class _EmissionManager(_interfaces.EmissionManager):
 
     Args:
       lock: The operation-wide lock.
-      failure_outcome: Whichever one of
-        base_interfaces.Outcome.SERVICED_FAILURE or
-        base_interfaces.Outcome.SERVICER_FAILURE describes this object's
-        methods being called inappropriately by customer code.
+      failure_outcome: Whichever one of interfaces.Outcome.SERVICED_FAILURE or
+        interfaces.Outcome.SERVICER_FAILURE describes this object's methods
+        being called inappropriately by customer code.
       termination_manager: The _interfaces.TerminationManager for the operation.
       transmission_manager: The _interfaces.TransmissionManager for the
         operation.
@@ -106,7 +105,7 @@ def front_emission_manager(lock, termination_manager, transmission_manager):
     An _interfaces.EmissionManager appropriate for front-side use.
   """
   return _EmissionManager(
-      lock, base_interfaces.Outcome.SERVICED_FAILURE, termination_manager,
+      lock, interfaces.Outcome.SERVICED_FAILURE, termination_manager,
       transmission_manager)
 
 
@@ -122,5 +121,5 @@ def back_emission_manager(lock, termination_manager, transmission_manager):
     An _interfaces.EmissionManager appropriate for back-side use.
   """
   return _EmissionManager(
-      lock, base_interfaces.Outcome.SERVICER_FAILURE, termination_manager,
+      lock, interfaces.Outcome.SERVICER_FAILURE, termination_manager,
       transmission_manager)
