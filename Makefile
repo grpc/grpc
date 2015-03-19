@@ -2331,6 +2331,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_win32.h \
     include/grpc/support/cancellable_platform.h \
     include/grpc/support/cmdline.h \
+    include/grpc/support/cpu.h \
     include/grpc/support/histogram.h \
     include/grpc/support/host_port.h \
     include/grpc/support/log.h \
@@ -2585,6 +2586,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/grpc.h \
+    include/grpc/grpc_http.h \
     include/grpc/status.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
@@ -3066,6 +3068,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/grpc.h \
+    include/grpc/grpc_http.h \
     include/grpc/status.h \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
@@ -3239,6 +3242,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
+    include/grpc++/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/internal_stub.h \
@@ -3483,6 +3487,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
+    include/grpc++/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/internal_stub.h \

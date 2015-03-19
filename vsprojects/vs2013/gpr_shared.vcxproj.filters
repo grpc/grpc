@@ -123,6 +123,9 @@
     <ClInclude Include="..\..\include\grpc\support\cmdline.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\cpu.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\histogram.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
