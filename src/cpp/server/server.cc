@@ -322,10 +322,9 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
         payload_(nullptr) {
     memset(&array_, 0, sizeof(array_));
     grpc_call_details_init(&call_details_);
-    grpc_server_request_call(
-        server->server_, &call_, &call_details_, &array_, cq->cq(), this);
+    grpc_server_request_call(server->server_, &call_, &call_details_, &array_,
+                             cq->cq(), this);
   }
-
 
   ~AsyncRequest() {
     if (payload_) {

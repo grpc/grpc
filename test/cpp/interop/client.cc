@@ -165,8 +165,8 @@ void AssertOkOrPrintErrorStatus(const grpc::Status& s) {
   if (s.IsOk()) {
     return;
   }
-  gpr_log(GPR_INFO, "Error status code: %d, message: %s",
-          s.code(), s.details().c_str());
+  gpr_log(GPR_INFO, "Error status code: %d, message: %s", s.code(),
+          s.details().c_str());
   GPR_ASSERT(0);
 }
 
@@ -246,8 +246,7 @@ void DoServiceAccountCreds() {
 }
 
 void DoJwtTokenCreds() {
-  gpr_log(GPR_INFO,
-          "Sending a large unary rpc with JWT token credentials ...");
+  gpr_log(GPR_INFO, "Sending a large unary rpc with JWT token credentials ...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("jwt_token_creds");
   SimpleRequest request;

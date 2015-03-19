@@ -36,7 +36,7 @@
 #include <grpc/support/log.h>
 
 // Make sure the existing grpc_status_code match with grpc::Code.
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   GPR_ASSERT(grpc::StatusCode::OK ==
              static_cast<grpc::StatusCode>(GRPC_STATUS_OK));
   GPR_ASSERT(grpc::StatusCode::CANCELLED ==

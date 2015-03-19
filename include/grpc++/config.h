@@ -59,10 +59,11 @@
 
 #ifndef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM
 #include <google/protobuf/io/zero_copy_stream.h>
-#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ::google::protobuf::io::ZeroCopyOutputStream
-#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ::google::protobuf::io::ZeroCopyInputStream
+#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM \
+  ::google::protobuf::io::ZeroCopyOutputStream
+#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM \
+  ::google::protobuf::io::ZeroCopyInputStream
 #endif
-
 
 namespace grpc {
 
