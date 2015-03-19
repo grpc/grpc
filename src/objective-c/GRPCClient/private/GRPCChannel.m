@@ -51,6 +51,7 @@
 
 - (instancetype)initWithHost:(NSString *)host {
   if (![host containsString:@"://"]) {
+    // No scheme provided; assume https.
     host = [@"https://" stringByAppendingString:host];
   }
   NSURL *hostURL = [NSURL URLWithString:host];
@@ -58,9 +59,11 @@
     [NSException raise:NSInvalidArgumentException format:@"Invalid URL: %@", host];
   }
   if ([hostURL.scheme isEqualToString:@"https"]) {
+    host = [hostURL.host stringByAppendingString:hostURL.port.stringValue ?: @":443"];
     return [[GRPCSecureChannel alloc] initWithHost:host];
   }
   if ([hostURL.scheme isEqualToString:@"http"]) {
+    host = [hostURL.host stringByAppendingString:hostURL.port.stringValue ?: @":80"];
     return [[GRPCUnsecuredChannel alloc] initWithHost:host];
   }
   [NSException raise:NSInvalidArgumentException
