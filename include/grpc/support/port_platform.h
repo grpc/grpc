@@ -124,10 +124,15 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__APPLE__)
+#include <TargetConditionals.h>
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#if TARGET_OS_IPHONE
+#define GPR_CPU_IPHONE 1
+#else /* TARGET_OS_IPHONE */
 #define GPR_CPU_POSIX 1
+#endif
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
@@ -185,8 +190,8 @@
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
 #endif
 
-#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) != 1
-#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) + defined(GPR_CPU_IPHONE) != 1
+#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32, GPR_CPU_IPHONE
 #endif
 
 #if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_SOCKET)
