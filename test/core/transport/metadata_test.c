@@ -178,7 +178,7 @@ static void test_things_stick_around(void) {
   grpc_mdctx *ctx;
   int i, j;
   char *buffer;
-  int nstrs = 10000;
+  int nstrs = 1000;
   grpc_mdstr **strs = gpr_malloc(sizeof(grpc_mdstr *) * nstrs);
   int *shuf = gpr_malloc(sizeof(int) * nstrs);
   grpc_mdstr *test;
