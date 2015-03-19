@@ -88,7 +88,7 @@ class CompletionQueue {
   // Returns false if the queue is ready for destruction, true if event
   bool Next(void **tag, bool *ok) {
     return (AsyncNext(tag,ok,
-		      std::chrono::system_clock::time_point::max()) !=
+		      (std::chrono::system_clock::time_point::max)()) !=
 	    SHUTDOWN);
   }
 
