@@ -86,53 +86,51 @@ class CompletionQueue {
 
   // Blocking (until deadline) read from queue.
   // Returns false if the queue is ready for destruction, true if event
+
   bool Next(void** tag, bool* ok) {
-    return (AsyncNext(tag, ok, std::chrono::system_clock::time_point::max()) !=
-            SHUTDOWN);
+    return (
+        AsyncNext(tag, ok, (std::chrono::system_clock::time_point::max)()) !=
+        SHUTDOWN);
+  }
 
-    bool Next(void** tag, bool* ok) {
-      return (
-          AsyncNext(tag, ok, (std::chrono::system_clock::time_point::max)()) !=
-          SHUTDOWN);
-    }
+  // Shutdown has to be called, and the CompletionQueue can only be
+  // destructed when false is returned from Next().
+  void Shutdown();
 
-    // Shutdown has to be called, and the CompletionQueue can only be
-    // destructed when false is returned from Next().
-    void Shutdown();
+  grpc_completion_queue* cq() { return cq_; }
 
-    grpc_completion_queue* cq() { return cq_; }
+ private:
+  // Friend synchronous wrappers so that they can access Pluck(), which is
+  // a semi-private API geared towards the synchronous implementation.
+  template <class R>
+  friend class ::grpc::ClientReader;
+  template <class W>
+  friend class ::grpc::ClientWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientReaderWriter;
+  template <class R>
+  friend class ::grpc::ServerReader;
+  template <class W>
+  friend class ::grpc::ServerWriter;
+  template <class R, class W>
+  friend class ::grpc::ServerReaderWriter;
+  friend class ::grpc::Server;
+  friend class ::grpc::ServerContext;
+  friend Status BlockingUnaryCall(ChannelInterface* channel,
+                                  const RpcMethod& method,
+                                  ClientContext* context,
+                                  const grpc::protobuf::Message& request,
+                                  grpc::protobuf::Message* result);
 
-   private:
-    // Friend synchronous wrappers so that they can access Pluck(), which is
-    // a semi-private API geared towards the synchronous implementation.
-    template <class R>
-    friend class ::grpc::ClientReader;
-    template <class W>
-    friend class ::grpc::ClientWriter;
-    template <class R, class W>
-    friend class ::grpc::ClientReaderWriter;
-    template <class R>
-    friend class ::grpc::ServerReader;
-    template <class W>
-    friend class ::grpc::ServerWriter;
-    template <class R, class W>
-    friend class ::grpc::ServerReaderWriter;
-    friend class ::grpc::Server;
-    friend class ::grpc::ServerContext;
-    friend Status BlockingUnaryCall(
-        ChannelInterface * channel, const RpcMethod& method,
-        ClientContext* context, const grpc::protobuf::Message& request,
-        grpc::protobuf::Message* result);
+  // Wraps grpc_completion_queue_pluck.
+  // Cannot be mixed with calls to Next().
+  bool Pluck(CompletionQueueTag* tag);
 
-    // Wraps grpc_completion_queue_pluck.
-    // Cannot be mixed with calls to Next().
-    bool Pluck(CompletionQueueTag * tag);
+  // Does a single polling pluck on tag
+  void TryPluck(CompletionQueueTag* tag);
 
-    // Does a single polling pluck on tag
-    void TryPluck(CompletionQueueTag * tag);
-
-    grpc_completion_queue* cq_;  // owned
-  };
+  grpc_completion_queue* cq_;  // owned
+};
 
 }  // namespace grpc
 
