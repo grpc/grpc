@@ -36,7 +36,7 @@ echo $result_file_name
 main() {
   source grpc_docker.sh
   test_cases=(large_unary empty_unary ping_pong client_streaming server_streaming cancel_after_begin cancel_after_first_response)
-  auth_test_cases=(service_account_creds compute_engine_creds)
+  auth_test_cases=(service_account_creds compute_engine_creds jwt_token_creds)
   clients=(cxx java go ruby node csharp_mono)
   for test_case in "${test_cases[@]}"
   do

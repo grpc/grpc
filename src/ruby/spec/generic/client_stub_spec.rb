@@ -434,7 +434,7 @@ describe 'ClientStub' do
       end
       expect(c.remote_read).to eq(expected_input)
       replys.each { |r| c.remote_send(r) }
-      c.send_status(status, status == @pass ? 'OK' : 'NOK')
+      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
     end
   end
 
@@ -444,7 +444,7 @@ describe 'ClientStub' do
       c = expect_server_to_be_invoked(mtx, cnd)
       expected_inputs.each { |i| expect(c.remote_read).to eq(i) }
       replys.each { |r| c.remote_send(r) }
-      c.send_status(status, status == @pass ? 'OK' : 'NOK')
+      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
     end
   end
 
@@ -460,7 +460,7 @@ describe 'ClientStub' do
           expect(c.remote_read).to eq(i)
         end
       end
-      c.send_status(status, status == @pass ? 'OK' : 'NOK')
+      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
     end
   end
 
@@ -473,7 +473,7 @@ describe 'ClientStub' do
         expect(c.metadata[k.to_s]).to eq(v)
       end
       c.remote_send(resp)
-      c.send_status(status, status == @pass ? 'OK' : 'NOK')
+      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
     end
   end
 
@@ -486,7 +486,7 @@ describe 'ClientStub' do
         expect(c.metadata[k.to_s]).to eq(v)
       end
       c.remote_send(resp)
-      c.send_status(status, status == @pass ? 'OK' : 'NOK')
+      c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
     end
   end
 

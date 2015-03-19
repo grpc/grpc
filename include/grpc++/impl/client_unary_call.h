@@ -45,10 +45,10 @@ class RpcMethod;
 class Status;
 
 // Wrapper that performs a blocking unary call
-Status BlockingUnaryCall(ChannelInterface *channel, const RpcMethod &method,
-                         ClientContext *context,
-                         const grpc::protobuf::Message &request,
-                         grpc::protobuf::Message *result);
+Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
+                         ClientContext* context,
+                         const grpc::protobuf::Message& request,
+                         grpc::protobuf::Message* result);
 
 }  // namespace grpc
 

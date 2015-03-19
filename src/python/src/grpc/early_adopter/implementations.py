@@ -33,11 +33,11 @@ import threading
 
 from grpc._adapter import fore as _fore
 from grpc._adapter import rear as _rear
-from grpc.early_adopter import _face_utilities
-from grpc.early_adopter import _reexport
-from grpc.early_adopter import interfaces
+from grpc.framework.alpha import _face_utilities
+from grpc.framework.alpha import _reexport
+from grpc.framework.alpha import interfaces
+from grpc.framework.base import implementations as _base_implementations
 from grpc.framework.base import util as _base_utilities
-from grpc.framework.base.packets import implementations as _tickets_implementations
 from grpc.framework.face import implementations as _face_implementations
 from grpc.framework.foundation import logging_pool
 
@@ -66,7 +66,7 @@ class _Server(interfaces.Server):
         self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
         servicer = _face_implementations.servicer(
             self._pool, self._breakdown.implementations, None)
-        self._back = _tickets_implementations.back(
+        self._back = _base_implementations.back_link(
             servicer, self._pool, self._pool, self._pool, _ONE_DAY_IN_SECONDS,
             _ONE_DAY_IN_SECONDS)
         self._fore_link = _fore.ForeLink(
@@ -134,7 +134,7 @@ class _Stub(interfaces.Stub):
     with self._lock:
       if self._pool is None:
         self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
-        self._front = _tickets_implementations.front(
+        self._front = _base_implementations.front_link(
             self._pool, self._pool, self._pool)
         self._rear_link = _rear.RearLink(
             self._host, self._port, self._pool,
@@ -146,8 +146,7 @@ class _Stub(interfaces.Stub):
         self._rear_link.join_fore_link(self._front)
         self._rear_link.start()
         self._understub = _face_implementations.dynamic_stub(
-            _reexport.common_cardinalities(self._breakdown.cardinalities),
-            self._front, self._pool, '')
+            self._breakdown.face_cardinalities, self._front, self._pool, '')
       else:
         raise ValueError('Tried to __enter__ already-__enter__ed Stub!')
     return self
@@ -171,17 +170,9 @@ class _Stub(interfaces.Stub):
       if self._pool is None:
         raise ValueError('Tried to __getattr__ non-__enter__ed Stub!')
       else:
-        underlying_attr = getattr(self._understub, attr, None)
         method_cardinality = self._breakdown.cardinalities.get(attr)
-        # TODO(nathaniel): Eliminate this trick.
-        if underlying_attr is None:
-          for method_name, method_cardinality in self._breakdown.cardinalities.iteritems():
-            last_slash_index = method_name.rfind('/')
-            if 0 <= last_slash_index and method_name[last_slash_index + 1:] == attr:
-              underlying_attr = getattr(self._understub, method_name)
-              break
-          else:
-            raise AttributeError(attr)
+        underlying_attr = getattr(
+            self._understub, self._breakdown.qualified_names.get(attr), None)
         if method_cardinality is interfaces.Cardinality.UNARY_UNARY:
           return _reexport.unary_unary_sync_async(underlying_attr)
         elif method_cardinality is interfaces.Cardinality.UNARY_STREAM:
@@ -198,44 +189,49 @@ class _Stub(interfaces.Stub):
 
 
 def _build_stub(
-    methods, host, port, secure, root_certificates, private_key,
+    service_name, methods, host, port, secure, root_certificates, private_key,
     certificate_chain, server_host_override=None):
-  breakdown = _face_utilities.break_down_invocation(methods)
+  breakdown = _face_utilities.break_down_invocation(service_name, methods)
   return _Stub(
       breakdown, host, port, secure, root_certificates, private_key,
       certificate_chain, server_host_override=server_host_override)
 
 
-def _build_server(methods, port, private_key, certificate_chain):
-  breakdown = _face_utilities.break_down_service(methods)
+def _build_server(service_name, methods, port, private_key, certificate_chain):
+  breakdown = _face_utilities.break_down_service(service_name, methods)
   return _Server(breakdown, port, private_key, certificate_chain)
 
 
-def insecure_stub(methods, host, port):
+def insecure_stub(service_name, methods, host, port):
   """Constructs an insecure interfaces.Stub.
 
   Args:
+    service_name: The package-qualified full name of the service.
     methods: A dictionary from RPC method name to
       interfaces.RpcMethodInvocationDescription describing the RPCs to be
-      supported by the created stub.
+      supported by the created stub. The RPC method names in the dictionary are
+      not qualified by the service name or decorated in any other way.
     host: The host to which to connect for RPC service.
     port: The port to which to connect for RPC service.
 
   Returns:
     An interfaces.Stub affording RPC invocation.
   """
-  return _build_stub(methods, host, port, False, None, None, None)
+  return _build_stub(
+      service_name, methods, host, port, False, None, None, None)
 
 
 def secure_stub(
-    methods, host, port, root_certificates, private_key, certificate_chain,
-    server_host_override=None):
+    service_name, methods, host, port, root_certificates, private_key,
+    certificate_chain, server_host_override=None):
   """Constructs an insecure interfaces.Stub.
 
   Args:
+    service_name: The package-qualified full name of the service.
     methods: A dictionary from RPC method name to
       interfaces.RpcMethodInvocationDescription describing the RPCs to be
-      supported by the created stub.
+      supported by the created stub. The RPC method names in the dictionary are
+      not qualified by the service name or decorated in any other way.
     host: The host to which to connect for RPC service.
     port: The port to which to connect for RPC service.
     root_certificates: The PEM-encoded root certificates or None to ask for
@@ -251,17 +247,19 @@ def secure_stub(
     An interfaces.Stub affording RPC invocation.
   """
   return _build_stub(
-      methods, host, port, True, root_certificates, private_key,
+      service_name, methods, host, port, True, root_certificates, private_key,
       certificate_chain, server_host_override=server_host_override)
 
 
-def insecure_server(methods, port):
+def insecure_server(service_name, methods, port):
   """Constructs an insecure interfaces.Server.
 
   Args:
+    service_name: The package-qualified full name of the service.
     methods: A dictionary from RPC method name to
       interfaces.RpcMethodServiceDescription describing the RPCs to
-      be serviced by the created server.
+      be serviced by the created server. The RPC method names in the dictionary
+      are not qualified by the service name or decorated in any other way.
     port: The desired port on which to serve or zero to ask for a port to
       be automatically selected.
 
@@ -269,16 +267,18 @@ def insecure_server(methods, port):
     An interfaces.Server that will run with no security and
       service unsecured raw requests.
   """
-  return _build_server(methods, port, None, None)
+  return _build_server(service_name, methods, port, None, None)
 
 
-def secure_server(methods, port, private_key, certificate_chain):
+def secure_server(service_name, methods, port, private_key, certificate_chain):
   """Constructs a secure interfaces.Server.
 
   Args:
+    service_name: The package-qualified full name of the service.
     methods: A dictionary from RPC method name to
       interfaces.RpcMethodServiceDescription describing the RPCs to
-      be serviced by the created server.
+      be serviced by the created server. The RPC method names in the dictionary
+      are not qualified by the service name or decorated in any other way.
     port: The port on which to serve or zero to ask for a port to be
       automatically selected.
     private_key: A pem-encoded private key.
@@ -287,4 +287,5 @@ def secure_server(methods, port, private_key, certificate_chain):
   Returns:
     An interfaces.Server that will serve secure traffic.
   """
-  return _build_server(methods, port, private_key, certificate_chain)
+  return _build_server(
+      service_name, methods, port, private_key, certificate_chain)

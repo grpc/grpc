@@ -74,4 +74,4 @@ unsigned gpr_cpu_current_cpu(void) {
   return shard_ptr(&magic_thread_local);
 }
 
-#endif /* GPR_CPU_LINUX */
+#endif /* GPR_CPU_POSIX */

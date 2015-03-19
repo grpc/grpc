@@ -12,7 +12,9 @@
     {
       "name": "grpc++_base",
       "public_headers": [
+        "include/grpc++/async_generic_service.h",
         "include/grpc++/async_unary_call.h",
+        "include/grpc++/byte_buffer.h",
         "include/grpc++/channel_arguments.h",
         "include/grpc++/channel_interface.h",
         "include/grpc++/client_context.h",
@@ -30,6 +32,7 @@
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
+        "include/grpc++/slice.h",
         "include/grpc++/status.h",
         "include/grpc++/status_code_enum.h",
         "include/grpc++/stream.h",
@@ -54,12 +57,15 @@
         "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
         "src/cpp/proto/proto_utils.cc",
+        "src/cpp/server/async_generic_service.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server.cc",
         "src/cpp/server/server_builder.cc",
         "src/cpp/server/server_context.cc",
         "src/cpp/server/server_credentials.cc",
         "src/cpp/server/thread_pool.cc",
+        "src/cpp/util/byte_buffer.cc",
+        "src/cpp/util/slice.cc",
         "src/cpp/util/status.cc",
         "src/cpp/util/time.cc"
       ]
@@ -1688,6 +1694,22 @@
       "language": "c++",
       "src": [
         "test/cpp/end2end/end2end_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "generic_end2end_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/generic_end2end_test.cc"
       ],
       "deps": [
         "grpc++_test_util",

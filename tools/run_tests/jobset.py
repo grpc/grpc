@@ -192,7 +192,7 @@ class Job(object):
         self._tempfile.seek(0)
         stdout = self._tempfile.read()
         message('FAILED', '%s [ret=%d]' % (
-            self._spec.shortname, self._process.returncode), stdout)
+            self._spec.shortname, self._process.returncode), stdout, do_newline=True)
       else:
         self._state = _SUCCESS
         message('PASSED', '%s [time=%.1fsec]' % (self._spec.shortname, elapsed),
@@ -200,7 +200,7 @@ class Job(object):
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > 300:
-      message('TIMEOUT', self._spec.shortname, do_newline=self._travis)
+      message('TIMEOUT', self._spec.shortname, do_newline=True)
       self.kill()
     return self._state
 

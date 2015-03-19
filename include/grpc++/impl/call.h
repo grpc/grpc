@@ -35,9 +35,9 @@
 #define GRPCXX_IMPL_CALL_H
 
 #include <grpc/grpc.h>
+#include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
 #include <grpc++/status.h>
-#include <grpc++/completion_queue.h>
 
 #include <memory>
 #include <map>
@@ -47,6 +47,7 @@ struct grpc_op;
 
 namespace grpc {
 
+class ByteBuffer;
 class Call;
 
 class CallOpBuffer : public CompletionQueueTag {
@@ -54,85 +55,89 @@ class CallOpBuffer : public CompletionQueueTag {
   CallOpBuffer();
   ~CallOpBuffer();
 
-  void Reset(void *next_return_tag);
+  void Reset(void* next_return_tag);
 
   // Does not take ownership.
   void AddSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string> *metadata);
-  void AddSendInitialMetadata(ClientContext *ctx);
-  void AddRecvInitialMetadata(ClientContext *ctx);
-  void AddSendMessage(const grpc::protobuf::Message &message);
-  void AddRecvMessage(grpc::protobuf::Message *message);
+      std::multimap<grpc::string, grpc::string>* metadata);
+  void AddSendInitialMetadata(ClientContext* ctx);
+  void AddRecvInitialMetadata(ClientContext* ctx);
+  void AddSendMessage(const grpc::protobuf::Message& message);
+  void AddSendMessage(const ByteBuffer& message);
+  void AddRecvMessage(grpc::protobuf::Message* message);
+  void AddRecvMessage(ByteBuffer* message);
   void AddClientSendClose();
-  void AddClientRecvStatus(ClientContext *ctx, Status *status);
-  void AddServerSendStatus(std::multimap<grpc::string, grpc::string> *metadata,
-                           const Status &status);
-  void AddServerRecvClose(bool *cancelled);
+  void AddClientRecvStatus(ClientContext* ctx, Status* status);
+  void AddServerSendStatus(std::multimap<grpc::string, grpc::string>* metadata,
+                           const Status& status);
+  void AddServerRecvClose(bool* cancelled);
 
   // INTERNAL API:
 
   // Convert to an array of grpc_op elements
-  void FillOps(grpc_op *ops, size_t *nops);
+  void FillOps(grpc_op* ops, size_t* nops);
 
   // Called by completion queue just prior to returning from Next() or Pluck()
-  bool FinalizeResult(void **tag, bool *status) GRPC_OVERRIDE;
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
   bool got_message;
 
  private:
-  void *return_tag_;
+  void* return_tag_;
   // Send initial metadata
   bool send_initial_metadata_;
   size_t initial_metadata_count_;
-  grpc_metadata *initial_metadata_;
+  grpc_metadata* initial_metadata_;
   // Recv initial metadta
-  std::multimap<grpc::string, grpc::string> *recv_initial_metadata_;
+  std::multimap<grpc::string, grpc::string>* recv_initial_metadata_;
   grpc_metadata_array recv_initial_metadata_arr_;
   // Send message
-  const grpc::protobuf::Message *send_message_;
-  grpc_byte_buffer *send_message_buf_;
+  const grpc::protobuf::Message* send_message_;
+  const ByteBuffer* send_message_buffer_;
+  grpc_byte_buffer* send_buf_;
   // Recv message
-  grpc::protobuf::Message *recv_message_;
-  grpc_byte_buffer *recv_message_buf_;
+  grpc::protobuf::Message* recv_message_;
+  ByteBuffer* recv_message_buffer_;
+  grpc_byte_buffer* recv_buf_;
   // Client send close
   bool client_send_close_;
   // Client recv status
-  std::multimap<grpc::string, grpc::string> *recv_trailing_metadata_;
-  Status *recv_status_;
+  std::multimap<grpc::string, grpc::string>* recv_trailing_metadata_;
+  Status* recv_status_;
   grpc_metadata_array recv_trailing_metadata_arr_;
   grpc_status_code status_code_;
-  char *status_details_;
+  char* status_details_;
   size_t status_details_capacity_;
   // Server send status
-  const Status *send_status_;
+  const Status* send_status_;
   size_t trailing_metadata_count_;
-  grpc_metadata *trailing_metadata_;
+  grpc_metadata* trailing_metadata_;
   int cancelled_buf_;
-  bool *recv_closed_;
+  bool* recv_closed_;
 };
 
 // Channel and Server implement this to allow them to hook performing ops
 class CallHook {
  public:
   virtual ~CallHook() {}
-  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) = 0;
+  virtual void PerformOpsOnCall(CallOpBuffer* ops, Call* call) = 0;
 };
 
 // Straightforward wrapping of the C call object
 class Call GRPC_FINAL {
  public:
   /* call is owned by the caller */
-  Call(grpc_call *call, CallHook *call_hook_, CompletionQueue *cq);
+  Call(grpc_call* call, CallHook* call_hook_, CompletionQueue* cq);
 
-  void PerformOps(CallOpBuffer *buffer);
+  void PerformOps(CallOpBuffer* buffer);
 
-  grpc_call *call() { return call_; }
-  CompletionQueue *cq() { return cq_; }
+  grpc_call* call() { return call_; }
+  CompletionQueue* cq() { return cq_; }
 
  private:
-  CallHook *call_hook_;
-  CompletionQueue *cq_;
-  grpc_call *call_;
+  CallHook* call_hook_;
+  CompletionQueue* cq_;
+  grpc_call* call_;
 };
 
 }  // namespace grpc

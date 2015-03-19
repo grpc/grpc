@@ -62,13 +62,13 @@ namespace testing {
 
 class AsyncQpsServerTest : public Server {
  public:
-  AsyncQpsServerTest(const ServerConfig &config, int port)
+  AsyncQpsServerTest(const ServerConfig& config, int port)
       : srv_cq_(), async_service_(&srv_cq_), server_(nullptr) {
-    char *server_address = NULL;
+    char* server_address = NULL;
     gpr_join_host_port(&server_address, "::", port);
 
     ServerBuilder builder;
-    builder.AddPort(server_address, InsecureServerCredentials());
+    builder.AddListeningPort(server_address, InsecureServerCredentials());
     gpr_free(server_address);
 
     builder.RegisterAsyncService(&async_service_);
@@ -87,10 +87,10 @@ class AsyncQpsServerTest : public Server {
       threads_.push_back(std::thread([=]() {
         // Wait until work is available or we are shutting down
         bool ok;
-        void *got_tag;
+        void* got_tag;
         while (srv_cq_.Next(&got_tag, &ok)) {
           if (ok) {
-            ServerRpcContext *ctx = detag(got_tag);
+            ServerRpcContext* ctx = detag(got_tag);
             // The tag is a pointer to an RPC context to invoke
             if (ctx->RunNextState() == false) {
               // this RPC context is done, so refresh it
@@ -105,7 +105,7 @@ class AsyncQpsServerTest : public Server {
   ~AsyncQpsServerTest() {
     server_->Shutdown();
     srv_cq_.Shutdown();
-    for (auto &thr : threads_) {
+    for (auto& thr : threads_) {
       thr.join();
     }
     while (!contexts_.empty()) {
@@ -122,21 +122,21 @@ class AsyncQpsServerTest : public Server {
     virtual bool RunNextState() = 0;  // do next state, return false if all done
     virtual void Reset() = 0;         // start this back at a clean state
   };
-  static void *tag(ServerRpcContext *func) {
-    return reinterpret_cast<void *>(func);
+  static void* tag(ServerRpcContext* func) {
+    return reinterpret_cast<void*>(func);
   }
-  static ServerRpcContext *detag(void *tag) {
-    return reinterpret_cast<ServerRpcContext *>(tag);
+  static ServerRpcContext* detag(void* tag) {
+    return reinterpret_cast<ServerRpcContext*>(tag);
   }
 
   template <class RequestType, class ResponseType>
   class ServerRpcContextUnaryImpl : public ServerRpcContext {
    public:
     ServerRpcContextUnaryImpl(
-        std::function<void(ServerContext *, RequestType *,
-                           grpc::ServerAsyncResponseWriter<ResponseType> *,
-                           void *)> request_method,
-        std::function<grpc::Status(const RequestType *, ResponseType *)>
+        std::function<void(ServerContext*, RequestType*,
+                           grpc::ServerAsyncResponseWriter<ResponseType>*,
+                           void*)> request_method,
+        std::function<grpc::Status(const RequestType*, ResponseType*)>
             invoke_method)
         : next_state_(&ServerRpcContextUnaryImpl::invoker),
           request_method_(request_method),
@@ -175,16 +175,16 @@ class AsyncQpsServerTest : public Server {
     ServerContext srv_ctx_;
     RequestType req_;
     bool (ServerRpcContextUnaryImpl::*next_state_)();
-    std::function<void(ServerContext *, RequestType *,
-                       grpc::ServerAsyncResponseWriter<ResponseType> *, void *)>
+    std::function<void(ServerContext*, RequestType*,
+                       grpc::ServerAsyncResponseWriter<ResponseType>*, void*)>
         request_method_;
-    std::function<grpc::Status(const RequestType *, ResponseType *)>
+    std::function<grpc::Status(const RequestType*, ResponseType*)>
         invoke_method_;
     grpc::ServerAsyncResponseWriter<ResponseType> response_writer_;
   };
 
-  static Status UnaryCall(const SimpleRequest *request,
-                          SimpleResponse *response) {
+  static Status UnaryCall(const SimpleRequest* request,
+                          SimpleResponse* response) {
     if (request->has_response_size() && request->response_size() > 0) {
       if (!SetPayload(request->response_type(), request->response_size(),
                       response->mutable_payload())) {
@@ -197,13 +197,13 @@ class AsyncQpsServerTest : public Server {
   TestService::AsyncService async_service_;
   std::vector<std::thread> threads_;
   std::unique_ptr<grpc::Server> server_;
-  std::function<void(ServerContext *, SimpleRequest *,
-                     grpc::ServerAsyncResponseWriter<SimpleResponse> *, void *)>
+  std::function<void(ServerContext*, SimpleRequest*,
+                     grpc::ServerAsyncResponseWriter<SimpleResponse>*, void*)>
       request_unary_;
-  std::forward_list<ServerRpcContext *> contexts_;
+  std::forward_list<ServerRpcContext*> contexts_;
 };
 
-std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config,
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config,
                                           int port) {
   return std::unique_ptr<Server>(new AsyncQpsServerTest(config, port));
 }

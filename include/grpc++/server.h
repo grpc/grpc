@@ -49,6 +49,8 @@ struct grpc_server;
 
 namespace grpc {
 class AsynchronousService;
+class GenericServerContext;
+class AsyncGenericService;
 class RpcService;
 class RpcServiceMethod;
 class ServerCredentials;
@@ -69,6 +71,7 @@ class Server GRPC_FINAL : private CallHook,
   void Wait();
 
  private:
+  friend class AsyncGenericService;
   friend class ServerBuilder;
 
   class SyncRequest;
@@ -81,8 +84,9 @@ class Server GRPC_FINAL : private CallHook,
   // The service must exist for the lifetime of the Server instance.
   bool RegisterService(RpcService* service);
   bool RegisterAsyncService(AsynchronousService* service);
+  void RegisterAsyncGenericService(AsyncGenericService* service);
   // Add a listening port. Can be called multiple times.
-  int AddPort(const grpc::string& addr, ServerCredentials* creds);
+  int AddListeningPort(const grpc::string& addr, ServerCredentials* creds);
   // Start the server.
   bool Start();
 
@@ -97,6 +101,10 @@ class Server GRPC_FINAL : private CallHook,
                         grpc::protobuf::Message* request,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* cq, void* tag) GRPC_OVERRIDE;
+
+  void RequestAsyncGenericCall(GenericServerContext* context,
+                               ServerAsyncStreamingInterface* stream,
+                               CompletionQueue* cq, void* tag);
 
   // Completion queue.
   CompletionQueue cq_;

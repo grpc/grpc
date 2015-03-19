@@ -57,7 +57,7 @@ require 'test/cpp/interop/empty'
 
 require 'signet/ssl_config'
 
-AUTH_ENV = Google::Auth::ServiceAccountCredentials::ENV_VAR
+AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
 
 # loads the certificates used to access the test server securely.
 def load_test_certs

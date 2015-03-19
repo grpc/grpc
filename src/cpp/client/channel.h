@@ -51,16 +51,16 @@ class StreamContextInterface;
 
 class Channel GRPC_FINAL : public ChannelInterface {
  public:
-  Channel(const grpc::string &target, grpc_channel *c_channel);
+  Channel(const grpc::string& target, grpc_channel* c_channel);
   ~Channel() GRPC_OVERRIDE;
 
-  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
-                          CompletionQueue *cq) GRPC_OVERRIDE;
-  virtual void PerformOpsOnCall(CallOpBuffer *ops, Call *call) GRPC_OVERRIDE;
+  virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
+                          CompletionQueue* cq) GRPC_OVERRIDE;
+  virtual void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;
 
  private:
   const grpc::string target_;
-  grpc_channel *const c_channel_;  // owned
+  grpc_channel* const c_channel_;  // owned
 };
 
 }  // namespace grpc

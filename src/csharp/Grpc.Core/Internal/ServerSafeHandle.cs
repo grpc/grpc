@@ -80,12 +80,12 @@ namespace Grpc.Core.Internal
             return grpcsharp_server_create(cq, args);
         }
 
-        public int AddPort(string addr)
+        public int AddListeningPort(string addr)
         {
             return grpcsharp_server_add_http2_port(this, addr);
         }
 
-        public int AddPort(string addr, ServerCredentialsSafeHandle credentials)
+        public int AddListeningPort(string addr, ServerCredentialsSafeHandle credentials)
         {
             return grpcsharp_server_add_secure_http2_port(this, addr, credentials);
         }

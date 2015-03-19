@@ -31,14 +31,13 @@
 
 import time
 
-# _interfaces and packets are referenced from specification in this module.
-from grpc.framework.base import interfaces as base_interfaces
-from grpc.framework.base.packets import _interfaces  # pylint: disable=unused-import
-from grpc.framework.base.packets import packets  # pylint: disable=unused-import
+# _interfaces is referenced from specification in this module.
+from grpc.framework.base import interfaces
+from grpc.framework.base import _interfaces  # pylint: disable=unused-import
 
 
-class OperationContext(base_interfaces.OperationContext):
-  """An implementation of base_interfaces.OperationContext."""
+class OperationContext(interfaces.OperationContext):
+  """An implementation of interfaces.OperationContext."""
 
   def __init__(
       self, lock, operation_id, local_failure, termination_manager,
@@ -48,8 +47,9 @@ class OperationContext(base_interfaces.OperationContext):
     Args:
       lock: The operation-wide lock.
       operation_id: An object identifying the operation.
-      local_failure: Whichever one of packets.Kind.SERVICED_FAILURE or
-        packets.Kind.SERVICER_FAILURE describes local failure of customer code.
+      local_failure: Whichever one of interfaces.Outcome.SERVICED_FAILURE or
+        interfaces.Outcome.SERVICER_FAILURE describes local failure of
+        customer code.
       termination_manager: The _interfaces.TerminationManager for the operation.
       transmission_manager: The _interfaces.TransmissionManager for the
         operation.
@@ -75,12 +75,12 @@ class OperationContext(base_interfaces.OperationContext):
     self._expiration_manager = expiration_manager
 
   def is_active(self):
-    """See base_interfaces.OperationContext.is_active for specification."""
+    """See interfaces.OperationContext.is_active for specification."""
     with self._lock:
       return self._termination_manager.is_active()
 
   def add_termination_callback(self, callback):
-    """See base_interfaces.OperationContext.add_termination_callback."""
+    """See interfaces.OperationContext.add_termination_callback."""
     with self._lock:
       self._termination_manager.add_callback(callback)
 

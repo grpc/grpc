@@ -30,6 +30,7 @@
 """Interfaces defined and used by the base layer of RPC Framework."""
 
 import abc
+import collections
 import enum
 
 # stream is referenced from specification in this module.
@@ -229,4 +230,134 @@ class Front(End):
 
 class Back(End):
   """Serverish objects that perform the work of operations."""
+  __metaclass__ = abc.ABCMeta
+
+
+class FrontToBackTicket(
+    collections.namedtuple(
+        'FrontToBackTicket',
+        ['operation_id', 'sequence_number', 'kind', 'name', 'subscription',
+         'trace_id', 'payload', 'timeout'])):
+  """A sum type for all values sent from a front to a back.
+
+  Attributes:
+    operation_id: A unique-with-respect-to-equality hashable object identifying
+      a particular operation.
+    sequence_number: A zero-indexed integer sequence number identifying the
+      ticket's place among all the tickets sent from front to back for this
+      particular operation. Must be zero if kind is Kind.COMMENCEMENT or
+      Kind.ENTIRE. Must be positive for any other kind.
+    kind: A Kind value describing the overall kind of ticket.
+    name: The name of an operation. Must be present if kind is Kind.COMMENCEMENT
+      or Kind.ENTIRE. Must be None for any other kind.
+    subscription: An ServicedSubscription.Kind value describing the interest
+      the front has in tickets sent from the back. Must be present if
+      kind is Kind.COMMENCEMENT or Kind.ENTIRE. Must be None for any other kind.
+    trace_id: A uuid.UUID identifying a set of related operations to which this
+      operation belongs. May be None.
+    payload: A customer payload object. Must be present if kind is
+      Kind.CONTINUATION. Must be None if kind is Kind.CANCELLATION. May be None
+      for any other kind.
+    timeout: An optional length of time (measured from the beginning of the
+      operation) to allow for the entire operation. If None, a default value on
+      the back will be used. If present and excessively large, the back may
+      limit the operation to a smaller duration of its choice. May be present
+      for any ticket kind; setting a value on a later ticket allows fronts
+      to request time extensions (or even time reductions!) on in-progress
+      operations.
+  """
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Identifies the overall kind of a FrontToBackTicket."""
+
+    COMMENCEMENT = 'commencement'
+    CONTINUATION = 'continuation'
+    COMPLETION = 'completion'
+    ENTIRE = 'entire'
+    CANCELLATION = 'cancellation'
+    EXPIRATION = 'expiration'
+    SERVICER_FAILURE = 'servicer failure'
+    SERVICED_FAILURE = 'serviced failure'
+    RECEPTION_FAILURE = 'reception failure'
+    TRANSMISSION_FAILURE = 'transmission failure'
+
+
+class BackToFrontTicket(
+    collections.namedtuple(
+        'BackToFrontTicket',
+        ['operation_id', 'sequence_number', 'kind', 'payload'])):
+  """A sum type for all values sent from a back to a front.
+
+  Attributes:
+    operation_id: A unique-with-respect-to-equality hashable object identifying
+      a particular operation.
+    sequence_number: A zero-indexed integer sequence number identifying the
+      ticket's place among all the tickets sent from back to front for this
+      particular operation.
+    kind: A Kind value describing the overall kind of ticket.
+    payload: A customer payload object. Must be present if kind is
+      Kind.CONTINUATION. May be None if kind is Kind.COMPLETION. Must be None
+      otherwise.
+  """
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Identifies the overall kind of a BackToFrontTicket."""
+
+    CONTINUATION = 'continuation'
+    COMPLETION = 'completion'
+    CANCELLATION = 'cancellation'
+    EXPIRATION = 'expiration'
+    SERVICER_FAILURE = 'servicer failure'
+    SERVICED_FAILURE = 'serviced failure'
+    RECEPTION_FAILURE = 'reception failure'
+    TRANSMISSION_FAILURE = 'transmission failure'
+
+
+class ForeLink(object):
+  """Accepts back-to-front tickets and emits front-to-back tickets."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def accept_back_to_front_ticket(self, ticket):
+    """Accept a BackToFrontTicket.
+
+    Args:
+      ticket: Any BackToFrontTicket.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def join_rear_link(self, rear_link):
+    """Mates this object with a peer with which it will exchange tickets."""
+    raise NotImplementedError()
+
+
+class RearLink(object):
+  """Accepts front-to-back tickets and emits back-to-front tickets."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def accept_front_to_back_ticket(self, ticket):
+    """Accepts a FrontToBackTicket.
+
+    Args:
+      ticket: Any FrontToBackTicket.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def join_fore_link(self, fore_link):
+    """Mates this object with a peer with which it will exchange tickets."""
+    raise NotImplementedError()
+
+
+class FrontLink(Front, ForeLink):
+  """Clientish objects that operate by sending and receiving tickets."""
+  __metaclass__ = abc.ABCMeta
+
+
+class BackLink(Back, RearLink):
+  """Serverish objects that operate by sending and receiving tickets."""
   __metaclass__ = abc.ABCMeta

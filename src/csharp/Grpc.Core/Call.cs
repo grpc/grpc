@@ -33,34 +33,25 @@
 
 using System;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     public class Call<TRequest, TResponse>
     {
-        readonly string methodName;
-        readonly Func<TRequest, byte[]> requestSerializer;
-        readonly Func<byte[], TResponse> responseDeserializer;
+        readonly string name;
+        readonly Marshaller<TRequest> requestMarshaller;
+        readonly Marshaller<TResponse> responseMarshaller;
         readonly Channel channel;
+        readonly Metadata headers;
 
-        public Call(string methodName,
-                    Func<TRequest, byte[]> requestSerializer,
-                    Func<byte[], TResponse> responseDeserializer,
-                    TimeSpan timeout,
-                    Channel channel)
+        public Call(string serviceName, Method<TRequest, TResponse> method, Channel channel, Metadata headers)
         {
-            this.methodName = methodName;
-            this.requestSerializer = requestSerializer;
-            this.responseDeserializer = responseDeserializer;
-            this.channel = channel;
-        }
-
-        public Call(Method<TRequest, TResponse> method, Channel channel)
-        {
-            this.methodName = method.Name;
-            this.requestSerializer = method.RequestMarshaller.Serializer;
-            this.responseDeserializer = method.ResponseMarshaller.Deserializer;
-            this.channel = channel;
+            this.name = Preconditions.CheckNotNull(serviceName) + "/" + method.Name;
+            this.requestMarshaller = method.RequestMarshaller;
+            this.responseMarshaller = method.ResponseMarshaller;
+            this.channel = Preconditions.CheckNotNull(channel);
+            this.headers = Preconditions.CheckNotNull(headers);
         }
 
         public Channel Channel
@@ -71,27 +62,41 @@ namespace Grpc.Core
             }
         }
 
-        public string MethodName
+        /// <summary>
+        /// Full methods name including the service name.
+        /// </summary>
+        public string Name
         {
             get
             {
-                return this.methodName;
+                return name;
             }
         }
 
-        public Func<TRequest, byte[]> RequestSerializer
+        /// <summary>
+        /// Headers to send at the beginning of the call.
+        /// </summary>
+        public Metadata Headers
         {
             get
             {
-                return this.requestSerializer;
+                return headers;
             }
         }
 
-        public Func<byte[], TResponse> ResponseDeserializer
+        public Marshaller<TRequest> RequestMarshaller
         {
             get
             {
-                return this.responseDeserializer;
+                return requestMarshaller;
+            }
+        }
+
+        public Marshaller<TResponse> ResponseMarshaller
+        {
+            get
+            {
+                return responseMarshaller;
             }
         }
     }

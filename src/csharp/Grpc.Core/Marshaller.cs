@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -45,8 +46,8 @@ namespace Grpc.Core
 
         public Marshaller(Func<T, byte[]> serializer, Func<byte[], T> deserializer)
         {
-            this.serializer = serializer;
-            this.deserializer = deserializer;
+            this.serializer = Preconditions.CheckNotNull(serializer);
+            this.deserializer = Preconditions.CheckNotNull(deserializer);
         }
 
         public Func<T, byte[]> Serializer

@@ -36,10 +36,8 @@ import time
 
 from grpc._adapter import _common
 from grpc._adapter import _low
-from grpc.framework.base import interfaces
-from grpc.framework.base.packets import interfaces as ticket_interfaces
-from grpc.framework.base.packets import null
-from grpc.framework.base.packets import packets as tickets
+from grpc.framework.base import interfaces as base_interfaces
+from grpc.framework.base import null
 from grpc.framework.foundation import activated
 from grpc.framework.foundation import logging_pool
 
@@ -69,7 +67,7 @@ def _status(call, rpc_state):
   rpc_state.write.low = _LowWrite.CLOSED
 
 
-class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
+class ForeLink(base_interfaces.ForeLink, activated.Activated):
   """A service-side bridge between RPC Framework and the C-ish _low code."""
 
   def __init__(
@@ -127,9 +125,9 @@ class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
         self._request_deserializers[method],
         self._response_serializers[method])
 
-    ticket = tickets.FrontToBackPacket(
-        call, 0, tickets.Kind.COMMENCEMENT, method,
-        interfaces.ServicedSubscription.Kind.FULL, None, None,
+    ticket = base_interfaces.FrontToBackTicket(
+        call, 0, base_interfaces.FrontToBackTicket.Kind.COMMENCEMENT, method,
+        base_interfaces.ServicedSubscription.Kind.FULL, None, None,
         service_acceptance.deadline - time.time())
     self._rear_link.accept_front_to_back_ticket(ticket)
 
@@ -145,14 +143,16 @@ class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
     sequence_number = rpc_state.sequence_number
     rpc_state.sequence_number += 1
     if event.bytes is None:
-      ticket = tickets.FrontToBackPacket(
-          call, sequence_number, tickets.Kind.COMPLETION, None, None, None,
+      ticket = base_interfaces.FrontToBackTicket(
+          call, sequence_number,
+          base_interfaces.FrontToBackTicket.Kind.COMPLETION, None, None, None,
           None, None)
     else:
       call.read(call)
-      ticket = tickets.FrontToBackPacket(
-          call, sequence_number, tickets.Kind.CONTINUATION, None, None, None,
-          rpc_state.deserializer(event.bytes), None)
+      ticket = base_interfaces.FrontToBackTicket(
+          call, sequence_number,
+          base_interfaces.FrontToBackTicket.Kind.CONTINUATION, None, None,
+          None, rpc_state.deserializer(event.bytes), None)
 
     self._rear_link.accept_front_to_back_ticket(ticket)
 
@@ -180,9 +180,10 @@ class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
 
       sequence_number = rpc_state.sequence_number
       rpc_state.sequence_number += 1
-      ticket = tickets.FrontToBackPacket(
-          call, sequence_number, tickets.Kind.TRANSMISSION_FAILURE, None, None,
-          None, None, None)
+      ticket = base_interfaces.FrontToBackTicket(
+          call, sequence_number,
+          base_interfaces.FrontToBackTicket.Kind.TRANSMISSION_FAILURE, None,
+          None, None, None, None)
       self._rear_link.accept_front_to_back_ticket(ticket)
 
   def _on_finish_event(self, event):
@@ -199,18 +200,21 @@ class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
     sequence_number = rpc_state.sequence_number
     rpc_state.sequence_number += 1
     if code is _low.Code.CANCELLED:
-      ticket = tickets.FrontToBackPacket(
-          call, sequence_number, tickets.Kind.CANCELLATION, None, None, None,
-          None, None)
+      ticket = base_interfaces.FrontToBackTicket(
+          call, sequence_number,
+          base_interfaces.FrontToBackTicket.Kind.CANCELLATION, None, None,
+          None, None, None)
     elif code is _low.Code.EXPIRED:
-      ticket = tickets.FrontToBackPacket(
-          call, sequence_number, tickets.Kind.EXPIRATION, None, None, None,
+      ticket = base_interfaces.FrontToBackTicket(
+          call, sequence_number,
+          base_interfaces.FrontToBackTicket.Kind.EXPIRATION, None, None, None,
           None, None)
     else:
       # TODO(nathaniel): Better mapping of codes to ticket-categories
-      ticket = tickets.FrontToBackPacket(
-          call, sequence_number, tickets.Kind.TRANSMISSION_FAILURE, None, None,
-          None, None, None)
+      ticket = base_interfaces.FrontToBackTicket(
+          call, sequence_number,
+          base_interfaces.FrontToBackTicket.Kind.TRANSMISSION_FAILURE, None,
+          None, None, None, None)
     self._rear_link.accept_front_to_back_ticket(ticket)
 
   def _spin(self, completion_queue, server):
@@ -266,7 +270,7 @@ class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
     self._rpc_states.pop(call, None)
 
   def join_rear_link(self, rear_link):
-    """See ticket_interfaces.ForeLink.join_rear_link for specification."""
+    """See base_interfaces.ForeLink.join_rear_link for specification."""
     self._rear_link = null.NULL_REAR_LINK if rear_link is None else rear_link
 
   def _start(self):
@@ -346,14 +350,14 @@ class ForeLink(ticket_interfaces.ForeLink, activated.Activated):
       return self._port
 
   def accept_back_to_front_ticket(self, ticket):
-    """See ticket_interfaces.ForeLink.accept_back_to_front_ticket for spec."""
+    """See base_interfaces.ForeLink.accept_back_to_front_ticket for spec."""
     with self._condition:
       if self._server is None:
         return
 
-      if ticket.kind is tickets.Kind.CONTINUATION:
+      if ticket.kind is base_interfaces.BackToFrontTicket.Kind.CONTINUATION:
         self._continue(ticket.operation_id, ticket.payload)
-      elif ticket.kind is tickets.Kind.COMPLETION:
+      elif ticket.kind is base_interfaces.BackToFrontTicket.Kind.COMPLETION:
         self._complete(ticket.operation_id, ticket.payload)
       else:
         self._cancel(ticket.operation_id)

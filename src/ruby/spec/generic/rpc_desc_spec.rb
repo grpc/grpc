@@ -94,6 +94,7 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:remote_read).once.and_return(req)
         expect(@call).to receive(:remote_send).once.with(@ok_response)
         expect(@call).to receive(:send_status).once.with(OK, 'OK')
+        expect(@call).to receive(:finished).once
         @request_response.run_server_method(@call, method(:fake_reqresp))
       end
     end
@@ -134,6 +135,7 @@ describe GRPC::RpcDesc do
       it 'sends a response and closes the stream if there no errors' do
         expect(@call).to receive(:remote_send).once.with(@ok_response)
         expect(@call).to receive(:send_status).once.with(OK, 'OK')
+        expect(@call).to receive(:finished).once
         @client_streamer.run_server_method(@call, method(:fake_clstream))
       end
     end
@@ -178,6 +180,7 @@ describe GRPC::RpcDesc do
         expect(@call).to receive(:remote_read).once.and_return(req)
         expect(@call).to receive(:remote_send).twice.with(@ok_response)
         expect(@call).to receive(:send_status).once.with(OK, 'OK')
+        expect(@call).to receive(:finished).once
         @server_streamer.run_server_method(@call, method(:fake_svstream))
       end
     end
@@ -207,6 +210,7 @@ describe GRPC::RpcDesc do
       it 'closes the stream if there no errors' do
         expect(@call).to receive(:run_server_bidi)
         expect(@call).to receive(:send_status).once.with(OK, 'OK')
+        expect(@call).to receive(:finished).once
         @bidi_streamer.run_server_method(@call, method(:fake_bidistream))
       end
     end

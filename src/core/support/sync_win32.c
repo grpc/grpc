@@ -37,6 +37,7 @@
 
 #ifdef GPR_WIN32
 
+#undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0600
 #include <windows.h>
 #include <grpc/support/log.h>

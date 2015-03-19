@@ -27,12 +27,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Entry points into the packet-exchange-based implementation the base layer."""
+"""In-memory implementations of base layer interfaces."""
 
 import threading
 
-from grpc.framework.base.packets import _constants
-from grpc.framework.base.packets import interfaces
+from grpc.framework.base import _constants
+from grpc.framework.base import interfaces
 from grpc.framework.foundation import callable_util
 
 
