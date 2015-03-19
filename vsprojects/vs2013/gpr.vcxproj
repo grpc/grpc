@@ -85,6 +85,7 @@
     <ClInclude Include="..\..\include\grpc\support\atm_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\cancellable_platform.h" />
     <ClInclude Include="..\..\include\grpc\support\cmdline.h" />
+    <ClInclude Include="..\..\include\grpc\support\cpu.h" />
     <ClInclude Include="..\..\include\grpc\support\histogram.h" />
     <ClInclude Include="..\..\include\grpc\support\host_port.h" />
     <ClInclude Include="..\..\include\grpc\support\log.h" />
