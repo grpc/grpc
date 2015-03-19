@@ -234,7 +234,8 @@ void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
   service->server_ = this;
 }
 
-int Server::AddPort(const grpc::string& addr, ServerCredentials* creds) {
+int Server::AddListeningPort(const grpc::string& addr,
+                             ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   return creds->AddPortToServer(addr, server_);
 }
