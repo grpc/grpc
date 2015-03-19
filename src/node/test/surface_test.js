@@ -45,6 +45,8 @@ var math_proto = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
 
+var capitalize = require('underscore.string/capitalize');
+
 describe('Surface server constructor', function() {
   it('Should fail with conflicting method names', function() {
     assert.throws(function() {
@@ -73,6 +75,55 @@ describe('Surface server constructor', function() {
     assert.throws(function() {
       new Server({});
     }, /math.Math/);
+  });
+});
+describe('Generic client and server', function() {
+  function toString(val) {
+    return val.toString();
+  }
+  function toBuffer(str) {
+    return new Buffer(str);
+  }
+  var string_service_attrs = {
+    'capitalize' : {
+      path: '/string/capitalize',
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: toBuffer,
+      requestDeserialize: toString,
+      responseSerialize: toBuffer,
+      responseDeserialize: toString
+    }
+  };
+  describe('String client and server', function() {
+    var client;
+    var server;
+    before(function() {
+      var Server = grpc.makeGenericServerConstructor({
+        string: string_service_attrs
+      });
+      server = new Server({
+        string: {
+          capitalize: function(call, callback) {
+            callback(null, capitalize(call.request));
+          }
+        }
+      });
+      var port = server.bind('localhost:0');
+      server.listen();
+      var Client = grpc.makeGenericClientConstructor(string_service_attrs);
+      client = new Client('localhost:' + port);
+    });
+    after(function() {
+      server.shutdown();
+    });
+    it('Should respond with a capitalized string', function(done) {
+      client.capitalize('abc', function(err, response) {
+        assert.ifError(err);
+        assert.strictEqual(response, 'Abc');
+        done();
+      });
+    });
   });
 });
 describe('Cancelling surface client', function() {
