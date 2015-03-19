@@ -3128,6 +3128,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/client_unary_call.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/credentials.cc \
+    src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
     src/cpp/client/internal_stub.cc \
     src/cpp/common/call.cc \
@@ -3157,6 +3158,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
+    include/grpc++/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/internal_stub.h \
@@ -3215,6 +3217,7 @@ src/cpp/client/client_context.cc: $(OPENSSL_DEP)
 src/cpp/client/client_unary_call.cc: $(OPENSSL_DEP)
 src/cpp/client/create_channel.cc: $(OPENSSL_DEP)
 src/cpp/client/credentials.cc: $(OPENSSL_DEP)
+src/cpp/client/generic_stub.cc: $(OPENSSL_DEP)
 src/cpp/client/insecure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/internal_stub.cc: $(OPENSSL_DEP)
 src/cpp/common/call.cc: $(OPENSSL_DEP)
@@ -3281,6 +3284,7 @@ $(OBJDIR)/$(CONFIG)/src/cpp/client/client_context.o:
 $(OBJDIR)/$(CONFIG)/src/cpp/client/client_unary_call.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/create_channel.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/generic_stub.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/insecure_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/internal_stub.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/call.o: 
@@ -3372,6 +3376,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/client_unary_call.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/credentials.cc \
+    src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
     src/cpp/client/internal_stub.cc \
     src/cpp/common/call.cc \
@@ -3401,6 +3406,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/config.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
+    include/grpc++/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/internal_stub.h \
@@ -3474,6 +3480,7 @@ $(OBJDIR)/$(CONFIG)/src/cpp/client/client_context.o:
 $(OBJDIR)/$(CONFIG)/src/cpp/client/client_unary_call.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/create_channel.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/credentials.o: 
+$(OBJDIR)/$(CONFIG)/src/cpp/client/generic_stub.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/insecure_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/client/internal_stub.o: 
 $(OBJDIR)/$(CONFIG)/src/cpp/common/call.o: 
