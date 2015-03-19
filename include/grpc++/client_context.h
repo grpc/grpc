@@ -74,8 +74,8 @@ class ClientContext {
   ClientContext();
   ~ClientContext();
 
-  void AddMetadata(const grpc::string &meta_key,
-                   const grpc::string &meta_value);
+  void AddMetadata(const grpc::string& meta_key,
+                   const grpc::string& meta_value);
 
   const std::multimap<grpc::string, grpc::string>& GetServerInitialMetadata() {
     GPR_ASSERT(initial_metadata_received_);
@@ -87,19 +87,17 @@ class ClientContext {
     return trailing_metadata_;
   }
 
-  void set_absolute_deadline(const system_clock::time_point &deadline);
+  void set_absolute_deadline(const system_clock::time_point& deadline);
   system_clock::time_point absolute_deadline();
 
-  void set_authority(const grpc::string& authority) {
-    authority_ = authority;
-  }
+  void set_authority(const grpc::string& authority) { authority_ = authority; }
 
   void TryCancel();
 
  private:
   // Disallow copy and assign.
-  ClientContext(const ClientContext &);
-  ClientContext &operator=(const ClientContext &);
+  ClientContext(const ClientContext&);
+  ClientContext& operator=(const ClientContext&);
 
   friend class CallOpBuffer;
   friend class Channel;
@@ -118,24 +116,22 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
 
-  grpc_call *call() { return call_; }
-  void set_call(grpc_call *call) {
+  grpc_call* call() { return call_; }
+  void set_call(grpc_call* call) {
     GPR_ASSERT(call_ == nullptr);
     call_ = call;
   }
 
-  grpc_completion_queue *cq() { return cq_; }
-  void set_cq(grpc_completion_queue *cq) { cq_ = cq; }
+  grpc_completion_queue* cq() { return cq_; }
+  void set_cq(grpc_completion_queue* cq) { cq_ = cq; }
 
   gpr_timespec RawDeadline() { return absolute_deadline_; }
 
-  grpc::string authority() {
-    return authority_;
-  }
+  grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
-  grpc_call *call_;
-  grpc_completion_queue *cq_;
+  grpc_call* call_;
+  grpc_completion_queue* cq_;
   gpr_timespec absolute_deadline_;
   grpc::string authority_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;

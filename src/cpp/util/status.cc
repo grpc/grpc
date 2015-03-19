@@ -35,7 +35,7 @@
 
 namespace grpc {
 
-const Status &Status::OK = Status();
-const Status &Status::Cancelled = Status(StatusCode::CANCELLED);
+const Status& Status::OK = Status();
+const Status& Status::Cancelled = Status(StatusCode::CANCELLED);
 
 }  // namespace grpc

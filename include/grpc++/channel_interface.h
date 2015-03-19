@@ -51,8 +51,8 @@ class ChannelInterface : public CallHook {
  public:
   virtual ~ChannelInterface() {}
 
-  virtual Call CreateCall(const RpcMethod &method, ClientContext *context,
-                          CompletionQueue *cq) = 0;
+  virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
+                          CompletionQueue* cq) = 0;
 };
 
 }  // namespace grpc

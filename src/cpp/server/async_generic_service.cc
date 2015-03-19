@@ -47,5 +47,4 @@ CompletionQueue* AsyncGenericService::completion_queue() {
   return &server_->cq_;
 }
 
-} // namespace grpc
-
+}  // namespace grpc
