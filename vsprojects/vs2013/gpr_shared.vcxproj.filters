@@ -10,6 +10,9 @@
     <ClCompile Include="..\..\src\core\support\cmdline.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\cpu_iphone.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\cpu_linux.c">
       <Filter>src\core\support</Filter>
     </ClCompile>

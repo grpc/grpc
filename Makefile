@@ -2292,6 +2292,7 @@ LIBGPR_SRC = \
     src/core/support/alloc.c \
     src/core/support/cancellable.c \
     src/core/support/cmdline.c \
+    src/core/support/cpu_iphone.c \
     src/core/support/cpu_linux.c \
     src/core/support/cpu_posix.c \
     src/core/support/cpu_windows.c \
@@ -2385,6 +2386,7 @@ endif
 $(OBJDIR)/$(CONFIG)/src/core/support/alloc.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/cancellable.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/cmdline.o: 
+$(OBJDIR)/$(CONFIG)/src/core/support/cpu_iphone.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/cpu_linux.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/cpu_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/cpu_windows.o: 
