@@ -176,25 +176,26 @@ module GRPC
             unmarshal = desc.unmarshal_proc(:output)
             route = "/#{route_prefix}/#{name}"
             if desc.request_response?
-              define_method(mth_name) do |req, deadline = nil|
+              define_method(mth_name) do |req, deadline = nil, **kw|
                 logger.debug("calling #{@host}:#{route}")
-                request_response(route, req, marshal, unmarshal, deadline)
+                request_response(route, req, marshal, unmarshal, deadline, **kw)
               end
             elsif desc.client_streamer?
-              define_method(mth_name) do |reqs, deadline = nil|
+              define_method(mth_name) do |reqs, deadline = nil, **kw|
                 logger.debug("calling #{@host}:#{route}")
-                client_streamer(route, reqs, marshal, unmarshal, deadline)
+                client_streamer(route, reqs, marshal, unmarshal, deadline, **kw)
               end
             elsif desc.server_streamer?
-              define_method(mth_name) do |req, deadline = nil, &blk|
+              define_method(mth_name) do |req, deadline = nil, **kw, &blk|
                 logger.debug("calling #{@host}:#{route}")
-                server_streamer(route, req, marshal, unmarshal, deadline,
+                server_streamer(route, req, marshal, unmarshal, deadline, **kw,
                                 &blk)
               end
             else  # is a bidi_stream
-              define_method(mth_name) do |reqs, deadline = nil, &blk|
+              define_method(mth_name) do |reqs, deadline = nil, **kw, &blk|
                 logger.debug("calling #{@host}:#{route}")
-                bidi_streamer(route, reqs, marshal, unmarshal, deadline, &blk)
+                bidi_streamer(route, reqs, marshal, unmarshal, deadline, **kw,
+                              &blk)
               end
             end
           end
@@ -202,7 +203,7 @@ module GRPC
       end
 
       # Asserts that the appropriate methods are defined for each added rpc
-      # spec. Is intended to aid verifying that server classes are correctly
+      # spec. Is intended to aid verifying that serve2Ar classes are correctly
       # implemented.
       def assert_rpc_descs_have_methods
         rpc_descs.each_pair do |m, spec|
