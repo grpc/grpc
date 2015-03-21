@@ -34,41 +34,33 @@
 #ifndef GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
 #define GRPC_INTERNAL_COMPILER_PYTHON_GENERATOR_H
 
-#include <string>
 #include <utility>
 
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/descriptor.h>
-
-namespace google {
-namespace protobuf {
-class FileDescriptor;
-}  // namespace protobuf
-}  // namespace google
+#include "src/compiler/config.h"
 
 namespace grpc_python_generator {
 
 // Data pertaining to configuration of the generator with respect to anything
 // that may be used internally at Google.
 struct GeneratorConfiguration {
-  std::string implementations_package_root;
+  grpc::string implementations_package_root;
 };
 
-class PythonGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
+class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   PythonGrpcGenerator(const GeneratorConfiguration& config);
   ~PythonGrpcGenerator();
 
-  bool Generate(const google::protobuf::FileDescriptor* file,
-                const std::string& parameter,
-                google::protobuf::compiler::GeneratorContext* context,
-                std::string* error) const;
+  bool Generate(const grpc::protobuf::FileDescriptor* file,
+                const grpc::string& parameter,
+                grpc::protobuf::compiler::GeneratorContext* context,
+                grpc::string* error) const;
  private:
   GeneratorConfiguration config_;
 };
 
-std::pair<bool, std::string> GetServices(
-    const google::protobuf::FileDescriptor* file,
+std::pair<bool, grpc::string> GetServices(
+    const grpc::protobuf::FileDescriptor* file,
     const GeneratorConfiguration& config);
 
 }  // namespace grpc_python_generator

@@ -33,14 +33,12 @@
 
 // Generates a Python gRPC service interface out of Protobuf IDL.
 
+#include "src/compiler/config.h"
 #include "src/compiler/python_generator.h"
-#include <google/protobuf/compiler/plugin.h>
-
-using google::protobuf::compiler::PluginMain;
 
 int main(int argc, char* argv[]) {
   grpc_python_generator::GeneratorConfiguration config;
   config.implementations_package_root = "grpc.early_adopter";
   grpc_python_generator::PythonGrpcGenerator generator(config);
-  return PluginMain(argc, argv, &generator);
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }
