@@ -6,7 +6,8 @@ Pod::Spec.new do |s|
   s.license  = 'New BSD'
   s.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
 
-  s.source_files = './*.{h,m}'
+  s.source_files = '*.pb.{h,m}'
+  s.public_header_files = '*.pb.h'
 
   s.platform = :ios
   s.ios.deployment_target = '6.0'
