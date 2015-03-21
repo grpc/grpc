@@ -1708,6 +1708,21 @@
       ]
     },
     {
+      "name": "cxx_time_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/time_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "end2end_test",
       "build": "test",
       "language": "c++",
