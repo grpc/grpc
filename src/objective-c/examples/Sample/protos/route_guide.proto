@@ -31,9 +31,8 @@ syntax = "proto2";
 
 package grpc.example.routeguide;
 
-option java_multiple_files = true;
-option java_package = "io.grpc.examples.routeguide";
-option java_outer_classname = "RouteGuideProto";
+import "google/protobuf/objectivec-descriptor.proto";
+option (google.protobuf.objectivec_file_options).class_prefix = "RGD";
 
 // Interface exported by the server.
 service RouteGuide {

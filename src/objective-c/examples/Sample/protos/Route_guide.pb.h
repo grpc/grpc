@@ -4,26 +4,70 @@
 
 // @@protoc_insertion_point(imports)
 
-@class Feature;
-@class FeatureBuilder;
-@class Point;
-@class PointBuilder;
-@class Rectangle;
-@class RectangleBuilder;
-@class RouteNote;
-@class RouteNoteBuilder;
-@class RouteSummary;
-@class RouteSummaryBuilder;
+@class ObjectiveCFileOptions;
+@class ObjectiveCFileOptionsBuilder;
+@class PBDescriptorProto;
+@class PBDescriptorProtoBuilder;
+@class PBDescriptorProtoExtensionRange;
+@class PBDescriptorProtoExtensionRangeBuilder;
+@class PBEnumDescriptorProto;
+@class PBEnumDescriptorProtoBuilder;
+@class PBEnumOptions;
+@class PBEnumOptionsBuilder;
+@class PBEnumValueDescriptorProto;
+@class PBEnumValueDescriptorProtoBuilder;
+@class PBEnumValueOptions;
+@class PBEnumValueOptionsBuilder;
+@class PBFieldDescriptorProto;
+@class PBFieldDescriptorProtoBuilder;
+@class PBFieldOptions;
+@class PBFieldOptionsBuilder;
+@class PBFileDescriptorProto;
+@class PBFileDescriptorProtoBuilder;
+@class PBFileDescriptorSet;
+@class PBFileDescriptorSetBuilder;
+@class PBFileOptions;
+@class PBFileOptionsBuilder;
+@class PBMessageOptions;
+@class PBMessageOptionsBuilder;
+@class PBMethodDescriptorProto;
+@class PBMethodDescriptorProtoBuilder;
+@class PBMethodOptions;
+@class PBMethodOptionsBuilder;
+@class PBOneofDescriptorProto;
+@class PBOneofDescriptorProtoBuilder;
+@class PBServiceDescriptorProto;
+@class PBServiceDescriptorProtoBuilder;
+@class PBServiceOptions;
+@class PBServiceOptionsBuilder;
+@class PBSourceCodeInfo;
+@class PBSourceCodeInfoBuilder;
+@class PBSourceCodeInfoLocation;
+@class PBSourceCodeInfoLocationBuilder;
+@class PBUninterpretedOption;
+@class PBUninterpretedOptionBuilder;
+@class PBUninterpretedOptionNamePart;
+@class PBUninterpretedOptionNamePartBuilder;
+@class RGDFeature;
+@class RGDFeatureBuilder;
+@class RGDPoint;
+@class RGDPointBuilder;
+@class RGDRectangle;
+@class RGDRectangleBuilder;
+@class RGDRouteNote;
+@class RGDRouteNoteBuilder;
+@class RGDRouteSummary;
+@class RGDRouteSummaryBuilder;
 
 
 
-@interface RouteGuideRoot : NSObject {
+@interface RGDRouteGuideRoot : NSObject {
 }
 + (PBExtensionRegistry*) extensionRegistry;
 + (void) registerAllExtensions:(PBMutableExtensionRegistry*) registry;
 @end
 
-@interface Point : PBGeneratedMessage<GeneratedMessageProtocol> {
+@interface RGDPoint : PBGeneratedMessage<GeneratedMessageProtocol> {
 @private
   BOOL hasLatitude_:1;
   BOOL hasLongitude_:1;
@@ -40,179 +84,179 @@
 
 - (BOOL) isInitialized;
 - (void) writeToCodedOutputStream:(PBCodedOutputStream*) output;
-- (PointBuilder*) builder;
-+ (PointBuilder*) builder;
-+ (PointBuilder*) builderWithPrototype:(Point*) prototype;
-- (PointBuilder*) toBuilder;
+- (RGDPointBuilder*) builder;
++ (RGDPointBuilder*) builder;
++ (RGDPointBuilder*) builderWithPrototype:(RGDPoint*) prototype;
+- (RGDPointBuilder*) toBuilder;
 
-+ (Point*) parseFromData:(NSData*) data;
-+ (Point*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (Point*) parseFromInputStream:(NSInputStream*) input;
-+ (Point*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (Point*) parseFromCodedInputStream:(PBCodedInputStream*) input;
-+ (Point*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDPoint*) parseFromData:(NSData*) data;
++ (RGDPoint*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDPoint*) parseFromInputStream:(NSInputStream*) input;
++ (RGDPoint*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDPoint*) parseFromCodedInputStream:(PBCodedInputStream*) input;
++ (RGDPoint*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 @end
 
-@interface PointBuilder : PBGeneratedMessageBuilder {
+@interface RGDPointBuilder : PBGeneratedMessageBuilder {
 @private
-  Point* resultPoint;
+  RGDPoint* resultPoint;
 }
 
-- (Point*) defaultInstance;
+- (RGDPoint*) defaultInstance;
 
-- (PointBuilder*) clear;
-- (PointBuilder*) clone;
+- (RGDPointBuilder*) clear;
+- (RGDPointBuilder*) clone;
 
-- (Point*) build;
-- (Point*) buildPartial;
+- (RGDPoint*) build;
+- (RGDPoint*) buildPartial;
 
-- (PointBuilder*) mergeFrom:(Point*) other;
-- (PointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
-- (PointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
+- (RGDPointBuilder*) mergeFrom:(RGDPoint*) other;
+- (RGDPointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
+- (RGDPointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 
 - (BOOL) hasLatitude;
 - (SInt32) latitude;
-- (PointBuilder*) setLatitude:(SInt32) value;
-- (PointBuilder*) clearLatitude;
+- (RGDPointBuilder*) setLatitude:(SInt32) value;
+- (RGDPointBuilder*) clearLatitude;
 
 - (BOOL) hasLongitude;
 - (SInt32) longitude;
-- (PointBuilder*) setLongitude:(SInt32) value;
-- (PointBuilder*) clearLongitude;
+- (RGDPointBuilder*) setLongitude:(SInt32) value;
+- (RGDPointBuilder*) clearLongitude;
 @end
 
-@interface Rectangle : PBGeneratedMessage<GeneratedMessageProtocol> {
+@interface RGDRectangle : PBGeneratedMessage<GeneratedMessageProtocol> {
 @private
   BOOL hasLo_:1;
   BOOL hasHi_:1;
-  Point* lo;
-  Point* hi;
+  RGDPoint* lo;
+  RGDPoint* hi;
 }
 - (BOOL) hasLo;
 - (BOOL) hasHi;
-@property (readonly, strong) Point* lo;
-@property (readonly, strong) Point* hi;
+@property (readonly, strong) RGDPoint* lo;
+@property (readonly, strong) RGDPoint* hi;
 
 + (instancetype) defaultInstance;
 - (instancetype) defaultInstance;
 
 - (BOOL) isInitialized;
 - (void) writeToCodedOutputStream:(PBCodedOutputStream*) output;
-- (RectangleBuilder*) builder;
-+ (RectangleBuilder*) builder;
-+ (RectangleBuilder*) builderWithPrototype:(Rectangle*) prototype;
-- (RectangleBuilder*) toBuilder;
+- (RGDRectangleBuilder*) builder;
++ (RGDRectangleBuilder*) builder;
++ (RGDRectangleBuilder*) builderWithPrototype:(RGDRectangle*) prototype;
+- (RGDRectangleBuilder*) toBuilder;
 
-+ (Rectangle*) parseFromData:(NSData*) data;
-+ (Rectangle*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (Rectangle*) parseFromInputStream:(NSInputStream*) input;
-+ (Rectangle*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (Rectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input;
-+ (Rectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRectangle*) parseFromData:(NSData*) data;
++ (RGDRectangle*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRectangle*) parseFromInputStream:(NSInputStream*) input;
++ (RGDRectangle*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input;
++ (RGDRectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 @end
 
-@interface RectangleBuilder : PBGeneratedMessageBuilder {
+@interface RGDRectangleBuilder : PBGeneratedMessageBuilder {
 @private
-  Rectangle* resultRectangle;
+  RGDRectangle* resultRectangle;
 }
 
-- (Rectangle*) defaultInstance;
+- (RGDRectangle*) defaultInstance;
 
-- (RectangleBuilder*) clear;
-- (RectangleBuilder*) clone;
+- (RGDRectangleBuilder*) clear;
+- (RGDRectangleBuilder*) clone;
 
-- (Rectangle*) build;
-- (Rectangle*) buildPartial;
+- (RGDRectangle*) build;
+- (RGDRectangle*) buildPartial;
 
-- (RectangleBuilder*) mergeFrom:(Rectangle*) other;
-- (RectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
-- (RectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
+- (RGDRectangleBuilder*) mergeFrom:(RGDRectangle*) other;
+- (RGDRectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
+- (RGDRectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 
 - (BOOL) hasLo;
-- (Point*) lo;
-- (RectangleBuilder*) setLo:(Point*) value;
-- (RectangleBuilder*) setLoBuilder:(PointBuilder*) builderForValue;
-- (RectangleBuilder*) mergeLo:(Point*) value;
-- (RectangleBuilder*) clearLo;
+- (RGDPoint*) lo;
+- (RGDRectangleBuilder*) setLo:(RGDPoint*) value;
+- (RGDRectangleBuilder*) setLoBuilder:(RGDPointBuilder*) builderForValue;
+- (RGDRectangleBuilder*) mergeLo:(RGDPoint*) value;
+- (RGDRectangleBuilder*) clearLo;
 
 - (BOOL) hasHi;
-- (Point*) hi;
-- (RectangleBuilder*) setHi:(Point*) value;
-- (RectangleBuilder*) setHiBuilder:(PointBuilder*) builderForValue;
-- (RectangleBuilder*) mergeHi:(Point*) value;
-- (RectangleBuilder*) clearHi;
+- (RGDPoint*) hi;
+- (RGDRectangleBuilder*) setHi:(RGDPoint*) value;
+- (RGDRectangleBuilder*) setHiBuilder:(RGDPointBuilder*) builderForValue;
+- (RGDRectangleBuilder*) mergeHi:(RGDPoint*) value;
+- (RGDRectangleBuilder*) clearHi;
 @end
 
-@interface Feature : PBGeneratedMessage<GeneratedMessageProtocol> {
+@interface RGDFeature : PBGeneratedMessage<GeneratedMessageProtocol> {
 @private
   BOOL hasName_:1;
   BOOL hasLocation_:1;
   NSString* name;
-  Point* location;
+  RGDPoint* location;
 }
 - (BOOL) hasName;
 - (BOOL) hasLocation;
 @property (readonly, strong) NSString* name;
-@property (readonly, strong) Point* location;
+@property (readonly, strong) RGDPoint* location;
 
 + (instancetype) defaultInstance;
 - (instancetype) defaultInstance;
 
 - (BOOL) isInitialized;
 - (void) writeToCodedOutputStream:(PBCodedOutputStream*) output;
-- (FeatureBuilder*) builder;
-+ (FeatureBuilder*) builder;
-+ (FeatureBuilder*) builderWithPrototype:(Feature*) prototype;
-- (FeatureBuilder*) toBuilder;
+- (RGDFeatureBuilder*) builder;
++ (RGDFeatureBuilder*) builder;
++ (RGDFeatureBuilder*) builderWithPrototype:(RGDFeature*) prototype;
+- (RGDFeatureBuilder*) toBuilder;
 
-+ (Feature*) parseFromData:(NSData*) data;
-+ (Feature*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (Feature*) parseFromInputStream:(NSInputStream*) input;
-+ (Feature*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (Feature*) parseFromCodedInputStream:(PBCodedInputStream*) input;
-+ (Feature*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDFeature*) parseFromData:(NSData*) data;
++ (RGDFeature*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDFeature*) parseFromInputStream:(NSInputStream*) input;
++ (RGDFeature*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDFeature*) parseFromCodedInputStream:(PBCodedInputStream*) input;
++ (RGDFeature*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 @end
 
-@interface FeatureBuilder : PBGeneratedMessageBuilder {
+@interface RGDFeatureBuilder : PBGeneratedMessageBuilder {
 @private
-  Feature* resultFeature;
+  RGDFeature* resultFeature;
 }
 
-- (Feature*) defaultInstance;
+- (RGDFeature*) defaultInstance;
 
-- (FeatureBuilder*) clear;
-- (FeatureBuilder*) clone;
+- (RGDFeatureBuilder*) clear;
+- (RGDFeatureBuilder*) clone;
 
-- (Feature*) build;
-- (Feature*) buildPartial;
+- (RGDFeature*) build;
+- (RGDFeature*) buildPartial;
 
-- (FeatureBuilder*) mergeFrom:(Feature*) other;
-- (FeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
-- (FeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
+- (RGDFeatureBuilder*) mergeFrom:(RGDFeature*) other;
+- (RGDFeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
+- (RGDFeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 
 - (BOOL) hasName;
 - (NSString*) name;
-- (FeatureBuilder*) setName:(NSString*) value;
-- (FeatureBuilder*) clearName;
+- (RGDFeatureBuilder*) setName:(NSString*) value;
+- (RGDFeatureBuilder*) clearName;
 
 - (BOOL) hasLocation;
-- (Point*) location;
-- (FeatureBuilder*) setLocation:(Point*) value;
-- (FeatureBuilder*) setLocationBuilder:(PointBuilder*) builderForValue;
-- (FeatureBuilder*) mergeLocation:(Point*) value;
-- (FeatureBuilder*) clearLocation;
+- (RGDPoint*) location;
+- (RGDFeatureBuilder*) setLocation:(RGDPoint*) value;
+- (RGDFeatureBuilder*) setLocationBuilder:(RGDPointBuilder*) builderForValue;
+- (RGDFeatureBuilder*) mergeLocation:(RGDPoint*) value;
+- (RGDFeatureBuilder*) clearLocation;
 @end
 
-@interface RouteNote : PBGeneratedMessage<GeneratedMessageProtocol> {
+@interface RGDRouteNote : PBGeneratedMessage<GeneratedMessageProtocol> {
 @private
   BOOL hasMessage_:1;
   BOOL hasLocation_:1;
   NSString* message;
-  Point* location;
+  RGDPoint* location;
 }
 - (BOOL) hasLocation;
 - (BOOL) hasMessage;
-@property (readonly, strong) Point* location;
+@property (readonly, strong) RGDPoint* location;
 @property (readonly, strong) NSString* message;
 
 + (instancetype) defaultInstance;
@@ -220,50 +264,50 @@
 
 - (BOOL) isInitialized;
 - (void) writeToCodedOutputStream:(PBCodedOutputStream*) output;
-- (RouteNoteBuilder*) builder;
-+ (RouteNoteBuilder*) builder;
-+ (RouteNoteBuilder*) builderWithPrototype:(RouteNote*) prototype;
-- (RouteNoteBuilder*) toBuilder;
+- (RGDRouteNoteBuilder*) builder;
++ (RGDRouteNoteBuilder*) builder;
++ (RGDRouteNoteBuilder*) builderWithPrototype:(RGDRouteNote*) prototype;
+- (RGDRouteNoteBuilder*) toBuilder;
 
-+ (RouteNote*) parseFromData:(NSData*) data;
-+ (RouteNote*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (RouteNote*) parseFromInputStream:(NSInputStream*) input;
-+ (RouteNote*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (RouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input;
-+ (RouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRouteNote*) parseFromData:(NSData*) data;
++ (RGDRouteNote*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRouteNote*) parseFromInputStream:(NSInputStream*) input;
++ (RGDRouteNote*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input;
++ (RGDRouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 @end
 
-@interface RouteNoteBuilder : PBGeneratedMessageBuilder {
+@interface RGDRouteNoteBuilder : PBGeneratedMessageBuilder {
 @private
-  RouteNote* resultRouteNote;
+  RGDRouteNote* resultRouteNote;
 }
 
-- (RouteNote*) defaultInstance;
+- (RGDRouteNote*) defaultInstance;
 
-- (RouteNoteBuilder*) clear;
-- (RouteNoteBuilder*) clone;
+- (RGDRouteNoteBuilder*) clear;
+- (RGDRouteNoteBuilder*) clone;
 
-- (RouteNote*) build;
-- (RouteNote*) buildPartial;
+- (RGDRouteNote*) build;
+- (RGDRouteNote*) buildPartial;
 
-- (RouteNoteBuilder*) mergeFrom:(RouteNote*) other;
-- (RouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
-- (RouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
+- (RGDRouteNoteBuilder*) mergeFrom:(RGDRouteNote*) other;
+- (RGDRouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
+- (RGDRouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 
 - (BOOL) hasLocation;
-- (Point*) location;
-- (RouteNoteBuilder*) setLocation:(Point*) value;
-- (RouteNoteBuilder*) setLocationBuilder:(PointBuilder*) builderForValue;
-- (RouteNoteBuilder*) mergeLocation:(Point*) value;
-- (RouteNoteBuilder*) clearLocation;
+- (RGDPoint*) location;
+- (RGDRouteNoteBuilder*) setLocation:(RGDPoint*) value;
+- (RGDRouteNoteBuilder*) setLocationBuilder:(RGDPointBuilder*) builderForValue;
+- (RGDRouteNoteBuilder*) mergeLocation:(RGDPoint*) value;
+- (RGDRouteNoteBuilder*) clearLocation;
 
 - (BOOL) hasMessage;
 - (NSString*) message;
-- (RouteNoteBuilder*) setMessage:(NSString*) value;
-- (RouteNoteBuilder*) clearMessage;
+- (RGDRouteNoteBuilder*) setMessage:(NSString*) value;
+- (RGDRouteNoteBuilder*) clearMessage;
 @end
 
-@interface RouteSummary : PBGeneratedMessage<GeneratedMessageProtocol> {
+@interface RGDRouteSummary : PBGeneratedMessage<GeneratedMessageProtocol> {
 @private
   BOOL hasPointCount_:1;
   BOOL hasFeatureCount_:1;
@@ -288,55 +332,55 @@
 
 - (BOOL) isInitialized;
 - (void) writeToCodedOutputStream:(PBCodedOutputStream*) output;
-- (RouteSummaryBuilder*) builder;
-+ (RouteSummaryBuilder*) builder;
-+ (RouteSummaryBuilder*) builderWithPrototype:(RouteSummary*) prototype;
-- (RouteSummaryBuilder*) toBuilder;
+- (RGDRouteSummaryBuilder*) builder;
++ (RGDRouteSummaryBuilder*) builder;
++ (RGDRouteSummaryBuilder*) builderWithPrototype:(RGDRouteSummary*) prototype;
+- (RGDRouteSummaryBuilder*) toBuilder;
 
-+ (RouteSummary*) parseFromData:(NSData*) data;
-+ (RouteSummary*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (RouteSummary*) parseFromInputStream:(NSInputStream*) input;
-+ (RouteSummary*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
-+ (RouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input;
-+ (RouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRouteSummary*) parseFromData:(NSData*) data;
++ (RGDRouteSummary*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRouteSummary*) parseFromInputStream:(NSInputStream*) input;
++ (RGDRouteSummary*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
++ (RGDRouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input;
++ (RGDRouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 @end
 
-@interface RouteSummaryBuilder : PBGeneratedMessageBuilder {
+@interface RGDRouteSummaryBuilder : PBGeneratedMessageBuilder {
 @private
-  RouteSummary* resultRouteSummary;
+  RGDRouteSummary* resultRouteSummary;
 }
 
-- (RouteSummary*) defaultInstance;
+- (RGDRouteSummary*) defaultInstance;
 
-- (RouteSummaryBuilder*) clear;
-- (RouteSummaryBuilder*) clone;
+- (RGDRouteSummaryBuilder*) clear;
+- (RGDRouteSummaryBuilder*) clone;
 
-- (RouteSummary*) build;
-- (RouteSummary*) buildPartial;
+- (RGDRouteSummary*) build;
+- (RGDRouteSummary*) buildPartial;
 
-- (RouteSummaryBuilder*) mergeFrom:(RouteSummary*) other;
-- (RouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
-- (RouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
+- (RGDRouteSummaryBuilder*) mergeFrom:(RGDRouteSummary*) other;
+- (RGDRouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input;
+- (RGDRouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry;
 
 - (BOOL) hasPointCount;
 - (SInt32) pointCount;
-- (RouteSummaryBuilder*) setPointCount:(SInt32) value;
-- (RouteSummaryBuilder*) clearPointCount;
+- (RGDRouteSummaryBuilder*) setPointCount:(SInt32) value;
+- (RGDRouteSummaryBuilder*) clearPointCount;
 
 - (BOOL) hasFeatureCount;
 - (SInt32) featureCount;
-- (RouteSummaryBuilder*) setFeatureCount:(SInt32) value;
-- (RouteSummaryBuilder*) clearFeatureCount;
+- (RGDRouteSummaryBuilder*) setFeatureCount:(SInt32) value;
+- (RGDRouteSummaryBuilder*) clearFeatureCount;
 
 - (BOOL) hasDistance;
 - (SInt32) distance;
-- (RouteSummaryBuilder*) setDistance:(SInt32) value;
-- (RouteSummaryBuilder*) clearDistance;
+- (RGDRouteSummaryBuilder*) setDistance:(SInt32) value;
+- (RGDRouteSummaryBuilder*) clearDistance;
 
 - (BOOL) hasElapsedTime;
 - (SInt32) elapsedTime;
-- (RouteSummaryBuilder*) setElapsedTime:(SInt32) value;
-- (RouteSummaryBuilder*) clearElapsedTime;
+- (RGDRouteSummaryBuilder*) setElapsedTime:(SInt32) value;
+- (RGDRouteSummaryBuilder*) clearElapsedTime;
 @end
 
 

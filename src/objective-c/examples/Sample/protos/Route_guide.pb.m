@@ -3,16 +3,17 @@
 #import "Route_guide.pb.h"
 // @@protoc_insertion_point(imports)
 
-@implementation RouteGuideRoot
+@implementation RGDRouteGuideRoot
 static PBExtensionRegistry* extensionRegistry = nil;
 + (PBExtensionRegistry*) extensionRegistry {
   return extensionRegistry;
 }
 
 + (void) initialize {
-  if (self == [RouteGuideRoot class]) {
+  if (self == [RGDRouteGuideRoot class]) {
     PBMutableExtensionRegistry* registry = [PBMutableExtensionRegistry registry];
     [self registerAllExtensions:registry];
+    [ObjectivecDescriptorRoot registerAllExtensions:registry];
     extensionRegistry = registry;
   }
 }
@@ -20,12 +21,12 @@ static PBExtensionRegistry* extensionRegistry = nil;
 }
 @end
 
-@interface Point ()
+@interface RGDPoint ()
 @property SInt32 latitude;
 @property SInt32 longitude;
 @end
 
-@implementation Point
+@implementation RGDPoint
 
 - (BOOL) hasLatitude {
   return !!hasLatitude_;
@@ -48,17 +49,17 @@ static PBExtensionRegistry* extensionRegistry = nil;
   }
   return self;
 }
-static Point* defaultPointInstance = nil;
+static RGDPoint* defaultRGDPointInstance = nil;
 + (void) initialize {
-  if (self == [Point class]) {
-    defaultPointInstance = [[Point alloc] init];
+  if (self == [RGDPoint class]) {
+    defaultRGDPointInstance = [[RGDPoint alloc] init];
   }
 }
 + (instancetype) defaultInstance {
-  return defaultPointInstance;
+  return defaultRGDPointInstance;
 }
 - (instancetype) defaultInstance {
-  return defaultPointInstance;
+  return defaultRGDPointInstance;
 }
 - (BOOL) isInitialized {
   return YES;
@@ -89,35 +90,35 @@ static Point* defaultPointInstance = nil;
   memoizedSerializedSize = size_;
   return size_;
 }
-+ (Point*) parseFromData:(NSData*) data {
-  return (Point*)[[[Point builder] mergeFromData:data] build];
++ (RGDPoint*) parseFromData:(NSData*) data {
+  return (RGDPoint*)[[[RGDPoint builder] mergeFromData:data] build];
 }
-+ (Point*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Point*)[[[Point builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
++ (RGDPoint*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDPoint*)[[[RGDPoint builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
 }
-+ (Point*) parseFromInputStream:(NSInputStream*) input {
-  return (Point*)[[[Point builder] mergeFromInputStream:input] build];
++ (RGDPoint*) parseFromInputStream:(NSInputStream*) input {
+  return (RGDPoint*)[[[RGDPoint builder] mergeFromInputStream:input] build];
 }
-+ (Point*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Point*)[[[Point builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDPoint*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDPoint*)[[[RGDPoint builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (Point*) parseFromCodedInputStream:(PBCodedInputStream*) input {
-  return (Point*)[[[Point builder] mergeFromCodedInputStream:input] build];
++ (RGDPoint*) parseFromCodedInputStream:(PBCodedInputStream*) input {
+  return (RGDPoint*)[[[RGDPoint builder] mergeFromCodedInputStream:input] build];
 }
-+ (Point*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Point*)[[[Point builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDPoint*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDPoint*)[[[RGDPoint builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (PointBuilder*) builder {
-  return [[PointBuilder alloc] init];
++ (RGDPointBuilder*) builder {
+  return [[RGDPointBuilder alloc] init];
 }
-+ (PointBuilder*) builderWithPrototype:(Point*) prototype {
-  return [[Point builder] mergeFrom:prototype];
++ (RGDPointBuilder*) builderWithPrototype:(RGDPoint*) prototype {
+  return [[RGDPoint builder] mergeFrom:prototype];
 }
-- (PointBuilder*) builder {
-  return [Point builder];
+- (RGDPointBuilder*) builder {
+  return [RGDPoint builder];
 }
-- (PointBuilder*) toBuilder {
-  return [Point builderWithPrototype:self];
+- (RGDPointBuilder*) toBuilder {
+  return [RGDPoint builderWithPrototype:self];
 }
 - (void) writeDescriptionTo:(NSMutableString*) output withIndent:(NSString*) indent {
   if (self.hasLatitude) {
@@ -132,10 +133,10 @@ static Point* defaultPointInstance = nil;
   if (other == self) {
     return YES;
   }
-  if (![other isKindOfClass:[Point class]]) {
+  if (![other isKindOfClass:[RGDPoint class]]) {
     return NO;
   }
-  Point *otherMessage = other;
+  RGDPoint *otherMessage = other;
   return
       self.hasLatitude == otherMessage.hasLatitude &&
       (!self.hasLatitude || self.latitude == otherMessage.latitude) &&
@@ -156,42 +157,42 @@ static Point* defaultPointInstance = nil;
 }
 @end
 
-@interface PointBuilder()
-@property (strong) Point* resultPoint;
+@interface RGDPointBuilder()
+@property (strong) RGDPoint* resultPoint;
 @end
 
-@implementation PointBuilder
+@implementation RGDPointBuilder
 @synthesize resultPoint;
 - (instancetype) init {
   if ((self = [super init])) {
-    self.resultPoint = [[Point alloc] init];
+    self.resultPoint = [[RGDPoint alloc] init];
   }
   return self;
 }
 - (PBGeneratedMessage*) internalGetResult {
   return resultPoint;
 }
-- (PointBuilder*) clear {
-  self.resultPoint = [[Point alloc] init];
+- (RGDPointBuilder*) clear {
+  self.resultPoint = [[RGDPoint alloc] init];
   return self;
 }
-- (PointBuilder*) clone {
-  return [Point builderWithPrototype:resultPoint];
+- (RGDPointBuilder*) clone {
+  return [RGDPoint builderWithPrototype:resultPoint];
 }
-- (Point*) defaultInstance {
-  return [Point defaultInstance];
+- (RGDPoint*) defaultInstance {
+  return [RGDPoint defaultInstance];
 }
-- (Point*) build {
+- (RGDPoint*) build {
   [self checkInitialized];
   return [self buildPartial];
 }
-- (Point*) buildPartial {
-  Point* returnMe = resultPoint;
+- (RGDPoint*) buildPartial {
+  RGDPoint* returnMe = resultPoint;
   self.resultPoint = nil;
   return returnMe;
 }
-- (PointBuilder*) mergeFrom:(Point*) other {
-  if (other == [Point defaultInstance]) {
+- (RGDPointBuilder*) mergeFrom:(RGDPoint*) other {
+  if (other == [RGDPoint defaultInstance]) {
     return self;
   }
   if (other.hasLatitude) {
@@ -203,10 +204,10 @@ static Point* defaultPointInstance = nil;
   [self mergeUnknownFields:other.unknownFields];
   return self;
 }
-- (PointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
+- (RGDPointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
   return [self mergeFromCodedInputStream:input extensionRegistry:[PBExtensionRegistry emptyRegistry]];
 }
-- (PointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+- (RGDPointBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
   PBUnknownFieldSetBuilder* unknownFields = [PBUnknownFieldSet builderWithUnknownFields:self.unknownFields];
   while (YES) {
     SInt32 tag = [input readTag];
@@ -238,12 +239,12 @@ static Point* defaultPointInstance = nil;
 - (SInt32) latitude {
   return resultPoint.latitude;
 }
-- (PointBuilder*) setLatitude:(SInt32) value {
+- (RGDPointBuilder*) setLatitude:(SInt32) value {
   resultPoint.hasLatitude = YES;
   resultPoint.latitude = value;
   return self;
 }
-- (PointBuilder*) clearLatitude {
+- (RGDPointBuilder*) clearLatitude {
   resultPoint.hasLatitude = NO;
   resultPoint.latitude = 0;
   return self;
@@ -254,24 +255,24 @@ static Point* defaultPointInstance = nil;
 - (SInt32) longitude {
   return resultPoint.longitude;
 }
-- (PointBuilder*) setLongitude:(SInt32) value {
+- (RGDPointBuilder*) setLongitude:(SInt32) value {
   resultPoint.hasLongitude = YES;
   resultPoint.longitude = value;
   return self;
 }
-- (PointBuilder*) clearLongitude {
+- (RGDPointBuilder*) clearLongitude {
   resultPoint.hasLongitude = NO;
   resultPoint.longitude = 0;
   return self;
 }
 @end
 
-@interface Rectangle ()
-@property (strong) Point* lo;
-@property (strong) Point* hi;
+@interface RGDRectangle ()
+@property (strong) RGDPoint* lo;
+@property (strong) RGDPoint* hi;
 @end
 
-@implementation Rectangle
+@implementation RGDRectangle
 
 - (BOOL) hasLo {
   return !!hasLo_;
@@ -289,22 +290,22 @@ static Point* defaultPointInstance = nil;
 @synthesize hi;
 - (instancetype) init {
   if ((self = [super init])) {
-    self.lo = [Point defaultInstance];
-    self.hi = [Point defaultInstance];
+    self.lo = [RGDPoint defaultInstance];
+    self.hi = [RGDPoint defaultInstance];
   }
   return self;
 }
-static Rectangle* defaultRectangleInstance = nil;
+static RGDRectangle* defaultRGDRectangleInstance = nil;
 + (void) initialize {
-  if (self == [Rectangle class]) {
-    defaultRectangleInstance = [[Rectangle alloc] init];
+  if (self == [RGDRectangle class]) {
+    defaultRGDRectangleInstance = [[RGDRectangle alloc] init];
   }
 }
 + (instancetype) defaultInstance {
-  return defaultRectangleInstance;
+  return defaultRGDRectangleInstance;
 }
 - (instancetype) defaultInstance {
-  return defaultRectangleInstance;
+  return defaultRGDRectangleInstance;
 }
 - (BOOL) isInitialized {
   return YES;
@@ -335,35 +336,35 @@ static Rectangle* defaultRectangleInstance = nil;
   memoizedSerializedSize = size_;
   return size_;
 }
-+ (Rectangle*) parseFromData:(NSData*) data {
-  return (Rectangle*)[[[Rectangle builder] mergeFromData:data] build];
++ (RGDRectangle*) parseFromData:(NSData*) data {
+  return (RGDRectangle*)[[[RGDRectangle builder] mergeFromData:data] build];
 }
-+ (Rectangle*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Rectangle*)[[[Rectangle builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
++ (RGDRectangle*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRectangle*)[[[RGDRectangle builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
 }
-+ (Rectangle*) parseFromInputStream:(NSInputStream*) input {
-  return (Rectangle*)[[[Rectangle builder] mergeFromInputStream:input] build];
++ (RGDRectangle*) parseFromInputStream:(NSInputStream*) input {
+  return (RGDRectangle*)[[[RGDRectangle builder] mergeFromInputStream:input] build];
 }
-+ (Rectangle*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Rectangle*)[[[Rectangle builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDRectangle*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRectangle*)[[[RGDRectangle builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (Rectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input {
-  return (Rectangle*)[[[Rectangle builder] mergeFromCodedInputStream:input] build];
++ (RGDRectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input {
+  return (RGDRectangle*)[[[RGDRectangle builder] mergeFromCodedInputStream:input] build];
 }
-+ (Rectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Rectangle*)[[[Rectangle builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDRectangle*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRectangle*)[[[RGDRectangle builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (RectangleBuilder*) builder {
-  return [[RectangleBuilder alloc] init];
++ (RGDRectangleBuilder*) builder {
+  return [[RGDRectangleBuilder alloc] init];
 }
-+ (RectangleBuilder*) builderWithPrototype:(Rectangle*) prototype {
-  return [[Rectangle builder] mergeFrom:prototype];
++ (RGDRectangleBuilder*) builderWithPrototype:(RGDRectangle*) prototype {
+  return [[RGDRectangle builder] mergeFrom:prototype];
 }
-- (RectangleBuilder*) builder {
-  return [Rectangle builder];
+- (RGDRectangleBuilder*) builder {
+  return [RGDRectangle builder];
 }
-- (RectangleBuilder*) toBuilder {
-  return [Rectangle builderWithPrototype:self];
+- (RGDRectangleBuilder*) toBuilder {
+  return [RGDRectangle builderWithPrototype:self];
 }
 - (void) writeDescriptionTo:(NSMutableString*) output withIndent:(NSString*) indent {
   if (self.hasLo) {
@@ -384,10 +385,10 @@ static Rectangle* defaultRectangleInstance = nil;
   if (other == self) {
     return YES;
   }
-  if (![other isKindOfClass:[Rectangle class]]) {
+  if (![other isKindOfClass:[RGDRectangle class]]) {
     return NO;
   }
-  Rectangle *otherMessage = other;
+  RGDRectangle *otherMessage = other;
   return
       self.hasLo == otherMessage.hasLo &&
       (!self.hasLo || [self.lo isEqual:otherMessage.lo]) &&
@@ -408,42 +409,42 @@ static Rectangle* defaultRectangleInstance = nil;
 }
 @end
 
-@interface RectangleBuilder()
-@property (strong) Rectangle* resultRectangle;
+@interface RGDRectangleBuilder()
+@property (strong) RGDRectangle* resultRectangle;
 @end
 
-@implementation RectangleBuilder
+@implementation RGDRectangleBuilder
 @synthesize resultRectangle;
 - (instancetype) init {
   if ((self = [super init])) {
-    self.resultRectangle = [[Rectangle alloc] init];
+    self.resultRectangle = [[RGDRectangle alloc] init];
   }
   return self;
 }
 - (PBGeneratedMessage*) internalGetResult {
   return resultRectangle;
 }
-- (RectangleBuilder*) clear {
-  self.resultRectangle = [[Rectangle alloc] init];
+- (RGDRectangleBuilder*) clear {
+  self.resultRectangle = [[RGDRectangle alloc] init];
   return self;
 }
-- (RectangleBuilder*) clone {
-  return [Rectangle builderWithPrototype:resultRectangle];
+- (RGDRectangleBuilder*) clone {
+  return [RGDRectangle builderWithPrototype:resultRectangle];
 }
-- (Rectangle*) defaultInstance {
-  return [Rectangle defaultInstance];
+- (RGDRectangle*) defaultInstance {
+  return [RGDRectangle defaultInstance];
 }
-- (Rectangle*) build {
+- (RGDRectangle*) build {
   [self checkInitialized];
   return [self buildPartial];
 }
-- (Rectangle*) buildPartial {
-  Rectangle* returnMe = resultRectangle;
+- (RGDRectangle*) buildPartial {
+  RGDRectangle* returnMe = resultRectangle;
   self.resultRectangle = nil;
   return returnMe;
 }
-- (RectangleBuilder*) mergeFrom:(Rectangle*) other {
-  if (other == [Rectangle defaultInstance]) {
+- (RGDRectangleBuilder*) mergeFrom:(RGDRectangle*) other {
+  if (other == [RGDRectangle defaultInstance]) {
     return self;
   }
   if (other.hasLo) {
@@ -455,10 +456,10 @@ static Rectangle* defaultRectangleInstance = nil;
   [self mergeUnknownFields:other.unknownFields];
   return self;
 }
-- (RectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
+- (RGDRectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
   return [self mergeFromCodedInputStream:input extensionRegistry:[PBExtensionRegistry emptyRegistry]];
 }
-- (RectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+- (RGDRectangleBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
   PBUnknownFieldSetBuilder* unknownFields = [PBUnknownFieldSet builderWithUnknownFields:self.unknownFields];
   while (YES) {
     SInt32 tag = [input readTag];
@@ -474,7 +475,7 @@ static Rectangle* defaultRectangleInstance = nil;
         break;
       }
       case 10: {
-        PointBuilder* subBuilder = [Point builder];
+        RGDPointBuilder* subBuilder = [RGDPoint builder];
         if (self.hasLo) {
           [subBuilder mergeFrom:self.lo];
         }
@@ -483,7 +484,7 @@ static Rectangle* defaultRectangleInstance = nil;
         break;
       }
       case 18: {
-        PointBuilder* subBuilder = [Point builder];
+        RGDPointBuilder* subBuilder = [RGDPoint builder];
         if (self.hasHi) {
           [subBuilder mergeFrom:self.hi];
         }
@@ -497,71 +498,71 @@ static Rectangle* defaultRectangleInstance = nil;
 - (BOOL) hasLo {
   return resultRectangle.hasLo;
 }
-- (Point*) lo {
+- (RGDPoint*) lo {
   return resultRectangle.lo;
 }
-- (RectangleBuilder*) setLo:(Point*) value {
+- (RGDRectangleBuilder*) setLo:(RGDPoint*) value {
   resultRectangle.hasLo = YES;
   resultRectangle.lo = value;
   return self;
 }
-- (RectangleBuilder*) setLoBuilder:(PointBuilder*) builderForValue {
+- (RGDRectangleBuilder*) setLoBuilder:(RGDPointBuilder*) builderForValue {
   return [self setLo:[builderForValue build]];
 }
-- (RectangleBuilder*) mergeLo:(Point*) value {
+- (RGDRectangleBuilder*) mergeLo:(RGDPoint*) value {
   if (resultRectangle.hasLo &&
-      resultRectangle.lo != [Point defaultInstance]) {
+      resultRectangle.lo != [RGDPoint defaultInstance]) {
     resultRectangle.lo =
-      [[[Point builderWithPrototype:resultRectangle.lo] mergeFrom:value] buildPartial];
+      [[[RGDPoint builderWithPrototype:resultRectangle.lo] mergeFrom:value] buildPartial];
   } else {
     resultRectangle.lo = value;
   }
   resultRectangle.hasLo = YES;
   return self;
 }
-- (RectangleBuilder*) clearLo {
+- (RGDRectangleBuilder*) clearLo {
   resultRectangle.hasLo = NO;
-  resultRectangle.lo = [Point defaultInstance];
+  resultRectangle.lo = [RGDPoint defaultInstance];
   return self;
 }
 - (BOOL) hasHi {
   return resultRectangle.hasHi;
 }
-- (Point*) hi {
+- (RGDPoint*) hi {
   return resultRectangle.hi;
 }
-- (RectangleBuilder*) setHi:(Point*) value {
+- (RGDRectangleBuilder*) setHi:(RGDPoint*) value {
   resultRectangle.hasHi = YES;
   resultRectangle.hi = value;
   return self;
 }
-- (RectangleBuilder*) setHiBuilder:(PointBuilder*) builderForValue {
+- (RGDRectangleBuilder*) setHiBuilder:(RGDPointBuilder*) builderForValue {
   return [self setHi:[builderForValue build]];
 }
-- (RectangleBuilder*) mergeHi:(Point*) value {
+- (RGDRectangleBuilder*) mergeHi:(RGDPoint*) value {
   if (resultRectangle.hasHi &&
-      resultRectangle.hi != [Point defaultInstance]) {
+      resultRectangle.hi != [RGDPoint defaultInstance]) {
     resultRectangle.hi =
-      [[[Point builderWithPrototype:resultRectangle.hi] mergeFrom:value] buildPartial];
+      [[[RGDPoint builderWithPrototype:resultRectangle.hi] mergeFrom:value] buildPartial];
   } else {
     resultRectangle.hi = value;
   }
   resultRectangle.hasHi = YES;
   return self;
 }
-- (RectangleBuilder*) clearHi {
+- (RGDRectangleBuilder*) clearHi {
   resultRectangle.hasHi = NO;
-  resultRectangle.hi = [Point defaultInstance];
+  resultRectangle.hi = [RGDPoint defaultInstance];
   return self;
 }
 @end
 
-@interface Feature ()
+@interface RGDFeature ()
 @property (strong) NSString* name;
-@property (strong) Point* location;
+@property (strong) RGDPoint* location;
 @end
 
-@implementation Feature
+@implementation RGDFeature
 
 - (BOOL) hasName {
   return !!hasName_;
@@ -580,21 +581,21 @@ static Rectangle* defaultRectangleInstance = nil;
 - (instancetype) init {
   if ((self = [super init])) {
     self.name = @"";
-    self.location = [Point defaultInstance];
+    self.location = [RGDPoint defaultInstance];
   }
   return self;
 }
-static Feature* defaultFeatureInstance = nil;
+static RGDFeature* defaultRGDFeatureInstance = nil;
 + (void) initialize {
-  if (self == [Feature class]) {
-    defaultFeatureInstance = [[Feature alloc] init];
+  if (self == [RGDFeature class]) {
+    defaultRGDFeatureInstance = [[RGDFeature alloc] init];
   }
 }
 + (instancetype) defaultInstance {
-  return defaultFeatureInstance;
+  return defaultRGDFeatureInstance;
 }
 - (instancetype) defaultInstance {
-  return defaultFeatureInstance;
+  return defaultRGDFeatureInstance;
 }
 - (BOOL) isInitialized {
   return YES;
@@ -625,35 +626,35 @@ static Feature* defaultFeatureInstance = nil;
   memoizedSerializedSize = size_;
   return size_;
 }
-+ (Feature*) parseFromData:(NSData*) data {
-  return (Feature*)[[[Feature builder] mergeFromData:data] build];
++ (RGDFeature*) parseFromData:(NSData*) data {
+  return (RGDFeature*)[[[RGDFeature builder] mergeFromData:data] build];
 }
-+ (Feature*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Feature*)[[[Feature builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
++ (RGDFeature*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDFeature*)[[[RGDFeature builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
 }
-+ (Feature*) parseFromInputStream:(NSInputStream*) input {
-  return (Feature*)[[[Feature builder] mergeFromInputStream:input] build];
++ (RGDFeature*) parseFromInputStream:(NSInputStream*) input {
+  return (RGDFeature*)[[[RGDFeature builder] mergeFromInputStream:input] build];
 }
-+ (Feature*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Feature*)[[[Feature builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDFeature*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDFeature*)[[[RGDFeature builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (Feature*) parseFromCodedInputStream:(PBCodedInputStream*) input {
-  return (Feature*)[[[Feature builder] mergeFromCodedInputStream:input] build];
++ (RGDFeature*) parseFromCodedInputStream:(PBCodedInputStream*) input {
+  return (RGDFeature*)[[[RGDFeature builder] mergeFromCodedInputStream:input] build];
 }
-+ (Feature*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (Feature*)[[[Feature builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDFeature*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDFeature*)[[[RGDFeature builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (FeatureBuilder*) builder {
-  return [[FeatureBuilder alloc] init];
++ (RGDFeatureBuilder*) builder {
+  return [[RGDFeatureBuilder alloc] init];
 }
-+ (FeatureBuilder*) builderWithPrototype:(Feature*) prototype {
-  return [[Feature builder] mergeFrom:prototype];
++ (RGDFeatureBuilder*) builderWithPrototype:(RGDFeature*) prototype {
+  return [[RGDFeature builder] mergeFrom:prototype];
 }
-- (FeatureBuilder*) builder {
-  return [Feature builder];
+- (RGDFeatureBuilder*) builder {
+  return [RGDFeature builder];
 }
-- (FeatureBuilder*) toBuilder {
-  return [Feature builderWithPrototype:self];
+- (RGDFeatureBuilder*) toBuilder {
+  return [RGDFeature builderWithPrototype:self];
 }
 - (void) writeDescriptionTo:(NSMutableString*) output withIndent:(NSString*) indent {
   if (self.hasName) {
@@ -671,10 +672,10 @@ static Feature* defaultFeatureInstance = nil;
   if (other == self) {
     return YES;
   }
-  if (![other isKindOfClass:[Feature class]]) {
+  if (![other isKindOfClass:[RGDFeature class]]) {
     return NO;
   }
-  Feature *otherMessage = other;
+  RGDFeature *otherMessage = other;
   return
       self.hasName == otherMessage.hasName &&
       (!self.hasName || [self.name isEqual:otherMessage.name]) &&
@@ -695,42 +696,42 @@ static Feature* defaultFeatureInstance = nil;
 }
 @end
 
-@interface FeatureBuilder()
-@property (strong) Feature* resultFeature;
+@interface RGDFeatureBuilder()
+@property (strong) RGDFeature* resultFeature;
 @end
 
-@implementation FeatureBuilder
+@implementation RGDFeatureBuilder
 @synthesize resultFeature;
 - (instancetype) init {
   if ((self = [super init])) {
-    self.resultFeature = [[Feature alloc] init];
+    self.resultFeature = [[RGDFeature alloc] init];
   }
   return self;
 }
 - (PBGeneratedMessage*) internalGetResult {
   return resultFeature;
 }
-- (FeatureBuilder*) clear {
-  self.resultFeature = [[Feature alloc] init];
+- (RGDFeatureBuilder*) clear {
+  self.resultFeature = [[RGDFeature alloc] init];
   return self;
 }
-- (FeatureBuilder*) clone {
-  return [Feature builderWithPrototype:resultFeature];
+- (RGDFeatureBuilder*) clone {
+  return [RGDFeature builderWithPrototype:resultFeature];
 }
-- (Feature*) defaultInstance {
-  return [Feature defaultInstance];
+- (RGDFeature*) defaultInstance {
+  return [RGDFeature defaultInstance];
 }
-- (Feature*) build {
+- (RGDFeature*) build {
   [self checkInitialized];
   return [self buildPartial];
 }
-- (Feature*) buildPartial {
-  Feature* returnMe = resultFeature;
+- (RGDFeature*) buildPartial {
+  RGDFeature* returnMe = resultFeature;
   self.resultFeature = nil;
   return returnMe;
 }
-- (FeatureBuilder*) mergeFrom:(Feature*) other {
-  if (other == [Feature defaultInstance]) {
+- (RGDFeatureBuilder*) mergeFrom:(RGDFeature*) other {
+  if (other == [RGDFeature defaultInstance]) {
     return self;
   }
   if (other.hasName) {
@@ -742,10 +743,10 @@ static Feature* defaultFeatureInstance = nil;
   [self mergeUnknownFields:other.unknownFields];
   return self;
 }
-- (FeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
+- (RGDFeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
   return [self mergeFromCodedInputStream:input extensionRegistry:[PBExtensionRegistry emptyRegistry]];
 }
-- (FeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+- (RGDFeatureBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
   PBUnknownFieldSetBuilder* unknownFields = [PBUnknownFieldSet builderWithUnknownFields:self.unknownFields];
   while (YES) {
     SInt32 tag = [input readTag];
@@ -765,7 +766,7 @@ static Feature* defaultFeatureInstance = nil;
         break;
       }
       case 18: {
-        PointBuilder* subBuilder = [Point builder];
+        RGDPointBuilder* subBuilder = [RGDPoint builder];
         if (self.hasLocation) {
           [subBuilder mergeFrom:self.location];
         }
@@ -782,12 +783,12 @@ static Feature* defaultFeatureInstance = nil;
 - (NSString*) name {
   return resultFeature.name;
 }
-- (FeatureBuilder*) setName:(NSString*) value {
+- (RGDFeatureBuilder*) setName:(NSString*) value {
   resultFeature.hasName = YES;
   resultFeature.name = value;
   return self;
 }
-- (FeatureBuilder*) clearName {
+- (RGDFeatureBuilder*) clearName {
   resultFeature.hasName = NO;
   resultFeature.name = @"";
   return self;
@@ -795,41 +796,41 @@ static Feature* defaultFeatureInstance = nil;
 - (BOOL) hasLocation {
   return resultFeature.hasLocation;
 }
-- (Point*) location {
+- (RGDPoint*) location {
   return resultFeature.location;
 }
-- (FeatureBuilder*) setLocation:(Point*) value {
+- (RGDFeatureBuilder*) setLocation:(RGDPoint*) value {
   resultFeature.hasLocation = YES;
   resultFeature.location = value;
   return self;
 }
-- (FeatureBuilder*) setLocationBuilder:(PointBuilder*) builderForValue {
+- (RGDFeatureBuilder*) setLocationBuilder:(RGDPointBuilder*) builderForValue {
   return [self setLocation:[builderForValue build]];
 }
-- (FeatureBuilder*) mergeLocation:(Point*) value {
+- (RGDFeatureBuilder*) mergeLocation:(RGDPoint*) value {
   if (resultFeature.hasLocation &&
-      resultFeature.location != [Point defaultInstance]) {
+      resultFeature.location != [RGDPoint defaultInstance]) {
     resultFeature.location =
-      [[[Point builderWithPrototype:resultFeature.location] mergeFrom:value] buildPartial];
+      [[[RGDPoint builderWithPrototype:resultFeature.location] mergeFrom:value] buildPartial];
   } else {
     resultFeature.location = value;
   }
   resultFeature.hasLocation = YES;
   return self;
 }
-- (FeatureBuilder*) clearLocation {
+- (RGDFeatureBuilder*) clearLocation {
   resultFeature.hasLocation = NO;
-  resultFeature.location = [Point defaultInstance];
+  resultFeature.location = [RGDPoint defaultInstance];
   return self;
 }
 @end
 
-@interface RouteNote ()
-@property (strong) Point* location;
+@interface RGDRouteNote ()
+@property (strong) RGDPoint* location;
 @property (strong) NSString* message;
 @end
 
-@implementation RouteNote
+@implementation RGDRouteNote
 
 - (BOOL) hasLocation {
   return !!hasLocation_;
@@ -847,22 +848,22 @@ static Feature* defaultFeatureInstance = nil;
 @synthesize message;
 - (instancetype) init {
   if ((self = [super init])) {
-    self.location = [Point defaultInstance];
+    self.location = [RGDPoint defaultInstance];
     self.message = @"";
   }
   return self;
 }
-static RouteNote* defaultRouteNoteInstance = nil;
+static RGDRouteNote* defaultRGDRouteNoteInstance = nil;
 + (void) initialize {
-  if (self == [RouteNote class]) {
-    defaultRouteNoteInstance = [[RouteNote alloc] init];
+  if (self == [RGDRouteNote class]) {
+    defaultRGDRouteNoteInstance = [[RGDRouteNote alloc] init];
   }
 }
 + (instancetype) defaultInstance {
-  return defaultRouteNoteInstance;
+  return defaultRGDRouteNoteInstance;
 }
 - (instancetype) defaultInstance {
-  return defaultRouteNoteInstance;
+  return defaultRGDRouteNoteInstance;
 }
 - (BOOL) isInitialized {
   return YES;
@@ -893,35 +894,35 @@ static RouteNote* defaultRouteNoteInstance = nil;
   memoizedSerializedSize = size_;
   return size_;
 }
-+ (RouteNote*) parseFromData:(NSData*) data {
-  return (RouteNote*)[[[RouteNote builder] mergeFromData:data] build];
++ (RGDRouteNote*) parseFromData:(NSData*) data {
+  return (RGDRouteNote*)[[[RGDRouteNote builder] mergeFromData:data] build];
 }
-+ (RouteNote*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (RouteNote*)[[[RouteNote builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
++ (RGDRouteNote*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRouteNote*)[[[RGDRouteNote builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
 }
-+ (RouteNote*) parseFromInputStream:(NSInputStream*) input {
-  return (RouteNote*)[[[RouteNote builder] mergeFromInputStream:input] build];
++ (RGDRouteNote*) parseFromInputStream:(NSInputStream*) input {
+  return (RGDRouteNote*)[[[RGDRouteNote builder] mergeFromInputStream:input] build];
 }
-+ (RouteNote*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (RouteNote*)[[[RouteNote builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDRouteNote*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRouteNote*)[[[RGDRouteNote builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (RouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input {
-  return (RouteNote*)[[[RouteNote builder] mergeFromCodedInputStream:input] build];
++ (RGDRouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input {
+  return (RGDRouteNote*)[[[RGDRouteNote builder] mergeFromCodedInputStream:input] build];
 }
-+ (RouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (RouteNote*)[[[RouteNote builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDRouteNote*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRouteNote*)[[[RGDRouteNote builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (RouteNoteBuilder*) builder {
-  return [[RouteNoteBuilder alloc] init];
++ (RGDRouteNoteBuilder*) builder {
+  return [[RGDRouteNoteBuilder alloc] init];
 }
-+ (RouteNoteBuilder*) builderWithPrototype:(RouteNote*) prototype {
-  return [[RouteNote builder] mergeFrom:prototype];
++ (RGDRouteNoteBuilder*) builderWithPrototype:(RGDRouteNote*) prototype {
+  return [[RGDRouteNote builder] mergeFrom:prototype];
 }
-- (RouteNoteBuilder*) builder {
-  return [RouteNote builder];
+- (RGDRouteNoteBuilder*) builder {
+  return [RGDRouteNote builder];
 }
-- (RouteNoteBuilder*) toBuilder {
-  return [RouteNote builderWithPrototype:self];
+- (RGDRouteNoteBuilder*) toBuilder {
+  return [RGDRouteNote builderWithPrototype:self];
 }
 - (void) writeDescriptionTo:(NSMutableString*) output withIndent:(NSString*) indent {
   if (self.hasLocation) {
@@ -939,10 +940,10 @@ static RouteNote* defaultRouteNoteInstance = nil;
   if (other == self) {
     return YES;
   }
-  if (![other isKindOfClass:[RouteNote class]]) {
+  if (![other isKindOfClass:[RGDRouteNote class]]) {
     return NO;
   }
-  RouteNote *otherMessage = other;
+  RGDRouteNote *otherMessage = other;
   return
       self.hasLocation == otherMessage.hasLocation &&
       (!self.hasLocation || [self.location isEqual:otherMessage.location]) &&
@@ -963,42 +964,42 @@ static RouteNote* defaultRouteNoteInstance = nil;
 }
 @end
 
-@interface RouteNoteBuilder()
-@property (strong) RouteNote* resultRouteNote;
+@interface RGDRouteNoteBuilder()
+@property (strong) RGDRouteNote* resultRouteNote;
 @end
 
-@implementation RouteNoteBuilder
+@implementation RGDRouteNoteBuilder
 @synthesize resultRouteNote;
 - (instancetype) init {
   if ((self = [super init])) {
-    self.resultRouteNote = [[RouteNote alloc] init];
+    self.resultRouteNote = [[RGDRouteNote alloc] init];
   }
   return self;
 }
 - (PBGeneratedMessage*) internalGetResult {
   return resultRouteNote;
 }
-- (RouteNoteBuilder*) clear {
-  self.resultRouteNote = [[RouteNote alloc] init];
+- (RGDRouteNoteBuilder*) clear {
+  self.resultRouteNote = [[RGDRouteNote alloc] init];
   return self;
 }
-- (RouteNoteBuilder*) clone {
-  return [RouteNote builderWithPrototype:resultRouteNote];
+- (RGDRouteNoteBuilder*) clone {
+  return [RGDRouteNote builderWithPrototype:resultRouteNote];
 }
-- (RouteNote*) defaultInstance {
-  return [RouteNote defaultInstance];
+- (RGDRouteNote*) defaultInstance {
+  return [RGDRouteNote defaultInstance];
 }
-- (RouteNote*) build {
+- (RGDRouteNote*) build {
   [self checkInitialized];
   return [self buildPartial];
 }
-- (RouteNote*) buildPartial {
-  RouteNote* returnMe = resultRouteNote;
+- (RGDRouteNote*) buildPartial {
+  RGDRouteNote* returnMe = resultRouteNote;
   self.resultRouteNote = nil;
   return returnMe;
 }
-- (RouteNoteBuilder*) mergeFrom:(RouteNote*) other {
-  if (other == [RouteNote defaultInstance]) {
+- (RGDRouteNoteBuilder*) mergeFrom:(RGDRouteNote*) other {
+  if (other == [RGDRouteNote defaultInstance]) {
     return self;
   }
   if (other.hasLocation) {
@@ -1010,10 +1011,10 @@ static RouteNote* defaultRouteNoteInstance = nil;
   [self mergeUnknownFields:other.unknownFields];
   return self;
 }
-- (RouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
+- (RGDRouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
   return [self mergeFromCodedInputStream:input extensionRegistry:[PBExtensionRegistry emptyRegistry]];
 }
-- (RouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+- (RGDRouteNoteBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
   PBUnknownFieldSetBuilder* unknownFields = [PBUnknownFieldSet builderWithUnknownFields:self.unknownFields];
   while (YES) {
     SInt32 tag = [input readTag];
@@ -1029,7 +1030,7 @@ static RouteNote* defaultRouteNoteInstance = nil;
         break;
       }
       case 10: {
-        PointBuilder* subBuilder = [Point builder];
+        RGDPointBuilder* subBuilder = [RGDPoint builder];
         if (self.hasLocation) {
           [subBuilder mergeFrom:self.location];
         }
@@ -1047,31 +1048,31 @@ static RouteNote* defaultRouteNoteInstance = nil;
 - (BOOL) hasLocation {
   return resultRouteNote.hasLocation;
 }
-- (Point*) location {
+- (RGDPoint*) location {
   return resultRouteNote.location;
 }
-- (RouteNoteBuilder*) setLocation:(Point*) value {
+- (RGDRouteNoteBuilder*) setLocation:(RGDPoint*) value {
   resultRouteNote.hasLocation = YES;
   resultRouteNote.location = value;
   return self;
 }
-- (RouteNoteBuilder*) setLocationBuilder:(PointBuilder*) builderForValue {
+- (RGDRouteNoteBuilder*) setLocationBuilder:(RGDPointBuilder*) builderForValue {
   return [self setLocation:[builderForValue build]];
 }
-- (RouteNoteBuilder*) mergeLocation:(Point*) value {
+- (RGDRouteNoteBuilder*) mergeLocation:(RGDPoint*) value {
   if (resultRouteNote.hasLocation &&
-      resultRouteNote.location != [Point defaultInstance]) {
+      resultRouteNote.location != [RGDPoint defaultInstance]) {
     resultRouteNote.location =
-      [[[Point builderWithPrototype:resultRouteNote.location] mergeFrom:value] buildPartial];
+      [[[RGDPoint builderWithPrototype:resultRouteNote.location] mergeFrom:value] buildPartial];
   } else {
     resultRouteNote.location = value;
   }
   resultRouteNote.hasLocation = YES;
   return self;
 }
-- (RouteNoteBuilder*) clearLocation {
+- (RGDRouteNoteBuilder*) clearLocation {
   resultRouteNote.hasLocation = NO;
-  resultRouteNote.location = [Point defaultInstance];
+  resultRouteNote.location = [RGDPoint defaultInstance];
   return self;
 }
 - (BOOL) hasMessage {
@@ -1080,26 +1081,26 @@ static RouteNote* defaultRouteNoteInstance = nil;
 - (NSString*) message {
   return resultRouteNote.message;
 }
-- (RouteNoteBuilder*) setMessage:(NSString*) value {
+- (RGDRouteNoteBuilder*) setMessage:(NSString*) value {
   resultRouteNote.hasMessage = YES;
   resultRouteNote.message = value;
   return self;
 }
-- (RouteNoteBuilder*) clearMessage {
+- (RGDRouteNoteBuilder*) clearMessage {
   resultRouteNote.hasMessage = NO;
   resultRouteNote.message = @"";
   return self;
 }
 @end
 
-@interface RouteSummary ()
+@interface RGDRouteSummary ()
 @property SInt32 pointCount;
 @property SInt32 featureCount;
 @property SInt32 distance;
 @property SInt32 elapsedTime;
 @end
 
-@implementation RouteSummary
+@implementation RGDRouteSummary
 
 - (BOOL) hasPointCount {
   return !!hasPointCount_;
@@ -1138,17 +1139,17 @@ static RouteNote* defaultRouteNoteInstance = nil;
   }
   return self;
 }
-static RouteSummary* defaultRouteSummaryInstance = nil;
+static RGDRouteSummary* defaultRGDRouteSummaryInstance = nil;
 + (void) initialize {
-  if (self == [RouteSummary class]) {
-    defaultRouteSummaryInstance = [[RouteSummary alloc] init];
+  if (self == [RGDRouteSummary class]) {
+    defaultRGDRouteSummaryInstance = [[RGDRouteSummary alloc] init];
   }
 }
 + (instancetype) defaultInstance {
-  return defaultRouteSummaryInstance;
+  return defaultRGDRouteSummaryInstance;
 }
 - (instancetype) defaultInstance {
-  return defaultRouteSummaryInstance;
+  return defaultRGDRouteSummaryInstance;
 }
 - (BOOL) isInitialized {
   return YES;
@@ -1191,35 +1192,35 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
   memoizedSerializedSize = size_;
   return size_;
 }
-+ (RouteSummary*) parseFromData:(NSData*) data {
-  return (RouteSummary*)[[[RouteSummary builder] mergeFromData:data] build];
++ (RGDRouteSummary*) parseFromData:(NSData*) data {
+  return (RGDRouteSummary*)[[[RGDRouteSummary builder] mergeFromData:data] build];
 }
-+ (RouteSummary*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (RouteSummary*)[[[RouteSummary builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
++ (RGDRouteSummary*) parseFromData:(NSData*) data extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRouteSummary*)[[[RGDRouteSummary builder] mergeFromData:data extensionRegistry:extensionRegistry] build];
 }
-+ (RouteSummary*) parseFromInputStream:(NSInputStream*) input {
-  return (RouteSummary*)[[[RouteSummary builder] mergeFromInputStream:input] build];
++ (RGDRouteSummary*) parseFromInputStream:(NSInputStream*) input {
+  return (RGDRouteSummary*)[[[RGDRouteSummary builder] mergeFromInputStream:input] build];
 }
-+ (RouteSummary*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (RouteSummary*)[[[RouteSummary builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDRouteSummary*) parseFromInputStream:(NSInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRouteSummary*)[[[RGDRouteSummary builder] mergeFromInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (RouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input {
-  return (RouteSummary*)[[[RouteSummary builder] mergeFromCodedInputStream:input] build];
++ (RGDRouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input {
+  return (RGDRouteSummary*)[[[RGDRouteSummary builder] mergeFromCodedInputStream:input] build];
 }
-+ (RouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
-  return (RouteSummary*)[[[RouteSummary builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
++ (RGDRouteSummary*) parseFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+  return (RGDRouteSummary*)[[[RGDRouteSummary builder] mergeFromCodedInputStream:input extensionRegistry:extensionRegistry] build];
 }
-+ (RouteSummaryBuilder*) builder {
-  return [[RouteSummaryBuilder alloc] init];
++ (RGDRouteSummaryBuilder*) builder {
+  return [[RGDRouteSummaryBuilder alloc] init];
 }
-+ (RouteSummaryBuilder*) builderWithPrototype:(RouteSummary*) prototype {
-  return [[RouteSummary builder] mergeFrom:prototype];
++ (RGDRouteSummaryBuilder*) builderWithPrototype:(RGDRouteSummary*) prototype {
+  return [[RGDRouteSummary builder] mergeFrom:prototype];
 }
-- (RouteSummaryBuilder*) builder {
-  return [RouteSummary builder];
+- (RGDRouteSummaryBuilder*) builder {
+  return [RGDRouteSummary builder];
 }
-- (RouteSummaryBuilder*) toBuilder {
-  return [RouteSummary builderWithPrototype:self];
+- (RGDRouteSummaryBuilder*) toBuilder {
+  return [RGDRouteSummary builderWithPrototype:self];
 }
 - (void) writeDescriptionTo:(NSMutableString*) output withIndent:(NSString*) indent {
   if (self.hasPointCount) {
@@ -1240,10 +1241,10 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
   if (other == self) {
     return YES;
   }
-  if (![other isKindOfClass:[RouteSummary class]]) {
+  if (![other isKindOfClass:[RGDRouteSummary class]]) {
     return NO;
   }
-  RouteSummary *otherMessage = other;
+  RGDRouteSummary *otherMessage = other;
   return
       self.hasPointCount == otherMessage.hasPointCount &&
       (!self.hasPointCount || self.pointCount == otherMessage.pointCount) &&
@@ -1274,42 +1275,42 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
 }
 @end
 
-@interface RouteSummaryBuilder()
-@property (strong) RouteSummary* resultRouteSummary;
+@interface RGDRouteSummaryBuilder()
+@property (strong) RGDRouteSummary* resultRouteSummary;
 @end
 
-@implementation RouteSummaryBuilder
+@implementation RGDRouteSummaryBuilder
 @synthesize resultRouteSummary;
 - (instancetype) init {
   if ((self = [super init])) {
-    self.resultRouteSummary = [[RouteSummary alloc] init];
+    self.resultRouteSummary = [[RGDRouteSummary alloc] init];
   }
   return self;
 }
 - (PBGeneratedMessage*) internalGetResult {
   return resultRouteSummary;
 }
-- (RouteSummaryBuilder*) clear {
-  self.resultRouteSummary = [[RouteSummary alloc] init];
+- (RGDRouteSummaryBuilder*) clear {
+  self.resultRouteSummary = [[RGDRouteSummary alloc] init];
   return self;
 }
-- (RouteSummaryBuilder*) clone {
-  return [RouteSummary builderWithPrototype:resultRouteSummary];
+- (RGDRouteSummaryBuilder*) clone {
+  return [RGDRouteSummary builderWithPrototype:resultRouteSummary];
 }
-- (RouteSummary*) defaultInstance {
-  return [RouteSummary defaultInstance];
+- (RGDRouteSummary*) defaultInstance {
+  return [RGDRouteSummary defaultInstance];
 }
-- (RouteSummary*) build {
+- (RGDRouteSummary*) build {
   [self checkInitialized];
   return [self buildPartial];
 }
-- (RouteSummary*) buildPartial {
-  RouteSummary* returnMe = resultRouteSummary;
+- (RGDRouteSummary*) buildPartial {
+  RGDRouteSummary* returnMe = resultRouteSummary;
   self.resultRouteSummary = nil;
   return returnMe;
 }
-- (RouteSummaryBuilder*) mergeFrom:(RouteSummary*) other {
-  if (other == [RouteSummary defaultInstance]) {
+- (RGDRouteSummaryBuilder*) mergeFrom:(RGDRouteSummary*) other {
+  if (other == [RGDRouteSummary defaultInstance]) {
     return self;
   }
   if (other.hasPointCount) {
@@ -1327,10 +1328,10 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
   [self mergeUnknownFields:other.unknownFields];
   return self;
 }
-- (RouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
+- (RGDRouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input {
   return [self mergeFromCodedInputStream:input extensionRegistry:[PBExtensionRegistry emptyRegistry]];
 }
-- (RouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
+- (RGDRouteSummaryBuilder*) mergeFromCodedInputStream:(PBCodedInputStream*) input extensionRegistry:(PBExtensionRegistry*) extensionRegistry {
   PBUnknownFieldSetBuilder* unknownFields = [PBUnknownFieldSet builderWithUnknownFields:self.unknownFields];
   while (YES) {
     SInt32 tag = [input readTag];
@@ -1370,12 +1371,12 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
 - (SInt32) pointCount {
   return resultRouteSummary.pointCount;
 }
-- (RouteSummaryBuilder*) setPointCount:(SInt32) value {
+- (RGDRouteSummaryBuilder*) setPointCount:(SInt32) value {
   resultRouteSummary.hasPointCount = YES;
   resultRouteSummary.pointCount = value;
   return self;
 }
-- (RouteSummaryBuilder*) clearPointCount {
+- (RGDRouteSummaryBuilder*) clearPointCount {
   resultRouteSummary.hasPointCount = NO;
   resultRouteSummary.pointCount = 0;
   return self;
@@ -1386,12 +1387,12 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
 - (SInt32) featureCount {
   return resultRouteSummary.featureCount;
 }
-- (RouteSummaryBuilder*) setFeatureCount:(SInt32) value {
+- (RGDRouteSummaryBuilder*) setFeatureCount:(SInt32) value {
   resultRouteSummary.hasFeatureCount = YES;
   resultRouteSummary.featureCount = value;
   return self;
 }
-- (RouteSummaryBuilder*) clearFeatureCount {
+- (RGDRouteSummaryBuilder*) clearFeatureCount {
   resultRouteSummary.hasFeatureCount = NO;
   resultRouteSummary.featureCount = 0;
   return self;
@@ -1402,12 +1403,12 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
 - (SInt32) distance {
   return resultRouteSummary.distance;
 }
-- (RouteSummaryBuilder*) setDistance:(SInt32) value {
+- (RGDRouteSummaryBuilder*) setDistance:(SInt32) value {
   resultRouteSummary.hasDistance = YES;
   resultRouteSummary.distance = value;
   return self;
 }
-- (RouteSummaryBuilder*) clearDistance {
+- (RGDRouteSummaryBuilder*) clearDistance {
   resultRouteSummary.hasDistance = NO;
   resultRouteSummary.distance = 0;
   return self;
@@ -1418,12 +1419,12 @@ static RouteSummary* defaultRouteSummaryInstance = nil;
 - (SInt32) elapsedTime {
   return resultRouteSummary.elapsedTime;
 }
-- (RouteSummaryBuilder*) setElapsedTime:(SInt32) value {
+- (RGDRouteSummaryBuilder*) setElapsedTime:(SInt32) value {
   resultRouteSummary.hasElapsedTime = YES;
   resultRouteSummary.elapsedTime = value;
   return self;
 }
-- (RouteSummaryBuilder*) clearElapsedTime {
+- (RGDRouteSummaryBuilder*) clearElapsedTime {
   resultRouteSummary.hasElapsedTime = NO;
   resultRouteSummary.elapsedTime = 0;
   return self;
