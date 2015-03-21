@@ -134,7 +134,7 @@ following command:
 
 
 ```
-git clone https://github.com/google/grpc-java.git
+git clone https://github.com/grpc/grpc-java.git
 ```
 
 Change your current directory to grpc-java/examples
