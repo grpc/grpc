@@ -78,8 +78,6 @@ class ServerContext {
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  bool IsCancelled();
-
   const std::multimap<grpc::string, grpc::string>& client_metadata() {
     return client_metadata_;
   }
@@ -112,7 +110,6 @@ class ServerContext {
 
   std::chrono::system_clock::time_point deadline_;
   grpc_call* call_;
-  CompletionQueue* cq_;
   bool sent_initial_metadata_;
   std::multimap<grpc::string, grpc::string> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
