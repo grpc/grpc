@@ -107,6 +107,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
           request_payload_(mrd->request_payload_),
           method_(mrd->method_) {
       ctx_.call_ = mrd->call_;
+      ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
       mrd->in_flight_ = false;
       mrd->request_metadata_.count = 0;
@@ -364,6 +365,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
       }
     }
     ctx->call_ = call_;
+    ctx->cq_ = cq_;
     Call call(call_, server_, cq_);
     if (orig_status && call_) {
       ctx->BeginCompletionOp(&call);
