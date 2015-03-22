@@ -354,6 +354,11 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "cxx_time_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "end2end_test"
   }, 
   {
