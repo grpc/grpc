@@ -31,6 +31,14 @@
  *
  */
 
+/**
+ * This script runs a QPS test. It sends requests for a specified length of time
+ * with a specified number pending at any one time. It then outputs the measured
+ * QPS. Usage:
+ * node qps_test.js [--concurrent=count] [--time=seconds]
+ * concurrent defaults to 100 and time defaults to 10
+ */
+
 'use strict';
 
 var async = require('async');
@@ -40,47 +48,73 @@ var grpc = require('..');
 var testProto = grpc.load(__dirname + '/../interop/test.proto').grpc.testing;
 var interop_server = require('../interop/interop_server.js');
 
-function runTest(concurrent, seconds, callback) {
+/**
+ * Runs the QPS test. Sends requests constantly for the given number of seconds,
+ * and keeps concurrent_calls requests pending at all times. When the test ends,
+ * the callback is called with the number of calls that completed within the
+ * time limit.
+ * @param {number} concurrent_calls The number of calls to have pending
+ *     simultaneously
+ * @param {number} seconds The number of seconds to run the test for
+ * @param {function(Error, number)} callback Callback for test completion
+ */
+function runTest(concurrent_calls, seconds, callback) {
   var testServer = interop_server.getServer(0, false);
   testServer.server.listen();
   var client = new testProto.TestService('localhost:' + testServer.port);
 
   var warmup_num = 100;
 
-  async.waterfall([
-    function warmUp(callback) {
-      var pending = warmup_num;
-      function startCall() {
-        client.emptyCall({}, function(err, resp) {
-          pending--;
-          if (pending === 0) {
-            callback(null);
-          }
-        });
-      }
-      for (var i = 0; i < warmup_num; i++) {
-        startCall();
-      }
-    }, function run(callback) {
-      var running = 0;
-      var count = 0;
-      var start = process.hrtime();
-      function responseCallback(err, resp) {
-        if (process.hrtime(start)[0] < seconds) {
-          count += 1;
-          client.emptyCall({}, responseCallback);
-        } else {
-          running -= 1;
-          if (running <= 0) {
-            callback(null, count);
-          }
+  /**
+   * Warms up the client to avoid counting startup time in the test result
+   * @param {function(Error)} callback Called when warmup is complete
+   */
+  function warmUp(callback) {
+    var pending = warmup_num;
+    function startCall() {
+      client.emptyCall({}, function(err, resp) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        pending--;
+        if (pending === 0) {
+          callback(null);
+        }
+      });
+    }
+    for (var i = 0; i < warmup_num; i++) {
+      startCall();
+    }
+  }
+  /**
+   * Run the QPS test. Starts concurrent_calls requests, then starts a new
+   * request whenever one completes until time runs out.
+   * @param {function(Error, number)} callback Called when the test is complete.
+   *     The second argument is the number of calls that finished within the
+   *     time limit
+   */
+  function run(callback) {
+    var running = 0;
+    var count = 0;
+    var start = process.hrtime();
+    function responseCallback(err, resp) {
+      if (process.hrtime(start)[0] < seconds) {
+        count += 1;
+        client.emptyCall({}, responseCallback);
+      } else {
+        running -= 1;
+        if (running <= 0) {
+          callback(null, count);
         }
       }
-      for (var i = 0; i < concurrent; i++) {
-        running += 1;
-        client.emptyCall({}, responseCallback);
-      }
-    }], function(err, count) {
+    }
+    for (var i = 0; i < concurrent_calls; i++) {
+      running += 1;
+      client.emptyCall({}, responseCallback);
+    }
+  }
+  async.waterfall([warmUp, run], function(err, count) {
       testServer.server.shutdown();
       callback(err, count);
     });
