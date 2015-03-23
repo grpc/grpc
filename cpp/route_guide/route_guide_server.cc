@@ -187,7 +187,7 @@ void RunServer(const std::string& db_path) {
   RouteGuideImpl service(db_path);
 
   ServerBuilder builder;
-  builder.AddPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
