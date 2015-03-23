@@ -217,7 +217,7 @@ void RunServer() {
         "", {{test_server1_key, test_server1_cert}}};
     creds = grpc::SslServerCredentials(ssl_opts);
   }
-  builder.AddPort(server_address.str(), creds);
+  builder.AddListeningPort(server_address.str(), creds);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!got_sigint) {

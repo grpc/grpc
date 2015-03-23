@@ -57,6 +57,6 @@ class GenericStub GRPC_FINAL {
   std::shared_ptr<ChannelInterface> channel_;
 };
 
-} // namespace grpc
+}  // namespace grpc
 
 #endif  // GRPCXX_GENERIC_STUB_H

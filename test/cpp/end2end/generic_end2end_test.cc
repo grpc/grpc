@@ -68,7 +68,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr)i; }
+void* tag(int i) { return (void*)(gpr_intptr) i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -91,14 +91,14 @@ bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
 
 class GenericEnd2endTest : public ::testing::Test {
  protected:
-  GenericEnd2endTest() :  generic_service_("*") {}
+  GenericEnd2endTest() : generic_service_("*") {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str(), InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
     server_ = builder.BuildAndStart();
   }
@@ -116,8 +116,8 @@ class GenericEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel =
-        CreateChannel(server_address_.str(), InsecureCredentials(), ChannelArguments());
+    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+        server_address_.str(), InsecureCredentials(), ChannelArguments());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
@@ -237,7 +237,6 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   cli_stream->Read(&recv_response, tag(6));
   client_ok(6);
   EXPECT_EQ(send_response.message(), recv_response.message());
-
 
   cli_stream->WritesDone(tag(7));
   client_ok(7);

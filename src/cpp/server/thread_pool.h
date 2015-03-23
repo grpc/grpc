@@ -50,7 +50,7 @@ class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
   explicit ThreadPool(int num_threads);
   ~ThreadPool();
 
-  void ScheduleCallback(const std::function<void()> &callback) GRPC_OVERRIDE;
+  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
 
  private:
   std::mutex mu_;

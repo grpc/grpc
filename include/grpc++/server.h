@@ -86,7 +86,7 @@ class Server GRPC_FINAL : private CallHook,
   bool RegisterAsyncService(AsynchronousService* service);
   void RegisterAsyncGenericService(AsyncGenericService* service);
   // Add a listening port. Can be called multiple times.
-  int AddPort(const grpc::string& addr, ServerCredentials* creds);
+  int AddListeningPort(const grpc::string& addr, ServerCredentials* creds);
   // Start the server.
   bool Start();
 

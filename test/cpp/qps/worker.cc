@@ -213,7 +213,7 @@ static void RunServer() {
   WorkerImpl service;
 
   ServerBuilder builder;
-  builder.AddPort(server_address, InsecureServerCredentials());
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
   builder.RegisterService(&service);
 
   gpr_free(server_address);

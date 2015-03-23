@@ -31,40 +31,23 @@
  *
  */
 
-#include "src/cpp/util/time.h"
+#include <grpc/support/port_platform.h>
 
-#include <grpc/support/time.h>
+#ifdef GPR_CPU_IPHONE
 
-using std::chrono::duration_cast;
-using std::chrono::nanoseconds;
-using std::chrono::seconds;
-using std::chrono::system_clock;
-
-namespace grpc {
-
-void Timepoint2Timespec(const system_clock::time_point& from,
-                        gpr_timespec* to) {
-  system_clock::duration deadline = from.time_since_epoch();
-  seconds secs = duration_cast<seconds>(deadline);
-  if (from == system_clock::time_point::max() ||
-      secs.count() >= gpr_inf_future.tv_sec || secs.count() < 0) {
-    *to = gpr_inf_future;
-    return;
-  }
-  nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
-  to->tv_sec = secs.count();
-  to->tv_nsec = nsecs.count();
+/* Probably 2 instead of 1, but see comment on gpr_cpu_current_cpu. */
+unsigned gpr_cpu_num_cores(void) {
+  return 1;
 }
 
-system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
-  if (gpr_time_cmp(t, gpr_inf_future) == 0) {
-    return system_clock::time_point::max();
-  }
-  system_clock::time_point tp;
-  tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
-  tp +=
-      duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
-  return tp;
+/* Most code that's using this is using it to shard across work queues. So
+   unless profiling shows it's a problem or there appears a way to detect the
+   currently running CPU core, let's have it shard the default way.
+   Note that the interface in cpu.h lets gpr_cpu_num_cores return 0, but doing
+   it makes it impossible for gpr_cpu_current_cpu to satisfy its stated range,
+   and some code might be relying on it. */
+unsigned gpr_cpu_current_cpu(void) {
+  return 0;
 }
 
-}  // namespace grpc
+#endif /* GPR_CPU_IPHONE */

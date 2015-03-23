@@ -72,9 +72,7 @@ class ByteBuffer GRPC_FINAL {
     buffer_ = buf;
   }
 
-  grpc_byte_buffer* buffer() const {
-    return buffer_;
-  }
+  grpc_byte_buffer* buffer() const { return buffer_; }
 
   grpc_byte_buffer* buffer_;
 };

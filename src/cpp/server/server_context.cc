@@ -94,7 +94,6 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
 ServerContext::ServerContext()
     : completion_op_(nullptr),
       call_(nullptr),
-      cq_(nullptr),
       sent_initial_metadata_(false) {}
 
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
@@ -102,7 +101,6 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
     : completion_op_(nullptr),
       deadline_(Timespec2Timepoint(deadline)),
       call_(nullptr),
-      cq_(nullptr),
       sent_initial_metadata_(false) {
   for (size_t i = 0; i < metadata_count; i++) {
     client_metadata_.insert(std::make_pair(
@@ -135,10 +133,6 @@ void ServerContext::AddInitialMetadata(const grpc::string& key,
 void ServerContext::AddTrailingMetadata(const grpc::string& key,
                                         const grpc::string& value) {
   trailing_metadata_.insert(std::make_pair(key, value));
-}
-
-bool ServerContext::IsCancelled() {
-  return completion_op_ && completion_op_->CheckCancelled(cq_);
 }
 
 }  // namespace grpc

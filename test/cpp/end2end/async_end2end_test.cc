@@ -66,7 +66,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr)i; }
+void* tag(int i) { return (void*)(gpr_intptr) i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -76,11 +76,11 @@ void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   EXPECT_EQ(tag(i), got_tag);
 }
 
-void verify_timed_ok(CompletionQueue* cq, int i, bool expect_ok,
-		     std::chrono::system_clock::time_point deadline =
-		     std::chrono::system_clock::time_point::max(),
-		     CompletionQueue::NextStatus expected_outcome =
-		     CompletionQueue::GOT_EVENT) {
+void verify_timed_ok(
+    CompletionQueue* cq, int i, bool expect_ok,
+    std::chrono::system_clock::time_point deadline =
+        std::chrono::system_clock::time_point::max(),
+    CompletionQueue::NextStatus expected_outcome = CompletionQueue::GOT_EVENT) {
   bool ok;
   void* got_tag;
   EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline), expected_outcome);
@@ -99,7 +99,7 @@ class AsyncEnd2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str(), grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), grpc::InsecureServerCredentials());
     builder.RegisterAsyncService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -195,18 +195,17 @@ TEST_F(AsyncEnd2endTest, AsyncNextRpc) {
   grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> >
-    response_reader(stub_->AsyncEcho(&cli_ctx, send_request,
-				     &cli_cq_, tag(1)));
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
+      stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
 
-  std::chrono::system_clock::time_point
-    time_now(std::chrono::system_clock::now()),
-    time_limit(std::chrono::system_clock::now()+std::chrono::seconds(5));
+  std::chrono::system_clock::time_point time_now(
+      std::chrono::system_clock::now()),
+      time_limit(std::chrono::system_clock::now() + std::chrono::seconds(5));
   verify_timed_ok(&srv_cq_, -1, true, time_now, CompletionQueue::TIMEOUT);
   verify_timed_ok(&cli_cq_, -1, true, time_now, CompletionQueue::TIMEOUT);
 
   service_.RequestEcho(&srv_ctx, &recv_request, &response_writer, &srv_cq_,
-		       tag(2));
+                       tag(2));
 
   verify_timed_ok(&srv_cq_, 2, true, time_limit);
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -221,9 +220,8 @@ TEST_F(AsyncEnd2endTest, AsyncNextRpc) {
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.IsOk());
-
 }
-  
+
 // Two pings and a final pong.
 TEST_F(AsyncEnd2endTest, SimpleClientStreaming) {
   ResetStub();

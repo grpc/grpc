@@ -58,7 +58,7 @@ namespace math.Tests
 
             server = new Server();
             server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
-            int port = server.AddPort(host + ":0");
+            int port = server.AddListeningPort(host + ":0");
             server.Start();
             channel = new Channel(host + ":" + port);
 

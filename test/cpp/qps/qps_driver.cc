@@ -71,7 +71,7 @@ namespace gflags {}
 using namespace google;
 using namespace gflags;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_init();
   ParseCommandLineFlags(&argc, &argv, true);
 

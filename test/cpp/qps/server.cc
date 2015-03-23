@@ -73,8 +73,8 @@ using grpc::Status;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
+namespace google {}
+namespace gflags {}
 using namespace google;
 using namespace gflags;
 
@@ -137,7 +137,7 @@ static void RunServer() {
   SimpleResponse response;
 
   ServerBuilder builder;
-  builder.AddPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
 
   std::unique_ptr<ThreadPool> pool(new ThreadPool(FLAGS_server_threads));

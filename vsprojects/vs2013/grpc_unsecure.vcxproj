@@ -81,6 +81,7 @@
     <ClInclude Include="..\..\include\grpc\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h" />
     <ClInclude Include="..\..\include\grpc\grpc.h" />
+    <ClInclude Include="..\..\include\grpc\grpc_http.h" />
     <ClInclude Include="..\..\include\grpc\status.h" />
   </ItemGroup>
   <ItemGroup>
@@ -148,6 +149,7 @@
     <ClInclude Include="..\..\src\core\surface\init.h" />
     <ClInclude Include="..\..\src\core\surface\server.h" />
     <ClInclude Include="..\..\src\core\surface\surface_trace.h" />
+    <ClInclude Include="..\..\src\core\transport\chttp2\alpn.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame.h" />
     <ClInclude Include="..\..\src\core\transport\chttp2\frame_data.h" />
