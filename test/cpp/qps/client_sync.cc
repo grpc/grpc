@@ -108,13 +108,10 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     if (stream_) {
       SimpleResponse response;
       stream_->WritesDone();
-      EXPECT_FALSE(stream_->Read(&response));
-
-      Status s = stream_->Finish();
-      EXPECT_TRUE(s.IsOk());
+      EXPECT_TRUE(stream_->Finish().IsOk());
     }
   }
-  
+
   void ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     double start = Timer::Now();
     EXPECT_TRUE(stream_->Write(request_));
@@ -123,7 +120,8 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
   }
   private:
     grpc::ClientContext context_;
-    std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest,SimpleResponse>> stream_;
+    std::unique_ptr<grpc::ClientReaderWriter<SimpleRequest,
+                                             SimpleResponse>> stream_;
 };
 
 std::unique_ptr<Client>
