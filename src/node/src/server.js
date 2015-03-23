@@ -652,4 +652,7 @@ function makeProtobufServerConstructor(services) {
  */
 exports.makeServerConstructor = makeServerConstructor;
 
+/**
+ * See documentation for makeProtobufServerConstructor
+ */
 exports.makeProtobufServerConstructor = makeProtobufServerConstructor;
