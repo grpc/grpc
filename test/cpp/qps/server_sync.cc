@@ -62,12 +62,29 @@ class TestServiceImpl GRPC_FINAL : public TestService::Service {
  public:
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) GRPC_OVERRIDE {
-    if (request->has_response_size() && request->response_size() > 0) {
+    if (request->response_size() > 0) {
       if (!Server::SetPayload(request->response_type(),
                               request->response_size(),
                               response->mutable_payload())) {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
+    }
+    return Status::OK;
+  }
+  Status StreamingCall(ServerContext *context,
+		       ServerReaderWriter<SimpleResponse, SimpleRequest>*
+		       stream) GRPC_OVERRIDE {
+    SimpleRequest request;
+    while (stream->Read(&request)) {
+      SimpleResponse response;
+      if (request.response_size() > 0) {
+	if (!Server::SetPayload(request.response_type(),
+				request.response_size(),
+				response.mutable_payload())) {
+	  return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+	}
+      }
+      stream->Write(response);
     }
     return Status::OK;
   }
