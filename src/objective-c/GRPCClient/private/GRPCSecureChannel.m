@@ -64,7 +64,11 @@ static const char *kCertificates =
 
 - (instancetype)initWithHost:(NSString *)host {
   // TODO(jcanizales): Get the certificates here.
-  grpc_credentials *credentials = grpc_ssl_credentials_create(kCertificates, NULL);
+  NSURL *url = [[NSBundle mainBundle] URLForResource:@"gRPC.bundle/roots" withExtension:@"pem"];
+  NSData *fontData = [NSData dataWithContentsOfURL:url];
+  NSString *str = [[NSString alloc] initWithData:fontData encoding:NSUTF8StringEncoding];
+  NSLog(@"Certs:\n%@", str);
+  grpc_credentials *credentials = grpc_ssl_credentials_create(str.UTF8String, NULL);
   return (self = [super initWithChannel:grpc_secure_channel_create(credentials,
                                                                    host.UTF8String,
                                                                    NULL)]);
