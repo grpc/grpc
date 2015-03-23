@@ -214,7 +214,7 @@ void RunServer(const std::string& db_path) {
   RouteGuideImpl service(db_path);
 
   ServerBuilder builder;
-  builder.AddPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
@@ -225,7 +225,7 @@ As you can see, we build and start our server using a `ServerBuilder`. To do thi
 
 1. Create an instance of our service implementation class `RouteGuideImpl`.
 2. Create an instance of the factory `ServerBuilder` class.
-3. Specify the address and port we want to use to listen for client requests using the builder's `AddPort()` method.
+3. Specify the address and port we want to use to listen for client requests using the builder's `AddListeningPort()` method.
 4. Register our service implementation with the builder.
 5. Call `BuildAndStart()` on the builder to create and start an RPC server for our service.
 5. Call `Wait()` on the server to do a blocking wait until process is killed or `Shutdown()` is called.
