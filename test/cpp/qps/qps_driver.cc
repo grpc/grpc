@@ -42,8 +42,7 @@ DEFINE_int32(num_servers, 1, "Number of server binaries");
 
 // Common config
 DEFINE_bool(enable_ssl, false, "Use SSL");
-DEFINE_string(rpc_type, "UNARY_TEST",
-	      "Type of RPC: UNARY_TEST or STREAMING_TEST");
+DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 
 // Server config
 DEFINE_int32(server_threads, 1, "Number of server threads");
@@ -77,7 +76,7 @@ int main(int argc, char **argv) {
   ParseCommandLineFlags(&argc, &argv, true);
 
   RpcType rpc_type;
-  RpcType_Parse(FLAGS_rpc_type, &rpc_type);
+  GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
 
   ClientType client_type;
   ServerType server_type;
