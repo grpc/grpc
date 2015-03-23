@@ -33,6 +33,7 @@
 
 #include <forward_list>
 #include <functional>
+#include <mutex>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/signal.h>
@@ -64,7 +65,8 @@ namespace testing {
 class AsyncQpsServerTest : public Server {
  public:
   AsyncQpsServerTest(const ServerConfig &config, int port)
-      : srv_cq_(), async_service_(&srv_cq_), server_(nullptr) {
+      : srv_cq_(), async_service_(&srv_cq_), server_(nullptr),
+        shutdown_(false) {
     char *server_address = NULL;
     gpr_join_host_port(&server_address, "::", port);
 
@@ -100,7 +102,9 @@ class AsyncQpsServerTest : public Server {
 	  // The tag is a pointer to an RPC context to invoke
 	  if (ctx->RunNextState(ok) == false) {
 	    // this RPC context is done, so refresh it
-	    ctx->Reset();
+            std::lock_guard<std::mutex> g(shutdown_mutex_);
+            if (!shutdown_)
+              ctx->Reset();
 	  }
         }
         return;
@@ -109,7 +113,11 @@ class AsyncQpsServerTest : public Server {
   }
   ~AsyncQpsServerTest() {
     server_->Shutdown();
-    srv_cq_.Shutdown();
+    {
+      std::lock_guard<std::mutex> g(shutdown_mutex_);
+      shutdown_ = true;
+      srv_cq_.Shutdown();
+    }
     for (auto &thr : threads_) {
       thr.join();
     }
@@ -195,7 +203,7 @@ class AsyncQpsServerTest : public Server {
   class ServerRpcContextStreamingImpl GRPC_FINAL : public ServerRpcContext {
    public:
     ServerRpcContextStreamingImpl(
-        std::function<void(ServerContext *, 
+        std::function<void(ServerContext *,
                            grpc::ServerAsyncReaderWriter<ResponseType,
 			   RequestType> *, void *)> request_method,
         std::function<grpc::Status(const RequestType *, ResponseType *)>
@@ -228,7 +236,7 @@ class AsyncQpsServerTest : public Server {
       next_state_ = &ServerRpcContextStreamingImpl::read_done;
       return true;
     }
-      
+
     bool read_done(bool ok) {
       if (ok) {
 	// invoke the method
@@ -291,6 +299,9 @@ class AsyncQpsServerTest : public Server {
 		     SimpleResponse,SimpleRequest> *, void *)>
       request_streaming_;
   std::forward_list<ServerRpcContext *> contexts_;
+
+  std::mutex shutdown_mutex_;
+  bool shutdown_;
 };
 
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config,
