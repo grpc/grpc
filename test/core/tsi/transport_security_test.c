@@ -39,9 +39,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include <openssl/crypto.h>
+
 #include "src/core/support/string.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/util/test_config.h"
+
+/* Currently points to 1.0.2a. */
+#define GRPC_MIN_OPENSSL_VERSION_NUMBER 0x1000201fL
 
 typedef struct {
   /* 1 if success, 0 if failure. */
@@ -296,8 +301,13 @@ static void test_peer_matches_name(void) {
   }
 }
 
+static void test_openssl_version(void) {
+  GPR_ASSERT(OPENSSL_VERSION_NUMBER >= GRPC_MIN_OPENSSL_VERSION_NUMBER);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_peer_matches_name();
+  test_openssl_version();
   return 0;
 }
