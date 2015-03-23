@@ -113,7 +113,7 @@
                                                          interface:@"RouteGuide"
                                                             method:@"GetFeature"];
 
-  RGDPoint *point = [[[[[RGDPointBuilder alloc] init] setLatitude:28E7] setLongitude:-30E7] build];
+  RGDPoint *point = [[[[[RGDPointBuilder alloc] init] setLatitude:28E7] setLongitude:-15E7] build];
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
