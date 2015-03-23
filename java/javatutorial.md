@@ -20,7 +20,7 @@ With gRPC we can define our service once in a .proto file and implement clients 
 
 The example code for our tutorial is in [grpc/grpc-java/examples/src/main/java/io/grpc/examples](https://github.com/grpc/grpc-java/tree/master/examples/src/main/java/io/grpc/examples). To download the example, clone the `grpc-java` repository by running the following command:
 ```shell
-$ git clone https://github.com/google/grpc-java.git
+$ git clone https://github.com/grpc/grpc-java.git
 ```
 
 Then change your current directory to `grpc-java/examples`:

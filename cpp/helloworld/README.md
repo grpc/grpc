@@ -12,7 +12,7 @@ following command:
 
 
 ```sh
-$ git clone https://github.com/google/grpc-common.git
+$ git clone https://github.com/grpc/grpc-common.git
 ```
 
 Change your current directory to grpc-common/cpp/helloworld
