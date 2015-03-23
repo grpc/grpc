@@ -203,7 +203,7 @@ module GRPC
       end
 
       # Asserts that the appropriate methods are defined for each added rpc
-      # spec. Is intended to aid verifying that serve2Ar classes are correctly
+      # spec. Is intended to aid verifying that server classes are correctly
       # implemented.
       def assert_rpc_descs_have_methods
         rpc_descs.each_pair do |m, spec|
