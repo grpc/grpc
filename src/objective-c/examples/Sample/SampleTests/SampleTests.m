@@ -124,7 +124,8 @@
     XCTAssertNotNil(value, @"nil value received as response.");
     [response fulfill];
     RGDFeature *feature = [RGDFeature parseFromData:value];
-    NSLog(@"%@ %@", feature.name, feature.location);
+    XCTAssertEqualObjects(point, feature.location);
+    XCTAssertNotNil(feature.name, @"Response's name is nil.");
     [expectedResponse fulfill];
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
