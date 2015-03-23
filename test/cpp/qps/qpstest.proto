@@ -87,9 +87,9 @@ enum ServerType {
   ASYNC_SERVER = 2;
 }
 
-enum TestType {
-  UNARY_TEST = 1;
-  STREAMING_TEST = 2;
+enum RpcType {
+  UNARY = 1;
+  STREAMING = 2;
 }
 
 message ClientConfig {
@@ -101,7 +101,7 @@ message ClientConfig {
   required int32 payload_size = 6;
   // only for async client:
   optional int32 async_client_threads = 7;
-  optional TestType test_type = 8 [default=UNARY_TEST];
+  optional RpcType rpc_type = 8 [default=UNARY];
 }
 
 // Request current stats
