@@ -50,11 +50,14 @@
 }
 
 - (instancetype)initWithHost:(NSString *)host {
+  if (![host containsString:@"://"]) {
+    host = [@"https://" stringByAppendingString:host];
+  }
   NSURL *hostURL = [NSURL URLWithString:host];
   if (!hostURL) {
     [NSException raise:NSInvalidArgumentException format:@"Invalid URL: %@", host];
   }
-  if (!hostURL.scheme || [hostURL.scheme isEqualToString:@"https"]) {
+  if ([hostURL.scheme isEqualToString:@"https"]) {
     return [[GRPCSecureChannel alloc] initWithHost:host];
   }
   if ([hostURL.scheme isEqualToString:@"http"]) {
@@ -73,8 +76,12 @@
 }
 
 - (void)dealloc {
-  // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
-  // as in the past that made this call to crash.
-  grpc_channel_destroy(_unmanagedChannel);
+  // _unmanagedChannel is NULL when deallocating an object of the base class (because the
+  // initializer returns a different object).
+  if (_unmanagedChannel) {
+    // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
+    // as in the past that made this call to crash.
+    grpc_channel_destroy(_unmanagedChannel);
+  }
 }
 @end
