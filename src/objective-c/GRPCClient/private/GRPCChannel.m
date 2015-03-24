@@ -59,11 +59,11 @@
     [NSException raise:NSInvalidArgumentException format:@"Invalid URL: %@", host];
   }
   if ([hostURL.scheme isEqualToString:@"https"]) {
-    host = [hostURL.host stringByAppendingString:hostURL.port.stringValue ?: @":443"];
+    host = [@[hostURL.host, hostURL.port ?: @443] componentsJoinedByString:@":"];
     return [[GRPCSecureChannel alloc] initWithHost:host];
   }
   if ([hostURL.scheme isEqualToString:@"http"]) {
-    host = [hostURL.host stringByAppendingString:hostURL.port.stringValue ?: @":80"];
+    host = [@[hostURL.host, hostURL.port ?: @80] componentsJoinedByString:@":"];
     return [[GRPCUnsecuredChannel alloc] initWithHost:host];
   }
   [NSException raise:NSInvalidArgumentException
