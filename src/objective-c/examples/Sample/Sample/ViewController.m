@@ -66,7 +66,7 @@
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value];
-    NSLog(@"Received response: %@", response);
+    NSLog(@"Received response:\n%@", response);
   } completionHandler:^(NSError *errorOrNil) {
     NSLog(@"Finished with error: %@", errorOrNil);
   }];
