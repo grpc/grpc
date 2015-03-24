@@ -9,6 +9,9 @@ env:
   global:
     - RUBY_VERSION=2.1
     - COVERALLS_PARALLEL=true
+    - CPPFLAGS=-I/tmp/prebuilt/include
+    - LDFLAGS=-L/tmp/prebuilt/lib
+    - PATH=/tmp/prebuilt/bin:$PATH
   matrix:
     - CONFIG=dbg TEST=c
     - CONFIG=dbg TEST=c++
@@ -22,6 +25,7 @@ env:
 script:
   - rvm use $RUBY_VERSION
   - gem install bundler
+  - ./tools/run_tests/prepare_travis.sh
   - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
 after_success:
   - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens -b. --gcov-options '\-p' ; fi
