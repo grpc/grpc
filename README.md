@@ -164,7 +164,7 @@ service has one method, `hello`, that lets the server receive a single
 `HelloRequest`
 message from the remote client containing the user's name, then send back
 a greeting in a single `HelloReply`. This is the simplest type of RPC you
-can specify in gRPC - we'll look at some other types later in this document.
+can specify in gRPC - you can find out about other types in the tutorial for your chosen language.
 
 ```proto
 syntax = "proto3";
