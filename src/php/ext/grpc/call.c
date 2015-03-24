@@ -112,6 +112,8 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, grpc_completion_queue *queue,
   return call_object;
 }
 
+/* Creates and returns a PHP array object with the data in a
+ * grpc_metadata_array. Returns NULL on failure */
 zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
   int count = metadata_array->count;
   grpc_metadata *elements = metadata_array->metadata;
@@ -155,6 +157,8 @@ zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
   return array;
 }
 
+/* Populates a grpc_metadata_array with the data in a PHP array object.
+   Returns true on success and false on failure */
 bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
   zval **inner_array;
   zval **value;
