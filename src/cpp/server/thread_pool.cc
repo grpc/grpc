@@ -66,8 +66,8 @@ ThreadPool::~ThreadPool() {
     shutdown_ = true;
     cv_.notify_all();
   }
-  for (auto& t : threads_) {
-    t.join();
+  for (auto t = threads_.begin(); t != threads_.end(); t++) {
+    t->join();
   }
 }
 
