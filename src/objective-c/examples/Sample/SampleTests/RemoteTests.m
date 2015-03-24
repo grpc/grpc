@@ -36,7 +36,7 @@
 
 #import <gRPC/GRPCCall.h>
 #import <gRPC/GRPCMethodName.h>
-#import <Route_guide/Route_guide.pb.h>
+#import <RemoteTest/Messages.pb.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriteable.h>
 
@@ -111,8 +111,12 @@
                                                          interface:@"TestService"
                                                             method:@"UnaryCall"];
 
-  RGDPoint *point = [[[[[RGDPointBuilder alloc] init] setLatitude:28E7] setLongitude:-15E7] build];
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
+  RMTSimpleRequest *request = [[[[[[RMTSimpleRequestBuilder alloc] init]
+                                  setResponseSize:100]
+                                 setFillUsername:YES]
+                                setFillOauthScope:YES]
+                               build];
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
                                            method:method
@@ -121,9 +125,11 @@
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
     XCTAssertNotNil(value, @"nil value received as response.");
     [response fulfill];
-    RGDFeature *feature = [RGDFeature parseFromData:value];
-    XCTAssertEqualObjects(point, feature.location);
-    XCTAssertNotNil(feature.name, @"Response's name is nil.");
+    XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
+    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value];
+    // We expect empty strings, not nil:
+    XCTAssertNotNil(response.username, @"Response's username is nil.");
+    XCTAssertNotNil(response.oauthScope, @"Response's OAuth scope is nil.");
     [expectedResponse fulfill];
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
