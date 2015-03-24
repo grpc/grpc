@@ -31,7 +31,11 @@
 
 syntax = "proto2";
 
+import "google/protobuf/objectivec-descriptor.proto";
+
 package grpc.testing;
+
+option (google.protobuf.objectivec_file_options).class_prefix = "RMT";
 
 // The type of payload that should be returned.
 enum PayloadType {

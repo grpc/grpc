@@ -33,8 +33,11 @@ syntax = "proto2";
 
 import "empty.proto";
 import "messages.proto";
+import "google/protobuf/objectivec-descriptor.proto";
 
 package grpc.testing;
+
+option (google.protobuf.objectivec_file_options).class_prefix = "RMT";
 
 // A simple service to test the various types of RPCs and experiment with
 // performance with various types of payload.

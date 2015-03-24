@@ -29,7 +29,11 @@
 
 syntax = "proto2";
 
+import "google/protobuf/objectivec-descriptor.proto";
+
 package grpc.testing;
+
+option (google.protobuf.objectivec_file_options).class_prefix = "RMT";
 
 // An empty message that you can re-use to avoid defining duplicated empty
 // messages in your project. A typical example is to use it as argument or the
