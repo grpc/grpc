@@ -59,10 +59,14 @@ class EventDeleter {
 CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
     void** tag, bool* ok, gpr_timespec deadline) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
+  void *dummy;
+
+  if (tag == nullptr) // If user doesn't care
+    tag = &dummy;     // Need to pass down something
 
   for (;;) {
     ev.reset(grpc_completion_queue_next(cq_, deadline));
-    if (!ev) { /* got a NULL back because deadline passed */
+    if (!ev) { // got a NULL back because deadline passed
       return TIMEOUT;
     }
     if (ev->type == GRPC_QUEUE_SHUTDOWN) {
