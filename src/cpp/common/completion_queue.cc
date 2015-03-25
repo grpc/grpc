@@ -59,7 +59,7 @@ class EventDeleter {
 CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
     void** tag, bool* ok, gpr_timespec deadline) {
   std::unique_ptr<grpc_event, EventDeleter> ev;
-  void *dummy;
+  void* dummy;
 
   if (tag == nullptr) // If user doesn't care
     tag = &dummy;     // Need to pass down something
