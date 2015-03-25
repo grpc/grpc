@@ -51,12 +51,9 @@ namespace examples {
 namespace pubsub {
 
 Publisher::Publisher(std::shared_ptr<ChannelInterface> channel)
-    : stub_(PublisherService::NewStub(channel)) {
-}
+    : stub_(PublisherService::NewStub(channel)) {}
 
-void Publisher::Shutdown() {
-  stub_.reset();
-}
+void Publisher::Shutdown() { stub_.reset(); }
 
 Status Publisher::CreateTopic(const grpc::string& topic) {
   Topic request;
