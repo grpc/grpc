@@ -51,6 +51,10 @@ typedef struct {
   gpr_slice_buffer left_overs;
   grpc_secure_transport_setup_done_cb cb;
   void *user_data;
+  gpr_mu shutdown_mu;
+  int shutdown_started;
+  int setup_failed;
+  gpr_refcount refcount;
 } grpc_secure_transport_setup;
 
 static void on_handshake_data_received_from_peer(void *setup, gpr_slice *slices,
@@ -60,22 +64,41 @@ static void on_handshake_data_received_from_peer(void *setup, gpr_slice *slices,
 static void on_handshake_data_sent_to_peer(void *setup,
                                            grpc_endpoint_cb_status error);
 
-static void secure_transport_setup_done(grpc_secure_transport_setup *s,
-                                        int is_success) {
-  if (is_success) {
-    s->cb(s->user_data, GRPC_SECURITY_OK, s->endpoint);
-  } else {
-    if (s->endpoint != NULL) {
-      grpc_endpoint_shutdown(s->endpoint);
+static void secure_transport_setup_unref(grpc_secure_transport_setup *s) {
+  if (gpr_unref(&s->refcount)) {
+    if (s->setup_failed) {
       grpc_endpoint_destroy(s->endpoint);
     }
-    s->cb(s->user_data, GRPC_SECURITY_ERROR, NULL);
+    if (s->handshaker != NULL) tsi_handshaker_destroy(s->handshaker);
+    if (s->handshake_buffer != NULL) gpr_free(s->handshake_buffer);
+    gpr_slice_buffer_destroy(&s->left_overs);
+    grpc_security_context_unref(s->ctx);
+    gpr_free(s);
   }
-  if (s->handshaker != NULL) tsi_handshaker_destroy(s->handshaker);
-  if (s->handshake_buffer != NULL) gpr_free(s->handshake_buffer);
-  gpr_slice_buffer_destroy(&s->left_overs);
-  grpc_security_context_unref(s->ctx);
-  gpr_free(s);
+}
+
+static void secure_transport_setup_done(grpc_secure_transport_setup *s,
+                                        int is_success) {
+  int start_shutdown = 0;
+  gpr_mu_lock(&s->shutdown_mu);
+  if (!s->shutdown_started) {
+    start_shutdown = 1;
+    s->shutdown_started = 1;
+  }
+  gpr_mu_unlock(&s->shutdown_mu);
+
+  if (start_shutdown) {
+    if (is_success) {
+      s->cb(s->user_data, GRPC_SECURITY_OK, s->endpoint);
+    } else {
+      if (s->endpoint != NULL) {
+        s->setup_failed = 1;
+        grpc_endpoint_shutdown(s->endpoint);
+      }
+      s->cb(s->user_data, GRPC_SECURITY_ERROR, NULL);
+    }
+    secure_transport_setup_unref(s);
+  }
 }
 
 static void on_peer_checked(void *user_data, grpc_security_status status) {
@@ -152,11 +175,13 @@ static void send_handshake_bytes_to_peer(grpc_secure_transport_setup *s) {
       gpr_slice_from_copied_buffer((const char *)s->handshake_buffer, offset);
   /* TODO(klempner,jboeuf): This should probably use the client setup
          deadline */
+  gpr_ref(&s->refcount);
   write_status = grpc_endpoint_write(s->endpoint, &to_send, 1,
                                      on_handshake_data_sent_to_peer, s);
   if (write_status == GRPC_ENDPOINT_WRITE_ERROR) {
     gpr_log(GPR_ERROR, "Could not send handshake data to peer.");
     secure_transport_setup_done(s, 0);
+    secure_transport_setup_unref(s);
   } else if (write_status == GRPC_ENDPOINT_WRITE_DONE) {
     on_handshake_data_sent_to_peer(s, GRPC_ENDPOINT_CB_OK);
   }
@@ -183,6 +208,7 @@ static void on_handshake_data_received_from_peer(
     gpr_log(GPR_ERROR, "Read failed.");
     cleanup_slices(slices, nslices);
     secure_transport_setup_done(s, 0);
+    secure_transport_setup_unref(s);
     return;
   }
 
@@ -198,13 +224,16 @@ static void on_handshake_data_received_from_peer(
     if (result == TSI_INCOMPLETE_DATA) {
       /* TODO(klempner,jboeuf): This should probably use the client setup
          deadline */
+      gpr_ref(&s->refcount);
       grpc_endpoint_notify_on_read(s->endpoint,
                                    on_handshake_data_received_from_peer, setup);
       cleanup_slices(slices, nslices);
+      secure_transport_setup_unref(s);
       return;
     } else {
       send_handshake_bytes_to_peer(s);
       cleanup_slices(slices, nslices);
+      secure_transport_setup_unref(s);
       return;
     }
   }
@@ -214,6 +243,7 @@ static void on_handshake_data_received_from_peer(
             tsi_result_to_string(result));
     cleanup_slices(slices, nslices);
     secure_transport_setup_done(s, 0);
+    secure_transport_setup_unref(s);
     return;
   }
 
@@ -224,6 +254,7 @@ static void on_handshake_data_received_from_peer(
   if (num_left_overs == 0) {
     cleanup_slices(slices, nslices);
     check_peer(s);
+    secure_transport_setup_unref(s);
     return;
   }
   cleanup_slices(slices, nslices - num_left_overs);
@@ -237,6 +268,7 @@ static void on_handshake_data_received_from_peer(
   gpr_slice_buffer_addn(&s->left_overs, &slices[i + 1],
                         num_left_overs - has_left_overs_in_current_slice);
   check_peer(s);
+  secure_transport_setup_unref(s);
 }
 
 /* If setup is NULL, the setup is done. */
@@ -248,6 +280,7 @@ static void on_handshake_data_sent_to_peer(void *setup,
   if (error != GRPC_ENDPOINT_CB_OK) {
     gpr_log(GPR_ERROR, "Write failed with error %d.", error);
     if (setup != NULL) secure_transport_setup_done(s, 0);
+    secure_transport_setup_unref(s);
     return;
   }
 
@@ -255,11 +288,13 @@ static void on_handshake_data_sent_to_peer(void *setup,
   if (tsi_handshaker_is_in_progress(s->handshaker)) {
     /* TODO(klempner,jboeuf): This should probably use the client setup
        deadline */
+    gpr_ref(&s->refcount);
     grpc_endpoint_notify_on_read(s->endpoint,
                                  on_handshake_data_received_from_peer, setup);
   } else {
     check_peer(s);
   }
+  secure_transport_setup_unref(s);
 }
 
 void grpc_setup_secure_transport(grpc_security_context *ctx,
@@ -270,6 +305,10 @@ void grpc_setup_secure_transport(grpc_security_context *ctx,
   grpc_secure_transport_setup *s =
       gpr_malloc(sizeof(grpc_secure_transport_setup));
   memset(s, 0, sizeof(grpc_secure_transport_setup));
+  s->shutdown_started = 0;
+  s->setup_failed = 0;
+  gpr_ref_init(&s->refcount, 1);
+
   result = grpc_security_context_create_handshaker(ctx, &s->handshaker);
   if (result != GRPC_SECURITY_OK) {
     secure_transport_setup_done(s, 0);
