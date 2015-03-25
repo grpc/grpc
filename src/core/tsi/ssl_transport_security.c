@@ -567,7 +567,8 @@ static tsi_result populate_ssl_context(
     EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
-      result = TSI_INTERNAL_ERROR;
+      EC_KEY_free(ecdh);
+      return TSI_INTERNAL_ERROR;
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
     EC_KEY_free(ecdh);
@@ -604,6 +605,7 @@ static tsi_result build_alpn_protocol_name_list(
   unsigned char* current;
   *protocol_name_list = NULL;
   *protocol_name_list_length = 0;
+  if (num_alpn_protocols == 0) return TSI_INVALID_ARGUMENT;
   for (i = 0; i < num_alpn_protocols; i++) {
     if (alpn_protocols_lengths[i] == 0) {
       gpr_log(GPR_ERROR, "Invalid 0-length protocol name.");
