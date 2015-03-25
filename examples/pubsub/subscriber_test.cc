@@ -31,8 +31,6 @@
  *
  */
 
-#include <google/protobuf/stubs/common.h>
-
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
