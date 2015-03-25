@@ -132,8 +132,6 @@ function serverStreaming($stub) {
   }
 
   $call = $stub->StreamingOutputCall($request);
-  hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
-              'Call did not complete successfully');
   $i = 0;
   foreach($call->responses() as $value) {
     hardAssert($i < 4, 'Too many responses');
@@ -142,7 +140,10 @@ function serverStreaming($stub) {
                 'Payload ' . $i . ' had the wrong type');
     hardAssert(strlen($payload->getBody()) === $sizes[$i],
                 'Response ' . $i . ' had the wrong length');
+    $i += 1;
   }
+  hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
+             'Call did not complete successfully');
 }
 
 /**
@@ -240,4 +241,6 @@ switch($args['test_case']) {
     break;
   case 'cancel_after_first_response':
     cancelAfterFirstResponse($stub);
+  default:
+    exit(1);
 }
