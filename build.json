@@ -1723,6 +1723,23 @@
       ]
     },
     {
+      "name": "grpc_cli",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/util/grpc_cli.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
