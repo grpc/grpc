@@ -65,6 +65,26 @@
   ::google::protobuf::io::ZeroCopyInputStream
 #endif
 
+#ifdef __GNUC__
+#if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
+#define GRPC_NO_NULLPTR
+#endif
+#endif
+
+#ifdef GRPC_NO_NULLPTR
+#include <memory>
+const class {
+public:
+  template <class T> operator T*() const {return static_cast<T *>(0);}
+  template <class T> operator std::unique_ptr<T>() const {
+    return std::unique_ptr<T>(static_cast<T *>(0));
+  }
+  operator bool() const {return false;}
+private:
+  void operator&() const = delete;
+} nullptr = {};
+#endif
+
 namespace grpc {
 
 typedef GRPC_CUSTOM_STRING string;
