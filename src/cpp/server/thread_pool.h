@@ -58,8 +58,6 @@ class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
   bool shutdown_;
   std::queue<std::function<void()>> callbacks_;
   std::vector<std::thread> threads_;
-
-  void ThreadFunc();
 };
 
 }  // namespace grpc
