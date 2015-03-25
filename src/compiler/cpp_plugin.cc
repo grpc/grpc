@@ -63,13 +63,15 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     if (!parameter.empty()) {
       std::vector<grpc::string> parameters_list =
         grpc_generator::tokenize(parameter, ",");
-      for (auto &parameter_string: parameters_list) {
+      for (auto parameter_string = parameters_list.begin();
+           parameter_string != parameters_list.end();
+           parameter_string++) {
         std::vector<grpc::string> param =
-          grpc_generator::tokenize(parameter_string, "=");
+          grpc_generator::tokenize(*parameter_string, "=");
         if (param[0] == "services_namespace") {
           generator_parameters.services_namespace = param[1];
         } else {
-          *error = grpc::string("Unknown parameter: ") + parameter_string;
+          *error = grpc::string("Unknown parameter: ") + *parameter_string;
           return false;
         }
       }
