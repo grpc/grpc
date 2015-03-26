@@ -281,16 +281,17 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
 
     int t = 0;
     for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
-      for (auto &channel : channels_) {
-        auto *cq = cli_cqs_[t].get();
+      for (auto channel = channels_.begin(); channel != channels_.end();
+           channel++) {
+        auto* cq = cli_cqs_[t].get();
         t = (t + 1) % cli_cqs_.size();
         auto start_req = [cq](TestService::Stub *stub, grpc::ClientContext *ctx,
                               void *tag) {
           auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
-	  return stream;
+          return stream;
         };
 
-        TestService::Stub *stub = channel.get_stub();
+        TestService::Stub *stub = channel->get_stub();
         const SimpleRequest &request = request_;
         new ClientRpcContextStreamingImpl<SimpleRequest, SimpleResponse>(
             stub, request, start_req, check_done);
@@ -303,11 +304,11 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
   ~AsyncStreamingClient() GRPC_OVERRIDE {
     EndThreads();
 
-    for (auto &cq : cli_cqs_) {
-      cq->Shutdown();
+    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
+      (*cq)->Shutdown();
       void *got_tag;
       bool ok;
-      while (cq->Next(&got_tag, &ok)) {
+      while ((*cq)->Next(&got_tag, &ok)) {
         delete ClientRpcContext::detag(got_tag);
       }
     }
