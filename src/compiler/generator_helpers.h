@@ -75,6 +75,26 @@ inline grpc::string StringReplace(grpc::string str, const grpc::string &from,
   return str;
 }
 
+inline std::vector<grpc::string> tokenize(const grpc::string &input,
+                                          const grpc::string &delimiters) {
+  std::vector<grpc::string> tokens;
+  size_t pos, last_pos = 0;
+
+  for (;;) {
+    bool done = false;
+    pos = input.find_first_of(delimiters, last_pos);
+    if (pos == grpc::string::npos) {
+      done = true;
+      pos = input.length();
+    }
+
+    tokens.push_back(input.substr(last_pos, pos - last_pos));
+    if (done) return tokens;
+
+    last_pos = pos + 1;
+  }
+}
+
 }  // namespace grpc_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H
