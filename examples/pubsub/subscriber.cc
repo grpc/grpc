@@ -49,12 +49,9 @@ namespace examples {
 namespace pubsub {
 
 Subscriber::Subscriber(std::shared_ptr<ChannelInterface> channel)
-    : stub_(SubscriberService::NewStub(channel)) {
-}
+    : stub_(SubscriberService::NewStub(channel)) {}
 
-void Subscriber::Shutdown() {
-  stub_.reset();
-}
+void Subscriber::Shutdown() { stub_.reset(); }
 
 Status Subscriber::CreateSubscription(const grpc::string& topic,
                                       const grpc::string& name) {

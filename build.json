@@ -498,14 +498,24 @@
       "secure": "no"
     },
     {
-      "name": "grpc_python_plugin_support",
+      "name": "grpc_plugin_support",
       "build": "protoc",
       "language": "c++",
       "public_headers": [
-        "src/compiler/python_generator.h"
+        "src/compiler/config.h",
+        "src/compiler/cpp_generator.h",
+        "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/generator_helpers.h",
+        "src/compiler/python_generator.h",
+        "src/compiler/ruby_generator.h",
+        "src/compiler/ruby_generator_helpers-inl.h",
+        "src/compiler/ruby_generator_map-inl.h",
+        "src/compiler/ruby_generator_string-inl.h"
       ],
       "src": [
-        "src/compiler/python_generator.cc"
+        "src/compiler/cpp_generator.cc",
+        "src/compiler/python_generator.cc",
+        "src/compiler/ruby_generator.cc"
       ],
       "deps": [],
       "secure": "no"
@@ -1758,15 +1768,12 @@
       "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
-      "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers.h"
-      ],
       "src": [
-        "src/compiler/cpp_generator.cc",
         "src/compiler/cpp_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_plugin_support"
+      ],
       "secure": "no"
     },
     {
@@ -1777,7 +1784,7 @@
         "src/compiler/python_plugin.cc"
       ],
       "deps": [
-        "grpc_python_plugin_support"
+        "grpc_plugin_support"
       ],
       "secure": "no"
     },
@@ -1786,10 +1793,11 @@
       "build": "protoc",
       "language": "c++",
       "src": [
-        "src/compiler/ruby_generator.cc",
         "src/compiler/ruby_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_plugin_support"
+      ],
       "secure": "no"
     },
     {

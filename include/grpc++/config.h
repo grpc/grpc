@@ -65,9 +65,11 @@
   ::google::protobuf::io::ZeroCopyInputStream
 #endif
 
+#ifndef __clang__
 #ifdef __GNUC__
 #if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
 #define GRPC_NO_NULLPTR
+#endif
 #endif
 #endif
 

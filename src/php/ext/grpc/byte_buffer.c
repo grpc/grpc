@@ -57,6 +57,11 @@ grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
 
 void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
                            size_t *out_length) {
+  if (buffer == NULL) {
+    *out_string = NULL;
+    *out_length = 0;
+    return;
+  }
   size_t length = grpc_byte_buffer_length(buffer);
   char *string = ecalloc(length + 1, sizeof(char));
   size_t offset = 0;

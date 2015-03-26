@@ -448,8 +448,12 @@ PHP_METHOD(Call, start_batch) {
         break;
       case GRPC_OP_RECV_MESSAGE:
         byte_buffer_to_string(message, &message_str, &message_len);
-        add_property_stringl(result, "message", message_str, message_len,
-                             false);
+        if (message_str == NULL) {
+          add_property_null(result, "message");
+        } else {
+          add_property_stringl(result, "message", message_str, message_len,
+                               false);
+        }
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         MAKE_STD_ZVAL(recv_status);
@@ -478,9 +482,20 @@ cleanup:
   RETURN_DESTROY_ZVAL(result);
 }
 
+/**
+ * Cancel the call. This will cause the call to end with STATUS_CANCELLED if it
+ * has not already ended with another status.
+ */
+PHP_METHOD(Call, cancel) {
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
+  grpc_call_cancel(call->wrapped);
+}
+
 static zend_function_entry call_methods[] = {
     PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Call, start_batch, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Call, start_batch, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;

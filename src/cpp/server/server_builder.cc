@@ -86,24 +86,26 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_owned = true;
   }
   std::unique_ptr<Server> server(new Server(thread_pool_, thread_pool_owned));
-  for (auto* service : services_) {
-    if (!server->RegisterService(service)) {
+  for (auto service = services_.begin(); service != services_.end();
+       service++) {
+    if (!server->RegisterService(*service)) {
       return nullptr;
     }
   }
-  for (auto* service : async_services_) {
-    if (!server->RegisterAsyncService(service)) {
+  for (auto service = async_services_.begin();
+       service != async_services_.end(); service++) {
+    if (!server->RegisterAsyncService(*service)) {
       return nullptr;
     }
   }
   if (generic_service_) {
     server->RegisterAsyncGenericService(generic_service_);
   }
-  for (auto& port : ports_) {
-    int r = server->AddListeningPort(port.addr, port.creds.get());
+  for (auto port = ports_.begin(); port != ports_.end(); port++) {
+    int r = server->AddListeningPort(port->addr, port->creds.get());
     if (!r) return nullptr;
-    if (port.selected_port != nullptr) {
-      *port.selected_port = r;
+    if (port->selected_port != nullptr) {
+      *port->selected_port = r;
     }
   }
   if (!server->Start()) {
