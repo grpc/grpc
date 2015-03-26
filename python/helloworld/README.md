@@ -46,7 +46,11 @@ a greeting in a single `HelloReply`. This is the simplest type of RPC you
 can specify in gRPC.
 
 ```
-syntax = "proto2";
+syntax = "proto3";
+
+option java_package = "io.grpc.examples";
+
+package helloworld;
 
 // The greeting service definition.
 service Greeter {
@@ -56,12 +60,12 @@ service Greeter {
 
 // The request message containing the user's name.
 message HelloRequest {
-  optional string name = 1;
+  string name = 1;
 }
 
 // The response message containing the greetings
 message HelloReply {
-  optional string message = 1;
+  string message = 1;
 }
 
 ```
@@ -83,7 +87,7 @@ $ ./run_codegen.sh
 Which internally invokes the proto-compiler as:
 
 ```sh
-$ protoc -I . --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` helloworld.proto
+$ protoc -I ../../protos --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` ../../protos/helloworld.proto
 ```
 
 Optionally, you can just skip the code generation step as the generated python module has already
