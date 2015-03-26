@@ -38,38 +38,52 @@ require_once realpath(dirname(__FILE__) . '/../autoload.php');
  * Represents an active call that allows for sending and recieving messages in
  * streams in any order.
  */
-class BidiStreamingSurfaceActiveCall extends AbstractSurfaceActiveCall {
+class BidiStreamingCall extends AbstractCall {
+  /**
+   * Start the call
+   * @param array $metadata Metadata to send with the call, if applicable
+   */
+  public function start($metadata) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true]);
+    $this->metadata = $event->metadata;
+  }
 
   /**
    * Reads the next value from the server.
    * @return The next value from the server, or null if there is none
    */
   public function read() {
-    return $this->_read();
+    $read_event = $this->call->start_batch([OP_RECV_MESSAGE => true]);
+    return $this->deserializeResponse($read_event->message);
   }
 
   /**
-   * Writes a single message to the server. This cannot be called after
+   * Write a single message to the server. This cannot be called after
    * writesDone is called.
-   * @param $value The message to send
+   * @param ByteBuffer $data The data to write
    */
-  public function write($value) {
-    $this->_write($value);
+  public function write($data) {
+    $this->call->start_batch([OP_SEND_MESSAGE => $data->serialize()]);
   }
 
   /**
-   * Indicate that no more writes will be sent
+   * Indicate that no more writes will be sent.
    */
   public function writesDone() {
-    $this->_writesDone();
+    $this->call->start_batch([OP_SEND_CLOSE_FROM_CLIENT => true]);
   }
 
   /**
    * Wait for the server to send the status, and return it.
-   * @return object The status object, with integer $code and string $details
-   *     members
+   * @return object The status object, with integer $code, string $details,
+   *     and array $metadata members
    */
   public function getStatus() {
-    return $this->_getStatus();
+    $status_event = $this->call->start_batch([
+        OP_RECV_STATUS_ON_CLIENT => true
+                                              ]);
+    return $status_event->status;
   }
 }

@@ -362,6 +362,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\call_details.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call_log_batch.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel_create.c">

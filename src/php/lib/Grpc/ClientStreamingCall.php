@@ -1,5 +1,4 @@
 <?php
-
 /*
  *
  * Copyright 2015, Google Inc.
@@ -32,67 +31,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 namespace Grpc;
-
 require_once realpath(dirname(__FILE__) . '/../autoload.php');
 
 /**
- * Represents an active call that allows sending and recieving messages.
- * Subclasses restrict how data can be sent and recieved.
+ * Represents an active call that sends a stream of messages and then gets a
+ * single response.
  */
-abstract class AbstractSurfaceActiveCall {
-  private $active_call;
-  private $deserialize;
-
+class ClientStreamingCall extends AbstractCall {
   /**
-   * Create a new surface active call.
-   * @param Channel $channel The channel to communicate on
-   * @param string $method The method to call on the remote server
-   * @param callable $deserialize The function to deserialize a value
+   * Start the call.
+   * @param Traversable $arg_iter The iterator of arguments to send
    * @param array $metadata Metadata to send with the call, if applicable
-   * @param long $flags Write flags to use with this call
    */
-  public function __construct(Channel $channel,
-                       $method,
-                       callable $deserialize,
-                       $metadata = array(),
-                       $flags = 0) {
-    $this->active_call = new ActiveCall($channel, $method, $metadata, $flags);
-    $this->deserialize = $deserialize;
-  }
-
-  /**
-   * @return The metadata sent by the server
-   */
-  public function getMetadata() {
-    return $this->metadata();
-  }
-
-  /**
-   * Cancels the call
-   */
-  public function cancel() {
-    $this->active_call->cancel();
-  }
-
-  protected function _read() {
-    $response = $this->active_call->read();
-    if ($response === null) {
-      return null;
+  public function start($arg_iter, $metadata = array()) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true]);
+    $this->metadata = $event->metadata;
+    foreach($arg_iter as $arg) {
+      $this->call->start_batch([OP_SEND_MESSAGE => $arg->serialize()]);
     }
-    return call_user_func($this->deserialize, $response);
+    $this->call->start_batch([OP_SEND_CLOSE_FROM_CLIENT => true]);
   }
 
-  protected function _write($value) {
-    return $this->active_call->write($value->serialize());
-  }
-
-  protected function _writesDone() {
-    $this->active_call->writesDone();
-  }
-
-  protected function _getStatus() {
-    return $this->active_call->getStatus();
+  /**
+   * Wait for the server to respond with data and a status
+   * @return [response data, status]
+   */
+  public function wait() {
+    $event = $this->call->start_batch([
+        OP_RECV_MESSAGE => true,
+        OP_RECV_STATUS_ON_CLIENT => true]);
+    return array($this->deserializeResponse($event->message), $event->status);
   }
 }

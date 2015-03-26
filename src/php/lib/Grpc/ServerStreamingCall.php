@@ -32,68 +32,37 @@
  *
  */
 namespace Grpc;
+
 require_once realpath(dirname(__FILE__) . '/../autoload.php');
 
 /**
- * Represents an active call that allows sending and recieving binary data
+ * Represents an active call that sends a single message and then gets a stream
+ * of reponses
  */
-class ActiveCall {
-  private $call;
-  private $metadata;
-
+class ServerStreamingCall extends AbstractCall {
   /**
-   * Create a new active call.
-   * @param Channel $channel The channel to communicate on
-   * @param string $method The method to call on the remote server
+   * Start the call
+   * @param $arg The argument to send
    * @param array $metadata Metadata to send with the call, if applicable
    */
-  public function __construct(Channel $channel,
-                              $method,
-                              $metadata = array()) {
-    $this->call = new Call($channel, $method, Timeval::inf_future());
-
-    $event = $this->call->start_batch([OP_SEND_INITIAL_METADATA => $metadata]);
-
+  public function start($arg, $metadata = array()) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true,
+        OP_SEND_MESSAGE => $arg->serialize(),
+        OP_SEND_CLOSE_FROM_CLIENT => true]);
     $this->metadata = $event->metadata;
   }
 
   /**
-   * @return The metadata sent by the server.
+   * @return An iterator of response values
    */
-  public function getMetadata() {
-    return $this->metadata;
-  }
-
-  /**
-   * Cancels the call
-   */
-  public function cancel() {
-    $this->call->cancel();
-  }
-
-  /**
-   * Read a single message from the server.
-   * @return The next message from the server, or null if there is none.
-   */
-  public function read() {
-    $read_event = $this->call->start_batch([OP_RECV_MESSAGE => true]);
-    return $read_event->data;
-  }
-
-  /**
-   * Write a single message to the server. This cannot be called after
-   * writesDone is called.
-   * @param ByteBuffer $data The data to write
-   */
-  public function write($data) {
-    $this->call->start_batch([OP_SEND_MESSAGE => $data]);
-  }
-
-  /**
-   * Indicate that no more writes will be sent.
-   */
-  public function writesDone() {
-    $this->call->start_batch([OP_SEND_CLOSE_FROM_CLIENT => true]);
+  public function responses() {
+    $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+    while($response !== null) {
+      yield $this->deserializeResponse($response);
+      $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+    }
   }
 
   /**
@@ -102,7 +71,9 @@ class ActiveCall {
    *     and array $metadata members
    */
   public function getStatus() {
-    $status_event = $this->call->start_batch([RECV_STATUS_ON_CLIENT => true]);
-    return $status_event->data;
+    $status_event = $this->call->start_batch([
+        OP_RECV_STATUS_ON_CLIENT => true
+                                              ]);
+    return $status_event->status;
   }
 }
