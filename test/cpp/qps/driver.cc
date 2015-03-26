@@ -154,19 +154,19 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   server_mark.mutable_mark();
   ClientArgs client_mark;
   client_mark.mutable_mark();
-  for (auto& server : servers) {
-    GPR_ASSERT(server.stream->Write(server_mark));
+  for (auto server = servers.begin(); server != servers.end(); server++) {
+    GPR_ASSERT(server->stream->Write(server_mark));
   }
-  for (auto& client : clients) {
-    GPR_ASSERT(client.stream->Write(client_mark));
+  for (auto client = clients.begin(); client != clients.end(); client++) {
+    GPR_ASSERT(client->stream->Write(client_mark));
   }
   ServerStatus server_status;
   ClientStatus client_status;
-  for (auto& server : servers) {
-    GPR_ASSERT(server.stream->Read(&server_status));
+  for (auto server = servers.begin(); server != servers.end(); server++) {
+    GPR_ASSERT(server->stream->Read(&server_status));
   }
-  for (auto& client : clients) {
-    GPR_ASSERT(client.stream->Read(&client_status));
+  for (auto client = clients.begin(); client != clients.end(); client++) {
+    GPR_ASSERT(client->stream->Read(&client_status));
   }
 
   // Wait some time
@@ -176,33 +176,33 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   // Finish a run
   ScenarioResult result;
   gpr_log(GPR_INFO, "Finishing");
-  for (auto& server : servers) {
-    GPR_ASSERT(server.stream->Write(server_mark));
+  for (auto server = servers.begin(); server != servers.end(); server++) {
+    GPR_ASSERT(server->stream->Write(server_mark));
   }
-  for (auto& client : clients) {
-    GPR_ASSERT(client.stream->Write(client_mark));
+  for (auto client = clients.begin(); client != clients.end(); client++) {
+    GPR_ASSERT(client->stream->Write(client_mark));
   }
-  for (auto& server : servers) {
-    GPR_ASSERT(server.stream->Read(&server_status));
+  for (auto server = servers.begin(); server != servers.end(); server++) {
+    GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
     result.server_resources.push_back(ResourceUsage{
         stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
-  for (auto& client : clients) {
-    GPR_ASSERT(client.stream->Read(&client_status));
+  for (auto client = clients.begin(); client != clients.end(); client++) {
+    GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result.latencies.MergeProto(stats.latencies());
     result.client_resources.push_back(ResourceUsage{
         stats.time_elapsed(), stats.time_user(), stats.time_system()});
   }
 
-  for (auto& client : clients) {
-    GPR_ASSERT(client.stream->WritesDone());
-    GPR_ASSERT(client.stream->Finish().IsOk());
+  for (auto client = clients.begin(); client != clients.end(); client++) {
+    GPR_ASSERT(client->stream->WritesDone());
+    GPR_ASSERT(client->stream->Finish().IsOk());
   }
-  for (auto& server : servers) {
-    GPR_ASSERT(server.stream->WritesDone());
-    GPR_ASSERT(server.stream->Finish().IsOk());
+  for (auto server = servers.begin(); server != servers.end(); server++) {
+    GPR_ASSERT(server->stream->WritesDone());
+    GPR_ASSERT(server->stream->Finish().IsOk());
   }
   return result;
 }

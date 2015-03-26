@@ -34,17 +34,11 @@
 #ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_H
 #define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_H
 
-#include <string>
-
-namespace google {
-namespace protobuf {
-class FileDescriptor;
-}  // namespace protobuf
-}  // namespace google
+#include "src/compiler/config.h"
 
 namespace grpc_ruby_generator {
 
-std::string GetServices(const google::protobuf::FileDescriptor *file);
+grpc::string GetServices(const grpc::protobuf::FileDescriptor *file);
 
 }  // namespace grpc_ruby_generator
 

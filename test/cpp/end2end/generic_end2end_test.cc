@@ -83,8 +83,8 @@ bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
   buffer->Dump(&slices);
   grpc::string buf;
   buf.reserve(buffer->Length());
-  for (const Slice& s : slices) {
-    buf.append(reinterpret_cast<const char*>(s.begin()), s.size());
+  for (auto s = slices.begin(); s != slices.end(); s++) {
+    buf.append(reinterpret_cast<const char*>(s->begin()), s->size());
   }
   return message->ParseFromString(buf);
 }
@@ -265,6 +265,5 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  google::protobuf::ShutdownProtobufLibrary();
   return result;
 }

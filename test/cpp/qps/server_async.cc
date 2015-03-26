@@ -119,8 +119,8 @@ class AsyncQpsServerTest : public Server {
       shutdown_ = true;
       srv_cq_.Shutdown();
     }
-    for (auto& thr : threads_) {
-      thr.join();
+    for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
+      thr->join();
     }
     while (!contexts_.empty()) {
       delete contexts_.front();
