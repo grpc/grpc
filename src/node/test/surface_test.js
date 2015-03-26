@@ -126,7 +126,7 @@ describe('Generic client and server', function() {
     });
   });
 });
-describe.only('Trailing metadata', function() {
+describe('Trailing metadata', function() {
   var client;
   var server;
   before(function() {
@@ -145,15 +145,19 @@ describe.only('Trailing metadata', function() {
         },
         clientStream: function(stream, cb){
           var count = 0;
+          var errored;
           stream.on('data', function(data) {
             if (data.error) {
+              errored = true;
               cb(new Error('Requested error'), null, {metadata: ['yes']});
             } else {
               count += 1;
             }
           });
           stream.on('end', function() {
-            cb(null, {count: count}, {metadata: ['yes']});
+            if (!errored) {
+              cb(null, {count: count}, {metadata: ['yes']});
+            }
           });
         },
         serverStream: function(stream) {
@@ -161,7 +165,7 @@ describe.only('Trailing metadata', function() {
           if (req.error) {
             var err = new Error('Requested error');
             err.metadata = {metadata: ['yes']};
-            stream.emit(err);
+            stream.emit('error', err);
           } else {
             for (var i = 0; i < 5; i++) {
               stream.write({count: i});
@@ -175,8 +179,8 @@ describe.only('Trailing metadata', function() {
             if (data.error) {
               var err = new Error('Requested error');
               err.metadata = {
-                metadata: 'yes',
-                count: '' + count
+                metadata: ['yes'],
+                count: ['' + count]
               };
               stream.emit('error', err);
             } else {
@@ -236,6 +240,48 @@ describe.only('Trailing metadata', function() {
     call.write({error: true});
     call.end();
     call.on('status', function(status) {
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('when a server stream call succeeds', function(done) {
+    var call = client.serverStream({error: false});
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.strictEqual(status.code, grpc.status.OK);
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('when a server stream call fails', function(done) {
+    var call = client.serverStream({error: true});
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.notStrictEqual(status.code, grpc.status.OK);
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('when a bidi stream succeeds', function(done) {
+    var call = client.bidiStream();
+    call.write({error: false});
+    call.write({error: false});
+    call.end();
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.strictEqual(status.code, grpc.status.OK);
+      assert.deepEqual(status.metadata.metadata, ['yes']);
+      done();
+    });
+  });
+  it('when a bidi stream fails', function(done) {
+    var call = client.bidiStream();
+    call.write({error: false});
+    call.write({error: true});
+    call.end();
+    call.on('data', function(){});
+    call.on('status', function(status) {
+      assert.notStrictEqual(status.code, grpc.status.OK);
       assert.deepEqual(status.metadata.metadata, ['yes']);
       done();
     });
