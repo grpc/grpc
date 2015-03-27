@@ -42,6 +42,7 @@ DEFINE_int32(num_servers, 1, "Number of server binaries");
 
 // Common config
 DEFINE_bool(enable_ssl, false, "Use SSL");
+DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 
 // Server config
 DEFINE_int32(server_threads, 1, "Number of server threads");
@@ -59,6 +60,7 @@ using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
 using grpc::testing::ServerType;
+using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
 using grpc::testing::sum;
 
@@ -73,6 +75,9 @@ int main(int argc, char** argv) {
   grpc_init();
   ParseCommandLineFlags(&argc, &argv, true);
 
+  RpcType rpc_type;
+  GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
+
   ClientType client_type;
   ServerType server_type;
   GPR_ASSERT(ClientType_Parse(FLAGS_client_type, &client_type));
@@ -86,6 +91,7 @@ int main(int argc, char** argv) {
   client_config.set_client_channels(FLAGS_client_channels);
   client_config.set_payload_size(FLAGS_payload_size);
   client_config.set_async_client_threads(FLAGS_async_client_threads);
+  client_config.set_rpc_type(rpc_type);
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);

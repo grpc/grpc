@@ -115,12 +115,12 @@ class Client {
           impl_([this, idx, client]() {
             for (;;) {
               // run the loop body
-              client->ThreadFunc(&histogram_, idx);
+	      client->ThreadFunc(&histogram_, idx);
               // lock, see if we're done
               std::lock_guard<std::mutex> g(mu_);
-              if (done_) return;
-              // also check if we're marking, and swap out the histogram if so
-              if (new_) {
+              if (done_) {return;}
+	      // check if we're marking, swap out the histogram if so
+	      if (new_) {
                 new_->Swap(&histogram_);
                 new_ = nullptr;
                 cv_.notify_one();
@@ -164,8 +164,12 @@ class Client {
   std::unique_ptr<Timer> timer_;
 };
 
-std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& args);
-std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& args);
+std::unique_ptr<Client>
+  CreateSynchronousUnaryClient(const ClientConfig& args);
+std::unique_ptr<Client>
+  CreateSynchronousStreamingClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateAsyncUnaryClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateAsyncStreamingClient(const ClientConfig& args);
 
 }  // namespace testing
 }  // namespace grpc
