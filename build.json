@@ -502,7 +502,7 @@
       "name": "grpc_plugin_support",
       "build": "protoc",
       "language": "c++",
-      "public_headers": [
+      "headers": [
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",

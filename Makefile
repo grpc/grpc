@@ -3595,16 +3595,6 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
     src/compiler/python_generator.cc \
     src/compiler/ruby_generator.cc \
 
-PUBLIC_HEADERS_CXX += \
-    src/compiler/config.h \
-    src/compiler/cpp_generator.h \
-    src/compiler/cpp_generator_helpers.h \
-    src/compiler/generator_helpers.h \
-    src/compiler/python_generator.h \
-    src/compiler/ruby_generator.h \
-    src/compiler/ruby_generator_helpers-inl.h \
-    src/compiler/ruby_generator_map-inl.h \
-    src/compiler/ruby_generator_string-inl.h \
 
 LIBGRPC_PLUGIN_SUPPORT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_PLUGIN_SUPPORT_SRC))))
 
