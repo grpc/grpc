@@ -160,6 +160,7 @@ int main(int argc, char** argv) {
               << std::endl;
   }
   grpc::string server_address(argv[2]);
+  grpc::string method(argv[3]);
 
   if (FLAGS_input_binary_file.empty()) {
     std::cout << "Missing --input_binary_file for serialized request."
