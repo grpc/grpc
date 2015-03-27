@@ -46,4 +46,6 @@ RUN cd /var/local/git/grpc/src/php/ext/grpc \
   && ./configure \
   && make
 
+RUN cd /var/local/git/grpc/src/php && composer install
+
 RUN cd /var/local/git/grpc/src/php && ./bin/run_tests.sh

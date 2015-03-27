@@ -64,8 +64,11 @@ RUN apt-get update && apt-get install -y \
     sqlite3 \
     zlib1g-dev
 
-# Install the version of PHP gRPC is tested against
 ENV DEBIAN_FRONTEND noniteractive
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
 
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
