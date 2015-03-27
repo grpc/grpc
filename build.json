@@ -52,6 +52,7 @@
         "src/cpp/client/client_unary_call.cc",
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
+        "src/cpp/client/generic_stub.cc",
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/internal_stub.cc",
         "src/cpp/common/call.cc",
@@ -481,6 +482,7 @@
         "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
+        "test/cpp/util/cli_call.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
     },
@@ -1706,6 +1708,22 @@
       ]
     },
     {
+      "name": "cli_call_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/cli_call_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "credentials_test",
       "build": "test",
       "language": "c++",
@@ -1755,6 +1773,23 @@
       "language": "c++",
       "src": [
         "test/cpp/end2end/generic_end2end_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_cli",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/util/grpc_cli.cc"
       ],
       "deps": [
         "grpc++_test_util",

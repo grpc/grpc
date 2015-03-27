@@ -25,6 +25,9 @@
     <ClCompile Include="..\..\src\cpp\client\credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\generic_stub.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\insecure_credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>

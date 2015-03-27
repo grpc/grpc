@@ -47,6 +47,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
+#include <grpc++/generic_stub.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -89,6 +90,15 @@ bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
   return message->ParseFromString(buf);
 }
 
+std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
+    grpc::protobuf::Message* message) {
+  grpc::string buf;
+  message->SerializeToString(&buf);
+  gpr_slice s = gpr_slice_from_copied_string(buf.c_str());
+  Slice slice(s, Slice::STEAL_REF);
+  return std::unique_ptr<ByteBuffer>(new ByteBuffer(&slice, 1));
+}
+
 class GenericEnd2endTest : public ::testing::Test {
  protected:
   GenericEnd2endTest() : generic_service_("*") {}
@@ -118,7 +128,7 @@ class GenericEnd2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<ChannelInterface> channel = CreateChannel(
         server_address_.str(), InsecureCredentials(), ChannelArguments());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
+    generic_stub_.reset(new GenericStub(channel));
   }
 
   void server_ok(int i) { verify_ok(&srv_cq_, i, true); }
@@ -127,6 +137,7 @@ class GenericEnd2endTest : public ::testing::Test {
   void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
 
   void SendRpc(int num_rpcs) {
+    const grpc::string kMethodName("/grpc.cpp.test.util.TestService/Echo");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest send_request;
       EchoRequest recv_request;
@@ -139,35 +150,42 @@ class GenericEnd2endTest : public ::testing::Test {
       GenericServerAsyncReaderWriter stream(&srv_ctx);
 
       send_request.set_message("Hello");
-      std::unique_ptr<ClientAsyncResponseReader<EchoResponse> > response_reader(
-          stub_->AsyncEcho(&cli_ctx, send_request, &cli_cq_, tag(1)));
+      std::unique_ptr<GenericClientAsyncReaderWriter> call =
+          generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
       client_ok(1);
+      std::unique_ptr<ByteBuffer> send_buffer =
+          SerializeToByteBuffer(&send_request);
+      call->Write(*send_buffer, tag(2));
+      client_ok(2);
+      call->WritesDone(tag(3));
+      client_ok(3);
 
-      generic_service_.RequestCall(&srv_ctx, &stream, &srv_cq_, tag(2));
+      generic_service_.RequestCall(&srv_ctx, &stream, &srv_cq_, tag(4));
 
-      verify_ok(generic_service_.completion_queue(), 2, true);
+      verify_ok(generic_service_.completion_queue(), 4, true);
       EXPECT_EQ(server_address_.str(), srv_ctx.host());
-      EXPECT_EQ("/grpc.cpp.test.util.TestService/Echo", srv_ctx.method());
+      EXPECT_EQ(kMethodName, srv_ctx.method());
       ByteBuffer recv_buffer;
-      stream.Read(&recv_buffer, tag(3));
-      server_ok(3);
+      stream.Read(&recv_buffer, tag(5));
+      server_ok(5);
       EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
       EXPECT_EQ(send_request.message(), recv_request.message());
 
       send_response.set_message(recv_request.message());
-      grpc::string buf;
-      send_response.SerializeToString(&buf);
-      gpr_slice s = gpr_slice_from_copied_string(buf.c_str());
-      Slice slice(s, Slice::STEAL_REF);
-      ByteBuffer send_buffer(&slice, 1);
-      stream.Write(send_buffer, tag(4));
-      server_ok(4);
+      send_buffer = SerializeToByteBuffer(&send_response);
+      stream.Write(*send_buffer, tag(6));
+      server_ok(6);
 
-      stream.Finish(Status::OK, tag(5));
-      server_ok(5);
+      stream.Finish(Status::OK, tag(7));
+      server_ok(7);
 
-      response_reader->Finish(&recv_response, &recv_status, tag(4));
-      client_ok(4);
+      recv_buffer.Clear();
+      call->Read(&recv_buffer, tag(8));
+      client_ok(8);
+      EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
+
+      call->Finish(&recv_status, tag(9));
+      client_ok(9);
 
       EXPECT_EQ(send_response.message(), recv_response.message());
       EXPECT_TRUE(recv_status.IsOk());
@@ -177,6 +195,7 @@ class GenericEnd2endTest : public ::testing::Test {
   CompletionQueue cli_cq_;
   CompletionQueue srv_cq_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;
   std::ostringstream server_address_;
@@ -196,6 +215,7 @@ TEST_F(GenericEnd2endTest, SequentialRpcs) {
 TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
 
+  const grpc::string kMethodName("/grpc.cpp.test.util.TestService/BidiStream");
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -206,17 +226,19 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   GenericServerAsyncReaderWriter srv_stream(&srv_ctx);
 
   send_request.set_message("Hello");
-  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse> >
-      cli_stream(stub_->AsyncBidiStream(&cli_ctx, &cli_cq_, tag(1)));
+  std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
+      generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
   client_ok(1);
 
   generic_service_.RequestCall(&srv_ctx, &srv_stream, &srv_cq_, tag(2));
 
   verify_ok(generic_service_.completion_queue(), 2, true);
   EXPECT_EQ(server_address_.str(), srv_ctx.host());
-  EXPECT_EQ("/grpc.cpp.test.util.TestService/BidiStream", srv_ctx.method());
+  EXPECT_EQ(kMethodName, srv_ctx.method());
 
-  cli_stream->Write(send_request, tag(3));
+  std::unique_ptr<ByteBuffer> send_buffer =
+      SerializeToByteBuffer(&send_request);
+  cli_stream->Write(*send_buffer, tag(3));
   client_ok(3);
 
   ByteBuffer recv_buffer;
@@ -226,22 +248,18 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  grpc::string buf;
-  send_response.SerializeToString(&buf);
-  gpr_slice s = gpr_slice_from_copied_string(buf.c_str());
-  Slice slice(s, Slice::STEAL_REF);
-  ByteBuffer send_buffer(&slice, 1);
-  srv_stream.Write(send_buffer, tag(5));
+  send_buffer = SerializeToByteBuffer(&send_response);
+  srv_stream.Write(*send_buffer, tag(5));
   server_ok(5);
 
-  cli_stream->Read(&recv_response, tag(6));
+  cli_stream->Read(&recv_buffer, tag(6));
   client_ok(6);
+  EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
   EXPECT_EQ(send_response.message(), recv_response.message());
 
   cli_stream->WritesDone(tag(7));
   client_ok(7);
 
-  recv_buffer.Clear();
   srv_stream.Read(&recv_buffer, tag(8));
   server_fail(8);
 
