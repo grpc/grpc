@@ -58,6 +58,11 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       return false;
     }
 
+    if (file->service_count() == 0) {
+      // No services.  Do nothing.
+      return true;
+    }
+
     grpc_cpp_generator::Parameters generator_parameters;
 
     if (!parameter.empty()) {
