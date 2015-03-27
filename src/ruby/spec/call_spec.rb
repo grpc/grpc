@@ -66,6 +66,27 @@ describe GRPC::Core::RpcErrors do
   end
 end
 
+describe GRPC::Core::CallOps do
+  before(:each) do
+    @known_types = {
+      SEND_INITIAL_METADATA: 0,
+      SEND_MESSAGE: 1,
+      SEND_CLOSE_FROM_CLIENT: 2,
+      SEND_STATUS_FROM_SERVER: 3,
+      RECV_INITIAL_METADATA: 4,
+      RECV_MESSAGE: 5,
+      RECV_STATUS_ON_CLIENT: 6,
+      RECV_CLOSE_ON_SERVER: 7,
+    }
+  end
+
+  it 'should have symbols for all the known operation types' do
+    m = GRPC::Core::CallOps
+    syms_and_codes = m.constants.collect { |c| [c, m.const_get(c)] }
+    expect(Hash[syms_and_codes]).to eq(@known_types)
+  end
+end
+
 describe GRPC::Core::Call do
   let (:client_queue) { GRPC::Core::CompletionQueue.new }
   let (:test_tag)  { Object.new }
