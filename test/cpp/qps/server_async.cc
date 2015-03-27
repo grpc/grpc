@@ -68,7 +68,7 @@ class AsyncQpsServerTest : public Server {
     gpr_join_host_port(&server_address, "::", port);
 
     ServerBuilder builder;
-    builder.AddPort(server_address, InsecureServerCredentials());
+    builder.AddListeningPort(server_address, InsecureServerCredentials());
     gpr_free(server_address);
 
     builder.RegisterAsyncService(&async_service_);
@@ -105,8 +105,8 @@ class AsyncQpsServerTest : public Server {
   ~AsyncQpsServerTest() {
     server_->Shutdown();
     srv_cq_.Shutdown();
-    for (auto& thr : threads_) {
-      thr.join();
+    for (auto thr = threads_.begin(); thr != threads_.end(); thr++) {
+      thr->join();
     }
     while (!contexts_.empty()) {
       delete contexts_.front();

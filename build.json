@@ -78,6 +78,7 @@
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
         "include/grpc/grpc.h",
+        "include/grpc/grpc_http.h",
         "include/grpc/status.h"
       ],
       "headers": [
@@ -145,6 +146,7 @@
         "src/core/surface/init.h",
         "src/core/surface/server.h",
         "src/core/surface/surface_trace.h",
+        "src/core/transport/chttp2/alpn.h",
         "src/core/transport/chttp2/bin_encoder.h",
         "src/core/transport/chttp2/frame.h",
         "src/core/transport/chttp2/frame_data.h",
@@ -232,6 +234,7 @@
         "src/core/surface/byte_buffer_reader.c",
         "src/core/surface/call.c",
         "src/core/surface/call_details.c",
+        "src/core/surface/call_log_batch.c",
         "src/core/surface/channel.c",
         "src/core/surface/channel_create.c",
         "src/core/surface/client.c",
@@ -280,6 +283,7 @@
         "include/grpc/support/atm_win32.h",
         "include/grpc/support/cancellable_platform.h",
         "include/grpc/support/cmdline.h",
+        "include/grpc/support/cpu.h",
         "include/grpc/support/histogram.h",
         "include/grpc/support/host_port.h",
         "include/grpc/support/log.h",
@@ -307,6 +311,7 @@
         "src/core/support/alloc.c",
         "src/core/support/cancellable.c",
         "src/core/support/cmdline.c",
+        "src/core/support/cpu_iphone.c",
         "src/core/support/cpu_linux.c",
         "src/core/support/cpu_posix.c",
         "src/core/support/cpu_windows.c",
@@ -369,6 +374,7 @@
         "src/core/security/base64.h",
         "src/core/security/credentials.h",
         "src/core/security/json_token.h",
+        "src/core/security/secure_endpoint.h",
         "src/core/security/secure_transport_setup.h",
         "src/core/security/security_context.h",
         "src/core/tsi/fake_transport_security.h",
@@ -491,6 +497,29 @@
       "filegroups": [
         "grpc++_base"
       ],
+      "secure": "no"
+    },
+    {
+      "name": "grpc_plugin_support",
+      "build": "protoc",
+      "language": "c++",
+      "headers": [
+        "src/compiler/config.h",
+        "src/compiler/cpp_generator.h",
+        "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/generator_helpers.h",
+        "src/compiler/python_generator.h",
+        "src/compiler/ruby_generator.h",
+        "src/compiler/ruby_generator_helpers-inl.h",
+        "src/compiler/ruby_generator_map-inl.h",
+        "src/compiler/ruby_generator_string-inl.h"
+      ],
+      "src": [
+        "src/compiler/cpp_generator.cc",
+        "src/compiler/python_generator.cc",
+        "src/compiler/ruby_generator.cc"
+      ],
+      "deps": [],
       "secure": "no"
     },
     {
@@ -1691,6 +1720,21 @@
       ]
     },
     {
+      "name": "cxx_time_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/time_test.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "end2end_test",
       "build": "test",
       "language": "c++",
@@ -1743,29 +1787,24 @@
       "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
-      "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers.h"
-      ],
       "src": [
-        "src/compiler/cpp_generator.cc",
         "src/compiler/cpp_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_plugin_support"
+      ],
       "secure": "no"
     },
     {
       "name": "grpc_python_plugin",
       "build": "protoc",
       "language": "c++",
-      "headers": [
-        "src/compiler/python_generator.h"
-      ],
       "src": [
-        "src/compiler/python_generator.cc",
         "src/compiler/python_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_plugin_support"
+      ],
       "secure": "no"
     },
     {
@@ -1773,10 +1812,11 @@
       "build": "protoc",
       "language": "c++",
       "src": [
-        "src/compiler/ruby_generator.cc",
         "src/compiler/ruby_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_plugin_support"
+      ],
       "secure": "no"
     },
     {

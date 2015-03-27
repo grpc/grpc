@@ -234,7 +234,8 @@ void Server::RegisterAsyncGenericService(AsyncGenericService* service) {
   service->server_ = this;
 }
 
-int Server::AddPort(const grpc::string& addr, ServerCredentials* creds) {
+int Server::AddListeningPort(const grpc::string& addr,
+                             ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   return creds->AddPortToServer(addr, server_);
 }
@@ -246,8 +247,8 @@ bool Server::Start() {
 
   // Start processing rpcs.
   if (!sync_methods_.empty()) {
-    for (auto& m : sync_methods_) {
-      m.Request(server_);
+    for (auto m = sync_methods_.begin(); m != sync_methods_.end(); m++) {
+      m->Request(server_);
     }
 
     ScheduleCallback();

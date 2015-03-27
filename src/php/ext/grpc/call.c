@@ -49,11 +49,11 @@
 #include <stdbool.h>
 
 #include "grpc/support/log.h"
+#include "grpc/support/alloc.h"
 #include "grpc/grpc.h"
 
 #include "timeval.h"
 #include "channel.h"
-#include "completion_queue.h"
 #include "byte_buffer.h"
 
 zend_class_entry *grpc_ce_call;
@@ -61,7 +61,19 @@ zend_class_entry *grpc_ce_call;
 /* Frees and destroys an instance of wrapped_grpc_call */
 void free_wrapped_grpc_call(void *object TSRMLS_DC) {
   wrapped_grpc_call *call = (wrapped_grpc_call *)object;
+  grpc_event *event;
   if (call->owned && call->wrapped != NULL) {
+    if (call->queue != NULL) {
+      grpc_completion_queue_shutdown(call->queue);
+      event = grpc_completion_queue_next(call->queue, gpr_inf_future);
+      while (event != NULL) {
+        if (event->type == GRPC_QUEUE_SHUTDOWN) {
+          break;
+        }
+        event = grpc_completion_queue_next(call->queue, gpr_inf_future);
+      }
+      grpc_completion_queue_destroy(call->queue);
+    }
     grpc_call_destroy(call->wrapped);
   }
   efree(call);
@@ -88,17 +100,23 @@ zend_object_value create_wrapped_grpc_call(zend_class_entry *class_type
 
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the struct
    should be destroyed at the end of the object's lifecycle */
-zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned) {
+zval *grpc_php_wrap_call(grpc_call *wrapped, grpc_completion_queue *queue,
+                         bool owned) {
   zval *call_object;
   MAKE_STD_ZVAL(call_object);
   object_init_ex(call_object, grpc_ce_call);
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(call_object TSRMLS_CC);
   call->wrapped = wrapped;
+  call->queue = queue;
   return call_object;
 }
 
-zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements) {
+/* Creates and returns a PHP array object with the data in a
+ * grpc_metadata_array. Returns NULL on failure */
+zval *grpc_parse_metadata_array(grpc_metadata_array *metadata_array) {
+  int count = metadata_array->count;
+  grpc_metadata *elements = metadata_array->metadata;
   int i;
   zval *array;
   zval **data = NULL;
@@ -139,6 +157,64 @@ zval *grpc_call_create_metadata_array(int count, grpc_metadata *elements) {
   return array;
 }
 
+/* Populates a grpc_metadata_array with the data in a PHP array object.
+   Returns true on success and false on failure */
+bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
+  zval **inner_array;
+  zval **value;
+  HashTable *array_hash;
+  HashPosition array_pointer;
+  HashTable *inner_array_hash;
+  HashPosition inner_array_pointer;
+  char *key;
+  uint key_len;
+  ulong index;
+  if (Z_TYPE_P(array) != IS_ARRAY) {
+    return false;
+  }
+  grpc_metadata_array_init(metadata);
+  array_hash = Z_ARRVAL_P(array);
+  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
+       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
+                                     &array_pointer) == SUCCESS;
+       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
+    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
+                                     &array_pointer) != HASH_KEY_IS_STRING) {
+      return false;
+    }
+    if (Z_TYPE_P(*inner_array) != IS_ARRAY) {
+      return false;
+    }
+    inner_array_hash = Z_ARRVAL_P(*inner_array);
+    metadata->capacity += zend_hash_num_elements(inner_array_hash);
+  }
+  metadata->metadata = gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
+  for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
+       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
+                                     &array_pointer) == SUCCESS;
+       zend_hash_move_forward_ex(array_hash, &array_pointer)) {
+    if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
+                                     &array_pointer) != HASH_KEY_IS_STRING) {
+      return false;
+    }
+    inner_array_hash = Z_ARRVAL_P(*inner_array);
+    for (zend_hash_internal_pointer_reset_ex(inner_array_hash,
+                                             &inner_array_pointer);
+         zend_hash_get_current_data_ex(inner_array_hash, (void**)&value,
+                                       &inner_array_pointer) == SUCCESS;
+         zend_hash_move_forward_ex(inner_array_hash, &inner_array_pointer)) {
+      if (Z_TYPE_P(*value) != IS_STRING) {
+        return false;
+      }
+      metadata->metadata[metadata->count].key = key;
+      metadata->metadata[metadata->count].value = Z_STRVAL_P(*value);
+      metadata->metadata[metadata->count].value_length = Z_STRLEN_P(*value);
+      metadata->count += 1;
+    }
+  }
+  return true;
+}
+
 /**
  * Constructs a new instance of the Call class.
  * @param Channel $channel The channel to associate the call with. Must not be
@@ -157,9 +233,10 @@ PHP_METHOD(Call, __construct) {
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO", &channel_obj,
                             grpc_ce_channel, &method, &method_len,
                             &deadline_obj, grpc_ce_timeval) == FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "Call expects a Channel, a String, and a Timeval",
-                         1 TSRMLS_CC);
+    zend_throw_exception(
+        spl_ce_InvalidArgumentException,
+        "Call expects a Channel, a String, and a Timeval",
+        1 TSRMLS_CC);
     return;
   }
   wrapped_grpc_channel *channel =
@@ -175,289 +252,250 @@ PHP_METHOD(Call, __construct) {
   wrapped_grpc_timeval *deadline =
       (wrapped_grpc_timeval *)zend_object_store_get_object(
           deadline_obj TSRMLS_CC);
-  call->wrapped = grpc_channel_create_call_old(
-      channel->wrapped, method, channel->target, deadline->wrapped);
+  call->queue = grpc_completion_queue_create();
+  call->wrapped = grpc_channel_create_call(
+      channel->wrapped, call->queue, method, channel->target,
+      deadline->wrapped);
 }
 
 /**
- * Add metadata to the call. All array keys must be strings. If the value is a
- * string, it is added as a key/value pair. If it is an array, each value is
- * added paired with the same string
- * @param array $metadata The metadata to add
- * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
- * (optional)
- * @return Void
+ * Start a batch of RPC actions.
+ * @param array batch Array of actions to take
+ * @return object Object with results of all actions
  */
-PHP_METHOD(Call, add_metadata) {
+PHP_METHOD(Call, start_batch) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  grpc_metadata metadata;
-  grpc_call_error error_code;
+  grpc_op ops[8];
+  size_t op_num = 0;
   zval *array;
-  zval **inner_array;
   zval **value;
+  zval **inner_value;
   HashTable *array_hash;
   HashPosition array_pointer;
-  HashTable *inner_array_hash;
-  HashPosition inner_array_pointer;
+  HashTable *status_hash;
   char *key;
   uint key_len;
   ulong index;
-  long flags = 0;
-  /* "a|l" == 1 array, 1 optional long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a|l", &array, &flags) ==
+  grpc_metadata_array metadata;
+  grpc_metadata_array trailing_metadata;
+  grpc_metadata_array recv_metadata;
+  grpc_metadata_array recv_trailing_metadata;
+  grpc_status_code status;
+  char *status_details = NULL;
+  size_t status_details_capacity = 0;
+  grpc_byte_buffer *message;
+  int cancelled;
+  grpc_call_error error;
+  grpc_event *event;
+  zval *result;
+  char *message_str;
+  size_t message_len;
+  zval *recv_status;
+  grpc_metadata_array_init(&metadata);
+  grpc_metadata_array_init(&trailing_metadata);
+  grpc_metadata_array_init(&recv_metadata);
+  grpc_metadata_array_init(&recv_trailing_metadata);
+  MAKE_STD_ZVAL(result);
+  object_init(result);
+  /* "a" == 1 array */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &array) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "add_metadata expects an array and an optional long",
-                         1 TSRMLS_CC);
-    return;
+                         "start_batch expects an array", 1 TSRMLS_CC);
+    goto cleanup;
   }
   array_hash = Z_ARRVAL_P(array);
   for (zend_hash_internal_pointer_reset_ex(array_hash, &array_pointer);
-       zend_hash_get_current_data_ex(array_hash, (void**)&inner_array,
+       zend_hash_get_current_data_ex(array_hash, (void**)&value,
                                      &array_pointer) == SUCCESS;
        zend_hash_move_forward_ex(array_hash, &array_pointer)) {
     if (zend_hash_get_current_key_ex(array_hash, &key, &key_len, &index, 0,
-                                     &array_pointer) != HASH_KEY_IS_STRING) {
+                                     &array_pointer) != HASH_KEY_IS_LONG) {
       zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "metadata keys must be strings", 1 TSRMLS_CC);
-      return;
+                           "batch keys must be integers", 1 TSRMLS_CC);
+      goto cleanup;
     }
-    if (Z_TYPE_P(*inner_array) != IS_ARRAY) {
-      zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "metadata values must be arrays",
-                           1 TSRMLS_CC);
-      return;
-    }
-    inner_array_hash = Z_ARRVAL_P(*inner_array);
-    for (zend_hash_internal_pointer_reset_ex(inner_array_hash,
-                                             &inner_array_pointer);
-         zend_hash_get_current_data_ex(inner_array_hash, (void**)&value,
-                                       &inner_array_pointer) == SUCCESS;
-         zend_hash_move_forward_ex(inner_array_hash, &inner_array_pointer)) {
-      if (Z_TYPE_P(*value) != IS_STRING) {
+    switch(index) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        if (!create_metadata_array(*value, &metadata)) {
+          zend_throw_exception(spl_ce_InvalidArgumentException,
+                               "Bad metadata value given", 1 TSRMLS_CC);
+          goto cleanup;
+        }
+        ops[op_num].data.send_initial_metadata.count =
+            metadata.count;
+        ops[op_num].data.send_initial_metadata.metadata =
+            metadata.metadata;
+        break;
+      case GRPC_OP_SEND_MESSAGE:
+        if (Z_TYPE_PP(value) != IS_STRING) {
+          zend_throw_exception(spl_ce_InvalidArgumentException,
+                               "Expected a string for send message",
+                               1 TSRMLS_CC);
+        }
+        ops[op_num].data.send_message =
+            string_to_byte_buffer(Z_STRVAL_PP(value), Z_STRLEN_PP(value));
+        break;
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        status_hash = Z_ARRVAL_PP(value);
+        if (zend_hash_find(status_hash, "metadata", sizeof("metadata"),
+                           (void **)&inner_value) == SUCCESS) {
+          if (!create_metadata_array(*inner_value, &trailing_metadata)) {
+            zend_throw_exception(spl_ce_InvalidArgumentException,
+                                 "Bad trailing metadata value given",
+                                 1 TSRMLS_CC);
+            goto cleanup;
+          }
+          ops[op_num].data.send_status_from_server.trailing_metadata =
+              trailing_metadata.metadata;
+          ops[op_num].data.send_status_from_server.trailing_metadata_count =
+              trailing_metadata.count;
+        }
+        if (zend_hash_find(status_hash, "code", sizeof("code"),
+                           (void**)&inner_value) == SUCCESS) {
+          if (Z_TYPE_PP(inner_value) != IS_LONG) {
+            zend_throw_exception(spl_ce_InvalidArgumentException,
+                                 "Status code must be an integer",
+                                 1 TSRMLS_CC);
+            goto cleanup;
+          }
+          ops[op_num].data.send_status_from_server.status =
+              Z_LVAL_PP(inner_value);
+        } else {
+          zend_throw_exception(spl_ce_InvalidArgumentException,
+                               "Integer status code is required",
+                               1 TSRMLS_CC);
+          goto cleanup;
+        }
+        if (zend_hash_find(status_hash, "details", sizeof("details"),
+                           (void**)&inner_value) == SUCCESS) {
+          if (Z_TYPE_PP(inner_value) != IS_STRING) {
+            zend_throw_exception(spl_ce_InvalidArgumentException,
+                                 "Status details must be a string",
+                                 1 TSRMLS_CC);
+            goto cleanup;
+          }
+          ops[op_num].data.send_status_from_server.status_details =
+              Z_STRVAL_PP(inner_value);
+        } else {
+          zend_throw_exception(spl_ce_InvalidArgumentException,
+                               "String status details is required",
+                               1 TSRMLS_CC);
+          goto cleanup;
+        }
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        ops[op_num].data.recv_initial_metadata = &recv_metadata;
+        break;
+      case GRPC_OP_RECV_MESSAGE:
+        ops[op_num].data.recv_message = &message;
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        ops[op_num].data.recv_status_on_client.trailing_metadata =
+            &recv_trailing_metadata;
+        ops[op_num].data.recv_status_on_client.status = &status;
+        ops[op_num].data.recv_status_on_client.status_details =
+            &status_details;
+        ops[op_num].data.recv_status_on_client.status_details_capacity =
+            &status_details_capacity;
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        ops[op_num].data.recv_close_on_server.cancelled = &cancelled;
+        break;
+      default:
         zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "metadata values must be arrays of strings",
-                             1 TSRMLS_CC);
-        return;
-      }
-      metadata.key = key;
-      metadata.value = Z_STRVAL_P(*value);
-      metadata.value_length = Z_STRLEN_P(*value);
-      error_code = grpc_call_add_metadata_old(call->wrapped, &metadata, 0u);
-      MAYBE_THROW_CALL_ERROR(add_metadata, error_code);
+                             "Unrecognized key in batch", 1 TSRMLS_CC);
+        goto cleanup;
+    }
+    ops[op_num].op = (grpc_op_type)index;
+    op_num++;
+  }
+  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped);
+  if (error != GRPC_CALL_OK) {
+    zend_throw_exception(spl_ce_LogicException,
+                         "start_batch was called incorrectly",
+                         (long)error TSRMLS_CC);
+    goto cleanup;
+  }
+  event = grpc_completion_queue_pluck(call->queue, call->wrapped,
+                                      gpr_inf_future);
+  if (event->data.op_complete != GRPC_OP_OK) {
+    zend_throw_exception(spl_ce_LogicException,
+                         "The batch failed for some reason",
+                         1 TSRMLS_CC);
+    goto cleanup;
+  }
+  for (int i = 0; i < op_num; i++) {
+    switch(ops[i].op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        add_property_bool(result, "send_metadata", true);
+        break;
+      case GRPC_OP_SEND_MESSAGE:
+        add_property_bool(result, "send_message", true);
+        break;
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        add_property_bool(result, "send_close", true);
+        break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        add_property_bool(result, "send_status", true);
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        add_property_zval(result, "metadata",
+                          grpc_parse_metadata_array(&recv_metadata));
+        break;
+      case GRPC_OP_RECV_MESSAGE:
+        byte_buffer_to_string(message, &message_str, &message_len);
+        if (message_str == NULL) {
+          add_property_null(result, "message");
+        } else {
+          add_property_stringl(result, "message", message_str, message_len,
+                               false);
+        }
+        break;
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        MAKE_STD_ZVAL(recv_status);
+        object_init(recv_status);
+        add_property_zval(recv_status, "metadata",
+                          grpc_parse_metadata_array(&recv_trailing_metadata));
+        add_property_long(recv_status, "code", status);
+        add_property_string(recv_status, "details", status_details, true);
+        add_property_zval(result, "status", recv_status);
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        add_property_bool(result, "cancelled", cancelled);
+        break;
+      default:
+        break;
     }
   }
+cleanup:
+  grpc_metadata_array_destroy(&metadata);
+  grpc_metadata_array_destroy(&trailing_metadata);
+  grpc_metadata_array_destroy(&recv_metadata);
+  grpc_metadata_array_destroy(&recv_trailing_metadata);
+  if (status_details != NULL) {
+    gpr_free(status_details);
+  }
+  RETURN_DESTROY_ZVAL(result);
 }
 
 /**
- * Invoke the RPC. Starts sending metadata and request headers over the wire
- * @param CompletionQueue $queue The completion queue to use with this call
- * @param long $metadata_tag The tag to associate with returned metadata
- * @param long $finished_tag The tag to associate with the finished event
- * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
- * (optional)
- * @return Void
- */
-PHP_METHOD(Call, invoke) {
-  grpc_call_error error_code;
-  long tag1;
-  long tag2;
-  zval *queue_obj;
-  long flags = 0;
-  /* "Oll|l" == 1 Object, 3 mandatory longs, 1 optional long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Oll|l", &queue_obj,
-                            grpc_ce_completion_queue, &tag1, &tag2,
-                            &flags) == FAILURE) {
-    zend_throw_exception(
-        spl_ce_InvalidArgumentException,
-        "invoke needs a CompletionQueue, 2 longs, and an optional long",
-        1 TSRMLS_CC);
-    return;
-  }
-  add_property_zval(getThis(), "completion_queue", queue_obj);
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  wrapped_grpc_completion_queue *queue =
-      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
-          queue_obj TSRMLS_CC);
-  error_code = grpc_call_invoke_old(call->wrapped, queue->wrapped, (void *)tag1,
-                                    (void *)tag2, (gpr_uint32)flags);
-  MAYBE_THROW_CALL_ERROR(invoke, error_code);
-}
-
-/**
- * Accept an incoming RPC, binding a completion queue to it. To be called after
- * adding metadata to the call, but before sending messages. Can only be called
- * on the server
- * @param CompletionQueue $queue The completion queue to use with this call
- * @param long $finished_tag The tag to associate with the finished event
- * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
- * (optional)
- * @return Void
- */
-PHP_METHOD(Call, server_accept) {
-  long tag;
-  zval *queue_obj;
-  grpc_call_error error_code;
-  /* "Ol|l" == 1 Object, 1 long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "Ol", &queue_obj,
-                            grpc_ce_completion_queue, &tag) == FAILURE) {
-    zend_throw_exception(
-        spl_ce_InvalidArgumentException,
-        "server_accept expects a CompletionQueue, a long, and an optional long",
-        1 TSRMLS_CC);
-    return;
-  }
-  add_property_zval(getThis(), "completion_queue", queue_obj);
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  wrapped_grpc_completion_queue *queue =
-      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
-          queue_obj TSRMLS_CC);
-  error_code =
-      grpc_call_server_accept_old(call->wrapped, queue->wrapped, (void *)tag);
-  MAYBE_THROW_CALL_ERROR(server_accept, error_code);
-}
-
-PHP_METHOD(Call, server_end_initial_metadata) {
-  grpc_call_error error_code;
-  long flags = 0;
-  /* "|l" == 1 optional long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &flags) ==
-      FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "server_end_initial_metadata expects an optional long",
-                         1 TSRMLS_CC);
-  }
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  error_code = grpc_call_server_end_initial_metadata_old(call->wrapped, flags);
-  MAYBE_THROW_CALL_ERROR(server_end_initial_metadata, error_code);
-}
-
-/**
- * Called by clients to cancel an RPC on the server.
- * @return Void
+ * Cancel the call. This will cause the call to end with STATUS_CANCELLED if it
+ * has not already ended with another status.
  */
 PHP_METHOD(Call, cancel) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  grpc_call_error error_code = grpc_call_cancel(call->wrapped);
-  MAYBE_THROW_CALL_ERROR(cancel, error_code);
-}
-
-/**
- * Queue a byte buffer for writing
- * @param string $buffer The buffer to queue for writing
- * @param long $tag The tag to associate with this write
- * @param long $flags A bitwise combination of the Grpc\WRITE_* constants
- * (optional)
- * @return Void
- */
-PHP_METHOD(Call, start_write) {
-  grpc_call_error error_code;
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  char *buffer;
-  int buffer_len;
-  long tag;
-  long flags = 0;
-  /* "Ol|l" == 1 Object, 1 mandatory long, 1 optional long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|l", &buffer,
-                            &buffer_len, &tag, &flags) == FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "start_write expects a string and an optional long",
-                         1 TSRMLS_CC);
-    return;
-  }
-  error_code = grpc_call_start_write_old(
-      call->wrapped, string_to_byte_buffer(buffer, buffer_len), (void *)tag,
-      (gpr_uint32)flags);
-  MAYBE_THROW_CALL_ERROR(start_write, error_code);
-}
-
-/**
- * Queue a status for writing
- * @param long $status_code The status code to send
- * @param string $status_details The status details to send
- * @param long $tag The tag to associate with this status
- * @return Void
- */
-PHP_METHOD(Call, start_write_status) {
-  grpc_call_error error_code;
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  long status_code;
-  int status_details_length;
-  long tag;
-  char *status_details;
-  /* "lsl" == 1 long, 1 string, 1 long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lsl", &status_code,
-                            &status_details, &status_details_length,
-                            &tag) == FAILURE) {
-    zend_throw_exception(
-        spl_ce_InvalidArgumentException,
-        "start_write_status expects a long, a string, and a long", 1 TSRMLS_CC);
-    return;
-  }
-  error_code = grpc_call_start_write_status_old(call->wrapped,
-                                                (grpc_status_code)status_code,
-                                                status_details, (void *)tag);
-  MAYBE_THROW_CALL_ERROR(start_write_status, error_code);
-}
-
-/**
- * Indicate that there are no more messages to send
- * @return Void
- */
-PHP_METHOD(Call, writes_done) {
-  grpc_call_error error_code;
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  long tag;
-  /* "l" == 1 long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &tag) == FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "writes_done expects a long", 1 TSRMLS_CC);
-    return;
-  }
-  error_code = grpc_call_writes_done_old(call->wrapped, (void *)tag);
-  MAYBE_THROW_CALL_ERROR(writes_done, error_code);
-}
-
-/**
- * Initiate a read on a call. Output event contains a byte buffer with the
- * result of the read
- * @param long $tag The tag to associate with this read
- * @return Void
- */
-PHP_METHOD(Call, start_read) {
-  grpc_call_error error_code;
-  wrapped_grpc_call *call =
-      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  long tag;
-  /* "l" == 1 long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &tag) == FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "start_read expects a long", 1 TSRMLS_CC);
-    return;
-  }
-  error_code = grpc_call_start_read_old(call->wrapped, (void *)tag);
-  MAYBE_THROW_CALL_ERROR(start_read, error_code);
+  grpc_call_cancel(call->wrapped);
 }
 
 static zend_function_entry call_methods[] = {
     PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Call, server_accept, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, server_end_initial_metadata, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, add_metadata, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, invoke, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, start_read, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, start_write, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, start_write_status, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Call, writes_done, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
+    PHP_ME(Call, start_batch, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_call(TSRMLS_D) {
   zend_class_entry ce;

@@ -36,6 +36,7 @@
 
 #include <chrono>
 #include <grpc++/impl/client_unary_call.h>
+#include <grpc/support/time.h>
 
 struct grpc_completion_queue;
 
@@ -88,9 +89,7 @@ class CompletionQueue {
   // Returns false if the queue is ready for destruction, true if event
 
   bool Next(void** tag, bool* ok) {
-    return (
-        AsyncNext(tag, ok, (std::chrono::system_clock::time_point::max)()) !=
-        SHUTDOWN);
+    return (AsyncNextInternal(tag, ok, gpr_inf_future) != SHUTDOWN);
   }
 
   // Shutdown has to be called, and the CompletionQueue can only be
@@ -121,6 +120,8 @@ class CompletionQueue {
                                   ClientContext* context,
                                   const grpc::protobuf::Message& request,
                                   grpc::protobuf::Message* result);
+
+  NextStatus AsyncNextInternal(void** tag, bool* ok, gpr_timespec deadline);
 
   // Wraps grpc_completion_queue_pluck.
   // Cannot be mixed with calls to Next().

@@ -96,11 +96,11 @@ namespace Grpc.IntegrationTesting
             string addr = "0.0.0.0:" + options.port;
             if (options.useTls)
             {
-                server.AddPort(addr, TestCredentials.CreateTestServerCredentials());
+                server.AddListeningPort(addr, TestCredentials.CreateTestServerCredentials());
             }
             else
             {
-                server.AddPort(addr);
+                server.AddListeningPort(addr);
             }
             Console.WriteLine("Running server on " + addr);
             server.Start();

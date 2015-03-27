@@ -31,8 +31,6 @@
  *
  */
 
-#include <google/protobuf/stubs/common.h>
-
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
@@ -84,20 +82,19 @@ class PublisherServiceImpl : public tech::pubsub::PublisherService::Service {
   Status ListTopics(
       ServerContext* context, const ::tech::pubsub::ListTopicsRequest* request,
       ::tech::pubsub::ListTopicsResponse* response) GRPC_OVERRIDE {
-   std::ostringstream ss;
-   ss << "cloud.googleapis.com/project in (/projects/" << kProjectId << ")";
-   EXPECT_EQ(request->query(), ss.str());
-   response->add_topic()->set_name(kTopic);
-   return Status::OK;
- }
+    std::ostringstream ss;
+    ss << "cloud.googleapis.com/project in (/projects/" << kProjectId << ")";
+    EXPECT_EQ(request->query(), ss.str());
+    response->add_topic()->set_name(kTopic);
+    return Status::OK;
+  }
 
- Status DeleteTopic(ServerContext* context,
-                    const ::tech::pubsub::DeleteTopicRequest* request,
-                    ::proto2::Empty* response) GRPC_OVERRIDE {
+  Status DeleteTopic(ServerContext* context,
+                     const ::tech::pubsub::DeleteTopicRequest* request,
+                     ::proto2::Empty* response) GRPC_OVERRIDE {
     EXPECT_EQ(request->topic(), kTopic);
     return Status::OK;
- }
-
+  }
 };
 
 class PublisherTest : public ::testing::Test {
@@ -107,11 +104,13 @@ class PublisherTest : public ::testing::Test {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
     ServerBuilder builder;
-    builder.AddPort(server_address_.str(), grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(),
+                             grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ = CreateChannel(server_address_.str(), grpc::InsecureCredentials(), ChannelArguments());
+    channel_ = CreateChannel(server_address_.str(), grpc::InsecureCredentials(),
+                             ChannelArguments());
 
     publisher_.reset(new grpc::examples::pubsub::Publisher(channel_));
   }

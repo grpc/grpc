@@ -84,8 +84,8 @@ bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
   buffer->Dump(&slices);
   grpc::string buf;
   buf.reserve(buffer->Length());
-  for (const Slice& s : slices) {
-    buf.append(reinterpret_cast<const char*>(s.begin()), s.size());
+  for (auto s = slices.begin(); s != slices.end(); s++) {
+    buf.append(reinterpret_cast<const char*>(s->begin()), s->size());
   }
   return message->ParseFromString(buf);
 }
@@ -108,7 +108,7 @@ class GenericEnd2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str(), InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
     server_ = builder.BuildAndStart();
   }
@@ -283,6 +283,5 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  google::protobuf::ShutdownProtobufLibrary();
   return result;
 }

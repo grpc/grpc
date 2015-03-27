@@ -51,14 +51,14 @@
 #include "examples/pubsub/subscriber.h"
 
 DEFINE_int32(server_port, 443, "Server port.");
-DEFINE_string(server_host,
-              "pubsub-staging.googleapis.com", "Server host to connect to");
+DEFINE_string(server_host, "pubsub-staging.googleapis.com",
+              "Server host to connect to");
 DEFINE_string(project_id, "", "GCE project id such as stoked-keyword-656");
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
+namespace google {}
+namespace gflags {}
 using namespace google;
 using namespace gflags;
 
@@ -92,32 +92,32 @@ int main(int argc, char** argv) {
   grpc::string topic = ss.str();
 
   ss.str("");
-  ss << FLAGS_project_id << "/"  << kSubscriptionName;
+  ss << FLAGS_project_id << "/" << kSubscriptionName;
   grpc::string subscription_name = ss.str();
 
   // Clean up test topic and subcription if they exist before.
   grpc::string subscription_topic;
-  if (subscriber.GetSubscription(
-      subscription_name, &subscription_topic).IsOk()) {
+  if (subscriber.GetSubscription(subscription_name, &subscription_topic)
+          .IsOk()) {
     subscriber.DeleteSubscription(subscription_name);
   }
 
   if (publisher.GetTopic(topic).IsOk()) publisher.DeleteTopic(topic);
 
   grpc::Status s = publisher.CreateTopic(topic);
-  gpr_log(GPR_INFO, "Create topic returns code %d, %s",
-          s.code(), s.details().c_str());
+  gpr_log(GPR_INFO, "Create topic returns code %d, %s", s.code(),
+          s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
   s = publisher.GetTopic(topic);
-  gpr_log(GPR_INFO, "Get topic returns code %d, %s",
-          s.code(), s.details().c_str());
+  gpr_log(GPR_INFO, "Get topic returns code %d, %s", s.code(),
+          s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
   std::vector<grpc::string> topics;
   s = publisher.ListTopics(FLAGS_project_id, &topics);
-  gpr_log(GPR_INFO, "List topic returns code %d, %s",
-          s.code(), s.details().c_str());
+  gpr_log(GPR_INFO, "List topic returns code %d, %s", s.code(),
+          s.details().c_str());
   bool topic_found = false;
   for (unsigned int i = 0; i < topics.size(); i++) {
     if (topics[i] == topic) topic_found = true;
@@ -127,27 +127,27 @@ int main(int argc, char** argv) {
   GPR_ASSERT(topic_found);
 
   s = subscriber.CreateSubscription(topic, subscription_name);
-  gpr_log(GPR_INFO, "create subscrption returns code %d, %s",
-          s.code(), s.details().c_str());
+  gpr_log(GPR_INFO, "create subscrption returns code %d, %s", s.code(),
+          s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
   s = publisher.Publish(topic, kMessageData);
-  gpr_log(GPR_INFO, "Publish %s returns code %d, %s",
-          kMessageData, s.code(), s.details().c_str());
+  gpr_log(GPR_INFO, "Publish %s returns code %d, %s", kMessageData, s.code(),
+          s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
   grpc::string data;
   s = subscriber.Pull(subscription_name, &data);
   gpr_log(GPR_INFO, "Pull %s", data.c_str());
 
-  s =  subscriber.DeleteSubscription(subscription_name);
-  gpr_log(GPR_INFO, "Delete subscription returns code %d, %s",
-          s.code(), s.details().c_str());
+  s = subscriber.DeleteSubscription(subscription_name);
+  gpr_log(GPR_INFO, "Delete subscription returns code %d, %s", s.code(),
+          s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
   s = publisher.DeleteTopic(topic);
-  gpr_log(GPR_INFO, "Delete topic returns code %d, %s",
-          s.code(), s.details().c_str());
+  gpr_log(GPR_INFO, "Delete topic returns code %d, %s", s.code(),
+          s.details().c_str());
   GPR_ASSERT(s.IsOk());
 
   subscriber.Shutdown();

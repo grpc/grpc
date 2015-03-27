@@ -53,9 +53,6 @@
 #define INIT_PORT_CAP 2
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
-static gpr_once s_init_max_accept_queue_size;
-static int s_max_accept_queue_size;
-
 /* one listening port */
 typedef struct server_port {
   gpr_uint8 addresses[sizeof(struct sockaddr_in6) * 2 + 32];

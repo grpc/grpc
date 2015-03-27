@@ -151,7 +151,7 @@ class End2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddPort(server_address_.str(), InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterService(&service_);
     builder.RegisterService(&dup_pkg_service_);
     builder.SetThreadPool(&thread_pool_);
@@ -432,6 +432,5 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int result = RUN_ALL_TESTS();
   grpc_shutdown();
-  google::protobuf::ShutdownProtobufLibrary();
   return result;
 }

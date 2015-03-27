@@ -213,11 +213,14 @@ void RunServer() {
   builder.RegisterService(&service);
   std::shared_ptr<ServerCredentials> creds = grpc::InsecureServerCredentials();
   if (FLAGS_enable_ssl) {
-    SslServerCredentialsOptions ssl_opts = {
-        "", {{test_server1_key, test_server1_cert}}};
+    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+							test_server1_cert};
+    SslServerCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = "";
+    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
     creds = grpc::SslServerCredentials(ssl_opts);
   }
-  builder.AddPort(server_address.str(), creds);
+  builder.AddListeningPort(server_address.str(), creds);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!got_sigint) {

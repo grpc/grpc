@@ -193,6 +193,9 @@
     <ClCompile Include="..\..\src\core\surface\call_details.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call_log_batch.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\surface\channel.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -298,6 +301,9 @@
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\grpc.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\grpc_http.h">
       <Filter>include\grpc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\status.h">
@@ -496,6 +502,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\surface_trace.h">
       <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\alpn.h">
+      <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h">
       <Filter>src\core\transport\chttp2</Filter>

@@ -1,3 +1,4 @@
+<?php
 /*
  *
  * Copyright 2015, Google Inc.
@@ -30,33 +31,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+namespace Grpc;
+require_once realpath(dirname(__FILE__) . '/../autoload.php');
 
-#ifndef NET_GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
-#define NET_GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
+/**
+ * Represents an active call that sends a stream of messages and then gets a
+ * single response.
+ */
+class ClientStreamingCall extends AbstractCall {
+  /**
+   * Start the call.
+   * @param Traversable $arg_iter The iterator of arguments to send
+   * @param array $metadata Metadata to send with the call, if applicable
+   */
+  public function start($arg_iter, $metadata = array()) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true]);
+    $this->metadata = $event->metadata;
+    foreach($arg_iter as $arg) {
+      $this->call->start_batch([OP_SEND_MESSAGE => $arg->serialize()]);
+    }
+    $this->call->start_batch([OP_SEND_CLOSE_FROM_CLIENT => true]);
+  }
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "php_grpc.h"
-
-#include "grpc/grpc.h"
-
-/* Class entry for the PHP CompletionQueue class */
-extern zend_class_entry *grpc_ce_completion_queue;
-
-/* Wrapper class for grpc_completion_queue that can be associated with a
-   PHP object */
-typedef struct wrapped_grpc_completion_queue {
-  zend_object std;
-
-  grpc_completion_queue *wrapped;
-} wrapped_grpc_completion_queue;
-
-/* Initialize the CompletionQueue class */
-void grpc_init_completion_queue(TSRMLS_D);
-
-#endif /* NET_GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */
+  /**
+   * Wait for the server to respond with data and a status
+   * @return [response data, status]
+   */
+  public function wait() {
+    $event = $this->call->start_batch([
+        OP_RECV_MESSAGE => true,
+        OP_RECV_STATUS_ON_CLIENT => true]);
+    return array($this->deserializeResponse($event->message), $event->status);
+  }
+}

@@ -31,16 +31,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-class CompletionQueueTest extends PHPUnit_Framework_TestCase{
-  public function testNextReturnsNullWithNoCall() {
-    $cq = new Grpc\CompletionQueue();
-    $event = $cq->next(Grpc\Timeval::zero());
-    $this->assertNull($event);
+namespace Grpc;
+
+require_once realpath(dirname(__FILE__) . '/../autoload.php');
+
+/**
+ * Represents an active call that sends a single message and then gets a stream
+ * of reponses
+ */
+class ServerStreamingCall extends AbstractCall {
+  /**
+   * Start the call
+   * @param $arg The argument to send
+   * @param array $metadata Metadata to send with the call, if applicable
+   */
+  public function start($arg, $metadata = array()) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true,
+        OP_SEND_MESSAGE => $arg->serialize(),
+        OP_SEND_CLOSE_FROM_CLIENT => true]);
+    $this->metadata = $event->metadata;
   }
 
-  public function testPluckReturnsNullWithNoCall() {
-    $cq = new Grpc\CompletionQueue();
-    $event = $cq->pluck(0, Grpc\Timeval::zero());
-    $this->assertNull($event);
+  /**
+   * @return An iterator of response values
+   */
+  public function responses() {
+    $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+    while($response !== null) {
+      yield $this->deserializeResponse($response);
+      $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+    }
+  }
+
+  /**
+   * Wait for the server to send the status, and return it.
+   * @return object The status object, with integer $code, string $details,
+   *     and array $metadata members
+   */
+  public function getStatus() {
+    $status_event = $this->call->start_batch([
+        OP_RECV_STATUS_ON_CLIENT => true
+                                              ]);
+    return $status_event->status;
   }
 }
