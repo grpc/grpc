@@ -390,13 +390,13 @@ module GRPC
 
     # Creates a new active stub
     #
-    # @param ch [GRPC::Channel] the channel used to create the stub.
+    # @param method [string] the method being called.
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param deadline [TimeConst]
-    def new_active_call(ch, marshal, unmarshal, deadline = nil)
+    def new_active_call(method, marshal, unmarshal, deadline = nil)
       absolute_deadline = Core::TimeConsts.from_relative_time(deadline)
-      call = @ch.create_call(ch, @host, absolute_deadline)
+      call = @ch.create_call(@queue, method, @host, absolute_deadline)
       ActiveCall.new(call, @queue, marshal, unmarshal, absolute_deadline,
                      started: false)
     end

@@ -67,16 +67,17 @@ describe GRPC::Core::RpcErrors do
 end
 
 describe GRPC::Core::Call do
+  let (:client_queue) { GRPC::Core::CompletionQueue.new }
+  let (:test_tag)  { Object.new }
+  let (:fake_host) { 'localhost:10101' }
+
   before(:each) do
-    @tag = Object.new
-    @client_queue = GRPC::Core::CompletionQueue.new
-    fake_host = 'localhost:10101'
     @ch = GRPC::Core::Channel.new(fake_host, nil)
   end
 
   describe '#start_read' do
     xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_read(@tag) }
+      blk = proc { make_test_call.start_read(test_tag) }
       expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
@@ -84,14 +85,14 @@ describe GRPC::Core::Call do
   describe '#start_write' do
     xit 'should fail if called immediately' do
       bytes = GRPC::Core::ByteBuffer.new('test string')
-      blk = proc { make_test_call.start_write(bytes, @tag) }
+      blk = proc { make_test_call.start_write(bytes, test_tag) }
       expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
 
   describe '#start_write_status' do
     xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_write_status(153, 'x', @tag) }
+      blk = proc { make_test_call.start_write_status(153, 'x', test_tag) }
       expect(&blk).to raise_error GRPC::Core::CallError
     end
   end
@@ -154,7 +155,7 @@ describe GRPC::Core::Call do
   end
 
   def make_test_call
-    @ch.create_call('dummy_method', 'dummy_host', deadline)
+    @ch.create_call(client_queue, 'dummy_method', 'dummy_host', deadline)
   end
 
   def deadline
