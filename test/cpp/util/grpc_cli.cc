@@ -62,19 +62,13 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc++/byte_buffer.h>
+#include "test/cpp/util/cli_call.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/generic_stub.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/slice.h>
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
@@ -90,63 +84,6 @@ DEFINE_string(input_binary_file, "",
 DEFINE_string(output_binary_file, "output.bin",
               "Path to output file to write serialized response.");
 
-void* tag(int i) { return (void*)(gpr_intptr) i; }
-
-void Call(std::shared_ptr<grpc::ChannelInterface> channel,
-          const grpc::string& method) {
-  std::unique_ptr<grpc::GenericStub> stub(new grpc::GenericStub(channel));
-  grpc::ClientContext ctx;
-  grpc::CompletionQueue cq;
-  std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call(
-      stub->Call(&ctx, method, &cq, tag(1)));
-  void* got_tag;
-  bool ok;
-  cq.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
-
-  std::ifstream input_file(FLAGS_input_binary_file,
-                           std::ios::in | std::ios::binary);
-  std::stringstream input_stream;
-  input_stream << input_file.rdbuf();
-
-  gpr_slice s = gpr_slice_from_copied_string(input_stream.str().c_str());
-  grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
-  grpc::ByteBuffer request(&req_slice, 1);
-  call->Write(request, tag(2));
-  cq.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
-  call->WritesDone(tag(3));
-  cq.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
-  grpc::ByteBuffer recv_buffer;
-  call->Read(&recv_buffer, tag(4));
-  cq.Next(&got_tag, &ok);
-  if (!ok) {
-    std::cout << "Failed to read response." << std::endl;
-    return;
-  }
-  grpc::Status status;
-  call->Finish(&status, tag(5));
-  cq.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
-
-  if (status.IsOk()) {
-    std::cout << "RPC finished with OK status." << std::endl;
-    std::vector<grpc::Slice> slices;
-    recv_buffer.Dump(&slices);
-
-    std::ofstream output_file(FLAGS_output_binary_file,
-                              std::ios::trunc | std::ios::binary);
-    for (size_t i = 0; i < slices.size(); i++) {
-      output_file.write(reinterpret_cast<const char*>(slices[i].begin()),
-                        slices[i].size());
-    }
-  } else {
-    std::cout << "RPC finished with status code " << status.code()
-              << " details: " << status.details() << std::endl;
-  }
-}
-
 int main(int argc, char** argv) {
   grpc_init();
 
@@ -160,6 +97,7 @@ int main(int argc, char** argv) {
               << std::endl;
   }
   grpc::string server_address(argv[2]);
+  // TODO(yangg) basic check of method string
   grpc::string method(argv[3]);
 
   if (FLAGS_input_binary_file.empty()) {
@@ -169,7 +107,10 @@ int main(int argc, char** argv) {
   }
   std::cout << "connecting to " << server_address << std::endl;
 
-  // TODO(yangg) basic check of method string
+  std::ifstream input_file(FLAGS_input_binary_file,
+                           std::ios::in | std::ios::binary);
+  std::stringstream input_stream;
+  input_stream << input_file.rdbuf();
 
   std::unique_ptr<grpc::Credentials> creds;
   if (!FLAGS_enable_ssl) {
@@ -184,7 +125,13 @@ int main(int argc, char** argv) {
   std::shared_ptr<grpc::ChannelInterface> channel =
       grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
 
-  Call(channel, method);
+  grpc::string response;
+  grpc::testing::CliCall::Call(channel, method, input_stream.str(), &response);
+  if (!response.empty()) {
+    std::ofstream output_file(FLAGS_output_binary_file,
+                              std::ios::trunc | std::ios::binary);
+    output_file << response;
+  }
 
   channel.reset();
   grpc_shutdown();
