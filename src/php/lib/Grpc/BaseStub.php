@@ -32,7 +32,7 @@
  *
  */
 namespace Grpc;
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
+require_once realpath(dirname(__FILE__) . '/../../vendor/autoload.php');
 
 /**
  * Base class for generated client stubs. Stub methods are expected to call

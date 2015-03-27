@@ -32,7 +32,7 @@
  *
  */
 namespace Grpc;
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
+require_once realpath(dirname(__FILE__) . '/../../vendor/autoload.php');
 
 /**
  * Represents an active call that allows for sending and recieving messages in
