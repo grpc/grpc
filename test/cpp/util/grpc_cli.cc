@@ -31,70 +31,161 @@
  *
  */
 
-#include <chrono>
-#include <iostream>
-#include <thread>
+/*
+  A command line tool to talk to any grpc server.
+  Example of talking to grpc interop server:
+  1. Prepare request binary file:
+    a. create a text file input.txt, containing the following:
+        response_size: 10
+        payload: {
+          body: "hello world"
+        }
+    b. under grpc/ run
+        protoc --proto_path=test/cpp/interop/ \
+        --encode=grpc.testing.SimpleRequest test/cpp/interop/messages.proto \
+        < input.txt > input.bin
+  2. Start a server
+    make interop_server && bins/opt/interop_server --port=50051
+  3. Run the tool
+    make grpc_cli && bins/opt/grpc_cli call localhost:50051 \
+    /grpc.testing.TestService/UnaryCall --enable_ssl=false \
+    --input_binary_file=input.bin --output_binary_file=output.bin
+  4. Decode response
+    protoc --proto_path=test/cpp/interop/ \
+    --decode=grpc.testing.SimpleResponse test/cpp/interop/messages.proto \
+    < output.bin > output.txt
+  5. Now the text form of response should be in output.txt
+*/
 
-#include "test/cpp/util/create_test_channel.h"
-#include "src/cpp/util/time.h"
-#include "src/cpp/server/thread_pool.h"
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
 #include <gflags/gflags.h>
+#include <grpc++/byte_buffer.h>
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
+#include <grpc++/generic_stub.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/core/util/port.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
+#include <grpc/support/log.h>
+#include <grpc/support/slice.h>
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
-namespace google { }
-namespace gflags { }
+namespace google {}
+namespace gflags {}
 using namespace google;
 using namespace gflags;
 
-using std::chrono::system_clock;
+DEFINE_bool(enable_ssl, true, "Whether to use ssl/tls.");
+DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
+DEFINE_string(input_binary_file, "",
+              "Path to input file containing serialized request.");
+DEFINE_string(output_binary_file, "output.bin",
+              "Path to output file to write serialized response.");
 
-// DEFINE_bool(enable_ssl, true, "Whether to use ssl/tls.");
+void* tag(int i) { return (void*)(gpr_intptr) i; }
 
-void Call() {}
+void Call(std::shared_ptr<grpc::ChannelInterface> channel,
+          const grpc::string& method) {
+  std::unique_ptr<grpc::GenericStub> stub(new grpc::GenericStub(channel));
+  grpc::ClientContext ctx;
+  grpc::CompletionQueue cq;
+  std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call(
+      stub->Call(&ctx, method, &cq, tag(1)));
+  void* got_tag;
+  bool ok;
+  cq.Next(&got_tag, &ok);
+  GPR_ASSERT(ok);
+
+  std::ifstream input_file(FLAGS_input_binary_file,
+                           std::ios::in | std::ios::binary);
+  std::stringstream input_stream;
+  input_stream << input_file.rdbuf();
+
+  gpr_slice s = gpr_slice_from_copied_string(input_stream.str().c_str());
+  grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
+  grpc::ByteBuffer request(&req_slice, 1);
+  call->Write(request, tag(2));
+  cq.Next(&got_tag, &ok);
+  GPR_ASSERT(ok);
+  call->WritesDone(tag(3));
+  cq.Next(&got_tag, &ok);
+  GPR_ASSERT(ok);
+  grpc::ByteBuffer recv_buffer;
+  call->Read(&recv_buffer, tag(4));
+  cq.Next(&got_tag, &ok);
+  if (!ok) {
+    std::cout << "Failed to read response." << std::endl;
+    return;
+  }
+  grpc::Status status;
+  call->Finish(&status, tag(5));
+  cq.Next(&got_tag, &ok);
+  GPR_ASSERT(ok);
+
+  if (status.IsOk()) {
+    std::cout << "RPC finished with OK status." << std::endl;
+    std::vector<grpc::Slice> slices;
+    recv_buffer.Dump(&slices);
+
+    std::ofstream output_file(FLAGS_output_binary_file,
+                              std::ios::trunc | std::ios::binary);
+    for (size_t i = 0; i < slices.size(); i++) {
+      output_file.write(reinterpret_cast<const char*>(slices[i].begin()),
+                        slices[i].size());
+    }
+  } else {
+    std::cout << "RPC finished with status code " << status.code()
+              << " details: " << status.details() << std::endl;
+  }
+}
 
 int main(int argc, char** argv) {
   grpc_init();
 
   ParseCommandLineFlags(&argc, &argv, true);
 
-  if (argc < grpc::string(argv[1]) != "call") {
+  if (argc < 4 || grpc::string(argv[1]) != "call") {
     std::cout << "Usage: grpc_cli call server_host:port full_method_string\n"
               << "Example: grpc_cli call service.googleapis.com "
-              << "/grpc.cpp.test.util.TestService/Echo " << std::endl;
+              << "/grpc.testing.TestService/UnaryCall "
+              << "--input_binary_file=input.bin --output_binary_file=output.bin"
+              << std::endl;
   }
   grpc::string server_address(argv[2]);
-  grpc::string method(argv[3]);
-  std::cout << "connecting to " << server_address << std::endl;
-  std::cout << "method is " << method << std::endl;
 
-  std::unique_ptr<grpc::Credentials> creds = grpc::GoogleDefaultCredentials();
+  if (FLAGS_input_binary_file.empty()) {
+    std::cout << "Missing --input_binary_file for serialized request."
+              << std::endl;
+    return 1;
+  }
+  std::cout << "connecting to " << server_address << std::endl;
+
+  // TODO(yangg) basic check of method string
+
+  std::unique_ptr<grpc::Credentials> creds;
+  if (!FLAGS_enable_ssl) {
+    creds = grpc::InsecureCredentials();
+  } else {
+    if (FLAGS_use_auth) {
+      creds = grpc::GoogleDefaultCredentials();
+    } else {
+      creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
+    }
+  }
   std::shared_ptr<grpc::ChannelInterface> channel =
       grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
 
-  // Parse argument
-  Call();
+  Call(channel, method);
 
   channel.reset();
   grpc_shutdown();
   return 0;
 }
-
-
-
