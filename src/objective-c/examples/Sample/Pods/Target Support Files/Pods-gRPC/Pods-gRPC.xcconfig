@@ -1,0 +1,2 @@
+PODS_GRPC_HEADER_SEARCH_PATHS = "$(PODS_ROOT)/Headers/Public/gRPC/include" "$(PODS_ROOT)/Headers/Public/gRPC/include" "$(PODS_ROOT)/Headers/Build/gRPC" "$(PODS_ROOT)/Headers/Build/gRPC/include"
+PODS_GRPC_OTHER_LDFLAGS = -l"z"

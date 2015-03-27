@@ -1,0 +1,18 @@
+{
+  "name": "RxLibrary",
+  "version": "0.0.1",
+  "summary": "Reactive Extensions library for iOS",
+  "authors": {
+    "Jorge Canizales": "jcanizales@google.com"
+  },
+  "source_files": [
+    "*.{h,m}",
+    "transformations/*.{h,m}",
+    "private/*.{h,m}"
+  ],
+  "private_header_files": "private/*.h",
+  "platforms": {
+    "ios": "6.0"
+  },
+  "requires_arc": true
+}
