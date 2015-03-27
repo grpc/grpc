@@ -32,8 +32,8 @@
  */
 
 #import "ViewController.h"
-#import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/GRPCMethodName.h>
+#import <gRPC/GRPCCall.h>
+#import <gRPC/GRPCMethodName.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriteable.h>
 
