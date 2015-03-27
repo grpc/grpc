@@ -61,7 +61,6 @@ RUN apt-get update && apt-get install -y \
     php-pear \
     pkg-config \
     procps \
-    ruby-full \
     sqlite3 \
     zlib1g-dev
 
@@ -72,11 +71,17 @@ ENV DEBIAN_FRONTEND noniteractive
 # from proto3 schemas.
 RUN git clone https://github.com/murgatroid99/Protobuf-PHP.git /var/local/git/protobuf-php
 
+# Install ruby (via RVM) as ruby tools are dependencies for building Protobuf
+# PHP extensions.
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3  # Needed for RVM
+RUN \curl -sSL https://get.rvm.io | bash -s stable --ruby
+ENV PATH /usr/local/rvm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
 # ronn: a ruby tool used to convert markdown to man pages, used during the
 # install of Protobuf extensions
 #
 # rake: a ruby version of make used to build the PHP Protobuf extension
-RUN gem install ronn rake
+RUN rvm all do gem install ronn rake
 
 # Get the source from GitHub, this gets the protobuf library as well
 RUN git clone https://github.com/grpc/grpc.git /var/local/git/grpc
