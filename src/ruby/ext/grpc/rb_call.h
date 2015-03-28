@@ -46,6 +46,9 @@ VALUE grpc_rb_wrap_call(grpc_call* c);
 /* Provides the details of an call error */
 const char* grpc_call_error_detail_of(grpc_call_error err);
 
+/* Converts a metadata array to a hash. */
+VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
+
 /* rb_cCall is the Call class whose instances proxy grpc_call. */
 extern VALUE rb_cCall;
 
