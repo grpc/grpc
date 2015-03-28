@@ -84,7 +84,7 @@ func RegisterGreeterServer(s *grpc.Server, srv GreeterServer) {
 	s.RegisterService(&_Greeter_serviceDesc, srv)
 }
 
-func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, buf []byte) (proto.Message, error) {
+func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, buf []byte) (interface{}, error) {
 	in := new(HelloRequest)
 	if err := proto.Unmarshal(buf, in); err != nil {
 		return nil, err
