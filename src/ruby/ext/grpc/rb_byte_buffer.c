@@ -39,6 +39,33 @@
 #include <grpc/support/slice.h>
 #include "rb_grpc.h"
 
+grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char *string, size_t length) {
+  gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
+  grpc_byte_buffer *buffer = grpc_byte_buffer_create(&slice, 1);
+  gpr_slice_unref(slice);
+  return buffer;
+}
+
+VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer) {
+  size_t length = 0;
+  char *string = NULL;
+  size_t offset = 0;
+  grpc_byte_buffer_reader *reader = NULL;
+  gpr_slice next;
+  if (buffer == NULL) {
+    return Qnil;
+
+  }
+  length = grpc_byte_buffer_length(buffer);
+  string = xmalloc(length + 1);
+  reader = grpc_byte_buffer_reader_create(buffer);
+  while (grpc_byte_buffer_reader_next(reader, &next) != 0) {
+    memcpy(string + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
+    offset += GPR_SLICE_LENGTH(next);
+  }
+  return rb_str_new(string, length);
+}
+
 /* grpc_rb_byte_buffer wraps a grpc_byte_buffer.  It provides a peer ruby
  * object, 'mark' to minimize copying when a byte_buffer is created from
  * ruby. */
@@ -125,7 +152,7 @@ static VALUE grpc_rb_byte_buffer_init_copy(VALUE copy, VALUE orig) {
 /* id_empty is used to return the empty string from to_s when necessary. */
 static ID id_empty;
 
-static VALUE grpc_rb_byte_buffer_to_s(VALUE self) {
+static VALUE grpc_rb_byte_buffer_to_s_obj(VALUE self) {
   grpc_rb_byte_buffer *wrapper = NULL;
   grpc_byte_buffer *bb = NULL;
   grpc_byte_buffer_reader *reader = NULL;
@@ -215,7 +242,7 @@ void Init_grpc_byte_buffer() {
                    grpc_rb_byte_buffer_init_copy, 1);
 
   /* Provides a to_s method that returns the buffer value */
-  rb_define_method(rb_cByteBuffer, "to_s", grpc_rb_byte_buffer_to_s, 0);
+  rb_define_method(rb_cByteBuffer, "to_s", grpc_rb_byte_buffer_to_s_obj, 0);
 
   id_source = rb_intern("__source");
   id_empty = rb_intern("");
