@@ -76,7 +76,7 @@ describe GRPC::Core::CallOps do
       RECV_INITIAL_METADATA: 4,
       RECV_MESSAGE: 5,
       RECV_STATUS_ON_CLIENT: 6,
-      RECV_CLOSE_ON_SERVER: 7,
+      RECV_CLOSE_ON_SERVER: 7
     }
   end
 
@@ -88,41 +88,12 @@ describe GRPC::Core::CallOps do
 end
 
 describe GRPC::Core::Call do
-  let (:client_queue) { GRPC::Core::CompletionQueue.new }
-  let (:test_tag)  { Object.new }
-  let (:fake_host) { 'localhost:10101' }
+  let(:client_queue) { GRPC::Core::CompletionQueue.new }
+  let(:test_tag)  { Object.new }
+  let(:fake_host) { 'localhost:10101' }
 
   before(:each) do
     @ch = GRPC::Core::Channel.new(fake_host, nil)
-  end
-
-  describe '#start_read' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_read(test_tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#start_write' do
-    xit 'should fail if called immediately' do
-      bytes = GRPC::Core::ByteBuffer.new('test string')
-      blk = proc { make_test_call.start_write(bytes, test_tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#start_write_status' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_write_status(153, 'x', test_tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#writes_done' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.writes_done(Object.new) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
   end
 
   describe '#add_metadata' do

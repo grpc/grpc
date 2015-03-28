@@ -195,7 +195,7 @@ static ID id_inspect;
 /* id_to_s is the to_s method found on various ruby objects. */
 static ID id_to_s;
 
-/* Converts `a wrapped time constant to a standard time. */
+/* Converts a wrapped time constant to a standard time. */
 VALUE grpc_rb_time_val_to_time(VALUE self) {
   gpr_timespec *time_const = NULL;
   Data_Get_Struct(self, gpr_timespec, time_const);
@@ -257,8 +257,11 @@ void Init_grpc() {
   rb_mGRPC = rb_define_module("GRPC");
   rb_mGrpcCore = rb_define_module_under(rb_mGRPC, "Core");
   rb_sNewServerRpc = rb_struct_define("NewServerRpc", "method", "host",
-                                      "deadline", "metadata", NULL);
+                                      "deadline", "metadata", "call", NULL);
   rb_sStatus = rb_struct_define("Status", "code", "details", "metadata", NULL);
+  sym_code = ID2SYM(rb_intern("code"));
+  sym_details = ID2SYM(rb_intern("details"));
+  sym_metadata = ID2SYM(rb_intern("metadata"));
 
   Init_grpc_byte_buffer();
   Init_grpc_event();
