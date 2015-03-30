@@ -32,6 +32,10 @@
 # Includes PHP installation dependencies, things that are unlikely to vary.
 FROM grpc/base
 
+RUN echo "deb http://packages.dotdeb.org wheezy-php55 all" >> /etc/apt/sources.list.d/dotdeb.list
+RUN echo "deb-src http://packages.dotdeb.org wheezy-php55 all" >> /etc/apt/sources.list.d/dotdeb.list
+RUN wget http://www.dotdeb.org/dotdeb.gpg -O- |apt-key add -
+
 # Install RVM dependencies and other packages
 RUN apt-get update && apt-get install -y \
     autoconf \
