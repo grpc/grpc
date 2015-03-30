@@ -1,4 +1,3 @@
-<?php
 /*
  *
  * Copyright 2015, Google Inc.
@@ -31,23 +30,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-function grpcAutoloader($class) {
-  $prefix = 'Grpc\\';
 
-  $base_dir = __DIR__ . '/Grpc/';
+#ifndef GRPC_TEST_CPP_UTIL_CLI_CALL_H
+#define GRPC_TEST_CPP_UTIL_CLI_CALL_H
 
-  $len = strlen($prefix);
-  if (strncmp($prefix, $class, $len) !== 0) {
-    return;
-  }
+#include <grpc++/channel_interface.h>
+#include <grpc++/config.h>
 
-  $relative_class = substr($class, $len);
+namespace grpc {
+namespace testing {
 
-  $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+class CliCall GRPC_FINAL {
+ public:
+  static void Call(std::shared_ptr<grpc::ChannelInterface> channel,
+                   const grpc::string& method, const grpc::string& request,
+                   grpc::string* response);
+};
 
-  if (file_exists($file)) {
-    include $file;
-  }
-}
+}  // namespace testing
+}  // namespace grpc
 
-spl_autoload_register('grpcAutoloader');
+#endif  // GRPC_TEST_CPP_UTIL_CLI_CALL_H

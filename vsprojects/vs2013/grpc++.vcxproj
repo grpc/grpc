@@ -128,6 +128,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\credentials.cc">
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\generic_stub.cc">
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\insecure_credentials.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\internal_stub.cc">

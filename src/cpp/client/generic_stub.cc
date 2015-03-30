@@ -1,4 +1,3 @@
-<?php
 /*
  *
  * Copyright 2015, Google Inc.
@@ -31,45 +30,22 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-namespace Grpc;
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
 
-/**
- * Represents an active call that allows for sending and recieving messages in
- * streams in any order.
- */
-class BidiStreamingSurfaceActiveCall extends AbstractSurfaceActiveCall {
+#include <grpc++/generic_stub.h>
 
-  /**
-   * Reads the next value from the server.
-   * @return The next value from the server, or null if there is none
-   */
-  public function read() {
-    return $this->_read();
-  }
+#include <grpc++/impl/rpc_method.h>
 
-  /**
-   * Writes a single message to the server. This cannot be called after
-   * writesDone is called.
-   * @param $value The message to send
-   */
-  public function write($value) {
-    $this->_write($value);
-  }
+namespace grpc {
 
-  /**
-   * Indicate that no more writes will be sent
-   */
-  public function writesDone() {
-    $this->_writesDone();
-  }
-
-  /**
-   * Wait for the server to send the status, and return it.
-   * @return object The status object, with integer $code and string $details
-   *     members
-   */
-  public function getStatus() {
-    return $this->_getStatus();
-  }
+// begin a call to a named method
+std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::Call(
+    ClientContext* context, const grpc::string& method,
+    CompletionQueue* cq, void* tag) {
+  return std::unique_ptr<GenericClientAsyncReaderWriter>(
+      new GenericClientAsyncReaderWriter(
+          channel_.get(), cq, RpcMethod(method.c_str()), context, tag));
 }
+
+
+} // namespace grpc
+

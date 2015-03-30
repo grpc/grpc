@@ -1006,6 +1006,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   const grpc_op *op;
   grpc_ioreq *req;
 
+  GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, tag);
+
   if (nops == 0) {
     grpc_cq_begin_op(call->cq, call, GRPC_OP_COMPLETE);
     grpc_cq_end_op_complete(call->cq, tag, call, do_nothing, NULL, GRPC_OP_OK);

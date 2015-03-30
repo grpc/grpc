@@ -384,13 +384,7 @@ describe 'ClientStub' do
         th.join
       end
 
-      # disabled because an unresolved wire-protocol implementation feature
-      #
-      # - servers should be able initiate messaging, however, as it stand
-      # servers don't know if all the client metadata has been sent until
-      # they receive a message from the client.  Without receiving all the
-      # metadata, the server does not accept the call, so this test hangs.
-      xit 'supports a server-initiated ping pong', bidi: true do
+      it 'supports a server-initiated ping pong', bidi: true do
         server_port = create_test_server
         host = "localhost:#{server_port}"
         th = run_bidi_streamer_echo_ping_pong(@sent_msgs, @pass, false)

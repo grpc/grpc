@@ -1,5 +1,4 @@
 <?php
-
 /*
  *
  * Copyright 2015, Google Inc.
@@ -32,67 +31,58 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 namespace Grpc;
 
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
-
 /**
- * Represents an active call that allows sending and recieving messages.
- * Subclasses restrict how data can be sent and recieved.
+ * Represents an active call that allows for sending and recieving messages in
+ * streams in any order.
  */
-abstract class AbstractSurfaceActiveCall {
-  private $active_call;
-  private $deserialize;
-
+class BidiStreamingCall extends AbstractCall {
   /**
-   * Create a new surface active call.
-   * @param Channel $channel The channel to communicate on
-   * @param string $method The method to call on the remote server
-   * @param callable $deserialize The function to deserialize a value
+   * Start the call
    * @param array $metadata Metadata to send with the call, if applicable
-   * @param long $flags Write flags to use with this call
    */
-  public function __construct(Channel $channel,
-                       $method,
-                       callable $deserialize,
-                       $metadata = array(),
-                       $flags = 0) {
-    $this->active_call = new ActiveCall($channel, $method, $metadata, $flags);
-    $this->deserialize = $deserialize;
+  public function start($metadata) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true]);
+    $this->metadata = $event->metadata;
   }
 
   /**
-   * @return The metadata sent by the server
+   * Reads the next value from the server.
+   * @return The next value from the server, or null if there is none
    */
-  public function getMetadata() {
-    return $this->metadata();
+  public function read() {
+    $read_event = $this->call->start_batch([OP_RECV_MESSAGE => true]);
+    return $this->deserializeResponse($read_event->message);
   }
 
   /**
-   * Cancels the call
+   * Write a single message to the server. This cannot be called after
+   * writesDone is called.
+   * @param ByteBuffer $data The data to write
    */
-  public function cancel() {
-    $this->active_call->cancel();
+  public function write($data) {
+    $this->call->start_batch([OP_SEND_MESSAGE => $data->serialize()]);
   }
 
-  protected function _read() {
-    $response = $this->active_call->read();
-    if ($response === null) {
-      return null;
-    }
-    return call_user_func($this->deserialize, $response);
+  /**
+   * Indicate that no more writes will be sent.
+   */
+  public function writesDone() {
+    $this->call->start_batch([OP_SEND_CLOSE_FROM_CLIENT => true]);
   }
 
-  protected function _write($value) {
-    return $this->active_call->write($value->serialize());
-  }
-
-  protected function _writesDone() {
-    $this->active_call->writesDone();
-  }
-
-  protected function _getStatus() {
-    return $this->active_call->getStatus();
+  /**
+   * Wait for the server to send the status, and return it.
+   * @return object The status object, with integer $code, string $details,
+   *     and array $metadata members
+   */
+  public function getStatus() {
+    $status_event = $this->call->start_batch([
+        OP_RECV_STATUS_ON_CLIENT => true
+                                              ]);
+    return $status_event->status;
   }
 }

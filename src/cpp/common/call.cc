@@ -148,7 +148,7 @@ void FillMetadataMap(grpc_metadata_array* arr,
     // TODO(yangg) handle duplicates?
     metadata->insert(std::pair<grpc::string, grpc::string>(
         arr->metadata[i].key,
-        {arr->metadata[i].value, arr->metadata[i].value_length}));
+        grpc::string(arr->metadata[i].value, arr->metadata[i].value_length)));
   }
   grpc_metadata_array_destroy(arr);
   grpc_metadata_array_init(arr);
@@ -186,6 +186,7 @@ void CallOpBuffer::AddRecvMessage(grpc::protobuf::Message* message) {
 
 void CallOpBuffer::AddRecvMessage(ByteBuffer* message) {
   recv_message_buffer_ = message;
+  recv_message_buffer_->Clear();
 }
 
 void CallOpBuffer::AddClientSendClose() { client_send_close_ = true; }

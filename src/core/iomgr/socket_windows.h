@@ -57,12 +57,13 @@ typedef struct grpc_winsocket_callback_info {
 typedef struct grpc_winsocket {
   SOCKET socket;
 
-  int added_to_iocp;
-
   grpc_winsocket_callback_info write_info;
   grpc_winsocket_callback_info read_info;
 
   gpr_mu state_mu;
+
+  int added_to_iocp;
+  int orphan;
 } grpc_winsocket;
 
 /* Create a wrapped windows handle.
@@ -71,5 +72,6 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket);
 
 void grpc_winsocket_shutdown(grpc_winsocket *socket);
 void grpc_winsocket_orphan(grpc_winsocket *socket);
+void grpc_winsocket_destroy(grpc_winsocket *socket);
 
 #endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H */

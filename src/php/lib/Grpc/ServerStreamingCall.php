@@ -1,3 +1,4 @@
+<?php
 /*
  *
  * Copyright 2015, Google Inc.
@@ -30,33 +31,47 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+namespace Grpc;
 
-#ifndef NET_GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
-#define NET_GRPC_PHP_GRPC_COMPLETION_QUEUE_H_
+/**
+ * Represents an active call that sends a single message and then gets a stream
+ * of reponses
+ */
+class ServerStreamingCall extends AbstractCall {
+  /**
+   * Start the call
+   * @param $arg The argument to send
+   * @param array $metadata Metadata to send with the call, if applicable
+   */
+  public function start($arg, $metadata = array()) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true,
+        OP_SEND_MESSAGE => $arg->serialize(),
+        OP_SEND_CLOSE_FROM_CLIENT => true]);
+    $this->metadata = $event->metadata;
+  }
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+  /**
+   * @return An iterator of response values
+   */
+  public function responses() {
+    $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+    while($response !== null) {
+      yield $this->deserializeResponse($response);
+      $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+    }
+  }
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "php_grpc.h"
-
-#include "grpc/grpc.h"
-
-/* Class entry for the PHP CompletionQueue class */
-extern zend_class_entry *grpc_ce_completion_queue;
-
-/* Wrapper class for grpc_completion_queue that can be associated with a
-   PHP object */
-typedef struct wrapped_grpc_completion_queue {
-  zend_object std;
-
-  grpc_completion_queue *wrapped;
-} wrapped_grpc_completion_queue;
-
-/* Initialize the CompletionQueue class */
-void grpc_init_completion_queue(TSRMLS_D);
-
-#endif /* NET_GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */
+  /**
+   * Wait for the server to send the status, and return it.
+   * @return object The status object, with integer $code, string $details,
+   *     and array $metadata members
+   */
+  public function getStatus() {
+    $status_event = $this->call->start_batch([
+        OP_RECV_STATUS_ON_CLIENT => true
+                                              ]);
+    return $status_event->status;
+  }
+}

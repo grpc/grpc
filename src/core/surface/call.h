@@ -119,4 +119,13 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
 
+extern int grpc_trace_batch;
+
+void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
+                         grpc_call *call, const grpc_op *ops, size_t nops,
+                         void *tag);
+
+#define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
+  if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
+
 #endif  /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */

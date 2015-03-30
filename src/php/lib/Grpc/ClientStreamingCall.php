@@ -32,31 +32,26 @@
  *
  */
 namespace Grpc;
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
 
 /**
  * Represents an active call that sends a stream of messages and then gets a
  * single response.
  */
-class ClientStreamingSurfaceActiveCall extends AbstractSurfaceActiveCall {
+class ClientStreamingCall extends AbstractCall {
   /**
-   * Create a new simple (single request/single response) active call.
-   * @param Channel $channel The channel to communicate on
-   * @param string $method The method to call on the remote server
-   * @param callable $deserialize The function to deserialize a value
+   * Start the call.
    * @param Traversable $arg_iter The iterator of arguments to send
    * @param array $metadata Metadata to send with the call, if applicable
    */
-  public function __construct(Channel $channel,
-                              $method,
-                              callable $deserialize,
-                              $arg_iter,
-                              $metadata = array()) {
-    parent::__construct($channel, $method, $deserialize, $metadata, 0);
+  public function start($arg_iter, $metadata = array()) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true]);
+    $this->metadata = $event->metadata;
     foreach($arg_iter as $arg) {
-      $this->_write($arg);
+      $this->call->start_batch([OP_SEND_MESSAGE => $arg->serialize()]);
     }
-    $this->_writesDone();
+    $this->call->start_batch([OP_SEND_CLOSE_FROM_CLIENT => true]);
   }
 
   /**
@@ -64,8 +59,9 @@ class ClientStreamingSurfaceActiveCall extends AbstractSurfaceActiveCall {
    * @return [response data, status]
    */
   public function wait() {
-    $response = $this->_read();
-    $status = $this->_getStatus();
-    return array($response, $status);
+    $event = $this->call->start_batch([
+        OP_RECV_MESSAGE => true,
+        OP_RECV_STATUS_ON_CLIENT => true]);
+    return array($this->deserializeResponse($event->message), $event->status);
   }
 }

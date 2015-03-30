@@ -31,16 +31,35 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-class CompletionQueueTest extends PHPUnit_Framework_TestCase{
-  public function testNextReturnsNullWithNoCall() {
-    $cq = new Grpc\CompletionQueue();
-    $event = $cq->next(Grpc\Timeval::zero());
-    $this->assertNull($event);
+namespace Grpc;
+
+/**
+ * Represents an active call that sends a single message and then gets a single
+ * response.
+ */
+class UnaryCall extends AbstractCall {
+  /**
+   * Start the call
+   * @param $arg The argument to send
+   * @param array $metadata Metadata to send with the call, if applicable
+   */
+  public function start($arg, $metadata = array()) {
+    $event = $this->call->start_batch([
+        OP_SEND_INITIAL_METADATA => $metadata,
+        OP_RECV_INITIAL_METADATA => true,
+        OP_SEND_MESSAGE => $arg->serialize(),
+        OP_SEND_CLOSE_FROM_CLIENT => true]);
+    $this->metadata = $event->metadata;
   }
 
-  public function testPluckReturnsNullWithNoCall() {
-    $cq = new Grpc\CompletionQueue();
-    $event = $cq->pluck(0, Grpc\Timeval::zero());
-    $this->assertNull($event);
+  /**
+   * Wait for the server to respond with data and a status
+   * @return [response data, status]
+   */
+  public function wait() {
+    $event = $this->call->start_batch([
+        OP_RECV_MESSAGE => true,
+        OP_RECV_STATUS_ON_CLIENT => true]);
+    return array($this->deserializeResponse($event->message), $event->status);
   }
 }

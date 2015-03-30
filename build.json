@@ -52,6 +52,7 @@
         "src/cpp/client/client_unary_call.cc",
         "src/cpp/client/create_channel.cc",
         "src/cpp/client/credentials.cc",
+        "src/cpp/client/generic_stub.cc",
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/internal_stub.cc",
         "src/cpp/common/call.cc",
@@ -233,6 +234,7 @@
         "src/core/surface/byte_buffer_reader.c",
         "src/core/surface/call.c",
         "src/core/surface/call_details.c",
+        "src/core/surface/call_log_batch.c",
         "src/core/surface/channel.c",
         "src/core/surface/channel_create.c",
         "src/core/surface/client.c",
@@ -480,6 +482,7 @@
         "test/cpp/util/messages.proto",
         "test/cpp/util/echo.proto",
         "test/cpp/util/echo_duplicate.proto",
+        "test/cpp/util/cli_call.cc",
         "test/cpp/util/create_test_channel.cc"
       ]
     },
@@ -498,14 +501,24 @@
       "secure": "no"
     },
     {
-      "name": "grpc_python_plugin_support",
+      "name": "grpc_plugin_support",
       "build": "protoc",
       "language": "c++",
-      "public_headers": [
-        "src/compiler/python_generator.h"
+      "headers": [
+        "src/compiler/config.h",
+        "src/compiler/cpp_generator.h",
+        "src/compiler/cpp_generator_helpers.h",
+        "src/compiler/generator_helpers.h",
+        "src/compiler/python_generator.h",
+        "src/compiler/ruby_generator.h",
+        "src/compiler/ruby_generator_helpers-inl.h",
+        "src/compiler/ruby_generator_map-inl.h",
+        "src/compiler/ruby_generator_string-inl.h"
       ],
       "src": [
-        "src/compiler/python_generator.cc"
+        "src/compiler/cpp_generator.cc",
+        "src/compiler/python_generator.cc",
+        "src/compiler/ruby_generator.cc"
       ],
       "deps": [],
       "secure": "no"
@@ -1695,6 +1708,22 @@
       ]
     },
     {
+      "name": "cli_call_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/cli_call_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "credentials_test",
       "build": "test",
       "language": "c++",
@@ -1755,18 +1784,32 @@
       ]
     },
     {
+      "name": "grpc_cli",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/util/grpc_cli.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "grpc_cpp_plugin",
       "build": "protoc",
       "language": "c++",
-      "headers": [
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers.h"
-      ],
       "src": [
-        "src/compiler/cpp_generator.cc",
         "src/compiler/cpp_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_plugin_support"
+      ],
       "secure": "no"
     },
     {
@@ -1777,7 +1820,7 @@
         "src/compiler/python_plugin.cc"
       ],
       "deps": [
-        "grpc_python_plugin_support"
+        "grpc_plugin_support"
       ],
       "secure": "no"
     },
@@ -1786,10 +1829,11 @@
       "build": "protoc",
       "language": "c++",
       "src": [
-        "src/compiler/ruby_generator.cc",
         "src/compiler/ruby_plugin.cc"
       ],
-      "deps": [],
+      "deps": [
+        "grpc_plugin_support"
+      ],
       "secure": "no"
     },
     {

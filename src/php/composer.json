@@ -1,0 +1,15 @@
+{
+  "name": "grpc/grpc",
+  "description": "gRPC library for PHP",
+  "version": "0.2.0",
+  "homepage": "http://grpc.io",
+  "license": "BSD-3-Clause",
+  "require": {
+    "php": ">=5.5.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Grpc\\": "lib/Grpc/"
+    }
+  }
+}
