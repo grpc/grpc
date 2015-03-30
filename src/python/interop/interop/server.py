@@ -53,11 +53,11 @@ def serve():
   if args.use_tls:
     private_key = resources.private_key()
     certificate_chain = resources.certificate_chain()
-    server = implementations.secure_server(
-        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port, private_key,
-        certificate_chain)
+    server = implementations.server(
+        methods.SERVICE_NAME, methods.SERVER_METHODS, args.port,
+        private_key=private_key, certificate_chain=certificate_chain)
   else:
-    server = implementations.insecure_server(
+    server = implementations.server(
         methods.SERVICE_NAME, methods.SERVER_METHODS, args.port)
 
   server.start()
