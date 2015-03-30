@@ -39,10 +39,9 @@ _TIMEOUT_SECONDS = 30
 
 
 def make_route_note(message, latitude, longitude):
-  route_note = route_guide_pb2.RouteNote(message=message)
-  route_note.location.latitude = latitude
-  route_note.location.longitude = longitude
-  return route_note
+  return route_guide_pb2.RouteNote(
+      message=message,
+      location=route_guide_pb2.Point(latitude=latitude, longitude=longitude))
 
 
 def guide_get_one_feature(stub, point):
@@ -63,11 +62,11 @@ def guide_get_feature(stub):
 
 
 def guide_list_features(stub):
-  rect = route_guide_pb2.Rectangle()
-  rect.lo.latitude = 400000000
-  rect.lo.longitude = -750000000
-  rect.hi.latitude = 420000000
-  rect.hi.longitude = -730000000
+  rect = route_guide_pb2.Rectangle(
+      lo=route_guide_pb2.Point(
+          latitude=400000000, longitude = -750000000),
+      hi=route_guide_pb2.Point(
+          latitude = 420000000, longitude = -730000000))
   print "Looking for features between 40, -75 and 42, -73"
 
   features = stub.ListFeatures(rect, _TIMEOUT_SECONDS)

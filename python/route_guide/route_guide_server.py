@@ -73,20 +73,16 @@ class RouteGuideServicer(route_guide_pb2.EarlyAdopterRouteGuideServicer):
 
   def GetFeature(self, request, context):
     feature = get_feature(self.db, request)
-    if not feature:
-      feature = route_guide_pb2.Feature(
-          name="",
-          location=route_guide_pb2.Point(
-              latitude=request.latitude, longitude=request.longitude))
-    return feature
+    if feature is None:
+      return route_guide_pb2.Feature(name="", location=request)
+    else:
+      return feature
 
   def ListFeatures(self, request, context):
-    lo = request.lo
-    hi = request.hi
-    left = min(lo.longitude, hi.longitude)
-    right = max(lo.longitude, hi.longitude)
-    top = max(lo.latitude, hi.latitude)
-    bottom = min(lo.latitude, hi.latitude)
+    left = min(request.lo.longitude, request.hi.longitude)
+    right = max(request.lo.longitude, request.hi.longitude)
+    top = max(request.lo.latitude, request.hi.latitude)
+    bottom = min(request.lo.latitude, request.hi.latitude)
     for feature in self.db:
       if (feature.location.longitude >= left and
           feature.location.longitude <= right and
