@@ -32,6 +32,10 @@
 # Includes PHP installation dependencies, things that are unlikely to vary.
 FROM grpc/base
 
+RUN echo "deb http://packages.dotdeb.org wheezy-php55 all" >> /etc/apt/sources.list.d/dotdeb.list
+RUN echo "deb-src http://packages.dotdeb.org wheezy-php55 all" >> /etc/apt/sources.list.d/dotdeb.list
+RUN wget http://www.dotdeb.org/dotdeb.gpg -O- |apt-key add -
+
 # Install RVM dependencies and other packages
 RUN apt-get update && apt-get install -y \
     autoconf \
@@ -64,8 +68,11 @@ RUN apt-get update && apt-get install -y \
     sqlite3 \
     zlib1g-dev
 
-# Install the version of PHP gRPC is tested against
 ENV DEBIAN_FRONTEND noniteractive
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
 
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
