@@ -33,8 +33,6 @@
  */
 namespace Grpc;
 
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
-
 /**
  * Represents an active call that sends a single message and then gets a stream
  * of reponses
