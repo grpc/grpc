@@ -47,7 +47,6 @@
 #include <grpc++/client_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/core/util/grpc_profiler.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/qps/qpstest.pb.h"
 #include "test/cpp/qps/timer.h"
