@@ -55,6 +55,9 @@ grpc::string GetSourceIncludes(const Parameters &params);
 grpc::string GetHeaderServices(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params);
 
+grpc::string
+  GetNakedHeaderService(const grpc::protobuf::ServiceDescriptor *service);
+
 // Return the services for generated source file.
 grpc::string GetSourceServices(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params);
