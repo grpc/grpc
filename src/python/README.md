@@ -42,7 +42,14 @@ $ tools/run_tests/run_python.sh
 Installing
 -----------------------
 
-- [Install the gRPC core](https://github.com/grpc/grpc/blob/master/INSTALL)
+- Install the gRPC core
+  - [Debian package](https://github.com/grpc/grpc/releases)
+    ```
+    $ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc_0.5.0_amd64.deb
+    $ wget https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc-dev_0.5.0_amd64.deb
+    $ sudo dpkg -i libgrpc_0.5.0_amd64.deb libgrpc-dev_0.5.0_amd64.deb
+    ```
+  - [From source](https://github.com/grpc/grpc/blob/master/INSTALL)
 
 - Install gRPC Python's dependencies
 ```
@@ -52,4 +59,17 @@ $ pip install -r src/python/requirements.txt
 - Install gRPC Python
 ```
 $ pip install src/python/src
+```
+
+Packaging to PyPI
+-----------------------
+
+- Install packaging dependencies
+```
+$ pip install setuptools twine
+```
+
+- Push to PyPI
+```
+$ ../../tools/distrib/python/submit.py
 ```
