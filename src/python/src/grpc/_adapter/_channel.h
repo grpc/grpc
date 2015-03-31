@@ -37,7 +37,10 @@
 #include <Python.h>
 #include <grpc/grpc.h>
 
-typedef struct { PyObject_HEAD grpc_channel *c_channel; } Channel;
+typedef struct {
+  PyObject_HEAD;
+  grpc_channel *c_channel;
+} Channel;
 
 PyTypeObject pygrpc_ChannelType;
 

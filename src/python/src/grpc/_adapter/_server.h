@@ -37,7 +37,10 @@
 #include <Python.h>
 #include <grpc/grpc.h>
 
-typedef struct { PyObject_HEAD grpc_server *c_server; } Server;
+typedef struct {
+  PyObject_HEAD;
+  grpc_server *c_server;
+} Server;
 
 int pygrpc_add_server(PyObject *module);
 

@@ -37,7 +37,10 @@
 #include <Python.h>
 #include <grpc/grpc.h>
 
-typedef struct { PyObject_HEAD grpc_call *c_call; } Call;
+typedef struct {
+  PyObject_HEAD;
+  grpc_call *c_call;
+} Call;
 
 PyTypeObject pygrpc_CallType;
 

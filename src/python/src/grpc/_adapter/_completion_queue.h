@@ -38,7 +38,8 @@
 #include <grpc/grpc.h>
 
 typedef struct {
-  PyObject_HEAD grpc_completion_queue *c_completion_queue;
+  PyObject_HEAD;
+  grpc_completion_queue *c_completion_queue;
 } CompletionQueue;
 
 PyTypeObject pygrpc_CompletionQueueType;
