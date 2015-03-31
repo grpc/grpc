@@ -1,4 +1,6 @@
-# gRPC Python Hello World Tutorial
+# gRPC Python Hello World
+
+This is a quick introduction with a simple example and installation instructions: for a more complete tutorial see [gRPC Basics: Python](https://github.com/grpc/grpc-common/tree/master/python/route_guide).
 
 ### Install gRPC
 Make sure you have built gRPC Python from source on your system. Follow the instructions here:
@@ -8,9 +10,9 @@ This gives you a python virtual environment with installed gRPC Python
 in GRPC_ROOT/python2.7_virtual_environment. GRPC_ROOT is the path to which you
 have cloned the [gRPC git repo](https://github.com/grpc/grpc).
 
-### Get the tutorial source code
+### Get the source code
 
-The example code for this and our other examples live in the `grpc-common`
+The example code for our Hello World and our other examples live in the `grpc-common`
 GitHub repository. Clone this repository to your local machine by running the
 following command:
 
