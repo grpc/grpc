@@ -37,19 +37,19 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "ext/spl/spl_exceptions.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
 
-#include "zend_exceptions.h"
+#include <zend_exceptions.h>
 
 #include <stdbool.h>
 
-#include "grpc/grpc.h"
-#include "grpc/support/log.h"
-#include "grpc/grpc_security.h"
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/grpc_security.h>
 
 #include "server.h"
 #include "channel.h"
