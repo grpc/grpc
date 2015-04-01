@@ -199,7 +199,7 @@
 #endif
 
 #if defined(GPR_POSIX_SOCKET) + defined(GPR_WIN32) != 1
-#error Must define exactly one of GPR_POSIX_POLLSET, GPR_WIN32
+#error Must define exactly one of GPR_POSIX_SOCKET, GPR_WIN32
 #endif
 
 typedef int16_t gpr_int16;
