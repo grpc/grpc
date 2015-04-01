@@ -437,6 +437,7 @@
       ],
       "deps": [
         "gpr",
+        "gpr_test_util",
         "grpc"
       ],
       "vs_project_guid": "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
