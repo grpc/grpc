@@ -47,6 +47,7 @@ abstract class AbstractCall {
   public function __construct(Channel $channel, $method, $deserialize) {
     $this->call = new Call($channel, $method, Timeval::inf_future());
     $this->deserialize = $deserialize;
+    $this->metadata = null;
   }
 
   /**
