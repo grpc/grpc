@@ -350,6 +350,9 @@
       "name": "gpr_test_util",
       "build": "private",
       "language": "c",
+      "headers": [
+        "test/core/util/test_config.h"
+      ],
       "src": [
         "test/core/util/test_config.c"
       ],
