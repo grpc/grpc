@@ -41,7 +41,7 @@ package grpc.testing;
 // performance with various types of payload.
 service TestService {
   // One empty request followed by one empty response.
-  rpc EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+  rpc EmptyCall(grpc.testing.EmptyMessage) returns (grpc.testing.EmptyMessage);
 
   // One request followed by one response.
   // TODO(Issue 527): Describe required server behavior.

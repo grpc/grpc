@@ -37,7 +37,7 @@ package grpc.testing;
 // return value of a service API. For instance:
 //
 //   service Foo {
-//     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
+//     rpc Bar (grpc.testing.EmptyMessage) returns (grpc.testing.EmptyMessage) { };
 //   };
 //
-message Empty {}
+message EmptyMessage {}
