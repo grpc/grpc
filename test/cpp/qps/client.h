@@ -88,11 +88,11 @@ class Client {
         : channel_(CreateTestChannel(target, config.enable_ssl())),
           stub_(TestService::NewStub(channel_)) {}
     ChannelInterface* get_channel() { return channel_.get(); }
-    TestService::Stub* get_stub() { return stub_.get(); }
+    TestService::GrpcStub* get_stub() { return stub_.get(); }
 
    private:
     std::shared_ptr<ChannelInterface> channel_;
-    std::unique_ptr<TestService::Stub> stub_;
+    std::unique_ptr<TestService::GrpcStub> stub_;
   };
   std::vector<ClientChannelInfo> channels_;
 
@@ -150,7 +150,7 @@ class Client {
     Thread(const Thread&);
     Thread& operator=(const Thread&);
 
-    TestService::Stub* stub_;
+    TestService::GrpcStub* stub_;
     ClientConfig config_;
     std::mutex mu_;
     std::condition_variable cv_;

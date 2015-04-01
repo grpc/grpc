@@ -90,7 +90,7 @@ class CliCallTest : public ::testing::Test {
   }
 
   std::shared_ptr<ChannelInterface> channel_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::cpp::test::util::TestService::GrpcStub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;

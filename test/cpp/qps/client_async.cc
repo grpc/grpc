@@ -73,10 +73,10 @@ template <class RequestType, class ResponseType>
 class ClientRpcContextUnaryImpl : public ClientRpcContext {
  public:
   ClientRpcContextUnaryImpl(
-      TestService::Stub* stub, const RequestType& req,
+      TestService::GrpcStub* stub, const RequestType& req,
       std::function<
           std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-              TestService::Stub*, grpc::ClientContext*, const RequestType&,
+              TestService::GrpcStub*, grpc::ClientContext*, const RequestType&,
               void*)> start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
       : context_(),
@@ -117,13 +117,13 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     return false;
   }
   grpc::ClientContext context_;
-  TestService::Stub* stub_;
+  TestService::GrpcStub* stub_;
   RequestType req_;
   ResponseType response_;
   bool (ClientRpcContextUnaryImpl::*next_state_)(bool);
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
-      TestService::Stub*, grpc::ClientContext*, const RequestType&, void*)>
+      TestService::GrpcStub*, grpc::ClientContext*, const RequestType&, void*)>
       start_req_;
   grpc::Status status_;
   double start_;
@@ -152,12 +152,13 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
 	   channel++) {
         auto* cq = cli_cqs_[t].get();
         t = (t + 1) % cli_cqs_.size();
-        auto start_req = [cq](TestService::Stub* stub, grpc::ClientContext* ctx,
+        auto start_req = [cq](TestService::GrpcStub* stub,
+                              grpc::ClientContext* ctx,
                               const SimpleRequest& request, void* tag) {
           return stub->AsyncUnaryCall(ctx, request, cq, tag);
         };
 
-        TestService::Stub* stub = channel->get_stub();
+        TestService::GrpcStub* stub = channel->get_stub();
         const SimpleRequest& request = request_;
         new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
             stub, request, start_req, check_done);
@@ -201,11 +202,11 @@ template <class RequestType, class ResponseType>
 class ClientRpcContextStreamingImpl : public ClientRpcContext {
  public:
   ClientRpcContextStreamingImpl(
-      TestService::Stub *stub, const RequestType &req,
+      TestService::GrpcStub *stub, const RequestType &req,
       std::function<
               std::unique_ptr<grpc::ClientAsyncReaderWriter<
                               RequestType,ResponseType>>(
-              TestService::Stub *, grpc::ClientContext *, void *)> start_req,
+              TestService::GrpcStub *, grpc::ClientContext *, void *)> start_req,
       std::function<void(grpc::Status, ResponseType *)> on_done)
       : context_(),
         stub_(stub),
@@ -250,14 +251,14 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
     return StartWrite(ok);
   }
   grpc::ClientContext context_;
-  TestService::Stub *stub_;
+  TestService::GrpcStub *stub_;
   RequestType req_;
   ResponseType response_;
   bool (ClientRpcContextStreamingImpl::*next_state_)(bool, Histogram *);
   std::function<void(grpc::Status, ResponseType *)> callback_;
   std::function<std::unique_ptr<grpc::ClientAsyncReaderWriter<
 				  RequestType,ResponseType>>(
-      TestService::Stub *, grpc::ClientContext *, void *)> start_req_;
+      TestService::GrpcStub *, grpc::ClientContext *, void *)> start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType,ResponseType>>
@@ -285,13 +286,13 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
            channel++) {
         auto* cq = cli_cqs_[t].get();
         t = (t + 1) % cli_cqs_.size();
-        auto start_req = [cq](TestService::Stub *stub, grpc::ClientContext *ctx,
-                              void *tag) {
+        auto start_req = [cq](TestService::GrpcStub *stub,
+                              grpc::ClientContext *ctx, void *tag) {
           auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
           return stream;
         };
 
-        TestService::Stub *stub = channel->get_stub();
+        TestService::GrpcStub *stub = channel->get_stub();
         const SimpleRequest &request = request_;
         new ClientRpcContextStreamingImpl<SimpleRequest, SimpleResponse>(
             stub, request, start_req, check_done);

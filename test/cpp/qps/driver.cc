@@ -96,7 +96,7 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
 
   // Start servers
   struct ServerData {
-    unique_ptr<Worker::Stub> stub;
+    unique_ptr<Worker::GrpcStub> stub;
     unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
   };
   vector<ServerData> servers;
@@ -125,7 +125,7 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
 
   // Start clients
   struct ClientData {
-    unique_ptr<Worker::Stub> stub;
+    unique_ptr<Worker::GrpcStub> stub;
     unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
   };
   vector<ClientData> clients;

@@ -174,7 +174,7 @@ void DoEmpty() {
   gpr_log(GPR_INFO, "Sending an empty rpc...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("empty_unary");
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
+  std::unique_ptr<TestService::GrpcStub> stub(TestService::NewStub(channel));
 
   grpc::testing::Empty request = grpc::testing::Empty::default_instance();
   grpc::testing::Empty response = grpc::testing::Empty::default_instance();
@@ -189,7 +189,7 @@ void DoEmpty() {
 // Shared code to set large payload, make rpc and check response payload.
 void PerformLargeUnary(std::shared_ptr<ChannelInterface> channel,
                        SimpleRequest* request, SimpleResponse* response) {
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
+  std::unique_ptr<TestService::GrpcStub> stub(TestService::NewStub(channel));
 
   ClientContext context;
   request->set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
@@ -273,7 +273,7 @@ void DoRequestStreaming() {
   gpr_log(GPR_INFO, "Sending request steaming rpc ...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("client_streaming");
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
+  std::unique_ptr<TestService::GrpcStub> stub(TestService::NewStub(channel));
 
   grpc::ClientContext context;
   StreamingInputCallRequest request;
@@ -301,7 +301,7 @@ void DoResponseStreaming() {
   gpr_log(GPR_INFO, "Receiving response steaming rpc ...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("server_streaming");
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
+  std::unique_ptr<TestService::GrpcStub> stub(TestService::NewStub(channel));
 
   grpc::ClientContext context;
   StreamingOutputCallRequest request;
@@ -330,7 +330,7 @@ void DoResponseStreamingWithSlowConsumer() {
   gpr_log(GPR_INFO, "Receiving response steaming rpc with slow consumer ...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("slow_consumer");
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
+  std::unique_ptr<TestService::GrpcStub> stub(TestService::NewStub(channel));
 
   grpc::ClientContext context;
   StreamingOutputCallRequest request;
@@ -362,7 +362,7 @@ void DoHalfDuplex() {
   gpr_log(GPR_INFO, "Sending half-duplex streaming rpc ...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("half_duplex");
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
+  std::unique_ptr<TestService::GrpcStub> stub(TestService::NewStub(channel));
 
   grpc::ClientContext context;
   std::unique_ptr<grpc::ClientReaderWriter<StreamingOutputCallRequest,
@@ -395,7 +395,7 @@ void DoPingPong() {
   gpr_log(GPR_INFO, "Sending Ping Pong streaming rpc ...");
   std::shared_ptr<ChannelInterface> channel =
       CreateChannelForTestCase("ping_pong");
-  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel));
+  std::unique_ptr<TestService::GrpcStub> stub(TestService::NewStub(channel));
 
   grpc::ClientContext context;
   std::unique_ptr<grpc::ClientReaderWriter<StreamingOutputCallRequest,

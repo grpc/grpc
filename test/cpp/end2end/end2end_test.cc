@@ -196,7 +196,7 @@ class End2endTest : public ::testing::Test {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::cpp::test::util::TestService::GrpcStub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
@@ -204,7 +204,7 @@ class End2endTest : public ::testing::Test {
   ThreadPool thread_pool_;
 };
 
-static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
+static void SendRpc(grpc::cpp::test::util::TestService::GrpcStub* stub,
                     int num_rpcs) {
   EchoRequest request;
   EchoResponse response;
@@ -409,14 +409,14 @@ TEST_F(End2endTest, DiffPackageServices) {
   EchoResponse response;
   request.set_message("Hello");
 
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
+  std::unique_ptr<grpc::cpp::test::util::TestService::GrpcStub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));
   ClientContext context;
   Status s = stub->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.IsOk());
 
-  std::unique_ptr<grpc::cpp::test::util::duplicate::TestService::Stub>
+  std::unique_ptr<grpc::cpp::test::util::duplicate::TestService::GrpcStub>
       dup_pkg_stub(
           grpc::cpp::test::util::duplicate::TestService::NewStub(channel));
   ClientContext context2;
@@ -432,7 +432,7 @@ TEST_F(End2endTest, BadCredentials) {
   EXPECT_EQ(nullptr, bad_creds.get());
   std::shared_ptr<ChannelInterface> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
+  std::unique_ptr<grpc::cpp::test::util::TestService::GrpcStub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));
   EchoRequest request;
   EchoResponse response;
