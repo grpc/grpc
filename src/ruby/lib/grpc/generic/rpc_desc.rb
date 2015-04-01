@@ -81,7 +81,6 @@ module GRPC
         active_call.run_server_bidi(mth)
       end
       send_status(active_call, OK, 'OK')
-      active_call.finished
     rescue BadStatus => e
       # this is raised by handlers that want GRPC to send an application
       # error code and detail message.
@@ -96,10 +95,6 @@ module GRPC
       # event.  Send a status of deadline exceeded
       logger.warn("late call: #{active_call}")
       send_status(active_call, DEADLINE_EXCEEDED, 'late')
-    rescue Core::EventError => e
-      # This is raised by GRPC internals but should rarely, if ever happen.
-      # Log it, but don't notify the other endpoint..
-      logger.warn("failed call: #{active_call}\n#{e}")
     rescue StandardError => e
       # This will usuaally be an unhandled error in the handling code.
       # Send back a UNKNOWN status to the client
@@ -142,7 +137,7 @@ module GRPC
 
     def send_status(active_client, code, details)
       details = 'Not sure why' if details.nil?
-      active_client.send_status(code, details)
+      active_client.send_status(code, details, code == OK)
     rescue StandardError => e
       logger.warn("Could not send status #{code}:#{details}")
       logger.warn(e)
