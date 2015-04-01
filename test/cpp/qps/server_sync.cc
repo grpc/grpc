@@ -47,7 +47,6 @@
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "src/cpp/server/thread_pool.h"
-#include "test/core/util/grpc_profiler.h"
 #include "test/cpp/qps/qpstest.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/timer.h"

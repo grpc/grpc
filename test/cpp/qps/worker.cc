@@ -109,30 +109,10 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
       return Status(RESOURCE_EXHAUSTED);
     }
 
-    ClientArgs args;
-    if (!stream->Read(&args)) {
-      return Status(INVALID_ARGUMENT);
-    }
-    if (!args.has_setup()) {
-      return Status(INVALID_ARGUMENT);
-    }
-    auto client = CreateClient(args.setup());
-    if (!client) {
-      return Status(INVALID_ARGUMENT);
-    }
-    ClientStatus status;
-    if (!stream->Write(status)) {
-      return Status(UNKNOWN);
-    }
-    while (stream->Read(&args)) {
-      if (!args.has_mark()) {
-        return Status(INVALID_ARGUMENT);
-      }
-      *status.mutable_stats() = client->Mark();
-      stream->Write(status);
-    }
-
-    return Status::OK;
+    grpc_profiler_start("qps_client.prof");
+    Status ret = RunTestBody(ctx,stream);
+    grpc_profiler_stop();
+    return ret;
   }
 
   Status RunServer(ServerContext* ctx,
@@ -143,31 +123,10 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
       return Status(RESOURCE_EXHAUSTED);
     }
 
-    ServerArgs args;
-    if (!stream->Read(&args)) {
-      return Status(INVALID_ARGUMENT);
-    }
-    if (!args.has_setup()) {
-      return Status(INVALID_ARGUMENT);
-    }
-    auto server = CreateServer(args.setup());
-    if (!server) {
-      return Status(INVALID_ARGUMENT);
-    }
-    ServerStatus status;
-    status.set_port(FLAGS_server_port);
-    if (!stream->Write(status)) {
-      return Status(UNKNOWN);
-    }
-    while (stream->Read(&args)) {
-      if (!args.has_mark()) {
-        return Status(INVALID_ARGUMENT);
-      }
-      *status.mutable_stats() = server->Mark();
-      stream->Write(status);
-    }
-
-    return Status::OK;
+    grpc_profiler_start("qps_server.prof");
+    Status ret = RunServerBody(ctx,stream);
+    grpc_profiler_stop();
+    return ret;
   }
 
  private:
@@ -200,6 +159,63 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     std::lock_guard<std::mutex> g(mu_);
     GPR_ASSERT(acquired_);
     acquired_ = false;
+  }
+
+  Status RunTestBody(ServerContext* ctx,
+                     ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
+    ClientArgs args;
+    if (!stream->Read(&args)) {
+      return Status(INVALID_ARGUMENT);
+    }
+    if (!args.has_setup()) {
+      return Status(INVALID_ARGUMENT);
+    }
+    auto client = CreateClient(args.setup());
+    if (!client) {
+      return Status(INVALID_ARGUMENT);
+    }
+    ClientStatus status;
+    if (!stream->Write(status)) {
+      return Status(UNKNOWN);
+    }
+    while (stream->Read(&args)) {
+      if (!args.has_mark()) {
+        return Status(INVALID_ARGUMENT);
+      }
+      *status.mutable_stats() = client->Mark();
+      stream->Write(status);
+    }
+
+    return Status::OK;
+  }
+
+  Status RunServerBody(ServerContext* ctx,
+                       ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
+    ServerArgs args;
+    if (!stream->Read(&args)) {
+      return Status(INVALID_ARGUMENT);
+    }
+    if (!args.has_setup()) {
+      return Status(INVALID_ARGUMENT);
+    }
+    auto server = CreateServer(args.setup());
+    if (!server) {
+      return Status(INVALID_ARGUMENT);
+    }
+    ServerStatus status;
+    status.set_port(FLAGS_server_port);
+    if (!stream->Write(status)) {
+      return Status(UNKNOWN);
+    }
+    while (stream->Read(&args)) {
+      if (!args.has_mark()) {
+        return Status(INVALID_ARGUMENT);
+      }
+      *status.mutable_stats() = server->Mark();
+      stream->Write(status);
+    }
+
+    return Status::OK;
   }
 
   std::mutex mu_;
