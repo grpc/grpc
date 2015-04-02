@@ -241,6 +241,7 @@ switch($args['test_case']) {
     break;
   case 'cancel_after_first_response':
     cancelAfterFirstResponse($stub);
+    break;
   default:
     exit(1);
 }
