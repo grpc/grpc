@@ -60,7 +60,8 @@ CallOpBuffer::CallOpBuffer()
       status_code_(GRPC_STATUS_OK),
       status_details_(nullptr),
       status_details_capacity_(0),
-      send_status_(nullptr),
+      send_status_available_(false),
+      send_status_code_(GRPC_STATUS_OK),
       trailing_metadata_count_(0),
       trailing_metadata_(nullptr),
       cancelled_buf_(0),
@@ -104,7 +105,9 @@ void CallOpBuffer::Reset(void* next_return_tag) {
 
   status_code_ = GRPC_STATUS_OK;
 
-  send_status_ = nullptr;
+  send_status_available_ = false;
+  send_status_code_ = GRPC_STATUS_OK;
+  send_status_details_.clear();
   trailing_metadata_count_ = 0;
   trailing_metadata_ = nullptr;
 
@@ -208,7 +211,9 @@ void CallOpBuffer::AddServerSendStatus(
   } else {
     trailing_metadata_count_ = 0;
   }
-  send_status_ = &status;
+  send_status_available_ = true;
+  send_status_code_ = static_cast<grpc_status_code>(status.code());
+  send_status_details_ = status.details();
 }
 
 void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
@@ -257,16 +262,15 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
         &status_details_capacity_;
     (*nops)++;
   }
-  if (send_status_) {
+  if (send_status_available_) {
     ops[*nops].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     ops[*nops].data.send_status_from_server.trailing_metadata_count =
         trailing_metadata_count_;
     ops[*nops].data.send_status_from_server.trailing_metadata =
         trailing_metadata_;
-    ops[*nops].data.send_status_from_server.status =
-        static_cast<grpc_status_code>(send_status_->code());
+    ops[*nops].data.send_status_from_server.status = send_status_code_;
     ops[*nops].data.send_status_from_server.status_details =
-        send_status_->details().c_str();
+        send_status_details_.empty() ? nullptr : send_status_details_.c_str();
     (*nops)++;
   }
   if (recv_closed_) {
