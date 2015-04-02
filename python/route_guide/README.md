@@ -18,7 +18,7 @@ With gRPC you can define your service once in a .proto file and implement client
 
 The example code for this tutorial is in [grpc/grpc-common/python/route_guide](https://github.com/grpc/grpc-common/tree/master/python/route_guide). To download the example, clone the `grpc-common` repository by running the following command:
 ```shell
-$ git clone https://github.com/google/grpc-common.git
+$ git clone https://github.com/grpc/grpc-common.git
 ```
 
 Then change your current directory to `grpc-common/python/route_guide`:
