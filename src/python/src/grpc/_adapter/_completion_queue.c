@@ -115,35 +115,56 @@ static PyObject *pygrpc_status_code(grpc_status_code c_status_code) {
   }
 }
 
+static PyObject *pygrpc_metadata_collection_get(
+    grpc_metadata *metadata_elements, size_t count) {
+  PyObject *metadata = PyList_New(count);
+  size_t i;
+  for (i = 0; i < count; ++i) {
+    grpc_metadata elem = metadata_elements[i];
+    PyObject *key = PyString_FromString(elem.key);
+    PyObject *value = PyString_FromStringAndSize(elem.value, elem.value_length);
+    PyObject* kvp = PyTuple_Pack(2, key, value);
+    // n.b. PyList_SetItem *steals* a reference to the set element.
+    PyList_SetItem(metadata, i, kvp);
+    Py_DECREF(key);
+    Py_DECREF(value);
+  }
+  return metadata;
+}
+
 static PyObject *pygrpc_stop_event_args(grpc_event *c_event) {
-  return PyTuple_Pack(7, stop_event_kind, Py_None, Py_None, Py_None,
-                      Py_None, Py_None, Py_None);
+  return PyTuple_Pack(8, stop_event_kind, Py_None, Py_None, Py_None,
+                      Py_None, Py_None, Py_None, Py_None);
 }
 
 static PyObject *pygrpc_write_event_args(grpc_event *c_event) {
   PyObject *write_accepted =
       c_event->data.write_accepted == GRPC_OP_OK ? Py_True : Py_False;
-  return PyTuple_Pack(7, write_event_kind, (PyObject *)c_event->tag,
-                      write_accepted, Py_None, Py_None, Py_None, Py_None);
+  return PyTuple_Pack(8, write_event_kind, (PyObject *)c_event->tag,
+                      write_accepted, Py_None, Py_None, Py_None, Py_None,
+                      Py_None);
 }
 
 static PyObject *pygrpc_complete_event_args(grpc_event *c_event) {
   PyObject *complete_accepted =
       c_event->data.finish_accepted == GRPC_OP_OK ? Py_True : Py_False;
-  return PyTuple_Pack(7, complete_event_kind, (PyObject *)c_event->tag,
-                      Py_None, complete_accepted, Py_None, Py_None, Py_None);
+  return PyTuple_Pack(8, complete_event_kind, (PyObject *)c_event->tag,
+                      Py_None, complete_accepted, Py_None, Py_None, Py_None,
+                      Py_None);
 }
 
 static PyObject *pygrpc_service_event_args(grpc_event *c_event) {
   if (c_event->data.server_rpc_new.method == NULL) {
-    return PyTuple_Pack(7, service_event_kind, c_event->tag,
-                        Py_None, Py_None, Py_None, Py_None, Py_None);
+    return PyTuple_Pack(
+        8, service_event_kind, c_event->tag, Py_None, Py_None, Py_None, Py_None,
+        Py_None, Py_None);
   } else {
     PyObject *method = NULL;
     PyObject *host = NULL;
     PyObject *service_deadline = NULL;
     Call *call = NULL;
     PyObject *service_acceptance = NULL;
+    PyObject *metadata = NULL;
     PyObject *event_args = NULL;
 
     method = PyBytes_FromString(c_event->data.server_rpc_new.method);
@@ -173,11 +194,16 @@ static PyObject *pygrpc_service_event_args(grpc_event *c_event) {
       goto error;
     }
 
-    event_args = PyTuple_Pack(7, service_event_kind,
+    metadata = pygrpc_metadata_collection_get(
+        c_event->data.server_rpc_new.metadata_elements,
+        c_event->data.server_rpc_new.metadata_count);
+    event_args = PyTuple_Pack(8, service_event_kind,
                               (PyObject *)c_event->tag, Py_None, Py_None,
-                              service_acceptance, Py_None, Py_None);
+                              service_acceptance, Py_None, Py_None,
+                              metadata);
 
     Py_DECREF(service_acceptance);
+    Py_DECREF(metadata);
 error:
     Py_XDECREF(call);
     Py_XDECREF(method);
@@ -190,8 +216,8 @@ error:
 
 static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
   if (c_event->data.read == NULL) {
-    return PyTuple_Pack(7, read_event_kind, (PyObject *)c_event->tag,
-                        Py_None, Py_None, Py_None, Py_None, Py_None);
+    return PyTuple_Pack(8, read_event_kind, (PyObject *)c_event->tag,
+                        Py_None, Py_None, Py_None, Py_None, Py_None, Py_None);
   } else {
     size_t length;
     size_t offset;
@@ -216,17 +242,23 @@ static PyObject *pygrpc_read_event_args(grpc_event *c_event) {
     if (bytes == NULL) {
       return NULL;
     }
-    event_args = PyTuple_Pack(7, read_event_kind, (PyObject *)c_event->tag,
-                              Py_None, Py_None, Py_None, bytes, Py_None);
+    event_args = PyTuple_Pack(8, read_event_kind, (PyObject *)c_event->tag,
+                              Py_None, Py_None, Py_None, bytes, Py_None,
+                              Py_None);
     Py_DECREF(bytes);
     return event_args;
   }
 }
 
 static PyObject *pygrpc_metadata_event_args(grpc_event *c_event) {
-  /* TODO(nathaniel): Actual transmission of metadata. */
-  return PyTuple_Pack(7, metadata_event_kind, (PyObject *)c_event->tag,
-                      Py_None, Py_None, Py_None, Py_None, Py_None);
+  PyObject *metadata = pygrpc_metadata_collection_get(
+      c_event->data.client_metadata_read.elements,
+      c_event->data.client_metadata_read.count);
+  PyObject* result = PyTuple_Pack(
+      8, metadata_event_kind, (PyObject *)c_event->tag, Py_None, Py_None,
+      Py_None, Py_None, Py_None, metadata);
+  Py_DECREF(metadata);
+  return result;
 }
 
 static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
@@ -253,9 +285,14 @@ static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
   if (status == NULL) {
     return NULL;
   }
-  event_args = PyTuple_Pack(7, finish_event_kind, (PyObject *)c_event->tag,
-                            Py_None, Py_None, Py_None, Py_None, status);
+  PyObject* metadata = pygrpc_metadata_collection_get(
+      c_event->data.finished.metadata_elements,
+      c_event->data.finished.metadata_count);
+  event_args = PyTuple_Pack(8, finish_event_kind, (PyObject *)c_event->tag,
+                            Py_None, Py_None, Py_None, Py_None, status,
+                            metadata);
   Py_DECREF(status);
+  Py_DECREF(metadata);
   return event_args;
 }
 
