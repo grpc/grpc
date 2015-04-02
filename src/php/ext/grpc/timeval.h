@@ -38,13 +38,13 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
 #include "php_grpc.h"
 
-#include "grpc/grpc.h"
-#include "grpc/support/time.h"
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
 
 /* Class entry for the Timeval PHP Class */
 extern zend_class_entry *grpc_ce_timeval;

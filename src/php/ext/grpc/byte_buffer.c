@@ -35,18 +35,18 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "ext/spl/spl_exceptions.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
 
 #include <string.h>
 
 #include "byte_buffer.h"
 
-#include "grpc/grpc.h"
-#include "grpc/support/slice.h"
+#include <grpc/grpc.h>
+#include <grpc/support/slice.h>
 
 grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
   gpr_slice slice = gpr_slice_from_copied_buffer(string, length);
