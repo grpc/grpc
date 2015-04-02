@@ -37,9 +37,6 @@
 #include <grpc++/config.h>
 #include <grpc++/thread_pool_interface.h>
 
-#include <condition_variable>
-#include <thread>
-#include <mutex>
 #include <queue>
 #include <vector>
 

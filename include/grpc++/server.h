@@ -34,10 +34,8 @@
 #ifndef GRPCXX_SERVER_H
 #define GRPCXX_SERVER_H
 
-#include <condition_variable>
 #include <list>
 #include <memory>
-#include <mutex>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
