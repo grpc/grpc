@@ -96,16 +96,6 @@ describe GRPC::Core::Call do
     @ch = GRPC::Core::Channel.new(fake_host, nil)
   end
 
-  describe '#add_metadata' do
-    it 'adds metadata to a call without fail' do
-      call = make_test_call
-      n = 37
-      one_md = proc { |x| [sprintf('key%d', x), sprintf('value%d', x)] }
-      metadata = Hash[n.times.collect { |i| one_md.call i }]
-      expect { call.add_metadata(metadata) }.to_not raise_error
-    end
-  end
-
   describe '#status' do
     it 'can save the status and read it back' do
       call = make_test_call
