@@ -11,4 +11,4 @@
 	branch = v3.0.0-alpha-1
 [submodule "third_party/gflags"]
 	path = third_party/gflags
-	url = https://code.google.com/p/gflags
+	url = https://github.com/gflags/gflags.git
