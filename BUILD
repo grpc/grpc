@@ -72,6 +72,7 @@ cc_library(
         "src/core/support/sync.c",
         "src/core/support/sync_posix.c",
         "src/core/support/sync_win32.c",
+        "src/core/support/thd.c",
         "src/core/support/thd_posix.c",
         "src/core/support/thd_win32.c",
         "src/core/support/time.c",

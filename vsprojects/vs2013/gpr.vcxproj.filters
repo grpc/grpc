@@ -88,6 +88,9 @@
     <ClCompile Include="..\..\src\core\support\sync_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\thd.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\thd_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
