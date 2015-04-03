@@ -202,7 +202,7 @@ describe('Trailing metadata', function() {
   after(function() {
     server.shutdown();
   });
-  it('when a unary call succeeds', function(done) {
+  it('should be present when a unary call succeeds', function(done) {
     var call = client.unary({error: false}, function(err, data) {
       assert.ifError(err);
     });
@@ -211,7 +211,7 @@ describe('Trailing metadata', function() {
       done();
     });
   });
-  it('when a unary call fails', function(done) {
+  it('should be present when a unary call fails', function(done) {
     var call = client.unary({error: true}, function(err, data) {
       assert(err);
     });
@@ -220,7 +220,7 @@ describe('Trailing metadata', function() {
       done();
     });
   });
-  it('when a client stream call succeeds', function(done) {
+  it('should be present when a client stream call succeeds', function(done) {
     var call = client.clientStream(function(err, data) {
       assert.ifError(err);
     });
@@ -232,7 +232,7 @@ describe('Trailing metadata', function() {
       done();
     });
   });
-  it('when a client stream call fails', function(done) {
+  it('should be present when a client stream call fails', function(done) {
     var call = client.clientStream(function(err, data) {
       assert(err);
     });
@@ -244,7 +244,7 @@ describe('Trailing metadata', function() {
       done();
     });
   });
-  it('when a server stream call succeeds', function(done) {
+  it('should be present when a server stream call succeeds', function(done) {
     var call = client.serverStream({error: false});
     call.on('data', function(){});
     call.on('status', function(status) {
@@ -253,7 +253,7 @@ describe('Trailing metadata', function() {
       done();
     });
   });
-  it('when a server stream call fails', function(done) {
+  it('should be present when a server stream call fails', function(done) {
     var call = client.serverStream({error: true});
     call.on('data', function(){});
     call.on('status', function(status) {
@@ -262,7 +262,7 @@ describe('Trailing metadata', function() {
       done();
     });
   });
-  it('when a bidi stream succeeds', function(done) {
+  it('should be present when a bidi stream succeeds', function(done) {
     var call = client.bidiStream();
     call.write({error: false});
     call.write({error: false});
@@ -274,7 +274,7 @@ describe('Trailing metadata', function() {
       done();
     });
   });
-  it('when a bidi stream fails', function(done) {
+  it('should be present when a bidi stream fails', function(done) {
     var call = client.bidiStream();
     call.write({error: false});
     call.write({error: true});
