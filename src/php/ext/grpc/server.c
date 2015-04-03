@@ -133,7 +133,7 @@ PHP_METHOD(Server, __construct) {
  * @param long $tag_cancel The tag to use if the call is cancelled
  * @return Void
  */
-PHP_METHOD(Server, request_call) {
+PHP_METHOD(Server, requestCall) {
   grpc_call_error error_code;
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
@@ -178,7 +178,7 @@ cleanup:
  * @param string $addr The address to add
  * @return true on success, false on failure
  */
-PHP_METHOD(Server, add_http2_port) {
+PHP_METHOD(Server, addHttp2Port) {
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
@@ -193,7 +193,7 @@ PHP_METHOD(Server, add_http2_port) {
   RETURN_LONG(grpc_server_add_http2_port(server->wrapped, addr));
 }
 
-PHP_METHOD(Server, add_secure_http2_port) {
+PHP_METHOD(Server, addSecureHttp2Port) {
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
@@ -227,9 +227,9 @@ PHP_METHOD(Server, start) {
 
 static zend_function_entry server_methods[] = {
     PHP_ME(Server, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Server, request_call, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, add_http2_port, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, add_secure_http2_port, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, requestCall, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, addHttp2Port, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, addSecureHttp2Port, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_server(TSRMLS_D) {
