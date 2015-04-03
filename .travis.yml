@@ -9,6 +9,7 @@ env:
   global:
     - RUBY_VERSION=2.1
     - COVERALLS_PARALLEL=true
+    - MAX_JOBS=16
   matrix:
     - CONFIG=dbg TEST=c
     - CONFIG=dbg TEST=c++
@@ -16,7 +17,7 @@ env:
     - CONFIG=opt TEST=c++
     - CONFIG=opt TEST=node
     - CONFIG=opt TEST=ruby
-    - CONFIG=opt TEST=python
+    - CONFIG=opt TEST=python MAX_JOBS=4
     - CONFIG=gcov TEST=c
     - CONFIG=gcov TEST=c++
     - USE_GCC=4.4 CONFIG=opt TEST=build
@@ -25,7 +26,7 @@ script:
   - rvm use $RUBY_VERSION
   - gem install bundler
   - if [ ! -z "$USE_GCC" ] ; then export CC=gcc-$USE_GCC ; export CXX=g++-$USE_GCC ; fi
-  - ./tools/run_tests/run_tests.py -l $TEST -t -j 16 -c $CONFIG -s 4.0
+  - ./tools/run_tests/run_tests.py -l $TEST -t -j $MAX_JOBS -c $CONFIG -s 4.0
 after_success:
   - if [ "$CONFIG" = "gcov" ] ; then coveralls --exclude third_party --exclude gens -b. --gcov-options '\-p' ; fi
 notifications:
