@@ -30,11 +30,18 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Where to put resulting .deb packages.
-deb_dest="deb_out"
+deb_dest="/tmp/deb_out"
 mkdir -p $deb_dest
 
-version='0.5.0.0'
+# Update version from default values if the file /version.txt exists
+#
+# - when present, /version.txt will by the docker build
 pkg_version='0.5.0'
+if [ -f /version.txt ]; then
+  pkg_version=$(cat /version.txt)
+fi
+version="${pkg_version}.0"
+echo "Target release => $pkg_version"
 
 if [ -f /.dockerinit ]; then
   # We're in Docker where uname -p returns "unknown".
@@ -110,8 +117,5 @@ do
   dpkg-deb -c $deb_path
   echo "Problems reported by lintian:"
   lintian $deb_path
-
   echo
 done
-
-
