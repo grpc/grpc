@@ -90,7 +90,7 @@ module GRPC
       # This is raised by GRPC internals but should rarely, if ever happen.
       # Log it, but don't notify the other endpoint..
       logger.warn("failed call: #{active_call}\n#{e}")
-    rescue OutOfTime
+    rescue Core::OutOfTime
       # This is raised when active_call#method.call exceeeds the deadline
       # event.  Send a status of deadline exceeded
       logger.warn("late call: #{active_call}")

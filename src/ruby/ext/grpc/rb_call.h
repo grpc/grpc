@@ -52,9 +52,13 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
 /* rb_cCall is the Call class whose instances proxy grpc_call. */
 extern VALUE rb_cCall;
 
-/* rb_cCallError is the ruby class of the exception thrown during call
+/* rb_eCallError is the ruby class of the exception thrown during call
    operations. */
 extern VALUE rb_eCallError;
+
+/* rb_eOutOfTime is the ruby class of the exception thrown to indicate
+   a timeout. */
+extern VALUE rb_eOutOfTime;
 
 /* Initializes the Call class. */
 void Init_grpc_call();

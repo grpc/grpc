@@ -556,6 +556,11 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
     return;
   }
   ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout);
+  if (ev == NULL) {
+    grpc_run_batch_stack_cleanup(&st);
+    rb_raise(rb_eOutOfTime, "grpc_call_start_batch timed out");
+    return;
+  }
   if (ev->data.op_complete != GRPC_OP_OK) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(rb_eCallError, "start_batch completion failed, (code=%d)",
@@ -575,6 +580,10 @@ VALUE rb_cCall = Qnil;
 /* rb_eCallError is the ruby class of the exception thrown during call
    operations; */
 VALUE rb_eCallError = Qnil;
+
+/* rb_eOutOfTime is the ruby class of the exception thrown to indicate
+   a timeout. */
+VALUE rb_eOutOfTime = Qnil;
 
 void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
@@ -651,6 +660,8 @@ void Init_grpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
   rb_eCallError =
       rb_define_class_under(rb_mGrpcCore, "CallError", rb_eException);
+  rb_eOutOfTime =
+      rb_define_class_under(rb_mGrpcCore, "OutOfTime", rb_eException);
   rb_cCall = rb_define_class_under(rb_mGrpcCore, "Call", rb_cObject);
   rb_cMdAry = rb_define_class_under(rb_mGrpcCore, "MetadataArray",
                                     rb_cObject);
