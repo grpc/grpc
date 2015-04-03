@@ -35,9 +35,10 @@ module GRPC
   # ClientStub represents an endpoint used to send requests to GRPC servers.
   class ClientStub
     include Core::StatusCodes
+    include Core::TimeConsts
 
-    # Default deadline is 5 seconds.
-    DEFAULT_DEADLINE = 5
+    # Default timeout is 5 seconds.
+    DEFAULT_TIMEOUT = 5
 
     # setup_channel is used by #initialize to constuct a channel from its
     # arguments.
@@ -76,8 +77,8 @@ module GRPC
     # present the host and arbitrary keyword arg areignored, and the RPC
     # connection uses this channel.
     #
-    # - :deadline
-    # when present, this is the default deadline used for calls
+    # - :timeout
+    # when present, this is the default timeout used for calls
     #
     # - :update_metadata
     # when present, this a func that takes a hash and returns a hash
@@ -87,13 +88,13 @@ module GRPC
     # @param host [String] the host the stub connects to
     # @param q [Core::CompletionQueue] used to wait for events
     # @param channel_override [Core::Channel] a pre-created channel
-    # @param deadline [Number] the default deadline to use in requests
+    # @param timeout [Number] the default timeout to use in requests
     # @param creds [Core::Credentials] the channel
     # @param update_metadata a func that updates metadata as described above
     # @param kw [KeywordArgs]the channel arguments
     def initialize(host, q,
                    channel_override: nil,
-                   deadline: DEFAULT_DEADLINE,
+                   timeout: nil,
                    creds: nil,
                    update_metadata: nil,
                    **kw)
@@ -103,7 +104,7 @@ module GRPC
       @update_metadata = ClientStub.check_update_metadata(update_metadata)
       alt_host = kw[Core::Channel::SSL_TARGET]
       @host = alt_host.nil? ? host : alt_host
-      @deadline = deadline
+      @timeout = timeout.nil? ? DEFAULT_TIMEOUT : timeout
     end
 
     # request_response sends a request to a GRPC server, and returns the
@@ -140,12 +141,12 @@ module GRPC
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] (optional) the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
     # @param return_op [true|false] return an Operation if true
     # @return [Object] the response received from the server
-    def request_response(method, req, marshal, unmarshal, deadline = nil,
+    def request_response(method, req, marshal, unmarshal, timeout = nil,
                          return_op: false, **kw)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
+      c = new_active_call(method, marshal, unmarshal, timeout)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
       return c.request_response(req, **md) unless return_op
 
@@ -197,12 +198,12 @@ module GRPC
     # @param requests [Object] an Enumerable of requests to send
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] the max completion time in seconds
     # @param return_op [true|false] return an Operation if true
     # @return [Object|Operation] the response received from the server
-    def client_streamer(method, requests, marshal, unmarshal, deadline = nil,
+    def client_streamer(method, requests, marshal, unmarshal, timeout = nil,
                         return_op: false, **kw)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
+      c = new_active_call(method, marshal, unmarshal, timeout)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
       return c.client_streamer(requests, **md) unless return_op
 
@@ -262,13 +263,13 @@ module GRPC
     # @param req [Object] the request sent to the server
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] the max completion time in seconds
+    # @param timeout [Numeric] the max completion time in seconds
     # @param return_op [true|false]return an Operation if true
     # @param blk [Block] when provided, is executed for each response
     # @return [Enumerator|Operation|nil] as discussed above
-    def server_streamer(method, req, marshal, unmarshal, deadline = nil,
+    def server_streamer(method, req, marshal, unmarshal, timeout = nil,
                         return_op: false, **kw, &blk)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
+      c = new_active_call(method, marshal, unmarshal, timeout)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
       return c.server_streamer(req, **md, &blk) unless return_op
 
@@ -367,13 +368,13 @@ module GRPC
     # @param requests [Object] an Enumerable of requests to send
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [Numeric] (optional) the max completion time in seconds
+    # @param timeout [Numeric] (optional) the max completion time in seconds
     # @param blk [Block] when provided, is executed for each response
     # @param return_op [true|false] return an Operation if true
     # @return [Enumerator|nil|Operation] as discussed above
-    def bidi_streamer(method, requests, marshal, unmarshal, deadline = nil,
+    def bidi_streamer(method, requests, marshal, unmarshal, timeout = nil,
                       return_op: false, **kw, &blk)
-      c = new_active_call(method, marshal, unmarshal, deadline || @deadline)
+      c = new_active_call(method, marshal, unmarshal, timeout)
       md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
       return c.bidi_streamer(requests, **md, &blk) unless return_op
 
@@ -393,12 +394,11 @@ module GRPC
     # @param method [string] the method being called.
     # @param marshal [Function] f(obj)->string that marshals requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    # @param deadline [TimeConst]
-    def new_active_call(method, marshal, unmarshal, deadline = nil)
-      absolute_deadline = Core::TimeConsts.from_relative_time(deadline)
-      call = @ch.create_call(@queue, method, @host, absolute_deadline)
-      ActiveCall.new(call, @queue, marshal, unmarshal, absolute_deadline,
-                     started: false)
+    # @param timeout [TimeConst]
+    def new_active_call(method, marshal, unmarshal, timeout = nil)
+      deadline = from_relative_time(timeout.nil? ? @timeout : timeout)
+      call = @ch.create_call(@queue, method, @host, deadline)
+      ActiveCall.new(call, @queue, marshal, unmarshal, deadline, started: false)
     end
   end
 end
