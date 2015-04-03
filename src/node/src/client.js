@@ -241,13 +241,13 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
           callback(err);
           return;
         }
+        emitter.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
           callback(error);
           return;
         }
-        emitter.emit('status', response.status);
         emitter.emit('metadata', response.metadata);
         callback(null, deserialize(response.read));
       });
@@ -312,13 +312,13 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
           callback(err);
           return;
         }
+        stream.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
           callback(error);
           return;
         }
-        stream.emit('status', response.status);
         callback(null, deserialize(response.read));
       });
     });
