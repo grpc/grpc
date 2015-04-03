@@ -35,7 +35,7 @@ mkdir -p $deb_dest
 
 # Update version from default values if the file /version.txt exists
 #
-# - when present, /version.txt will by the docker build
+# - when present, /version.txt will added by the docker build.
 pkg_version='0.5.0'
 if [ -f /version.txt ]; then
   pkg_version=$(cat /version.txt)
