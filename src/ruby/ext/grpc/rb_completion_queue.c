@@ -38,7 +38,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include "rb_grpc.h"
-#include "rb_event.h"
 
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {

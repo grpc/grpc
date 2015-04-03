@@ -40,7 +40,6 @@
 
 #include "rb_byte_buffer.h"
 #include "rb_completion_queue.h"
-#include "rb_metadata.h"
 #include "rb_grpc.h"
 
 /* rb_sBatchResult is struct class used to hold the results of a batch call */
@@ -119,87 +118,6 @@ const char *grpc_call_error_detail_of(grpc_call_error err) {
   return detail;
 }
 
-/* grpc_rb_call_add_metadata_hash_cb is the hash iteration callback used by
-   grpc_rb_call_add_metadata.
-*/
-int grpc_rb_call_add_metadata_hash_cb(VALUE key, VALUE val, VALUE call_obj) {
-  grpc_call *call = NULL;
-  grpc_metadata *md = NULL;
-  VALUE md_obj = Qnil;
-  VALUE md_obj_args[2];
-  VALUE flags = rb_ivar_get(call_obj, id_flags);
-  grpc_call_error err;
-  int array_length;
-  int i;
-
-  /* Construct a metadata object from key and value and add it */
-  Data_Get_Struct(call_obj, grpc_call, call);
-  md_obj_args[0] = key;
-
-  if (TYPE(val) == T_ARRAY) {
-    /* If the value is an array, add each value in the array separately */
-    array_length = RARRAY_LEN(val);
-    for (i = 0; i < array_length; i++) {
-      md_obj_args[1] = rb_ary_entry(val, i);
-      md_obj = rb_class_new_instance(2, md_obj_args, rb_cMetadata);
-      md = grpc_rb_get_wrapped_metadata(md_obj);
-      err = grpc_call_add_metadata_old(call, md, NUM2UINT(flags));
-      if (err != GRPC_CALL_OK) {
-        rb_raise(rb_eCallError, "add metadata failed: %s (code=%d)",
-                 grpc_call_error_detail_of(err), err);
-        return ST_STOP;
-      }
-    }
-  } else {
-    md_obj_args[1] = val;
-    md_obj = rb_class_new_instance(2, md_obj_args, rb_cMetadata);
-    md = grpc_rb_get_wrapped_metadata(md_obj);
-    err = grpc_call_add_metadata_old(call, md, NUM2UINT(flags));
-    if (err != GRPC_CALL_OK) {
-      rb_raise(rb_eCallError, "add metadata failed: %s (code=%d)",
-               grpc_call_error_detail_of(err), err);
-      return ST_STOP;
-    }
-  }
-
-  return ST_CONTINUE;
-}
-
-
-/*
-  call-seq:
-  call.add_metadata(completion_queue, hash_elements, flags=nil)
-
-  Add metadata elements to the call from a ruby hash, to be sent upon
-  invocation. flags is a bit-field combination of the write flags defined
-  above.
-
-  REQUIRES: grpc_call_invoke/grpc_call_accept have not been
-            called on this call.  Produces no events. */
-
-static VALUE grpc_rb_call_add_metadata(int argc, VALUE *argv, VALUE self) {
-  VALUE metadata;
-  VALUE flags = Qnil;
-  ID id_size = rb_intern("size");
-
-  /* "11" == 1 mandatory args, 1 (flags) is optional */
-  rb_scan_args(argc, argv, "11", &metadata, &flags);
-  if (NIL_P(flags)) {
-    flags = UINT2NUM(0); /* Default to no flags */
-  }
-  if (TYPE(metadata) != T_HASH) {
-    rb_raise(rb_eTypeError, "add metadata failed: metadata should be a hash");
-    return Qnil;
-  }
-  if (NUM2UINT(rb_funcall(metadata, id_size, 0)) == 0) {
-    return Qnil;
-  }
-  rb_ivar_set(self, id_flags, flags);
-  rb_ivar_set(self, id_input_md, metadata);
-  rb_hash_foreach(metadata, grpc_rb_call_add_metadata_hash_cb, self);
-  return Qnil;
-}
-
 /* Called by clients to cancel an RPC on the server.
    Can be called multiple times, from any thread. */
 static VALUE grpc_rb_call_cancel(VALUE self) {
@@ -209,65 +127,6 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   err = grpc_call_cancel(call);
   if (err != GRPC_CALL_OK) {
     rb_raise(rb_eCallError, "cancel failed: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-
-  return Qnil;
-}
-
-/*
-  call-seq:
-  call.invoke(completion_queue, tag, flags=nil)
-
-  Invoke the RPC. Starts sending metadata and request headers on the wire.
-  flags is a bit-field combination of the write flags defined above.
-
-  REQUIRES: Can be called at most once per call.
-            Can only be called on the client.
-  Produces a GRPC_INVOKE_ACCEPTED event on completion. */
-static VALUE grpc_rb_call_invoke(int argc, VALUE *argv, VALUE self) {
-  VALUE cqueue = Qnil;
-  VALUE metadata_read_tag = Qnil;
-  VALUE finished_tag = Qnil;
-  VALUE flags = Qnil;
-  grpc_call *call = NULL;
-  grpc_completion_queue *cq = NULL;
-  grpc_call_error err;
-
-  /* "31" == 3 mandatory args, 1 (flags) is optional */
-  rb_scan_args(argc, argv, "31", &cqueue, &metadata_read_tag, &finished_tag,
-               &flags);
-  if (NIL_P(flags)) {
-    flags = UINT2NUM(0); /* Default to no flags */
-  }
-  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
-  Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_invoke_old(call, cq, ROBJECT(metadata_read_tag),
-                             ROBJECT(finished_tag), NUM2UINT(flags));
-  if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "invoke failed: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-
-  /* Add the completion queue as an instance attribute, prevents it from being
-   * GCed until this call object is GCed */
-  rb_ivar_set(self, id_cq, cqueue);
-  return Qnil;
-}
-
-/* Initiate a read on a call. Output event contains a byte buffer with the
-   result of the read.
-
-   REQUIRES: No other reads are pending on the call.
-             It is only safe to start the next read after the corresponding
-             read event is received. */
-static VALUE grpc_rb_call_start_read(VALUE self, VALUE tag) {
-  grpc_call *call = NULL;
-  grpc_call_error err;
-  Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_read_old(call, ROBJECT(tag));
-  if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "start read failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -320,122 +179,6 @@ static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
   }
 
   return rb_ivar_set(self, id_metadata, metadata);
-}
-
-/*
-  call-seq:
-  call.start_write(byte_buffer, tag, flags=nil)
-
-  Queue a byte buffer for writing.
-  flags is a bit-field combination of the write flags defined above.
-  A write with byte_buffer null is allowed, and will not send any bytes on the
-  wire. If this is performed without GRPC_WRITE_BUFFER_HINT flag it provides
-  a mechanism to flush any previously buffered writes to outgoing flow control.
-
-  REQUIRES: No other writes are pending on the call. It is only safe to
-            start the next write after the corresponding write_accepted event
-            is received.
-            GRPC_INVOKE_ACCEPTED must have been received by the application
-            prior to calling this on the client. On the server,
-            grpc_call_accept must have been called successfully.
-            Produces a GRPC_WRITE_ACCEPTED event. */
-static VALUE grpc_rb_call_start_write(int argc, VALUE *argv, VALUE self) {
-  VALUE byte_buffer = Qnil;
-  VALUE tag = Qnil;
-  VALUE flags = Qnil;
-  grpc_call *call = NULL;
-  grpc_byte_buffer *bfr = NULL;
-  grpc_call_error err;
-
-  /* "21" == 2 mandatory args, 1 (flags) is optional */
-  rb_scan_args(argc, argv, "21", &byte_buffer, &tag, &flags);
-  if (NIL_P(flags)) {
-    flags = UINT2NUM(0); /* Default to no flags */
-  }
-  bfr = grpc_rb_get_wrapped_byte_buffer(byte_buffer);
-  Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_write_old(call, bfr, ROBJECT(tag), NUM2UINT(flags));
-  if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "start write failed: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-
-  return Qnil;
-}
-
-/* Queue a status for writing.
-
-   call-seq:
-   tag = Object.new
-   call.write_status(200, "OK", tag)
-
-   REQUIRES: No other writes are pending on the call. It is only safe to
-             start the next write after the corresponding write_accepted event
-             is received.
-             GRPC_INVOKE_ACCEPTED must have been received by the application
-             prior to calling this.
-             Only callable on the server.
-
-   Produces a GRPC_FINISHED event when the status is sent and the
-   stream is fully closed */
-static VALUE grpc_rb_call_start_write_status(VALUE self, VALUE code,
-                                             VALUE status, VALUE tag) {
-  grpc_call *call = NULL;
-  grpc_call_error err;
-  Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_start_write_status_old(call, NUM2UINT(code),
-                                         StringValueCStr(status), ROBJECT(tag));
-  if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "start write status: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-
-  return Qnil;
-}
-
-/* No more messages to send.
-   REQUIRES: No other writes are pending on the call. */
-static VALUE grpc_rb_call_writes_done(VALUE self, VALUE tag) {
-  grpc_call *call = NULL;
-  grpc_call_error err;
-  Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_writes_done_old(call, ROBJECT(tag));
-  if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "writes done: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-
-  return Qnil;
-}
-
-/* call-seq:
-   call.server_end_initial_metadata(flag)
-
-   Only to be called on servers, before sending messages.
-   flags is a bit-field combination of the write flags defined above.
-
-   REQUIRES: Can be called at most once per call.
-   Can only be called on the server, must be called after
-   grpc_call_server_accept
-   Produces no events */
-static VALUE grpc_rb_call_server_end_initial_metadata(int argc, VALUE *argv,
-                                                      VALUE self) {
-  VALUE flags = Qnil;
-  grpc_call *call = NULL;
-  grpc_call_error err;
-
-  /* "01" == 1 (flags) is optional */
-  rb_scan_args(argc, argv, "01", &flags);
-  if (NIL_P(flags)) {
-    flags = UINT2NUM(0); /* Default to no flags */
-  }
-  Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_server_end_initial_metadata_old(call, NUM2UINT(flags));
-  if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "end_initial_metadata failed: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-  return Qnil;
 }
 
 /* grpc_rb_md_ary_fill_hash_cb is the hash iteration callback used
@@ -826,35 +569,6 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   return result;
 }
 
-/* call-seq:
-   call.server_accept(completion_queue, finished_tag)
-
-   Accept an incoming RPC, binding a completion queue to it.
-   To be called before sending or receiving messages.
-
-   REQUIRES: Can be called at most once per call.
-   Can only be called on the server.
-   Produces a GRPC_FINISHED event with finished_tag when the call has been
-   completed (there may be other events for the call pending at this
-   time) */
-static VALUE grpc_rb_call_server_accept(VALUE self, VALUE cqueue,
-                                        VALUE finished_tag) {
-  grpc_call *call = NULL;
-  grpc_completion_queue *cq = grpc_rb_get_wrapped_completion_queue(cqueue);
-  grpc_call_error err;
-  Data_Get_Struct(self, grpc_call, call);
-  err = grpc_call_server_accept_old(call, cq, ROBJECT(finished_tag));
-  if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "server_accept failed: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
-  }
-
-  /* Add the completion queue as an instance attribute, prevents it from being
-   * GCed until this call object is GCed */
-  rb_ivar_set(self, id_cq, cqueue);
-  return Qnil;
-}
-
 /* rb_cCall is the ruby class that proxies grpc_call. */
 VALUE rb_cCall = Qnil;
 
@@ -948,17 +662,7 @@ void Init_grpc_call() {
 
   /* Add ruby analogues of the Call methods. */
   rb_define_method(rb_cCall, "run_batch", grpc_rb_call_run_batch, 4);
-  rb_define_method(rb_cCall, "server_accept", grpc_rb_call_server_accept, 2);
-  rb_define_method(rb_cCall, "server_end_initial_metadata",
-                   grpc_rb_call_server_end_initial_metadata, -1);
-  rb_define_method(rb_cCall, "add_metadata", grpc_rb_call_add_metadata, -1);
   rb_define_method(rb_cCall, "cancel", grpc_rb_call_cancel, 0);
-  rb_define_method(rb_cCall, "invoke", grpc_rb_call_invoke, -1);
-  rb_define_method(rb_cCall, "start_read", grpc_rb_call_start_read, 1);
-  rb_define_method(rb_cCall, "start_write", grpc_rb_call_start_write, -1);
-  rb_define_method(rb_cCall, "start_write_status",
-                   grpc_rb_call_start_write_status, 3);
-  rb_define_method(rb_cCall, "writes_done", grpc_rb_call_writes_done, 1);
   rb_define_method(rb_cCall, "status", grpc_rb_call_get_status, 0);
   rb_define_method(rb_cCall, "status=", grpc_rb_call_set_status, 1);
   rb_define_method(rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);

@@ -37,20 +37,6 @@
 #include <grpc/grpc.h>
 #include <ruby.h>
 
-/* rb_cByteBuffer is the ByteBuffer class whose instances proxy
-   grpc_byte_buffer. */
-extern VALUE rb_cByteBuffer;
-
-/* Initializes the ByteBuffer class. */
-void Init_grpc_byte_buffer();
-
-/* grpc_rb_byte_buffer_create_with_mark creates a grpc_rb_byte_buffer with a
- * ruby mark object that will be kept alive while the byte_buffer is alive. */
-VALUE grpc_rb_byte_buffer_create_with_mark(VALUE mark, grpc_byte_buffer* bb);
-
-/* Gets the wrapped byte_buffer from its ruby object. */
-grpc_byte_buffer* grpc_rb_get_wrapped_byte_buffer(VALUE v);
-
 /* Converts a char* with a length to a grpc_byte_buffer */
 grpc_byte_buffer *grpc_rb_s_to_byte_buffer(char *string, size_t length);
 

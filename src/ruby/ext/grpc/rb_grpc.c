@@ -39,12 +39,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
-#include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_channel.h"
 #include "rb_completion_queue.h"
-#include "rb_event.h"
-#include "rb_metadata.h"
 #include "rb_server.h"
 #include "rb_credentials.h"
 #include "rb_server_credentials.h"
@@ -263,13 +260,10 @@ void Init_grpc() {
   sym_details = ID2SYM(rb_intern("details"));
   sym_metadata = ID2SYM(rb_intern("metadata"));
 
-  Init_grpc_byte_buffer();
-  Init_grpc_event();
   Init_grpc_channel();
   Init_grpc_completion_queue();
   Init_grpc_call();
   Init_grpc_credentials();
-  Init_grpc_metadata();
   Init_grpc_server();
   Init_grpc_server_credentials();
   Init_grpc_status_codes();
