@@ -31,6 +31,9 @@
  *
  */
 
+#include <grpc++/impl/sync.h>
+#include <grpc++/impl/thd.h>
+
 #include "src/cpp/server/thread_pool.h"
 
 namespace grpc {
@@ -38,7 +41,7 @@ namespace grpc {
 void ThreadPool::ThreadFunc() {
   for (;;) {
     // Wait until work is available or we are shutting down.
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::unique_lock<grpc::mutex> lock(mu_);
     if (!shutdown_ && callbacks_.empty()) {
       cv_.wait(lock);
     }
@@ -57,13 +60,13 @@ void ThreadPool::ThreadFunc() {
 
 ThreadPool::ThreadPool(int num_threads) : shutdown_(false) {
   for (int i = 0; i < num_threads; i++) {
-    threads_.push_back(std::thread(&ThreadPool::ThreadFunc, this));
+    threads_.push_back(grpc::thread(&ThreadPool::ThreadFunc, this));
   }
 }
 
 ThreadPool::~ThreadPool() {
   {
-    std::lock_guard<std::mutex> lock(mu_);
+    grpc::lock_guard<grpc::mutex> lock(mu_);
     shutdown_ = true;
     cv_.notify_all();
   }
@@ -73,7 +76,7 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::ScheduleCallback(const std::function<void()>& callback) {
-  std::lock_guard<std::mutex> lock(mu_);
+  grpc::lock_guard<grpc::mutex> lock(mu_);
   callbacks_.push(callback);
   cv_.notify_one();
 }

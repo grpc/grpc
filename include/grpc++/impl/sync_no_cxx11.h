@@ -31,37 +31,68 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#ifndef GRPCXX_IMPL_SYNC_NO_CXX11_H
+#define GRPCXX_IMPL_SYNC_NO_CXX11_H
 
-#include <grpc++/config.h>
-
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/thread_pool_interface.h>
-
-#include <queue>
-#include <vector>
+#include <grpc/support/sync.h>
 
 namespace grpc {
 
-class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
+template<class mutex>
+class lock_guard;
+class condition_variable;
+
+class mutex {
  public:
-  explicit ThreadPool(int num_threads);
-  ~ThreadPool();
-
-  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
-
+  mutex() { gpr_mu_init(&mu_); }
+  ~mutex() { gpr_mu_destroy(&mu_); }
  private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread> threads_;
+  ::gpr_mu mu_;
+  template <class mutex>
+  friend class lock_guard;
+  friend class condition_variable;
+};
 
-  void ThreadFunc();
+template <class mutex>
+class lock_guard {
+ public:
+   lock_guard(mutex &mu) : mu_(mu), locked(true) { gpr_mu_lock(&mu.mu_); }
+   ~lock_guard() { unlock(); }
+  void lock() {
+    if (!locked) gpr_mu_lock(&mu_.mu_);
+    locked = true;
+  }
+  void unlock() {
+    if (locked) gpr_mu_unlock(&mu_.mu_);
+    locked = false;
+  }
+ private:
+  mutex &mu_;
+  bool locked;
+  friend class condition_variable;
+};
+
+template <class mutex>
+class unique_lock : public lock_guard<mutex> {
+ public:
+   unique_lock(mutex &mu) : lock_guard(mu) { }
+};
+
+class condition_variable {
+ public:
+  condition_variable() { gpr_cv_init(&cv_); }
+  ~condition_variable() { gpr_cv_destroy(&cv_); }
+  void wait(lock_guard<mutex> &mu) {
+    mu.locked = false;
+    gpr_cv_wait(&cv_, &mu.mu_.mu_, gpr_inf_future);
+    mu.locked = true;
+  }
+  void notify_one() { gpr_cv_signal(&cv_); }
+  void notify_all() { gpr_cv_broadcast(&cv_); }
+ private:
+  gpr_cv cv_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#endif  // GRPCXX_IMPL_SYNC_NO_CXX11_H

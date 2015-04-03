@@ -31,37 +31,16 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#ifndef GRPCXX_IMPL_THD_H
+#define GRPCXX_IMPL_THD_H
 
 #include <grpc++/config.h>
 
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/thread_pool_interface.h>
+#ifdef GRPC_CXX0X_NO_THREAD
+#include <grpc++/impl/thd_nocxx11.h>
+#else
+#include <grpc++/impl/thd_cxx11.h>
 
-#include <queue>
-#include <vector>
+#endif
 
-namespace grpc {
-
-class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
- public:
-  explicit ThreadPool(int num_threads);
-  ~ThreadPool();
-
-  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
-
- private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread> threads_;
-
-  void ThreadFunc();
-};
-
-}  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#endif  // GRPCXX_IMPL_THD_H
