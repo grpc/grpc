@@ -94,6 +94,15 @@ CPPFLAGS_dbg = -O0
 LDFLAGS_dbg =
 DEFINES_dbg = _DEBUG DEBUG
 
+VALID_CONFIG_mutrace = 1
+CC_mutrace = $(DEFAULT_CC)
+CXX_mutrace = $(DEFAULT_CXX)
+LD_mutrace = $(DEFAULT_CC)
+LDXX_mutrace = $(DEFAULT_CXX)
+CPPFLAGS_mutrace = -O0
+LDFLAGS_mutrace = -rdynamic
+DEFINES_mutrace = _DEBUG DEBUG
+
 VALID_CONFIG_valgrind = 1
 REQUIRE_CUSTOM_LIBRARIES_valgrind = 1
 CC_valgrind = $(DEFAULT_CC)
