@@ -307,10 +307,6 @@ static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
 
   /* TODO(ctiller): verify that there are any alarms (atomically) here */
 
-  if (gpr_time_cmp(g_shard_queue[0]->min_deadline, now) >= 0) {
-    return 0;
-  }
-
   if (gpr_mu_trylock(&g_checker_mu)) {
     gpr_mu_lock(&g_mu);
 
