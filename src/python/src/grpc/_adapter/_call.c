@@ -164,10 +164,10 @@ static const PyObject *pygrpc_call_add_metadata(Call *self, PyObject *args) {
   const char* key = NULL;
   const char* value = NULL;
   int value_length = 0;
+  grpc_metadata metadata;
   if (!PyArg_ParseTuple(args, "ss#", &key, &value, &value_length)) {
     return NULL;
   }
-  grpc_metadata metadata;
   metadata.key = key;
   metadata.value = value;
   metadata.value_length = value_length;

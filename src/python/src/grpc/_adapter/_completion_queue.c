@@ -124,7 +124,7 @@ static PyObject *pygrpc_metadata_collection_get(
     PyObject *key = PyString_FromString(elem.key);
     PyObject *value = PyString_FromStringAndSize(elem.value, elem.value_length);
     PyObject* kvp = PyTuple_Pack(2, key, value);
-    // n.b. PyList_SetItem *steals* a reference to the set element.
+    /* n.b. PyList_SetItem *steals* a reference to the set element. */
     PyList_SetItem(metadata, i, kvp);
     Py_DECREF(key);
     Py_DECREF(value);
@@ -266,6 +266,7 @@ static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
   PyObject *details;
   PyObject *status;
   PyObject *event_args;
+  PyObject *metadata;
 
   code = pygrpc_status_code(c_event->data.finished.status);
   if (code == NULL) {
@@ -285,7 +286,7 @@ static PyObject *pygrpc_finished_event_args(grpc_event *c_event) {
   if (status == NULL) {
     return NULL;
   }
-  PyObject* metadata = pygrpc_metadata_collection_get(
+  metadata = pygrpc_metadata_collection_get(
       c_event->data.finished.metadata_elements,
       c_event->data.finished.metadata_count);
   event_args = PyTuple_Pack(8, finish_event_kind, (PyObject *)c_event->tag,
