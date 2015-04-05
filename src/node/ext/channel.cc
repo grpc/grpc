@@ -31,8 +31,6 @@
  *
  */
 
-#include <malloc.h>
-
 #include <vector>
 
 #include <node.h>
