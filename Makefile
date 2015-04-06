@@ -2334,6 +2334,7 @@ LIBGPR_SRC = \
     src/core/support/sync.c \
     src/core/support/sync_posix.c \
     src/core/support/sync_win32.c \
+    src/core/support/thd.c \
     src/core/support/thd_posix.c \
     src/core/support/thd_win32.c \
     src/core/support/time.c \
@@ -2428,6 +2429,7 @@ $(OBJDIR)/$(CONFIG)/src/core/support/string_win32.o:
 $(OBJDIR)/$(CONFIG)/src/core/support/sync.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/sync_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/sync_win32.o: 
+$(OBJDIR)/$(CONFIG)/src/core/support/thd.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/thd_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/thd_win32.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/time.o: 

@@ -60,12 +60,16 @@ static void thd_body(void *v) {
   gpr_mu_unlock(&t->mu);
 }
 
+static void thd_body_joinable(void *v) { }
+
 /* Test that we can create a number of threads and wait for them. */
 static void test(void) {
   int i;
   gpr_thd_id thd;
+  gpr_thd_id thds[1000];
   struct test t;
   int n = 1000;
+  gpr_thd_options options = gpr_thd_options_default();
   gpr_mu_init(&t.mu);
   gpr_cv_init(&t.done_cv);
   t.n = n;
@@ -79,6 +83,13 @@ static void test(void) {
   }
   gpr_mu_unlock(&t.mu);
   GPR_ASSERT(t.n == 0);
+  gpr_thd_options_set_joinable(&options);
+  for (i = 0; i < n; i++) {
+    GPR_ASSERT(gpr_thd_new(&thds[i], &thd_body_joinable, NULL, &options));
+  }
+  for (i = 0; i < n; i++) {
+    gpr_thd_join(thds[i]);
+  }
 }
 
 /* ------------------------------------------------- */
