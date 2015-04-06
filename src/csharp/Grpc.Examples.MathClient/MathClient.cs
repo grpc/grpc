@@ -46,11 +46,15 @@ namespace math
                 MathGrpc.IMathServiceClient stub = new MathGrpc.MathServiceClientStub(channel);
                 MathExamples.DivExample(stub);
 
-                MathExamples.FibExample(stub);
+                MathExamples.DivAsyncExample(stub).Wait();
 
-                MathExamples.SumExample(stub);
+                MathExamples.FibExample(stub).Wait();
 
-                MathExamples.DivManyExample(stub);
+                MathExamples.SumExample(stub).Wait();
+
+                MathExamples.DivManyExample(stub).Wait();
+
+                MathExamples.DependendRequestsExample(stub).Wait();
             }
 
             GrpcEnvironment.Shutdown();
