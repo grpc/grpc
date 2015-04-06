@@ -56,13 +56,14 @@ class mutex {
 template <class mutex>
 class lock_guard {
  public:
-   lock_guard(mutex &mu) : mu_(mu), locked(true) { gpr_mu_lock(&mu.mu_); }
-   ~lock_guard() { unlock(); }
-  void lock() {
+  lock_guard(mutex &mu) : mu_(mu), locked(true) { gpr_mu_lock(&mu.mu_); }
+  ~lock_guard() { unlock_internal(); }
+ protected:
+  void lock_internal() {
     if (!locked) gpr_mu_lock(&mu_.mu_);
     locked = true;
   }
-  void unlock() {
+  void unlock_internal() {
     if (locked) gpr_mu_unlock(&mu_.mu_);
     locked = false;
   }
@@ -75,7 +76,9 @@ class lock_guard {
 template <class mutex>
 class unique_lock : public lock_guard<mutex> {
  public:
-   unique_lock(mutex &mu) : lock_guard(mu) { }
+  unique_lock(mutex &mu) : lock_guard(mu) { }
+  void lock() { lock_internal(); }
+  void unlock() { unlock_internal(); }
 };
 
 class condition_variable {

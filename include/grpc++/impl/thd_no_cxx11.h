@@ -42,15 +42,22 @@ class thread {
  public:
   template<class T> thread(void (T::*fptr)(), T *obj) {
     func_ = new thread_function<T>(fptr, obj);
+    joined_ = false;
     start();
   }
-  ~thread() { delete func_; }
-  void join() { gpr_thd_join(thd); }
+  ~thread() {
+    if (!joined_) std::terminate();
+    delete func_;
+  }
+  void join() {
+    gpr_thd_join(thd_);
+    joined_ = true;
+  }
  private:
   void start() {
     gpr_thd_options options = gpr_thd_options_default();
     gpr_thd_options_set_joinable(&options);
-    gpr_thd_new(&thd, thread_func, (void *) func_, &options);
+    gpr_thd_new(&thd_, thread_func, (void *) func_, &options);
   }
   static void thread_func(void *arg) {
     thread_function_base *func = (thread_function_base *) arg;
@@ -73,7 +80,8 @@ class thread {
     T *obj_;
   };
   thread_function_base *func_;
-  gpr_thd_id thd;
+  gpr_thd_id thd_;
+  bool joined_;
 };
 
 }  // namespace grpc

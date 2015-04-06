@@ -37,10 +37,9 @@
 #include <grpc++/config.h>
 
 #ifdef GRPC_CXX0X_NO_THREAD
-#include <grpc++/impl/thd_nocxx11.h>
+#include <grpc++/impl/thd_no_cxx11.h>
 #else
 #include <grpc++/impl/thd_cxx11.h>
-
 #endif
 
 #endif  // GRPCXX_IMPL_THD_H
