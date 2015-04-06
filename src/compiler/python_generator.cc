@@ -354,6 +354,7 @@ bool PrintStubFactory(const grpc::string& package_qualified_service_name,
         "Service", service->name(),
       });
   out->Print(dict, "def early_adopter_create_$Service$_stub(host, port,"
+             " metadata_transformer=None,"
              " secure=False, root_certificates=None, private_key=None,"
              " certificate_chain=None, server_host_override=None):\n");
   {
@@ -423,7 +424,8 @@ bool PrintStubFactory(const grpc::string& package_qualified_service_name,
     out->Print(
         "return implementations.stub("
         "\"$PackageQualifiedServiceName$\","
-        " method_invocation_descriptions, host, port, secure=secure,"
+        " method_invocation_descriptions, host, port,"
+        " metadata_transformer=metadata_transformer, secure=secure,"
         " root_certificates=root_certificates, private_key=private_key,"
         " certificate_chain=certificate_chain,"
         " server_host_override=server_host_override)\n",

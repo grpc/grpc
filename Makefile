@@ -94,6 +94,15 @@ CPPFLAGS_dbg = -O0
 LDFLAGS_dbg =
 DEFINES_dbg = _DEBUG DEBUG
 
+VALID_CONFIG_mutrace = 1
+CC_mutrace = $(DEFAULT_CC)
+CXX_mutrace = $(DEFAULT_CXX)
+LD_mutrace = $(DEFAULT_CC)
+LDXX_mutrace = $(DEFAULT_CXX)
+CPPFLAGS_mutrace = -O0
+LDFLAGS_mutrace = -rdynamic
+DEFINES_mutrace = _DEBUG DEBUG
+
 VALID_CONFIG_valgrind = 1
 REQUIRE_CUSTOM_LIBRARIES_valgrind = 1
 CC_valgrind = $(DEFAULT_CC)
@@ -2324,6 +2333,7 @@ LIBGPR_SRC = \
     src/core/support/sync.c \
     src/core/support/sync_posix.c \
     src/core/support/sync_win32.c \
+    src/core/support/thd.c \
     src/core/support/thd_posix.c \
     src/core/support/thd_win32.c \
     src/core/support/time.c \
@@ -2418,6 +2428,7 @@ $(OBJDIR)/$(CONFIG)/src/core/support/string_win32.o:
 $(OBJDIR)/$(CONFIG)/src/core/support/sync.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/sync_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/sync_win32.o: 
+$(OBJDIR)/$(CONFIG)/src/core/support/thd.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/thd_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/thd_win32.o: 
 $(OBJDIR)/$(CONFIG)/src/core/support/time.o: 

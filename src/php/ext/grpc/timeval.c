@@ -227,7 +227,7 @@ PHP_METHOD(Timeval, zero) {
  * Returns the infinite future time value as a timeval object
  * @return Timeval Infinite future time value
  */
-PHP_METHOD(Timeval, inf_future) {
+PHP_METHOD(Timeval, infFuture) {
   zval *grpc_php_timeval_inf_future = grpc_php_wrap_timeval(gpr_inf_future);
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_future);
 }
@@ -236,7 +236,7 @@ PHP_METHOD(Timeval, inf_future) {
  * Returns the infinite past time value as a timeval object
  * @return Timeval Infinite past time value
  */
-PHP_METHOD(Timeval, inf_past) {
+PHP_METHOD(Timeval, infPast) {
   zval *grpc_php_timeval_inf_past = grpc_php_wrap_timeval(gpr_inf_past);
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_past);
 }
@@ -245,7 +245,7 @@ PHP_METHOD(Timeval, inf_past) {
  * Sleep until this time, interpreted as an absolute timeout
  * @return void
  */
-PHP_METHOD(Timeval, sleep_until) {
+PHP_METHOD(Timeval, sleepUntil) {
   wrapped_grpc_timeval *this =
       (wrapped_grpc_timeval *)zend_object_store_get_object(getThis() TSRMLS_CC);
   gpr_sleep_until(this->wrapped);
@@ -255,11 +255,11 @@ static zend_function_entry timeval_methods[] = {
     PHP_ME(Timeval, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Timeval, add, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Timeval, compare, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Timeval, inf_future, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Timeval, inf_past, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Timeval, infFuture, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(Timeval, infPast, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Timeval, now, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Timeval, similar, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Timeval, sleep_until, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Timeval, sleepUntil, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Timeval, subtract, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Timeval, zero, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) PHP_FE_END};
 

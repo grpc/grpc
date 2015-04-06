@@ -114,7 +114,7 @@ class _Stub(interfaces.Stub):
 
   def __init__(
       self, breakdown, host, port, secure, root_certificates, private_key,
-      certificate_chain, server_host_override=None):
+      certificate_chain, metadata_transformer=None, server_host_override=None):
     self._lock = threading.Lock()
     self._breakdown = breakdown
     self._host = host
@@ -123,6 +123,7 @@ class _Stub(interfaces.Stub):
     self._root_certificates = root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._metadata_transformer = metadata_transformer
     self._server_host_override = server_host_override
 
     self._pool = None
@@ -141,6 +142,7 @@ class _Stub(interfaces.Stub):
             self._breakdown.request_serializers,
             self._breakdown.response_deserializers, self._secure,
             self._root_certificates, self._private_key, self._certificate_chain,
+            metadata_transformer=self._metadata_transformer,
             server_host_override=self._server_host_override)
         self._front.join_rear_link(self._rear_link)
         self._rear_link.join_fore_link(self._front)
@@ -189,8 +191,9 @@ class _Stub(interfaces.Stub):
 
 
 def stub(
-    service_name, methods, host, port, secure=False, root_certificates=None,
-    private_key=None, certificate_chain=None, server_host_override=None):
+    service_name, methods, host, port, metadata_transformer=None, secure=False,
+    root_certificates=None, private_key=None, certificate_chain=None,
+    server_host_override=None):
   """Constructs an interfaces.Stub.
 
   Args:
@@ -201,6 +204,9 @@ def stub(
       not qualified by the service name or decorated in any other way.
     host: The host to which to connect for RPC service.
     port: The port to which to connect for RPC service.
+    metadata_transformer: A callable that given a metadata object produces
+      another metadata object to be used in the underlying communication on the
+      wire.
     secure: Whether or not to construct the stub with a secure connection.
     root_certificates: The PEM-encoded root certificates or None to ask for
       them to be retrieved from a default location.

@@ -68,7 +68,11 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
   a->arg = arg;
 
   GPR_ASSERT(pthread_attr_init(&attr) == 0);
-  GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
+  if (gpr_thd_options_is_detached(options)) {
+    GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
+  } else {
+    GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) == 0);
+  }
   thread_started = (pthread_create(&p, &attr, &thread_body, a) == 0);
   GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
   if (!thread_started) {
@@ -78,14 +82,12 @@ int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
   return thread_started;
 }
 
-gpr_thd_options gpr_thd_options_default(void) {
-  gpr_thd_options options;
-  memset(&options, 0, sizeof(options));
-  return options;
-}
-
 gpr_thd_id gpr_thd_currentid(void) {
   return (gpr_thd_id)pthread_self();
+}
+
+void gpr_thd_join(gpr_thd_id t) {
+  pthread_join(t, NULL);
 }
 
 #endif /* GPR_POSIX_SYNC */

@@ -44,7 +44,7 @@ class ServerStreamingCall extends AbstractCall {
    * @param array $metadata Metadata to send with the call, if applicable
    */
   public function start($arg, $metadata = array()) {
-    $event = $this->call->start_batch([
+    $event = $this->call->startBatch([
         OP_SEND_INITIAL_METADATA => $metadata,
         OP_RECV_INITIAL_METADATA => true,
         OP_SEND_MESSAGE => $arg->serialize(),
@@ -56,10 +56,10 @@ class ServerStreamingCall extends AbstractCall {
    * @return An iterator of response values
    */
   public function responses() {
-    $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+    $response = $this->call->startBatch([OP_RECV_MESSAGE => true])->message;
     while($response !== null) {
       yield $this->deserializeResponse($response);
-      $response = $this->call->start_batch([OP_RECV_MESSAGE => true])->message;
+      $response = $this->call->startBatch([OP_RECV_MESSAGE => true])->message;
     }
   }
 
@@ -69,7 +69,7 @@ class ServerStreamingCall extends AbstractCall {
    *     and array $metadata members
    */
   public function getStatus() {
-    $status_event = $this->call->start_batch([
+    $status_event = $this->call->startBatch([
         OP_RECV_STATUS_ON_CLIENT => true
                                               ]);
     return $status_event->status;

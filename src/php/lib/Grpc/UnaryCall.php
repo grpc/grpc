@@ -44,7 +44,7 @@ class UnaryCall extends AbstractCall {
    * @param array $metadata Metadata to send with the call, if applicable
    */
   public function start($arg, $metadata = array()) {
-    $event = $this->call->start_batch([
+    $event = $this->call->startBatch([
         OP_SEND_INITIAL_METADATA => $metadata,
         OP_RECV_INITIAL_METADATA => true,
         OP_SEND_MESSAGE => $arg->serialize(),
@@ -57,7 +57,7 @@ class UnaryCall extends AbstractCall {
    * @return [response data, status]
    */
   public function wait() {
-    $event = $this->call->start_batch([
+    $event = $this->call->startBatch([
         OP_RECV_MESSAGE => true,
         OP_RECV_STATUS_ON_CLIENT => true]);
     return array($this->deserializeResponse($event->message), $event->status);

@@ -38,7 +38,7 @@
 #include <grpc/grpc_security.h>
 
 typedef struct {
-  PyObject_HEAD;
+  PyObject_HEAD
   grpc_server_credentials *c_server_credentials;
 } ServerCredentials;
 

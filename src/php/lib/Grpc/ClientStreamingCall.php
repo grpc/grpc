@@ -44,11 +44,11 @@ class ClientStreamingCall extends AbstractCall {
    * @param array $metadata Metadata to send with the call, if applicable
    */
   public function start($arg_iter, $metadata = array()) {
-    $event = $this->call->start_batch([OP_SEND_INITIAL_METADATA => $metadata]);
+    $event = $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
     foreach($arg_iter as $arg) {
-      $this->call->start_batch([OP_SEND_MESSAGE => $arg->serialize()]);
+      $this->call->startBatch([OP_SEND_MESSAGE => $arg->serialize()]);
     }
-    $this->call->start_batch([OP_SEND_CLOSE_FROM_CLIENT => true]);
+    $this->call->startBatch([OP_SEND_CLOSE_FROM_CLIENT => true]);
   }
 
   /**
@@ -56,7 +56,7 @@ class ClientStreamingCall extends AbstractCall {
    * @return [response data, status]
    */
   public function wait() {
-    $event = $this->call->start_batch([
+    $event = $this->call->startBatch([
         OP_RECV_INITIAL_METADATA => true,
         OP_RECV_MESSAGE => true,
         OP_RECV_STATUS_ON_CLIENT => true]);

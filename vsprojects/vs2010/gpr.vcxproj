@@ -166,6 +166,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\sync_win32.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\thd.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\thd_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\support\thd_win32.c">

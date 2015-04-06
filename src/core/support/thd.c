@@ -1,4 +1,3 @@
-<?php
 /*
  *
  * Copyright 2015, Google Inc.
@@ -31,48 +30,37 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-namespace Grpc;
 
-abstract class AbstractCall {
+/* Posix implementation for gpr threads. */
 
-  protected $call;
-  protected $deserialize;
-  protected $metadata;
+#include <memory.h>
 
-  /**
-   * Create a new Call wrapper object.
-   * @param Channel $channel The channel to communicate on
-   * @param string $method The method to call on the remote server
-   */
-  public function __construct(Channel $channel, $method, $deserialize) {
-    $this->call = new Call($channel, $method, Timeval::infFuture());
-    $this->deserialize = $deserialize;
-    $this->metadata = null;
-  }
+#include <grpc/support/thd.h>
 
-  /**
-   * @return The metadata sent by the server.
-   */
-  public function getMetadata() {
-    return $this->metadata;
-  }
+enum {
+  GPR_THD_JOINABLE = 1
+};
 
-  /**
-   * Cancels the call
-   */
-  public function cancel() {
-    $this->call->cancel();
-  }
+gpr_thd_options gpr_thd_options_default(void) {
+  gpr_thd_options options;
+  memset(&options, 0, sizeof(options));
+  return options;
+}
 
-  /**
-   * Deserialize a response value to an object.
-   * @param string $value The binary value to deserialize
-   * @return The deserialized value
-   */
-  protected function deserializeResponse($value) {
-    if ($value === null) {
-      return null;
-    }
-    return call_user_func($this->deserialize, $value);
-  }
+void gpr_thd_options_set_detached(gpr_thd_options *options) {
+  options->flags &= ~GPR_THD_JOINABLE;
+}
+
+void gpr_thd_options_set_joinable(gpr_thd_options *options) {
+  options->flags |= GPR_THD_JOINABLE;
+}
+
+int gpr_thd_options_is_detached(const gpr_thd_options *options) {
+  if (!options) return 1;
+  return (options->flags & GPR_THD_JOINABLE) == 0;
+}
+
+int gpr_thd_options_is_joinable(const gpr_thd_options *options) {
+  if (!options) return 0;
+  return (options->flags & GPR_THD_JOINABLE) == GPR_THD_JOINABLE;
 }

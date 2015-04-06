@@ -70,6 +70,9 @@ function handleError(call, error) {
       status.details = error.details;
     }
   }
+  if (error.hasOwnProperty('metadata')) {
+    status.metadata = error.metadata;
+  }
   var error_batch = {};
   error_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = status;
   call.startBatch(error_batch, function(){});
@@ -102,15 +105,20 @@ function waitForCancel(call, emitter) {
  * @param {*} value The value to respond with
  * @param {function(*):Buffer=} serialize Serialization function for the
  *     response
+ * @param {Object=} metadata Optional trailing metadata to send with status
  */
-function sendUnaryResponse(call, value, serialize) {
+function sendUnaryResponse(call, value, serialize, metadata) {
   var end_batch = {};
-  end_batch[grpc.opType.SEND_MESSAGE] = serialize(value);
-  end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
+  var status = {
     code: grpc.status.OK,
     details: 'OK',
     metadata: {}
   };
+  if (metadata) {
+    status.metadata = metadata;
+  }
+  end_batch[grpc.opType.SEND_MESSAGE] = serialize(value);
+  end_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = status;
   call.startBatch(end_batch, function (){});
 }
 
@@ -143,6 +151,7 @@ function setUpWritable(stream, serialize) {
   function setStatus(err) {
     var code = grpc.status.INTERNAL;
     var details = 'Unknown Error';
+    var metadata = {};
     if (err.hasOwnProperty('message')) {
       details = err.message;
     }
@@ -152,7 +161,10 @@ function setUpWritable(stream, serialize) {
         details = err.details;
       }
     }
-    stream.status = {code: code, details: details, metadata: {}};
+    if (err.hasOwnProperty('metadata')) {
+      metadata = err.metadata;
+    }
+    stream.status = {code: code, details: details, metadata: metadata};
   }
   /**
    * Terminate the call. This includes indicating that reads are done, draining
@@ -166,6 +178,17 @@ function setUpWritable(stream, serialize) {
     stream.end();
   }
   stream.on('error', terminateCall);
+  /**
+   * Override of Writable#end method that allows for sending metadata with a
+   * success status.
+   * @param {Object=} metadata Metadata to send with the status
+   */
+  stream.end = function(metadata) {
+    if (metadata) {
+      stream.status.metadata = metadata;
+    }
+    Writable.prototype.end.call(this);
+  };
 }
 
 /**
@@ -335,11 +358,13 @@ function handleUnary(call, handler, metadata) {
     if (emitter.cancelled) {
       return;
     }
-    handler.func(emitter, function sendUnaryData(err, value) {
+    handler.func(emitter, function sendUnaryData(err, value, trailer) {
       if (err) {
+        err.metadata = trailer;
         handleError(call, err);
+      } else {
+        sendUnaryResponse(call, value, handler.serialize, trailer);
       }
-      sendUnaryResponse(call, value, handler.serialize);
     });
   });
 }
@@ -378,12 +403,14 @@ function handleClientStreaming(call, handler, metadata) {
   var metadata_batch = {};
   metadata_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
   call.startBatch(metadata_batch, function() {});
-  handler.func(stream, function(err, value) {
+  handler.func(stream, function(err, value, trailer) {
     stream.terminate();
     if (err) {
+      err.metadata = trailer;
       handleError(call, err);
+    } else {
+      sendUnaryResponse(call, value, handler.serialize, trailer);
     }
-    sendUnaryResponse(call, value, handler.serialize);
   });
 }
 
