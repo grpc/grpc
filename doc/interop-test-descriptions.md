@@ -1,0 +1,685 @@
+Interoperability Test Case Descriptions
+=======================================
+
+Client and server use
+[test.proto](https://github.com/grpc/grpc/blob/master/test/cpp/interop/test.proto)
+and the [gRPC over HTTP/2 v2
+protocol](https://github.com/grpc/grpc-common/blob/master/PROTOCOL-HTTP2.md).
+
+Client
+------
+
+Clients implement test cases that test certain functionally. Each client is
+provided the test case it is expected to run as a command-line parameter. Names
+should be lowercase and without spaces.
+
+Clients should accept these arguments:
+* --server_host=HOSTNAME
+    * The server host to connect to. For example, "localhost" or "127.0.0.1"
+* --server_host_override=HOSTNAME
+    * The server host to claim to be connecting to, for use in TLS and HTTP/2
+      :authority header. If unspecified, the value of --server_host will be
+      used
+* --server_port=PORT
+    * The server port to connect to. For example, "8080"
+* --test_case=TESTCASE
+    * The name of the test case to execute. For example, "empty_unary"
+* --use_tls=BOOLEAN
+    * Whether to use a plaintext or encrypted connection
+* --use_test_ca=BOOLEAN
+    * Whether to replace platform root CAs with
+      [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/ca.pem)
+      as the CA root
+
+Clients must support TLS with ALPN. Clients must not disable certificate
+checking.
+
+### empty_unary
+
+This test verifies that implementations support zero-size messages. Ideally,
+client implementations would verify that the request and response were zero
+bytes serialized, but this is generally prohibitive to perform, so is not
+required.
+
+Server features:
+* [EmptyCall][]
+
+Procedure:
+ 1. Client calls EmptyCall with the default Empty message
+
+Asserts:
+* call was successful
+* response is non-null
+
+*It may be possible to use UnaryCall instead of EmptyCall, but it is harder to
+ensure that the proto serialized to zero bytes.*
+
+### large_unary
+
+This test verifies unary calls succeed in sending messages, and touches on flow
+control (even if compression is enabled on the channel).
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+Asserts:
+* call was successful
+* response payload type is COMPRESSABLE
+* response payload body is 314159 bytes in size
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response message against a golden response
+
+### client_streaming
+
+This test verifies that client-only streaming succeeds.
+
+Server features:
+* [StreamingInputCall][]
+* [Compressable Payload][]
+
+Procedure:
+ 1. Client calls StreamingInputCall
+ 2. Client sends:
+
+    ```
+    {
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+ 3. Client then sends:
+
+    ```
+    {
+      payload:{
+        body: 8 bytes of zeros
+      }
+    }
+    ```
+ 4. Client then sends:
+
+    ```
+    {
+      payload:{
+        body: 1828 bytes of zeros
+      }
+    }
+    ```
+ 5. Client then sends:
+
+    ```
+    {
+      payload:{
+        body: 45904 bytes of zeros
+      }
+    }
+    ```
+ 6. Client halfCloses
+
+Asserts:
+* call was successful
+* response aggregated_payload_size is 74922
+
+### server_streaming
+
+This test verifies that server-only streaming succeeds.
+
+Server features:
+* [StreamingOutputCall][]
+* [Compressable Payload][]
+
+Procedure:
+ 1. Client calls StreamingOutputCall with:
+
+    ```
+    {
+      response_type:COMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 9
+      }
+      response_parameters:{
+        size: 2653
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+Asserts:
+* call was successful
+* exactly four responses
+* response payloads are COMPRESSABLE
+* response payload bodies are sized (in order): 31415, 9, 2653, 58979
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response messages against golden responses
+
+### ping_pong
+
+This test verifies that full duplex bidi is supported.
+
+Server features:
+* [FullDuplexCall][]
+* [Compressable Payload][]
+
+Procedure:
+ 1. Client calls FullDuplexCall with:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+ 2. After getting a reply, it sends:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_parameters:{
+        size: 9
+      }
+      payload:{
+        body: 8 bytes of zeros
+      }
+    }
+    ```
+ 3. After getting a reply, it sends:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_parameters:{
+        size: 2653
+      }
+      payload:{
+        body: 1828 bytes of zeros
+      }
+    }
+    ```
+ 4. After getting a reply, it sends:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_parameters:{
+        size: 58979
+      }
+      payload:{
+        body: 45904 bytes of zeros
+      }
+    }
+    ```
+
+Asserts:
+* call was successful
+* exactly four responses
+* response payloads are COMPRESSABLE
+* response payload bodies are sized (in order): 31415, 9, 2653, 58979
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response messages against golden responses
+
+### empty_stream
+
+This test verifies that streams support having zero-messages in both
+directions.
+
+Server features:
+* [FullDuplexCall][]
+
+Procedure:
+ 1. Client calls FullDuplexCall and then half-closes
+
+Asserts:
+* call was successful
+* exactly zero responses
+
+### compute_engine_creds
+
+Status: Not yet implementable
+
+This test is only for cloud-to-prod path.
+
+This test verifies unary calls succeed in sending messages while using Service
+Credentials from GCE metadata server. The client instance needs to be created
+with desired oauth scope.
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* SimpeResponse.username
+* SimpleResponse.oauth_scope
+
+Procedure:
+ 1. Client sets flags default_service_account with GCE service account name and
+    oauth_scope with the oauth scope to use.
+ 2. Client configures channel to use GCECredentials
+ 3. Client calls UnaryCall on the channel with:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+      fill_username: true
+      fill_oauth_scope: true
+    }
+    ```
+
+Asserts:
+* call was successful
+* received SimpleResponse.username equals FLAGS_default_service_account
+* received SimpleResponse.oauth_scope is in FLAGS_oauth_scope
+* response payload body is 314159 bytes in size
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response message against a golden response
+
+### service_account_creds
+
+Status: Not yet implementable
+
+This test is only for cloud-to-prod path.
+
+This test verifies unary calls succeed in sending messages while using JWT
+signing keys (redeemed for OAuth2 access tokens by the auth implementation)
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* SimpleResponse.username
+* SimpleResponse.oauth_scope
+
+Procedure:
+ 1. Client sets flags service_account_key_file with the path to json key file,
+    oauth_scope to the oauth scope.
+ 2. Client configures the channel to use ServiceAccountCredentials.
+ 3. Client calls UnaryCall with:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+      fill_username: true
+      fill_oauth_scope: true
+    }
+    ```
+
+Asserts:
+* call was successful
+* received SimpleResponse.username is in the json key file read from
+  FLAGS_service_account_key_file
+* received SimpleResponse.oauth_scope is in FLAGS_oauth_scope
+* response payload body is 314159 bytes in size
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response message against a golden response
+
+### jwt_token_creds
+
+Status: Not yet implementable
+
+This test is only for cloud-to-prod path.
+
+This test verifies unary calls succeed in sending messages while using JWT
+token (created by the project's key file)
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* SimpleResponse.username
+* SimpleResponse.oauth_scope
+
+Procedure:
+ 1. Client sets flags service_account_key_file with the path to json key file
+ 2. Client configures the channel to use JWTTokenCredentials.
+ 3. Client calls UnaryCall with:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+      fill_username: true
+    }
+    ```
+
+Asserts:
+* call was successful
+* received SimpleResponse.username is in the json key file read from
+  FLAGS_service_account_key_file
+* response payload body is 314159 bytes in size
+* clients are free to assert that the response payload body contents are zero
+  and comparing the entire response message against a golden response
+
+### Metadata (TODO: fix name)
+
+Status: Not yet implementable
+
+This test verifies that custom metadata in either binary or ascii format can be
+sent in header and trailer.
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* Ability to receive custom metadata from client in header and send custom data
+  back to client in both header and trailer. (TODO: this is not defined)
+
+Procedure:
+ 1. While sending custom metadata (ascii + binary) in the header, client calls UnaryCall with:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+Asserts:
+* call was successful
+* custom metadata is echoed back in the response header.
+* custom metadata is echoed back in the response trailer.
+
+### status_code_and_message
+
+Status: Not yet implementable
+
+This test verifies unary calls succeed in sending messages, and propagates back
+status code and message sent along with the messages.
+
+Server features:
+* [UnaryCall][]
+
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_status:{
+        code: 2
+        message: "test status message"
+      }
+    }
+    ```
+
+Asserts:
+* received status code is the same with sent code
+* received status message is the same with sent message
+
+### unimplemented_method
+
+Status: Not yet implementable
+
+This test verifies calling unimplemented RPC method returns unimplemented
+status.
+
+Procedure:
+* Client calls UnimplementedCall with:
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+
+Asserts:
+* received status code is 12 (UNIMPLEMENTED)
+* received status message is empty or null/unset
+
+### cancel_after_begin
+
+This test verifies that a request can be cancelled after metadata has been sent
+but before payloads are sent.
+
+Server features:
+* [StreamingInputCall][]
+
+Procedure:
+ 1. Client starts StreamingInputCall
+ 2. Client immediately cancels request
+
+Asserts:
+* Call completed with status CANCELLED
+
+### cancel_after_first_response
+
+This test verifies that a request can be cancelled after receiving a message
+from the server.
+
+Server features:
+* [FullDuplexCall][]
+* [Compressable Payload][]
+
+Procedure:
+ 1. Client starts FullDuplexCall with
+
+    ```
+    {
+      response_type: COMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      payload:{
+        body: 27182 bytes of zeros
+      }
+    }
+    ```
+ 2. After receiving a response, client cancels request
+
+Asserts:
+* Call completed with status CANCELLED
+
+### concurrent_large_unary
+
+Status: TODO
+
+Client performs 1000 large_unary tests in parallel on the same channel.
+
+### Flow control. Pushback at client for large messages (TODO: fix name)
+
+Status: TODO
+
+This test verifies that a client sending faster than a server can drain sees
+pushback (i.e., attempts to send succeed only after appropriate delays).
+
+### TODO Tests
+
+High priority:
+
+Propagation of status code and message (yangg)
+
+Cancel after sent headers (ctiller - done)
+
+Cancel after received first message (ctiller - done)
+
+Timeout after expire (zhaoq)
+
+Zero-message streams (ejona)
+
+Multiple thousand simultaneous calls on same Channel (ctiller - done)
+
+OAuth2 tokens + Service Credentials from GCE metadata server (GCE->prod only)
+(abhishek)
+
+OAuth2 tokens + JWT signing key (GCE->prod only) (abhishek)
+
+Metadata: client headers, server headers + trailers, binary+ascii (chenw)
+
+Normal priority:
+
+Cancel before start (ctiller)
+
+Cancel after sent first message (ctiller)
+
+Cancel after received headers (ctiller)
+
+Timeout but completed before expire (zhaoq)
+
+Multiple thousand simultaneous calls timeout on same Channel (ctiller)
+
+Lower priority:
+
+Flow control. Pushback at client for large messages (abhishek)
+
+Flow control. Pushback at server for large messages (abhishek)
+
+Going over max concurrent streams doesn't fail (client controls itself)
+(abhishek)
+
+RPC method not implemented (yangg)
+
+Multiple thousand simultaneous calls on different Channels (ctiller)
+
+Failed TLS hostname verification (ejona?)
+
+To priorize:
+
+Start streaming RPC but don't send any requests, server responds
+
+### Postponed Tests
+
+Resilience to buggy servers: These tests would verify that a client application
+isn't affected negatively by the responses put on the wire by a buggy server
+(e.g. the client library won't make the application crash).
+
+Reconnect after transport failure
+
+Reconnect backoff
+
+Fuzz testing
+
+
+Server
+------
+
+Servers implement various named features for clients to test with. Server
+features are orthogonal. If a server implements a feature, it is always
+available for clients. Names are simple descriptions for developer
+communication and tracking.
+
+Servers should accept these arguments:
+
+* --port=PORT
+
+    * The port to listen on. For example, "8080"
+
+* --use_tls=BOOLEAN
+
+    * Whether to use a plaintext or encrypted connection
+
+Servers must support TLS with ALPN. They should use
+[server1.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem)
+for their certificate.
+
+### EmptyCall
+[EmptyCall]: #emptycall
+
+Server implements EmptyCall which immediately returns the empty message.
+
+### UnaryCall
+[UnaryCall]: #unarycall
+
+Server implements UnaryCall which immediately returns a SimpleResponse with a
+payload body of size SimpleRequest.response_size bytes and type as appropriate
+for the SimpleRequest.response_type. If the server does not support the
+response_type, then it should fail the RPC with INVALID_ARGUMENT.
+
+If the request sets fill_username, the server should return the client username
+it sees in field SimpleResponse.username. If the request sets fill_oauth_scope,
+the server should return the oauth scope of the rpc in the form of "xapi_zoo"
+in field SimpleResponse.oauth_scope.
+
+### StreamingInputCall
+[StreamingInputCall]: #streaminginputcall
+
+Server implements StreamingInputCall which upon half close immediately returns
+a StreamingInputCallResponse where aggregated_payload_size is the sum of all
+request payload bodies received.
+
+### StreamingOutputCall
+[StreamingOutputCall]: #streamingoutputcall
+
+Server implements StreamingOutputCall by replying, in order, with one
+StreamingOutputCallResponses for each ResponseParameters in
+StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+payload body of size ResponseParameters.size bytes, as specified by its
+respective ResponseParameters. After sending all responses, it closes with OK.
+
+### FullDuplexCall
+[FullDuplexCall]: #fullduplexcall
+
+Server implements FullDuplexCall by replying, in order, with one
+StreamingOutputCallResponses for each ResponseParameters in each
+StreamingOutputCallRequest. Each StreamingOutputCallResponses should have a
+payload body of size ResponseParameters.size bytes, as specified by its
+respective ResponseParameters. After receiving half close and sending all
+responses, it closes with OK.
+
+### Compressable Payload
+[Compressable Payload]: #compressable-payload
+
+When the client requests COMPRESSABLE payload, the response includes a payload
+of the size requested containing all zeros and the payload type is
+COMPRESSABLE.
+
+### Observe ResponseParameters.interval_us
+[Observe ResponseParameters.interval_us]: #observe-responseparametersinterval_us
+
+In StreamingOutputCall and FullDuplexCall, server delays sending a
+StreamingOutputCallResponse by the ResponseParameters's interval_us for that
+particular response, relative to the last response sent. That is, interval_us
+acts like a sleep *before* sending the response and accumulates from one
+response to the next.
+
+Interaction with flow control is unspecified.
+
+### Echo Auth Information
+
+Status: Pending
+
+If a SimpleRequest has fill_username=true and that request was successfully
+authenticated, then the SimpleResponse should have username filled with the
+canonical form of the authenticated source. The canonical form is dependent on
+the authentication method, but is likely to be a base 10 integer identifier or
+an email address.
+
+Discussion:
+
+Ideally, this would be communicated via metadata and not in the
+request/response, but we want to use this test in code paths that don't yet
+fully communicate metadata.
