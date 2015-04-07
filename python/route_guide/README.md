@@ -6,7 +6,10 @@ This tutorial provides a basic Python programmer's introduction to working with 
 - Generate server and client code using the protocol buffer compiler.
 - Use the Python gRPC API to write a simple client and server for your service.
 
-It assumes that you have read the [Getting started](https://github.com/grpc/grpc-common) guide and are familiar with [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview).
+It assumes that you have read the [Getting started](https://github.com/grpc/grpc-common) guide and are familiar with [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview). Note that the example in this tutorial uses the proto3 version of the protocol buffers language, which is currently in alpha release: you can see the [release notes](https://github.com/google/protobuf/releases) for the new version in the protocol buffers Github repository.
+
+This isn't a comprehensive guide to using gRPC in Python: more reference documentation is coming soon.
+
 
 ## Why use gRPC?
 
@@ -85,15 +88,15 @@ message Point {
 
 ## Generating client and server code
 
-Next you need to generate the gRPC client and server interfaces from your .proto service definition. You may do this using the protocol buffer compiler `protoc` with a special gRPC Python plugin. Make sure you've installed protoc and followed the gRPC Python plugin [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first):
+Next you need to generate the gRPC client and server interfaces from your .proto service definition. You do this using the protocol buffer compiler `protoc` with a special gRPC Python plugin. Make sure you've installed protoc and followed the gRPC Python plugin [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first):
 
 With `protoc` and the gRPC Python plugin installed, use the following command to generate the Python code:
 
 ```shell
-$ protoc -I . --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` route_guide.proto
+$ protoc -I ../../protos --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` ../../protos/route_guide.proto
 ```
 
-Note that as we've already provided a version of the generated code in the example repository, running this command regenerates the appropriate file rather than creates a new one. The generated code file is called route_guide_pb2.py and contains:
+Note that as we've already provided a version of the generated code in the example repository, running this command regenerates the appropriate file rather than creates a new one. The generated code file is called `route_guide_pb2.py` and contains:
 - classes for the messages defined in route_guide.proto
 - abstract classes for the service defined in route_guide.proto
    - `EarlyAdopterRouteGuideServicer`, which defines the interface for implementations of the RouteGuide service
