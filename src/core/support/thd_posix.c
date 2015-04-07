@@ -87,7 +87,7 @@ gpr_thd_id gpr_thd_currentid(void) {
 }
 
 void gpr_thd_join(gpr_thd_id t) {
-  pthread_join(t, NULL);
+  pthread_join((pthread_t)t, NULL);
 }
 
 #endif /* GPR_POSIX_SYNC */
