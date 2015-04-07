@@ -31,6 +31,7 @@
 
 from distutils import core as _core
 import setuptools
+import sys
 
 _EXTENSION_SOURCES = (
     'grpc/_adapter/_c.c',
@@ -50,8 +51,9 @@ _EXTENSION_INCLUDE_DIRECTORIES = (
 _EXTENSION_LIBRARIES = (
     'grpc',
     'gpr',
-    'rt',
 )
+if not "darwin" in sys.platform:
+    _EXTENSION_LIBRARIES += ('rt',)
 
 _EXTENSION_MODULE = _core.Extension(
     'grpc._adapter._c', sources=list(_EXTENSION_SOURCES),
