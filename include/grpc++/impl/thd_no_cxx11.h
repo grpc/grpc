@@ -31,37 +31,59 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#ifndef GRPCXX_IMPL_THD_NO_CXX11_H
+#define GRPCXX_IMPL_THD_NO_CXX11_H
 
-#include <grpc++/config.h>
-
-#include <grpc++/impl/sync.h>
-#include <grpc++/impl/thd.h>
-#include <grpc++/thread_pool_interface.h>
-
-#include <queue>
-#include <vector>
+#include <grpc/support/thd.h>
 
 namespace grpc {
 
-class ThreadPool GRPC_FINAL : public ThreadPoolInterface {
+class thread {
  public:
-  explicit ThreadPool(int num_threads);
-  ~ThreadPool();
-
-  void ScheduleCallback(const std::function<void()>& callback) GRPC_OVERRIDE;
-
+  template<class T> thread(void (T::*fptr)(), T *obj) {
+    func_ = new thread_function<T>(fptr, obj);
+    joined_ = false;
+    start();
+  }
+  ~thread() {
+    if (!joined_) std::terminate();
+    delete func_;
+  }
+  void join() {
+    gpr_thd_join(thd_);
+    joined_ = true;
+  }
  private:
-  grpc::mutex mu_;
-  grpc::condition_variable cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  std::vector<grpc::thread> threads_;
-
-  void ThreadFunc();
+  void start() {
+    gpr_thd_options options = gpr_thd_options_default();
+    gpr_thd_options_set_joinable(&options);
+    gpr_thd_new(&thd_, thread_func, (void *) func_, &options);
+  }
+  static void thread_func(void *arg) {
+    thread_function_base *func = (thread_function_base *) arg;
+    func->call();
+  }
+  class thread_function_base {
+   public:
+    virtual ~thread_function_base() { }
+    virtual void call() = 0;
+  };
+  template<class T>
+  class thread_function : public thread_function_base {
+   public:
+    thread_function(void (T::*fptr)(), T *obj)
+      : fptr_(fptr)
+      , obj_(obj) { }
+    virtual void call() { (obj_->*fptr_)(); }
+   private:
+    void (T::*fptr_)();
+    T *obj_;
+  };
+  thread_function_base *func_;
+  gpr_thd_id thd_;
+  bool joined_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_SERVER_THREAD_POOL_H
+#endif  // GRPCXX_IMPL_THD_NO_CXX11_H

@@ -34,15 +34,14 @@
 #ifndef GRPCXX_SERVER_H
 #define GRPCXX_SERVER_H
 
-#include <condition_variable>
 #include <list>
 #include <memory>
-#include <mutex>
 
 #include <grpc++/completion_queue.h>
 #include <grpc++/config.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/service_type.h>
+#include <grpc++/impl/sync.h>
 #include <grpc++/status.h>
 
 struct grpc_server;
@@ -110,12 +109,12 @@ class Server GRPC_FINAL : private CallHook,
   CompletionQueue cq_;
 
   // Sever status
-  std::mutex mu_;
+  grpc::mutex mu_;
   bool started_;
   bool shutdown_;
   // The number of threads which are running callbacks.
   int num_running_cb_;
-  std::condition_variable callback_cv_;
+  grpc::condition_variable callback_cv_;
 
   std::list<SyncRequest> sync_methods_;
 

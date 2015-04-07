@@ -183,7 +183,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned)
 
 Server::~Server() {
   {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::unique_lock<grpc::mutex> lock(mu_);
     if (started_ && !shutdown_) {
       lock.unlock();
       Shutdown();
@@ -259,7 +259,7 @@ bool Server::Start() {
 }
 
 void Server::Shutdown() {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc::unique_lock<grpc::mutex> lock(mu_);
   if (started_ && !shutdown_) {
     shutdown_ = true;
     grpc_server_shutdown(server_);
@@ -273,7 +273,7 @@ void Server::Shutdown() {
 }
 
 void Server::Wait() {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc::unique_lock<grpc::mutex> lock(mu_);
   while (num_running_cb_ != 0) {
     callback_cv_.wait(lock);
   }
@@ -405,7 +405,7 @@ void Server::RequestAsyncGenericCall(GenericServerContext* context,
 
 void Server::ScheduleCallback() {
   {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::unique_lock<grpc::mutex> lock(mu_);
     num_running_cb_++;
   }
   thread_pool_->ScheduleCallback(std::bind(&Server::RunRpc, this));
@@ -426,7 +426,7 @@ void Server::RunRpc() {
   }
 
   {
-    std::unique_lock<std::mutex> lock(mu_);
+    grpc::unique_lock<grpc::mutex> lock(mu_);
     num_running_cb_--;
     if (shutdown_) {
       callback_cv_.notify_all();

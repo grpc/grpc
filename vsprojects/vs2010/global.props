@@ -6,7 +6,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(SolutionDir)\..\..;$(SolutionDir)\..\..\include;$(SolutionDir)\..\..\third_party\zlib;$(SolutionDir)\..\third_party;$(SolutionDir)\..\..\third_party\openssl\inc32;$(SolutionDir)\..\..\third_party\protobuf\src</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GRPC_OLD_CXX;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
     </ClCompile>
   </ItemDefinitionGroup>
