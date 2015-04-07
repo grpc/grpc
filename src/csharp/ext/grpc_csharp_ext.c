@@ -731,7 +731,7 @@ grpcsharp_ssl_credentials_create(const char *pem_root_certs,
   }
 }
 
-GPR_EXPORT void grpcsharp_credentials_release(grpc_credentials *creds) {
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_credentials_release(grpc_credentials *creds) {
   grpc_credentials_release(creds);
 }
 
@@ -765,7 +765,7 @@ grpcsharp_ssl_server_credentials_create(
   return creds;
 }
 
-GPR_EXPORT void grpcsharp_server_credentials_release(
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_credentials_release(
     grpc_server_credentials *creds) {
   grpc_server_credentials_release(creds);
 }
