@@ -51,6 +51,8 @@ void grpc_server_add_listener(grpc_server *server, void *listener,
                                             grpc_pollset **pollsets, size_t npollsets),
                               void (*destroy)(grpc_server *server, void *arg));
 
+void grpc_server_listener_destroy_done(void *server);
+
 /* Setup a transport - creates a channel stack, binds the transport to the
    server */
 grpc_transport_setup_result grpc_server_setup_transport(
