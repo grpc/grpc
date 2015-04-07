@@ -51,10 +51,11 @@ static void *tag(gpr_intptr t) { return (void *)t; }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char *test_name,
+                                            cancellation_mode mode,
                                             grpc_channel_args *client_args,
                                             grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  gpr_log(GPR_INFO, "%s/%s/%s", test_name, config.name, mode.name);
   f = config.create_fixture(client_args, server_args);
   config.init_client(&f, client_args);
   config.init_server(&f, server_args);
@@ -109,7 +110,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
-  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
+  grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, mode, NULL, NULL);
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   grpc_metadata_array initial_metadata_recv;

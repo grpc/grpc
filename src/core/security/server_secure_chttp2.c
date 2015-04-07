@@ -120,7 +120,7 @@ static void destroy(grpc_server *server, void *statep) {
   grpc_server_secure_state *state = statep;
   gpr_mu_lock(&state->mu);
   state->is_shutdown = 1;
-  grpc_tcp_server_destroy(state->tcp);
+  grpc_tcp_server_destroy(state->tcp, grpc_server_listener_destroy_done, server);
   gpr_mu_unlock(&state->mu);
   state_unref(state);
 }
@@ -213,7 +213,7 @@ error:
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
-    grpc_tcp_server_destroy(tcp);
+    grpc_tcp_server_destroy(tcp, NULL, NULL);
   }
   if (state) {
     gpr_free(state);
