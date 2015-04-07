@@ -40,7 +40,7 @@ except:
 
 # Make the push.
 cmd = ['python', 'setup.py', 'sdist']
-subprocess.call(cmd)
+subprocess.call(cmd, cwd=pkgdir)
 
 cmd = ['twine', 'upload', '-r', args.repository]
 if args.identity is not None:
