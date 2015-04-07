@@ -92,7 +92,9 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   return s;
 }
 
-void grpc_tcp_server_destroy(grpc_tcp_server *s) {
+void grpc_tcp_server_destroy(grpc_tcp_server *s,
+                             void(*shutdown_done)(void *shutdown_done_arg),
+	                         void *shutdown_done_arg) {
   size_t i;
   gpr_mu_lock(&s->mu);
   /* shutdown all fd's */
@@ -112,6 +114,10 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s) {
   }
   gpr_free(s->ports);
   gpr_free(s);
+
+  if (shutdown_done) {
+	shutdown_done(shutdown_done_arg);
+  }
 }
 
 /* Prepare a recently-created socket for listening. */
