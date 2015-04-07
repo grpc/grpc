@@ -11,16 +11,19 @@ Alpha : Ready for early adopters
 INSTALLATION PREREQUISITES
 --------------------------
 
-This requires Ruby 2.1, as the RPC API surface uses keyword args.
+This requires Ruby 2.x, as the RPC API surface uses keyword args.
 
 
 QUICK - INSTALL
 ---------------
 
-- Clone this repository.
-- Follow the instructions in [INSTALL](../../INSTALL) to install the gRPC C core.
-- If you don't have Ruby 2.1 installed, switch to the more detailed instructions below
-- Use bundler to install
+On debian linux systems, install from our released deb package.
+Otherwise, install from source, as described below.
+
+$ wget https://github.com/grpc/grpc/releases/download/release-0_6_0/libgrpc_0.6.0_amd64.deb
+$ wget https://github.com/grpc/grpc/releases/download/release-0_6_0/libgrpc-dev_0.6.0_amd64.deb
+$ sudo dpkg -i libgrpc_0.6.0_amd64.deb libgrpc-dev_0.6.0_amd64.deb
+
 ```sh
 $ # from this directory
 $ gem install bundler && bundle install
@@ -29,14 +32,9 @@ $ gem install bundler && bundle install
 Installing from source
 ----------------------
 
-- Build the gRPC C core
-E.g, from the root of the gRPC [git repo](https://github.com/google/grpc)
-```sh
-$ cd ../..
-$ make && sudo make install
-```
-
-- Install Ruby 2.1. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
+- Clone this repository
+- Follow the instructions in [INSTALL](../../INSTALL) to install the gRPC C core.
+- Install Ruby 2.x. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
   the exact ruby version that's used.
 ```sh
 $ command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
