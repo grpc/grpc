@@ -38,7 +38,7 @@
 
 namespace grpc_objective_c_generator {
 
-grpc::string GetHeader(const grpc::protobuf::ServiceDescriptor *service
+grpc::string GetHeader(const grpc::protobuf::ServiceDescriptor *service,
                        const grpc::string message_header);
 
 grpc::string GetSource(const grpc::protobuf::ServiceDescriptor *service);

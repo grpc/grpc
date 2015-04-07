@@ -56,21 +56,24 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
     for (int i = 0; i < file->service_count(); i++) {
       const grpc::protobuf::ServiceDescriptor *service = file->service(i);
-      grpc::sring file_name = grpc_objective_c_generator::StubFileName(
+      grpc::string file_name = grpc_objective_c_generator::StubFileName(
           service->name());
 
       // Generate .pb.h
-      grpc::string header_code = grpc_objective_c_generator::GetHeader(service);
+      grpc::string header_code = grpc_objective_c_generator::GetHeader(
+          service, grpc_objective_c_generator::MessageHeaderName(file));
       std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> header_output(
         context->Open(file_name + ".pb.h"));
-      grpc::protobuf::io::CodedOutputStream header_coded_out(output.get());
+      grpc::protobuf::io::CodedOutputStream header_coded_out(
+          header_output.get());
       header_coded_out.WriteRaw(header_code.data(), header_code.size());
 
       // Generate .pb.m
       grpc::string source_code = grpc_objective_c_generator::GetSource(service);
       std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> source_output(
         context->Open(file_name + ".pb.m"));
-      grpc::protobuf::io::CodedOutputStream source_coded_out(output.get());
+      grpc::protobuf::io::CodedOutputStream source_coded_out(
+          source_output.get());
       source_coded_out.WriteRaw(source_code.data(), source_code.size());
     }
 

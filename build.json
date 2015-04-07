@@ -514,6 +514,8 @@
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
+        "src/compiler/objective_c_generator.h",
+        "src/compiler/objective_c_generator_helpers.h",
         "src/compiler/python_generator.h",
         "src/compiler/ruby_generator.h",
         "src/compiler/ruby_generator_helpers-inl.h",
@@ -522,6 +524,7 @@
       ],
       "src": [
         "src/compiler/cpp_generator.cc",
+        "src/compiler/objective_c_generator.cc",
         "src/compiler/python_generator.cc",
         "src/compiler/ruby_generator.cc"
       ],
@@ -1811,6 +1814,18 @@
       "language": "c++",
       "src": [
         "src/compiler/cpp_plugin.cc"
+      ],
+      "deps": [
+        "grpc_plugin_support"
+      ],
+      "secure": "no"
+    },
+    {
+      "name": "grpc_objective_c_plugin",
+      "build": "protoc",
+      "language": "c++",
+      "src": [
+        "src/compiler/objective_c_plugin.cc"
       ],
       "deps": [
         "grpc_plugin_support"

@@ -95,7 +95,7 @@ inline std::vector<grpc::string> tokenize(const grpc::string &input,
   }
 }
 
-inline grpc::string CapitalizeFirstLetter(grpc::string str) {
+inline grpc::string CapitalizeFirstLetter(grpc::string s) {
   if (s.empty()) {
     return s;
   }

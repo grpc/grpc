@@ -43,7 +43,7 @@ namespace grpc_objective_c_generator {
 const grpc::string prefix = "PBG";
 
 inline grpc::string MessageHeaderName(const grpc::protobuf::FileDescriptor *file) {
-  return FileNameInUpperCase(file) + ".pb.h";
+  return grpc_generator::FileNameInUpperCamel(file) + ".pb.h";
 }
 
 inline grpc::string StubFileName(grpc::string service_name) {
