@@ -71,8 +71,8 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
    up when grpc_tcp_server_destroy is called. */
 int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index);
 
-void grpc_tcp_server_destroy(grpc_tcp_server *server, 
-                             void (*shutdown_done)(void *shutdown_done_arg), 
+void grpc_tcp_server_destroy(grpc_tcp_server *server,
+                             void (*shutdown_done)(void *shutdown_done_arg),
                              void *shutdown_done_arg);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */

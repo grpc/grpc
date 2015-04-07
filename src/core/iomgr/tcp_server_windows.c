@@ -93,8 +93,8 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
 }
 
 void grpc_tcp_server_destroy(grpc_tcp_server *s,
-                             void(*shutdown_done)(void *shutdown_done_arg),
-	                         void *shutdown_done_arg) {
+                             void (*shutdown_done)(void *shutdown_done_arg),
+                             void *shutdown_done_arg) {
   size_t i;
   gpr_mu_lock(&s->mu);
   /* shutdown all fd's */
@@ -116,13 +116,13 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   gpr_free(s);
 
   if (shutdown_done) {
-	shutdown_done(shutdown_done_arg);
+    shutdown_done(shutdown_done_arg);
   }
 }
 
 /* Prepare a recently-created socket for listening. */
-static int prepare_socket(SOCKET sock,
-                          const struct sockaddr *addr, int addr_len) {
+static int prepare_socket(SOCKET sock, const struct sockaddr *addr,
+                          int addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
 
@@ -153,15 +153,15 @@ static int prepare_socket(SOCKET sock,
   }
 
   sockname_len = sizeof(sockname_temp);
-  if (getsockname(sock, (struct sockaddr *) &sockname_temp, &sockname_len)
-        == SOCKET_ERROR) {
+  if (getsockname(sock, (struct sockaddr *)&sockname_temp, &sockname_len) ==
+      SOCKET_ERROR) {
     char *utf8_message = gpr_format_message(WSAGetLastError());
     gpr_log(GPR_ERROR, "getsockname: %s", utf8_message);
     gpr_free(utf8_message);
     goto error;
   }
 
-  return grpc_sockaddr_get_port((struct sockaddr *) &sockname_temp);
+  return grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
 
 error:
   if (sock != INVALID_SOCKET) closesocket(sock);
@@ -227,8 +227,7 @@ static void on_accept(void *arg, int success) {
     DWORD transfered_bytes = 0;
     DWORD flags;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
-                                              &transfered_bytes, FALSE,
-                                              &flags);
+                                              &transfered_bytes, FALSE, &flags);
     if (!wsa_success) {
       char *utf8_message = gpr_format_message(WSAGetLastError());
       gpr_log(GPR_ERROR, "on_accept error: %s", utf8_message);
@@ -263,9 +262,9 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
 
   if (sock == INVALID_SOCKET) return -1;
 
-  status = WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
-                    &guid, sizeof(guid), &AcceptEx, sizeof(AcceptEx),
-                    &ioctl_num_bytes, NULL, NULL);
+  status =
+      WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
+               &AcceptEx, sizeof(AcceptEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
     char *utf8_message = gpr_format_message(WSAGetLastError());
@@ -313,9 +312,8 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
     for (i = 0; i < s->nports; i++) {
       sockname_len = sizeof(sockname_temp);
       if (0 == getsockname(s->ports[i].socket->socket,
-                           (struct sockaddr *) &sockname_temp,
-                           &sockname_len)) {
-        port = grpc_sockaddr_get_port((struct sockaddr *) &sockname_temp);
+                           (struct sockaddr *)&sockname_temp, &sockname_len)) {
+        port = grpc_sockaddr_get_port((struct sockaddr *)&sockname_temp);
         if (port > 0) {
           allocated_addr = malloc(addr_len);
           memcpy(allocated_addr, addr, addr_len);
@@ -336,7 +334,7 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
   if (grpc_sockaddr_is_wildcard(addr, &port)) {
     grpc_sockaddr_make_wildcard6(port, &wildcard);
 
-    addr = (struct sockaddr *) &wildcard;
+    addr = (struct sockaddr *)&wildcard;
     addr_len = sizeof(wildcard);
   }
 
@@ -375,4 +373,4 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollset,
   gpr_mu_unlock(&s->mu);
 }
 
-#endif  /* GPR_WINSOCK_SOCKET */
+#endif /* GPR_WINSOCK_SOCKET */

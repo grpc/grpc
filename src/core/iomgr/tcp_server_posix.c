@@ -154,13 +154,15 @@ static void destroyed_port(void *server, int success) {
 
 static void dont_care_about_shutdown_completion(void *ignored) {}
 
-void grpc_tcp_server_destroy(grpc_tcp_server *s, 
-                             void (*shutdown_complete)(void *shutdown_complete_arg),
-                             void *shutdown_complete_arg) {
+void grpc_tcp_server_destroy(
+    grpc_tcp_server *s, void (*shutdown_complete)(void *shutdown_complete_arg),
+    void *shutdown_complete_arg) {
   size_t i;
   gpr_mu_lock(&s->mu);
 
-  s->shutdown_complete = shutdown_complete ? shutdown_complete : dont_care_about_shutdown_completion;
+  s->shutdown_complete = shutdown_complete
+                             ? shutdown_complete
+                             : dont_care_about_shutdown_completion;
   s->shutdown_complete_arg = shutdown_complete_arg;
 
   /* shutdown all fd's */
