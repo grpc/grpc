@@ -34,43 +34,40 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINSOCK_SOCKET
-
+#include "src/core/iomgr/sockaddr_utils.h"
 #include "src/core/iomgr/endpoint_pair.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 
-#include "src/core/iomgr/tcp_posix.h"
+#include "src/core/iomgr/tcp_windows.h"
+#include "src/core/iomgr/socket_windows.h"
 #include <grpc/support/log.h>
 
 static void create_sockets(SOCKET sv[2]) {
   SOCKET svr_sock = INVALID_SOCKET;
   SOCKET lst_sock = INVALID_SOCKET;
   SOCKET cli_sock = INVALID_SOCKET;
-  BOOL success;
-  int status;
-  sockaddr_in addr;
-  socklen_t addr_len;
+  SOCKADDR_IN addr;
+  int addr_len;
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
   GPR_ASSERT(lst_sock != INVALID_SOCKET);
 
-  memset(addr, 0, sizeof(addr));
-  GPR_ASSERT(bind(lst_sock, &addr, sizeof(addr)) != SOCKET_ERROR);
+  memset(&addr, 0, sizeof(addr));
+  GPR_ASSERT(bind(lst_sock, (struct sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
   GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GPR_ASSERT(getsockname(lst_sock, &addr, &addr_len) != SOCKET_ERROR);
+  GPR_ASSERT(getsockname(lst_sock, (struct sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
   GPR_ASSERT(cli_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(WSAConnect(cli_sock, &addr, addr_len, NULL, NULL, NULL, NULL) == 0);
-  svr_sock = accept(lst_sock, &addr, &addr_len);
+  GPR_ASSERT(WSAConnect(cli_sock, (struct sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL) == 0);
+  svr_sock = accept(lst_sock, (struct sockaddr*)&addr, &addr_len);
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
-  Close(lst_sock);
+  closesocket(lst_sock);
 
   sv[1] = cli_sock;
   sv[0] = svr_sock;
@@ -80,8 +77,8 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(size_t read_slice_size) {
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1]), read_slice_size);
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0]), read_slice_size);
+  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1]));
+  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0]));
   return p;
 }
 
