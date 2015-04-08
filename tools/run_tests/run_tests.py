@@ -39,6 +39,7 @@ import os
 import re
 import sys
 import time
+import platform
 
 import jobset
 import watch_dirs
@@ -314,17 +315,27 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
-build_steps = [jobset.JobSpec(['make',
-                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
-                               'CONFIG=%s' % cfg] + list(set(
-                                   itertools.chain.from_iterable(
-                                       l.make_targets() for l in languages))))
-               for cfg in build_configs] + list(set(
+if platform.system() == 'Windows':
+  def make_jobspec(cfg, targets):
+    return jobset.JobSpec(['nmake', '/f', 'Grpc.mak', 'CONFIG=%s' % cfg] + targets,
+                          cwd='vsprojects\\vs2013')
+else:
+  def make_jobspec(cfg, targets):
+    return jobset.JobSpec(['make',
+                           '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % 
+                               args.slowdown,
+                           'CONFIG=%s' % cfg] + targets)
+
+build_steps = [make_jobspec(cfg, 
+                            list(set(itertools.chain.from_iterable(
+                                         l.make_targets() for l in languages))))
+               for cfg in build_configs]
+build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
                    for l in languages
-                   for cmdline in l.build_steps()))
+                   for cmdline in l.build_steps()))               
 one_run = set(
     spec
     for config in run_configs
