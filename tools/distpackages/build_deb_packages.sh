@@ -30,8 +30,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Where to put resulting .deb packages.
+set -x
 deb_dest="/tmp/deb_out"
 mkdir -p $deb_dest
+
+# Where the grpc disto is
+grpc_root="/var/local/git/grpc"
 
 # Update version from default values if the file /version.txt exists
 #
@@ -71,7 +75,9 @@ do
   if [ $pkg_name == "libgrpc" ]
   then
     # Copy shared libraries
-    (cd ../..; make install-shared_c prefix=$tmp_dir/$pkg_name/usr/lib)
+    pushd $grpc_root
+    make install-shared_c prefix=$tmp_dir/$pkg_name/usr/lib
+    popd
     mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
 
     # non-dev package should contain so.0 symlinks
@@ -84,7 +90,10 @@ do
   if [ $pkg_name == "libgrpc-dev" ]
   then
     # Copy headers and static libraries
-    (cd ../..; make install-headers_c install-static_c prefix=$tmp_dir/$pkg_name/usr/lib)
+    pushd $grpc_root
+    make install-headers_c install-static_c prefix=$tmp_dir/$pkg_name/usr/lib
+    popd
+
     mv $tmp_dir/$pkg_name/usr/lib/include $tmp_dir/$pkg_name/usr/include
     mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
 
