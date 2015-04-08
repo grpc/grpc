@@ -80,7 +80,7 @@ ${target.name}.exe \
 	echo All tests built.
 
 % for target in buildable_targets:
-${target.name}.exe: grpc_test_util
+${target.name}.exe: grpc_test_util $(OUT_DIR)
 	echo Building ${target.name}
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ \
 %for source in target.src:
