@@ -102,9 +102,16 @@ class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
     self.make_target = make_target
+    if platform.system() == 'Windows':
+      plat = 'windows'
+    else:
+      plat = 'posix'
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
-      self.binaries = [tgt for tgt in js if tgt['language'] == test_lang]
+      self.binaries = [tgt
+                       for tgt in js
+                       if tgt['language'] == test_lang and
+                          plat in tgt['platforms']]
 
   def test_specs(self, config, travis):
     out = []
@@ -191,6 +198,7 @@ class PythonLanguage(object):
   def __str__(self):
     return 'python'
 
+
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
@@ -208,6 +216,7 @@ class RubyLanguage(object):
   def __str__(self):
     return 'ruby'
 
+
 class CSharpLanguage(object):
 
   def test_specs(self, config, travis):
@@ -224,6 +233,7 @@ class CSharpLanguage(object):
 
   def __str__(self):
     return 'csharp'
+
 
 class Build(object):
 
