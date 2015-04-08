@@ -747,6 +747,11 @@ grpc_build_debs() {
   local project_opt="--project $grpc_project"
   local zone_opt="--zone $grpc_zone"
 
+  # Update the remote distpackages_dir
+  local src_dist_dir='tools/distpackages'
+  local rmt_dist_dir="$host:~"
+  gcloud compute copy-files $src_dist_dir $rmt_dist_dir $project_opt $zone_opt || return 1
+
   # rebuild the build_deb image
   local label='build_deb'
   grpc_update_image -- -h $host $label || return 1
