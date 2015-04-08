@@ -31,7 +31,6 @@
  *
  */
 
-#include <chrono>
 #include <thread>
 
 #include "test/core/util/port.h"

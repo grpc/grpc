@@ -31,8 +31,6 @@
  *
  */
 
-#include <chrono>
-
 #include <grpc/support/time.h>
 #include <grpc++/time.h>
 #include <gtest/gtest.h>
