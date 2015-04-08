@@ -2925,6 +2925,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
+    test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 
 
@@ -2954,6 +2955,7 @@ test/core/transport/transport_end2end_tests.c: $(OPENSSL_DEP)
 test/core/util/grpc_profiler.c: $(OPENSSL_DEP)
 test/core/util/parse_hexstring.c: $(OPENSSL_DEP)
 test/core/util/port_posix.c: $(OPENSSL_DEP)
+test/core/util/port_windows.c: $(OPENSSL_DEP)
 test/core/util/slice_splitter.c: $(OPENSSL_DEP)
 endif
 
@@ -2987,6 +2989,7 @@ $(OBJDIR)/$(CONFIG)/test/core/transport/transport_end2end_tests.o:
 $(OBJDIR)/$(CONFIG)/test/core/util/grpc_profiler.o: 
 $(OBJDIR)/$(CONFIG)/test/core/util/parse_hexstring.o: 
 $(OBJDIR)/$(CONFIG)/test/core/util/port_posix.o: 
+$(OBJDIR)/$(CONFIG)/test/core/util/port_windows.o: 
 $(OBJDIR)/$(CONFIG)/test/core/util/slice_splitter.o: 
 
 
