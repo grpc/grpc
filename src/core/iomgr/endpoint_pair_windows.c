@@ -33,7 +33,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_POSIX_SOCKET
+#ifdef GPR_WINSOCK_SOCKET
 
 #include "src/core/iomgr/endpoint_pair.h"
 
