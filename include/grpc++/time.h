@@ -34,6 +34,23 @@
 #ifndef GRPC_INTERNAL_CPP_UTIL_TIME_H
 #define GRPC_INTERNAL_CPP_UTIL_TIME_H
 
+#include <grpc++/config.h>
+
+namespace grpc {
+
+template <typename T>
+class TimePoint {
+ public:
+  TimePoint(const T& time) : time_(time) { }
+  gpr_timespec raw_time() const { return time_; }
+ private:
+  gpr_timespec time_;
+};
+
+}  // namespace grpc
+
+#ifndef GRPC_CXX0X_NO_CHRONO
+
 #include <chrono>
 
 #include <grpc/support/time.h>
@@ -46,6 +63,19 @@ void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
 
 std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
 
+template <>
+class TimePoint<std::chrono::system_clock::time_point> {
+ public:
+  TimePoint(const std::chrono::system_clock::time_point& time) {
+	Timepoint2Timespec(time, &time_);
+  }
+  gpr_timespec raw_time() const { return time_; }
+ private:
+  gpr_timespec time_;
+};
+
 }  // namespace grpc
+
+#endif  // !GRPC_CXX0X_NO_CHRONO
 
 #endif  // GRPC_INTERNAL_CPP_UTIL_TIME_H

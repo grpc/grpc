@@ -34,7 +34,6 @@
 #ifndef GRPCXX_CREDENTIALS_H
 #define GRPCXX_CREDENTIALS_H
 
-#include <chrono>
 #include <memory>
 
 #include <grpc++/config.h>
@@ -103,7 +102,7 @@ std::unique_ptr<Credentials> ComputeEngineCredentials();
 // grpc_max_auth_token_lifetime or will be cropped to this value.
 std::unique_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
-    std::chrono::seconds token_lifetime);
+    long token_lifetime);
 
 // Builds JWT credentials.
 // json_key is the JSON key string containing the client's private key.
@@ -111,7 +110,7 @@ std::unique_ptr<Credentials> ServiceAccountCredentials(
 // this credentials.  It should not exceed grpc_max_auth_token_lifetime or
 // will be cropped to this value.
 std::unique_ptr<Credentials> JWTCredentials(
-    const grpc::string& json_key, std::chrono::seconds token_lifetime);
+    const grpc::string& json_key, long token_lifetime);
 
 // Builds refresh token credentials.
 // json_refresh_token is the JSON string containing the refresh token along

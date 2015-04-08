@@ -33,11 +33,11 @@
 
 #include <grpc++/server_context.h>
 
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/sync.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "src/cpp/util/time.h"
+#include <grpc++/impl/call.h>
+#include <grpc++/impl/sync.h>
+#include <grpc++/time.h>
 
 namespace grpc {
 
@@ -99,7 +99,7 @@ ServerContext::ServerContext()
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
                              size_t metadata_count)
     : completion_op_(nullptr),
-      deadline_(Timespec2Timepoint(deadline)),
+      deadline_(deadline),
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false) {
