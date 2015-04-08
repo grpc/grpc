@@ -32,12 +32,9 @@
 set +e
 cd $(dirname $0)
 
-cd ../tests/generated_code
+gen_code='../tests/generated_code'
+interop='../tests/interop'
 
-protoc-gen-php -i . -o . ./math.proto
+protoc-gen-php -i $gen_code -o $gen_code $gen_code/math.proto
 
-cd -
-
-cd ../tests/interop
-
-protoc-gen-php -i . -o . ./test.proto
+protoc-gen-php -i $interop -o $interop $interop/test.proto
