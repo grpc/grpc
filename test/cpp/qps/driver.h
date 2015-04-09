@@ -35,7 +35,7 @@
 #define TEST_QPS_DRIVER_H
 
 #include "test/cpp/qps/histogram.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

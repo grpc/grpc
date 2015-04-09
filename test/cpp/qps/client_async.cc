@@ -48,7 +48,7 @@
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/client.h"
 

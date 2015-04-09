@@ -49,9 +49,9 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/cpp/interop/test.pb.h"
-#include "test/cpp/interop/empty.pb.h"
-#include "test/cpp/interop/messages.pb.h"
+#include "test/cpp/interop/test.grpc.pb.h"
+#include "test/cpp/interop/empty.grpc.pb.h"
+#include "test/cpp/interop/messages.grpc.pb.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
