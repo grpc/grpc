@@ -38,7 +38,7 @@
 #include "src/cpp/util/time.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.pb.h"
+#include "test/cpp/util/echo.grpc.pb.h"
 #include <grpc++/async_generic_service.h>
 #include <grpc++/async_unary_call.h>
 #include <grpc++/byte_buffer.h>

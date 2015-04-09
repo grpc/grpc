@@ -36,7 +36,7 @@
 
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/timer.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 
 #include <condition_variable>
 #include <mutex>
