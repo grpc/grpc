@@ -44,12 +44,25 @@ struct Parameters {
   grpc::string services_namespace;
 };
 
+// Return the prologue of the generated header file.
+grpc::string GetHeaderPrologue(const grpc::protobuf::FileDescriptor *file,
+                               const Parameters &params);
+
 // Return the includes needed for generated header file.
 grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params);
 
 // Return the includes needed for generated source file.
-grpc::string GetSourceIncludes(const Parameters &params);
+grpc::string GetSourceIncludes(const grpc::protobuf::FileDescriptor *file,
+                               const Parameters &params);
+
+// Return the epilogue of the generated header file.
+grpc::string GetHeaderEpilogue(const grpc::protobuf::FileDescriptor *file,
+                               const Parameters &params);
+
+// Return the prologue of the generated source file.
+grpc::string GetSourcePrologue(const grpc::protobuf::FileDescriptor *file,
+                               const Parameters &params);
 
 // Return the services for generated header file.
 grpc::string GetHeaderServices(const grpc::protobuf::FileDescriptor *file,
@@ -57,6 +70,10 @@ grpc::string GetHeaderServices(const grpc::protobuf::FileDescriptor *file,
 
 // Return the services for generated source file.
 grpc::string GetSourceServices(const grpc::protobuf::FileDescriptor *file,
+                               const Parameters &params);
+
+// Return the epilogue of the generated source file.
+grpc::string GetSourceEpilogue(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params);
 
 }  // namespace grpc_cpp_generator
