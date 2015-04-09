@@ -113,9 +113,9 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
 
   void ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     double start = Timer::Now();
-    EXPECT_TRUE(stream_->Write(request_));
-    EXPECT_TRUE(stream_->Read(&responses_[thread_idx]));
-    histogram->Add((Timer::Now() - start) * 1e9);
+    if (stream_->Write(request_) && stream_->Read(&responses_[thread_idx])) {
+      histogram->Add((Timer::Now() - start) * 1e9);
+    }
   }
   private:
     grpc::ClientContext context_;
