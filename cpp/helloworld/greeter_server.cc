@@ -41,7 +41,7 @@
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
-#include "helloworld.pb.h"
+#include "helloworld.grpc.pb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;

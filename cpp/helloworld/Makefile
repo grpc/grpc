@@ -43,14 +43,17 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check greeter_client greeter_server
 
-greeter_client: helloworld.pb.o greeter_client.o
+greeter_client: helloworld.grpc.pb.o helloworld.pb.o greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 greeter_server: helloworld.pb.o greeter_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
+%.grpc.pb.cc: %.proto
+	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
+
 %.pb.cc: %.proto
-	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
+	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
 	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server

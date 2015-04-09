@@ -38,7 +38,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "route_guide.pb.h"
+#include "route_guide.grpc.pb.h"
 
 namespace examples {
 

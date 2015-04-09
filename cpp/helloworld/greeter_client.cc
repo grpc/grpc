@@ -42,7 +42,7 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/status.h>
-#include "helloworld.pb.h"
+#include "helloworld.grpc.pb.h"
 
 using grpc::ChannelArguments;
 using grpc::ChannelInterface;

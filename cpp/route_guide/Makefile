@@ -43,14 +43,17 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check route_guide_client route_guide_server
 
-route_guide_client: route_guide.pb.o route_guide_client.o helper.o
+route_guide_client: route_guide.grpc.pb.o route_guide.pb.o route_guide_client.o helper.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-route_guide_server: route_guide.pb.o route_guide_server.o helper.o
+route_guide_server: route_guide.grpc.pb.o route_guide.pb.o route_guide_server.o helper.o
 	$(CXX) $^ $(LDFLAGS) -o $@
+
+%.grpc.pb.cc: %.proto
+	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
 
 %.pb.cc: %.proto
-	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
+	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
 	rm -f *.o *.pb.cc *.pb.h route_guide_client route_guide_server
