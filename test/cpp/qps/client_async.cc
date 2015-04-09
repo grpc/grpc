@@ -173,7 +173,7 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
     }
   }
 
-  void ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     void* got_tag;
     bool ok;
     cli_cqs_[thread_idx]->Next(&got_tag, &ok);
@@ -185,6 +185,8 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
       ctx->StartNewClone();
       delete ctx;
     }
+
+    return true;
   }
 
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
@@ -301,7 +303,7 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
     }
   }
 
-  void ThreadFunc(Histogram *histogram, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(Histogram *histogram, size_t thread_idx) GRPC_OVERRIDE {
     void *got_tag;
     bool ok;
     cli_cqs_[thread_idx]->Next(&got_tag, &ok);
@@ -313,6 +315,8 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
       ctx->StartNewClone();
       delete ctx;
     }
+
+    return true;
   }
 
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;

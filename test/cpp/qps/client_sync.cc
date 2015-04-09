@@ -83,13 +83,14 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
     SynchronousClient(config) {StartThreads(num_threads_);}
   ~SynchronousUnaryClient() {}
   
-  void ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = Timer::Now();
     grpc::ClientContext context;
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
     histogram->Add((Timer::Now() - start) * 1e9);
+    return s.IsOk();
   }
 };
 
@@ -111,11 +112,13 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     }
   }
 
-  void ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     double start = Timer::Now();
     if (stream_->Write(request_) && stream_->Read(&responses_[thread_idx])) {
       histogram->Add((Timer::Now() - start) * 1e9);
+      return true;
     }
+    return false;
   }
   private:
     grpc::ClientContext context_;
