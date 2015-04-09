@@ -30,12 +30,13 @@ $ cd grpc-common/cpp/helloworld/
 To generate the client and server side interfaces:
 
 ```sh
-$ make helloworld.pb.cc
+$ make helloworld.grpc.pb.cc helloworld.pb.cc
 ```
 Which internally invokes the proto-compiler as:
 
 ```sh
-$ protoc -I ../../protos/ --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=grpc_cpp_plugin ../../protos/helloworld.proto
+$ protoc -I ../../protos/ --grpc_out=. --plugin=protoc-gen-grpc=grpc_cpp_plugin ../../protos/helloworld.proto
+$ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
 ```
 
 ### Client and server implementations

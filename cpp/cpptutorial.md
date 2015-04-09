@@ -94,18 +94,21 @@ Next we need to generate the gRPC client and server interfaces from our .proto s
 For simplicity, we've provided a [makefile](https://github.com/grpc/grpc-common/blob/master/cpp/route_guide/Makefile) that runs `protoc` for you with the appropriate plugin, input, and output (if you want to run this yourself, make sure you've installed protoc and followed the gRPC code [installation instructions](https://github.com/grpc/grpc/blob/master/INSTALL) first):
 
 ```shell
-$ make route_guide.pb.cc
+$ make route_guide.grpc.pb.cc route_guide.pb.cc
 ```
 
 which actually runs:
 
 ```shell
-$ protoc -I ../../protos --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ../../protos/route_guide.proto
+$ protoc -I ../../protos --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ../../protos/route_guide.proto
+$ protoc -I ../../protos --cpp_out=. ../../protos/route_guide.proto
 ```
 
 Running this command generates the following files in your current directory:
-- `route_guide.pb.h`, the header which declares your generated classes
-- `route_guide.pb.cc`, which contains the implementation of your classes
+- `route_guide.pb.h`, the header which declares your generated message classes
+- `route_guide.pb.cc`, which contains the implementation of your message classes
+- `route_guide.grpc.pb.h`, the header which declares your generated service classes
+- `route_guide.grpc.pb.cc`, which contains the implementation of your service classes
 
 These contain:
 - All the protocol buffer code to populate, serialize, and retrieve our request and response message types

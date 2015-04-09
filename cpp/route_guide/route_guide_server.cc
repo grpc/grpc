@@ -46,7 +46,7 @@
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "helper.h"
-#include "route_guide.pb.h"
+#include "route_guide.grpc.pb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
