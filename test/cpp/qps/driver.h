@@ -54,7 +54,10 @@ struct ScenarioResult {
 ScenarioResult RunScenario(const grpc::testing::ClientConfig& client_config,
                            size_t num_clients,
                            const grpc::testing::ServerConfig& server_config,
-                           size_t num_servers);
+                           size_t num_servers,
+                           int warmup_seconds,
+                           int benchmark_seconds);
+
 }  // namespace testing
 }  // namespace grpc
 
