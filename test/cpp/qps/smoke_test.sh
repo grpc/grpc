@@ -8,7 +8,7 @@ cd $(dirname $0)/../../..
 
 killall qps_worker || true
 
-config=opt
+config=dbg
 
 NUMCPUS=`python2.7 -c 'import multiprocessing; print multiprocessing.cpu_count()'`
 
