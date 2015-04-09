@@ -97,15 +97,15 @@ class AsyncQpsServerTest : public Server {
         bool ok;
         void* got_tag;
         while (srv_cq_.Next(&got_tag, &ok)) {
-	  ServerRpcContext* ctx = detag(got_tag);
-	  // The tag is a pointer to an RPC context to invoke
-	  if (ctx->RunNextState(ok) == false) {
-	    // this RPC context is done, so refresh it
+          ServerRpcContext* ctx = detag(got_tag);
+          // The tag is a pointer to an RPC context to invoke
+          if (ctx->RunNextState(ok) == false) {
+            // this RPC context is done, so refresh it
             std::lock_guard<std::mutex> g(shutdown_mutex_);
             if (!shutdown_) {
               ctx->Reset();
             }
-	  }
+          }
         }
         return;
       }));
@@ -175,8 +175,9 @@ class AsyncQpsServerTest : public Server {
    private:
     bool finisher(bool) { return false; }
     bool invoker(bool ok) {
-      if (!ok)
-	return false;
+      if (!ok) {
+        return false;
+      }
 
       ResponseType response;
 
@@ -230,8 +231,9 @@ class AsyncQpsServerTest : public Server {
 
    private:
     bool request_done(bool ok) {
-      if (!ok)
-	return false;
+      if (!ok) {
+        return false;
+      }
       stream_.Read(&req_, AsyncQpsServerTest::tag(this));
       next_state_ = &ServerRpcContextStreamingImpl::read_done;
       return true;
