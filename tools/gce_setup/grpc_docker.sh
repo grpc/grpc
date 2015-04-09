@@ -1041,6 +1041,35 @@ grpc_interop_gen_python_cmd() {
   echo $the_cmd
 }
 
+# constructs the full dockerized python service_account auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_service_account_creds_gen_python_cmd() {
+  local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local added_gfe_flags=$(_grpc_default_creds_test_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
+  local the_cmd="$cmd_prefix '$env_prefix python -B -m interop.client --use_tls $gfe_flags $added_gfe_flags $@'"
+  echo $the_cmd
+}
+
+# constructs the full dockerized python gce auth interop test cmd.
+#
+# call-seq:
+#   flags= .... # generic flags to include the command
+#   cmd=$($grpc_gen_test_cmd $flags)
+grpc_cloud_prod_auth_compute_engine_creds_gen_python_cmd() {
+  local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c";
+  local gfe_flags=$(_grpc_prod_gfe_flags)
+  local added_gfe_flags=$(_grpc_gce_test_flags)
+  local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
+  local the_cmd="$cmd_prefix '$env_prefix python -B -m interop.client --use_tls $gfe_flags $added_gfe_flags $@'"
+  echo $the_cmd
+}
+
 # constructs the full dockerized java interop test cmd.
 #
 # call-seq:
