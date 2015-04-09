@@ -58,7 +58,7 @@ static void RunSynchronousUnaryPingPong() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(1);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   gpr_log(GPR_INFO, "QPS: %.1f",
           result.latencies.Count() /
@@ -87,7 +87,7 @@ static void RunSynchronousStreamingPingPong() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(1);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   gpr_log(GPR_INFO, "QPS: %.1f",
           result.latencies.Count() /
@@ -117,7 +117,7 @@ static void RunAsyncUnaryPingPong() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(1);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   gpr_log(GPR_INFO, "QPS: %.1f",
           result.latencies.Count() /
@@ -147,7 +147,7 @@ static void RunQPS() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(4);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   auto qps = 
       result.latencies.Count() /

@@ -3728,7 +3728,12 @@ $(OBJDIR)/$(CONFIG)/examples/pubsub/subscriber.o:     $(GENDIR)/examples/pubsub/
 
 LIBQPS_SRC = \
     $(GENDIR)/test/cpp/qps/qpstest.pb.cc \
+    test/cpp/qps/client_async.cc \
+    test/cpp/qps/client_sync.cc \
     test/cpp/qps/driver.cc \
+    test/cpp/qps/qps_worker.cc \
+    test/cpp/qps/server_async.cc \
+    test/cpp/qps/server_sync.cc \
     test/cpp/qps/timer.cc \
 
 
@@ -3757,7 +3762,12 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 test/cpp/qps/qpstest.proto: $(OPENSSL_DEP)
+test/cpp/qps/client_async.cc: $(OPENSSL_DEP)
+test/cpp/qps/client_sync.cc: $(OPENSSL_DEP)
 test/cpp/qps/driver.cc: $(OPENSSL_DEP)
+test/cpp/qps/qps_worker.cc: $(OPENSSL_DEP)
+test/cpp/qps/server_async.cc: $(OPENSSL_DEP)
+test/cpp/qps/server_sync.cc: $(OPENSSL_DEP)
 test/cpp/qps/timer.cc: $(OPENSSL_DEP)
 endif
 
@@ -3784,7 +3794,12 @@ endif
 endif
 
 
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
 
 
@@ -8775,10 +8790,6 @@ endif
 
 
 QPS_WORKER_SRC = \
-    test/cpp/qps/client_async.cc \
-    test/cpp/qps/client_sync.cc \
-    test/cpp/qps/server_async.cc \
-    test/cpp/qps/server_sync.cc \
     test/cpp/qps/worker.cc \
 
 QPS_WORKER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(QPS_WORKER_SRC))))
@@ -8809,10 +8820,6 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/worker.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_qps_worker: $(QPS_WORKER_OBJS:.o=.dep)

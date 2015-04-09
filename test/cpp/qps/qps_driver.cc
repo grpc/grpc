@@ -42,6 +42,7 @@ DEFINE_int32(num_servers, 1, "Number of server binaries");
 
 DEFINE_int32(warmup_seconds, 5, "Warmup time (in seconds)");
 DEFINE_int32(benchmark_seconds, 30, "Benchmark time (in seconds)");
+DEFINE_int32(local_workers, 0, "Number of local workers to start");
 
 // Common config
 DEFINE_bool(enable_ssl, false, "Use SSL");
@@ -103,7 +104,8 @@ int main(int argc, char** argv) {
 
   auto result = RunScenario(client_config, FLAGS_num_clients,
                             server_config, FLAGS_num_servers,
-                            FLAGS_warmup_seconds, FLAGS_benchmark_seconds);
+                            FLAGS_warmup_seconds, FLAGS_benchmark_seconds,
+                            FLAGS_local_workers);
 
   gpr_log(GPR_INFO, "QPS: %.1f",
           result.latencies.Count() /
