@@ -176,7 +176,7 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     void* got_tag;
     bool ok;
-    switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, std::chrono::system_clock::now() + std::chrono::seconds(11))) {
+    switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, std::chrono::system_clock::now() + std::chrono::seconds(1))) {
       case CompletionQueue::SHUTDOWN: return false;
       case CompletionQueue::TIMEOUT: return true;
       case CompletionQueue::GOT_EVENT: break;
