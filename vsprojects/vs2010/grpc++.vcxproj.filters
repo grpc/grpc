@@ -159,6 +159,9 @@
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\time.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cpp\client\channel.h">
@@ -169,9 +172,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h">
       <Filter>src\cpp\server</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\cpp\util\time.h">
-      <Filter>src\cpp\util</Filter>
     </ClInclude>
   </ItemGroup>
 
