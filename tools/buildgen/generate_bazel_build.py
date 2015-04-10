@@ -41,7 +41,7 @@ def translate_rule(target_dict, grpc_top_dir, build_output, bazel_type):
   name = '%s',
   includes = [
     "%s",
-    # This is sub-optimial because we wan't put something like -I. to copts.
+    # This is sub-optimial because we can't put something like -I. to copts.
     ".",
   ],''' % (bazel_type,
        target_dict['name'],
