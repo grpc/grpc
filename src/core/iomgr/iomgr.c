@@ -117,7 +117,16 @@ void grpc_iomgr_shutdown(void) {
       gpr_mu_lock(&g_mu);
     }
     if (g_refs) {
-      if (gpr_cv_wait(&g_rcv, &g_mu, shutdown_deadline) && g_cbs_head == NULL) {
+      int timeout = 0;
+      gpr_timespec short_deadline = gpr_time_add(gpr_now(),
+                                                 gpr_time_from_millis(100));
+      while (gpr_cv_wait(&g_rcv, &g_mu, short_deadline) && g_cbs_head == NULL) {
+        if (gpr_time_cmp(gpr_now(), shutdown_deadline) > 0) {
+          timeout = 1;
+          break;
+        }
+      }
+      if (timeout) {
         gpr_log(GPR_DEBUG,
                 "Failed to free %d iomgr objects before shutdown deadline: "
                 "memory leaks are likely",

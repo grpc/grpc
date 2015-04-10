@@ -241,6 +241,24 @@ class Sanity(object):
   def __str__(self):
     return 'sanity'
 
+class Build(object):
+
+  def test_specs(self, config, travis):
+    return []
+
+  def make_targets(self):
+    return ['all']
+
+  def build_steps(self):
+    return []
+
+  def supports_multi_config(self):
+    return True
+
+  def __str__(self):
+    return self.make_target
+
+
 # different configurations we can run under
 _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
@@ -267,6 +285,7 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'sanity': Sanity(),
+    'build': Build(),
     }
 
 # parse command line

@@ -30,6 +30,8 @@
 """A setup module for the GRPC Python package."""
 
 from distutils import core as _core
+import setuptools
+import sys
 
 _EXTENSION_SOURCES = (
     'grpc/_adapter/_c.c',
@@ -49,8 +51,9 @@ _EXTENSION_INCLUDE_DIRECTORIES = (
 _EXTENSION_LIBRARIES = (
     'grpc',
     'gpr',
-    'rt',
 )
+if not "darwin" in sys.platform:
+    _EXTENSION_LIBRARIES += ('rt',)
 
 _EXTENSION_MODULE = _core.Extension(
     'grpc._adapter._c', sources=list(_EXTENSION_SOURCES),
@@ -80,7 +83,15 @@ _PACKAGE_DIRECTORIES = {
     'grpc.framework': 'grpc/framework',
 }
 
-_core.setup(
-    name='grpc-2015', version='0.4.0',
-    ext_modules=[_EXTENSION_MODULE], packages=list(_PACKAGES),
-    package_dir=_PACKAGE_DIRECTORIES)
+setuptools.setup(
+    name='grpcio',
+    version='0.5.0a0',
+    ext_modules=[_EXTENSION_MODULE],
+    packages=list(_PACKAGES),
+    package_dir=_PACKAGE_DIRECTORIES,
+    install_requires=[
+        'enum34==1.0.4',
+        'futures==2.2.0',
+        'protobuf==3.0.0-alpha-1'
+    ]
+)

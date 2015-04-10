@@ -30,11 +30,28 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Where to put resulting .deb packages.
-deb_dest="deb_out"
+set -x
+deb_dest="/tmp/deb_out"
 mkdir -p $deb_dest
 
-version='0.5.0.0'
+# Where the grpc disto is
+grpc_root="/var/local/git/grpc"
+
+# Update version from default values if the file /version.txt exists
+#
+# - when present, /version.txt will added by the docker build.
 pkg_version='0.5.0'
+if [ -f /version.txt ]; then
+  pkg_version=$(cat /version.txt)
+fi
+version="${pkg_version}.0"
+release_tag="release-${pkg_version//./_}"
+echo "Target release => $pkg_version, will checkout tag $release_tag"
+
+# Switch grpc_root to the release tag
+pushd $grpc_root
+git checkout $release_tag || { echo "bad release tag ${release_tag}"; exit 1; }
+popd
 
 if [ -f /.dockerinit ]; then
   # We're in Docker where uname -p returns "unknown".
@@ -64,7 +81,9 @@ do
   if [ $pkg_name == "libgrpc" ]
   then
     # Copy shared libraries
-    (cd ../..; make install-shared_c prefix=$tmp_dir/$pkg_name/usr/lib)
+    pushd $grpc_root
+    make install-shared_c prefix=$tmp_dir/$pkg_name/usr/lib
+    popd
     mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
 
     # non-dev package should contain so.0 symlinks
@@ -77,7 +96,10 @@ do
   if [ $pkg_name == "libgrpc-dev" ]
   then
     # Copy headers and static libraries
-    (cd ../..; make install-headers_c install-static_c prefix=$tmp_dir/$pkg_name/usr/lib)
+    pushd $grpc_root
+    make install-headers_c install-static_c prefix=$tmp_dir/$pkg_name/usr/lib
+    popd
+
     mv $tmp_dir/$pkg_name/usr/lib/include $tmp_dir/$pkg_name/usr/include
     mv $tmp_dir/$pkg_name/usr/lib/lib $arch_lib_dir
 
@@ -110,8 +132,5 @@ do
   dpkg-deb -c $deb_path
   echo "Problems reported by lintian:"
   lintian $deb_path
-
   echo
 done
-
-

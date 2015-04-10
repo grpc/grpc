@@ -29,121 +29,150 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
 
-from grpc.framework.face import demonstration as _face_testing
-from grpc.framework.face import interfaces as _face_interfaces
-class TestServiceService(object):
+import abc
+from grpc.early_adopter import implementations
+from grpc.framework.alpha import utilities
+class EarlyAdopterTestServiceServicer(object):
   """<fill me in later!>"""
-  def __init__(self):
-    pass
-class TestServiceServicer(object):
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def EmptyCall(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def UnaryCall(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def StreamingOutputCall(self, request, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def StreamingInputCall(self, request_iterator, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def FullDuplexCall(self, request_iterator, context):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def HalfDuplexCall(self, request_iterator, context):
+    raise NotImplementedError()
+class EarlyAdopterTestServiceServer(object):
   """<fill me in later!>"""
-  def EmptyCall(self, arg):
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def start(self):
     raise NotImplementedError()
-  def UnaryCall(self, arg):
+  @abc.abstractmethod
+  def stop(self):
     raise NotImplementedError()
-  def StreamingOutputCall(self, arg):
-    raise NotImplementedError()
-  def StreamingInputCall(self, arg):
-    raise NotImplementedError()
-  def FullDuplexCall(self, arg):
-    raise NotImplementedError()
-  def HalfDuplexCall(self, arg):
-    raise NotImplementedError()
-class TestServiceStub(object):
+class EarlyAdopterTestServiceStub(object):
   """<fill me in later!>"""
-  def EmptyCall(self, arg):
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def EmptyCall(self, request):
     raise NotImplementedError()
   EmptyCall.async = None
-  def UnaryCall(self, arg):
+  @abc.abstractmethod
+  def UnaryCall(self, request):
     raise NotImplementedError()
   UnaryCall.async = None
-  def StreamingOutputCall(self, arg):
+  @abc.abstractmethod
+  def StreamingOutputCall(self, request):
     raise NotImplementedError()
   StreamingOutputCall.async = None
-  def StreamingInputCall(self, arg):
+  @abc.abstractmethod
+  def StreamingInputCall(self, request_iterator):
     raise NotImplementedError()
   StreamingInputCall.async = None
-  def FullDuplexCall(self, arg):
+  @abc.abstractmethod
+  def FullDuplexCall(self, request_iterator):
     raise NotImplementedError()
   FullDuplexCall.async = None
-  def HalfDuplexCall(self, arg):
+  @abc.abstractmethod
+  def HalfDuplexCall(self, request_iterator):
     raise NotImplementedError()
   HalfDuplexCall.async = None
-class _TestServiceStub(TestServiceStub):
-  def __init__(self, face_stub, default_timeout):
-    self._face_stub = face_stub
-    self._default_timeout = default_timeout
-    stub_self = self
-    class EmptyCall(object):
-      def __call__(self, arg):
-        return stub_self._face_stub.blocking_value_in_value_out("EmptyCall", arg, stub_self._default_timeout)
-      def async(self, arg):
-        return stub_self._face_stub.future_value_in_value_out("EmptyCall", arg, stub_self._default_timeout)
-    self.EmptyCall = EmptyCall()
-    class UnaryCall(object):
-      def __call__(self, arg):
-        return stub_self._face_stub.blocking_value_in_value_out("UnaryCall", arg, stub_self._default_timeout)
-      def async(self, arg):
-        return stub_self._face_stub.future_value_in_value_out("UnaryCall", arg, stub_self._default_timeout)
-    self.UnaryCall = UnaryCall()
-    class StreamingOutputCall(object):
-      def __call__(self, arg):
-        return stub_self._face_stub.inline_value_in_stream_out("StreamingOutputCall", arg, stub_self._default_timeout)
-      def async(self, arg):
-        return stub_self._face_stub.inline_value_in_stream_out("StreamingOutputCall", arg, stub_self._default_timeout)
-    self.StreamingOutputCall = StreamingOutputCall()
-    class StreamingInputCall(object):
-      def __call__(self, arg):
-        return stub_self._face_stub.blocking_stream_in_value_out("StreamingInputCall", arg, stub_self._default_timeout)
-      def async(self, arg):
-        return stub_self._face_stub.future_stream_in_value_out("StreamingInputCall", arg, stub_self._default_timeout)
-    self.StreamingInputCall = StreamingInputCall()
-    class FullDuplexCall(object):
-      def __call__(self, arg):
-        return stub_self._face_stub.inline_stream_in_stream_out("FullDuplexCall", arg, stub_self._default_timeout)
-      def async(self, arg):
-        return stub_self._face_stub.inline_stream_in_stream_out("FullDuplexCall", arg, stub_self._default_timeout)
-    self.FullDuplexCall = FullDuplexCall()
-    class HalfDuplexCall(object):
-      def __call__(self, arg):
-        return stub_self._face_stub.inline_stream_in_stream_out("HalfDuplexCall", arg, stub_self._default_timeout)
-      def async(self, arg):
-        return stub_self._face_stub.inline_stream_in_stream_out("HalfDuplexCall", arg, stub_self._default_timeout)
-    self.HalfDuplexCall = HalfDuplexCall()
-def mock_TestService(servicer, default_timeout):
-  value_in_value_out = {}
-  value_in_stream_out = {}
-  stream_in_value_out = {}
-  stream_in_stream_out = {}
-  class EmptyCall(_face_interfaces.InlineValueInValueOutMethod):
-    def service(self, request, context):
-      return servicer.EmptyCall(request)
-  value_in_value_out['EmptyCall'] = EmptyCall()
-  class UnaryCall(_face_interfaces.InlineValueInValueOutMethod):
-    def service(self, request, context):
-      return servicer.UnaryCall(request)
-  value_in_value_out['UnaryCall'] = UnaryCall()
-  class StreamingOutputCall(_face_interfaces.InlineValueInStreamOutMethod):
-    def service(self, request, context):
-      return servicer.StreamingOutputCall(request)
-  value_in_stream_out['StreamingOutputCall'] = StreamingOutputCall()
-  class StreamingInputCall(_face_interfaces.InlineStreamInValueOutMethod):
-    def service(self, request, context):
-      return servicer.StreamingInputCall(request)
-  stream_in_value_out['StreamingInputCall'] = StreamingInputCall()
-  class FullDuplexCall(_face_interfaces.InlineStreamInStreamOutMethod):
-    def service(self, request, context):
-      return servicer.FullDuplexCall(request)
-  stream_in_stream_out['FullDuplexCall'] = FullDuplexCall()
-  class HalfDuplexCall(_face_interfaces.InlineStreamInStreamOutMethod):
-    def service(self, request, context):
-      return servicer.HalfDuplexCall(request)
-  stream_in_stream_out['HalfDuplexCall'] = HalfDuplexCall()
-  face_linked_pair = _face_testing.server_and_stub(default_timeout,inline_value_in_value_out_methods=value_in_value_out,inline_value_in_stream_out_methods=value_in_stream_out,inline_stream_in_value_out_methods=stream_in_value_out,inline_stream_in_stream_out_methods=stream_in_stream_out)
-  class LinkedPair(object):
-    def __init__(self, server, stub):
-      self.server = server
-      self.stub = stub
-  stub = _TestServiceStub(face_linked_pair.stub, default_timeout)
-  return LinkedPair(None, stub)
+def early_adopter_create_TestService_server(servicer, port, private_key=None, certificate_chain=None):
+  import test.cpp.interop.empty_pb2
+  import test.cpp.interop.empty_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  method_service_descriptions = {
+    "EmptyCall": utilities.unary_unary_service_description(
+      servicer.EmptyCall,
+      test.cpp.interop.empty_pb2.Empty.FromString,
+      test.cpp.interop.empty_pb2.Empty.SerializeToString,
+    ),
+    "FullDuplexCall": utilities.stream_stream_service_description(
+      servicer.FullDuplexCall,
+      test.cpp.interop.messages_pb2.StreamingOutputCallRequest.FromString,
+      test.cpp.interop.messages_pb2.StreamingOutputCallResponse.SerializeToString,
+    ),
+    "HalfDuplexCall": utilities.stream_stream_service_description(
+      servicer.HalfDuplexCall,
+      test.cpp.interop.messages_pb2.StreamingOutputCallRequest.FromString,
+      test.cpp.interop.messages_pb2.StreamingOutputCallResponse.SerializeToString,
+    ),
+    "StreamingInputCall": utilities.stream_unary_service_description(
+      servicer.StreamingInputCall,
+      test.cpp.interop.messages_pb2.StreamingInputCallRequest.FromString,
+      test.cpp.interop.messages_pb2.StreamingInputCallResponse.SerializeToString,
+    ),
+    "StreamingOutputCall": utilities.unary_stream_service_description(
+      servicer.StreamingOutputCall,
+      test.cpp.interop.messages_pb2.StreamingOutputCallRequest.FromString,
+      test.cpp.interop.messages_pb2.StreamingOutputCallResponse.SerializeToString,
+    ),
+    "UnaryCall": utilities.unary_unary_service_description(
+      servicer.UnaryCall,
+      test.cpp.interop.messages_pb2.SimpleRequest.FromString,
+      test.cpp.interop.messages_pb2.SimpleResponse.SerializeToString,
+    ),
+  }
+  return implementations.server("grpc.testing.TestService", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
+def early_adopter_create_TestService_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
+  import test.cpp.interop.empty_pb2
+  import test.cpp.interop.empty_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  import test.cpp.interop.messages_pb2
+  method_invocation_descriptions = {
+    "EmptyCall": utilities.unary_unary_invocation_description(
+      test.cpp.interop.empty_pb2.Empty.SerializeToString,
+      test.cpp.interop.empty_pb2.Empty.FromString,
+    ),
+    "FullDuplexCall": utilities.stream_stream_invocation_description(
+      test.cpp.interop.messages_pb2.StreamingOutputCallRequest.SerializeToString,
+      test.cpp.interop.messages_pb2.StreamingOutputCallResponse.FromString,
+    ),
+    "HalfDuplexCall": utilities.stream_stream_invocation_description(
+      test.cpp.interop.messages_pb2.StreamingOutputCallRequest.SerializeToString,
+      test.cpp.interop.messages_pb2.StreamingOutputCallResponse.FromString,
+    ),
+    "StreamingInputCall": utilities.stream_unary_invocation_description(
+      test.cpp.interop.messages_pb2.StreamingInputCallRequest.SerializeToString,
+      test.cpp.interop.messages_pb2.StreamingInputCallResponse.FromString,
+    ),
+    "StreamingOutputCall": utilities.unary_stream_invocation_description(
+      test.cpp.interop.messages_pb2.StreamingOutputCallRequest.SerializeToString,
+      test.cpp.interop.messages_pb2.StreamingOutputCallResponse.FromString,
+    ),
+    "UnaryCall": utilities.unary_unary_invocation_description(
+      test.cpp.interop.messages_pb2.SimpleRequest.SerializeToString,
+      test.cpp.interop.messages_pb2.SimpleResponse.FromString,
+    ),
+  }
+  return implementations.stub("grpc.testing.TestService", method_invocation_descriptions, host, port, metadata_transformer=metadata_transformer, secure=secure, root_certificates=root_certificates, private_key=private_key, certificate_chain=certificate_chain, server_host_override=server_host_override)
 # @@protoc_insertion_point(module_scope)

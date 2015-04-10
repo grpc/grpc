@@ -30,8 +30,17 @@
 # Dockerfile to build Debian packages for gRPC C core.
 FROM grpc/base
 
+# Add the file containing the gRPC version
+ADD version.txt version.txt
+
+# Add the update-to-date distpackages folder
+ADD distpackages distpackages
+
 # Install dependencies
-RUN apt-get update && apt-get install -y lintian
+RUN echo 'deb http://http.debian.net/debian experimental main contrib non-free' >> /etc/apt/sources.list
+RUN apt-get update \
+  && apt-get -t experimental install -y openssl=1.0.2-1 \
+  && apt-get install -y lintian
 
 # Get the source from GitHub
 RUN git clone https://github.com/grpc/grpc.git /var/local/git/grpc
@@ -39,4 +48,4 @@ RUN cd /var/local/git/grpc && \
   git pull --recurse-submodules && \
   git submodule update --init --recursive
 
-RUN /bin/bash -l -c 'cd /var/local/git/grpc/tools/distpackages && ./build_deb_packages.sh'
+RUN /bin/bash -l -c 'cd /distpackages && ./build_deb_packages.sh'

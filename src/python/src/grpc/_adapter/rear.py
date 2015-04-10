@@ -93,7 +93,7 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
   def __init__(
       self, host, port, pool, request_serializers, response_deserializers,
       secure, root_certificates, private_key, certificate_chain,
-      server_host_override=None):
+      metadata_transformer=None, server_host_override=None):
     """Constructor.
 
     Args:
@@ -111,6 +111,9 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
         key should be used.
       certificate_chain: The PEM-encoded certificate chain to use or None if
         no certificate chain should be used.
+      metadata_transformer: A function that given a metadata object produces
+        another metadata to be used in the underlying communication on the
+        wire.
       server_host_override: (For testing only) the target name used for SSL
         host name checking.
     """
@@ -134,6 +137,7 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
     self._root_certificates = root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._metadata_transformer = metadata_transformer
     self._server_host_override = server_host_override
 
   def _on_write_event(self, operation_id, event, rpc_state):
@@ -243,6 +247,10 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
     """
     request_serializer = self._request_serializers[name]
     call = _low.Call(self._channel, name, self._host, time.time() + timeout)
+    if self._metadata_transformer is not None:
+      metadata = self._metadata_transformer([])
+      for metadata_key, metadata_value in metadata:
+        call.add_metadata(metadata_key, metadata_value)
     call.invoke(self._completion_queue, operation_id, operation_id)
     outstanding = set(_INVOCATION_EVENT_KINDS)
 

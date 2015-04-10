@@ -97,7 +97,7 @@ static void internal_string_ref(internal_string *s);
 static void internal_string_unref(internal_string *s);
 static void discard_metadata(grpc_mdctx *ctx);
 static void gc_mdtab(grpc_mdctx *ctx);
-static void metadata_context_destroy(grpc_mdctx *ctx);
+static void metadata_context_destroy_locked(grpc_mdctx *ctx);
 
 static void lock(grpc_mdctx *ctx) { gpr_mu_lock(&ctx->mu); }
 
@@ -122,8 +122,7 @@ static void unlock(grpc_mdctx *ctx) {
       discard_metadata(ctx);
     }
     if (ctx->strtab_count == 0) {
-      gpr_mu_unlock(&ctx->mu);
-      metadata_context_destroy(ctx);
+      metadata_context_destroy_locked(ctx);
       return;
     }
   }
@@ -185,8 +184,7 @@ static void discard_metadata(grpc_mdctx *ctx) {
   }
 }
 
-static void metadata_context_destroy(grpc_mdctx *ctx) {
-  gpr_mu_lock(&ctx->mu);
+static void metadata_context_destroy_locked(grpc_mdctx *ctx) {
   GPR_ASSERT(ctx->strtab_count == 0);
   GPR_ASSERT(ctx->mdtab_count == 0);
   GPR_ASSERT(ctx->mdtab_free == 0);

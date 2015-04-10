@@ -271,7 +271,7 @@ bool GetModuleAndMessagePath(const Descriptor* type,
 bool PrintServerFactory(const grpc::string& package_qualified_service_name,
                         const ServiceDescriptor* service, Printer* out) {
   out->Print("def early_adopter_create_$Service$_server(servicer, port, "
-             "root_certificates, key_chain_pairs):\n",
+             "private_key=None, certificate_chain=None):\n",
              "Service", service->name());
   {
     IndentScope raii_create_server_indent(out);
@@ -309,17 +309,20 @@ bool PrintServerFactory(const grpc::string& package_qualified_service_name,
           make_pair(method->name(), output_message_module_and_class));
     }
     out->Print("method_service_descriptions = {\n");
-    for (auto& name_and_description_constructor :
-         method_description_constructors) {
+    for (auto name_and_description_constructor =
+	   method_description_constructors.begin();
+	 name_and_description_constructor !=
+	   method_description_constructors.end();
+	 name_and_description_constructor++) {
       IndentScope raii_descriptions_indent(out);
-      const grpc::string method_name = name_and_description_constructor.first;
+      const grpc::string method_name = name_and_description_constructor->first;
       auto input_message_module_and_class =
           input_message_modules_and_classes.find(method_name);
       auto output_message_module_and_class =
           output_message_modules_and_classes.find(method_name);
       out->Print("\"$Method$\": utilities.$Constructor$(\n", "Method",
                  method_name, "Constructor",
-                 name_and_description_constructor.second);
+                 name_and_description_constructor->second);
       {
         IndentScope raii_description_arguments_indent(out);
         out->Print("servicer.$Method$,\n", "Method", method_name);
@@ -336,10 +339,10 @@ bool PrintServerFactory(const grpc::string& package_qualified_service_name,
     }
     out->Print("}\n");
     out->Print(
-        "return implementations.secure_server("
+        "return implementations.server("
         "\"$PackageQualifiedServiceName$\","
-        " method_service_descriptions, port, root_certificates,"
-        " key_chain_pairs)\n",
+        " method_service_descriptions, port, private_key=private_key,"
+        " certificate_chain=certificate_chain)\n",
         "PackageQualifiedServiceName", package_qualified_service_name);
   }
   return true;
@@ -350,7 +353,10 @@ bool PrintStubFactory(const grpc::string& package_qualified_service_name,
   map<grpc::string, grpc::string> dict = ListToDict({
         "Service", service->name(),
       });
-  out->Print(dict, "def early_adopter_create_$Service$_stub(host, port):\n");
+  out->Print(dict, "def early_adopter_create_$Service$_stub(host, port,"
+             " metadata_transformer=None,"
+             " secure=False, root_certificates=None, private_key=None,"
+             " certificate_chain=None, server_host_override=None):\n");
   {
     IndentScope raii_create_server_indent(out);
     map<grpc::string, grpc::string> method_description_constructors;
@@ -387,17 +393,20 @@ bool PrintStubFactory(const grpc::string& package_qualified_service_name,
           make_pair(method->name(), output_message_module_and_class));
     }
     out->Print("method_invocation_descriptions = {\n");
-    for (auto& name_and_description_constructor :
-         method_description_constructors) {
+    for (auto name_and_description_constructor =
+	   method_description_constructors.begin();
+	 name_and_description_constructor !=
+	   method_description_constructors.end();
+	 name_and_description_constructor++) {
       IndentScope raii_descriptions_indent(out);
-      const grpc::string method_name = name_and_description_constructor.first;
+      const grpc::string method_name = name_and_description_constructor->first;
       auto input_message_module_and_class =
           input_message_modules_and_classes.find(method_name);
       auto output_message_module_and_class =
           output_message_modules_and_classes.find(method_name);
       out->Print("\"$Method$\": utilities.$Constructor$(\n", "Method",
                  method_name, "Constructor",
-                 name_and_description_constructor.second);
+                 name_and_description_constructor->second);
       {
         IndentScope raii_description_arguments_indent(out);
         out->Print(
@@ -413,9 +422,13 @@ bool PrintStubFactory(const grpc::string& package_qualified_service_name,
     }
     out->Print("}\n");
     out->Print(
-        "return implementations.insecure_stub("
+        "return implementations.stub("
         "\"$PackageQualifiedServiceName$\","
-        " method_invocation_descriptions, host, port)\n",
+        " method_invocation_descriptions, host, port,"
+        " metadata_transformer=metadata_transformer, secure=secure,"
+        " root_certificates=root_certificates, private_key=private_key,"
+        " certificate_chain=certificate_chain,"
+        " server_host_override=server_host_override)\n",
         "PackageQualifiedServiceName", package_qualified_service_name);
   }
   return true;

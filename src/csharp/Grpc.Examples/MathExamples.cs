@@ -45,51 +45,45 @@ namespace math
             Console.WriteLine("Div Result: " + result);
         }
 
-        public static void DivAsyncExample(MathGrpc.IMathServiceClient stub)
+        public static async Task DivAsyncExample(MathGrpc.IMathServiceClient stub)
         {
-            Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-            DivReply result = call.Result;
+            Task<DivReply> resultTask = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
+            DivReply result = await resultTask;
+            Console.WriteLine("DivAsync Result: " + result);
+        }
+
+        public static async Task DivAsyncWithCancellationExample(MathGrpc.IMathServiceClient stub)
+        {
+            Task<DivReply> resultTask = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
+            DivReply result = await resultTask;
             Console.WriteLine(result);
         }
 
-        public static void DivAsyncWithCancellationExample(MathGrpc.IMathServiceClient stub)
-        {
-            Task<DivReply> call = stub.DivAsync(new DivArgs.Builder { Dividend = 4, Divisor = 5 }.Build());
-            DivReply result = call.Result;
-            Console.WriteLine(result);
-        }
-
-        public static void FibExample(MathGrpc.IMathServiceClient stub)
+        public static async Task FibExample(MathGrpc.IMathServiceClient stub)
         {
             var recorder = new RecordingObserver<Num>();
             stub.Fib(new FibArgs.Builder { Limit = 5 }.Build(), recorder);
-
-            List<Num> numbers = recorder.ToList().Result;
-            Console.WriteLine("Fib Result: " + string.Join("|", recorder.ToList().Result));
+            List<Num> result = await recorder.ToList();
+            Console.WriteLine("Fib Result: " + string.Join("|", result));
         }
 
-        public static void SumExample(MathGrpc.IMathServiceClient stub)
+        public static async Task SumExample(MathGrpc.IMathServiceClient stub)
         {
-            List<Num> numbers = new List<Num>
+            var numbers = new List<Num>
             {
                 new Num.Builder { Num_ = 1 }.Build(),
                 new Num.Builder { Num_ = 2 }.Build(),
                 new Num.Builder { Num_ = 3 }.Build()
             };
 
-            var res = stub.Sum();
-            foreach (var num in numbers)
-            {
-                res.Inputs.OnNext(num);
-            }
-            res.Inputs.OnCompleted();
-
-            Console.WriteLine("Sum Result: " + res.Task.Result);
+            var clientStreamingResult = stub.Sum();
+            numbers.Subscribe(clientStreamingResult.Inputs);
+            Console.WriteLine("Sum Result: " + await clientStreamingResult.Task);
         }
 
-        public static void DivManyExample(MathGrpc.IMathServiceClient stub)
+        public static async Task DivManyExample(MathGrpc.IMathServiceClient stub)
         {
-            List<DivArgs> divArgsList = new List<DivArgs>
+            var divArgsList = new List<DivArgs>
             {
                 new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build(),
                 new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build(),
@@ -97,26 +91,27 @@ namespace math
             };
 
             var recorder = new RecordingObserver<DivReply>();
-
             var inputs = stub.DivMany(recorder);
-            foreach (var input in divArgsList)
-            {
-                inputs.OnNext(input);
-            }
-            inputs.OnCompleted();
-
-            Console.WriteLine("DivMany Result: " + string.Join("|", recorder.ToList().Result));
+            divArgsList.Subscribe(inputs);
+            var result = await recorder.ToList();
+            Console.WriteLine("DivMany Result: " + string.Join("|", result));
         }
 
-        public static void DependendRequestsExample(MathGrpc.IMathServiceClient stub)
+        public static async Task DependendRequestsExample(MathGrpc.IMathServiceClient stub)
         {
-            var numberList = new List<Num>
+            var numbers = new List<Num>
             {
-                new Num.Builder { Num_ = 1 }.Build(),
-                new Num.Builder { Num_ = 2 }.Build(), new Num.Builder { Num_ = 3 }.Build()
+                new Num.Builder { Num_ = 1 }.Build(), 
+                new Num.Builder { Num_ = 2 }.Build(),
+                new Num.Builder { Num_ = 3 }.Build()
             };
 
-            numberList.ToObservable();
+            var clientStreamingResult = stub.Sum();
+            numbers.Subscribe(clientStreamingResult.Inputs);
+            Num sum = await clientStreamingResult.Task;
+
+            DivReply result = await stub.DivAsync(new DivArgs.Builder { Dividend = sum.Num_, Divisor = numbers.Count }.Build());
+            Console.WriteLine("Avg Result: " + result);
         }
     }
 }

@@ -85,10 +85,10 @@ static void on_secure_transport_setup_done(void *statep,
   if (status == GRPC_SECURITY_OK) {
     gpr_mu_lock(&state->mu);
     if (!state->is_shutdown) {
-      grpc_create_chttp2_transport(
-          setup_transport, state->server,
-          grpc_server_get_channel_args(state->server),
-          secure_endpoint, NULL, 0, grpc_mdctx_create(), 0);
+      grpc_create_chttp2_transport(setup_transport, state->server,
+                                   grpc_server_get_channel_args(state->server),
+                                   secure_endpoint, NULL, 0,
+                                   grpc_mdctx_create(), 0);
     } else {
       /* We need to consume this here, because the server may already have gone
        * away. */
@@ -104,7 +104,8 @@ static void on_secure_transport_setup_done(void *statep,
 static void on_accept(void *statep, grpc_endpoint *tcp) {
   grpc_server_secure_state *state = statep;
   state_ref(state);
-  grpc_setup_secure_transport(state->ctx, tcp, on_secure_transport_setup_done, state);
+  grpc_setup_secure_transport(state->ctx, tcp, on_secure_transport_setup_done,
+                              state);
 }
 
 /* Server callback: start listening on our ports */
@@ -120,12 +121,14 @@ static void destroy(grpc_server *server, void *statep) {
   grpc_server_secure_state *state = statep;
   gpr_mu_lock(&state->mu);
   state->is_shutdown = 1;
-  grpc_tcp_server_destroy(state->tcp);
+  grpc_tcp_server_destroy(state->tcp, grpc_server_listener_destroy_done,
+                          server);
   gpr_mu_unlock(&state->mu);
   state_unref(state);
 }
 
-int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr, grpc_server_credentials *creds) {
+int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
+                                      grpc_server_credentials *creds) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   grpc_server_secure_state *state = NULL;
@@ -213,7 +216,7 @@ error:
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
-    grpc_tcp_server_destroy(tcp);
+    grpc_tcp_server_destroy(tcp, NULL, NULL);
   }
   if (state) {
     gpr_free(state);

@@ -37,30 +37,42 @@
 #include "config.h"
 #endif
 
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
-#include "ext/spl/spl_exceptions.h"
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
 
-#include "zend_exceptions.h"
+#include <zend_exceptions.h>
 
 #include <stdbool.h>
 
-#include "grpc/grpc.h"
-#include "grpc/support/log.h"
-#include "grpc/grpc_security.h"
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/grpc_security.h>
 
 #include "server.h"
-#include "completion_queue.h"
 #include "channel.h"
 #include "server_credentials.h"
+#include "timeval.h"
 
 zend_class_entry *grpc_ce_server;
 
 /* Frees and destroys an instance of wrapped_grpc_server */
 void free_wrapped_grpc_server(void *object TSRMLS_DC) {
   wrapped_grpc_server *server = (wrapped_grpc_server *)object;
+  grpc_event *event;
+  if (server->queue != NULL) {
+    grpc_completion_queue_shutdown(server->queue);
+    event = grpc_completion_queue_next(server->queue, gpr_inf_future);
+    while (event != NULL) {
+      if (event->type == GRPC_QUEUE_SHUTDOWN) {
+        break;
+      }
+      event = grpc_completion_queue_next(server->queue, gpr_inf_future);
+    }
+    grpc_completion_queue_destroy(server->queue);
+  }
   if (server->wrapped != NULL) {
     grpc_server_shutdown(server->wrapped);
     grpc_server_destroy(server->wrapped);
@@ -95,26 +107,22 @@ zend_object_value create_wrapped_grpc_server(zend_class_entry *class_type
 PHP_METHOD(Server, __construct) {
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  zval *queue_obj;
   zval *args_array = NULL;
   grpc_channel_args args;
-  /* "O|a" == 1 Object, 1 optional array */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O|a", &queue_obj,
-                            grpc_ce_completion_queue, &args_array) == FAILURE) {
+  /* "|a" == 1 optional array */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a", &args_array) ==
+      FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "Server expects a CompletionQueue and an array",
+                         "Server expects an array",
                          1 TSRMLS_CC);
     return;
   }
-  add_property_zval(getThis(), "completion_queue", queue_obj);
-  wrapped_grpc_completion_queue *queue =
-      (wrapped_grpc_completion_queue *)zend_object_store_get_object(
-          queue_obj TSRMLS_CC);
+  server->queue = grpc_completion_queue_create();
   if (args_array == NULL) {
-    server->wrapped = grpc_server_create(queue->wrapped, NULL);
+    server->wrapped = grpc_server_create(server->queue, NULL);
   } else {
     php_grpc_read_args_array(args_array, &args);
-    server->wrapped = grpc_server_create(queue->wrapped, &args);
+    server->wrapped = grpc_server_create(server->queue, &args);
     efree(args.args);
   }
 }
@@ -125,20 +133,44 @@ PHP_METHOD(Server, __construct) {
  * @param long $tag_cancel The tag to use if the call is cancelled
  * @return Void
  */
-PHP_METHOD(Server, request_call) {
+PHP_METHOD(Server, requestCall) {
   grpc_call_error error_code;
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  long tag_new;
-  /* "l" == 1 long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &tag_new) ==
-      FAILURE) {
-    zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "request_call expects a long", 1 TSRMLS_CC);
-    return;
+  grpc_call *call;
+  grpc_call_details details;
+  grpc_metadata_array metadata;
+  zval *result;
+  grpc_event *event;
+  MAKE_STD_ZVAL(result);
+  object_init(result);
+  grpc_call_details_init(&details);
+  grpc_metadata_array_init(&metadata);
+  error_code = grpc_server_request_call(server->wrapped, &call, &details,
+                                        &metadata, server->queue, NULL);
+  if (error_code != GRPC_CALL_OK) {
+    zend_throw_exception(spl_ce_LogicException, "request_call failed",
+                         (long)error_code TSRMLS_CC);
+    goto cleanup;
   }
-  error_code = grpc_server_request_call_old(server->wrapped, (void *)tag_new);
-  MAYBE_THROW_CALL_ERROR(request_call, error_code);
+  event = grpc_completion_queue_pluck(server->queue, NULL, gpr_inf_future);
+  if (event->data.op_complete != GRPC_OP_OK) {
+    zend_throw_exception(spl_ce_LogicException,
+                         "Failed to request a call for some reason",
+                         1 TSRMLS_CC);
+    goto cleanup;
+  }
+  add_property_zval(result, "call", grpc_php_wrap_call(call, server->queue,
+                                                       true));
+  add_property_string(result, "method", details.method, true);
+  add_property_string(result, "host", details.host, true);
+  add_property_zval(result, "absolute_deadline",
+                    grpc_php_wrap_timeval(details.deadline));
+  add_property_zval(result, "metadata", grpc_parse_metadata_array(&metadata));
+cleanup:
+  grpc_call_details_destroy(&details);
+  grpc_metadata_array_destroy(&metadata);
+  RETURN_DESTROY_ZVAL(result);
 }
 
 /**
@@ -146,7 +178,7 @@ PHP_METHOD(Server, request_call) {
  * @param string $addr The address to add
  * @return true on success, false on failure
  */
-PHP_METHOD(Server, add_http2_port) {
+PHP_METHOD(Server, addHttp2Port) {
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
@@ -161,14 +193,14 @@ PHP_METHOD(Server, add_http2_port) {
   RETURN_LONG(grpc_server_add_http2_port(server->wrapped, addr));
 }
 
-PHP_METHOD(Server, add_secure_http2_port) {
+PHP_METHOD(Server, addSecureHttp2Port) {
   wrapped_grpc_server *server =
       (wrapped_grpc_server *)zend_object_store_get_object(getThis() TSRMLS_CC);
   const char *addr;
   int addr_len;
   zval *creds_obj;
   /* "sO" == 1 string, 1 object */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len,
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sO", &addr, &addr_len,
                             &creds_obj, grpc_ce_server_credentials) ==
       FAILURE) {
     zend_throw_exception(
@@ -195,9 +227,9 @@ PHP_METHOD(Server, start) {
 
 static zend_function_entry server_methods[] = {
     PHP_ME(Server, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
-    PHP_ME(Server, request_call, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, add_http2_port, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(Server, add_secure_http2_port, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, requestCall, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, addHttp2Port, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Server, addSecureHttp2Port, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Server, start, NULL, ZEND_ACC_PUBLIC) PHP_FE_END};
 
 void grpc_init_server(TSRMLS_D) {

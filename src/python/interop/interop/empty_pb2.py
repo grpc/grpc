@@ -57,6 +57,7 @@ Empty = _reflection.GeneratedProtocolMessageType('Empty', (_message.Message,), d
 _sym_db.RegisterMessage(Empty)
 
 
-from grpc.framework.face import demonstration as _face_testing
-from grpc.framework.face import interfaces as _face_interfaces
+import abc
+from grpc.early_adopter import implementations
+from grpc.framework.alpha import utilities
 # @@protoc_insertion_point(module_scope)

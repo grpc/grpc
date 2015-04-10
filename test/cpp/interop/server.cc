@@ -49,9 +49,9 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/cpp/interop/test.pb.h"
-#include "test/cpp/interop/empty.pb.h"
-#include "test/cpp/interop/messages.pb.h"
+#include "test/cpp/interop/test.grpc.pb.h"
+#include "test/cpp/interop/empty.grpc.pb.h"
+#include "test/cpp/interop/messages.grpc.pb.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
@@ -213,8 +213,11 @@ void RunServer() {
   builder.RegisterService(&service);
   std::shared_ptr<ServerCredentials> creds = grpc::InsecureServerCredentials();
   if (FLAGS_enable_ssl) {
-    SslServerCredentialsOptions ssl_opts = {
-        "", {{test_server1_key, test_server1_cert}}};
+    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+							test_server1_cert};
+    SslServerCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = "";
+    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
     creds = grpc::SslServerCredentials(ssl_opts);
   }
   builder.AddListeningPort(server_address.str(), creds);
