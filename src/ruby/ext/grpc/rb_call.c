@@ -414,6 +414,8 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
     this_value = rb_hash_aref(ops_hash, this_op);
     switch(NUM2INT(this_op)) {
       case GRPC_OP_SEND_INITIAL_METADATA:
+        /* N.B. later there is no need to explicitly delete the metadata keys
+         * and values, they are references to data in ruby objects. */
         grpc_rb_md_ary_convert(this_value, &st->send_metadata);
         st->ops[st->op_num].data.send_initial_metadata.count =
             st->send_metadata.count;
@@ -428,6 +430,8 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        /* N.B. later there is no need to explicitly delete the metadata keys
+         * and values, they are references to data in ruby objects. */
         grpc_rb_op_update_status_from_server(&st->ops[st->op_num],
                                              &st->send_trailing_metadata,
                                              this_value);
@@ -475,6 +479,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
         break;
       case GRPC_OP_SEND_MESSAGE:
         rb_struct_aset(result, sym_send_message, Qtrue);
+        grpc_byte_buffer_destroy(st->ops[st->op_num].data.send_message);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         rb_struct_aset(result, sym_send_close, Qtrue);
