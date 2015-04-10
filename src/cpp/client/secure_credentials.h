@@ -31,6 +31,9 @@
  *
  */
 
+#ifndef GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+#define GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+
 #include <grpc/grpc_security.h>
 
 #include <grpc++/config.h>
@@ -54,4 +57,5 @@ class SecureCredentials GRPC_FINAL : public Credentials {
 
 }  // namespace grpc
 
+#endif  // GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
 
