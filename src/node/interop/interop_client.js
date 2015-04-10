@@ -35,6 +35,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var _ = require('underscore');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
 var GoogleAuth = require('google-auth-library');
@@ -44,6 +45,8 @@ var assert = require('assert');
 var AUTH_SCOPE = 'https://www.googleapis.com/auth/xapi.zoo';
 var AUTH_SCOPE_RESPONSE = 'xapi.zoo';
 var AUTH_USER = ('155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk' +
+    '@developer.gserviceaccount.com');
+var COMPUTE_ENGINE_USER = ('155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel' +
     '@developer.gserviceaccount.com');
 
 /**
@@ -265,11 +268,12 @@ function cancelAfterFirstResponse(client, done) {
 
 /**
  * Run one of the authentication tests.
+ * @param {string} expected_user The expected username in the response
  * @param {Client} client The client to test against
  * @param {function} done Callback to call when the test is completed. Included
  *     primarily for use with mocha
  */
-function authTest(client, done) {
+function authTest(expected_user, client, done) {
   (new GoogleAuth()).getApplicationDefault(function(err, credential) {
     assert.ifError(err);
     if (credential.createScopedRequired()) {
@@ -290,7 +294,7 @@ function authTest(client, done) {
       assert.strictEqual(resp.payload.type, testProto.PayloadType.COMPRESSABLE);
       assert.strictEqual(resp.payload.body.limit - resp.payload.body.offset,
                          314159);
-      assert.strictEqual(resp.username, AUTH_USER);
+      assert.strictEqual(resp.username, expected_user);
       assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
     });
     call.on('status', function(status) {
@@ -314,8 +318,8 @@ var test_cases = {
   empty_stream: emptyStream,
   cancel_after_begin: cancelAfterBegin,
   cancel_after_first_response: cancelAfterFirstResponse,
-  compute_engine_creds: authTest,
-  service_account_creds: authTest
+  compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER),
+  service_account_creds: _.partial(authTest, AUTH_USER)
 };
 
 /**

@@ -31,5 +31,8 @@
 
 set +e
 cd $(dirname $0)
-php -d extension_dir=../ext/grpc/modules/ -d extension=grpc.so \
+
+module_dir=`php --version | grep -q 'PHP 5.6' && echo '../ext/grpc' || echo '../ext/grpc/modules'`
+
+php -d extension_dir=$module_dir -d extension=grpc.so \
   ../tests/interop/interop_client.php $@ 1>&2

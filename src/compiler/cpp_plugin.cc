@@ -58,18 +58,48 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       return false;
     }
 
+    grpc_cpp_generator::Parameters generator_parameters;
+
+    if (!parameter.empty()) {
+      std::vector<grpc::string> parameters_list =
+        grpc_generator::tokenize(parameter, ",");
+      for (auto parameter_string = parameters_list.begin();
+           parameter_string != parameters_list.end();
+           parameter_string++) {
+        std::vector<grpc::string> param =
+          grpc_generator::tokenize(*parameter_string, "=");
+        if (param[0] == "services_namespace") {
+          generator_parameters.services_namespace = param[1];
+        } else {
+          *error = grpc::string("Unknown parameter: ") + *parameter_string;
+          return false;
+        }
+      }
+    }
+
     grpc::string file_name = grpc_generator::StripProto(file->name());
 
-    // Generate .pb.h
-    Insert(context, file_name + ".pb.h", "includes",
-           grpc_cpp_generator::GetHeaderIncludes(file));
-    Insert(context, file_name + ".pb.h", "namespace_scope",
-           grpc_cpp_generator::GetHeaderServices(file));
-    // Generate .pb.cc
-    Insert(context, file_name + ".pb.cc", "includes",
-           grpc_cpp_generator::GetSourceIncludes());
-    Insert(context, file_name + ".pb.cc", "namespace_scope",
-           grpc_cpp_generator::GetSourceServices(file));
+    grpc::string header_code =
+        grpc_cpp_generator::GetHeaderPrologue(file, generator_parameters) +
+        grpc_cpp_generator::GetHeaderIncludes(file, generator_parameters) +
+        grpc_cpp_generator::GetHeaderServices(file, generator_parameters) +
+        grpc_cpp_generator::GetHeaderEpilogue(file, generator_parameters);
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> header_output(
+        context->Open(file_name + ".grpc.pb.h"));
+    grpc::protobuf::io::CodedOutputStream header_coded_out(
+        header_output.get());
+    header_coded_out.WriteRaw(header_code.data(), header_code.size());
+
+    grpc::string source_code =
+        grpc_cpp_generator::GetSourcePrologue(file, generator_parameters) +
+        grpc_cpp_generator::GetSourceIncludes(file, generator_parameters) +
+        grpc_cpp_generator::GetSourceServices(file, generator_parameters) +
+        grpc_cpp_generator::GetSourceEpilogue(file, generator_parameters);
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> source_output(
+        context->Open(file_name + ".grpc.pb.cc"));
+    grpc::protobuf::io::CodedOutputStream source_coded_out(
+        source_output.get());
+    source_coded_out.WriteRaw(source_code.data(), source_code.size());
 
     return true;
   }

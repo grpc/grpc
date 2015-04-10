@@ -75,6 +75,47 @@ inline grpc::string StringReplace(grpc::string str, const grpc::string &from,
   return str;
 }
 
+inline std::vector<grpc::string> tokenize(const grpc::string &input,
+                                          const grpc::string &delimiters) {
+  std::vector<grpc::string> tokens;
+  size_t pos, last_pos = 0;
+
+  for (;;) {
+    bool done = false;
+    pos = input.find_first_of(delimiters, last_pos);
+    if (pos == grpc::string::npos) {
+      done = true;
+      pos = input.length();
+    }
+
+    tokens.push_back(input.substr(last_pos, pos - last_pos));
+    if (done) return tokens;
+
+    last_pos = pos + 1;
+  }
+}
+
+inline grpc::string CapitalizeFirstLetter(grpc::string s) {
+  if (s.empty()) {
+    return s;
+  }
+  s[0] = ::toupper(s[0]);
+  return s;
+}
+
+inline grpc::string LowerUnderscoreToUpperCamel(grpc::string str) {
+  std::vector<grpc::string> tokens = tokenize(str, "_");
+  grpc::string result = "";
+  for (unsigned int i = 0; i < tokens.size(); i++) {
+    result += CapitalizeFirstLetter(tokens[i]);
+  }
+  return result;
+}
+
+inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *file) {
+  return LowerUnderscoreToUpperCamel(StripProto(file->name()));
+}
+
 }  // namespace grpc_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H

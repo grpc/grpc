@@ -32,43 +32,35 @@
  */
 
 // Generates Ruby gRPC service interface out of Protobuf IDL.
-//
-// This is a Proto2 compiler plugin.  See net/proto2/compiler/proto/plugin.proto
-// and net/proto2/compiler/public/plugin.h for more information on plugins.
 
 #include <memory>
-#include <string>
 
+#include "src/compiler/config.h"
 #include "src/compiler/ruby_generator.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
-#include <google/protobuf/compiler/code_generator.h>
-#include <google/protobuf/compiler/plugin.h>
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream.h>
-#include <google/protobuf/descriptor.h>
 
-class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
+class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   RubyGrpcGenerator() {}
   ~RubyGrpcGenerator() {}
 
-  bool Generate(const google::protobuf::FileDescriptor *file,
-                const std::string &parameter,
-                google::protobuf::compiler::GeneratorContext *context,
-                std::string *error) const {
-    std::string code = grpc_ruby_generator::GetServices(file);
+  bool Generate(const grpc::protobuf::FileDescriptor *file,
+                const grpc::string &parameter,
+                grpc::protobuf::compiler::GeneratorContext *context,
+                grpc::string *error) const {
+    grpc::string code = grpc_ruby_generator::GetServices(file);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }
 
     // Get output file name.
-    std::string file_name;
+    grpc::string file_name;
     if (!grpc_ruby_generator::ServicesFilename(file, &file_name)) {
       return false;
     }
-    std::unique_ptr<google::protobuf::io::ZeroCopyOutputStream> output(
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
-    google::protobuf::io::CodedOutputStream coded_out(output.get());
+    grpc::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
     return true;
   }
@@ -76,5 +68,5 @@ class RubyGrpcGenerator : public google::protobuf::compiler::CodeGenerator {
 
 int main(int argc, char *argv[]) {
   RubyGrpcGenerator generator;
-  return google::protobuf::compiler::PluginMain(argc, argv, &generator);
+  return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

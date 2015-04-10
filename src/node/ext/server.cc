@@ -38,8 +38,6 @@
 #include <node.h>
 #include <nan.h>
 
-#include <malloc.h>
-
 #include <vector>
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"

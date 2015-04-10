@@ -109,7 +109,9 @@ class CallOpBuffer : public CompletionQueueTag {
   char* status_details_;
   size_t status_details_capacity_;
   // Server send status
-  const Status* send_status_;
+  bool send_status_available_;
+  grpc_status_code send_status_code_;
+  grpc::string send_status_details_;
   size_t trailing_metadata_count_;
   grpc_metadata* trailing_metadata_;
   int cancelled_buf_;

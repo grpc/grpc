@@ -31,7 +31,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-require_once realpath(dirname(__FILE__) . '/../../lib/autoload.php');
+require_once realpath(dirname(__FILE__) . '/../../vendor/autoload.php');
 require 'DrSlump/Protobuf.php';
 \DrSlump\Protobuf::autoload();
 require 'math.php';
@@ -41,7 +41,8 @@ class GeneratedCodeTest extends PHPUnit_Framework_TestCase {
   protected static $client;
   protected static $timeout;
   public static function setUpBeforeClass() {
-    self::$client = new math\MathClient(getenv('GRPC_TEST_HOST'));
+    self::$client = new math\MathClient(new Grpc\BaseStub(
+        getenv('GRPC_TEST_HOST'), []));
   }
 
   public function testSimpleRequest() {

@@ -78,6 +78,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\test\core\util\test_config.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="..\..\test\core\util\test_config.c">
     </ClCompile>
   </ItemGroup>

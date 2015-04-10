@@ -35,9 +35,6 @@
 
 var _ = require('underscore');
 
-var capitalize = require('underscore.string/capitalize');
-var decapitalize = require('underscore.string/decapitalize');
-
 var grpc = require('bindings')('grpc.node');
 
 var common = require('./common.js');
@@ -244,13 +241,13 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
           callback(err);
           return;
         }
+        emitter.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
           callback(error);
           return;
         }
-        emitter.emit('status', response.status);
         emitter.emit('metadata', response.metadata);
         callback(null, deserialize(response.read));
       });
@@ -315,13 +312,13 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
           callback(err);
           return;
         }
+        stream.emit('status', response.status);
         if (response.status.code !== grpc.status.OK) {
           var error = new Error(response.status.details);
           error.code = response.status.code;
           callback(error);
           return;
         }
-        stream.emit('status', response.status);
         callback(null, deserialize(response.read));
       });
     });
@@ -463,13 +460,18 @@ var requester_makers = {
 };
 
 /**
- * Creates a constructor for clients for the given service
- * @param {ProtoBuf.Reflect.Service} service The service to generate a client
- *     for
+ * Creates a constructor for a client with the given methods. The methods object
+ * maps method name to an object with the following keys:
+ * path: The path on the server for accessing the method. For example, for
+ *     protocol buffers, we use "/service_name/method_name"
+ * requestStream: bool indicating whether the client sends a stream
+ * resonseStream: bool indicating whether the server sends a stream
+ * requestSerialize: function to serialize request objects
+ * responseDeserialize: function to deserialize response objects
+ * @param {Object} methods An object mapping method names to method attributes
  * @return {function(string, Object)} New client constructor
  */
-function makeClientConstructor(service) {
-  var prefix = '/' + common.fullyQualifiedName(service) + '/';
+function makeClientConstructor(methods) {
   /**
    * Create a client with the given methods
    * @constructor
@@ -489,36 +491,49 @@ function makeClientConstructor(service) {
     this.channel = new grpc.Channel(address, options);
   }
 
-  _.each(service.children, function(method) {
+  _.each(methods, function(attrs, name) {
     var method_type;
-    if (method.requestStream) {
-      if (method.responseStream) {
+    if (attrs.requestStream) {
+      if (attrs.responseStream) {
         method_type = 'bidi';
       } else {
         method_type = 'client_stream';
       }
     } else {
-      if (method.responseStream) {
+      if (attrs.responseStream) {
         method_type = 'server_stream';
       } else {
         method_type = 'unary';
       }
     }
-    var serialize = common.serializeCls(method.resolvedRequestType.build());
-    var deserialize = common.deserializeCls(
-        method.resolvedResponseType.build());
-    Client.prototype[decapitalize(method.name)] = requester_makers[method_type](
-        prefix + capitalize(method.name), serialize, deserialize);
-    Client.prototype[decapitalize(method.name)].serialize = serialize;
-    Client.prototype[decapitalize(method.name)].deserialize = deserialize;
+    var serialize = attrs.requestSerialize;
+    var deserialize = attrs.responseDeserialize;
+    Client.prototype[name] = requester_makers[method_type](
+        attrs.path, serialize, deserialize);
+    Client.prototype[name].serialize = serialize;
+    Client.prototype[name].deserialize = deserialize;
   });
 
+  return Client;
+}
+
+/**
+ * Creates a constructor for clients for the given service
+ * @param {ProtoBuf.Reflect.Service} service The service to generate a client
+ *     for
+ * @return {function(string, Object)} New client constructor
+ */
+function makeProtobufClientConstructor(service) {
+  var method_attrs = common.getProtobufServiceAttrs(service);
+  var Client = makeClientConstructor(method_attrs);
   Client.service = service;
 
   return Client;
 }
 
 exports.makeClientConstructor = makeClientConstructor;
+
+exports.makeProtobufClientConstructor = makeProtobufClientConstructor;
 
 /**
  * See docs for client.status

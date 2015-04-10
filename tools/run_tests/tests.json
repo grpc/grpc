@@ -349,7 +349,17 @@
   {
     "flaky": false, 
     "language": "c++", 
+    "name": "cli_call_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
     "name": "credentials_test"
+  }, 
+  {
+    "flaky": false, 
+    "language": "c++", 
+    "name": "cxx_time_test"
   }, 
   {
     "flaky": false, 

@@ -32,6 +32,10 @@
 # Includes PHP installation dependencies, things that are unlikely to vary.
 FROM grpc/base
 
+RUN echo "deb http://packages.dotdeb.org wheezy-php55 all" >> /etc/apt/sources.list.d/dotdeb.list
+RUN echo "deb-src http://packages.dotdeb.org wheezy-php55 all" >> /etc/apt/sources.list.d/dotdeb.list
+RUN wget http://www.dotdeb.org/dotdeb.gpg -O- |apt-key add -
+
 # Install RVM dependencies and other packages
 RUN apt-get update && apt-get install -y \
     autoconf \
@@ -50,29 +54,25 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libssl-dev \
     libtool \
+    libxml2 \
     libyaml-dev \
     make \
     patch \
     procps \
-# TODO(mlumish): Uncomment these lines when building against them works
-#    php5-common \
-#    php5-cli \
-#    php5-dev \
-#    php-pear \
+    php5-common \
+    php5-cli \
+    php5-dev \
+    php-pear \
     pkg-config \
     procps \
     sqlite3 \
     zlib1g-dev
 
-# Install the version of PHP gRPC is tested against
 ENV DEBIAN_FRONTEND noniteractive
-RUN apt-get update && apt-get install -y libxml2 libxml2-dev  # used by PHP
-RUN cd /var/local \
-  && curl -o php-5.5.17.tar.gz http://php.net/distributions/php-5.5.17.tar.gz \
-  && tar -xf php-5.5.17.tar.gz \
-  && cd php-5.5.17 \
-  && ./configure --with-zlib=/usr --with-libxml-dir=ext/libxml \
-  && make -j12 && make install
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
 
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.

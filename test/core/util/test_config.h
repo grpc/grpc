@@ -59,6 +59,10 @@ extern "C" {
   gpr_time_add(gpr_now(),                  \
                gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)))
 
+#ifndef GRPC_TEST_CUSTOM_PICK_PORT
+#define GRPC_TEST_PICK_PORT
+#endif
+
 void grpc_test_init(int argc, char **argv);
 
 #ifdef __cplusplus

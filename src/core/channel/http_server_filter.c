@@ -189,7 +189,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         /* translate host to :authority since :authority may be
            omitted */
         grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
-            channeld->mdctx, channeld->authority_key, op->data.metadata->value);
+            channeld->mdctx, grpc_mdstr_ref(channeld->authority_key),
+            grpc_mdstr_ref(op->data.metadata->value));
         grpc_mdelem_unref(op->data.metadata);
         op->data.metadata = authority;
         /* pass the event up */

@@ -177,6 +177,8 @@ static int addbyte(grpc_httpcli_parser *parser, gpr_uint8 byte) {
   }
   gpr_log(GPR_ERROR, "should never reach here");
   abort();
+
+  return 0;
 }
 
 void grpc_httpcli_parser_init(grpc_httpcli_parser *parser) {

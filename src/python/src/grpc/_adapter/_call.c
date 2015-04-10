@@ -160,8 +160,22 @@ static const PyObject *pygrpc_call_accept(Call *self, PyObject *args) {
   return result;
 }
 
+static const PyObject *pygrpc_call_add_metadata(Call *self, PyObject *args) {
+  const char* key = NULL;
+  const char* value = NULL;
+  int value_length = 0;
+  grpc_metadata metadata;
+  if (!PyArg_ParseTuple(args, "ss#", &key, &value, &value_length)) {
+    return NULL;
+  }
+  metadata.key = key;
+  metadata.value = value;
+  metadata.value_length = value_length;
+  return pygrpc_translate_call_error(
+      grpc_call_add_metadata_old(self->c_call, &metadata, 0));
+}
+
 static const PyObject *pygrpc_call_premetadata(Call *self) {
-  /* TODO(nathaniel): Metadata support. */
   return pygrpc_translate_call_error(
       grpc_call_server_end_initial_metadata_old(self->c_call, 0));
 }
@@ -236,6 +250,11 @@ static PyMethodDef methods[] = {
     {"complete", (PyCFunction)pygrpc_call_complete, METH_O,
      "Complete writes to this call."},
     {"accept", (PyCFunction)pygrpc_call_accept, METH_VARARGS, "Accept an RPC."},
+    {"add_metadata", (PyCFunction)pygrpc_call_add_metadata, METH_VARARGS,
+     "Add metadata to the call. May not be called after invoke on the client "
+     "side. On the server side: when called before premetadata it provides "
+     "'leading' metadata, when called after premetadata but before status it "
+     "provides 'trailing metadata'; may not be called after status."},
     {"premetadata", (PyCFunction)pygrpc_call_premetadata, METH_VARARGS,
      "Indicate the end of leading metadata in the response."},
     {"read", (PyCFunction)pygrpc_call_read, METH_O,

@@ -57,8 +57,6 @@ RUN wget -O - https://github.com/google/protobuf/archive/v3.0.0-alpha-2.tar.gz |
   ./autogen.sh && \
   ./configure --prefix=/usr && \
   make -j12 && make check && make install && \
-  cd java && mvn install && cd .. && \
-  cd javanano && mvn install && cd .. && \
   rm -r "$(pwd)"
 
 # Trigger download of as many Maven and Gradle artifacts as possible. We don't build grpc-java

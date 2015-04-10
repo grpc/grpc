@@ -32,7 +32,6 @@
  *
  */
 namespace Grpc;
-require_once realpath(dirname(__FILE__) . '/../autoload.php');
 
 /**
  * Base class for generated client stubs. Stub methods are expected to call
@@ -69,11 +68,9 @@ class BaseStub {
                                  $argument,
                                  callable $deserialize,
                                  $metadata = array()) {
-    return new SimpleSurfaceActiveCall($this->channel,
-                                       $method,
-                                       $deserialize,
-                                       $argument,
-                                       $metadata);
+    $call = new UnaryCall($this->channel, $method, $deserialize);
+    $call->start($argument, $metadata);
+    return $call;
   }
 
   /**
@@ -91,11 +88,9 @@ class BaseStub {
                                        $arguments,
                                        callable $deserialize,
                                        $metadata = array()) {
-    return new ClientStreamingSurfaceActiveCall($this->channel,
-                                                $method,
-                                                $deserialize,
-                                                $arguments,
-                                                $metadata);
+    $call = new ClientStreamingCall($this->channel, $method, $deserialize);
+    $call->start($arguments, $metadata);
+    return $call;
   }
 
   /**
@@ -112,11 +107,9 @@ class BaseStub {
                                        $argument,
                                        callable $deserialize,
                                        $metadata = array()) {
-    return new ServerStreamingSurfaceActiveCall($this->channel,
-                                                $method,
-                                                $deserialize,
-                                                $argument,
-                                                $metadata);
+    $call = new ServerStreamingCall($this->channel, $method, $deserialize);
+    $call->start($argument, $metadata);
+    return $call;
   }
 
   /**
@@ -130,9 +123,8 @@ class BaseStub {
   public function _bidiRequest($method,
                                callable $deserialize,
                                $metadata = array()) {
-    return new BidiStreamingSurfaceActiveCall($this->channel,
-                                              $method,
-                                              $deserialize,
-                                              $metadata);
+    $call = new BidiStreamingCall($this->channel, $method, $deserialize);
+    $call->start($metadata);
+    return $call;
   }
 }
