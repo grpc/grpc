@@ -3344,6 +3344,12 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/service_type.h \
+    include/grpc++/impl/sync.h \
+    include/grpc++/impl/sync_cxx11.h \
+    include/grpc++/impl/sync_no_cxx11.h \
+    include/grpc++/impl/thd.h \
+    include/grpc++/impl/thd_cxx11.h \
+    include/grpc++/impl/thd_no_cxx11.h \
     include/grpc++/server.h \
     include/grpc++/server_builder.h \
     include/grpc++/server_context.h \
@@ -3595,6 +3601,12 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
     include/grpc++/impl/service_type.h \
+    include/grpc++/impl/sync.h \
+    include/grpc++/impl/sync_cxx11.h \
+    include/grpc++/impl/sync_no_cxx11.h \
+    include/grpc++/impl/thd.h \
+    include/grpc++/impl/thd_cxx11.h \
+    include/grpc++/impl/thd_no_cxx11.h \
     include/grpc++/server.h \
     include/grpc++/server_builder.h \
     include/grpc++/server_context.h \
