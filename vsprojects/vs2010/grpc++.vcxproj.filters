@@ -161,6 +161,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\cpp\client\secure_credentials.h">
+      <Filter>src\cpp\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cpp\server\secure_server_credentials.h">
+      <Filter>src\cpp\server</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\cpp\client\channel.h">
       <Filter>src\cpp\client</Filter>
     </ClInclude>
