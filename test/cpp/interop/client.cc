@@ -51,9 +51,9 @@
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/interop/test.pb.h"
-#include "test/cpp/interop/empty.pb.h"
-#include "test/cpp/interop/messages.pb.h"
+#include "test/cpp/interop/test.grpc.pb.h"
+#include "test/cpp/interop/empty.grpc.pb.h"
+#include "test/cpp/interop/messages.grpc.pb.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
