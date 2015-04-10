@@ -63,7 +63,8 @@ struct grpc_channel {
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c)+1))
-#define CHANNEL_FROM_CHANNEL_STACK(channel_stack) (((grpc_channel *)(channel_stack)) - 1)
+#define CHANNEL_FROM_CHANNEL_STACK(channel_stack) \
+  (((grpc_channel *)(channel_stack)) - 1)
 #define CHANNEL_FROM_TOP_ELEM(top_elem) \
   CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
@@ -75,7 +76,8 @@ grpc_channel *grpc_channel_create_from_filters(
   grpc_channel *channel = gpr_malloc(size);
   GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
-  /* decremented by grpc_channel_destroy, and grpc_client_channel_closed if is_client */
+  /* decremented by grpc_channel_destroy, and grpc_client_channel_closed if
+   * is_client */
   gpr_ref_init(&channel->refs, 1 + is_client);
   channel->metadata_context = mdctx;
   channel->grpc_status_string = grpc_mdstr_from_string(mdctx, "grpc-status");
@@ -92,8 +94,8 @@ grpc_channel *grpc_channel_create_from_filters(
 static void do_nothing(void *ignored, grpc_op_error error) {}
 
 static grpc_call *grpc_channel_create_call_internal(
-    grpc_channel *channel, grpc_completion_queue *cq,
-    grpc_mdelem *path_mdelem, grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
+    grpc_channel *channel, grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
+    grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
   grpc_call *call;
   grpc_call_op op;
 
@@ -134,8 +136,7 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     const char *method, const char *host,
                                     gpr_timespec deadline) {
   return grpc_channel_create_call_internal(
-      channel, 
-      cq,
+      channel, cq,
       grpc_mdelem_from_metadata_strings(
           channel->metadata_context, grpc_mdstr_ref(channel->path_string),
           grpc_mdstr_from_string(channel->metadata_context, method)),
@@ -152,15 +153,15 @@ grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
                                   absolute_deadline);
 }
 
-void *grpc_channel_register_call(grpc_channel *channel, const char *method, 
+void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host) {
   registered_call *rc = gpr_malloc(sizeof(registered_call));
   rc->path = grpc_mdelem_from_metadata_strings(
-          channel->metadata_context, grpc_mdstr_ref(channel->path_string),
-          grpc_mdstr_from_string(channel->metadata_context, method));
+      channel->metadata_context, grpc_mdstr_ref(channel->path_string),
+      grpc_mdstr_from_string(channel->metadata_context, method));
   rc->authority = grpc_mdelem_from_metadata_strings(
-          channel->metadata_context, grpc_mdstr_ref(channel->authority_string),
-          grpc_mdstr_from_string(channel->metadata_context, host));
+      channel->metadata_context, grpc_mdstr_ref(channel->authority_string),
+      grpc_mdstr_from_string(channel->metadata_context, host));
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
@@ -168,12 +169,13 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
   return rc;
 }
 
-grpc_call *grpc_channel_create_registered_call(grpc_channel *channel,
-                                               grpc_completion_queue *completion_queue,
-                                               void *registered_call_handle,
-                                               gpr_timespec deadline) {
+grpc_call *grpc_channel_create_registered_call(
+    grpc_channel *channel, grpc_completion_queue *completion_queue,
+    void *registered_call_handle, gpr_timespec deadline) {
   registered_call *rc = registered_call_handle;
-  return grpc_channel_create_call_internal(channel, completion_queue, grpc_mdelem_ref(rc->path), grpc_mdelem_ref(rc->authority), deadline);
+  return grpc_channel_create_call_internal(
+      channel, completion_queue, grpc_mdelem_ref(rc->path),
+      grpc_mdelem_ref(rc->authority), deadline);
 }
 
 void grpc_channel_internal_ref(grpc_channel *channel) {

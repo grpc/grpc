@@ -361,7 +361,7 @@ typedef struct grpc_op {
    library). */
 void grpc_init(void);
 
-/* Shut down the grpc library. 
+/* Shut down the grpc library.
    No memory is used by grpc after this call returns, nor are any instructions
    executing within the grpc library.
    Prior to calling, all application owned grpc objects must have been
@@ -395,9 +395,9 @@ void grpc_event_finish(grpc_event *event);
 
 /* Begin destruction of a completion queue. Once all possible events are
    drained then grpc_completion_queue_next will start to produce
-   GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call 
-   grpc_completion_queue_destroy. 
-   
+   GRPC_QUEUE_SHUTDOWN events only. At that point it's safe to call
+   grpc_completion_queue_destroy.
+
    After calling this function applications should ensure that no
    NEW work is added to be published on this completion queue. */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
@@ -422,14 +422,13 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     gpr_timespec deadline);
 
 /* Pre-register a method/host pair on a channel. */
-void *grpc_channel_register_call(grpc_channel *channel, const char *method, 
+void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host);
 
 /* Create a call given a handle returned from grpc_channel_register_call */
-grpc_call *grpc_channel_create_registered_call(grpc_channel *channel,
-                                               grpc_completion_queue *completion_queue,
-                                               void *registered_call_handle,
-                                               gpr_timespec deadline);
+grpc_call *grpc_channel_create_registered_call(
+    grpc_channel *channel, grpc_completion_queue *completion_queue,
+    void *registered_call_handle, gpr_timespec deadline);
 
 /* Start a batch of operations defined in the array ops; when complete, post a
    completion of type 'tag' to the completion queue bound to the call.
@@ -589,8 +588,7 @@ grpc_call_error grpc_server_request_call_old(grpc_server *server,
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
-    grpc_completion_queue *cq_bound_to_call,
-    void *tag_new);
+    grpc_completion_queue *cq_bound_to_call, void *tag_new);
 
 /* Registers a method in the server.
    Methods to this (host, method) pair will not be reported by
@@ -645,4 +643,4 @@ void grpc_server_destroy(grpc_server *server);
 }
 #endif
 
-#endif  /* GRPC_GRPC_H */
+#endif /* GRPC_GRPC_H */
