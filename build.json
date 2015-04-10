@@ -543,10 +543,9 @@
         "test/cpp/interop/interop_client.cc"
       ],
       "deps": [
-        "grpc_test_util",
+        "grpc++_test_util",
         "grpc++",
         "grpc",
-        "gpr_test_util",
         "gpr"
       ]
     },
@@ -558,7 +557,8 @@
         "test/cpp/interop/server_helper.cc"
       ],
       "deps": [
-        "grpc++"
+        "grpc++",
+        "grpc_test_util"
       ]
     },
     {
