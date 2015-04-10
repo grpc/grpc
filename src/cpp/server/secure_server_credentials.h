@@ -31,6 +31,9 @@
  *
  */
 
+#ifndef GRPC_INTERNAL_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
+#define GRPC_INTERNAL_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
+
 #include <grpc/grpc_security.h>
 
 #include <grpc++/server_credentials.h>
@@ -54,3 +57,4 @@ class SecureServerCredentials GRPC_FINAL : public ServerCredentials {
 
 }  // namespace grpc
 
+#endif  // GRPC_INTERNAL_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
