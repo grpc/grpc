@@ -95,6 +95,27 @@ inline std::vector<grpc::string> tokenize(const grpc::string &input,
   }
 }
 
+inline grpc::string CapitalizeFirstLetter(grpc::string s) {
+  if (s.empty()) {
+    return s;
+  }
+  s[0] = ::toupper(s[0]);
+  return s;
+}
+
+inline grpc::string LowerUnderscoreToUpperCamel(grpc::string str) {
+  std::vector<grpc::string> tokens = tokenize(str, "_");
+  grpc::string result = "";
+  for (unsigned int i = 0; i < tokens.size(); i++) {
+    result += CapitalizeFirstLetter(tokens[i]);
+  }
+  return result;
+}
+
+inline grpc::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor *file) {
+  return LowerUnderscoreToUpperCamel(StripProto(file->name()));
+}
+
 }  // namespace grpc_generator
 
 #endif  // GRPC_INTERNAL_COMPILER_GENERATOR_HELPERS_H

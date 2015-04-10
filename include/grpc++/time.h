@@ -41,8 +41,8 @@ namespace grpc {
 /* If you are trying to use CompletionQueue::AsyncNext with a time class that
    isn't either gpr_timespec or std::chrono::system_clock::time_point, you
    will most likely be looking at that comment as your compiler will have
-   fired the static_assert below. In order to fix that issue, you have two
-   potential solutions:
+   fired an error below. In order to fix that issue, you have two potential
+   solutions:
 
      1. Use gpr_timespec or std::chrono::system_clock::time_point instead
      2. Specialize the TimePoint class with whichever time class that you
@@ -53,11 +53,14 @@ template <typename T>
 class TimePoint {
  public:
   TimePoint(const T& time) {
-    static_assert(false, "You need a specialization of TimePoint");
+    you_need_a_specialization_of_TimePoint();
   }
   gpr_timespec raw_time() {
-    static_assert(false, "You need a specialization of TimePoint");
+    gpr_timespec t;
+    return t;
   }
+ private:
+  void you_need_a_specialization_of_TimePoint();
 };
 
 template<>

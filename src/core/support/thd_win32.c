@@ -61,7 +61,7 @@ struct thd_info {
 static thread_local struct thd_info *g_thd_info;
 
 /* Destroys a thread info */
-static destroy_thread(struct thd_info *t) {
+static void destroy_thread(struct thd_info *t) {
   if (t->joinable) CloseHandle(t->join_event);
   gpr_free(t);
 }

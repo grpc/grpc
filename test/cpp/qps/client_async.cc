@@ -48,7 +48,7 @@
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/client.h"
 
@@ -137,13 +137,7 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
       cli_cqs_.emplace_back(new CompletionQueue);
     }
 
-    auto payload_size = config.payload_size();
-    auto check_done = [payload_size](grpc::Status s, SimpleResponse* response) {
-      GPR_ASSERT(s.IsOk() && (response->payload().type() ==
-                              grpc::testing::PayloadType::COMPRESSABLE) &&
-                 (response->payload().body().length() ==
-                  static_cast<size_t>(payload_size)));
-    };
+    auto check_done = [](grpc::Status s, SimpleResponse* response) {};
 
     int t = 0;
     for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
@@ -179,10 +173,14 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
     }
   }
 
-  void ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     void* got_tag;
     bool ok;
-    cli_cqs_[thread_idx]->Next(&got_tag, &ok);
+    switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, std::chrono::system_clock::now() + std::chrono::seconds(1))) {
+      case CompletionQueue::SHUTDOWN: return false;
+      case CompletionQueue::TIMEOUT: return true;
+      case CompletionQueue::GOT_EVENT: break;
+    }
 
     ClientRpcContext* ctx = ClientRpcContext::detag(got_tag);
     if (ctx->RunNextState(ok, histogram) == false) {
@@ -191,6 +189,8 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
       ctx->StartNewClone();
       delete ctx;
     }
+
+    return true;
   }
 
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
@@ -270,13 +270,7 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
       cli_cqs_.emplace_back(new CompletionQueue);
     }
 
-    auto payload_size = config.payload_size();
-    auto check_done = [payload_size](grpc::Status s, SimpleResponse *response) {
-      GPR_ASSERT(s.IsOk() && (response->payload().type() ==
-                              grpc::testing::PayloadType::COMPRESSABLE) &&
-                 (response->payload().body().length() ==
-                  static_cast<size_t>(payload_size)));
-    };
+    auto check_done = [](grpc::Status s, SimpleResponse* response) {};
 
     int t = 0;
     for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
@@ -313,10 +307,14 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
     }
   }
 
-  void ThreadFunc(Histogram *histogram, size_t thread_idx) GRPC_OVERRIDE {
+  bool ThreadFunc(Histogram *histogram, size_t thread_idx) GRPC_OVERRIDE {
     void *got_tag;
     bool ok;
-    cli_cqs_[thread_idx]->Next(&got_tag, &ok);
+    switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, std::chrono::system_clock::now() + std::chrono::seconds(1))) {
+      case CompletionQueue::SHUTDOWN: return false;
+      case CompletionQueue::TIMEOUT: return true;
+      case CompletionQueue::GOT_EVENT: break;
+    }
 
     ClientRpcContext *ctx = ClientRpcContext::detag(got_tag);
     if (ctx->RunNextState(ok, histogram) == false) {
@@ -325,6 +323,8 @@ class AsyncStreamingClient GRPC_FINAL : public Client {
       ctx->StartNewClone();
       delete ctx;
     }
+
+    return true;
   }
 
   std::vector<std::unique_ptr<CompletionQueue>> cli_cqs_;
