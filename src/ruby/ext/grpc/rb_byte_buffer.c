@@ -110,7 +110,7 @@ static VALUE grpc_rb_byte_buffer_init_copy(VALUE copy, VALUE orig) {
   /* Raise an error if orig is not a metadata object or a subclass. */
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_byte_buffer_free) {
-    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(rb_cByteBuffer));
+    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_cByteBuffer));
   }
 
   Data_Get_Struct(orig, grpc_rb_byte_buffer, orig_bb);
@@ -199,23 +199,23 @@ static VALUE grpc_rb_byte_buffer_init(VALUE self, VALUE src) {
   return self;
 }
 
-/* rb_cByteBuffer is the ruby class that proxies grpc_byte_buffer. */
-VALUE rb_cByteBuffer = Qnil;
+/* grpc_cByteBuffer is the ruby class that proxies grpc_byte_buffer. */
+VALUE grpc_cByteBuffer = Qnil;
 
 void Init_grpc_byte_buffer() {
-  rb_cByteBuffer =
-      rb_define_class_under(rb_mGrpcCore, "ByteBuffer", rb_cObject);
+  grpc_cByteBuffer =
+      rb_define_class_under(grpc_mGrpcCore, "ByteBuffer", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(rb_cByteBuffer, grpc_rb_byte_buffer_alloc);
+  rb_define_alloc_func(grpc_cByteBuffer, grpc_rb_byte_buffer_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cByteBuffer, "initialize", grpc_rb_byte_buffer_init, 1);
-  rb_define_method(rb_cByteBuffer, "initialize_copy",
+  rb_define_method(grpc_cByteBuffer, "initialize", grpc_rb_byte_buffer_init, 1);
+  rb_define_method(grpc_cByteBuffer, "initialize_copy",
                    grpc_rb_byte_buffer_init_copy, 1);
 
   /* Provides a to_s method that returns the buffer value */
-  rb_define_method(rb_cByteBuffer, "to_s", grpc_rb_byte_buffer_to_s, 0);
+  rb_define_method(grpc_cByteBuffer, "to_s", grpc_rb_byte_buffer_to_s, 0);
 
   id_source = rb_intern("__source");
   id_empty = rb_intern("");
@@ -229,7 +229,7 @@ VALUE grpc_rb_byte_buffer_create_with_mark(VALUE mark, grpc_byte_buffer *bb) {
   byte_buffer = ALLOC(grpc_rb_byte_buffer);
   byte_buffer->wrapped = bb;
   byte_buffer->mark = mark;
-  return Data_Wrap_Struct(rb_cByteBuffer, grpc_rb_byte_buffer_mark,
+  return Data_Wrap_Struct(grpc_cByteBuffer, grpc_rb_byte_buffer_mark,
                           grpc_rb_byte_buffer_free, byte_buffer);
 }
 

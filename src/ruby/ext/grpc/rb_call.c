@@ -123,22 +123,22 @@ int grpc_rb_call_add_metadata_hash_cb(VALUE key, VALUE val, VALUE call_obj) {
     array_length = RARRAY_LEN(val);
     for (i = 0; i < array_length; i++) {
       md_obj_args[1] = rb_ary_entry(val, i);
-      md_obj = rb_class_new_instance(2, md_obj_args, rb_cMetadata);
+      md_obj = rb_class_new_instance(2, md_obj_args, grpc_cMetadata);
       md = grpc_rb_get_wrapped_metadata(md_obj);
       err = grpc_call_add_metadata_old(call, md, NUM2UINT(flags));
       if (err != GRPC_CALL_OK) {
-        rb_raise(rb_eCallError, "add metadata failed: %s (code=%d)",
+        rb_raise(grpc_eCallError, "add metadata failed: %s (code=%d)",
                  grpc_call_error_detail_of(err), err);
         return ST_STOP;
       }
     }
   } else {
     md_obj_args[1] = val;
-    md_obj = rb_class_new_instance(2, md_obj_args, rb_cMetadata);
+    md_obj = rb_class_new_instance(2, md_obj_args, grpc_cMetadata);
     md = grpc_rb_get_wrapped_metadata(md_obj);
     err = grpc_call_add_metadata_old(call, md, NUM2UINT(flags));
     if (err != GRPC_CALL_OK) {
-      rb_raise(rb_eCallError, "add metadata failed: %s (code=%d)",
+      rb_raise(grpc_eCallError, "add metadata failed: %s (code=%d)",
                grpc_call_error_detail_of(err), err);
       return ST_STOP;
     }
@@ -187,7 +187,7 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_cancel(call);
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "cancel failed: %s (code=%d)",
+    rb_raise(grpc_eCallError, "cancel failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -223,7 +223,7 @@ static VALUE grpc_rb_call_invoke(int argc, VALUE *argv, VALUE self) {
   err = grpc_call_invoke_old(call, cq, ROBJECT(metadata_read_tag),
                              ROBJECT(finished_tag), NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "invoke failed: %s (code=%d)",
+    rb_raise(grpc_eCallError, "invoke failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -244,7 +244,7 @@ static VALUE grpc_rb_call_start_read(VALUE self, VALUE tag) {
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_start_read_old(call, ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "start read failed: %s (code=%d)",
+    rb_raise(grpc_eCallError, "start read failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -266,7 +266,7 @@ static VALUE grpc_rb_call_get_status(VALUE self) {
 
     Saves a status object on the call.  */
 static VALUE grpc_rb_call_set_status(VALUE self, VALUE status) {
-  if (!NIL_P(status) && rb_obj_class(status) != rb_sStatus) {
+  if (!NIL_P(status) && rb_obj_class(status) != grpc_sStatus) {
     rb_raise(rb_eTypeError, "bad status: got:<%s> want: <Struct::Status>",
              rb_obj_classname(status));
     return Qnil;
@@ -332,7 +332,7 @@ static VALUE grpc_rb_call_start_write(int argc, VALUE *argv, VALUE self) {
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_start_write_old(call, bfr, ROBJECT(tag), NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "start write failed: %s (code=%d)",
+    rb_raise(grpc_eCallError, "start write failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -361,7 +361,7 @@ static VALUE grpc_rb_call_start_write_status(VALUE self, VALUE code,
   err = grpc_call_start_write_status_old(call, NUM2UINT(code),
                                          StringValueCStr(status), ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "start write status: %s (code=%d)",
+    rb_raise(grpc_eCallError, "start write status: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -376,7 +376,7 @@ static VALUE grpc_rb_call_writes_done(VALUE self, VALUE tag) {
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_writes_done_old(call, ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "writes done: %s (code=%d)",
+    rb_raise(grpc_eCallError, "writes done: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -407,7 +407,7 @@ static VALUE grpc_rb_call_server_end_initial_metadata(int argc, VALUE *argv,
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_server_end_initial_metadata_old(call, NUM2UINT(flags));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "end_initial_metadata failed: %s (code=%d)",
+    rb_raise(grpc_eCallError, "end_initial_metadata failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
   return Qnil;
@@ -432,7 +432,7 @@ static VALUE grpc_rb_call_server_accept(VALUE self, VALUE cqueue,
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_server_accept_old(call, cq, ROBJECT(finished_tag));
   if (err != GRPC_CALL_OK) {
-    rb_raise(rb_eCallError, "server_accept failed: %s (code=%d)",
+    rb_raise(grpc_eCallError, "server_accept failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -442,16 +442,16 @@ static VALUE grpc_rb_call_server_accept(VALUE self, VALUE cqueue,
   return Qnil;
 }
 
-/* rb_cCall is the ruby class that proxies grpc_call. */
-VALUE rb_cCall = Qnil;
+/* grpc_cCall is the ruby class that proxies grpc_call. */
+VALUE grpc_cCall = Qnil;
 
-/* rb_eCallError is the ruby class of the exception thrown during call
+/* grpc_eCallError is the ruby class of the exception thrown during call
    operations; */
-VALUE rb_eCallError = Qnil;
+VALUE grpc_eCallError = Qnil;
 
 void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
-  VALUE rb_RpcErrors = rb_define_module_under(rb_mGrpcCore, "RpcErrors");
+  VALUE rb_RpcErrors = rb_define_module_under(grpc_mGrpcCore, "RpcErrors");
   rb_define_const(rb_RpcErrors, "OK", UINT2NUM(GRPC_CALL_OK));
   rb_define_const(rb_RpcErrors, "ERROR", UINT2NUM(GRPC_CALL_ERROR));
   rb_define_const(rb_RpcErrors, "NOT_ON_SERVER",
@@ -502,31 +502,31 @@ void Init_grpc_error_codes() {
 
 void Init_grpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
-  rb_eCallError =
-      rb_define_class_under(rb_mGrpcCore, "CallError", rb_eException);
-  rb_cCall = rb_define_class_under(rb_mGrpcCore, "Call", rb_cObject);
+  grpc_eCallError =
+      rb_define_class_under(grpc_mGrpcCore, "CallError", rb_eException);
+  grpc_cCall = rb_define_class_under(grpc_mGrpcCore, "Call", rb_cObject);
 
   /* Prevent allocation or inialization of the Call class */
-  rb_define_alloc_func(rb_cCall, grpc_rb_cannot_alloc);
-  rb_define_method(rb_cCall, "initialize", grpc_rb_cannot_init, 0);
-  rb_define_method(rb_cCall, "initialize_copy", grpc_rb_cannot_init_copy, 1);
+  rb_define_alloc_func(grpc_cCall, grpc_rb_cannot_alloc);
+  rb_define_method(grpc_cCall, "initialize", grpc_rb_cannot_init, 0);
+  rb_define_method(grpc_cCall, "initialize_copy", grpc_rb_cannot_init_copy, 1);
 
   /* Add ruby analogues of the Call methods. */
-  rb_define_method(rb_cCall, "server_accept", grpc_rb_call_server_accept, 2);
-  rb_define_method(rb_cCall, "server_end_initial_metadata",
+  rb_define_method(grpc_cCall, "server_accept", grpc_rb_call_server_accept, 2);
+  rb_define_method(grpc_cCall, "server_end_initial_metadata",
                    grpc_rb_call_server_end_initial_metadata, -1);
-  rb_define_method(rb_cCall, "add_metadata", grpc_rb_call_add_metadata, -1);
-  rb_define_method(rb_cCall, "cancel", grpc_rb_call_cancel, 0);
-  rb_define_method(rb_cCall, "invoke", grpc_rb_call_invoke, -1);
-  rb_define_method(rb_cCall, "start_read", grpc_rb_call_start_read, 1);
-  rb_define_method(rb_cCall, "start_write", grpc_rb_call_start_write, -1);
-  rb_define_method(rb_cCall, "start_write_status",
+  rb_define_method(grpc_cCall, "add_metadata", grpc_rb_call_add_metadata, -1);
+  rb_define_method(grpc_cCall, "cancel", grpc_rb_call_cancel, 0);
+  rb_define_method(grpc_cCall, "invoke", grpc_rb_call_invoke, -1);
+  rb_define_method(grpc_cCall, "start_read", grpc_rb_call_start_read, 1);
+  rb_define_method(grpc_cCall, "start_write", grpc_rb_call_start_write, -1);
+  rb_define_method(grpc_cCall, "start_write_status",
                    grpc_rb_call_start_write_status, 3);
-  rb_define_method(rb_cCall, "writes_done", grpc_rb_call_writes_done, 1);
-  rb_define_method(rb_cCall, "status", grpc_rb_call_get_status, 0);
-  rb_define_method(rb_cCall, "status=", grpc_rb_call_set_status, 1);
-  rb_define_method(rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);
-  rb_define_method(rb_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
+  rb_define_method(grpc_cCall, "writes_done", grpc_rb_call_writes_done, 1);
+  rb_define_method(grpc_cCall, "status", grpc_rb_call_get_status, 0);
+  rb_define_method(grpc_cCall, "status=", grpc_rb_call_set_status, 1);
+  rb_define_method(grpc_cCall, "metadata", grpc_rb_call_get_metadata, 0);
+  rb_define_method(grpc_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
 
   /* Ids used to support call attributes */
   id_metadata = rb_intern("metadata");
@@ -540,7 +540,7 @@ void Init_grpc_call() {
   /* The hash for reference counting calls, to ensure they can't be destroyed
    * more than once */
   hash_all_calls = rb_hash_new();
-  rb_define_const(rb_cCall, "INTERNAL_ALL_CALLs", hash_all_calls);
+  rb_define_const(grpc_cCall, "INTERNAL_ALL_CALLs", hash_all_calls);
 
   Init_grpc_error_codes();
 }
@@ -565,5 +565,5 @@ VALUE grpc_rb_wrap_call(grpc_call *c) {
     rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c),
                  UINT2NUM(NUM2UINT(obj) + 1));
   }
-  return Data_Wrap_Struct(rb_cCall, GC_NOT_MARKED, grpc_rb_call_destroy, c);
+  return Data_Wrap_Struct(grpc_cCall, GC_NOT_MARKED, grpc_rb_call_destroy, c);
 }

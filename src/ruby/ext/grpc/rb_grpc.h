@@ -38,17 +38,17 @@
 #include <ruby.h>
 #include <grpc/support/time.h>
 
-/* rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
-extern VALUE rb_mGrpcCore;
+/* grpc_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
+extern VALUE grpc_mGrpcCore;
 
 /* Class used to wrap timeval structs. */
-extern VALUE rb_cTimeVal;
+extern VALUE grpc_cTimeVal;
 
-/* rb_sNewServerRpc is the struct that holds new server rpc details. */
-extern VALUE rb_sNewServerRpc;
+/* grpc_sNewServerRpc is the struct that holds new server rpc details. */
+extern VALUE grpc_sNewServerRpc;
 
-/* rb_sStruct is the struct that holds status details. */
-extern VALUE rb_sStatus;
+/* grpc_sStruct is the struct that holds status details. */
+extern VALUE grpc_sStatus;
 
 /* GC_NOT_MARKED is used in calls to Data_Wrap_Struct to indicate that the
    wrapped struct does not need to participate in ruby gc. */

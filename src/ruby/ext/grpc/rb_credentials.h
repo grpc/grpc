@@ -37,9 +37,9 @@
 #include <ruby.h>
 #include <grpc/grpc_security.h>
 
-/* rb_cCredentials is the ruby class whose instances proxy
+/* grpc_cCredentials is the ruby class whose instances proxy
    grpc_credentials. */
-extern VALUE rb_cCredentials;
+extern VALUE grpc_cCredentials;
 
 /* Initializes the ruby Credentials class. */
 void Init_grpc_credentials();

@@ -46,12 +46,12 @@ VALUE grpc_rb_wrap_call(grpc_call* c);
 /* Provides the details of an call error */
 const char* grpc_call_error_detail_of(grpc_call_error err);
 
-/* rb_cCall is the Call class whose instances proxy grpc_call. */
-extern VALUE rb_cCall;
+/* grpc_cCall is the Call class whose instances proxy grpc_call. */
+extern VALUE grpc_cCall;
 
-/* rb_cCallError is the ruby class of the exception thrown during call
+/* grpc_cCallError is the ruby class of the exception thrown during call
    operations. */
-extern VALUE rb_eCallError;
+extern VALUE grpc_eCallError;
 
 /* Initializes the Call class. */
 void Init_grpc_call();

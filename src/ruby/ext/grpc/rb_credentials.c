@@ -107,7 +107,7 @@ static VALUE grpc_rb_credentials_init_copy(VALUE copy, VALUE orig) {
   /* Raise an error if orig is not a credentials object or a subclass. */
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_credentials_free) {
-    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(rb_cCredentials));
+    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_cCredentials));
   }
 
   Data_Get_Struct(orig, grpc_rb_credentials, orig_cred);
@@ -178,7 +178,7 @@ static VALUE grpc_rb_composite_credentials_create(VALUE self, VALUE other) {
   }
 
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(rb_cCredentials, grpc_rb_credentials_mark,
+  return Data_Wrap_Struct(grpc_cCredentials, grpc_rb_credentials_mark,
                           grpc_rb_credentials_free, wrapper);
 }
 
@@ -242,30 +242,30 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
   return self;
 }
 
-/* rb_cCredentials is the ruby class that proxies grpc_credentials. */
-VALUE rb_cCredentials = Qnil;
+/* grpc_cCredentials is the ruby class that proxies grpc_credentials. */
+VALUE grpc_cCredentials = Qnil;
 
 void Init_grpc_credentials() {
-  rb_cCredentials =
-      rb_define_class_under(rb_mGrpcCore, "Credentials", rb_cObject);
+  grpc_cCredentials =
+      rb_define_class_under(grpc_mGrpcCore, "Credentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(rb_cCredentials, grpc_rb_credentials_alloc);
+  rb_define_alloc_func(grpc_cCredentials, grpc_rb_credentials_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cCredentials, "initialize", grpc_rb_credentials_init, -1);
-  rb_define_method(rb_cCredentials, "initialize_copy",
+  rb_define_method(grpc_cCredentials, "initialize", grpc_rb_credentials_init, -1);
+  rb_define_method(grpc_cCredentials, "initialize_copy",
                    grpc_rb_credentials_init_copy, 1);
 
   /* Provide static funcs that create new special instances. */
-  rb_define_singleton_method(rb_cCredentials, "default",
+  rb_define_singleton_method(grpc_cCredentials, "default",
                              grpc_rb_default_credentials_create, 0);
 
-  rb_define_singleton_method(rb_cCredentials, "compute_engine",
+  rb_define_singleton_method(grpc_cCredentials, "compute_engine",
                              grpc_rb_compute_engine_credentials_create, 0);
 
   /* Provide other methods. */
-  rb_define_method(rb_cCredentials, "compose",
+  rb_define_method(grpc_cCredentials, "compose",
                    grpc_rb_composite_credentials_create, 1);
 
   id_pem_cert_chain = rb_intern("__pem_cert_chain");

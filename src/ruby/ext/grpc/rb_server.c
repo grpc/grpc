@@ -43,8 +43,8 @@
 #include "rb_server_credentials.h"
 #include "rb_grpc.h"
 
-/* rb_cServer is the ruby class that proxies grpc_server. */
-VALUE rb_cServer = Qnil;
+/* grpc_cServer is the ruby class that proxies grpc_server. */
+VALUE grpc_cServer = Qnil;
 
 /* grpc_rb_server wraps a grpc_server.  It provides a peer ruby object,
   'mark' to minimize copying when a server is created from ruby. */
@@ -140,7 +140,7 @@ static VALUE grpc_rb_server_init_copy(VALUE copy, VALUE orig) {
   /* Raise an error if orig is not a server object or a subclass. */
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_server_free) {
-    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(rb_cServer));
+    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_cServer));
   }
 
   Data_Get_Struct(orig, grpc_rb_server, orig_srv);
@@ -161,7 +161,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE tag_new) {
   } else {
     err = grpc_server_request_call_old(s->wrapped, ROBJECT(tag_new));
     if (err != GRPC_CALL_OK) {
-      rb_raise(rb_eCallError, "server request failed: %s (code=%d)",
+      rb_raise(grpc_eCallError, "server request failed: %s (code=%d)",
                grpc_call_error_detail_of(err), err);
     }
   }
@@ -239,21 +239,21 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
 }
 
 void Init_grpc_server() {
-  rb_cServer = rb_define_class_under(rb_mGrpcCore, "Server", rb_cObject);
+  grpc_cServer = rb_define_class_under(grpc_mGrpcCore, "Server", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(rb_cServer, grpc_rb_server_alloc);
+  rb_define_alloc_func(grpc_cServer, grpc_rb_server_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cServer, "initialize", grpc_rb_server_init, 2);
-  rb_define_method(rb_cServer, "initialize_copy", grpc_rb_server_init_copy, 1);
+  rb_define_method(grpc_cServer, "initialize", grpc_rb_server_init, 2);
+  rb_define_method(grpc_cServer, "initialize_copy", grpc_rb_server_init_copy, 1);
 
   /* Add the server methods. */
-  rb_define_method(rb_cServer, "request_call", grpc_rb_server_request_call, 1);
-  rb_define_method(rb_cServer, "start", grpc_rb_server_start, 0);
-  rb_define_method(rb_cServer, "destroy", grpc_rb_server_destroy, 0);
-  rb_define_alias(rb_cServer, "close", "destroy");
-  rb_define_method(rb_cServer, "add_http2_port", grpc_rb_server_add_http2_port,
+  rb_define_method(grpc_cServer, "request_call", grpc_rb_server_request_call, 1);
+  rb_define_method(grpc_cServer, "start", grpc_rb_server_start, 0);
+  rb_define_method(grpc_cServer, "destroy", grpc_rb_server_destroy, 0);
+  rb_define_alias(grpc_cServer, "close", "destroy");
+  rb_define_method(grpc_cServer, "add_http2_port", grpc_rb_server_add_http2_port,
                    -1);
 }
 

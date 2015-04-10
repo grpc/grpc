@@ -131,7 +131,7 @@ static VALUE grpc_rb_metadata_init_copy(VALUE copy, VALUE orig) {
   /* Raise an error if orig is not a metadata object or a subclass. */
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_metadata_free) {
-    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(rb_cMetadata));
+    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_cMetadata));
   }
 
   Data_Get_Struct(orig, grpc_rb_metadata, orig_md);
@@ -185,23 +185,23 @@ static VALUE grpc_rb_metadata_value(VALUE self) {
   return rb_str_new2(md->value);
 }
 
-/* rb_cMetadata is the Metadata class whose instances proxy grpc_metadata. */
-VALUE rb_cMetadata = Qnil;
+/* grpc_cMetadata is the Metadata class whose instances proxy grpc_metadata. */
+VALUE grpc_cMetadata = Qnil;
 void Init_grpc_metadata() {
-  rb_cMetadata =
-      rb_define_class_under(rb_mGrpcCore, "Metadata", rb_cObject);
+  grpc_cMetadata =
+      rb_define_class_under(grpc_mGrpcCore, "Metadata", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(rb_cMetadata, grpc_rb_metadata_alloc);
+  rb_define_alloc_func(grpc_cMetadata, grpc_rb_metadata_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cMetadata, "initialize", grpc_rb_metadata_init, 2);
-  rb_define_method(rb_cMetadata, "initialize_copy", grpc_rb_metadata_init_copy,
+  rb_define_method(grpc_cMetadata, "initialize", grpc_rb_metadata_init, 2);
+  rb_define_method(grpc_cMetadata, "initialize_copy", grpc_rb_metadata_init_copy,
                    1);
 
   /* Provides accessors for the code and details. */
-  rb_define_method(rb_cMetadata, "key", grpc_rb_metadata_key, 0);
-  rb_define_method(rb_cMetadata, "value", grpc_rb_metadata_value, 0);
+  rb_define_method(grpc_cMetadata, "key", grpc_rb_metadata_key, 0);
+  rb_define_method(grpc_cMetadata, "value", grpc_rb_metadata_value, 0);
 
   id_key = rb_intern("__key");
   id_value = rb_intern("__value");

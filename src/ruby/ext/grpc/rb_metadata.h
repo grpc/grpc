@@ -37,8 +37,8 @@
 #include <grpc/grpc.h>
 #include <ruby.h>
 
-/* rb_cMetadata is the Metadata class whose instances proxy grpc_metadata. */
-extern VALUE rb_cMetadata;
+/* grpc_cMetadata is the Metadata class whose instances proxy grpc_metadata. */
+extern VALUE grpc_cMetadata;
 
 /* grpc_rb_metadata_create_with_mark creates a grpc_rb_metadata with a ruby mark
  * object that will be kept alive while the metadata is alive. */

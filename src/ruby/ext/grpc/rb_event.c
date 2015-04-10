@@ -50,8 +50,8 @@ typedef struct grpc_rb_event {
   grpc_event *wrapped;
 } grpc_rb_event;
 
-/* rb_mCompletionType is a ruby module that holds the completion type values */
-VALUE rb_mCompletionType = Qnil;
+/* grpc_mCompletionType is a ruby module that holds the completion type values */
+VALUE grpc_mCompletionType = Qnil;
 
 /* Destroys Event instances. */
 static void grpc_rb_event_free(void *p) {
@@ -100,28 +100,28 @@ static VALUE grpc_rb_event_type(VALUE self) {
   event = wrapper->wrapped;
   switch (event->type) {
     case GRPC_QUEUE_SHUTDOWN:
-      return rb_const_get(rb_mCompletionType, rb_intern("QUEUE_SHUTDOWN"));
+      return rb_const_get(grpc_mCompletionType, rb_intern("QUEUE_SHUTDOWN"));
 
     case GRPC_READ:
-      return rb_const_get(rb_mCompletionType, rb_intern("READ"));
+      return rb_const_get(grpc_mCompletionType, rb_intern("READ"));
 
     case GRPC_WRITE_ACCEPTED:
       grpc_rb_event_result(self); /* validates the result */
-      return rb_const_get(rb_mCompletionType, rb_intern("WRITE_ACCEPTED"));
+      return rb_const_get(grpc_mCompletionType, rb_intern("WRITE_ACCEPTED"));
 
     case GRPC_FINISH_ACCEPTED:
       grpc_rb_event_result(self); /* validates the result */
-      return rb_const_get(rb_mCompletionType, rb_intern("FINISH_ACCEPTED"));
+      return rb_const_get(grpc_mCompletionType, rb_intern("FINISH_ACCEPTED"));
 
     case GRPC_CLIENT_METADATA_READ:
-      return rb_const_get(rb_mCompletionType,
+      return rb_const_get(grpc_mCompletionType,
                           rb_intern("CLIENT_METADATA_READ"));
 
     case GRPC_FINISHED:
-      return rb_const_get(rb_mCompletionType, rb_intern("FINISHED"));
+      return rb_const_get(grpc_mCompletionType, rb_intern("FINISHED"));
 
     case GRPC_SERVER_RPC_NEW:
-      return rb_const_get(rb_mCompletionType, rb_intern("SERVER_RPC_NEW"));
+      return rb_const_get(grpc_mCompletionType, rb_intern("SERVER_RPC_NEW"));
 
     default:
       rb_raise(rb_eRuntimeError, "unrecognized event code for an rpc event:%d",
@@ -252,7 +252,7 @@ static VALUE grpc_rb_event_result(VALUE self) {
       if (event->data.finish_accepted == GRPC_OP_OK) {
         return Qnil;
       }
-      rb_raise(rb_eEventError, "finish failed, not sure why (code=%d)",
+      rb_raise(grpc_eEventError, "finish failed, not sure why (code=%d)",
                event->data.finish_accepted);
       break;
 
@@ -260,7 +260,7 @@ static VALUE grpc_rb_event_result(VALUE self) {
       if (event->data.write_accepted == GRPC_OP_OK) {
         return Qnil;
       }
-      rb_raise(rb_eEventError, "write failed, not sure why (code=%d)",
+      rb_raise(grpc_eEventError, "write failed, not sure why (code=%d)",
                event->data.write_accepted);
       break;
 
@@ -268,7 +268,7 @@ static VALUE grpc_rb_event_result(VALUE self) {
       return grpc_rb_event_metadata(self);
 
     case GRPC_FINISHED:
-      return rb_struct_new(rb_sStatus, UINT2NUM(event->data.finished.status),
+      return rb_struct_new(grpc_sStatus, UINT2NUM(event->data.finished.status),
                            (event->data.finished.details == NULL
                                 ? Qnil
                                 : rb_str_new2(event->data.finished.details)),
@@ -277,9 +277,9 @@ static VALUE grpc_rb_event_result(VALUE self) {
 
     case GRPC_SERVER_RPC_NEW:
       return rb_struct_new(
-          rb_sNewServerRpc, rb_str_new2(event->data.server_rpc_new.method),
+          grpc_sNewServerRpc, rb_str_new2(event->data.server_rpc_new.method),
           rb_str_new2(event->data.server_rpc_new.host),
-          Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+          Data_Wrap_Struct(grpc_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
                            (void *)&event->data.server_rpc_new.deadline),
           grpc_rb_event_metadata(self), NULL);
 
@@ -305,50 +305,50 @@ static VALUE grpc_rb_event_finish(VALUE self) {
   return Qnil;
 }
 
-/* rb_cEvent is the Event class whose instances proxy grpc_event */
-VALUE rb_cEvent = Qnil;
+/* grpc_cEvent is the Event class whose instances proxy grpc_event */
+VALUE grpc_cEvent = Qnil;
 
-/* rb_eEventError is the ruby class of the exception thrown on failures during
+/* grpc_eEventError is the ruby class of the exception thrown on failures during
    rpc event processing. */
-VALUE rb_eEventError = Qnil;
+VALUE grpc_eEventError = Qnil;
 
 void Init_grpc_event() {
-  rb_eEventError =
-      rb_define_class_under(rb_mGrpcCore, "EventError", rb_eStandardError);
-  rb_cEvent = rb_define_class_under(rb_mGrpcCore, "Event", rb_cObject);
+  grpc_eEventError =
+      rb_define_class_under(grpc_mGrpcCore, "EventError", rb_eStandardError);
+  grpc_cEvent = rb_define_class_under(grpc_mGrpcCore, "Event", rb_cObject);
 
   /* Prevent allocation or inialization from ruby. */
-  rb_define_alloc_func(rb_cEvent, grpc_rb_cannot_alloc);
-  rb_define_method(rb_cEvent, "initialize", grpc_rb_cannot_init, 0);
-  rb_define_method(rb_cEvent, "initialize_copy", grpc_rb_cannot_init_copy, 1);
+  rb_define_alloc_func(grpc_cEvent, grpc_rb_cannot_alloc);
+  rb_define_method(grpc_cEvent, "initialize", grpc_rb_cannot_init, 0);
+  rb_define_method(grpc_cEvent, "initialize_copy", grpc_rb_cannot_init_copy, 1);
 
   /* Accessors for the data available in an event. */
-  rb_define_method(rb_cEvent, "call", grpc_rb_event_call, 0);
-  rb_define_method(rb_cEvent, "result", grpc_rb_event_result, 0);
-  rb_define_method(rb_cEvent, "tag", grpc_rb_event_tag, 0);
-  rb_define_method(rb_cEvent, "type", grpc_rb_event_type, 0);
-  rb_define_method(rb_cEvent, "finish", grpc_rb_event_finish, 0);
-  rb_define_alias(rb_cEvent, "close", "finish");
+  rb_define_method(grpc_cEvent, "call", grpc_rb_event_call, 0);
+  rb_define_method(grpc_cEvent, "result", grpc_rb_event_result, 0);
+  rb_define_method(grpc_cEvent, "tag", grpc_rb_event_tag, 0);
+  rb_define_method(grpc_cEvent, "type", grpc_rb_event_type, 0);
+  rb_define_method(grpc_cEvent, "finish", grpc_rb_event_finish, 0);
+  rb_define_alias(grpc_cEvent, "close", "finish");
 
   /* Constants representing the completion types */
-  rb_mCompletionType =
-      rb_define_module_under(rb_mGrpcCore, "CompletionType");
-  rb_define_const(rb_mCompletionType, "QUEUE_SHUTDOWN",
+  grpc_mCompletionType =
+      rb_define_module_under(grpc_mGrpcCore, "CompletionType");
+  rb_define_const(grpc_mCompletionType, "QUEUE_SHUTDOWN",
                   INT2NUM(GRPC_QUEUE_SHUTDOWN));
-  rb_define_const(rb_mCompletionType, "OP_COMPLETE", INT2NUM(GRPC_OP_COMPLETE));
-  rb_define_const(rb_mCompletionType, "READ", INT2NUM(GRPC_READ));
-  rb_define_const(rb_mCompletionType, "WRITE_ACCEPTED",
+  rb_define_const(grpc_mCompletionType, "OP_COMPLETE", INT2NUM(GRPC_OP_COMPLETE));
+  rb_define_const(grpc_mCompletionType, "READ", INT2NUM(GRPC_READ));
+  rb_define_const(grpc_mCompletionType, "WRITE_ACCEPTED",
                   INT2NUM(GRPC_WRITE_ACCEPTED));
-  rb_define_const(rb_mCompletionType, "FINISH_ACCEPTED",
+  rb_define_const(grpc_mCompletionType, "FINISH_ACCEPTED",
                   INT2NUM(GRPC_FINISH_ACCEPTED));
-  rb_define_const(rb_mCompletionType, "CLIENT_METADATA_READ",
+  rb_define_const(grpc_mCompletionType, "CLIENT_METADATA_READ",
                   INT2NUM(GRPC_CLIENT_METADATA_READ));
-  rb_define_const(rb_mCompletionType, "FINISHED", INT2NUM(GRPC_FINISHED));
-  rb_define_const(rb_mCompletionType, "SERVER_RPC_NEW",
+  rb_define_const(grpc_mCompletionType, "FINISHED", INT2NUM(GRPC_FINISHED));
+  rb_define_const(grpc_mCompletionType, "SERVER_RPC_NEW",
                   INT2NUM(GRPC_SERVER_RPC_NEW));
-  rb_define_const(rb_mCompletionType, "SERVER_SHUTDOWN",
+  rb_define_const(grpc_mCompletionType, "SERVER_SHUTDOWN",
                   INT2NUM(GRPC_SERVER_SHUTDOWN));
-  rb_define_const(rb_mCompletionType, "RESERVED",
+  rb_define_const(grpc_mCompletionType, "RESERVED",
                   INT2NUM(GRPC_COMPLETION_DO_NOT_USE));
 }
 
@@ -356,6 +356,6 @@ VALUE grpc_rb_new_event(grpc_event *ev) {
   grpc_rb_event *wrapper = ALLOC(grpc_rb_event);
   wrapper->wrapped = ev;
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(rb_cEvent, grpc_rb_event_mark, grpc_rb_event_free,
+  return Data_Wrap_Struct(grpc_cEvent, grpc_rb_event_mark, grpc_rb_event_free,
                           wrapper);
 }

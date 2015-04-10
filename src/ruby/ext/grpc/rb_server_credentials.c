@@ -109,7 +109,7 @@ static VALUE grpc_rb_server_credentials_init_copy(VALUE copy, VALUE orig) {
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_server_credentials_free) {
     rb_raise(rb_eTypeError, "not a %s",
-             rb_obj_classname(rb_cServerCredentials));
+             rb_obj_classname(grpc_cServerCredentials));
   }
 
   Data_Get_Struct(orig, grpc_rb_server_credentials, orig_ch);
@@ -180,21 +180,21 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   return self;
 }
 
-/* rb_cServerCredentials is the ruby class that proxies
+/* grpc_cServerCredentials is the ruby class that proxies
    grpc_server_credentials. */
-VALUE rb_cServerCredentials = Qnil;
+VALUE grpc_cServerCredentials = Qnil;
 
 void Init_grpc_server_credentials() {
-  rb_cServerCredentials =
-      rb_define_class_under(rb_mGrpcCore, "ServerCredentials", rb_cObject);
+  grpc_cServerCredentials =
+      rb_define_class_under(grpc_mGrpcCore, "ServerCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(rb_cServerCredentials, grpc_rb_server_credentials_alloc);
+  rb_define_alloc_func(grpc_cServerCredentials, grpc_rb_server_credentials_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(rb_cServerCredentials, "initialize",
+  rb_define_method(grpc_cServerCredentials, "initialize",
                    grpc_rb_server_credentials_init, 3);
-  rb_define_method(rb_cServerCredentials, "initialize_copy",
+  rb_define_method(grpc_cServerCredentials, "initialize_copy",
                    grpc_rb_server_credentials_init_copy, 1);
 
   id_pem_cert_chain = rb_intern("__pem_cert_chain");
