@@ -421,6 +421,16 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     const char *method, const char *host,
                                     gpr_timespec deadline);
 
+/* Pre-register a method/host pair on a channel. */
+void *grpc_channel_register_call(grpc_channel *channel, const char *method, 
+                                 const char *host);
+
+/* Create a call given a handle returned from grpc_channel_register_call */
+grpc_call *grpc_channel_create_registered_call(grpc_channel *channel,
+                                               grpc_completion_queue *completion_queue,
+                                               void *registered_call_handle,
+                                               gpr_timespec deadline);
+
 /* Start a batch of operations defined in the array ops; when complete, post a
    completion of type 'tag' to the completion queue bound to the call.
    The order of ops specified in the batch has no significance.
