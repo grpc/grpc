@@ -479,7 +479,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
         break;
       case GRPC_OP_SEND_MESSAGE:
         rb_struct_aset(result, sym_send_message, Qtrue);
-        grpc_byte_buffer_destroy(st->ops[st->op_num].data.send_message);
+        grpc_byte_buffer_destroy(st->ops[i].data.send_message);
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         rb_struct_aset(result, sym_send_close, Qtrue);
