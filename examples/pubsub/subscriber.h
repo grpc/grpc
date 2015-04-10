@@ -58,7 +58,7 @@ class Subscriber {
   Status Pull(const grpc::string& name, grpc::string* data);
 
  private:
-  std::unique_ptr<tech::pubsub::SubscriberService::Stub> stub_;
+  std::unique_ptr<tech::pubsub::SubscriberService::GrpcStub> stub_;
 };
 
 }  // namespace pubsub

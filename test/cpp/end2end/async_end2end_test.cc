@@ -164,7 +164,7 @@ class AsyncEnd2endTest : public ::testing::Test {
 
   CompletionQueue cli_cq_;
   CompletionQueue srv_cq_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::cpp::test::util::TestService::GrpcStub> stub_;
   std::unique_ptr<Server> server_;
   grpc::cpp::test::util::TestService::AsyncService service_;
   std::ostringstream server_address_;

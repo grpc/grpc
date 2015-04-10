@@ -194,7 +194,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
   CompletionQueue cli_cq_;
   CompletionQueue srv_cq_;
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
+  std::unique_ptr<grpc::cpp::test::util::TestService::GrpcStub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   std::unique_ptr<Server> server_;
   AsyncGenericService generic_service_;

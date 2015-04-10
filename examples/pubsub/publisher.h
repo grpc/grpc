@@ -57,7 +57,7 @@ class Publisher {
   Status Publish(const grpc::string& topic, const grpc::string& data);
 
  private:
-  std::unique_ptr<tech::pubsub::PublisherService::Stub> stub_;
+  std::unique_ptr<tech::pubsub::PublisherService::GrpcStub> stub_;
 };
 
 }  // namespace pubsub
