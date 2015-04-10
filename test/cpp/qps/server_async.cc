@@ -52,7 +52,7 @@
 #include <grpc++/stream.h>
 #include <gtest/gtest.h>
 #include "src/cpp/server/thread_pool.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 
 #include <grpc/grpc.h>

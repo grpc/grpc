@@ -432,3 +432,11 @@ void grpc_cq_dump_pending_ops(grpc_completion_queue *cc) {
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
   return &cc->pollset;
 }
+
+void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc) {
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
+  grpc_pollset_kick(&cc->pollset);
+  grpc_pollset_work(&cc->pollset,
+                    gpr_time_add(gpr_now(), gpr_time_from_millis(100)));
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
+}

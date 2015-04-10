@@ -34,7 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/stats.h"
+#include "test/cpp/qps/report.h"
 
 namespace grpc {
 namespace testing {
@@ -60,15 +60,8 @@ static void RunSynchronousUnaryPingPong() {
 
   auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  gpr_log(GPR_INFO, "QPS: %.1f",
-          result.latencies.Count() /
-              average(result.client_resources,
-                      [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
+  ReportQPS(result);
+  ReportLatency(result);
 }
 
 static void RunSynchronousStreamingPingPong() {
@@ -89,15 +82,8 @@ static void RunSynchronousStreamingPingPong() {
 
   auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  gpr_log(GPR_INFO, "QPS: %.1f",
-          result.latencies.Count() /
-              average(result.client_resources,
-                      [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
+  ReportQPS(result);
+  ReportLatency(result);
 }
 
 static void RunAsyncUnaryPingPong() {
@@ -119,15 +105,8 @@ static void RunAsyncUnaryPingPong() {
 
   auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  gpr_log(GPR_INFO, "QPS: %.1f",
-          result.latencies.Count() /
-              average(result.client_resources,
-                      [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
+  ReportQPS(result);
+  ReportLatency(result);
 }
 
 static void RunQPS() {
@@ -149,17 +128,8 @@ static void RunQPS() {
 
   auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  auto qps = 
-      result.latencies.Count() /
-      average(result.client_resources,
-          [](ResourceUsage u) { return u.wall_time; });
-
-  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/core)", qps, qps/client_config.client_channels());
-  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
+  ReportQPSPerCore(result, server_config);
+  ReportLatency(result);
 }
 
 }  // namespace testing

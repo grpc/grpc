@@ -45,7 +45,13 @@ if [ -f /version.txt ]; then
   pkg_version=$(cat /version.txt)
 fi
 version="${pkg_version}.0"
-echo "Target release => $pkg_version"
+release_tag="release-${pkg_version//./_}"
+echo "Target release => $pkg_version, will checkout tag $release_tag"
+
+# Switch grpc_root to the release tag
+pushd $grpc_root
+git checkout $release_tag || { echo "bad release tag ${release_tag}"; exit 1; }
+popd
 
 if [ -f /.dockerinit ]; then
   # We're in Docker where uname -p returns "unknown".

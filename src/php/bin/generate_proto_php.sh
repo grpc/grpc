@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,31 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python interop testing package."""
 
-import setuptools
+set +e
+cd $(dirname $0)
 
-_PACKAGES = (
-    'interop',
-)
+gen_code='../tests/generated_code'
+interop='../tests/interop'
 
-_PACKAGE_DIRECTORIES = {
-    'interop': 'interop',
-}
+protoc-gen-php -i $gen_code -o $gen_code $gen_code/math.proto
 
-_PACKAGE_DATA = {
-    'interop': [
-        'credentials/ca.pem', 'credentials/server1.key',
-        'credentials/server1.pem',]
-}
-
-_INSTALL_REQUIRES = ['oauth2client>=1.4.7', 'grpcio>=0.4.0a4']
-
-setuptools.setup(
-    name='interop',
-    version='0.0.1',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES
-)
+protoc-gen-php -i $interop -o $interop $interop/test.proto

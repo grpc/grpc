@@ -48,7 +48,7 @@
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
 #include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/client.h"
 
@@ -176,7 +176,7 @@ class AsyncUnaryClient GRPC_FINAL : public Client {
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     void* got_tag;
     bool ok;
-    switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, std::chrono::system_clock::now() + std::chrono::seconds(11))) {
+    switch (cli_cqs_[thread_idx]->AsyncNext(&got_tag, &ok, std::chrono::system_clock::now() + std::chrono::seconds(1))) {
       case CompletionQueue::SHUTDOWN: return false;
       case CompletionQueue::TIMEOUT: return true;
       case CompletionQueue::GOT_EVENT: break;

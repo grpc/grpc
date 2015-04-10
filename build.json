@@ -555,6 +555,7 @@
       "headers": [
         "test/cpp/qps/driver.h",
         "test/cpp/qps/qps_worker.h",
+        "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
       ],
       "src": [
@@ -563,6 +564,7 @@
         "test/cpp/qps/client_sync.cc",
         "test/cpp/qps/driver.cc",
         "test/cpp/qps/qps_worker.cc",
+        "test/cpp/qps/report.cc",
         "test/cpp/qps/server_async.cc",
         "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/timer.cc"
