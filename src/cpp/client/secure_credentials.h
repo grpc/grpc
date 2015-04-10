@@ -31,29 +31,31 @@
  *
  */
 
-#include "src/cpp/server/secure_server_credentials.h"
+#ifndef GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+#define GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+
+#include <grpc/grpc_security.h>
+
+#include <grpc++/config.h>
+#include <grpc++/credentials.h>
 
 namespace grpc {
 
-int SecureServerCredentials::AddPortToServer(
-    const grpc::string& addr, grpc_server* server) {
-  return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
-}
+class SecureCredentials GRPC_FINAL : public Credentials {
+ public:
+  explicit SecureCredentials(grpc_credentials* c_creds) : c_creds_(c_creds) {}
+  ~SecureCredentials() GRPC_OVERRIDE { grpc_credentials_release(c_creds_); }
+  grpc_credentials* GetRawCreds() { return c_creds_; }
 
-std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options) {
-  std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
-  for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
-       key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
-    grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
-                                    key_cert_pair->cert_chain.c_str()};
-    pem_key_cert_pairs.push_back(p);
-  }
-  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create(
-      options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      &pem_key_cert_pairs[0], pem_key_cert_pairs.size());
-  return std::shared_ptr<ServerCredentials>(
-      new SecureServerCredentials(c_creds));
-}
+  std::shared_ptr<grpc::ChannelInterface> CreateChannel(
+      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE;
+  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
+
+ private:
+  grpc_credentials* const c_creds_;
+};
 
 }  // namespace grpc
+
+#endif  // GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+

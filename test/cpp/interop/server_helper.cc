@@ -31,29 +31,39 @@
  *
  */
 
-#include "src/cpp/server/secure_server_credentials.h"
+#include "test/cpp/interop/server_helper.h"
+
+#include <memory>
+
+#include <gflags/gflags.h>
+#include "test/core/end2end/data/ssl_test_data.h"
+#include <grpc++/config.h>
+#include <grpc++/server_credentials.h>
+
+DECLARE_bool(enable_ssl);
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 namespace grpc {
+namespace testing {
 
-int SecureServerCredentials::AddPortToServer(
-    const grpc::string& addr, grpc_server* server) {
-  return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
-}
-
-std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options) {
-  std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
-  for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
-       key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
-    grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
-                                    key_cert_pair->cert_chain.c_str()};
-    pem_key_cert_pairs.push_back(p);
+std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
+  if (FLAGS_enable_ssl) {
+    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                        test_server1_cert};
+    SslServerCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = "";
+    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+    return SslServerCredentials(ssl_opts);
+  } else {
+    return InsecureServerCredentials();
   }
-  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create(
-      options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      &pem_key_cert_pairs[0], pem_key_cert_pairs.size());
-  return std::shared_ptr<ServerCredentials>(
-      new SecureServerCredentials(c_creds));
 }
 
+}  // namespace testing
 }  // namespace grpc

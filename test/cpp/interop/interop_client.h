@@ -31,29 +31,49 @@
  *
  */
 
-#include "src/cpp/server/secure_server_credentials.h"
+#ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
+#include <memory>
+
+#include <grpc/grpc.h>
+#include <grpc++/channel_interface.h>
+#include <grpc++/status.h>
+#include "test/cpp/interop/messages.grpc.pb.h"
 
 namespace grpc {
+namespace testing {
 
-int SecureServerCredentials::AddPortToServer(
-    const grpc::string& addr, grpc_server* server) {
-  return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
-}
+class InteropClient {
+ public:
+  explicit InteropClient(std::shared_ptr<ChannelInterface> channel);
+  ~InteropClient() {}
 
-std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options) {
-  std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
-  for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
-       key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
-    grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
-                                    key_cert_pair->cert_chain.c_str()};
-    pem_key_cert_pairs.push_back(p);
-  }
-  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create(
-      options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      &pem_key_cert_pairs[0], pem_key_cert_pairs.size());
-  return std::shared_ptr<ServerCredentials>(
-      new SecureServerCredentials(c_creds));
-}
+  void Reset(std::shared_ptr<ChannelInterface> channel) { channel_ = channel; }
 
+  void DoEmpty();
+  void DoLargeUnary();
+  void DoPingPong();
+  void DoHalfDuplex();
+  void DoRequestStreaming();
+  void DoResponseStreaming();
+  void DoResponseStreamingWithSlowConsumer();
+  // Auth tests.
+  // username is a string containing the user email
+  void DoJwtTokenCreds(const grpc::string& username);
+  void DoComputeEngineCreds(const grpc::string& default_service_account,
+                            const grpc::string& oauth_scope);
+  // username is a string containing the user email
+  void DoServiceAccountCreds(const grpc::string& username,
+                             const grpc::string& oauth_scope);
+
+ private:
+  void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
+  void AssertOkOrPrintErrorStatus(const Status& s);
+
+  std::shared_ptr<ChannelInterface> channel_;
+};
+
+}  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
