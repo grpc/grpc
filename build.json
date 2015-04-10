@@ -554,11 +554,13 @@
       "language": "c++",
       "headers": [
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
       ],
       "src": [
         "test/cpp/qps/qpstest.proto",
         "test/cpp/qps/driver.cc",
+        "test/cpp/qps/report.cc",
         "test/cpp/qps/timer.cc"
       ]
     },

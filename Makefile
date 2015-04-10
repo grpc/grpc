@@ -3729,6 +3729,7 @@ $(OBJDIR)/$(CONFIG)/examples/pubsub/subscriber.o:     $(GENDIR)/examples/pubsub/
 LIBQPS_SRC = \
     $(GENDIR)/test/cpp/qps/qpstest.pb.cc \
     test/cpp/qps/driver.cc \
+    test/cpp/qps/report.cc \
     test/cpp/qps/timer.cc \
 
 
@@ -3758,6 +3759,7 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 test/cpp/qps/qpstest.proto: $(OPENSSL_DEP)
 test/cpp/qps/driver.cc: $(OPENSSL_DEP)
+test/cpp/qps/report.cc: $(OPENSSL_DEP)
 test/cpp/qps/timer.cc: $(OPENSSL_DEP)
 endif
 
@@ -3785,6 +3787,7 @@ endif
 
 
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o:     $(GENDIR)/test/cpp/qps/qpstest.pb.cc
 
 
