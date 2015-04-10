@@ -38,7 +38,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include "rb_grpc.h"
-#include "rb_event.h"
 
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
@@ -140,8 +139,19 @@ static VALUE grpc_rb_completion_queue_next(VALUE self, VALUE timeout) {
 
 /* Blocks until the next event for given tag is available, and returns the
  * event. */
-static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
-                                            VALUE timeout) {
+VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
+                                     VALUE timeout) {
+  grpc_event *ev = grpc_rb_completion_queue_pluck_event(self, tag, timeout);
+  if (ev == NULL) {
+    return Qnil;
+  }
+  return grpc_rb_new_event(ev);
+}
+
+/* Blocks until the next event for given tag is available, and returns the
+ * event. */
+grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
+                                                 VALUE timeout) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   Data_Get_Struct(self, grpc_completion_queue, next_call.cq);
@@ -151,9 +161,9 @@ static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
   rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                              (void *)&next_call, NULL, NULL);
   if (next_call.event == NULL) {
-    return Qnil;
+    return NULL;
   }
-  return grpc_rb_new_event(next_call.event);
+  return next_call.event;
 }
 
 /* rb_cCompletionQueue is the ruby class that proxies grpc_completion_queue. */
