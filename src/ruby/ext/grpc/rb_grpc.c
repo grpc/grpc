@@ -46,10 +46,6 @@
 #include "rb_credentials.h"
 #include "rb_server_credentials.h"
 
-/* Define common vars and funcs declared in rb.h */
-const RUBY_DATA_FUNC GC_NOT_MARKED = NULL;
-const RUBY_DATA_FUNC GC_DONT_FREE = NULL;
-
 VALUE grpc_rb_cTimeVal = Qnil;
 
 /* Alloc func that blocks allocation of a given object by raising an
@@ -224,15 +220,15 @@ void Init_grpc_time_consts() {
       rb_define_class_under(grpc_rb_mGrpcCore, "TimeSpec", rb_cObject);
   rb_define_const(grpc_rb_mTimeConsts, "ZERO",
                   Data_Wrap_Struct(grpc_rb_cTimeVal,
-                                   GC_NOT_MARKED, GC_DONT_FREE,
+                                   GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE,
                                    (void *)&gpr_time_0));
   rb_define_const(grpc_rb_mTimeConsts, "INFINITE_FUTURE",
                   Data_Wrap_Struct(grpc_rb_cTimeVal,
-                                   GC_NOT_MARKED, GC_DONT_FREE,
+                                   GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE,
                                    (void *)&gpr_inf_future));
   rb_define_const(grpc_rb_mTimeConsts, "INFINITE_PAST",
                   Data_Wrap_Struct(grpc_rb_cTimeVal,
-                                   GC_NOT_MARKED, GC_DONT_FREE,
+                                   GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE,
                                    (void *)&gpr_inf_past));
   rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
   rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);

@@ -118,8 +118,8 @@ static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
   if (cq == NULL) {
     rb_raise(rb_eArgError, "could not create a completion queue: not sure why");
   }
-  return Data_Wrap_Struct(cls, GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
-                          cq);
+  return Data_Wrap_Struct(cls, GRPC_RB_GC_NOT_MARKED,
+                          grpc_rb_completion_queue_destroy, cq);
 }
 
 /* Blocks until the next event is available, and returns the event. */

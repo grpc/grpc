@@ -86,7 +86,7 @@ static VALUE sym_cancelled;
 static VALUE hash_all_calls;
 
 /* Destroys a Call. */
-void grpc_rb_call_destroy(void *p) {
+static void grpc_rb_call_destroy(void *p) {
   grpc_call *call = NULL;
   VALUE ref_count = Qnil;
   if (p == NULL) {
@@ -106,6 +106,18 @@ void grpc_rb_call_destroy(void *p) {
   }
 }
 
+/* Describes grpc_call struct for RTypedData */
+static const rb_data_type_t grpc_call_data_type = {
+    "grpc_call",
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_call_destroy, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL, NULL,
+    /* it is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because grpc_rb_call_destroy
+     * touches a hash object.
+     * TODO(yugui) Directly use st_table and call the free function earlier?
+     */
+    0
+};
+
 /* Error code details is a hash containing text strings describing errors */
 VALUE rb_error_code_details;
 
@@ -124,7 +136,7 @@ const char *grpc_call_error_detail_of(grpc_call_error err) {
 static VALUE grpc_rb_call_cancel(VALUE self) {
   grpc_call *call = NULL;
   grpc_call_error err;
-  Data_Get_Struct(self, grpc_call, call);
+  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
   err = grpc_call_cancel(call);
   if (err != GRPC_CALL_OK) {
     rb_raise(grpc_rb_eCallError, "cancel failed: %s (code=%d)",
@@ -258,8 +270,9 @@ void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
 
   /* Initialize the array, compute it's capacity, then fill it. */
   grpc_metadata_array_init(md_ary);
-  md_ary_obj =
-      Data_Wrap_Struct(grpc_rb_cMdAry, GC_NOT_MARKED, GC_DONT_FREE, md_ary);
+  md_ary_obj = Data_Wrap_Struct(grpc_rb_cMdAry,
+                                GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE,
+                                md_ary);
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_capacity_hash_cb, md_ary_obj);
   md_ary->metadata = gpr_malloc(md_ary->capacity * sizeof(grpc_metadata));
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_fill_hash_cb, md_ary_obj);
@@ -543,7 +556,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   grpc_event *ev = NULL;
   grpc_call_error err;
   VALUE result = Qnil;
-  Data_Get_Struct(self, grpc_call, call);
+  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */
   if (TYPE(ops_hash) != T_HASH) {
@@ -734,7 +747,7 @@ void Init_grpc_call() {
 /* Gets the call from the ruby object */
 grpc_call *grpc_rb_get_wrapped_call(VALUE v) {
   grpc_call *c = NULL;
-  Data_Get_Struct(v, grpc_call, c);
+  TypedData_Get_Struct(v, grpc_call, &grpc_call_data_type, c);
   return c;
 }
 
@@ -751,6 +764,5 @@ VALUE grpc_rb_wrap_call(grpc_call *c) {
     rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c),
                  UINT2NUM(NUM2UINT(obj) + 1));
   }
-  return Data_Wrap_Struct(grpc_rb_cCall, GC_NOT_MARKED,
-                          grpc_rb_call_destroy, c);
+  return TypedData_Wrap_Struct(grpc_rb_cCall, &grpc_call_data_type, c);
 }
