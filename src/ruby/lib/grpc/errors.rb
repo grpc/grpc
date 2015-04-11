@@ -31,10 +31,6 @@ require 'grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
-  # OutOfTime is an exception class that indicates that an RPC exceeded its
-  # deadline.
-  OutOfTime = Class.new(StandardError)
-
   # BadStatus is an exception class that indicates that an error occurred at
   # either end of a GRPC connection.  When raised, it indicates that a status
   # error should be returned to the other end of a GRPC connection; when

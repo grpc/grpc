@@ -32,38 +32,79 @@
 
 licenses(["notice"])  # 3-clause BSD
 
+package(default_visibility = ["//visibility:public"])
+
+<%!
+def get_deps(target_dict):
+  deps = []
+  if target_dict.get('secure', 'no') == 'yes':
+    deps = [
+      "//external:libssl",
+    ]
+  if target_dict.get('build', None) == 'protoc':
+    deps.append("//external:protobuf_compiler")
+  if target_dict['name'] == 'grpc++_unsecure' or target_dict['name'] == 'grpc++':
+    deps.append("//external:protobuf_clib")
+  for d in target_dict.get('deps', []):
+    if d.find('//') == 0 or d[0] == ':':
+      deps.append(d)
+    else:
+      deps.append(':%s' % (d))
+  return deps
+%>
+
 % for lib in libs:
-% if lib.build == "all" and lib.language == 'c':
-${makelib(lib)}
+% if lib.build != "private":
+${cc_library(lib)}
 % endif
 % endfor
 
-<%def name="makelib(lib)">
+% for tgt in targets:
+% if tgt.build == 'protoc':
+${cc_binary(tgt)}
+% endif
+% endfor
 
+<%def name="cc_library(lib)">
 cc_library(
-    name = "${lib.name}",
-    srcs = [
+  name = "${lib.name}",
+  srcs = [
 % for hdr in lib.get("headers", []):
-        "${hdr}",
+    "${hdr}",
 % endfor
 % for src in lib.src:
-        "${src}",
+    "${src}",
 % endfor
-    ],
-    hdrs = [
+  ],
+  hdrs = [
 % for hdr in lib.get("public_headers", []):
-        "${hdr}",
+    "${hdr}",
 % endfor
-    ],
-    includes = [
-        "include",
-        ".",
-    ],
-    deps = [
-% for dep in lib.get("deps", []):
-        ":${dep}",
+  ],
+  includes = [
+    "include",
+    ".",
+  ],
+  deps = [
+% for dep in get_deps(lib):
+    "${dep}",
 % endfor
-    ],
+  ],
 )
+</%def>
 
+<%def name="cc_binary(tgt)">
+cc_binary(
+  name = "${tgt.name}",
+  srcs = [
+% for src in tgt.src:
+    "${src}",
+% endfor
+  ],
+  deps = [
+% for dep in get_deps(tgt):
+    "${dep}",
+% endfor
+  ],
+)
 </%def>

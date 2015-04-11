@@ -364,7 +364,7 @@ describe GRPC::RpcServer do
         @srv.wait_till_running
         req = EchoMsg.new
         stub = SlowStub.new(@host, **@client_opts)
-        deadline = service.delay + 0.5 # wait for long enough
+        deadline = service.delay + 1.0 # wait for long enough
         expect(stub.an_rpc(req, deadline, k1: 'v1', k2: 'v2')).to be_a(EchoMsg)
         wanted_md = [{ 'k1' => 'v1', 'k2' => 'v2' }]
         expect(service.received_md).to eq(wanted_md)

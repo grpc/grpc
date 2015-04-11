@@ -55,14 +55,17 @@
 #define GPR_WINSOCK_SOCKET 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
 #else
 #define GPR_WIN32_ATOMIC 1
+#define GPR_MSVC_TLS 1
 #endif
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_ANDROID 1
 #define GPR_ARCH_32 1
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_SYNC 1
+#define GPR_GCC_TLS 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
 #define GPR_POSIX_WAKEUP_FD 1
 #define GPR_LINUX_EVENTFD 1
@@ -88,6 +91,7 @@
 #include <features.h>
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
 #define GPR_LINUX 1
 #define GPR_LINUX_MULTIPOLL_WITH_EPOLL 1
 #define GPR_POSIX_WAKEUP_FD 1
@@ -133,6 +137,31 @@
 #else /* TARGET_OS_IPHONE */
 #define GPR_CPU_POSIX 1
 #endif
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_MULTIPOLL_WITH_POLL 1
+#define GPR_POSIX_WAKEUP_FD 1
+#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#define GPR_POSIX_SOCKET 1
+#define GPR_POSIX_SOCKETADDR 1
+#define GPR_POSIX_SOCKETUTILS 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_FILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
+#elif defined(__FreeBSD__)
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
@@ -200,6 +229,10 @@
 
 #if defined(GPR_POSIX_SOCKET) + defined(GPR_WIN32) != 1
 #error Must define exactly one of GPR_POSIX_SOCKET, GPR_WIN32
+#endif
+
+#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) != 1
+#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS
 #endif
 
 typedef int16_t gpr_int16;
