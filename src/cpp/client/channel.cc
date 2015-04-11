@@ -82,4 +82,8 @@ void Channel::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
   GRPC_TIMER_MARK(PERFORM_OPS_END, call->call());
 }
 
+void *Channel::RegisterMethod(const char *method) {
+  return grpc_channel_register_call(c_channel_, method, target_.c_str());
+}
+
 }  // namespace grpc
