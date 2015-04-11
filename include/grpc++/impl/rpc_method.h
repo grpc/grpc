@@ -45,8 +45,6 @@ class RpcMethod {
     BIDI_STREAMING
   };
 
-  explicit RpcMethod(const char* name)
-      : name_(name), method_type_(NORMAL_RPC) {}
   RpcMethod(const char* name, RpcType type) : name_(name), method_type_(type) {}
 
   const char* name() const { return name_; }
