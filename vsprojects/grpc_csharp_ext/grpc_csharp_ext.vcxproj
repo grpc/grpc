@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\openssl.1.0.2.1\build\native\openssl.props" Condition="Exists('..\packages\openssl.1.0.2.1\build\native\openssl.props')" />
+  <Import Project="..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -102,20 +102,20 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\zlib.redist.1.2.8.7\build\native\zlib.redist.targets" Condition="Exists('..\packages\zlib.redist.1.2.8.7\build\native\zlib.redist.targets')" />
-    <Import Project="..\packages\zlib.1.2.8.7\build\native\zlib.targets" Condition="Exists('..\packages\zlib.1.2.8.7\build\native\zlib.targets')" />
-    <Import Project="..\packages\openssl.redist.1.0.2.1\build\native\openssl.redist.targets" Condition="Exists('..\packages\openssl.redist.1.0.2.1\build\native\openssl.redist.targets')" />
-    <Import Project="..\packages\openssl.1.0.2.1\build\native\openssl.targets" Condition="Exists('..\packages\openssl.1.0.2.1\build\native\openssl.targets')" />
+    <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" />
+    <Import Project="..\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" />
+    <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\native\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\native\grpc.dependencies.openssl.redist.targets')" />
+    <Import Project="..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\zlib.redist.1.2.8.7\build\native\zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\zlib.redist.1.2.8.7\build\native\zlib.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\zlib.1.2.8.7\build\native\zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\zlib.1.2.8.7\build\native\zlib.targets'))" />
-    <Error Condition="!Exists('..\packages\openssl.redist.1.0.2.1\build\native\openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl.redist.1.0.2.1\build\native\openssl.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\openssl.1.0.2.1\build\native\openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl.1.0.2.1\build\native\openssl.props'))" />
-    <Error Condition="!Exists('..\packages\openssl.1.0.2.1\build\native\openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl.1.0.2.1\build\native\openssl.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\native\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\native\grpc.dependencies.openssl.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.targets'))" />
   </Target>
 </Project>
 
