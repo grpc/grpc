@@ -647,21 +647,23 @@ void Init_grpc_error_codes() {
 
 void Init_grpc_op_codes() {
   /* Constants representing operation type codes in grpc.h */
-  VALUE rb_CallOps = rb_define_module_under(grpc_rb_mGrpcCore, "CallOps");
-  rb_define_const(rb_CallOps, "SEND_INITIAL_METADATA",
+  VALUE grpc_rb_mCallOps =
+      rb_define_module_under(grpc_rb_mGrpcCore, "CallOps");
+  rb_define_const(grpc_rb_mCallOps, "SEND_INITIAL_METADATA",
                   UINT2NUM(GRPC_OP_SEND_INITIAL_METADATA));
-  rb_define_const(rb_CallOps, "SEND_MESSAGE", UINT2NUM(GRPC_OP_SEND_MESSAGE));
-  rb_define_const(rb_CallOps, "SEND_CLOSE_FROM_CLIENT",
+  rb_define_const(grpc_rb_mCallOps, "SEND_MESSAGE",
+                  UINT2NUM(GRPC_OP_SEND_MESSAGE));
+  rb_define_const(grpc_rb_mCallOps, "SEND_CLOSE_FROM_CLIENT",
                   UINT2NUM(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
-  rb_define_const(rb_CallOps, "SEND_STATUS_FROM_SERVER",
+  rb_define_const(grpc_rb_mCallOps, "SEND_STATUS_FROM_SERVER",
                   UINT2NUM(GRPC_OP_SEND_STATUS_FROM_SERVER));
-  rb_define_const(rb_CallOps, "RECV_INITIAL_METADATA",
+  rb_define_const(grpc_rb_mCallOps, "RECV_INITIAL_METADATA",
                   UINT2NUM(GRPC_OP_RECV_INITIAL_METADATA));
-  rb_define_const(rb_CallOps, "RECV_MESSAGE",
+  rb_define_const(grpc_rb_mCallOps, "RECV_MESSAGE",
                   UINT2NUM(GRPC_OP_RECV_MESSAGE));
-  rb_define_const(rb_CallOps, "RECV_STATUS_ON_CLIENT",
+  rb_define_const(grpc_rb_mCallOps, "RECV_STATUS_ON_CLIENT",
                   UINT2NUM(GRPC_OP_RECV_STATUS_ON_CLIENT));
-  rb_define_const(rb_CallOps, "RECV_CLOSE_ON_SERVER",
+  rb_define_const(grpc_rb_mCallOps, "RECV_CLOSE_ON_SERVER",
                   UINT2NUM(GRPC_OP_RECV_CLOSE_ON_SERVER));
 }
 
