@@ -106,6 +106,25 @@ static void grpc_rb_call_destroy(void *p) {
   }
 }
 
+static size_t md_ary_datasize(const void *p) {
+    const grpc_metadata_array* const ary = (grpc_metadata_array*)p;
+    size_t i, datasize = sizeof(grpc_metadata_array);
+    for (i = 0; i < ary->count; ++i) {
+        const grpc_metadata* const md = &ary->metadata[i];
+        datasize += strlen(md->key);
+        datasize += md->value_length;
+    }
+    datasize += ary->capacity * sizeof(grpc_metadata);
+    return datasize;
+}
+
+static const rb_data_type_t grpc_rb_md_ary_data_type = {
+    "grpc_metadata_array",
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, md_ary_datasize},
+    NULL, NULL,
+    0
+};
+
 /* Describes grpc_call struct for RTypedData */
 static const rb_data_type_t grpc_call_data_type = {
     "grpc_call",
@@ -206,7 +225,8 @@ int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   int i;
 
   /* Construct a metadata object from key and value and add it */
-  Data_Get_Struct(md_ary_obj, grpc_metadata_array, md_ary);
+  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
+                       &grpc_rb_md_ary_data_type, md_ary);
 
   if (TYPE(val) == T_ARRAY) {
     /* If the value is an array, add capacity for each value in the array */
@@ -243,7 +263,8 @@ int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
 
   /* Construct a metadata object from key and value and add it */
-  Data_Get_Struct(md_ary_obj, grpc_metadata_array, md_ary);
+  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
+                       &grpc_rb_md_ary_data_type, md_ary);
 
   if (TYPE(val) == T_ARRAY) {
     /* If the value is an array, add capacity for each value in the array */
@@ -270,9 +291,8 @@ void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
 
   /* Initialize the array, compute it's capacity, then fill it. */
   grpc_metadata_array_init(md_ary);
-  md_ary_obj = Data_Wrap_Struct(grpc_rb_cMdAry,
-                                GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE,
-                                md_ary);
+  md_ary_obj = TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type,
+                                     md_ary);
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_capacity_hash_cb, md_ary_obj);
   md_ary->metadata = gpr_malloc(md_ary->capacity * sizeof(grpc_metadata));
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_fill_hash_cb, md_ary_obj);
