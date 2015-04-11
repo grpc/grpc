@@ -100,6 +100,12 @@
     <ClInclude Include="..\..\include\grpc++\impl\rpc_method.h" />
     <ClInclude Include="..\..\include\grpc++\impl\rpc_service_method.h" />
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\sync.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\sync_cxx11.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\sync_no_cxx11.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\thd.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\thd_cxx11.h" />
+    <ClInclude Include="..\..\include\grpc++\impl\thd_no_cxx11.h" />
     <ClInclude Include="..\..\include\grpc++\server.h" />
     <ClInclude Include="..\..\include\grpc++\server_builder.h" />
     <ClInclude Include="..\..\include\grpc++\server_context.h" />
@@ -111,6 +117,8 @@
     <ClInclude Include="..\..\include\grpc++\thread_pool_interface.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\cpp\client\secure_credentials.h" />
+    <ClInclude Include="..\..\src\cpp\server\secure_server_credentials.h" />
     <ClInclude Include="..\..\src\cpp\client\channel.h" />
     <ClInclude Include="..\..\src\cpp\proto\proto_utils.h" />
     <ClInclude Include="..\..\src\cpp\server\thread_pool.h" />

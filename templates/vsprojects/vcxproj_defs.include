@@ -1,15 +1,13 @@
-﻿<%namespace file="packages.include" import="gen_packages_config"/>\
+﻿<%namespace file="packages.include" import="gen_package_props,gen_package_targets,gen_package_ensure"/>\
 <%def name="get_repo_root()">..\..</%def>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
-<%def name="gen_project(name, libs, targets, configuration_type = 'StaticLibrary', project_guid = None, additional_props = [], openssl_pkg_version = None, zlib_pkg_version = None)">\
+<%def name="gen_project(name, libs, targets, configuration_type = 'StaticLibrary', project_guid = None, additional_props = [], packages = [])">\
 % for project in vsprojects:
   % if project.name == name:
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  % if openssl_pkg_version:
-  <Import Project="..\packages\openssl.${openssl_pkg_version}\build\native\openssl.props" Condition="Exists('..\packages\openssl.${openssl_pkg_version}\build\native\openssl.props')" />
-  % endif
+${gen_package_props(packages)}\
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -129,38 +127,16 @@
     % endfor
   </ItemGroup>
   % endif
-  %if zlib_pkg_version or openssl_pkg_version:
+  %if packages:
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   %endif
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    %if zlib_pkg_version:
-    <Import Project="..\packages\zlib.redist.${zlib_pkg_version}\build\native\zlib.redist.targets" Condition="Exists('..\packages\zlib.redist.${zlib_pkg_version}\build\native\zlib.redist.targets')" />
-    <Import Project="..\packages\zlib.${zlib_pkg_version}\build\native\zlib.targets" Condition="Exists('..\packages\zlib.${zlib_pkg_version}\build\native\zlib.targets')" />
-    %endif
-    % if openssl_pkg_version:
-    <Import Project="..\packages\openssl.redist.${openssl_pkg_version}\build\native\openssl.redist.targets" Condition="Exists('..\packages\openssl.redist.${openssl_pkg_version}\build\native\openssl.redist.targets')" />
-    <Import Project="..\packages\openssl.${openssl_pkg_version}\build\native\openssl.targets" Condition="Exists('..\packages\openssl.${openssl_pkg_version}\build\native\openssl.targets')" />
-    % endif
+${gen_package_targets(packages)}\
   </ImportGroup>
-  %if zlib_pkg_version or openssl_pkg_version:
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    %if zlib_pkg_version:
-    <Error Condition="!Exists('..\packages\zlib.redist.${zlib_pkg_version}\build\native\zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\zlib.redist.${zlib_pkg_version}\build\native\zlib.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\zlib.${zlib_pkg_version}\build\native\zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\zlib.${zlib_pkg_version}\build\native\zlib.targets'))" />
-    %endif
-    % if openssl_pkg_version:
-    <Error Condition="!Exists('..\packages\openssl.redist.${openssl_pkg_version}\build\native\openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl.redist.${openssl_pkg_version}\build\native\openssl.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\openssl.${openssl_pkg_version}\build\native\openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl.${openssl_pkg_version}\build\native\openssl.props'))" />
-    <Error Condition="!Exists('..\packages\openssl.${openssl_pkg_version}\build\native\openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl.${openssl_pkg_version}\build\native\openssl.targets'))" />
-    %endif
-  </Target>
-  %endif
+${gen_package_ensure(packages)}\
 </Project>
   % endif
 % endfor

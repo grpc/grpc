@@ -132,6 +132,24 @@
     <ClInclude Include="..\..\include\grpc++\impl\service_type.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\sync.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\sync_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\sync_no_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\thd.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\thd_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\impl\thd_no_cxx11.h">
+      <Filter>include\grpc++\impl</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\server.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -161,6 +179,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\cpp\client\secure_credentials.h">
+      <Filter>src\cpp\client</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\cpp\server\secure_server_credentials.h">
+      <Filter>src\cpp\server</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\cpp\client\channel.h">
       <Filter>src\cpp\client</Filter>
     </ClInclude>
