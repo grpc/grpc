@@ -1,5 +1,2 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<packages>
-  <package id="zlib" version="1.2.8.7" targetFramework="Native" />
-  <package id="zlib.redist" version="1.2.8.7" targetFramework="Native" />
-</packages>
+﻿<%namespace file="../packages.include" import="gen_packages_config"/>\
+${gen_packages_config(['zlib'])}

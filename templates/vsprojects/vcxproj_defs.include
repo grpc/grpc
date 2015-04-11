@@ -1,3 +1,4 @@
+﻿<%namespace file="packages.include" import="gen_packages_config"/>\
 <%def name="get_repo_root()">..\..</%def>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
