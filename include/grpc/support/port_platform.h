@@ -163,6 +163,7 @@
 #endif
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_MULTIPOLL_WITH_POLL 1
 #define GPR_POSIX_WAKEUP_FD 1
