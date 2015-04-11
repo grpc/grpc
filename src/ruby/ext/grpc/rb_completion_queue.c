@@ -166,25 +166,27 @@ grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
   return next_call.event;
 }
 
-/* grpc_cCompletionQueue is the ruby class that proxies grpc_completion_queue. */
-VALUE grpc_cCompletionQueue = Qnil;
+/* grpc_rb_cCompletionQueue is the ruby class that proxies
+ * grpc_completion_queue. */
+VALUE grpc_rb_cCompletionQueue = Qnil;
 
 void Init_grpc_completion_queue() {
-  grpc_cCompletionQueue =
-      rb_define_class_under(grpc_mGrpcCore, "CompletionQueue", rb_cObject);
+  grpc_rb_cCompletionQueue =
+      rb_define_class_under(grpc_rb_mGrpcCore, "CompletionQueue", rb_cObject);
 
   /* constructor: uses an alloc func without an initializer. Using a simple
      alloc func works here as the grpc header does not specify any args for
      this func, so no separate initialization step is necessary. */
-  rb_define_alloc_func(grpc_cCompletionQueue, grpc_rb_completion_queue_alloc);
+  rb_define_alloc_func(grpc_rb_cCompletionQueue,
+                       grpc_rb_completion_queue_alloc);
 
   /* Add the next method that waits for the next event. */
-  rb_define_method(grpc_cCompletionQueue, "next", grpc_rb_completion_queue_next,
-                   1);
+  rb_define_method(grpc_rb_cCompletionQueue, "next",
+                   grpc_rb_completion_queue_next, 1);
 
   /* Add the pluck method that waits for the next event of given tag */
-  rb_define_method(grpc_cCompletionQueue, "pluck", grpc_rb_completion_queue_pluck,
-                   2);
+  rb_define_method(grpc_rb_cCompletionQueue, "pluck",
+                   grpc_rb_completion_queue_pluck, 2);
 }
 
 /* Gets the wrapped completion queue from the ruby wrapper */

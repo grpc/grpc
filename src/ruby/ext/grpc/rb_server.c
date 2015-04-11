@@ -43,8 +43,8 @@
 #include "rb_server_credentials.h"
 #include "rb_grpc.h"
 
-/* grpc_cServer is the ruby class that proxies grpc_server. */
-VALUE grpc_cServer = Qnil;
+/* grpc_rb_cServer is the ruby class that proxies grpc_server. */
+VALUE grpc_rb_cServer = Qnil;
 
 /* id_at is the constructor method of the ruby standard Time class. */
 static ID id_at;
@@ -143,7 +143,7 @@ static VALUE grpc_rb_server_init_copy(VALUE copy, VALUE orig) {
   /* Raise an error if orig is not a server object or a subclass. */
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_server_free) {
-    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_cServer));
+    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_rb_cServer));
   }
 
   Data_Get_Struct(orig, grpc_rb_server, orig_srv);
@@ -208,7 +208,8 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
         ROBJECT(tag_new));
     if (err != GRPC_CALL_OK) {
       grpc_request_call_stack_cleanup(&st);
-      rb_raise(grpc_eCallError, "grpc_server_request_call failed: %s (code=%d)",
+      rb_raise(grpc_rb_eCallError,
+              "grpc_server_request_call failed: %s (code=%d)",
                grpc_call_error_detail_of(err), err);
       return Qnil;
     }
@@ -220,14 +221,14 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
     if (ev->data.op_complete != GRPC_OP_OK) {
       grpc_request_call_stack_cleanup(&st);
       grpc_event_finish(ev);
-      rb_raise(grpc_eCallError, "request_call completion failed: (code=%d)",
+      rb_raise(grpc_rb_eCallError, "request_call completion failed: (code=%d)",
                ev->data.op_complete);
       return Qnil;
     }
 
     /* build the NewServerRpc struct result */
     result = rb_struct_new(
-        grpc_sNewServerRpc,
+        grpc_rb_sNewServerRpc,
         rb_str_new2(st.details.method),
         rb_str_new2(st.details.host),
         rb_funcall(rb_cTime, id_at, 2, INT2NUM(st.details.deadline.tv_sec),
@@ -313,21 +314,25 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
 }
 
 void Init_grpc_server() {
-  grpc_cServer = rb_define_class_under(grpc_mGrpcCore, "Server", rb_cObject);
+  grpc_rb_cServer =
+      rb_define_class_under(grpc_rb_mGrpcCore, "Server", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(grpc_cServer, grpc_rb_server_alloc);
+  rb_define_alloc_func(grpc_rb_cServer, grpc_rb_server_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(grpc_cServer, "initialize", grpc_rb_server_init, 2);
-  rb_define_method(grpc_cServer, "initialize_copy", grpc_rb_server_init_copy, 1);
+  rb_define_method(grpc_rb_cServer, "initialize", grpc_rb_server_init, 2);
+  rb_define_method(grpc_rb_cServer, "initialize_copy",
+                   grpc_rb_server_init_copy, 1);
 
   /* Add the server methods. */
-  rb_define_method(grpc_cServer, "request_call", grpc_rb_server_request_call, 3);
-  rb_define_method(grpc_cServer, "start", grpc_rb_server_start, 0);
-  rb_define_method(grpc_cServer, "destroy", grpc_rb_server_destroy, 0);
-  rb_define_alias(grpc_cServer, "close", "destroy");
-  rb_define_method(grpc_cServer, "add_http2_port", grpc_rb_server_add_http2_port,
+  rb_define_method(grpc_rb_cServer, "request_call",
+                   grpc_rb_server_request_call, 3);
+  rb_define_method(grpc_rb_cServer, "start", grpc_rb_server_start, 0);
+  rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, 0);
+  rb_define_alias(grpc_rb_cServer, "close", "destroy");
+  rb_define_method(grpc_rb_cServer, "add_http2_port",
+                   grpc_rb_server_add_http2_port,
                    -1);
   id_at = rb_intern("at");
 }

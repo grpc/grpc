@@ -60,7 +60,7 @@ static ID id_cqueue;
 
 
 /* Used during the conversion of a hash to channel args during channel setup */
-static VALUE grpc_cChannelArgs;
+static VALUE grpc_rb_cChannelArgs;
 
 /* grpc_rb_channel wraps a grpc_channel.  It provides a peer ruby object,
  * 'mark' to minimize copying when a channel is created from ruby. */
@@ -170,7 +170,7 @@ static VALUE grpc_rb_channel_init_copy(VALUE copy, VALUE orig) {
   /* Raise an error if orig is not a channel object or a subclass. */
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_channel_free) {
-    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_cChannel));
+    rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_rb_cChannel));
     return Qnil;
   }
 
@@ -240,36 +240,38 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
   return Qnil;
 }
 
-/* grpc_cChannel is the ruby class that proxies grpc_channel. */
-VALUE grpc_cChannel = Qnil;
+/* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
+VALUE grpc_rb_cChannel = Qnil;
 
 void Init_grpc_channel() {
-  grpc_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
-  grpc_cChannel = rb_define_class_under(grpc_mGrpcCore, "Channel", rb_cObject);
+  grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
+  grpc_rb_cChannel =
+      rb_define_class_under(grpc_rb_mGrpcCore, "Channel", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(grpc_cChannel, grpc_rb_channel_alloc);
+  rb_define_alloc_func(grpc_rb_cChannel, grpc_rb_channel_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(grpc_cChannel, "initialize", grpc_rb_channel_init, -1);
-  rb_define_method(grpc_cChannel, "initialize_copy", grpc_rb_channel_init_copy,
-                   1);
+  rb_define_method(grpc_rb_cChannel, "initialize", grpc_rb_channel_init, -1);
+  rb_define_method(grpc_rb_cChannel, "initialize_copy",
+                   grpc_rb_channel_init_copy, 1);
 
   /* Add ruby analogues of the Channel methods. */
-  rb_define_method(grpc_cChannel, "create_call", grpc_rb_channel_create_call, 4);
-  rb_define_method(grpc_cChannel, "destroy", grpc_rb_channel_destroy, 0);
-  rb_define_alias(grpc_cChannel, "close", "destroy");
+  rb_define_method(grpc_rb_cChannel, "create_call",
+                   grpc_rb_channel_create_call, 4);
+  rb_define_method(grpc_rb_cChannel, "destroy", grpc_rb_channel_destroy, 0);
+  rb_define_alias(grpc_rb_cChannel, "close", "destroy");
 
   id_channel = rb_intern("__channel");
   id_cqueue = rb_intern("__cqueue");
   id_target = rb_intern("__target");
-  rb_define_const(grpc_cChannel, "SSL_TARGET",
+  rb_define_const(grpc_rb_cChannel, "SSL_TARGET",
                   ID2SYM(rb_intern(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));
-  rb_define_const(grpc_cChannel, "ENABLE_CENSUS",
+  rb_define_const(grpc_rb_cChannel, "ENABLE_CENSUS",
                   ID2SYM(rb_intern(GRPC_ARG_ENABLE_CENSUS)));
-  rb_define_const(grpc_cChannel, "MAX_CONCURRENT_STREAMS",
+  rb_define_const(grpc_rb_cChannel, "MAX_CONCURRENT_STREAMS",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_CONCURRENT_STREAMS)));
-  rb_define_const(grpc_cChannel, "MAX_MESSAGE_LENGTH",
+  rb_define_const(grpc_rb_cChannel, "MAX_MESSAGE_LENGTH",
                   ID2SYM(rb_intern(GRPC_ARG_MAX_MESSAGE_LENGTH)));
 }
 

@@ -42,12 +42,13 @@
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 
-/* grpc_sBatchResult is struct class used to hold the results of a batch call */
-static VALUE grpc_sBatchResult;
+/* grpc_rb_sBatchResult is struct class used to hold the results of a batch
+ * call. */
+static VALUE grpc_rb_sBatchResult;
 
-/* grpc_cMdAry is the MetadataArray class whose instances proxy
+/* grpc_rb_cMdAry is the MetadataArray class whose instances proxy
  * grpc_metadata_array. */
-static VALUE grpc_cMdAry;
+static VALUE grpc_rb_cMdAry;
 
 /* id_cq is the name of the hidden ivar that preserves a reference to a
  * completion queue */
@@ -70,7 +71,7 @@ static ID id_metadata;
  * received by the call and subsequently saved on it. */
 static ID id_status;
 
-/* sym_* are the symbol for attributes of grpc_sBatchResult. */
+/* sym_* are the symbol for attributes of grpc_rb_sBatchResult. */
 static VALUE sym_send_message;
 static VALUE sym_send_metadata;
 static VALUE sym_send_close;
@@ -126,7 +127,7 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   Data_Get_Struct(self, grpc_call, call);
   err = grpc_call_cancel(call);
   if (err != GRPC_CALL_OK) {
-    rb_raise(grpc_eCallError, "cancel failed: %s (code=%d)",
+    rb_raise(grpc_rb_eCallError, "cancel failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
 
@@ -148,7 +149,7 @@ static VALUE grpc_rb_call_get_status(VALUE self) {
 
   Saves a status object on the call.  */
 static VALUE grpc_rb_call_set_status(VALUE self, VALUE status) {
-  if (!NIL_P(status) && rb_obj_class(status) != grpc_sStatus) {
+  if (!NIL_P(status) && rb_obj_class(status) != grpc_rb_sStatus) {
     rb_raise(rb_eTypeError, "bad status: got:<%s> want: <Struct::Status>",
              rb_obj_classname(status));
     return Qnil;
@@ -257,7 +258,8 @@ void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
 
   /* Initialize the array, compute it's capacity, then fill it. */
   grpc_metadata_array_init(md_ary);
-  md_ary_obj = Data_Wrap_Struct(grpc_cMdAry, GC_NOT_MARKED, GC_DONT_FREE, md_ary);
+  md_ary_obj =
+      Data_Wrap_Struct(grpc_rb_cMdAry, GC_NOT_MARKED, GC_DONT_FREE, md_ary);
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_capacity_hash_cb, md_ary_obj);
   md_ary->metadata = gpr_malloc(md_ary->capacity * sizeof(grpc_metadata));
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_fill_hash_cb, md_ary_obj);
@@ -470,8 +472,8 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
    after the results have run */
 static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
   size_t i = 0;
-  VALUE result = rb_struct_new(grpc_sBatchResult, Qnil, Qnil, Qnil, Qnil, Qnil,
-                               Qnil, Qnil, Qnil, NULL);
+  VALUE result = rb_struct_new(grpc_rb_sBatchResult, Qnil, Qnil, Qnil, Qnil,
+                               Qnil, Qnil, Qnil, Qnil, NULL);
   for (i = 0; i < st->op_num; i++) {
     switch(st->ops[i].op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
@@ -498,7 +500,7 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
         rb_struct_aset(
             result,
             sym_status,
-            rb_struct_new(grpc_sStatus,
+            rb_struct_new(grpc_rb_sStatus,
                           UINT2NUM(st->recv_status),
                           (st->recv_status_details == NULL
                            ? Qnil
@@ -556,19 +558,20 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   err = grpc_call_start_batch(call, st.ops, st.op_num, ROBJECT(tag));
   if (err != GRPC_CALL_OK) {
     grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_eCallError, "grpc_call_start_batch failed with %s (code=%d)",
+    rb_raise(grpc_rb_eCallError,
+             "grpc_call_start_batch failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
     return;
   }
   ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout);
   if (ev == NULL) {
     grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_eOutOfTime, "grpc_call_start_batch timed out");
+    rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
     return;
   }
   if (ev->data.op_complete != GRPC_OP_OK) {
     grpc_run_batch_stack_cleanup(&st);
-    rb_raise(grpc_eCallError, "start_batch completion failed, (code=%d)",
+    rb_raise(grpc_rb_eCallError, "start_batch completion failed, (code=%d)",
              ev->data.op_complete);
     return;
   }
@@ -579,37 +582,38 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   return result;
 }
 
-/* grpc_cCall is the ruby class that proxies grpc_call. */
-VALUE grpc_cCall = Qnil;
+/* grpc_rb_cCall is the ruby class that proxies grpc_call. */
+VALUE grpc_rb_cCall = Qnil;
 
-/* grpc_eCallError is the ruby class of the exception thrown during call
+/* grpc_rb_eCallError is the ruby class of the exception thrown during call
    operations; */
-VALUE grpc_eCallError = Qnil;
+VALUE grpc_rb_eCallError = Qnil;
 
-/* grpc_eOutOfTime is the ruby class of the exception thrown to indicate
+/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
    a timeout. */
-VALUE grpc_eOutOfTime = Qnil;
+VALUE grpc_rb_eOutOfTime = Qnil;
 
 void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
-  VALUE grpc_mRpcErrors = rb_define_module_under(grpc_mGrpcCore, "RpcErrors");
-  rb_define_const(grpc_mRpcErrors, "OK", UINT2NUM(GRPC_CALL_OK));
-  rb_define_const(grpc_mRpcErrors, "ERROR", UINT2NUM(GRPC_CALL_ERROR));
-  rb_define_const(grpc_mRpcErrors, "NOT_ON_SERVER",
+  VALUE grpc_rb_mRpcErrors =
+      rb_define_module_under(grpc_rb_mGrpcCore, "RpcErrors");
+  rb_define_const(grpc_rb_mRpcErrors, "OK", UINT2NUM(GRPC_CALL_OK));
+  rb_define_const(grpc_rb_mRpcErrors, "ERROR", UINT2NUM(GRPC_CALL_ERROR));
+  rb_define_const(grpc_rb_mRpcErrors, "NOT_ON_SERVER",
                   UINT2NUM(GRPC_CALL_ERROR_NOT_ON_SERVER));
-  rb_define_const(grpc_mRpcErrors, "NOT_ON_CLIENT",
+  rb_define_const(grpc_rb_mRpcErrors, "NOT_ON_CLIENT",
                   UINT2NUM(GRPC_CALL_ERROR_NOT_ON_CLIENT));
-  rb_define_const(grpc_mRpcErrors, "ALREADY_ACCEPTED",
+  rb_define_const(grpc_rb_mRpcErrors, "ALREADY_ACCEPTED",
                   UINT2NUM(GRPC_CALL_ERROR_ALREADY_ACCEPTED));
-  rb_define_const(grpc_mRpcErrors, "ALREADY_INVOKED",
+  rb_define_const(grpc_rb_mRpcErrors, "ALREADY_INVOKED",
                   UINT2NUM(GRPC_CALL_ERROR_ALREADY_INVOKED));
-  rb_define_const(grpc_mRpcErrors, "NOT_INVOKED",
+  rb_define_const(grpc_rb_mRpcErrors, "NOT_INVOKED",
                   UINT2NUM(GRPC_CALL_ERROR_NOT_INVOKED));
-  rb_define_const(grpc_mRpcErrors, "ALREADY_FINISHED",
+  rb_define_const(grpc_rb_mRpcErrors, "ALREADY_FINISHED",
                   UINT2NUM(GRPC_CALL_ERROR_ALREADY_FINISHED));
-  rb_define_const(grpc_mRpcErrors, "TOO_MANY_OPERATIONS",
+  rb_define_const(grpc_rb_mRpcErrors, "TOO_MANY_OPERATIONS",
                   UINT2NUM(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS));
-  rb_define_const(grpc_mRpcErrors, "INVALID_FLAGS",
+  rb_define_const(grpc_rb_mRpcErrors, "INVALID_FLAGS",
                   UINT2NUM(GRPC_CALL_ERROR_INVALID_FLAGS));
 
   /* Add the detail strings to a Hash */
@@ -637,13 +641,13 @@ void Init_grpc_error_codes() {
                rb_str_new2("outstanding read or write present"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_INVALID_FLAGS),
                rb_str_new2("a bad flag was given"));
-  rb_define_const(grpc_mRpcErrors, "ErrorMessages", rb_error_code_details);
+  rb_define_const(grpc_rb_mRpcErrors, "ErrorMessages", rb_error_code_details);
   rb_obj_freeze(rb_error_code_details);
 }
 
 void Init_grpc_op_codes() {
   /* Constants representing operation type codes in grpc.h */
-  VALUE rb_CallOps = rb_define_module_under(grpc_mGrpcCore, "CallOps");
+  VALUE rb_CallOps = rb_define_module_under(grpc_rb_mGrpcCore, "CallOps");
   rb_define_const(rb_CallOps, "SEND_INITIAL_METADATA",
                   UINT2NUM(GRPC_OP_SEND_INITIAL_METADATA));
   rb_define_const(rb_CallOps, "SEND_MESSAGE", UINT2NUM(GRPC_OP_SEND_MESSAGE));
@@ -663,26 +667,27 @@ void Init_grpc_op_codes() {
 
 void Init_grpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
-  grpc_eCallError =
-      rb_define_class_under(grpc_mGrpcCore, "CallError", rb_eException);
-  grpc_eOutOfTime =
-      rb_define_class_under(grpc_mGrpcCore, "OutOfTime", rb_eException);
-  grpc_cCall = rb_define_class_under(grpc_mGrpcCore, "Call", rb_cObject);
-  grpc_cMdAry = rb_define_class_under(grpc_mGrpcCore, "MetadataArray",
-                                      rb_cObject);
+  grpc_rb_eCallError =
+      rb_define_class_under(grpc_rb_mGrpcCore, "CallError", rb_eException);
+  grpc_rb_eOutOfTime =
+      rb_define_class_under(grpc_rb_mGrpcCore, "OutOfTime", rb_eException);
+  grpc_rb_cCall = rb_define_class_under(grpc_rb_mGrpcCore, "Call", rb_cObject);
+  grpc_rb_cMdAry = rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray",
+                                         rb_cObject);
 
   /* Prevent allocation or inialization of the Call class */
-  rb_define_alloc_func(grpc_cCall, grpc_rb_cannot_alloc);
-  rb_define_method(grpc_cCall, "initialize", grpc_rb_cannot_init, 0);
-  rb_define_method(grpc_cCall, "initialize_copy", grpc_rb_cannot_init_copy, 1);
+  rb_define_alloc_func(grpc_rb_cCall, grpc_rb_cannot_alloc);
+  rb_define_method(grpc_rb_cCall, "initialize", grpc_rb_cannot_init, 0);
+  rb_define_method(grpc_rb_cCall, "initialize_copy",
+                   grpc_rb_cannot_init_copy, 1);
 
   /* Add ruby analogues of the Call methods. */
-  rb_define_method(grpc_cCall, "run_batch", grpc_rb_call_run_batch, 4);
-  rb_define_method(grpc_cCall, "cancel", grpc_rb_call_cancel, 0);
-  rb_define_method(grpc_cCall, "status", grpc_rb_call_get_status, 0);
-  rb_define_method(grpc_cCall, "status=", grpc_rb_call_set_status, 1);
-  rb_define_method(grpc_cCall, "metadata", grpc_rb_call_get_metadata, 0);
-  rb_define_method(grpc_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
+  rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 4);
+  rb_define_method(grpc_rb_cCall, "cancel", grpc_rb_call_cancel, 0);
+  rb_define_method(grpc_rb_cCall, "status", grpc_rb_call_get_status, 0);
+  rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
+  rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);
+  rb_define_method(grpc_rb_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
 
   /* Ids used to support call attributes */
   id_metadata = rb_intern("metadata");
@@ -703,7 +708,7 @@ void Init_grpc_call() {
   sym_cancelled = ID2SYM(rb_intern("cancelled"));
 
   /* The Struct used to return the run_batch result. */
-  grpc_sBatchResult = rb_struct_define(
+  grpc_rb_sBatchResult = rb_struct_define(
       "BatchResult",
       "send_message",
       "send_metadata",
@@ -718,7 +723,7 @@ void Init_grpc_call() {
   /* The hash for reference counting calls, to ensure they can't be destroyed
    * more than once */
   hash_all_calls = rb_hash_new();
-  rb_define_const(grpc_cCall, "INTERNAL_ALL_CALLs", hash_all_calls);
+  rb_define_const(grpc_rb_cCall, "INTERNAL_ALL_CALLs", hash_all_calls);
 
   Init_grpc_error_codes();
   Init_grpc_op_codes();
@@ -744,5 +749,6 @@ VALUE grpc_rb_wrap_call(grpc_call *c) {
     rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c),
                  UINT2NUM(NUM2UINT(obj) + 1));
   }
-  return Data_Wrap_Struct(grpc_cCall, GC_NOT_MARKED, grpc_rb_call_destroy, c);
+  return Data_Wrap_Struct(grpc_rb_cCall, GC_NOT_MARKED,
+                          grpc_rb_call_destroy, c);
 }

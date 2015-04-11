@@ -109,7 +109,7 @@ typedef struct channel_convert_params {
 
 static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
   ID id_size = rb_intern("size");
-  VALUE grpc_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
+  VALUE grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
   channel_convert_params* params = (channel_convert_params*)as_value;
   size_t num_args = 0;
 
@@ -126,7 +126,7 @@ static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
     MEMZERO(params->dst->args, grpc_arg, num_args);
     rb_hash_foreach(params->src_hash,
                     grpc_rb_channel_create_in_process_add_args_hash_cb,
-                    Data_Wrap_Struct(grpc_cChannelArgs, GC_NOT_MARKED,
+                    Data_Wrap_Struct(grpc_rb_cChannelArgs, GC_NOT_MARKED,
                                      GC_DONT_FREE, params->dst));
     /* reset num_args as grpc_rb_channel_create_in_process_add_args_hash_cb
      * decrements it during has processing */
