@@ -32,8 +32,12 @@
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%
   allowed_dependencies = set(['gpr', 'grpc', 'gpr_test_util', 'grpc_test_util'])
-  buildable_targets = [ target for target in targets if set(target.deps).issubset(allowed_dependencies) and all([src.endswith('.c') for src in target.src])]
-  test_targets = [ target for target in buildable_targets if target.name.endswith('_test') ]
+  buildable_targets = [ target for target in targets
+                        if set(target.deps).issubset(allowed_dependencies) and
+		           all([src.endswith('.c') for src in target.src]) and
+			   'windows' in target.platforms ]
+  c_test_targets = [ target for target in buildable_targets if target.build == 'test' and not target.language == 'c++' ]
+  cxx_test_targets = [ target for target in buildable_targets if target.build == 'test' and target.language == 'c++' ]
 %>\
 # NMake file to build secondary gRPC targets on Windows.
 # Use grpc.sln to solution to build the gRPC libraries.
@@ -62,29 +66,24 @@ grpc_test_util:
 $(OUT_DIR):
 	mkdir $(OUT_DIR)
 
-buildtests: \
-% for target in test_targets:
+buildtests: buildtests_c buildtests_cxx
+
+buildtests_c: \
+% for target in c_test_targets:
 ${target.name}.exe \
 % endfor
 
 	echo All tests built.
 
-test: \
-% for target in test_targets:
-${target.name} \
+buildtests_cxx: \
+% for target in cxx_test_targets:
+${target.name}.exe \
 % endfor
 
-	echo All tests ran.
-
-test_gpr: \
-% for target in [ tgt for tgt in test_targets if tgt.name.startswith('gpr_')]:
-${target.name} \
-% endfor
-
-	echo All tests ran.
+	echo All tests built.
 
 % for target in buildable_targets:
-${target.name}.exe: grpc_test_util
+${target.name}.exe: grpc_test_util $(OUT_DIR)
 	echo Building ${target.name}
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ \
 %for source in target.src:

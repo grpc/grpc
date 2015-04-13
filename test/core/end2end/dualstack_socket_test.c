@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
     do_ipv6 = 0;
   }
 
-    /* For coverage, test with and without dualstack sockets. */
+  /* For coverage, test with and without dualstack sockets. */
   for (grpc_forbid_dualstack_sockets_for_testing = 0;
        grpc_forbid_dualstack_sockets_for_testing <= 1;
        grpc_forbid_dualstack_sockets_for_testing++) {

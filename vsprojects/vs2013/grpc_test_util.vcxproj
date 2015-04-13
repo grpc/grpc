@@ -98,6 +98,8 @@
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\port_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\test\core\util\port_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\test\core\util\slice_splitter.c">
     </ClCompile>
   </ItemGroup>
