@@ -206,10 +206,9 @@ grpc_channel *grpc_secure_channel_create_with_factories(
     const grpc_secure_channel_factory *factories, size_t num_factories,
     grpc_credentials *creds, const char *target, const grpc_channel_args *args);
 
-/* Secure server creation. */
+/* Secure server context creation. */
 
-grpc_server *grpc_secure_server_create_internal(grpc_completion_queue *cq,
-                                                const grpc_channel_args *args,
-                                                grpc_security_context *ctx);
+grpc_security_status grpc_server_security_context_create(
+    grpc_server_credentials *creds, grpc_security_context **ctx);
 
 #endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */
