@@ -174,7 +174,6 @@ void grpc_tcp_server_destroy(
   while (s->active_ports) {
     gpr_cv_wait(&s->cv, &s->mu, gpr_inf_future);
   }
-  gpr_mu_unlock(&s->mu);
 
   /* delete ALL the things */
   if (s->nports) {
@@ -185,7 +184,9 @@ void grpc_tcp_server_destroy(
       }
       grpc_fd_orphan(sp->emfd, destroyed_port, s);
     }
+    gpr_mu_unlock(&s->mu);
   } else {
+    gpr_mu_unlock(&s->mu);
     finish_shutdown(s);
   }
 }
