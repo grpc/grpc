@@ -360,7 +360,9 @@ function handleUnary(call, handler, metadata) {
     }
     handler.func(emitter, function sendUnaryData(err, value, trailer) {
       if (err) {
-        err.metadata = trailer;
+        if (trailer) {
+          err.metadata = trailer;
+        }
         handleError(call, err);
       } else {
         sendUnaryResponse(call, value, handler.serialize, trailer);
@@ -406,7 +408,9 @@ function handleClientStreaming(call, handler, metadata) {
   handler.func(stream, function(err, value, trailer) {
     stream.terminate();
     if (err) {
-      err.metadata = trailer;
+      if (trailer) {
+        err.metadata = trailer;
+      }
       handleError(call, err);
     } else {
       sendUnaryResponse(call, value, handler.serialize, trailer);
