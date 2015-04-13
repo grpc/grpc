@@ -68,6 +68,13 @@ describe('Math client', function() {
       done();
     });
   });
+  it('should handle an error from a unary request', function(done) {
+    var arg = {dividend: 7, divisor: 0};
+    math_client.div(arg, function handleDivResult(err, value) {
+      assert(err);
+      done();
+    });
+  });
   it('should handle a server streaming request', function(done) {
     var call = math_client.fib({limit: 7});
     var expected_results = [1, 1, 2, 3, 5, 8, 13];
@@ -112,6 +119,19 @@ describe('Math client', function() {
     call.end();
     call.on('status', function checkStatus(status) {
       assert.strictEqual(status.code, grpc.status.OK);
+      done();
+    });
+  });
+  it('should handle an error from a bidi request', function(done) {
+    var call = math_client.divMany();
+    call.on('data', function(value) {
+      assert.fail(value, undefined, 'Unexpected data response on failing call',
+                  '!=');
+    });
+    call.write({dividend: 7, divisor: 0});
+    call.end();
+    call.on('status', function checkStatus(status) {
+      assert.notEqual(status.code, grpc.status.OK);
       done();
     });
   });
