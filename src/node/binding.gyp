@@ -18,12 +18,29 @@
       ],
       'link_settings': {
         'libraries': [
-          '-lrt',
           '-lpthread',
           '-lgrpc',
           '-lgpr'
-        ],
+        ]
       },
+      "conditions": [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9',
+            'OTHER_CFLAGS': [
+              '-std=c++11',
+              '-stdlib=libc++'
+            ]
+          }
+        }],
+        ['OS != "mac"', {
+          'link_settings': {
+            'libraries': [
+              '-lrt'
+            ]
+          }
+        }]
+      ],
       "target_name": "grpc",
       "sources": [
         "ext/byte_buffer.cc",

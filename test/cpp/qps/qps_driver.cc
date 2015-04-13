@@ -35,10 +35,13 @@
 #include <grpc/support/log.h>
 
 #include "test/cpp/qps/driver.h"
-#include "test/cpp/qps/stats.h"
+#include "test/cpp/qps/report.h"
 
 DEFINE_int32(num_clients, 1, "Number of client binaries");
 DEFINE_int32(num_servers, 1, "Number of server binaries");
+
+DEFINE_int32(warmup_seconds, 5, "Warmup time (in seconds)");
+DEFINE_int32(benchmark_seconds, 30, "Benchmark time (in seconds)");
 
 // Common config
 DEFINE_bool(enable_ssl, false, "Use SSL");
@@ -62,7 +65,6 @@ using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
-using grpc::testing::sum;
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
@@ -98,40 +100,13 @@ int main(int argc, char** argv) {
   server_config.set_threads(FLAGS_server_threads);
   server_config.set_enable_ssl(FLAGS_enable_ssl);
 
-  auto result = RunScenario(client_config, FLAGS_num_clients, server_config,
-                            FLAGS_num_servers);
+  auto result = RunScenario(client_config, FLAGS_num_clients,
+                            server_config, FLAGS_num_servers,
+                            FLAGS_warmup_seconds, FLAGS_benchmark_seconds);
 
-  gpr_log(GPR_INFO, "QPS: %.1f",
-          result.latencies.Count() /
-              average(result.client_resources,
-                      [](ResourceUsage u) { return u.wall_time; }));
-
-  gpr_log(GPR_INFO, "Latencies (50/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f us",
-          result.latencies.Percentile(50) / 1000,
-          result.latencies.Percentile(95) / 1000,
-          result.latencies.Percentile(99) / 1000,
-          result.latencies.Percentile(99.9) / 1000);
-
-  gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          100.0 * sum(result.server_resources,
-                      [](ResourceUsage u) { return u.system_time; }) /
-              sum(result.server_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          100.0 * sum(result.server_resources,
-                      [](ResourceUsage u) { return u.user_time; }) /
-              sum(result.server_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          100.0 * sum(result.client_resources,
-                      [](ResourceUsage u) { return u.system_time; }) /
-              sum(result.client_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
-  gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          100.0 * sum(result.client_resources,
-                      [](ResourceUsage u) { return u.user_time; }) /
-              sum(result.client_resources,
-                  [](ResourceUsage u) { return u.wall_time; }));
+  ReportQPSPerCore(result, server_config);
+  ReportLatency(result);
+  ReportTimes(result);
 
   grpc_shutdown();
   return 0;

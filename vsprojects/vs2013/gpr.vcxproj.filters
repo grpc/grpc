@@ -88,6 +88,9 @@
     <ClCompile Include="..\..\src\core\support\sync_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\support\thd.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\support\thd_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -166,6 +169,18 @@
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\time.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\tls.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\tls_gcc.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\tls_msvc.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\support\tls_pthread.h">
       <Filter>include\grpc\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc\support\useful.h">

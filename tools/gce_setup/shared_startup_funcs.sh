@@ -434,6 +434,12 @@ grpc_dockerfile_install() {
     grpc_docker_sync_service_account $dockerfile_dir/service_account || return 1;
   }
 
+  # For deb builds, copy the distpackages folder into the docker directory so
+  # that it can be installed using ADD distpackages distpackages.
+  [[ $image_label == "grpc/build_deb" ]] && {
+    cp -vR ~/distpackages $dockerfile_dir
+  }
+
   # TODO(temiola): maybe make cache/no-cache a func option?
   sudo docker build $cache_opt -t $image_label $dockerfile_dir || {
     echo "$FUNCNAME:: build of $image_label <- $dockerfile_dir"

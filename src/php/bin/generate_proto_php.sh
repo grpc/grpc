@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,18 +28,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
 
-# GRPC contains the General RPC module.
-module GRPC
-  module Core
-    # Event is a class defined in the c extension
-    #
-    # Here, we add an inspect method.
-    class Event
-      def inspect
-        "<#{self.class}: type:#{type}, tag:#{tag} result:#{result}>"
-      end
-    end
-  end
-end
+set +e
+cd $(dirname $0)
+
+gen_code='../tests/generated_code'
+interop='../tests/interop'
+
+protoc-gen-php -i $gen_code -o $gen_code $gen_code/math.proto
+
+protoc-gen-php -i $interop -o $interop $interop/test.proto

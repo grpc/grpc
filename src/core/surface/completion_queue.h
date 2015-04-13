@@ -116,4 +116,4 @@ grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
 void grpc_cq_hack_spin_pollset(grpc_completion_queue *cc);
 
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */
+#endif /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */

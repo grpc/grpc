@@ -41,7 +41,6 @@
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include "test/core/end2end/data/ssl_test_data.h"
 #include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -49,9 +48,10 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/cpp/interop/test.pb.h"
-#include "test/cpp/interop/empty.pb.h"
-#include "test/cpp/interop/messages.pb.h"
+#include "test/cpp/interop/test.grpc.pb.h"
+#include "test/cpp/interop/empty.grpc.pb.h"
+#include "test/cpp/interop/messages.grpc.pb.h"
+#include "test/cpp/interop/server_helper.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
@@ -211,15 +211,8 @@ void RunServer() {
 
   ServerBuilder builder;
   builder.RegisterService(&service);
-  std::shared_ptr<ServerCredentials> creds = grpc::InsecureServerCredentials();
-  if (FLAGS_enable_ssl) {
-    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-							test_server1_cert};
-    SslServerCredentialsOptions ssl_opts;
-    ssl_opts.pem_root_certs = "";
-    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-    creds = grpc::SslServerCredentials(ssl_opts);
-  }
+  std::shared_ptr<ServerCredentials> creds =
+      grpc::testing::CreateInteropServerCredentials();
   builder.AddListeningPort(server_address.str(), creds);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());

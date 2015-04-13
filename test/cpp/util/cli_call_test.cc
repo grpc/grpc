@@ -33,7 +33,7 @@
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_call.h"
-#include "test/cpp/util/echo.pb.h"
+#include "test/cpp/util/echo.grpc.pb.h"
 #include "src/cpp/server/thread_pool.h"
 #include <grpc++/channel_arguments.h>
 #include <grpc++/channel_interface.h>

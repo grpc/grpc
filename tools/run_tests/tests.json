@@ -318,15 +318,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_useful_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "grpc_base64_test", 
     "platforms": [
       "windows", 

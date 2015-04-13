@@ -31,23 +31,15 @@
  *
  */
 
-#ifndef GRPC_RB_EVENT_H_
-#define GRPC_RB_EVENT_H_
+#ifndef GRPCXX_IMPL_THD_CXX11_H
+#define GRPCXX_IMPL_THD_CXX11_H
 
-#include <ruby.h>
-#include <grpc/grpc.h>
+#include <thread>
 
-/* rb_cEvent is the Event class whose instances proxy grpc_event. */
-extern VALUE rb_cEvent;
+namespace grpc {
 
-/* rb_cEventError is the ruby class that acts the exception thrown during rpc
-   event processing. */
-extern VALUE rb_eEventError;
+using std::thread;
 
-/* Used to create new ruby event objects */
-VALUE grpc_rb_new_event(grpc_event *ev);
+}  // namespace grpc
 
-/* Initializes the Event and EventError classes. */
-void Init_grpc_event();
-
-#endif /* GRPC_RB_EVENT_H_ */
+#endif  // GRPCXX_IMPL_THD_CXX11_H

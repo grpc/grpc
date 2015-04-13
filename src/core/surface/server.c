@@ -592,9 +592,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "server",
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "server",
 };
 
 static void addcq(grpc_server *server, grpc_completion_queue *cq) {
@@ -737,7 +736,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
   channel = grpc_channel_create_from_filters(filters, num_filters,
                                              s->channel_args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
-              grpc_channel_get_channel_stack(channel), 0)->channel_data;
+              grpc_channel_get_channel_stack(channel), 0)
+              ->channel_data;
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
@@ -758,7 +758,7 @@ grpc_transport_setup_result grpc_server_setup_transport(
       method = grpc_mdstr_from_string(mdctx, rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
-                               .server_registered_method != NULL;
+                           .server_registered_method != NULL;
            probes++)
         ;
       if (probes > max_probes) max_probes = probes;
@@ -927,7 +927,8 @@ void grpc_server_destroy(grpc_server *server) {
       gpr_mu_lock(&server->mu);
     }
 
-    gpr_cv_wait(&server->cv, &server->mu, gpr_time_add(gpr_now(), gpr_time_from_millis(100)));
+    gpr_cv_wait(&server->cv, &server->mu,
+                gpr_time_add(gpr_now(), gpr_time_from_millis(100)));
   }
 
   while (server->listeners) {

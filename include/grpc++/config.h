@@ -34,11 +34,46 @@
 #ifndef GRPCXX_CONFIG_H
 #define GRPCXX_CONFIG_H
 
-#ifdef GRPC_OLD_CXX
+#if !defined(GRPC_NO_AUTODETECT_PLATFORM)
+
+#ifdef _MSC_VER
+// Visual Studio 2010 is 1600.
+#if _MSC_VER < 1600
+#error "gRPC is only supported with Visual Studio starting at 2010"
+// Visual Studio 2013 is 1800.
+#elif _MSC_VER < 1800
+#define GRPC_CXX0X_NO_FINAL 1
+#define GRPC_CXX0X_NO_OVERRIDE 1
+#define GRPC_CXX0X_NO_CHRONO 1
+#define GRPC_CXX0X_NO_THREAD 1
+#endif  
+#endif  // Visual Studio
+
+#ifndef __clang__
+#ifdef __GNUC__
+// nullptr was added in gcc 4.6
+#if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
+#define GRPC_CXX0X_NO_NULLPTR 1
+#endif
+// final and override were added in gcc 4.7
+#if (__GNUC__ * 100 + __GNUC_MINOR__ < 407)
+#define GRPC_CXX0X_NO_FINAL 1
+#define GRPC_CXX0X_NO_OVERRIDE 1
+#endif
+#endif
+#endif
+
+#endif
+
+#ifdef GRPC_CXX0X_NO_FINAL
 #define GRPC_FINAL
-#define GRPC_OVERRIDE
 #else
 #define GRPC_FINAL final
+#endif
+
+#ifdef GRPC_CXX0X_NO_OVERRIDE
+#define GRPC_OVERRIDE
+#else
 #define GRPC_OVERRIDE override
 #endif
 
@@ -65,15 +100,7 @@
   ::google::protobuf::io::ZeroCopyInputStream
 #endif
 
-#ifndef __clang__
-#ifdef __GNUC__
-#if (__GNUC__ * 100 + __GNUC_MINOR__ < 406)
-#define GRPC_NO_NULLPTR
-#endif
-#endif
-#endif
-
-#ifdef GRPC_NO_NULLPTR
+#ifdef GRPC_CXX0X_NO_NULLPTR
 #include <memory>
 const class {
 public:

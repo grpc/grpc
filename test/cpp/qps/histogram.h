@@ -35,7 +35,7 @@
 #define TEST_QPS_HISTOGRAM_H
 
 #include <grpc/support/histogram.h>
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -50,10 +50,10 @@ class Histogram {
 
   void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
   void Add(double value) { gpr_histogram_add(impl_, value); }
-  double Percentile(double pctile) {
+  double Percentile(double pctile) const {
     return gpr_histogram_percentile(impl_, pctile);
   }
-  double Count() { return gpr_histogram_count(impl_); }
+  double Count() const { return gpr_histogram_count(impl_); }
   void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
   void FillProto(HistogramData* p) {
     size_t n;

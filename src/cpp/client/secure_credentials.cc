@@ -31,38 +31,23 @@
  *
  */
 
-#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
 #include <grpc++/channel_arguments.h>
-#include <grpc++/config.h>
-#include <grpc++/credentials.h>
 #include "src/cpp/client/channel.h"
+#include "src/cpp/client/secure_credentials.h"
 
 namespace grpc {
 
-class SecureCredentials GRPC_FINAL : public Credentials {
- public:
-  explicit SecureCredentials(grpc_credentials* c_creds) : c_creds_(c_creds) {}
-  ~SecureCredentials() GRPC_OVERRIDE { grpc_credentials_release(c_creds_); }
-  grpc_credentials* GetRawCreds() { return c_creds_; }
-
-  std::shared_ptr<grpc::ChannelInterface> CreateChannel(
-      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE {
-    grpc_channel_args channel_args;
-    args.SetChannelArgs(&channel_args);
-    return std::shared_ptr<ChannelInterface>(new Channel(
-        args.GetSslTargetNameOverride().empty()
-            ? target
-            : args.GetSslTargetNameOverride(),
-        grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
-  }
-
-  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
-
- private:
-  grpc_credentials* const c_creds_;
-};
+std::shared_ptr<grpc::ChannelInterface> SecureCredentials::CreateChannel(
+    const string& target, const grpc::ChannelArguments& args) {
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
+  return std::shared_ptr<ChannelInterface>(new Channel(
+      args.GetSslTargetNameOverride().empty() ? target
+                                              : args.GetSslTargetNameOverride(),
+      grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args)));
+}
 
 namespace {
 std::unique_ptr<Credentials> WrapCredentials(grpc_credentials* creds) {
