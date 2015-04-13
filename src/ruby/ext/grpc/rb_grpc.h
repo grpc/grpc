@@ -50,6 +50,15 @@ extern VALUE rb_sNewServerRpc;
 /* rb_sStruct is the struct that holds status details. */
 extern VALUE rb_sStatus;
 
+/* sym_code is the symbol for the code attribute of rb_sStatus. */
+VALUE sym_code;
+
+/* sym_details is the symbol for the details attribute of rb_sStatus. */
+VALUE sym_details;
+
+/* sym_metadata is the symbol for the metadata attribute of rb_sStatus. */
+VALUE sym_metadata;
+
 /* GC_NOT_MARKED is used in calls to Data_Wrap_Struct to indicate that the
    wrapped struct does not need to participate in ruby gc. */
 extern const RUBY_DATA_FUNC GC_NOT_MARKED;

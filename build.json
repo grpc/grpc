@@ -305,6 +305,10 @@
         "include/grpc/support/sync_win32.h",
         "include/grpc/support/thd.h",
         "include/grpc/support/time.h",
+        "include/grpc/support/tls.h",
+        "include/grpc/support/tls_gcc.h",
+        "include/grpc/support/tls_msvc.h",
+        "include/grpc/support/tls_pthread.h",
         "include/grpc/support/useful.h"
       ],
       "headers": [
@@ -556,6 +560,7 @@
       ],
       "deps": [
         "grpc++_test_util",
+        "grpc_test_util",
         "grpc++",
         "grpc",
         "gpr"
@@ -1184,6 +1189,18 @@
       "language": "c",
       "src": [
         "test/core/support/time_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_tls_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/tls_test.c"
       ],
       "deps": [
         "gpr_test_util",

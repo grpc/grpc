@@ -104,6 +104,10 @@ cc_library(
     "include/grpc/support/sync_win32.h",
     "include/grpc/support/thd.h",
     "include/grpc/support/time.h",
+    "include/grpc/support/tls.h",
+    "include/grpc/support/tls_gcc.h",
+    "include/grpc/support/tls_msvc.h",
+    "include/grpc/support/tls_pthread.h",
     "include/grpc/support/useful.h",
   ],
   includes = [

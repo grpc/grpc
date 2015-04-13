@@ -49,9 +49,15 @@
 static ID id_channel;
 
 /* id_target is the name of the hidden ivar that preserves a reference to the
- * target string used to create the call, preserved so that is does not get
+ * target string used to create the call, preserved so that it does not get
  * GCed before the channel */
 static ID id_target;
+
+/* id_cqueue is the name of the hidden ivar that preserves a reference to the
+ * completion queue used to create the call, preserved so that it does not get
+ * GCed before the channel */
+static ID id_cqueue;
+
 
 /* Used during the conversion of a hash to channel args during channel setup */
 static VALUE rb_cChannelArgs;
@@ -142,6 +148,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   if (ch == NULL) {
     rb_raise(rb_eRuntimeError, "could not create an rpc channel to target:%s",
              target_chars);
+    return Qnil;
   }
   rb_ivar_set(self, id_target, target);
   wrapper->wrapped = ch;
@@ -164,6 +171,7 @@ static VALUE grpc_rb_channel_init_copy(VALUE copy, VALUE orig) {
   if (TYPE(orig) != T_DATA ||
       RDATA(orig)->dfree != (RUBY_DATA_FUNC)grpc_rb_channel_free) {
     rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(rb_cChannel));
+    return Qnil;
   }
 
   Data_Get_Struct(orig, grpc_rb_channel, orig_ch);
@@ -177,34 +185,42 @@ static VALUE grpc_rb_channel_init_copy(VALUE copy, VALUE orig) {
 
 /* Create a call given a grpc_channel, in order to call method. The request
    is not sent until grpc_call_invoke is called. */
-static VALUE grpc_rb_channel_create_call(VALUE self, VALUE method, VALUE host,
-                                         VALUE deadline) {
+static VALUE grpc_rb_channel_create_call(VALUE self, VALUE cqueue, VALUE method,
+                                         VALUE host, VALUE deadline) {
   VALUE res = Qnil;
   grpc_rb_channel *wrapper = NULL;
-  grpc_channel *ch = NULL;
   grpc_call *call = NULL;
+  grpc_channel *ch = NULL;
+  grpc_completion_queue *cq = NULL;
   char *method_chars = StringValueCStr(method);
   char *host_chars = StringValueCStr(host);
 
+  cq = grpc_rb_get_wrapped_completion_queue(cqueue);
   Data_Get_Struct(self, grpc_rb_channel, wrapper);
   ch = wrapper->wrapped;
   if (ch == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
+    return Qnil;
   }
 
   call =
-      grpc_channel_create_call_old(ch, method_chars, host_chars,
-                                   grpc_rb_time_timeval(deadline,
-                                                        /* absolute time */ 0));
+      grpc_channel_create_call(ch, cq, method_chars, host_chars,
+                               grpc_rb_time_timeval(deadline,
+                                                    /* absolute time */ 0));
   if (call == NULL) {
     rb_raise(rb_eRuntimeError, "cannot create call with method %s",
              method_chars);
+    return Qnil;
   }
   res = grpc_rb_wrap_call(call);
 
-  /* Make this channel an instance attribute of the call so that is is not GCed
+  /* Make this channel an instance attribute of the call so that it is not GCed
    * before the call. */
   rb_ivar_set(res, id_channel, self);
+
+  /* Make the completion queue an instance attribute of the call so that it is
+   * not GCed before the call. */
+  rb_ivar_set(res, id_cqueue, cqueue);
   return res;
 }
 
@@ -240,11 +256,12 @@ void Init_grpc_channel() {
                    1);
 
   /* Add ruby analogues of the Channel methods. */
-  rb_define_method(rb_cChannel, "create_call", grpc_rb_channel_create_call, 3);
+  rb_define_method(rb_cChannel, "create_call", grpc_rb_channel_create_call, 4);
   rb_define_method(rb_cChannel, "destroy", grpc_rb_channel_destroy, 0);
   rb_define_alias(rb_cChannel, "close", "destroy");
 
   id_channel = rb_intern("__channel");
+  id_cqueue = rb_intern("__cqueue");
   id_target = rb_intern("__target");
   rb_define_const(rb_cChannel, "SSL_TARGET",
                   ID2SYM(rb_intern(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)));

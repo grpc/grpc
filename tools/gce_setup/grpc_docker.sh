@@ -1047,7 +1047,7 @@ grpc_interop_gen_python_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_auth_service_account_creds_gen_python_cmd() {
-  local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c";
+  local cmd_prefix="sudo docker run grpc/python bin/bash -l -c";
   local gfe_flags=$(_grpc_prod_gfe_flags)
   local added_gfe_flags=$(_grpc_default_creds_test_flags)
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
@@ -1062,7 +1062,7 @@ grpc_cloud_prod_auth_service_account_creds_gen_python_cmd() {
 #   flags= .... # generic flags to include the command
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_auth_compute_engine_creds_gen_python_cmd() {
-  local cmd_prefix="sudo docker run grpc/ruby bin/bash -l -c";
+  local cmd_prefix="sudo docker run grpc/python bin/bash -l -c";
   local gfe_flags=$(_grpc_prod_gfe_flags)
   local added_gfe_flags=$(_grpc_gce_test_flags)
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"

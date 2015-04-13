@@ -31,36 +31,22 @@
  *
  */
 
-#ifndef GRPC_RB_CALL_H_
-#define GRPC_RB_CALL_H_
+#ifndef GRPC_SUPPORT_TLS_GCC_H
+#define GRPC_SUPPORT_TLS_GCC_H
 
-#include <grpc/grpc.h>
-#include <ruby.h>
+/* Thread local storage based on gcc compiler primitives.
+   #include tls.h to use this - and see that file for documentation */
 
-/* Gets the wrapped call from a VALUE. */
-grpc_call* grpc_rb_get_wrapped_call(VALUE v);
+struct gpr_gcc_thread_local {
+  gpr_intptr value;
+};
 
-/* Gets the VALUE corresponding to given grpc_call. */
-VALUE grpc_rb_wrap_call(grpc_call* c);
+#define GPR_TLS_DECL(name) \
+    static __thread struct gpr_gcc_thread_local name = {0}
 
-/* Provides the details of an call error */
-const char* grpc_call_error_detail_of(grpc_call_error err);
+#define gpr_tls_init(tls) do {} while (0)
+#define gpr_tls_destroy(tls) do {} while (0)
+#define gpr_tls_set(tls, new_value) (((tls)->value) = (new_value))
+#define gpr_tls_get(tls) ((tls)->value)
 
-/* Converts a metadata array to a hash. */
-VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
-
-/* rb_cCall is the Call class whose instances proxy grpc_call. */
-extern VALUE rb_cCall;
-
-/* rb_eCallError is the ruby class of the exception thrown during call
-   operations. */
-extern VALUE rb_eCallError;
-
-/* rb_eOutOfTime is the ruby class of the exception thrown to indicate
-   a timeout. */
-extern VALUE rb_eOutOfTime;
-
-/* Initializes the Call class. */
-void Init_grpc_call();
-
-#endif /* GRPC_RB_CALL_H_ */
+#endif
