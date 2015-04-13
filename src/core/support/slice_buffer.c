@@ -38,21 +38,34 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-/* initial allocation size (# of slices) */
-#define INITIAL_CAPACITY 4
-/* grow a buffer; requires INITIAL_CAPACITY > 1 */
+/* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
+
+static void maybe_embiggen(gpr_slice_buffer *sb) {
+  if (sb->count == sb->capacity) {
+    sb->capacity = GROW(sb->capacity);
+    GPR_ASSERT(sb->capacity > sb->count);
+    if (sb->slices == sb->inlined) {
+      sb->slices = gpr_malloc(sb->capacity * sizeof(gpr_slice));
+      memcpy(sb->slices, sb->inlined, sb->count * sizeof(gpr_slice));
+    } else {
+      sb->slices = gpr_realloc(sb->slices, sb->capacity * sizeof(gpr_slice));
+    }
+  }
+}
 
 void gpr_slice_buffer_init(gpr_slice_buffer *sb) {
   sb->count = 0;
   sb->length = 0;
-  sb->capacity = INITIAL_CAPACITY;
-  sb->slices = gpr_malloc(sizeof(gpr_slice) * INITIAL_CAPACITY);
+  sb->capacity = GRPC_SLICE_BUFFER_INLINE_ELEMENTS;
+  sb->slices = sb->inlined;
 }
 
 void gpr_slice_buffer_destroy(gpr_slice_buffer *sb) {
   gpr_slice_buffer_reset_and_unref(sb);
-  gpr_free(sb->slices);
+  if (sb->slices != sb->inlined) {
+    gpr_free(sb->slices);
+  }
 }
 
 gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned n) {
@@ -71,11 +84,7 @@ gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned n) {
   return out;
 
 add_new:
-  if (sb->count == sb->capacity) {
-    sb->capacity = GROW(sb->capacity);
-    GPR_ASSERT(sb->capacity > sb->count);
-    sb->slices = gpr_realloc(sb->slices, sb->capacity * sizeof(gpr_slice));
-  }
+  maybe_embiggen(sb);
   back = &sb->slices[sb->count];
   sb->count++;
   back->refcount = NULL;
@@ -85,11 +94,7 @@ add_new:
 
 size_t gpr_slice_buffer_add_indexed(gpr_slice_buffer *sb, gpr_slice s) {
   size_t out = sb->count;
-  if (out == sb->capacity) {
-    sb->capacity = GROW(sb->capacity);
-    GPR_ASSERT(sb->capacity > sb->count);
-    sb->slices = gpr_realloc(sb->slices, sb->capacity * sizeof(gpr_slice));
-  }
+  maybe_embiggen(sb);
   sb->slices[out] = s;
   sb->length += GPR_SLICE_LENGTH(s);
   sb->count = out + 1;
@@ -116,12 +121,7 @@ void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice s) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, cp1);
         back->data.inlined.length = GPR_SLICE_INLINED_SIZE;
-        if (n == sb->capacity) {
-          sb->capacity = GROW(sb->capacity);
-          GPR_ASSERT(sb->capacity > sb->count);
-          sb->slices =
-              gpr_realloc(sb->slices, sb->capacity * sizeof(gpr_slice));
-        }
+        maybe_embiggen(sb);
         back = &sb->slices[n];
         sb->count = n + 1;
         back->refcount = NULL;
@@ -159,4 +159,17 @@ void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb) {
 
   sb->count = 0;
   sb->length = 0;
+}
+
+void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b) {
+  gpr_slice_buffer temp = *a;
+  *a = *b;
+  *b = temp;
+
+  if (a->slices == b->inlined) {
+    a->slices = a->inlined;
+  }
+  if (b->slices == a->inlined) {
+    b->slices = b->inlined;
+  }
 }
