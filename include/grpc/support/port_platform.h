@@ -220,20 +220,20 @@
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
 #endif
 
-#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) + defined(GPR_CPU_IPHONE) != 1
-#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32, GPR_CPU_IPHONE
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WIN32) + defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) != 1
+#error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WIN32, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
 
 #if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_SOCKET)
 #error Must define GPR_POSIX_SOCKET to use GPR_POSIX_MULTIPOLL_WITH_POLL
 #endif
 
-#if defined(GPR_POSIX_SOCKET) + defined(GPR_WIN32) != 1
-#error Must define exactly one of GPR_POSIX_SOCKET, GPR_WIN32
+#if defined(GPR_POSIX_SOCKET) + defined(GPR_WINSOCK_SOCKET) + defined(GPR_CUSTOM_SOCKET) != 1
+#error Must define exactly one of GPR_POSIX_SOCKET, GPR_WINSOCK_SOCKET, GPR_CUSTOM_SOCKET
 #endif
 
-#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) != 1
-#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS
+#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + defined(GPR_CUSTOM_TLS) != 1
+#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, defined(GPR_CUSTOM_TLS)
 #endif
 
 typedef int16_t gpr_int16;
