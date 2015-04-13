@@ -31,28 +31,52 @@
  *
  */
 
-#ifndef GRPC_RB_COMPLETION_QUEUE_H_
-#define GRPC_RB_COMPLETION_QUEUE_H_
+/* Test of gpr thread local storage support. */
 
-#include <grpc/grpc.h>
-#include <ruby.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/tls.h>
+#include "test/core/util/test_config.h"
 
-/* Gets the wrapped completion queue from the ruby wrapper */
-grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v);
+#define NUM_THREADS 100
 
-/**
- * Makes the implementation of CompletionQueue#pluck available in other files
- *
- * This avoids having code that holds the GIL repeated at multiple sites.
- */
-grpc_event* grpc_rb_completion_queue_pluck_event(VALUE cqueue, VALUE tag,
-                                                 VALUE timeout);
+GPR_TLS_DECL(test_var);
 
-/* grpc_rb_cCompletionQueue is the CompletionQueue class whose instances proxy
-   grpc_completion_queue. */
-extern VALUE grpc_rb_cCompletionQueue;
+static void thd_body(void *arg) {
+  gpr_intptr i;
 
-/* Initializes the CompletionQueue class. */
-void Init_grpc_completion_queue();
+  GPR_ASSERT(gpr_tls_get(&test_var) == 0);
 
-#endif /* GRPC_RB_COMPLETION_QUEUE_H_ */
+  for (i = 0; i < 10000000; i++) {
+    gpr_tls_set(&test_var, i);
+    GPR_ASSERT(gpr_tls_get(&test_var) == i);
+  }
+}
+
+/* ------------------------------------------------- */
+
+int main(int argc, char *argv[]) {
+  gpr_thd_options opt = gpr_thd_options_default();
+  int i;
+  gpr_thd_id threads[NUM_THREADS];
+
+  grpc_test_init(argc, argv);
+
+  gpr_tls_init(&test_var);
+
+  gpr_thd_options_set_joinable(&opt);
+
+  for (i = 0; i < NUM_THREADS; i++) {
+    gpr_thd_new(&threads[i], thd_body, NULL, &opt);
+  }
+  for (i = 0; i < NUM_THREADS; i++) {
+    gpr_thd_join(threads[i]);
+  }
+
+  gpr_tls_destroy(&test_var);
+
+  return 0;
+}

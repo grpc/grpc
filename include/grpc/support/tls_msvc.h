@@ -31,28 +31,22 @@
  *
  */
 
-#ifndef GRPC_RB_COMPLETION_QUEUE_H_
-#define GRPC_RB_COMPLETION_QUEUE_H_
+#ifndef GRPC_SUPPORT_TLS_GCC_H
+#define GRPC_SUPPORT_TLS_GCC_H
 
-#include <grpc/grpc.h>
-#include <ruby.h>
+/* Thread local storage based on ms visual c compiler primitives.
+   #include tls.h to use this - and see that file for documentation */
 
-/* Gets the wrapped completion queue from the ruby wrapper */
-grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v);
+struct gpr_msvc_thread_local {
+  gpr_intptr value;
+};
 
-/**
- * Makes the implementation of CompletionQueue#pluck available in other files
- *
- * This avoids having code that holds the GIL repeated at multiple sites.
- */
-grpc_event* grpc_rb_completion_queue_pluck_event(VALUE cqueue, VALUE tag,
-                                                 VALUE timeout);
+#define GPR_TLS_DECL(name) \
+    static __thread struct gpr_msvc_thread_local name = {0}
 
-/* grpc_rb_cCompletionQueue is the CompletionQueue class whose instances proxy
-   grpc_completion_queue. */
-extern VALUE grpc_rb_cCompletionQueue;
+#define gpr_tls_init(tls) do {} while (0)
+#define gpr_tls_destroy(tls) do {} while (0)
+#define gpr_tls_set(tls, new_value) (((tls)->value) = (new_value))
+#define gpr_tls_get(tls) ((tls)->value)
 
-/* Initializes the CompletionQueue class. */
-void Init_grpc_completion_queue();
-
-#endif /* GRPC_RB_COMPLETION_QUEUE_H_ */
+#endif

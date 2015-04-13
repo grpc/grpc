@@ -66,5 +66,8 @@ RUN cd /var/local/git/grpc \
 # Add a cacerts directory containing the Google root pem file, allowing the interop client to access the production test instance
 ADD cacerts cacerts
 
+# Add a service_account directory containing the auth creds file
+ADD service_account service_account
+
 # Specify the default command such that the interop server runs on its known testing port
 CMD ["/bin/bash", "-l", "-c", "python2.7 -m interop.server --use_tls --port 8050"]

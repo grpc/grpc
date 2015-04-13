@@ -31,23 +31,23 @@
  *
  */
 
-#ifndef GRPC_RB_EVENT_H_
-#define GRPC_RB_EVENT_H_
+#ifndef GRPC_SUPPORT_TLS_PTHREAD_H
+#define GRPC_SUPPORT_TLS_PTHREAD_H
 
-#include <ruby.h>
-#include <grpc/grpc.h>
+/* Thread local storage based on pthread library calls.
+   #include tls.h to use this - and see that file for documentation */
 
-/* rb_cEvent is the Event class whose instances proxy grpc_event. */
-extern VALUE rb_cEvent;
+struct gpr_pthread_thread_local {
+  pthread_key_t key;
+};
 
-/* rb_cEventError is the ruby class that acts the exception thrown during rpc
-   event processing. */
-extern VALUE rb_eEventError;
+#define GPR_TLS_DECL(name) \
+    static struct gpr_pthread_thread_local name = {0}
 
-/* Used to create new ruby event objects */
-VALUE grpc_rb_new_event(grpc_event *ev);
+#define gpr_tls_init(tls) GPR_ASSERT(0 == pthread_key_create(&(tls)->key, NULL))
+#define gpr_tls_destroy(tls) pthread_key_delete((tls)->key)
+#define gpr_tls_set(tls, new_value) \
+    GPR_ASSERT(pthread_setspecific((tls)->key, (void*)(new_value)) == 0)
+#define gpr_tls_get(tls) ((gpr_intptr)pthread_getspecific((tls)->key))
 
-/* Initializes the Event and EventError classes. */
-void Init_grpc_event();
-
-#endif /* GRPC_RB_EVENT_H_ */
+#endif
