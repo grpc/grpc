@@ -31,36 +31,52 @@
  *
  */
 
-#ifndef GRPC_RB_CALL_H_
-#define GRPC_RB_CALL_H_
+/* Test of gpr thread local storage support. */
 
-#include <grpc/grpc.h>
-#include <ruby.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/tls.h>
+#include "test/core/util/test_config.h"
 
-/* Gets the wrapped call from a VALUE. */
-grpc_call* grpc_rb_get_wrapped_call(VALUE v);
+#define NUM_THREADS 100
 
-/* Gets the VALUE corresponding to given grpc_call. */
-VALUE grpc_rb_wrap_call(grpc_call* c);
+GPR_TLS_DECL(test_var);
 
-/* Provides the details of an call error */
-const char* grpc_call_error_detail_of(grpc_call_error err);
+static void thd_body(void *arg) {
+  gpr_intptr i;
 
-/* Converts a metadata array to a hash. */
-VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
+  GPR_ASSERT(gpr_tls_get(&test_var) == 0);
 
-/* rb_cCall is the Call class whose instances proxy grpc_call. */
-extern VALUE rb_cCall;
+  for (i = 0; i < 10000000; i++) {
+    gpr_tls_set(&test_var, i);
+    GPR_ASSERT(gpr_tls_get(&test_var) == i);
+  }
+}
 
-/* rb_eCallError is the ruby class of the exception thrown during call
-   operations. */
-extern VALUE rb_eCallError;
+/* ------------------------------------------------- */
 
-/* rb_eOutOfTime is the ruby class of the exception thrown to indicate
-   a timeout. */
-extern VALUE rb_eOutOfTime;
+int main(int argc, char *argv[]) {
+  gpr_thd_options opt = gpr_thd_options_default();
+  int i;
+  gpr_thd_id threads[NUM_THREADS];
 
-/* Initializes the Call class. */
-void Init_grpc_call();
+  grpc_test_init(argc, argv);
 
-#endif /* GRPC_RB_CALL_H_ */
+  gpr_tls_init(&test_var);
+
+  gpr_thd_options_set_joinable(&opt);
+
+  for (i = 0; i < NUM_THREADS; i++) {
+    gpr_thd_new(&threads[i], thd_body, NULL, &opt);
+  }
+  for (i = 0; i < NUM_THREADS; i++) {
+    gpr_thd_join(threads[i]);
+  }
+
+  gpr_tls_destroy(&test_var);
+
+  return 0;
+}

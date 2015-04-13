@@ -198,16 +198,17 @@ grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
 
   temp.append("\n");
 
-  std::vector<grpc::string> parts =
-    grpc_generator::tokenize(file->package(), ".");
+  if (!file->package().empty()) {
+    std::vector<grpc::string> parts =
+        grpc_generator::tokenize(file->package(), ".");
 
-  for (auto part = parts.begin(); part != parts.end(); part++) {
-    temp.append("namespace ");
-    temp.append(*part);
-    temp.append(" {\n");
+    for (auto part = parts.begin(); part != parts.end(); part++) {
+      temp.append("namespace ");
+      temp.append(*part);
+      temp.append(" {\n");
+    }
+    temp.append("\n");
   }
-
-  temp.append("\n");
 
   return temp;
 }
@@ -431,15 +432,18 @@ grpc::string GetHeaderEpilogue(const grpc::protobuf::FileDescriptor *file,
   vars["filename"] = file->name();
   vars["filename_identifier"] = FilenameIdentifier(file->name());
 
-  std::vector<grpc::string> parts =
-    grpc_generator::tokenize(file->package(), ".");
+  if (!file->package().empty()) {
+    std::vector<grpc::string> parts =
+        grpc_generator::tokenize(file->package(), ".");
 
-  for (auto part = parts.rbegin(); part != parts.rend(); part++) {
-    vars["part"] = *part;
-    printer.Print(vars, "}  // namespace $part$\n");
+    for (auto part = parts.rbegin(); part != parts.rend(); part++) {
+      vars["part"] = *part;
+      printer.Print(vars, "}  // namespace $part$\n");
+    }
+    printer.Print(vars, "\n");
   }
 
-  printer.Print(vars, "\n\n");
+  printer.Print(vars, "\n");
   printer.Print(vars, "#endif  // GRPC_$filename_identifier$__INCLUDED\n");
 
   return output;
@@ -480,12 +484,14 @@ grpc::string GetSourceIncludes(const grpc::protobuf::FileDescriptor *file,
   printer.Print(vars, "#include <grpc++/impl/service_type.h>\n");
   printer.Print(vars, "#include <grpc++/stream.h>\n");
 
-  std::vector<grpc::string> parts =
-    grpc_generator::tokenize(file->package(), ".");
+  if (!file->package().empty()) {
+    std::vector<grpc::string> parts =
+        grpc_generator::tokenize(file->package(), ".");
 
-  for (auto part = parts.begin(); part != parts.end(); part++) {
-    vars["part"] = *part;
-    printer.Print(vars, "namespace $part$ {\n");
+    for (auto part = parts.begin(); part != parts.end(); part++) {
+      vars["part"] = *part;
+      printer.Print(vars, "namespace $part$ {\n");
+    }
   }
 
   printer.Print(vars, "\n");
@@ -860,16 +866,17 @@ grpc::string GetSourceEpilogue(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params) {
   grpc::string temp;
 
-  std::vector<grpc::string> parts =
-    grpc_generator::tokenize(file->package(), ".");
+  if (!file->package().empty()) {
+    std::vector<grpc::string> parts =
+        grpc_generator::tokenize(file->package(), ".");
 
-  for (auto part = parts.begin(); part != parts.end(); part++) {
-    temp.append("}  // namespace ");
-    temp.append(*part);
+    for (auto part = parts.begin(); part != parts.end(); part++) {
+      temp.append("}  // namespace ");
+      temp.append(*part);
+      temp.append("\n");
+    }
     temp.append("\n");
   }
-
-  temp.append("\n");
 
   return temp;
 }

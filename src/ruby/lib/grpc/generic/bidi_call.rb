@@ -30,18 +30,12 @@
 require 'forwardable'
 require 'grpc/grpc'
 
-def assert_event_type(ev, want)
-  fail OutOfTime if ev.nil?
-  got = ev.type
-  fail("Unexpected rpc event: got #{got}, want #{want}") unless got == want
-end
-
 # GRPC contains the General RPC module.
 module GRPC
   # The BiDiCall class orchestrates exection of a BiDi stream on a client or
   # server.
   class BidiCall
-    include Core::CompletionType
+    include Core::CallOps
     include Core::StatusCodes
     include Core::TimeConsts
 
@@ -63,8 +57,7 @@ module GRPC
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
     # @param deadline [Fixnum] the deadline for the call to complete
-    # @param finished_tag [Object] the object used as the call's finish tag,
-    def initialize(call, q, marshal, unmarshal, deadline, finished_tag)
+    def initialize(call, q, marshal, unmarshal, deadline)
       fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
         fail(ArgumentError, 'not a CompletionQueue')
@@ -72,7 +65,6 @@ module GRPC
       @call = call
       @cq = q
       @deadline = deadline
-      @finished_tag = finished_tag
       @marshal = marshal
       @readq = Queue.new
       @unmarshal = unmarshal
@@ -146,30 +138,14 @@ module GRPC
           requests.each do |req|
             count += 1
             payload = @marshal.call(req)
-            @call.start_write(Core::ByteBuffer.new(payload), write_tag)
-            ev = @cq.pluck(write_tag, INFINITE_FUTURE)
-            begin
-              assert_event_type(ev, WRITE_ACCEPTED)
-            ensure
-              ev.close
-            end
+            @call.run_batch(@cq, write_tag, INFINITE_FUTURE,
+                            SEND_MESSAGE => payload)
           end
           if is_client
-            @call.writes_done(write_tag)
-            ev = @cq.pluck(write_tag, INFINITE_FUTURE)
-            begin
-              assert_event_type(ev, FINISH_ACCEPTED)
-            ensure
-              ev.close
-            end
             logger.debug("bidi-client: sent #{count} reqs, waiting to finish")
-            ev = @cq.pluck(@finished_tag, INFINITE_FUTURE)
-            begin
-              assert_event_type(ev, FINISHED)
-            ensure
-              ev.close
-            end
-            logger.debug('bidi-client: finished received')
+            @call.run_batch(@cq, write_tag, INFINITE_FUTURE,
+                            SEND_CLOSE_FROM_CLIENT => nil,
+                            RECV_STATUS_ON_CLIENT => nil)
           end
         rescue StandardError => e
           logger.warn('bidi: write_loop failed')
@@ -189,25 +165,20 @@ module GRPC
           loop do
             logger.debug("waiting for read #{count}")
             count += 1
-            @call.start_read(read_tag)
-            ev = @cq.pluck(read_tag, INFINITE_FUTURE)
-            begin
-              assert_event_type(ev, READ)
-
-              # handle the next event.
-              if ev.result.nil?
-                @readq.push(END_OF_READS)
-                logger.debug('done reading!')
-                break
-              end
-
-              # push the latest read onto the queue and continue reading
-              logger.debug("received req: #{ev.result}")
-              res = @unmarshal.call(ev.result.to_s)
-              @readq.push(res)
-            ensure
-              ev.close
+            # TODO: ensure metadata is read if available, currently it's not
+            batch_result = @call.run_batch(@cq, read_tag, INFINITE_FUTURE,
+                                           RECV_MESSAGE => nil)
+            # handle the next message
+            if batch_result.message.nil?
+              @readq.push(END_OF_READS)
+              logger.debug('done reading!')
+              break
             end
+
+            # push the latest read onto the queue and continue reading
+            logger.debug("received req: #{batch_result.message}")
+            res = @unmarshal.call(batch_result.message)
+            @readq.push(res)
           end
 
         rescue StandardError => e
