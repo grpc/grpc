@@ -43,10 +43,10 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check route_guide_client route_guide_server
 
-route_guide_client: route_guide.grpc.pb.o route_guide.pb.o route_guide_client.o helper.o
+route_guide_client: route_guide.pb.o route_guide.grpc.pb.o route_guide_client.o helper.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-route_guide_server: route_guide.grpc.pb.o route_guide.pb.o route_guide_server.o helper.o
+route_guide_server: route_guide.pb.o route_guide.grpc.pb.o route_guide_server.o helper.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 %.grpc.pb.cc: %.proto
