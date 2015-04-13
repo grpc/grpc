@@ -142,6 +142,7 @@
         "src/core/statistics/census_rpc_stats.h",
         "src/core/statistics/census_tracing.h",
         "src/core/statistics/hash_table.h",
+        "src/core/statistics/timers.h",
         "src/core/statistics/window_stats.h",
         "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
@@ -234,6 +235,7 @@
         "src/core/statistics/census_rpc_stats.c",
         "src/core/statistics/census_tracing.c",
         "src/core/statistics/hash_table.c",
+        "src/core/statistics/timers.c",
         "src/core/statistics/window_stats.c",
         "src/core/surface/byte_buffer.c",
         "src/core/surface/byte_buffer_queue.c",
@@ -1694,6 +1696,20 @@
       "language": "c",
       "src": [
         "test/core/transport/chttp2/timeout_encoding_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "timers_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/statistics/timers_test.c"
       ],
       "deps": [
         "grpc_test_util",
