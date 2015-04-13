@@ -2636,12 +2636,12 @@ LIBGRPC_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
+    src/core/profiling/timers.c \
     src/core/statistics/census_init.c \
     src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
     src/core/statistics/census_tracing.c \
     src/core/statistics/hash_table.c \
-    src/core/statistics/timers.c \
     src/core/statistics/window_stats.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \
@@ -2784,12 +2784,12 @@ src/core/json/json.c: $(OPENSSL_DEP)
 src/core/json/json_reader.c: $(OPENSSL_DEP)
 src/core/json/json_string.c: $(OPENSSL_DEP)
 src/core/json/json_writer.c: $(OPENSSL_DEP)
+src/core/profiling/timers.c: $(OPENSSL_DEP)
 src/core/statistics/census_init.c: $(OPENSSL_DEP)
 src/core/statistics/census_log.c: $(OPENSSL_DEP)
 src/core/statistics/census_rpc_stats.c: $(OPENSSL_DEP)
 src/core/statistics/census_tracing.c: $(OPENSSL_DEP)
 src/core/statistics/hash_table.c: $(OPENSSL_DEP)
-src/core/statistics/timers.c: $(OPENSSL_DEP)
 src/core/statistics/window_stats.c: $(OPENSSL_DEP)
 src/core/surface/byte_buffer.c: $(OPENSSL_DEP)
 src/core/surface/byte_buffer_queue.c: $(OPENSSL_DEP)
@@ -2948,12 +2948,12 @@ $(OBJDIR)/$(CONFIG)/src/core/json/json.o:
 $(OBJDIR)/$(CONFIG)/src/core/json/json_reader.o: 
 $(OBJDIR)/$(CONFIG)/src/core/json/json_string.o: 
 $(OBJDIR)/$(CONFIG)/src/core/json/json_writer.o: 
+$(OBJDIR)/$(CONFIG)/src/core/profiling/timers.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_init.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_log.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_rpc_stats.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_tracing.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/hash_table.o: 
-$(OBJDIR)/$(CONFIG)/src/core/statistics/timers.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/window_stats.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/byte_buffer.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/byte_buffer_queue.o: 
@@ -3125,12 +3125,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
+    src/core/profiling/timers.c \
     src/core/statistics/census_init.c \
     src/core/statistics/census_log.c \
     src/core/statistics/census_rpc_stats.c \
     src/core/statistics/census_tracing.c \
     src/core/statistics/hash_table.c \
-    src/core/statistics/timers.c \
     src/core/statistics/window_stats.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \
@@ -3266,12 +3266,12 @@ $(OBJDIR)/$(CONFIG)/src/core/json/json.o:
 $(OBJDIR)/$(CONFIG)/src/core/json/json_reader.o: 
 $(OBJDIR)/$(CONFIG)/src/core/json/json_string.o: 
 $(OBJDIR)/$(CONFIG)/src/core/json/json_writer.o: 
+$(OBJDIR)/$(CONFIG)/src/core/profiling/timers.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_init.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_log.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_rpc_stats.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/census_tracing.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/hash_table.o: 
-$(OBJDIR)/$(CONFIG)/src/core/statistics/timers.o: 
 $(OBJDIR)/$(CONFIG)/src/core/statistics/window_stats.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/byte_buffer.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/byte_buffer_queue.o: 
@@ -8160,7 +8160,7 @@ endif
 
 
 TIMERS_TEST_SRC = \
-    test/core/statistics/timers_test.c \
+    test/core/profiling/timers_test.c \
 
 TIMERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TIMERS_TEST_SRC))))
 
@@ -8179,7 +8179,7 @@ $(BINDIR)/$(CONFIG)/timers_test: $(TIMERS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/statistics/timers_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/profiling/timers_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_timers_test: $(TIMERS_TEST_OBJS:.o=.dep)
 

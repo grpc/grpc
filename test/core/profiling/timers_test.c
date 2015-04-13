@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/statistics/timers.h"
+#include "src/core/profiling/timers.h"
 #include <stdlib.h>
 #include "test/core/util/test_config.h"
 

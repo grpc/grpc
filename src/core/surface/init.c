@@ -36,7 +36,7 @@
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/statistics/census_interface.h"
-#include "src/core/statistics/timers.h"
+#include "src/core/profiling/timers.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
