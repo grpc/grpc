@@ -40,10 +40,10 @@
 extern "C" {
 #endif
 
+#ifdef GRPC_LATENCY_PROFILER
+
 typedef struct grpc_timers_log grpc_timers_log;
 
-void grpc_timers_log_global_init(void);
-void grpc_timers_log_global_destroy(void);
 grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE *dump,
                                         const char *fmt);
 void grpc_timers_log_add(grpc_timers_log *, const char *tag, int seq,
@@ -53,8 +53,14 @@ void grpc_timers_log_destroy(grpc_timers_log *);
 extern grpc_timers_log *grpc_timers_log_global;
 
 #define GRPC_TIMER_MARK(x, s) grpc_timers_log_add(grpc_timers_log_global, #x, \
-    s, __FILE__, __LINE__);
+    s, __FILE__, __LINE__)
 
+#else /* !GRPC_LATENCY_PROFILER */
+#define GRPC_TIMER_MARK(x, s) do {} while (0)
+#endif /* GRPC_LATENCY_PROFILER */
+
+void grpc_timers_log_global_init(void);
+void grpc_timers_log_global_destroy(void);
 
 #ifdef __cplusplus
 }

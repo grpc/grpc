@@ -31,6 +31,8 @@
  *
  */
 
+#ifdef GRPC_LATENCY_PROFILER
+
 #include "timers.h"
 
 #include <grpc/support/alloc.h>
@@ -44,22 +46,22 @@ typedef struct grpc_timer_entry {
 #error Rdtsc timers not supported yet
   /* TODO(vpai): Fill in rdtsc support if desired */
 #else
-  gpr_timespec timer_;
+  gpr_timespec timer;
 #endif
-  const char* tag_;
-  int seq_;
-  const char* file_;
-  int line_;
+  const char* tag;
+  int seq;
+  const char* file;
+  int line;
 } grpc_timer_entry;
 
 struct grpc_timers_log {
-  gpr_mu mu_;
-  grpc_timer_entry* log_;
-  int num_entries_;
-  int capacity_;
-  int capacity_limit_;
-  FILE *fp_;
-  const char *fmt_;
+  gpr_mu mu;
+  grpc_timer_entry* log;
+  int num_entries;
+  int capacity;
+  int capacity_limit;
+  FILE *fp;
+  const char *fmt;
 };
 
 grpc_timers_log* grpc_timers_log_global = NULL;
@@ -68,7 +70,7 @@ static int timer_now(grpc_timer_entry *tm) {
 #ifdef GRPC_TIMERS_RDTSC
 #error Rdtsc not supported yet
 #else
-  tm->timer_ = gpr_now();
+  tm->timer = gpr_now();
   return(1);
 #endif
 }
@@ -79,47 +81,47 @@ grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE *dump,
   GPR_ASSERT(log);
 
   /* TODO (vpai): Allow allocation below limit */
-  log->log_ = gpr_malloc(capacity_limit*sizeof(*log->log_));
-  GPR_ASSERT(log->log_);
+  log->log = gpr_malloc(capacity_limit*sizeof(*log->log));
+  GPR_ASSERT(log->log);
 
   /* TODO (vpai): Improve concurrency, do per-thread logging? */
-  gpr_mu_init(&log->mu_);
+  gpr_mu_init(&log->mu);
 
-  log->num_entries_ = 0;
-  log->capacity_ = log->capacity_limit_ = capacity_limit;
+  log->num_entries = 0;
+  log->capacity = log->capacity_limit = capacity_limit;
 
-  log->fp_ = dump;
-  log->fmt_ = fmt;
+  log->fp = dump;
+  log->fmt = fmt;
 
   return log;
 }
 
 static void log_report_locked(grpc_timers_log *log) {
-  FILE *fp = log->fp_;
-  const char *fmt = log->fmt_;
+  FILE *fp = log->fp;
+  const char *fmt = log->fmt;
   int i;
-  for (i=0;i<log->num_entries_;i++) {
-    grpc_timer_entry* entry = &(log->log_[i]);
+  for (i=0;i<log->num_entries;i++) {
+    grpc_timer_entry* entry = &(log->log[i]);
     fprintf(fp, fmt,
 #ifdef GRPC_TIMERS_RDTSC
 #error Rdtsc not supported
 #else
-            entry->timer_.tv_sec, entry->timer_.tv_nsec,
+            entry->timer.tv_sec, entry->timer.tv_nsec,
 #endif
-            entry->tag_, entry->seq_, entry->file_, entry->line_);
+            entry->tag, entry->seq, entry->file, entry->line);
   }
 
   /* Now clear out the log */
-  log->num_entries_=0;
+  log->num_entries=0;
 }
 
 void grpc_timers_log_destroy(grpc_timers_log *log) {
-  gpr_mu_lock(&log->mu_);
+  gpr_mu_lock(&log->mu);
   log_report_locked(log);
-  gpr_mu_unlock(&log->mu_);
+  gpr_mu_unlock(&log->mu);
 
-  gpr_free(log->log_);
-  gpr_mu_destroy(&log->mu_);
+  gpr_free(log->log);
+  gpr_mu_destroy(&log->mu);
 
   gpr_free(log);
 }
@@ -129,20 +131,20 @@ void grpc_timers_log_add(grpc_timers_log *log, const char *tag, int seq,
   grpc_timer_entry* entry;
 
   /* TODO (vpai) : Improve concurrency */
-  gpr_mu_lock(&log->mu_);
-  if (log->num_entries_ == log->capacity_limit_) {
+  gpr_mu_lock(&log->mu);
+  if (log->num_entries == log->capacity_limit) {
     log_report_locked(log);
   }
 
-  entry = &log->log_[log->num_entries_++];
+  entry = &log->log[log->num_entries++];
 
   timer_now(entry);
-  entry->tag_ = tag;
-  entry->seq_ = seq;
-  entry->file_ = file;
-  entry->line_ = line;
+  entry->tag = tag;
+  entry->seq = seq;
+  entry->file = file;
+  entry->line = line;
 
-  gpr_mu_unlock(&log->mu_);
+  gpr_mu_unlock(&log->mu);
 }
 
 void grpc_timers_log_global_init(void) {
@@ -160,3 +162,10 @@ void grpc_timers_log_global_init(void) {
 void grpc_timers_log_global_destroy(void) {
   grpc_timers_log_destroy(grpc_timers_log_global);
 }
+
+#else /* !GRPC_LATENCY_PROFILER */
+void grpc_timers_log_global_init(void) {
+}
+void grpc_timers_log_global_destroy(void) {
+}
+#endif /* GRPC_LATENCY_PROFILER */
