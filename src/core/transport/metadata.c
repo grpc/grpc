@@ -475,7 +475,7 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd) {
      this function - meaning that no adjustment to mdtab_free is necessary,
      simplifying the logic here to be just an atomic increment */
   /* use C assert to have this removed in opt builds */
-  assert(gpr_atm_acq_load(&md->refcnt) >= 1);
+  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
   gpr_atm_no_barrier_fetch_add(&md->refcnt, 1);
   return gmd;
 }
@@ -484,7 +484,7 @@ void grpc_mdelem_unref(grpc_mdelem *gmd) {
   internal_metadata *md = (internal_metadata *)gmd;
   grpc_mdctx *ctx = md->context;
   lock(ctx);
-  assert(gpr_atm_acq_load(&md->refcnt) >= 1);
+  assert(gpr_atm_nobarrier_load(&md->refcnt) >= 1);
   if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
     ctx->mdtab_free++;
   }
