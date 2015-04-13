@@ -4,2117 +4,3808 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "alarm_heap_test"
+    "name": "alarm_heap_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "alarm_list_test"
+    "name": "alarm_list_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "alarm_test"
+    "name": "alarm_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "alpn_test"
+    "name": "alpn_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "bin_encoder_test"
+    "name": "bin_encoder_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "census_hash_table_test"
+    "name": "census_hash_table_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": true, 
     "language": "c", 
-    "name": "census_statistics_multiple_writers_circular_buffer_test"
+    "name": "census_statistics_multiple_writers_circular_buffer_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "census_statistics_multiple_writers_test"
+    "name": "census_statistics_multiple_writers_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "census_statistics_performance_test"
+    "name": "census_statistics_performance_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "census_statistics_quick_test"
+    "name": "census_statistics_quick_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": true, 
     "language": "c", 
-    "name": "census_statistics_small_log_test"
+    "name": "census_statistics_small_log_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "census_stub_test"
+    "name": "census_stub_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "census_window_stats_test"
+    "name": "census_window_stats_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_status_conversion_test"
+    "name": "chttp2_status_conversion_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_stream_encoder_test"
+    "name": "chttp2_stream_encoder_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_stream_map_test"
+    "name": "chttp2_stream_map_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_transport_end2end_test"
+    "name": "chttp2_transport_end2end_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "dualstack_socket_test"
+    "name": "dualstack_socket_test", 
+    "platforms": [
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "echo_test"
+    "name": "echo_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "fd_posix_test"
+    "name": "fd_posix_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "fling_stream_test"
+    "name": "fling_stream_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "fling_test"
+    "name": "fling_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_cancellable_test"
+    "name": "gpr_cancellable_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_cmdline_test"
+    "name": "gpr_cmdline_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_env_test"
+    "name": "gpr_env_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_file_test"
+    "name": "gpr_file_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_histogram_test"
+    "name": "gpr_histogram_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_host_port_test"
+    "name": "gpr_host_port_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_log_test"
+    "name": "gpr_log_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_slice_buffer_test"
+    "name": "gpr_slice_buffer_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_slice_test"
+    "name": "gpr_slice_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_string_test"
+    "name": "gpr_string_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_sync_test"
+    "name": "gpr_sync_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_thd_test"
+    "name": "gpr_thd_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_time_test"
+    "name": "gpr_time_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_tls_test"
+    "name": "gpr_tls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "gpr_useful_test"
+    "name": "gpr_useful_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_base64_test"
+    "name": "grpc_base64_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_byte_buffer_reader_test"
+    "name": "grpc_byte_buffer_reader_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_channel_stack_test"
+    "name": "grpc_channel_stack_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_completion_queue_test"
+    "name": "grpc_completion_queue_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_credentials_test"
+    "name": "grpc_credentials_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_json_token_test"
+    "name": "grpc_json_token_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "grpc_stream_op_test"
+    "name": "grpc_stream_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "hpack_parser_test"
+    "name": "hpack_parser_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "hpack_table_test"
+    "name": "hpack_table_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "httpcli_format_request_test"
+    "name": "httpcli_format_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "httpcli_parser_test"
+    "name": "httpcli_parser_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "json_rewrite_test"
+    "name": "json_rewrite_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "json_test"
+    "name": "json_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "lame_client_test"
+    "name": "lame_client_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "message_compress_test"
+    "name": "message_compress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "metadata_buffer_test"
+    "name": "metadata_buffer_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "multi_init_test"
+    "name": "multi_init_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "murmur_hash_test"
+    "name": "murmur_hash_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "no_server_test"
+    "name": "no_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "poll_kick_posix_test"
+    "name": "poll_kick_posix_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "resolve_address_test"
+    "name": "resolve_address_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "secure_endpoint_test"
+    "name": "secure_endpoint_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "sockaddr_utils_test"
+    "name": "sockaddr_utils_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "tcp_client_posix_test"
+    "name": "tcp_client_posix_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "tcp_posix_test"
+    "name": "tcp_posix_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "tcp_server_posix_test"
+    "name": "tcp_server_posix_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "time_averaged_stats_test"
+    "name": "time_averaged_stats_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "time_test"
+    "name": "time_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "timeout_encoding_test"
+    "name": "timeout_encoding_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "transport_metadata_test"
+    "name": "transport_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "transport_security_test"
+    "name": "transport_security_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "async_end2end_test"
+    "name": "async_end2end_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "channel_arguments_test"
+    "name": "channel_arguments_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "cli_call_test"
+    "name": "cli_call_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "credentials_test"
+    "name": "credentials_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "cxx_time_test"
+    "name": "cxx_time_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "end2end_test"
+    "name": "end2end_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "generic_end2end_test"
+    "name": "generic_end2end_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "interop_test"
+    "name": "interop_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "pubsub_publisher_test"
+    "name": "pubsub_publisher_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "pubsub_subscriber_test"
+    "name": "pubsub_subscriber_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "status_test"
+    "name": "status_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "thread_pool_test"
+    "name": "thread_pool_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_bad_hostname_test"
+    "name": "chttp2_fake_security_bad_hostname_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_after_accept_test"
+    "name": "chttp2_fake_security_cancel_after_accept_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_after_accept_and_writes_closed_test"
+    "name": "chttp2_fake_security_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_after_invoke_test"
+    "name": "chttp2_fake_security_cancel_after_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_before_invoke_test"
+    "name": "chttp2_fake_security_cancel_before_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_in_a_vacuum_test"
+    "name": "chttp2_fake_security_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_census_simple_request_test"
+    "name": "chttp2_fake_security_census_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_disappearing_server_test"
+    "name": "chttp2_fake_security_disappearing_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test"
+    "name": "chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_early_server_shutdown_finishes_tags_test"
+    "name": "chttp2_fake_security_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_empty_batch_test"
+    "name": "chttp2_fake_security_empty_batch_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_graceful_server_shutdown_test"
+    "name": "chttp2_fake_security_graceful_server_shutdown_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_invoke_large_request_test"
+    "name": "chttp2_fake_security_invoke_large_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_max_concurrent_streams_test"
+    "name": "chttp2_fake_security_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_no_op_test"
+    "name": "chttp2_fake_security_no_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_ping_pong_streaming_test"
+    "name": "chttp2_fake_security_ping_pong_streaming_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_binary_metadata_and_payload_test"
+    "name": "chttp2_fake_security_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_metadata_and_payload_test"
+    "name": "chttp2_fake_security_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_payload_test"
+    "name": "chttp2_fake_security_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_with_large_metadata_test"
+    "name": "chttp2_fake_security_request_with_large_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_with_payload_test"
+    "name": "chttp2_fake_security_request_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_simple_delayed_request_test"
+    "name": "chttp2_fake_security_simple_delayed_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_simple_request_test"
+    "name": "chttp2_fake_security_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_thread_stress_test"
+    "name": "chttp2_fake_security_thread_stress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_writes_done_hangs_with_pending_read_test"
+    "name": "chttp2_fake_security_writes_done_hangs_with_pending_read_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_after_accept_legacy_test"
+    "name": "chttp2_fake_security_cancel_after_accept_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test"
+    "name": "chttp2_fake_security_cancel_after_accept_and_writes_closed_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_after_invoke_legacy_test"
+    "name": "chttp2_fake_security_cancel_after_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_before_invoke_legacy_test"
+    "name": "chttp2_fake_security_cancel_before_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_cancel_in_a_vacuum_legacy_test"
+    "name": "chttp2_fake_security_cancel_in_a_vacuum_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_census_simple_request_legacy_test"
+    "name": "chttp2_fake_security_census_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_disappearing_server_legacy_test"
+    "name": "chttp2_fake_security_disappearing_server_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test"
+    "name": "chttp2_fake_security_early_server_shutdown_finishes_inflight_calls_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test"
+    "name": "chttp2_fake_security_early_server_shutdown_finishes_tags_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_graceful_server_shutdown_legacy_test"
+    "name": "chttp2_fake_security_graceful_server_shutdown_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_invoke_large_request_legacy_test"
+    "name": "chttp2_fake_security_invoke_large_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_max_concurrent_streams_legacy_test"
+    "name": "chttp2_fake_security_max_concurrent_streams_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_no_op_legacy_test"
+    "name": "chttp2_fake_security_no_op_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_ping_pong_streaming_legacy_test"
+    "name": "chttp2_fake_security_ping_pong_streaming_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test"
+    "name": "chttp2_fake_security_request_response_with_binary_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test"
+    "name": "chttp2_fake_security_request_response_with_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_payload_legacy_test"
+    "name": "chttp2_fake_security_request_response_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test"
+    "name": "chttp2_fake_security_request_response_with_trailing_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_with_large_metadata_legacy_test"
+    "name": "chttp2_fake_security_request_with_large_metadata_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_request_with_payload_legacy_test"
+    "name": "chttp2_fake_security_request_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_simple_delayed_request_legacy_test"
+    "name": "chttp2_fake_security_simple_delayed_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_simple_request_legacy_test"
+    "name": "chttp2_fake_security_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_thread_stress_legacy_test"
+    "name": "chttp2_fake_security_thread_stress_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test"
+    "name": "chttp2_fake_security_writes_done_hangs_with_pending_read_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_bad_hostname_test"
+    "name": "chttp2_fullstack_bad_hostname_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_after_accept_test"
+    "name": "chttp2_fullstack_cancel_after_accept_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_after_accept_and_writes_closed_test"
+    "name": "chttp2_fullstack_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_after_invoke_test"
+    "name": "chttp2_fullstack_cancel_after_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_before_invoke_test"
+    "name": "chttp2_fullstack_cancel_before_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_in_a_vacuum_test"
+    "name": "chttp2_fullstack_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_census_simple_request_test"
+    "name": "chttp2_fullstack_census_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_disappearing_server_test"
+    "name": "chttp2_fullstack_disappearing_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test"
+    "name": "chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_early_server_shutdown_finishes_tags_test"
+    "name": "chttp2_fullstack_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_empty_batch_test"
+    "name": "chttp2_fullstack_empty_batch_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_graceful_server_shutdown_test"
+    "name": "chttp2_fullstack_graceful_server_shutdown_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_invoke_large_request_test"
+    "name": "chttp2_fullstack_invoke_large_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_max_concurrent_streams_test"
+    "name": "chttp2_fullstack_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_no_op_test"
+    "name": "chttp2_fullstack_no_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_ping_pong_streaming_test"
+    "name": "chttp2_fullstack_ping_pong_streaming_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_binary_metadata_and_payload_test"
+    "name": "chttp2_fullstack_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_metadata_and_payload_test"
+    "name": "chttp2_fullstack_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_payload_test"
+    "name": "chttp2_fullstack_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_with_large_metadata_test"
+    "name": "chttp2_fullstack_request_with_large_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_with_payload_test"
+    "name": "chttp2_fullstack_request_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_simple_delayed_request_test"
+    "name": "chttp2_fullstack_simple_delayed_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_simple_request_test"
+    "name": "chttp2_fullstack_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_thread_stress_test"
+    "name": "chttp2_fullstack_thread_stress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_writes_done_hangs_with_pending_read_test"
+    "name": "chttp2_fullstack_writes_done_hangs_with_pending_read_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_after_accept_legacy_test"
+    "name": "chttp2_fullstack_cancel_after_accept_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test"
+    "name": "chttp2_fullstack_cancel_after_accept_and_writes_closed_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_after_invoke_legacy_test"
+    "name": "chttp2_fullstack_cancel_after_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_before_invoke_legacy_test"
+    "name": "chttp2_fullstack_cancel_before_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_cancel_in_a_vacuum_legacy_test"
+    "name": "chttp2_fullstack_cancel_in_a_vacuum_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_census_simple_request_legacy_test"
+    "name": "chttp2_fullstack_census_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_disappearing_server_legacy_test"
+    "name": "chttp2_fullstack_disappearing_server_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test"
+    "name": "chttp2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test"
+    "name": "chttp2_fullstack_early_server_shutdown_finishes_tags_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_graceful_server_shutdown_legacy_test"
+    "name": "chttp2_fullstack_graceful_server_shutdown_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_invoke_large_request_legacy_test"
+    "name": "chttp2_fullstack_invoke_large_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_max_concurrent_streams_legacy_test"
+    "name": "chttp2_fullstack_max_concurrent_streams_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_no_op_legacy_test"
+    "name": "chttp2_fullstack_no_op_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_ping_pong_streaming_legacy_test"
+    "name": "chttp2_fullstack_ping_pong_streaming_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test"
+    "name": "chttp2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test"
+    "name": "chttp2_fullstack_request_response_with_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_payload_legacy_test"
+    "name": "chttp2_fullstack_request_response_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test"
+    "name": "chttp2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_with_large_metadata_legacy_test"
+    "name": "chttp2_fullstack_request_with_large_metadata_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_request_with_payload_legacy_test"
+    "name": "chttp2_fullstack_request_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_simple_delayed_request_legacy_test"
+    "name": "chttp2_fullstack_simple_delayed_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_simple_request_legacy_test"
+    "name": "chttp2_fullstack_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_thread_stress_legacy_test"
+    "name": "chttp2_fullstack_thread_stress_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test"
+    "name": "chttp2_fullstack_writes_done_hangs_with_pending_read_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_bad_hostname_test"
+    "name": "chttp2_fullstack_uds_bad_hostname_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_test"
+    "name": "chttp2_fullstack_uds_cancel_after_accept_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test"
+    "name": "chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_invoke_test"
+    "name": "chttp2_fullstack_uds_cancel_after_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_before_invoke_test"
+    "name": "chttp2_fullstack_uds_cancel_before_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_in_a_vacuum_test"
+    "name": "chttp2_fullstack_uds_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_census_simple_request_test"
+    "name": "chttp2_fullstack_uds_census_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_disappearing_server_test"
+    "name": "chttp2_fullstack_uds_disappearing_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test"
+    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test"
+    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_empty_batch_test"
+    "name": "chttp2_fullstack_uds_empty_batch_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_graceful_server_shutdown_test"
+    "name": "chttp2_fullstack_uds_graceful_server_shutdown_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_invoke_large_request_test"
+    "name": "chttp2_fullstack_uds_invoke_large_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_max_concurrent_streams_test"
+    "name": "chttp2_fullstack_uds_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_no_op_test"
+    "name": "chttp2_fullstack_uds_no_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_ping_pong_streaming_test"
+    "name": "chttp2_fullstack_uds_ping_pong_streaming_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test"
+    "name": "chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_metadata_and_payload_test"
+    "name": "chttp2_fullstack_uds_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_payload_test"
+    "name": "chttp2_fullstack_uds_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_large_metadata_test"
+    "name": "chttp2_fullstack_uds_request_with_large_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_payload_test"
+    "name": "chttp2_fullstack_uds_request_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_delayed_request_test"
+    "name": "chttp2_fullstack_uds_simple_delayed_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_request_test"
+    "name": "chttp2_fullstack_uds_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_thread_stress_test"
+    "name": "chttp2_fullstack_uds_thread_stress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test"
+    "name": "chttp2_fullstack_uds_writes_done_hangs_with_pending_read_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_legacy_test"
+    "name": "chttp2_fullstack_uds_cancel_after_accept_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test"
+    "name": "chttp2_fullstack_uds_cancel_after_accept_and_writes_closed_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_after_invoke_legacy_test"
+    "name": "chttp2_fullstack_uds_cancel_after_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_before_invoke_legacy_test"
+    "name": "chttp2_fullstack_uds_cancel_before_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test"
+    "name": "chttp2_fullstack_uds_cancel_in_a_vacuum_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_census_simple_request_legacy_test"
+    "name": "chttp2_fullstack_uds_census_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_disappearing_server_legacy_test"
+    "name": "chttp2_fullstack_uds_disappearing_server_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test"
+    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_inflight_calls_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test"
+    "name": "chttp2_fullstack_uds_early_server_shutdown_finishes_tags_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_graceful_server_shutdown_legacy_test"
+    "name": "chttp2_fullstack_uds_graceful_server_shutdown_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_invoke_large_request_legacy_test"
+    "name": "chttp2_fullstack_uds_invoke_large_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_max_concurrent_streams_legacy_test"
+    "name": "chttp2_fullstack_uds_max_concurrent_streams_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_no_op_legacy_test"
+    "name": "chttp2_fullstack_uds_no_op_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_ping_pong_streaming_legacy_test"
+    "name": "chttp2_fullstack_uds_ping_pong_streaming_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test"
+    "name": "chttp2_fullstack_uds_request_response_with_binary_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test"
+    "name": "chttp2_fullstack_uds_request_response_with_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_payload_legacy_test"
+    "name": "chttp2_fullstack_uds_request_response_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test"
+    "name": "chttp2_fullstack_uds_request_response_with_trailing_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_large_metadata_legacy_test"
+    "name": "chttp2_fullstack_uds_request_with_large_metadata_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_request_with_payload_legacy_test"
+    "name": "chttp2_fullstack_uds_request_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_delayed_request_legacy_test"
+    "name": "chttp2_fullstack_uds_simple_delayed_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_simple_request_legacy_test"
+    "name": "chttp2_fullstack_uds_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_thread_stress_legacy_test"
+    "name": "chttp2_fullstack_uds_thread_stress_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test"
+    "name": "chttp2_fullstack_uds_writes_done_hangs_with_pending_read_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_bad_hostname_test"
+    "name": "chttp2_simple_ssl_fullstack_bad_hostname_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_after_invoke_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_after_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_before_invoke_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_before_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_census_simple_request_test"
+    "name": "chttp2_simple_ssl_fullstack_census_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_disappearing_server_test"
+    "name": "chttp2_simple_ssl_fullstack_disappearing_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test"
+    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test"
+    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_empty_batch_test"
+    "name": "chttp2_simple_ssl_fullstack_empty_batch_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_graceful_server_shutdown_test"
+    "name": "chttp2_simple_ssl_fullstack_graceful_server_shutdown_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_invoke_large_request_test"
+    "name": "chttp2_simple_ssl_fullstack_invoke_large_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_max_concurrent_streams_test"
+    "name": "chttp2_simple_ssl_fullstack_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_no_op_test"
+    "name": "chttp2_simple_ssl_fullstack_no_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_ping_pong_streaming_test"
+    "name": "chttp2_simple_ssl_fullstack_ping_pong_streaming_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test"
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test"
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_test"
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_test"
+    "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_with_payload_test"
+    "name": "chttp2_simple_ssl_fullstack_request_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_simple_delayed_request_test"
+    "name": "chttp2_simple_ssl_fullstack_simple_delayed_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_simple_request_test"
+    "name": "chttp2_simple_ssl_fullstack_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_thread_stress_test"
+    "name": "chttp2_simple_ssl_fullstack_thread_stress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test"
+    "name": "chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_after_accept_and_writes_closed_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_after_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_before_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_cancel_in_a_vacuum_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_census_simple_request_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_census_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_disappearing_server_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_disappearing_server_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_early_server_shutdown_finishes_tags_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_graceful_server_shutdown_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_invoke_large_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_max_concurrent_streams_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_no_op_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_no_op_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_ping_pong_streaming_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_binary_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_request_with_large_metadata_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_request_with_payload_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_request_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_simple_delayed_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_simple_request_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_thread_stress_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_thread_stress_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test"
+    "name": "chttp2_simple_ssl_fullstack_writes_done_hangs_with_pending_read_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_bad_hostname_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_bad_hostname_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_empty_batch_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_no_op_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_no_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_accept_and_writes_closed_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_after_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_before_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_cancel_in_a_vacuum_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_census_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_disappearing_server_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_inflight_calls_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_early_server_shutdown_finishes_tags_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_graceful_server_shutdown_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_max_concurrent_streams_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_no_op_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_ping_pong_streaming_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_binary_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_trailing_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_large_metadata_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_delayed_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_thread_stress_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test"
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_writes_done_hangs_with_pending_read_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_bad_hostname_test"
+    "name": "chttp2_socket_pair_bad_hostname_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_after_accept_test"
+    "name": "chttp2_socket_pair_cancel_after_accept_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_after_accept_and_writes_closed_test"
+    "name": "chttp2_socket_pair_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_after_invoke_test"
+    "name": "chttp2_socket_pair_cancel_after_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_before_invoke_test"
+    "name": "chttp2_socket_pair_cancel_before_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_in_a_vacuum_test"
+    "name": "chttp2_socket_pair_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_census_simple_request_test"
+    "name": "chttp2_socket_pair_census_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_disappearing_server_test"
+    "name": "chttp2_socket_pair_disappearing_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test"
+    "name": "chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_early_server_shutdown_finishes_tags_test"
+    "name": "chttp2_socket_pair_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_empty_batch_test"
+    "name": "chttp2_socket_pair_empty_batch_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_graceful_server_shutdown_test"
+    "name": "chttp2_socket_pair_graceful_server_shutdown_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_invoke_large_request_test"
+    "name": "chttp2_socket_pair_invoke_large_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_max_concurrent_streams_test"
+    "name": "chttp2_socket_pair_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_no_op_test"
+    "name": "chttp2_socket_pair_no_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_ping_pong_streaming_test"
+    "name": "chttp2_socket_pair_ping_pong_streaming_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test"
+    "name": "chttp2_socket_pair_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_metadata_and_payload_test"
+    "name": "chttp2_socket_pair_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_payload_test"
+    "name": "chttp2_socket_pair_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_with_large_metadata_test"
+    "name": "chttp2_socket_pair_request_with_large_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_with_payload_test"
+    "name": "chttp2_socket_pair_request_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_simple_delayed_request_test"
+    "name": "chttp2_socket_pair_simple_delayed_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_simple_request_test"
+    "name": "chttp2_socket_pair_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_thread_stress_test"
+    "name": "chttp2_socket_pair_thread_stress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_writes_done_hangs_with_pending_read_test"
+    "name": "chttp2_socket_pair_writes_done_hangs_with_pending_read_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_after_accept_legacy_test"
+    "name": "chttp2_socket_pair_cancel_after_accept_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test"
+    "name": "chttp2_socket_pair_cancel_after_accept_and_writes_closed_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_after_invoke_legacy_test"
+    "name": "chttp2_socket_pair_cancel_after_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_before_invoke_legacy_test"
+    "name": "chttp2_socket_pair_cancel_before_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_cancel_in_a_vacuum_legacy_test"
+    "name": "chttp2_socket_pair_cancel_in_a_vacuum_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_census_simple_request_legacy_test"
+    "name": "chttp2_socket_pair_census_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_disappearing_server_legacy_test"
+    "name": "chttp2_socket_pair_disappearing_server_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test"
+    "name": "chttp2_socket_pair_early_server_shutdown_finishes_inflight_calls_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test"
+    "name": "chttp2_socket_pair_early_server_shutdown_finishes_tags_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_graceful_server_shutdown_legacy_test"
+    "name": "chttp2_socket_pair_graceful_server_shutdown_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_invoke_large_request_legacy_test"
+    "name": "chttp2_socket_pair_invoke_large_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_max_concurrent_streams_legacy_test"
+    "name": "chttp2_socket_pair_max_concurrent_streams_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_no_op_legacy_test"
+    "name": "chttp2_socket_pair_no_op_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_ping_pong_streaming_legacy_test"
+    "name": "chttp2_socket_pair_ping_pong_streaming_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test"
+    "name": "chttp2_socket_pair_request_response_with_binary_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test"
+    "name": "chttp2_socket_pair_request_response_with_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_payload_legacy_test"
+    "name": "chttp2_socket_pair_request_response_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test"
+    "name": "chttp2_socket_pair_request_response_with_trailing_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_with_large_metadata_legacy_test"
+    "name": "chttp2_socket_pair_request_with_large_metadata_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_request_with_payload_legacy_test"
+    "name": "chttp2_socket_pair_request_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_simple_delayed_request_legacy_test"
+    "name": "chttp2_socket_pair_simple_delayed_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_simple_request_legacy_test"
+    "name": "chttp2_socket_pair_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_thread_stress_legacy_test"
+    "name": "chttp2_socket_pair_thread_stress_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test"
+    "name": "chttp2_socket_pair_writes_done_hangs_with_pending_read_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_bad_hostname_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_bad_hostname_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_census_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_disappearing_server_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_empty_batch_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_empty_batch_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_no_op_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_no_op_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_request_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_request_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_thread_stress_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_thread_stress_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_accept_and_writes_closed_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_after_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_before_invoke_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_cancel_in_a_vacuum_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_census_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_disappearing_server_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_inflight_calls_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_early_server_shutdown_finishes_tags_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_graceful_server_shutdown_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_max_concurrent_streams_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_no_op_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_ping_pong_streaming_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_binary_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_trailing_metadata_and_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_large_metadata_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_with_payload_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_delayed_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_simple_request_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_thread_stress_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }, 
   {
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test"
+    "name": "chttp2_socket_pair_one_byte_at_a_time_writes_done_hangs_with_pending_read_legacy_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
   }
 ]
 

@@ -31,42 +31,55 @@
  *
  */
 
-/* Win32 code for gpr time support. */
-
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WIN32
+#ifdef GPR_WINSOCK_SOCKET
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/endpoint_pair.h"
 
-#include <grpc/support/time.h>
-#include <sys/timeb.h>
-#include <windows.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
 
-gpr_timespec gpr_now(void) {
-  gpr_timespec now_tv;
-  struct _timeb now_tb;
-  _ftime_s(&now_tb);
-  now_tv.tv_sec = now_tb.time;
-  now_tv.tv_nsec = now_tb.millitm * 1000000;
-  return now_tv;
+#include "src/core/iomgr/tcp_windows.h"
+#include "src/core/iomgr/socket_windows.h"
+#include <grpc/support/log.h>
+
+static void create_sockets(SOCKET sv[2]) {
+  SOCKET svr_sock = INVALID_SOCKET;
+  SOCKET lst_sock = INVALID_SOCKET;
+  SOCKET cli_sock = INVALID_SOCKET;
+  SOCKADDR_IN addr;
+  int addr_len;
+
+  lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+  GPR_ASSERT(lst_sock != INVALID_SOCKET);
+
+  memset(&addr, 0, sizeof(addr));
+  GPR_ASSERT(bind(lst_sock, (struct sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
+  GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
+  GPR_ASSERT(getsockname(lst_sock, (struct sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
+
+  cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+  GPR_ASSERT(cli_sock != INVALID_SOCKET);
+
+  GPR_ASSERT(WSAConnect(cli_sock, (struct sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL) == 0);
+  svr_sock = accept(lst_sock, (struct sockaddr*)&addr, &addr_len);
+  GPR_ASSERT(svr_sock != INVALID_SOCKET);
+
+  closesocket(lst_sock);
+
+  sv[1] = cli_sock;
+  sv[0] = svr_sock;
 }
 
-void gpr_sleep_until(gpr_timespec until) {
-  gpr_timespec now;
-  gpr_timespec delta;
-  DWORD sleep_millis;
-
-  for (;;) {
-    /* We could simplify by using clock_nanosleep instead, but it might be
-     * slightly less portable. */
-    now = gpr_now();
-    if (gpr_time_cmp(until, now) <= 0) {
-      return;
-    }
-
-    delta = gpr_time_sub(until, now);
-    sleep_millis = delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
-    Sleep(sleep_millis);
-  }
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(size_t read_slice_size) {
+  SOCKET sv[2];
+  grpc_endpoint_pair p;
+  create_sockets(sv);
+  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1]));
+  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0]));
+  return p;
 }
 
-#endif /* GPR_WIN32 */
+#endif
