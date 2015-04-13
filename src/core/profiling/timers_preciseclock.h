@@ -53,5 +53,4 @@ static void grpc_precise_clock_print(const grpc_precise_clock* clk, FILE* fp) {
 }
 #endif /* GRPC_TIMERS_RDTSC */
 
-
 #endif /* GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H */

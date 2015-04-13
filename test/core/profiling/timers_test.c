@@ -38,7 +38,7 @@
 void test_log_events(int num_seqs) {
   int start = 0;
   int *state;
-  state = calloc(num_seqs,sizeof(state[0]));
+  state = calloc(num_seqs, sizeof(state[0]));
   while (start < num_seqs) {
     int i;
     int row;
@@ -48,10 +48,10 @@ void test_log_events(int num_seqs) {
     }
 
     row = rand() % 10; /* how many in a row */
-    for (i = start; (i < start+row) && (i < num_seqs); i++) {
+    for (i = start; (i < start + row) && (i < num_seqs); i++) {
       int j;
       int advance = 1 + rand() % 3; /* how many to advance by */
-      for (j=0; j<advance; j++) {
+      for (j = 0; j < advance; j++) {
         switch (state[i]) {
           case 0:
             GRPC_TIMER_MARK(STATE_0, i);
