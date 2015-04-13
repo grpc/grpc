@@ -31,24 +31,39 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
-#define GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
+#include "test/cpp/interop/server_helper.h"
 
-typedef struct {
-  const char *name;
-  grpc_call_error (*initiate_cancel)(grpc_call *call);
-  grpc_status_code expect_status;
-  const char *expect_details;
-} cancellation_mode;
+#include <memory>
 
-static grpc_call_error wait_for_deadline(grpc_call *call) {
-  return GRPC_CALL_OK;
+#include <gflags/gflags.h>
+#include "test/core/end2end/data/ssl_test_data.h"
+#include <grpc++/config.h>
+#include <grpc++/server_credentials.h>
+
+DECLARE_bool(enable_ssl);
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
+namespace grpc {
+namespace testing {
+
+std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
+  if (FLAGS_enable_ssl) {
+    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                        test_server1_cert};
+    SslServerCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = "";
+    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+    return SslServerCredentials(ssl_opts);
+  } else {
+    return InsecureServerCredentials();
+  }
 }
 
-static const cancellation_mode cancellation_modes[] = {
-    {"cancel", grpc_call_cancel, GRPC_STATUS_CANCELLED, ""},
-    {"deadline", wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED,
-     "Deadline Exceeded"},
-};
-
-#endif /* GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H */
+}  // namespace testing
+}  // namespace grpc

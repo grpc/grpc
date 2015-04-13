@@ -31,55 +31,49 @@
  *
  */
 
-#ifndef TEST_QPS_HISTOGRAM_H
-#define TEST_QPS_HISTOGRAM_H
+#ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
+#define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
+#include <memory>
 
-#include <grpc/support/histogram.h>
-#include "test/cpp/qps/qpstest.grpc.pb.h"
+#include <grpc/grpc.h>
+#include <grpc++/channel_interface.h>
+#include <grpc++/status.h>
+#include "test/cpp/interop/messages.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
-class Histogram {
+class InteropClient {
  public:
-  Histogram() : impl_(gpr_histogram_create(0.01, 60e9)) {}
-  ~Histogram() {
-    if (impl_) gpr_histogram_destroy(impl_);
-  }
-  Histogram(Histogram&& other) : impl_(other.impl_) { other.impl_ = nullptr; }
+  explicit InteropClient(std::shared_ptr<ChannelInterface> channel);
+  ~InteropClient() {}
 
-  void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
-  void Add(double value) { gpr_histogram_add(impl_, value); }
-  double Percentile(double pctile) const {
-    return gpr_histogram_percentile(impl_, pctile);
-  }
-  double Count() const { return gpr_histogram_count(impl_); }
-  void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
-  void FillProto(HistogramData* p) {
-    size_t n;
-    const auto* data = gpr_histogram_get_contents(impl_, &n);
-    for (size_t i = 0; i < n; i++) {
-      p->add_bucket(data[i]);
-    }
-    p->set_min_seen(gpr_histogram_minimum(impl_));
-    p->set_max_seen(gpr_histogram_maximum(impl_));
-    p->set_sum(gpr_histogram_sum(impl_));
-    p->set_sum_of_squares(gpr_histogram_sum_of_squares(impl_));
-    p->set_count(gpr_histogram_count(impl_));
-  }
-  void MergeProto(const HistogramData& p) {
-    gpr_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(),
-                                 p.min_seen(), p.max_seen(), p.sum(),
-                                 p.sum_of_squares(), p.count());
-  }
+  void Reset(std::shared_ptr<ChannelInterface> channel) { channel_ = channel; }
+
+  void DoEmpty();
+  void DoLargeUnary();
+  void DoPingPong();
+  void DoHalfDuplex();
+  void DoRequestStreaming();
+  void DoResponseStreaming();
+  void DoResponseStreamingWithSlowConsumer();
+  // Auth tests.
+  // username is a string containing the user email
+  void DoJwtTokenCreds(const grpc::string& username);
+  void DoComputeEngineCreds(const grpc::string& default_service_account,
+                            const grpc::string& oauth_scope);
+  // username is a string containing the user email
+  void DoServiceAccountCreds(const grpc::string& username,
+                             const grpc::string& oauth_scope);
 
  private:
-  Histogram(const Histogram&);
-  Histogram& operator=(const Histogram&);
+  void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
+  void AssertOkOrPrintErrorStatus(const Status& s);
 
-  gpr_histogram* impl_;
+  std::shared_ptr<ChannelInterface> channel_;
 };
-}
-}
 
-#endif /* TEST_QPS_HISTOGRAM_H */
+}  // namespace testing
+}  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H

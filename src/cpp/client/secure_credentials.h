@@ -31,55 +31,31 @@
  *
  */
 
-#ifndef TEST_QPS_HISTOGRAM_H
-#define TEST_QPS_HISTOGRAM_H
+#ifndef GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+#define GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
 
-#include <grpc/support/histogram.h>
-#include "test/cpp/qps/qpstest.grpc.pb.h"
+#include <grpc/grpc_security.h>
+
+#include <grpc++/config.h>
+#include <grpc++/credentials.h>
 
 namespace grpc {
-namespace testing {
 
-class Histogram {
+class SecureCredentials GRPC_FINAL : public Credentials {
  public:
-  Histogram() : impl_(gpr_histogram_create(0.01, 60e9)) {}
-  ~Histogram() {
-    if (impl_) gpr_histogram_destroy(impl_);
-  }
-  Histogram(Histogram&& other) : impl_(other.impl_) { other.impl_ = nullptr; }
+  explicit SecureCredentials(grpc_credentials* c_creds) : c_creds_(c_creds) {}
+  ~SecureCredentials() GRPC_OVERRIDE { grpc_credentials_release(c_creds_); }
+  grpc_credentials* GetRawCreds() { return c_creds_; }
 
-  void Merge(Histogram* h) { gpr_histogram_merge(impl_, h->impl_); }
-  void Add(double value) { gpr_histogram_add(impl_, value); }
-  double Percentile(double pctile) const {
-    return gpr_histogram_percentile(impl_, pctile);
-  }
-  double Count() const { return gpr_histogram_count(impl_); }
-  void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
-  void FillProto(HistogramData* p) {
-    size_t n;
-    const auto* data = gpr_histogram_get_contents(impl_, &n);
-    for (size_t i = 0; i < n; i++) {
-      p->add_bucket(data[i]);
-    }
-    p->set_min_seen(gpr_histogram_minimum(impl_));
-    p->set_max_seen(gpr_histogram_maximum(impl_));
-    p->set_sum(gpr_histogram_sum(impl_));
-    p->set_sum_of_squares(gpr_histogram_sum_of_squares(impl_));
-    p->set_count(gpr_histogram_count(impl_));
-  }
-  void MergeProto(const HistogramData& p) {
-    gpr_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(),
-                                 p.min_seen(), p.max_seen(), p.sum(),
-                                 p.sum_of_squares(), p.count());
-  }
+  std::shared_ptr<grpc::ChannelInterface> CreateChannel(
+      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE;
+  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
 
  private:
-  Histogram(const Histogram&);
-  Histogram& operator=(const Histogram&);
-
-  gpr_histogram* impl_;
+  grpc_credentials* const c_creds_;
 };
-}
-}
 
-#endif /* TEST_QPS_HISTOGRAM_H */
+}  // namespace grpc
+
+#endif  // GRPC_INTERNAL_CPP_CLIENT_SECURE_CREDENTIALS_H
+

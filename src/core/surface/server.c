@@ -137,6 +137,7 @@ struct grpc_server {
   size_t cq_count;
 
   gpr_mu mu;
+  gpr_cv cv;
 
   registered_method *registered_methods;
   requested_call_array requested_calls;
@@ -149,6 +150,7 @@ struct grpc_server {
   channel_data root_channel_data;
 
   listener *listeners;
+  int listeners_destroyed;
   gpr_refcount internal_refcount;
 };
 
@@ -263,6 +265,7 @@ static void server_unref(grpc_server *server) {
   if (gpr_unref(&server->internal_refcount)) {
     grpc_channel_args_destroy(server->channel_args);
     gpr_mu_destroy(&server->mu);
+    gpr_cv_destroy(&server->cv);
     gpr_free(server->channel_filters);
     requested_call_array_destroy(&server->requested_calls);
     while ((rm = server->registered_methods) != NULL) {
@@ -589,9 +592,8 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "server",
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "server",
 };
 
 static void addcq(grpc_server *server, grpc_completion_queue *cq) {
@@ -620,6 +622,7 @@ grpc_server *grpc_server_create_from_filters(grpc_completion_queue *cq,
   if (cq) addcq(server, cq);
 
   gpr_mu_init(&server->mu);
+  gpr_cv_init(&server->cv);
 
   server->unregistered_cq = cq;
   /* decremented by grpc_server_destroy */
@@ -733,7 +736,8 @@ grpc_transport_setup_result grpc_server_setup_transport(
   channel = grpc_channel_create_from_filters(filters, num_filters,
                                              s->channel_args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
-              grpc_channel_get_channel_stack(channel), 0)->channel_data;
+              grpc_channel_get_channel_stack(channel), 0)
+              ->channel_data;
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
@@ -754,7 +758,7 @@ grpc_transport_setup_result grpc_server_setup_transport(
       method = grpc_mdstr_from_string(mdctx, rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
-                               .server_registered_method != NULL;
+                           .server_registered_method != NULL;
            probes++)
         ;
       if (probes > max_probes) max_probes = probes;
@@ -779,6 +783,15 @@ grpc_transport_setup_result grpc_server_setup_transport(
   gpr_free(filters);
 
   return result;
+}
+
+static int num_listeners(grpc_server *server) {
+  listener *l;
+  int n = 0;
+  for (l = server->listeners; l; l = l->next) {
+    n++;
+  }
+  return n;
 }
 
 static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
@@ -878,11 +891,6 @@ static void shutdown_internal(grpc_server *server, gpr_uint8 have_shutdown_tag,
   for (l = server->listeners; l; l = l->next) {
     l->destroy(server, l->arg);
   }
-  while (server->listeners) {
-    l = server->listeners;
-    server->listeners = l->next;
-    gpr_free(l);
-  }
 }
 
 void grpc_server_shutdown(grpc_server *server) {
@@ -893,13 +901,40 @@ void grpc_server_shutdown_and_notify(grpc_server *server, void *tag) {
   shutdown_internal(server, 1, tag);
 }
 
+void grpc_server_listener_destroy_done(void *s) {
+  grpc_server *server = s;
+  gpr_mu_lock(&server->mu);
+  server->listeners_destroyed++;
+  gpr_cv_signal(&server->cv);
+  gpr_mu_unlock(&server->mu);
+}
+
 void grpc_server_destroy(grpc_server *server) {
   channel_data *c;
+  listener *l;
+  size_t i;
   gpr_mu_lock(&server->mu);
   if (!server->shutdown) {
     gpr_mu_unlock(&server->mu);
     grpc_server_shutdown(server);
     gpr_mu_lock(&server->mu);
+  }
+
+  while (server->listeners_destroyed != num_listeners(server)) {
+    for (i = 0; i < server->cq_count; i++) {
+      gpr_mu_unlock(&server->mu);
+      grpc_cq_hack_spin_pollset(server->cqs[i]);
+      gpr_mu_lock(&server->mu);
+    }
+
+    gpr_cv_wait(&server->cv, &server->mu,
+                gpr_time_add(gpr_now(), gpr_time_from_millis(100)));
+  }
+
+  while (server->listeners) {
+    l = server->listeners;
+    server->listeners = l->next;
+    gpr_free(l);
   }
 
   for (c = server->root_channel_data.next; c != &server->root_channel_data;

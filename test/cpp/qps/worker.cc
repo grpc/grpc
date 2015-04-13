@@ -55,7 +55,7 @@
 #include <grpc++/stream.h>
 #include "test/core/util/grpc_profiler.h"
 #include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 
