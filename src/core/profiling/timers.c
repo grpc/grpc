@@ -78,11 +78,9 @@ static int timer_now(grpc_timer_entry *tm) {
 grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE *dump,
                                         const char *fmt) {
   grpc_timers_log* log = gpr_malloc(sizeof(*log));
-  GPR_ASSERT(log);
 
   /* TODO (vpai): Allow allocation below limit */
   log->log = gpr_malloc(capacity_limit*sizeof(*log->log));
-  GPR_ASSERT(log->log);
 
   /* TODO (vpai): Improve concurrency, do per-thread logging? */
   gpr_mu_init(&log->mu);
