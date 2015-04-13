@@ -37,13 +37,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

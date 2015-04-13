@@ -32,6 +32,7 @@
 import hashlib
 import multiprocessing
 import os
+import platform
 import random
 import signal
 import subprocess
@@ -43,17 +44,19 @@ import time
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 
 
-have_alarm = False
-def alarm_handler(unused_signum, unused_frame):
-  global have_alarm
-  have_alarm = False
-
-
 # setup a signal handler so that signal.pause registers 'something'
 # when a child finishes
 # not using futures and threading to avoid a dependency on subprocess32
-signal.signal(signal.SIGCHLD, lambda unused_signum, unused_frame: None)
-signal.signal(signal.SIGALRM, alarm_handler)
+if platform.system() == "Windows":
+  pass
+else:
+  have_alarm = False
+  def alarm_handler(unused_signum, unused_frame):
+    global have_alarm
+    have_alarm = False
+
+  signal.signal(signal.SIGCHLD, lambda unused_signum, unused_frame: None)
+  signal.signal(signal.SIGALRM, alarm_handler)
 
 
 def shuffle_iteratable(it):
@@ -109,6 +112,11 @@ _TAG_COLOR = {
 
 
 def message(tag, message, explanatory_text=None, do_newline=False):
+  if platform.system() == 'Windows':
+    if explanatory_text:
+      print explanatory_text
+    print '%s: %s' % (tag, message)
+    return
   try:
     sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
         _BEGINNING_OF_LINE,
@@ -136,7 +144,7 @@ def which(filename):
 class JobSpec(object):
   """Specifies what to run for a job."""
 
-  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None):
+  def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None, cwd=None):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -152,6 +160,7 @@ class JobSpec(object):
     self.environ = environ
     self.shortname = cmdline[0] if shortname is None else shortname
     self.hash_targets = hash_targets or []
+    self.cwd = cwd
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -177,6 +186,7 @@ class Job(object):
     self._process = subprocess.Popen(args=spec.cmdline,
                                      stderr=subprocess.STDOUT,
                                      stdout=self._tempfile,
+                                     cwd=spec.cwd,
                                      env=env)
     self._state = _RUNNING
     self._newline_on_success = newline_on_success
@@ -241,10 +251,15 @@ class Jobset(object):
       bin_hash = None
       should_run = True
     if should_run:
-      self._running.add(Job(spec,
-                            bin_hash,
-                            self._newline_on_success,
-                            self._travis))
+      try:
+        self._running.add(Job(spec,
+                              bin_hash,
+                              self._newline_on_success,
+                              self._travis))
+      except:
+        message('FAILED', spec.shortname)
+        self._cancelled = True
+        return False
     return True
 
   def reap(self):
@@ -264,11 +279,14 @@ class Jobset(object):
       if (not self._travis):
         message('WAITING', '%d jobs running, %d complete, %d failed' % (
             len(self._running), self._completed, self._failures))
-      global have_alarm
-      if not have_alarm:
-        have_alarm = True
-        signal.alarm(10)
-      signal.pause()
+      if platform.system() == 'Windows':
+        time.sleep(0.1)
+      else:
+        global have_alarm
+        if not have_alarm:
+          have_alarm = True
+          signal.alarm(10)
+        signal.pause()
 
   def cancelled(self):
     """Poll for cancellation."""

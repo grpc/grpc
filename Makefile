@@ -2613,6 +2613,7 @@ LIBGRPC_SRC = \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
+    src/core/iomgr/endpoint_pair_windows.c \
     src/core/iomgr/fd_posix.c \
     src/core/iomgr/iocp_windows.c \
     src/core/iomgr/iomgr.c \
@@ -2761,6 +2762,7 @@ src/core/iomgr/alarm.c: $(OPENSSL_DEP)
 src/core/iomgr/alarm_heap.c: $(OPENSSL_DEP)
 src/core/iomgr/endpoint.c: $(OPENSSL_DEP)
 src/core/iomgr/endpoint_pair_posix.c: $(OPENSSL_DEP)
+src/core/iomgr/endpoint_pair_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/fd_posix.c: $(OPENSSL_DEP)
 src/core/iomgr/iocp_windows.c: $(OPENSSL_DEP)
 src/core/iomgr/iomgr.c: $(OPENSSL_DEP)
@@ -2925,6 +2927,7 @@ $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm.o:
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint_pair_posix.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint_pair_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/fd_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/iocp_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/iomgr.o: 
@@ -3015,6 +3018,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/grpc_profiler.c \
     test/core/util/parse_hexstring.c \
     test/core/util/port_posix.c \
+    test/core/util/port_windows.c \
     test/core/util/slice_splitter.c \
 
 
@@ -3044,6 +3048,7 @@ test/core/transport/transport_end2end_tests.c: $(OPENSSL_DEP)
 test/core/util/grpc_profiler.c: $(OPENSSL_DEP)
 test/core/util/parse_hexstring.c: $(OPENSSL_DEP)
 test/core/util/port_posix.c: $(OPENSSL_DEP)
+test/core/util/port_windows.c: $(OPENSSL_DEP)
 test/core/util/slice_splitter.c: $(OPENSSL_DEP)
 endif
 
@@ -3077,6 +3082,7 @@ $(OBJDIR)/$(CONFIG)/test/core/transport/transport_end2end_tests.o:
 $(OBJDIR)/$(CONFIG)/test/core/util/grpc_profiler.o: 
 $(OBJDIR)/$(CONFIG)/test/core/util/parse_hexstring.o: 
 $(OBJDIR)/$(CONFIG)/test/core/util/port_posix.o: 
+$(OBJDIR)/$(CONFIG)/test/core/util/port_windows.o: 
 $(OBJDIR)/$(CONFIG)/test/core/util/slice_splitter.o: 
 
 
@@ -3102,6 +3108,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/iomgr/alarm_heap.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
+    src/core/iomgr/endpoint_pair_windows.c \
     src/core/iomgr/fd_posix.c \
     src/core/iomgr/iocp_windows.c \
     src/core/iomgr/iomgr.c \
@@ -3243,6 +3250,7 @@ $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm.o:
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/alarm_heap.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint_pair_posix.o: 
+$(OBJDIR)/$(CONFIG)/src/core/iomgr/endpoint_pair_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/fd_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/iocp_windows.o: 
 $(OBJDIR)/$(CONFIG)/src/core/iomgr/iomgr.o: 

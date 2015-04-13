@@ -199,6 +199,7 @@
         "src/core/iomgr/alarm_heap.c",
         "src/core/iomgr/endpoint.c",
         "src/core/iomgr/endpoint_pair_posix.c",
+        "src/core/iomgr/endpoint_pair_windows.c",
         "src/core/iomgr/fd_posix.c",
         "src/core/iomgr/iocp_windows.c",
         "src/core/iomgr/iomgr.c",
@@ -447,6 +448,7 @@
         "test/core/util/grpc_profiler.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
+        "test/core/util/port_windows.c",
         "test/core/util/slice_splitter.c"
       ],
       "deps": [
@@ -909,6 +911,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
