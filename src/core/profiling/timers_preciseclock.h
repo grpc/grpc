@@ -31,38 +31,27 @@
  *
  */
 
-#ifndef GRPC_CORE_PROFILING_TIMERS_H
-#define GRPC_CORE_PROFILING_TIMERS_H
+#ifndef GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H
+#define GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H
 
+#include <grpc/support/time.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct grpc_precise_clock grpc_precise_clock;
 
-#ifdef GRPC_LATENCY_PROFILER
-
-typedef struct grpc_timers_log grpc_timers_log;
-
-grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE *dump);
-void grpc_timers_log_add(grpc_timers_log *, const char *tag, int seq,
-                        const char *file, int line);
-void grpc_timers_log_destroy(grpc_timers_log *);
-
-extern grpc_timers_log *grpc_timers_log_global;
-
-#define GRPC_TIMER_MARK(x, s) grpc_timers_log_add(grpc_timers_log_global, #x, \
-    s, __FILE__, __LINE__)
-
-#else /* !GRPC_LATENCY_PROFILER */
-#define GRPC_TIMER_MARK(x, s) do {} while (0)
-#endif /* GRPC_LATENCY_PROFILER */
-
-void grpc_timers_log_global_init(void);
-void grpc_timers_log_global_destroy(void);
-
-#ifdef __cplusplus
+#ifdef GRPC_TIMERS_RDTSC
+#error RDTSC timers not currently supported
+#else
+struct grpc_precise_clock {
+  gpr_timespec clock;
+};
+static void grpc_precise_clock_now(grpc_precise_clock* clk) {
+  clk->clock = gpr_now();
 }
-#endif
+static void grpc_precise_clock_print(const grpc_precise_clock* clk, FILE* fp) {
+  fprintf(fp, "%ld.%09d", clk->clock.tv_sec, clk->clock.tv_nsec);
+}
+#endif /* GRPC_TIMERS_RDTSC */
 
-#endif /* GRPC_CORE_PROFILING_TIMERS_H */
+
+#endif /* GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H */

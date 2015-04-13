@@ -34,6 +34,7 @@
 #ifdef GRPC_LATENCY_PROFILER
 
 #include "timers.h"
+#include "timers_preciseclock.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -42,12 +43,7 @@
 #include <stdio.h>
 
 typedef struct grpc_timer_entry {
-#ifdef GRPC_TIMERS_RDTSC
-#error Rdtsc timers not supported yet
-  /* TODO(vpai): Fill in rdtsc support if desired */
-#else
-  gpr_timespec timer;
-#endif
+  grpc_precise_clock tm;
   const char* tag;
   int seq;
   const char* file;
@@ -61,22 +57,11 @@ struct grpc_timers_log {
   int capacity;
   int capacity_limit;
   FILE *fp;
-  const char *fmt;
 };
 
 grpc_timers_log* grpc_timers_log_global = NULL;
 
-static int timer_now(grpc_timer_entry *tm) {
-#ifdef GRPC_TIMERS_RDTSC
-#error Rdtsc not supported yet
-#else
-  tm->timer = gpr_now();
-  return(1);
-#endif
-}
-
-grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE *dump,
-                                        const char *fmt) {
+grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE *dump) {
   grpc_timers_log* log = gpr_malloc(sizeof(*log));
 
   /* TODO (vpai): Allow allocation below limit */
@@ -89,24 +74,19 @@ grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE *dump,
   log->capacity = log->capacity_limit = capacity_limit;
 
   log->fp = dump;
-  log->fmt = fmt;
 
   return log;
 }
 
 static void log_report_locked(grpc_timers_log *log) {
   FILE *fp = log->fp;
-  const char *fmt = log->fmt;
   int i;
   for (i=0;i<log->num_entries;i++) {
     grpc_timer_entry* entry = &(log->log[i]);
-    fprintf(fp, fmt,
-#ifdef GRPC_TIMERS_RDTSC
-#error Rdtsc not supported
-#else
-            entry->timer.tv_sec, entry->timer.tv_nsec,
-#endif
-            entry->tag, entry->seq, entry->file, entry->line);
+    fprintf(fp, "GRPC_LAT_PROF ");
+    grpc_precise_clock_print(&entry->tm, fp);
+    fprintf(fp, " %s#%d,%s:%d\n", entry->tag, entry->seq,
+            entry->file, entry->line);
   }
 
   /* Now clear out the log */
@@ -136,7 +116,7 @@ void grpc_timers_log_add(grpc_timers_log *log, const char *tag, int seq,
 
   entry = &log->log[log->num_entries++];
 
-  timer_now(entry);
+  grpc_precise_clock_now(&entry->tm);
   entry->tag = tag;
   entry->seq = seq;
   entry->file = file;
@@ -146,21 +126,12 @@ void grpc_timers_log_add(grpc_timers_log *log, const char *tag, int seq,
 }
 
 void grpc_timers_log_global_init(void) {
-  grpc_timers_log_global =
-      grpc_timers_log_create(100000, stdout,
-#ifdef GRPC_TIMERS_RDTSC
-#error Rdtsc not supported
-#else
-                            "TIMER %1$ld.%2$09d %3$s seq %4$d @ %5$s:%6$d\n"
-#endif
-                            );
-  /* Use positional arguments as an example for others to change fmt */
+  grpc_timers_log_global = grpc_timers_log_create(100000, stdout);
 }
 
 void grpc_timers_log_global_destroy(void) {
   grpc_timers_log_destroy(grpc_timers_log_global);
 }
-
 #else /* !GRPC_LATENCY_PROFILER */
 void grpc_timers_log_global_init(void) {
 }
