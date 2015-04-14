@@ -550,3 +550,17 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   unlock(ctx);
   return slice;
 }
+
+void grpc_mdctx_lock(grpc_mdctx *ctx) { lock(ctx); }
+
+void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *gmd) {
+  internal_metadata *md = (internal_metadata *)gmd;
+  grpc_mdctx *elem_ctx = md->context;
+  GPR_ASSERT(md->refs);
+  GPR_ASSERT(ctx == elem_ctx);
+  if (0 == --md->refs) {
+    ctx->mdtab_free++;
+  }
+}
+
+void grpc_mdctx_unlock(grpc_mdctx *ctx) { unlock(ctx); }
