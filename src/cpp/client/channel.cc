@@ -61,17 +61,17 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
-  auto c_call = method.channel_tag()?
-    grpc_channel_create_registered_call(
-    c_channel_, cq->cq(),
-    method.channel_tag(), context->RawDeadline()) :
-
-   grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
-                                         context->authority().empty()
-                                             ? target_.c_str()
-                                             : context->authority().c_str(),
-                                         context->RawDeadline());
-  GRPC_TIMER_MARK(CALL_CREATED,c_call);
+  auto c_call =
+      method.channel_tag()
+          ? grpc_channel_create_registered_call(c_channel_, cq->cq(),
+                                                method.channel_tag(),
+                                                context->RawDeadline())
+          : grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
+                                     context->authority().empty()
+                                         ? target_.c_str()
+                                         : context->authority().c_str(),
+                                     context->RawDeadline());
+  GRPC_TIMER_MARK(CALL_CREATED, c_call);
   context->set_call(c_call);
   return Call(c_call, this, cq);
 }
@@ -87,7 +87,7 @@ void Channel::PerformOpsOnCall(CallOpBuffer* buf, Call* call) {
   GRPC_TIMER_MARK(PERFORM_OPS_END, call->call());
 }
 
-void *Channel::RegisterMethod(const char *method) {
+void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(c_channel_, method, target_.c_str());
 }
 

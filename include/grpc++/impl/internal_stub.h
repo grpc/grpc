@@ -42,7 +42,8 @@ namespace grpc {
 
 class InternalStub {
  public:
-  InternalStub(const std::shared_ptr<ChannelInterface>& channel) : channel_(channel) {}
+  InternalStub(const std::shared_ptr<ChannelInterface>& channel)
+      : channel_(channel) {}
   virtual ~InternalStub() {}
 
   ChannelInterface* channel() { return channel_.get(); }

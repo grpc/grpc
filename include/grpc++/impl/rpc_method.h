@@ -45,16 +45,17 @@ class RpcMethod {
     BIDI_STREAMING
   };
 
-  RpcMethod(const char* name, RpcType type, void *channel_tag) : name_(name), method_type_(type), channel_tag_(channel_tag) {}
+  RpcMethod(const char* name, RpcType type, void* channel_tag)
+      : name_(name), method_type_(type), channel_tag_(channel_tag) {}
 
   const char* name() const { return name_; }
   RpcType method_type() const { return method_type_; }
-  void *channel_tag() const { return channel_tag_; }
+  void* channel_tag() const { return channel_tag_; }
 
  private:
   const char* const name_;
   const RpcType method_type_;
-  void * const channel_tag_;
+  void* const channel_tag_;
 };
 
 }  // namespace grpc
