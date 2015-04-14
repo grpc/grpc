@@ -33,8 +33,8 @@
 
 #ifdef GRPC_LATENCY_PROFILER
 
-#include "timers.h"
-#include "timers_preciseclock.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/profiling/timers_preciseclock.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
