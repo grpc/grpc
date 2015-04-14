@@ -359,7 +359,7 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
       "class Stub GRPC_FINAL : public ::grpc::InternalStub {\n"
       " public:\n");
   printer->Indent();
-  printer->Print("Stub();\n");
+  printer->Print("Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethod(printer, service->method(i), vars);
   }
@@ -744,15 +744,14 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
       *vars,
       "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
       "const std::shared_ptr< ::grpc::ChannelInterface>& channel) {\n"
-      "  std::unique_ptr< $ns$$Service$::Stub> stub(new $ns$$Service$::Stub());\n"
-      "  stub->set_channel(channel);\n"
+      "  std::unique_ptr< $ns$$Service$::Stub> stub(new $ns$$Service$::Stub(channel));\n"
       "  return stub;\n"
       "}\n\n");
-  printer->Print(*vars, "$ns$$Service$::Stub::Stub()");
+  printer->Print(*vars, "$ns$$Service$::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)\n");
   printer->Indent();
+  printer->Print(": ::grpc::InternalStub(channel)");
   for (int i = 0; i < service->method_count(); ++i) {
     const grpc::protobuf::MethodDescriptor *method = service->method(i);
-    (*vars)["Sep"] = (i==0) ? ":" : ",";
     (*vars)["Method"] = method->name();
     (*vars)["Idx"] = as_string(i);
     if (NoStreaming(method)) {
@@ -764,12 +763,13 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
     } else {
       (*vars)["StreamingType"] = "BIDI_STREAMING";
     }
-    printer->Print(*vars, "$Sep$ rpcmethod_$Method$_("
+    printer->Print(*vars, ", rpcmethod_$Method$_("
       "$prefix$$Service$_method_names[$Idx$], "
-      "::grpc::RpcMethod::$StreamingType$"
+      "::grpc::RpcMethod::$StreamingType$, "
+      "channel->RegisterMethod($prefix$$Service$_method_names[$Idx$])"
       ")\n");
   }
-  printer->Print("{}\n");
+  printer->Print("{}\n\n");
   printer->Outdent();
 
   for (int i = 0; i < service->method_count(); ++i) {
