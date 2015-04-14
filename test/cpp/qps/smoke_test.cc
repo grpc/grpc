@@ -58,7 +58,7 @@ static void RunSynchronousUnaryPingPong() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(1);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   ReportQPS(result);
   ReportLatency(result);
@@ -80,7 +80,7 @@ static void RunSynchronousStreamingPingPong() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(1);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   ReportQPS(result);
   ReportLatency(result);
@@ -103,7 +103,7 @@ static void RunAsyncUnaryPingPong() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(1);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   ReportQPS(result);
   ReportLatency(result);
@@ -126,7 +126,7 @@ static void RunQPS() {
   server_config.set_enable_ssl(false);
   server_config.set_threads(4);
 
-  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK);
+  auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
   ReportQPSPerCore(result, server_config);
   ReportLatency(result);

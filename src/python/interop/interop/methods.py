@@ -292,7 +292,7 @@ def _service_account_creds(stub, args):
   if wanted_email != response.username:
     raise ValueError(
         'expected username %s, got %s' % (wanted_email, response.username))
-  if response.oauth_scope in args.oauth_scope:
+  if args.oauth_scope.find(response.oauth_scope) == -1:
     raise ValueError(
         'expected to find oauth scope "%s" in received "%s"' %
             (response.oauth_scope, args.oauth_scope))
