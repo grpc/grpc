@@ -1070,7 +1070,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_python_cmd() {
   echo $the_cmd
 }
 
-# constructs the full dockerized java interop test cmd.
+# constructs the full dockerized ruby interop test cmd.
 #
 # call-seq:
 #   flags= .... # generic flags to include the command
