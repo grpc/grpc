@@ -96,6 +96,15 @@ CPPFLAGS_opt = -O2
 LDFLAGS_opt =
 DEFINES_opt = NDEBUG
 
+VALID_CONFIG_latprof = 1
+CC_latprof = $(DEFAULT_CC)
+CXX_latprof = $(DEFAULT_CXX)
+LD_latprof = $(DEFAULT_CC)
+LDXX_latprof = $(DEFAULT_CXX)
+CPPFLAGS_latprof = -O2 -DGRPC_LATENCY_PROFILER
+LDFLAGS_latprof =
+DEFINES_latprof = NDEBUG
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)

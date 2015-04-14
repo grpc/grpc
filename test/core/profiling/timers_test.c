@@ -31,59 +31,53 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/debug/trace.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/statistics/census_interface.h"
 #include "src/core/profiling/timers.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/init.h"
-#include "src/core/surface/surface_trace.h"
-#include "src/core/transport/chttp2_transport.h"
+#include <stdlib.h>
+#include "test/core/util/test_config.h"
 
-static gpr_once g_basic_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
-static int g_initializations;
+void test_log_events(int num_seqs) {
+  int start = 0;
+  int *state;
+  state = calloc(num_seqs, sizeof(state[0]));
+  while (start < num_seqs) {
+    int i;
+    int row;
+    if (state[start] == 3) { /* Already done with this posn */
+      start++;
+      continue;
+    }
 
-static void do_basic_init(void) {
-  gpr_mu_init(&g_init_mu);
-  g_initializations = 0;
-}
-
-void grpc_init(void) {
-  gpr_once_init(&g_basic_init, do_basic_init);
-
-  gpr_mu_lock(&g_init_mu);
-  if (++g_initializations == 1) {
-    grpc_register_tracer("channel", &grpc_trace_channel);
-    grpc_register_tracer("surface", &grpc_surface_trace);
-    grpc_register_tracer("http", &grpc_http_trace);
-    grpc_register_tracer("batch", &grpc_trace_batch);
-    grpc_security_pre_init();
-    grpc_tracer_init("GRPC_TRACE");
-    grpc_iomgr_init();
-    census_init();
-    grpc_timers_log_global_init();
+    row = rand() % 10; /* how many in a row */
+    for (i = start; (i < start + row) && (i < num_seqs); i++) {
+      int j;
+      int advance = 1 + rand() % 3; /* how many to advance by */
+      for (j = 0; j < advance; j++) {
+        switch (state[i]) {
+          case 0:
+            GRPC_TIMER_MARK(STATE_0, i);
+            state[i]++;
+            break;
+          case 1:
+            GRPC_TIMER_MARK(STATE_1, i);
+            state[i]++;
+            break;
+          case 2:
+            GRPC_TIMER_MARK(STATE_2, i);
+            state[i]++;
+            break;
+          case 3:
+            break;
+        }
+      }
+    }
   }
-  gpr_mu_unlock(&g_init_mu);
+  free(state);
 }
 
-void grpc_shutdown(void) {
-  gpr_mu_lock(&g_init_mu);
-  if (--g_initializations == 0) {
-    grpc_iomgr_shutdown();
-    census_shutdown();
-    grpc_timers_log_global_destroy();
-  }
-  gpr_mu_unlock(&g_init_mu);
-}
-
-int grpc_is_initialized(void) {
-  int r;
-  gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
-  r = g_initializations > 0;
-  gpr_mu_unlock(&g_init_mu);
-  return r;
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_timers_log_global_init();
+  test_log_events(1000000);
+  grpc_timers_log_global_destroy();
+  return 0;
 }

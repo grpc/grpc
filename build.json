@@ -137,6 +137,8 @@
         "src/core/json/json_common.h",
         "src/core/json/json_reader.h",
         "src/core/json/json_writer.h",
+        "src/core/profiling/timers.h",
+        "src/core/profiling/timers_preciseclock.h",
         "src/core/statistics/census_interface.h",
         "src/core/statistics/census_log.h",
         "src/core/statistics/census_rpc_stats.h",
@@ -230,6 +232,7 @@
         "src/core/json/json_reader.c",
         "src/core/json/json_string.c",
         "src/core/json/json_writer.c",
+        "src/core/profiling/timers.c",
         "src/core/statistics/census_init.c",
         "src/core/statistics/census_log.c",
         "src/core/statistics/census_rpc_stats.c",
@@ -1757,6 +1760,20 @@
       "language": "c",
       "src": [
         "test/core/transport/chttp2/timeout_encoding_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "timers_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/profiling/timers_test.c"
       ],
       "deps": [
         "grpc_test_util",
