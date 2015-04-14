@@ -192,11 +192,11 @@ shared_examples 'GRPC metadata delivery works OK' do
   describe 'from client => server' do
     before(:example) do
       n = 7  # arbitrary number of metadata
-      diff_keys_fn = proc { |i| [sprintf('k%d', i), sprintf('v%d', i)] }
+      diff_keys_fn = proc { |i| [format('k%d', i), format('v%d', i)] }
       diff_keys = Hash[n.times.collect { |x| diff_keys_fn.call x }]
-      null_vals_fn = proc { |i| [sprintf('k%d', i), sprintf('v\0%d', i)] }
+      null_vals_fn = proc { |i| [format('k%d', i), format('v\0%d', i)] }
       null_vals = Hash[n.times.collect { |x| null_vals_fn.call x }]
-      same_keys_fn = proc { |i| [sprintf('k%d', i), [sprintf('v%d', i)] * n] }
+      same_keys_fn = proc { |i| [format('k%d', i), [format('v%d', i)] * n] }
       same_keys = Hash[n.times.collect { |x| same_keys_fn.call x }]
       symbol_key = { a_key: 'a val' }
       @valid_metadata = [diff_keys, same_keys, null_vals, symbol_key]
@@ -242,11 +242,11 @@ shared_examples 'GRPC metadata delivery works OK' do
   describe 'from server => client' do
     before(:example) do
       n = 7  # arbitrary number of metadata
-      diff_keys_fn = proc { |i| [sprintf('k%d', i), sprintf('v%d', i)] }
+      diff_keys_fn = proc { |i| [format('k%d', i), format('v%d', i)] }
       diff_keys = Hash[n.times.collect { |x| diff_keys_fn.call x }]
-      null_vals_fn = proc { |i| [sprintf('k%d', i), sprintf('v\0%d', i)] }
+      null_vals_fn = proc { |i| [format('k%d', i), format('v\0%d', i)] }
       null_vals = Hash[n.times.collect { |x| null_vals_fn.call x }]
-      same_keys_fn = proc { |i| [sprintf('k%d', i), [sprintf('v%d', i)] * n] }
+      same_keys_fn = proc { |i| [format('k%d', i), [format('v%d', i)] * n] }
       same_keys = Hash[n.times.collect { |x| same_keys_fn.call x }]
       symbol_key = { a_key: 'a val' }
       @valid_metadata = [diff_keys, same_keys, null_vals, symbol_key]
