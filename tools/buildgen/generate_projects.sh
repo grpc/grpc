@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -31,7 +31,7 @@
 
 set -e
 
-if [ "x$TEST" == "x" ] ; then
+if [ "x$TEST" = "x" ] ; then
   TEST=false
 fi
 
@@ -61,12 +61,12 @@ for dir in . ; do
     out=${out%.*}  # strip template extension
     json_files="build.json $end2end_test_build"
     data=`for i in $json_files; do echo -n "-d $i "; done`
-    if [ $TEST == true ] ; then
+    if [ "x$TEST" = "xtrue" ] ; then
       actual_out=$out
       out=`mktemp /tmp/gentXXXXXX`
     fi
     $mako_renderer $plugins $data -o $out $file
-    if [ $TEST == true ] ; then
+    if [ "x$TEST" = "xtrue" ] ; then
       diff -q $out $actual_out
       rm $out
     fi

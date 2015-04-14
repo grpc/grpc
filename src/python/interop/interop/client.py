@@ -64,7 +64,7 @@ def _args():
   return parser.parse_args()
 
 def _oauth_access_token(args):
-  credentials = client.GoogleCredentials.get_application_default()
+  credentials = oauth2client_client.GoogleCredentials.get_application_default()
   scoped_credentials = credentials.create_scoped([args.oauth_scope])
   return scoped_credentials.get_access_token().access_token
 

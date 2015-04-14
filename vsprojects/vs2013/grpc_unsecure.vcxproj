@@ -216,6 +216,8 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\endpoint_pair_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\endpoint_pair_windows.c">
+    </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\iocp_windows.c">

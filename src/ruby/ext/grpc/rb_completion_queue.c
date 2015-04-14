@@ -38,7 +38,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include "rb_grpc.h"
-#include "rb_event.h"
 
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
@@ -140,8 +139,19 @@ static VALUE grpc_rb_completion_queue_next(VALUE self, VALUE timeout) {
 
 /* Blocks until the next event for given tag is available, and returns the
  * event. */
-static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
-                                            VALUE timeout) {
+VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
+                                     VALUE timeout) {
+  grpc_event *ev = grpc_rb_completion_queue_pluck_event(self, tag, timeout);
+  if (ev == NULL) {
+    return Qnil;
+  }
+  return grpc_rb_new_event(ev);
+}
+
+/* Blocks until the next event for given tag is available, and returns the
+ * event. */
+grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
+                                                 VALUE timeout) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   Data_Get_Struct(self, grpc_completion_queue, next_call.cq);
@@ -151,30 +161,32 @@ static VALUE grpc_rb_completion_queue_pluck(VALUE self, VALUE tag,
   rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                              (void *)&next_call, NULL, NULL);
   if (next_call.event == NULL) {
-    return Qnil;
+    return NULL;
   }
-  return grpc_rb_new_event(next_call.event);
+  return next_call.event;
 }
 
-/* rb_cCompletionQueue is the ruby class that proxies grpc_completion_queue. */
-VALUE rb_cCompletionQueue = Qnil;
+/* grpc_rb_cCompletionQueue is the ruby class that proxies
+ * grpc_completion_queue. */
+VALUE grpc_rb_cCompletionQueue = Qnil;
 
 void Init_grpc_completion_queue() {
-  rb_cCompletionQueue =
-      rb_define_class_under(rb_mGrpcCore, "CompletionQueue", rb_cObject);
+  grpc_rb_cCompletionQueue =
+      rb_define_class_under(grpc_rb_mGrpcCore, "CompletionQueue", rb_cObject);
 
   /* constructor: uses an alloc func without an initializer. Using a simple
      alloc func works here as the grpc header does not specify any args for
      this func, so no separate initialization step is necessary. */
-  rb_define_alloc_func(rb_cCompletionQueue, grpc_rb_completion_queue_alloc);
+  rb_define_alloc_func(grpc_rb_cCompletionQueue,
+                       grpc_rb_completion_queue_alloc);
 
   /* Add the next method that waits for the next event. */
-  rb_define_method(rb_cCompletionQueue, "next", grpc_rb_completion_queue_next,
-                   1);
+  rb_define_method(grpc_rb_cCompletionQueue, "next",
+                   grpc_rb_completion_queue_next, 1);
 
   /* Add the pluck method that waits for the next event of given tag */
-  rb_define_method(rb_cCompletionQueue, "pluck", grpc_rb_completion_queue_pluck,
-                   2);
+  rb_define_method(grpc_rb_cCompletionQueue, "pluck",
+                   grpc_rb_completion_queue_pluck, 2);
 }
 
 /* Gets the wrapped completion queue from the ruby wrapper */

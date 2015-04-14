@@ -27,18 +27,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc'
+"""Buildgen expand binary attributes plugin.
 
-# GRPC contains the General RPC module.
-module GRPC
-  module Core
-    # Event is a class defined in the c extension
-    #
-    # Here, we add an inspect method.
-    class Event
-      def inspect
-        "<#{self.class}: type:#{type}, tag:#{tag} result:#{result}>"
-      end
-    end
-  end
-end
+This fills in any optional attributes.
+
+"""
+
+
+def mako_plugin(dictionary):
+  """The exported plugin code for expand_filegroups.
+
+  The list of libs in the build.json file can contain "filegroups" tags.
+  These refer to the filegroups in the root object. We will expand and
+  merge filegroups on the src, headers and public_headers properties.
+
+  """
+
+  targets = dictionary.get('targets')
+
+  for tgt in targets:
+    tgt['flaky'] = tgt.get('flaky', False)
+    tgt['platforms'] = tgt.get('platforms', ['windows', 'posix'])
+

@@ -99,6 +99,10 @@
     <ClInclude Include="..\..\include\grpc\support\sync_win32.h" />
     <ClInclude Include="..\..\include\grpc\support\thd.h" />
     <ClInclude Include="..\..\include\grpc\support\time.h" />
+    <ClInclude Include="..\..\include\grpc\support\tls.h" />
+    <ClInclude Include="..\..\include\grpc\support\tls_gcc.h" />
+    <ClInclude Include="..\..\include\grpc\support\tls_msvc.h" />
+    <ClInclude Include="..\..\include\grpc\support\tls_pthread.h" />
     <ClInclude Include="..\..\include\grpc\support\useful.h" />
   </ItemGroup>
   <ItemGroup>

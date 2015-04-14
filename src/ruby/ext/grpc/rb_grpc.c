@@ -39,12 +39,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
-#include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_channel.h"
 #include "rb_completion_queue.h"
-#include "rb_event.h"
-#include "rb_metadata.h"
 #include "rb_server.h"
 #include "rb_credentials.h"
 #include "rb_server_credentials.h"
@@ -53,7 +50,7 @@
 const RUBY_DATA_FUNC GC_NOT_MARKED = NULL;
 const RUBY_DATA_FUNC GC_DONT_FREE = NULL;
 
-VALUE rb_cTimeVal = Qnil;
+VALUE grpc_rb_cTimeVal = Qnil;
 
 /* Alloc func that blocks allocation of a given object by raising an
  * exception. */
@@ -99,7 +96,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
 
   switch (TYPE(time)) {
     case T_DATA:
-      if (CLASS_OF(time) == rb_cTimeVal) {
+      if (CLASS_OF(time) == grpc_rb_cTimeVal) {
         Data_Get_Struct(time, gpr_timespec, time_const);
         t = *time_const;
       } else if (CLASS_OF(time) == rb_cTime) {
@@ -155,35 +152,41 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
 
 void Init_grpc_status_codes() {
   /* Constants representing the status codes or grpc_status_code in status.h */
-  VALUE rb_mStatusCodes =
-      rb_define_module_under(rb_mGrpcCore, "StatusCodes");
-  rb_define_const(rb_mStatusCodes, "OK", INT2NUM(GRPC_STATUS_OK));
-  rb_define_const(rb_mStatusCodes, "CANCELLED", INT2NUM(GRPC_STATUS_CANCELLED));
-  rb_define_const(rb_mStatusCodes, "UNKNOWN", INT2NUM(GRPC_STATUS_UNKNOWN));
-  rb_define_const(rb_mStatusCodes, "INVALID_ARGUMENT",
+  VALUE grpc_rb_mStatusCodes =
+      rb_define_module_under(grpc_rb_mGrpcCore, "StatusCodes");
+  rb_define_const(grpc_rb_mStatusCodes, "OK", INT2NUM(GRPC_STATUS_OK));
+  rb_define_const(grpc_rb_mStatusCodes, "CANCELLED",
+                  INT2NUM(GRPC_STATUS_CANCELLED));
+  rb_define_const(grpc_rb_mStatusCodes, "UNKNOWN",
+                  INT2NUM(GRPC_STATUS_UNKNOWN));
+  rb_define_const(grpc_rb_mStatusCodes, "INVALID_ARGUMENT",
                   INT2NUM(GRPC_STATUS_INVALID_ARGUMENT));
-  rb_define_const(rb_mStatusCodes, "DEADLINE_EXCEEDED",
+  rb_define_const(grpc_rb_mStatusCodes, "DEADLINE_EXCEEDED",
                   INT2NUM(GRPC_STATUS_DEADLINE_EXCEEDED));
-  rb_define_const(rb_mStatusCodes, "NOT_FOUND", INT2NUM(GRPC_STATUS_NOT_FOUND));
-  rb_define_const(rb_mStatusCodes, "ALREADY_EXISTS",
+  rb_define_const(grpc_rb_mStatusCodes, "NOT_FOUND",
+                  INT2NUM(GRPC_STATUS_NOT_FOUND));
+  rb_define_const(grpc_rb_mStatusCodes, "ALREADY_EXISTS",
                   INT2NUM(GRPC_STATUS_ALREADY_EXISTS));
-  rb_define_const(rb_mStatusCodes, "PERMISSION_DENIED",
+  rb_define_const(grpc_rb_mStatusCodes, "PERMISSION_DENIED",
                   INT2NUM(GRPC_STATUS_PERMISSION_DENIED));
-  rb_define_const(rb_mStatusCodes, "UNAUTHENTICATED",
+  rb_define_const(grpc_rb_mStatusCodes, "UNAUTHENTICATED",
                   INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
-  rb_define_const(rb_mStatusCodes, "RESOURCE_EXHAUSTED",
+  rb_define_const(grpc_rb_mStatusCodes, "RESOURCE_EXHAUSTED",
                   INT2NUM(GRPC_STATUS_RESOURCE_EXHAUSTED));
-  rb_define_const(rb_mStatusCodes, "FAILED_PRECONDITION",
+  rb_define_const(grpc_rb_mStatusCodes, "FAILED_PRECONDITION",
                   INT2NUM(GRPC_STATUS_FAILED_PRECONDITION));
-  rb_define_const(rb_mStatusCodes, "ABORTED", INT2NUM(GRPC_STATUS_ABORTED));
-  rb_define_const(rb_mStatusCodes, "OUT_OF_RANGE",
+  rb_define_const(grpc_rb_mStatusCodes, "ABORTED",
+                  INT2NUM(GRPC_STATUS_ABORTED));
+  rb_define_const(grpc_rb_mStatusCodes, "OUT_OF_RANGE",
                   INT2NUM(GRPC_STATUS_OUT_OF_RANGE));
-  rb_define_const(rb_mStatusCodes, "UNIMPLEMENTED",
+  rb_define_const(grpc_rb_mStatusCodes, "UNIMPLEMENTED",
                   INT2NUM(GRPC_STATUS_UNIMPLEMENTED));
-  rb_define_const(rb_mStatusCodes, "INTERNAL", INT2NUM(GRPC_STATUS_INTERNAL));
-  rb_define_const(rb_mStatusCodes, "UNAVAILABLE",
+  rb_define_const(grpc_rb_mStatusCodes, "INTERNAL",
+                  INT2NUM(GRPC_STATUS_INTERNAL));
+  rb_define_const(grpc_rb_mStatusCodes, "UNAVAILABLE",
                   INT2NUM(GRPC_STATUS_UNAVAILABLE));
-  rb_define_const(rb_mStatusCodes, "DATA_LOSS", INT2NUM(GRPC_STATUS_DATA_LOSS));
+  rb_define_const(grpc_rb_mStatusCodes, "DATA_LOSS",
+                  INT2NUM(GRPC_STATUS_DATA_LOSS));
 }
 
 /* id_at is the constructor method of the ruby standard Time class. */
@@ -195,7 +198,7 @@ static ID id_inspect;
 /* id_to_s is the to_s method found on various ruby objects. */
 static ID id_to_s;
 
-/* Converts `a wrapped time constant to a standard time. */
+/* Converts a wrapped time constant to a standard time. */
 VALUE grpc_rb_time_val_to_time(VALUE self) {
   gpr_timespec *time_const = NULL;
   Data_Get_Struct(self, gpr_timespec, time_const);
@@ -215,22 +218,25 @@ VALUE grpc_rb_time_val_to_s(VALUE self) {
 
 /* Adds a module with constants that map to gpr's static timeval structs. */
 void Init_grpc_time_consts() {
-  VALUE rb_mTimeConsts =
-      rb_define_module_under(rb_mGrpcCore, "TimeConsts");
-  rb_cTimeVal =
-      rb_define_class_under(rb_mGrpcCore, "TimeSpec", rb_cObject);
-  rb_define_const(rb_mTimeConsts, "ZERO",
-                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+  VALUE grpc_rb_mTimeConsts =
+      rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
+  grpc_rb_cTimeVal =
+      rb_define_class_under(grpc_rb_mGrpcCore, "TimeSpec", rb_cObject);
+  rb_define_const(grpc_rb_mTimeConsts, "ZERO",
+                  Data_Wrap_Struct(grpc_rb_cTimeVal,
+                                   GC_NOT_MARKED, GC_DONT_FREE,
                                    (void *)&gpr_time_0));
-  rb_define_const(rb_mTimeConsts, "INFINITE_FUTURE",
-                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+  rb_define_const(grpc_rb_mTimeConsts, "INFINITE_FUTURE",
+                  Data_Wrap_Struct(grpc_rb_cTimeVal,
+                                   GC_NOT_MARKED, GC_DONT_FREE,
                                    (void *)&gpr_inf_future));
-  rb_define_const(rb_mTimeConsts, "INFINITE_PAST",
-                  Data_Wrap_Struct(rb_cTimeVal, GC_NOT_MARKED, GC_DONT_FREE,
+  rb_define_const(grpc_rb_mTimeConsts, "INFINITE_PAST",
+                  Data_Wrap_Struct(grpc_rb_cTimeVal,
+                                   GC_NOT_MARKED, GC_DONT_FREE,
                                    (void *)&gpr_inf_past));
-  rb_define_method(rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
-  rb_define_method(rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
-  rb_define_method(rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);
+  rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
+  rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
+  rb_define_method(grpc_rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);
   id_at = rb_intern("at");
   id_inspect = rb_intern("inspect");
   id_to_s = rb_intern("to_s");
@@ -242,31 +248,33 @@ void grpc_rb_shutdown(void *vm) { grpc_shutdown(); }
 
 /* Initialize the GRPC module structs */
 
-/* rb_sNewServerRpc is the struct that holds new server rpc details. */
-VALUE rb_sNewServerRpc = Qnil;
-/* rb_sStatus is the struct that holds status details. */
-VALUE rb_sStatus = Qnil;
+/* grpc_rb_sNewServerRpc is the struct that holds new server rpc details. */
+VALUE grpc_rb_sNewServerRpc = Qnil;
+/* grpc_rb_sStatus is the struct that holds status details. */
+VALUE grpc_rb_sStatus = Qnil;
 
 /* Initialize the GRPC module. */
-VALUE rb_mGRPC = Qnil;
-VALUE rb_mGrpcCore = Qnil;
+VALUE grpc_rb_mGRPC = Qnil;
+VALUE grpc_rb_mGrpcCore = Qnil;
 
 void Init_grpc() {
   grpc_init();
   ruby_vm_at_exit(grpc_rb_shutdown);
-  rb_mGRPC = rb_define_module("GRPC");
-  rb_mGrpcCore = rb_define_module_under(rb_mGRPC, "Core");
-  rb_sNewServerRpc = rb_struct_define("NewServerRpc", "method", "host",
-                                      "deadline", "metadata", NULL);
-  rb_sStatus = rb_struct_define("Status", "code", "details", "metadata", NULL);
+  grpc_rb_mGRPC = rb_define_module("GRPC");
+  grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
+  grpc_rb_sNewServerRpc =
+      rb_struct_define("NewServerRpc", "method", "host",
+                       "deadline", "metadata", "call", NULL);
+  grpc_rb_sStatus =
+      rb_struct_define("Status", "code", "details", "metadata", NULL);
+  sym_code = ID2SYM(rb_intern("code"));
+  sym_details = ID2SYM(rb_intern("details"));
+  sym_metadata = ID2SYM(rb_intern("metadata"));
 
-  Init_grpc_byte_buffer();
-  Init_grpc_event();
   Init_grpc_channel();
   Init_grpc_completion_queue();
   Init_grpc_call();
   Init_grpc_credentials();
-  Init_grpc_metadata();
   Init_grpc_server();
   Init_grpc_server_credentials();
   Init_grpc_status_codes();

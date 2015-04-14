@@ -66,51 +66,34 @@ describe GRPC::Core::RpcErrors do
   end
 end
 
-describe GRPC::Core::Call do
+describe GRPC::Core::CallOps do
   before(:each) do
-    @tag = Object.new
-    @client_queue = GRPC::Core::CompletionQueue.new
-    fake_host = 'localhost:10101'
+    @known_types = {
+      SEND_INITIAL_METADATA: 0,
+      SEND_MESSAGE: 1,
+      SEND_CLOSE_FROM_CLIENT: 2,
+      SEND_STATUS_FROM_SERVER: 3,
+      RECV_INITIAL_METADATA: 4,
+      RECV_MESSAGE: 5,
+      RECV_STATUS_ON_CLIENT: 6,
+      RECV_CLOSE_ON_SERVER: 7
+    }
+  end
+
+  it 'should have symbols for all the known operation types' do
+    m = GRPC::Core::CallOps
+    syms_and_codes = m.constants.collect { |c| [c, m.const_get(c)] }
+    expect(Hash[syms_and_codes]).to eq(@known_types)
+  end
+end
+
+describe GRPC::Core::Call do
+  let(:client_queue) { GRPC::Core::CompletionQueue.new }
+  let(:test_tag)  { Object.new }
+  let(:fake_host) { 'localhost:10101' }
+
+  before(:each) do
     @ch = GRPC::Core::Channel.new(fake_host, nil)
-  end
-
-  describe '#start_read' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_read(@tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#start_write' do
-    xit 'should fail if called immediately' do
-      bytes = GRPC::Core::ByteBuffer.new('test string')
-      blk = proc { make_test_call.start_write(bytes, @tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#start_write_status' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.start_write_status(153, 'x', @tag) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#writes_done' do
-    xit 'should fail if called immediately' do
-      blk = proc { make_test_call.writes_done(Object.new) }
-      expect(&blk).to raise_error GRPC::Core::CallError
-    end
-  end
-
-  describe '#add_metadata' do
-    it 'adds metadata to a call without fail' do
-      call = make_test_call
-      n = 37
-      one_md = proc { |x| [sprintf('key%d', x), sprintf('value%d', x)] }
-      metadata = Hash[n.times.collect { |i| one_md.call i }]
-      expect { call.add_metadata(metadata) }.to_not raise_error
-    end
   end
 
   describe '#status' do
@@ -154,7 +137,7 @@ describe GRPC::Core::Call do
   end
 
   def make_test_call
-    @ch.create_call('dummy_method', 'dummy_host', deadline)
+    @ch.create_call(client_queue, 'dummy_method', 'dummy_host', deadline)
   end
 
   def deadline

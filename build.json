@@ -29,6 +29,12 @@
         "include/grpc++/impl/rpc_method.h",
         "include/grpc++/impl/rpc_service_method.h",
         "include/grpc++/impl/service_type.h",
+        "include/grpc++/impl/sync.h",
+        "include/grpc++/impl/sync_cxx11.h",
+        "include/grpc++/impl/sync_no_cxx11.h",
+        "include/grpc++/impl/thd.h",
+        "include/grpc++/impl/thd_cxx11.h",
+        "include/grpc++/impl/thd_no_cxx11.h",
         "include/grpc++/server.h",
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
@@ -191,6 +197,7 @@
         "src/core/iomgr/alarm_heap.c",
         "src/core/iomgr/endpoint.c",
         "src/core/iomgr/endpoint_pair_posix.c",
+        "src/core/iomgr/endpoint_pair_windows.c",
         "src/core/iomgr/fd_posix.c",
         "src/core/iomgr/iocp_windows.c",
         "src/core/iomgr/iomgr.c",
@@ -297,6 +304,10 @@
         "include/grpc/support/sync_win32.h",
         "include/grpc/support/thd.h",
         "include/grpc/support/time.h",
+        "include/grpc/support/tls.h",
+        "include/grpc/support/tls_gcc.h",
+        "include/grpc/support/tls_msvc.h",
+        "include/grpc/support/tls_pthread.h",
         "include/grpc/support/useful.h"
       ],
       "headers": [
@@ -434,6 +445,7 @@
         "test/core/util/grpc_profiler.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
+        "test/core/util/port_windows.c",
         "test/core/util/slice_splitter.c"
       ],
       "deps": [
@@ -464,6 +476,10 @@
       "name": "grpc++",
       "build": "all",
       "language": "c++",
+      "headers": [
+        "src/cpp/client/secure_credentials.h",
+        "src/cpp/server/secure_server_credentials.h"
+      ],
       "src": [
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc"
@@ -532,6 +548,74 @@
       "secure": "no"
     },
     {
+      "name": "interop_client_helper",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/interop/client_helper.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "interop_client_main",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/interop/empty.proto",
+        "test/cpp/interop/messages.proto",
+        "test/cpp/interop/test.proto",
+        "test/cpp/interop/client.cc",
+        "test/cpp/interop/interop_client.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "interop_server_helper",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/interop/server_helper.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr"
+      ]
+    },
+    {
+      "name": "interop_server_main",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/interop/empty.proto",
+        "test/cpp/interop/messages.proto",
+        "test/cpp/interop/test.proto",
+        "test/cpp/interop/server.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "pubsub_client_lib",
       "build": "private",
       "language": "c++",
@@ -554,11 +638,13 @@
       "language": "c++",
       "headers": [
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
       ],
       "src": [
         "test/cpp/qps/qpstest.proto",
         "test/cpp/qps/driver.cc",
+        "test/cpp/qps/report.cc",
         "test/cpp/qps/timer.cc"
       ]
     },
@@ -857,6 +943,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1138,6 +1227,18 @@
       "language": "c",
       "src": [
         "test/core/support/time_test.c"
+      ],
+      "deps": [
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "gpr_tls_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/support/tls_test.c"
       ],
       "deps": [
         "gpr_test_util",
@@ -1861,13 +1962,10 @@
       "build": "test",
       "run": false,
       "language": "c++",
-      "src": [
-        "test/cpp/interop/empty.proto",
-        "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
-        "test/cpp/interop/client.cc"
-      ],
+      "src": [],
       "deps": [
+        "interop_client_main",
+        "interop_client_helper",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1881,13 +1979,10 @@
       "build": "test",
       "run": false,
       "language": "c++",
-      "src": [
-        "test/cpp/interop/empty.proto",
-        "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
-        "test/cpp/interop/server.cc"
-      ],
+      "src": [],
       "deps": [
+        "interop_server_main",
+        "interop_server_helper",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
@@ -1968,6 +2063,24 @@
       "language": "c++",
       "src": [
         "test/cpp/qps/qps_driver.cc"
+      ],
+      "deps": [
+        "qps",
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "qps_smoke_test",
+      "build": "test",
+      "run": false,
+      "language": "c++",
+      "src": [
+        "test/cpp/qps/smoke_test.cc"
       ],
       "deps": [
         "qps",

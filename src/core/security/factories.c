@@ -50,3 +50,19 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   return grpc_secure_channel_create_with_factories(
       factories, GPR_ARRAY_SIZE(factories), creds, target, args);
 }
+
+grpc_security_status grpc_server_security_context_create(
+    grpc_server_credentials *creds, grpc_security_context **ctx) {
+  grpc_security_status status = GRPC_SECURITY_ERROR;
+
+  *ctx = NULL;
+  if (strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL) == 0) {
+    status = grpc_ssl_server_security_context_create(
+        grpc_ssl_server_credentials_get_config(creds), ctx);
+  } else if (strcmp(creds->type,
+                    GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) == 0) {
+    *ctx = grpc_fake_server_security_context_create();
+    status = GRPC_SECURITY_OK;
+  }
+  return status;
+}

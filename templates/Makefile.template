@@ -930,6 +930,7 @@ else
 	$(Q) $(INSTALL) -d $(prefix)/lib
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.$(SHARED_EXT)
 ifneq ($(SYSTEM),Darwin)
+	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so.${settings.version.major}
 	$(Q) ln -sf lib${lib.name}.$(SHARED_EXT) $(prefix)/lib/lib${lib.name}.so
 endif
 endif
@@ -1268,9 +1269,6 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
 % endif
-% if tgt.build == 'test':
- $(GTEST_LIB)\
-% endif
 % else:
 ## C-only targets specificities.
 	$(E) "[LD]      Linking $@"
@@ -1296,6 +1294,9 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  $(HOST_LDLIBS_PROTOC)\
 % elif tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
  $(LDLIBS_SECURE)\
+% endif
+% if tgt.language == 'c++' and tgt.build == 'test':
+ $(GTEST_LIB)\
 % endif
  -o $(BINDIR)/$(CONFIG)/${tgt.name}
 % if tgt.build == 'protoc' or tgt.language == 'c++':
