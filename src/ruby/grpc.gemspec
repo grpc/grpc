@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'google-protobuf', '~> 3.0.0alpha.1.1'
-  s.add_dependency 'googleauth', '~> 0.1'
+  s.add_dependency 'googleauth', '~> 0.4'
   s.add_dependency 'logging', '~> 1.8'
   s.add_dependency 'minitest', '~> 5.4'  # reqd for interop tests
   s.add_dependency 'xray', '~> 1.1'
