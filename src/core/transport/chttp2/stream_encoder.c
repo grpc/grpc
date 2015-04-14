@@ -566,6 +566,10 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
         curop++;
         break;
       case GRPC_OP_METADATA:
+        /* Encode a metadata element; store the returned value, representing
+           a metadata element that needs to be unreffed back into the metadata
+           slot. THIS MAY NOT BE THE SAME ELEMENT (if a decoder table slot got
+           updated). After this loop, we'll do a batch unref of elements. */
         op->data.metadata = hpack_enc(compressor, op->data.metadata, &st);
         need_unref |= op->data.metadata != NULL;
         curop++;
