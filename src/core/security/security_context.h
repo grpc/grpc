@@ -190,7 +190,7 @@ grpc_channel *grpc_fake_transport_security_channel_create(
 
 grpc_channel *grpc_secure_channel_create_internal(
     const char *target, const grpc_channel_args *args,
-    grpc_channel_security_context *ctx);
+    grpc_channel_security_context *ctx, grpc_mdctx *mdctx);
 
 typedef grpc_channel *(*grpc_secure_channel_factory_func)(
     grpc_credentials *transport_security_creds,
