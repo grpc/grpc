@@ -1,0 +1,16 @@
+{
+  "name": "{{{name}}}",
+  "version": "{{{version}}}",
+  "author": "Google Inc.",
+  "description": "Client library for {{{name}}} built on gRPC",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "grpc": "{{{grpc_version}}}"
+  },
+  "main": "index.js",
+  "files": [
+    "LICENSE",
+    "index.js",
+    "service.json"
+  ]
+}
