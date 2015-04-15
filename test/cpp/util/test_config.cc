@@ -31,46 +31,22 @@
  *
  */
 
-#include <sys/signal.h>
-
-#include <chrono>
-#include <thread>
-
-#include <grpc/grpc.h>
 #include <gflags/gflags.h>
-
-#include "qps_worker.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_int32(driver_port, 0, "Driver server port.");
-DEFINE_int32(server_port, 0, "Spawned server port.");
-
-static bool got_sigint = false;
-
-static void sigint_handler(int x) {got_sigint = true;}
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 namespace grpc {
 namespace testing {
 
-static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
-
-  while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-  }
+void InitTest(int* argc, char*** argv, bool remove_flags) {
+  ParseCommandLineFlags(argc, argv, remove_flags);
 }
 
 }  // namespace testing
 }  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc_init();
-  grpc::testing::InitTest(&argc, &argv, true);
-
-  signal(SIGINT, sigint_handler);
-
-  grpc::testing::RunServer();
-
-  grpc_shutdown();
-  return 0;
-}

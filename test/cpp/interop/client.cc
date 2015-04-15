@@ -44,6 +44,7 @@
 #include <grpc++/stream.h>
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
@@ -74,17 +75,10 @@ DEFINE_string(oauth_scope, "", "Scope for OAuth tokens.");
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
 int main(int argc, char** argv) {
   grpc_init();
 
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   grpc::testing::InteropClient client(
       CreateChannelForTestCase(FLAGS_test_case));
