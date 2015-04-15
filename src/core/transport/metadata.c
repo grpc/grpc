@@ -555,3 +555,17 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   unlock(ctx);
   return slice;
 }
+
+void grpc_mdctx_lock(grpc_mdctx *ctx) { lock(ctx); }
+
+void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *gmd) {
+  internal_metadata *md = (internal_metadata *)gmd;
+  grpc_mdctx *elem_ctx = md->context;
+  GPR_ASSERT(ctx == elem_ctx);
+  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
+  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
+    ctx->mdtab_free++;
+  }
+}
+
+void grpc_mdctx_unlock(grpc_mdctx *ctx) { unlock(ctx); }

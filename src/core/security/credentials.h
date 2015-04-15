@@ -94,6 +94,7 @@ typedef struct {
   void (*destroy)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
+  grpc_mdctx *(*get_metadata_context)(grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c,
                                const char *service_url,
                                grpc_credentials_metadata_cb cb,
@@ -114,6 +115,8 @@ void grpc_credentials_get_request_metadata(grpc_credentials *creds,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
+grpc_mdctx *grpc_credentials_get_metadata_context(grpc_credentials *creds);
+
 typedef struct {
   unsigned char *pem_private_key;
   size_t pem_private_key_size;

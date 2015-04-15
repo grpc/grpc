@@ -205,12 +205,11 @@ static grpc_transport_setup_result complete_setup(void *channel_stack,
                    - perform handshakes */
 grpc_channel *grpc_secure_channel_create_internal(
     const char *target, const grpc_channel_args *args,
-    grpc_channel_security_context *context) {
+    grpc_channel_security_context *context, grpc_mdctx *mdctx) {
   setup *s;
   grpc_channel *channel;
   grpc_arg context_arg;
   grpc_channel_args *args_copy;
-  grpc_mdctx *mdctx = grpc_mdctx_create();
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
   int n = 0;
