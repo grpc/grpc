@@ -384,16 +384,6 @@
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "pubsub_publisher_test"
-  }, 
-  {
-    "flaky": false, 
-    "language": "c++", 
-    "name": "pubsub_subscriber_test"
-  }, 
-  {
-    "flaky": false, 
-    "language": "c++", 
     "name": "status_test"
   }, 
   {
