@@ -388,6 +388,23 @@ describe GRPC::RpcServer do
         t.join
       end
 
+      it 'should handle cancellation correctly', server: true do
+        service = SlowService.new
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = SlowStub.new(@host, **@client_opts)
+        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        cancel_thread = Thread.new do 
+          sleep 0.1
+          op.cancel
+        end
+        expect{op.execute}.to raise_error GRPC::Cancelled
+        @srv.stop
+        t.join
+      end
+
       it 'should receive updated metadata', server: true do
         service = EchoService.new
         @srv.handle(service)
