@@ -179,7 +179,7 @@ static grpc_mdelem *add_elem(grpc_chttp2_hpack_compressor *c,
   gpr_uint32 new_index = c->tail_remote_index + c->table_elems + 1;
   gpr_uint32 elem_size = 32 + GPR_SLICE_LENGTH(elem->key->slice) +
                          GPR_SLICE_LENGTH(elem->value->slice);
-  grpc_mdelem *elem_to_unref = (void *)1;
+  grpc_mdelem *elem_to_unref;
 
   /* Reserve space for this element in the remote table: if this overflows
      the current table, drop elements until it fits, matching the decompressor
