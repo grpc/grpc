@@ -406,7 +406,7 @@ static void grpc_tcp_handle_read(void *arg /* grpc_tcp */, int success) {
       ++iov_size;
     }
   }
-  GRPC_TIMER_MARK(HANDLE_READ_BEGIN, 0);
+  GRPC_TIMER_MARK(HANDLE_READ_END, 0);
 }
 
 static void grpc_tcp_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,

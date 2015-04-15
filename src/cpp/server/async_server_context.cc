@@ -91,7 +91,7 @@ bool AsyncServerContext::ParseRead(grpc_byte_buffer* read_buffer) {
   GPR_ASSERT(request_);
   GRPC_TIMER_MARK(DESER_PROTO_BEGIN, call_->call());
   bool success = DeserializeProto(read_buffer, request_);
-  GRPC_TIMER_MARK(DESER_PROTO_BEGIN, call_->call());
+  GRPC_TIMER_MARK(DESER_PROTO_END, call_->call());
   request_ = nullptr;
   return success;
 }
