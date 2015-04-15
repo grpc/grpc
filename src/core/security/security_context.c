@@ -359,7 +359,6 @@ static int ssl_host_matches_name(const tsi_peer *peer,
     peer_name = allocated_name;
     if (!peer_name) return 0;
   }
-  
   r = tsi_ssl_peer_matches_name(peer, peer_name);
   gpr_free(allocated_name);
   return r;
@@ -453,13 +452,13 @@ static void init_default_pem_root_certs(void) {
   if (default_root_certs_path == NULL) {
     default_pem_root_certs = gpr_empty_slice();
   } else {
-    default_pem_root_certs = gpr_load_file(default_root_certs_path, NULL);
+    default_pem_root_certs = gpr_load_file(default_root_certs_path, 0, NULL);
     gpr_free(default_root_certs_path);
   }
 
   /* Fall back to installed certs if needed. */
   if (GPR_SLICE_IS_EMPTY(default_pem_root_certs)) {
-    default_pem_root_certs = gpr_load_file(installed_roots_path, NULL);
+    default_pem_root_certs = gpr_load_file(installed_roots_path, 0, NULL);
   }
 }
 

@@ -41,7 +41,8 @@
 
 #include "src/core/support/string.h"
 
-gpr_slice gpr_load_file(const char *filename, int *success) {
+gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
+                        int *success) {
   unsigned char *contents = NULL;
   size_t contents_size = 0;
   unsigned char buf[4096];
@@ -76,6 +77,10 @@ gpr_slice gpr_load_file(const char *filename, int *success) {
     }
   }
   if (success != NULL) *success = 1;
+  if (add_null_terminator) {
+    contents = gpr_realloc(contents, contents_size + 1);
+    contents[contents_size++] = 0;
+  }
   result = gpr_slice_new(contents, contents_size, gpr_free);
 
 end:
