@@ -396,11 +396,11 @@ describe GRPC::RpcServer do
         req = EchoMsg.new
         stub = SlowStub.new(@host, **@client_opts)
         op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
-        cancel_thread = Thread.new do 
+        Thread.new do  # cancel the call
           sleep 0.1
           op.cancel
         end
-        expect{op.execute}.to raise_error GRPC::Cancelled
+        expect { op.execute }.to raise_error GRPC::Cancelled
         @srv.stop
         t.join
       end
