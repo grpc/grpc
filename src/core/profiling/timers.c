@@ -45,7 +45,7 @@
 typedef struct grpc_timer_entry {
   grpc_precise_clock tm;
   const char* tag;
-  void* seq;
+  void* id;
   const char* file;
   int line;
 } grpc_timer_entry;
@@ -85,7 +85,7 @@ static void log_report_locked(grpc_timers_log* log) {
     grpc_timer_entry* entry = &(log->log[i]);
     fprintf(fp, "GRPC_LAT_PROF ");
     grpc_precise_clock_print(&entry->tm, fp);
-    fprintf(fp, " %s %p %s %d\n", entry->tag, entry->seq, entry->file,
+    fprintf(fp, " %s %p %s %d\n", entry->tag, entry->id, entry->file,
             entry->line);
   }
 
@@ -104,7 +104,7 @@ void grpc_timers_log_destroy(grpc_timers_log* log) {
   gpr_free(log);
 }
 
-void grpc_timers_log_add(grpc_timers_log* log, const char* tag, void* seq,
+void grpc_timers_log_add(grpc_timers_log* log, const char* tag, void* id,
                          const char* file, int line) {
   grpc_timer_entry* entry;
 
@@ -118,7 +118,7 @@ void grpc_timers_log_add(grpc_timers_log* log, const char* tag, void* seq,
 
   grpc_precise_clock_now(&entry->tm);
   entry->tag = tag;
-  entry->seq = seq;
+  entry->id = id;
   entry->file = file;
   entry->line = line;
 

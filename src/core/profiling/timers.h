@@ -45,7 +45,7 @@ extern "C" {
 typedef struct grpc_timers_log grpc_timers_log;
 
 grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE* dump);
-void grpc_timers_log_add(grpc_timers_log*, const char* tag, void* seq,
+void grpc_timers_log_add(grpc_timers_log*, const char* tag, void* id,
                          const char* file, int line);
 void grpc_timers_log_destroy(grpc_timers_log *);
 
