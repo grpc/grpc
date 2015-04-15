@@ -32,10 +32,11 @@
  */
 
 #include <grpc/grpc.h>
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/debug/trace.h"
-#include "src/core/statistics/census_interface.h"
 #include "src/core/channel/channel_stack.h"
+#include "src/core/debug/trace.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/statistics/census_interface.h"
+#include "src/core/profiling/timers.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
@@ -63,6 +64,7 @@ void grpc_init(void) {
     grpc_tracer_init("GRPC_TRACE");
     grpc_iomgr_init();
     census_init();
+    grpc_timers_log_global_init();
   }
   gpr_mu_unlock(&g_init_mu);
 }
@@ -72,6 +74,7 @@ void grpc_shutdown(void) {
   if (--g_initializations == 0) {
     grpc_iomgr_shutdown();
     census_shutdown();
+    grpc_timers_log_global_destroy();
   }
   gpr_mu_unlock(&g_init_mu);
 }

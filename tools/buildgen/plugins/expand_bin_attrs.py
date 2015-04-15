@@ -27,7 +27,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# GRPC contains the General RPC module.
-module GRPC
-  VERSION = '0.6.1'
-end
+"""Buildgen expand binary attributes plugin.
+
+This fills in any optional attributes.
+
+"""
+
+
+def mako_plugin(dictionary):
+  """The exported plugin code for expand_filegroups.
+
+  The list of libs in the build.json file can contain "filegroups" tags.
+  These refer to the filegroups in the root object. We will expand and
+  merge filegroups on the src, headers and public_headers properties.
+
+  """
+
+  targets = dictionary.get('targets')
+
+  for tgt in targets:
+    tgt['flaky'] = tgt.get('flaky', False)
+    tgt['platforms'] = tgt.get('platforms', ['windows', 'posix'])
+

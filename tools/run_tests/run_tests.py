@@ -39,6 +39,7 @@ import os
 import re
 import sys
 import time
+import platform
 
 import jobset
 import watch_dirs
@@ -101,9 +102,16 @@ class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
     self.make_target = make_target
+    if platform.system() == 'Windows':
+      plat = 'windows'
+    else:
+      plat = 'posix'
     with open('tools/run_tests/tests.json') as f:
       js = json.load(f)
-      self.binaries = [tgt for tgt in js if tgt['language'] == test_lang]
+      self.binaries = [tgt
+                       for tgt in js
+                       if tgt['language'] == test_lang and
+                          plat in tgt['platforms']]
 
   def test_specs(self, config, travis):
     out = []
@@ -190,6 +198,7 @@ class PythonLanguage(object):
   def __str__(self):
     return 'python'
 
+
 class RubyLanguage(object):
 
   def test_specs(self, config, travis):
@@ -207,6 +216,7 @@ class RubyLanguage(object):
   def __str__(self):
     return 'ruby'
 
+
 class CSharpLanguage(object):
 
   def test_specs(self, config, travis):
@@ -223,6 +233,25 @@ class CSharpLanguage(object):
 
   def __str__(self):
     return 'csharp'
+
+
+class Sanity(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec('tools/run_tests/run_sanity.sh', None)]
+
+  def make_targets(self):
+    return ['run_dep_checks']
+
+  def build_steps(self):
+    return []
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'sanity'
+
 
 class Build(object):
 
@@ -267,6 +296,7 @@ _LANGUAGES = {
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
+    'sanity': Sanity(),
     'build': Build(),
     }
 
@@ -314,17 +344,27 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
-build_steps = [jobset.JobSpec(['make',
-                               '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                               'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % args.slowdown,
-                               'CONFIG=%s' % cfg] + list(set(
-                                   itertools.chain.from_iterable(
-                                       l.make_targets() for l in languages))))
-               for cfg in build_configs] + list(set(
+if platform.system() == 'Windows':
+  def make_jobspec(cfg, targets):
+    return jobset.JobSpec(['nmake', '/f', 'Grpc.mak', 'CONFIG=%s' % cfg] + targets,
+                          cwd='vsprojects\\vs2013')
+else:
+  def make_jobspec(cfg, targets):
+    return jobset.JobSpec(['make',
+                           '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' % 
+                               args.slowdown,
+                           'CONFIG=%s' % cfg] + targets)
+
+build_steps = [make_jobspec(cfg, 
+                            list(set(itertools.chain.from_iterable(
+                                         l.make_targets() for l in languages))))
+               for cfg in build_configs]
+build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
                    for l in languages
-                   for cmdline in l.build_steps()))
+                   for cmdline in l.build_steps()))               
 one_run = set(
     spec
     for config in run_configs

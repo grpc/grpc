@@ -31,52 +31,26 @@
  *
  */
 
-#include <sys/signal.h>
+#ifndef GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H
+#define GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H
 
-#include <chrono>
-#include <thread>
+#include <grpc/support/time.h>
+#include <stdio.h>
 
-#include <grpc/grpc.h>
-#include <gflags/gflags.h>
+typedef struct grpc_precise_clock grpc_precise_clock;
 
-#include "qps_worker.h"
-
-DEFINE_int32(driver_port, 0, "Driver server port.");
-DEFINE_int32(server_port, 0, "Spawned server port.");
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
-static bool got_sigint = false;
-
-static void sigint_handler(int x) {got_sigint = true;}
-
-namespace grpc {
-namespace testing {
-
-static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
-
-  while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-  }
+#ifdef GRPC_TIMERS_RDTSC
+#error RDTSC timers not currently supported
+#else
+struct grpc_precise_clock {
+  gpr_timespec clock;
+};
+static void grpc_precise_clock_now(grpc_precise_clock* clk) {
+  clk->clock = gpr_now();
 }
-
-}  // namespace testing
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
-
-  signal(SIGINT, sigint_handler);
-
-  grpc::testing::RunServer();
-
-  grpc_shutdown();
-  return 0;
+static void grpc_precise_clock_print(const grpc_precise_clock* clk, FILE* fp) {
+  fprintf(fp, "%ld.%09d", clk->clock.tv_sec, clk->clock.tv_nsec);
 }
+#endif /* GRPC_TIMERS_RDTSC */
+
+#endif /* GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H */

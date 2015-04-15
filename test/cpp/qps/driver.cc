@@ -42,21 +42,25 @@
 #include <grpc++/stream.h>
 #include <list>
 #include <thread>
+#include <deque>
 #include <vector>
 #include "test/cpp/qps/histogram.h"
+#include "test/cpp/qps/qps_worker.h"
+#include "test/core/util/port.h"
 
 using std::list;
 using std::thread;
 using std::unique_ptr;
+using std::deque;
 using std::vector;
 
 namespace grpc {
 namespace testing {
-static vector<string> get_hosts(const string& name) {
+static deque<string> get_hosts(const string& name) {
   char* env = gpr_getenv(name.c_str());
-  if (!env) return vector<string>();
+  if (!env) return deque<string>();
 
-  vector<string> out;
+  deque<string> out;
   char* p = env;
   for (;;) {
     char* comma = strchr(p, ',');
@@ -76,7 +80,8 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
                            const ServerConfig& server_config,
                            size_t num_servers,
                            int warmup_seconds,
-                           int benchmark_seconds) {
+                           int benchmark_seconds,
+                           int spawn_local_worker_count) {
   // ClientContext allocator (all are destroyed at scope exit)
   list<ClientContext> contexts;
   auto alloc_context = [&contexts]() {
@@ -87,6 +92,21 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   // Get client, server lists
   auto workers = get_hosts("QPS_WORKERS");
   ClientConfig client_config = initial_client_config;
+
+  // Spawn some local workers if desired
+  vector<unique_ptr<QpsWorker>> local_workers;
+  for (int i = 0; i < abs(spawn_local_worker_count); i++) {
+    int driver_port = grpc_pick_unused_port_or_die();
+    int benchmark_port = grpc_pick_unused_port_or_die();
+    local_workers.emplace_back(new QpsWorker(driver_port, benchmark_port));
+    char addr[256];
+    sprintf(addr, "localhost:%d", driver_port);
+    if (spawn_local_worker_count < 0) {
+      workers.push_front(addr);
+    } else {
+      workers.push_back(addr);
+    }
+  }
 
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs

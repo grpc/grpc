@@ -52,6 +52,14 @@ module GRPC
       Core::Channel.new(host, kw, creds)
     end
 
+    def self.update_with_jwt_aud_uri(a_hash, host, method)
+      last_slash_idx, res = method.rindex('/'), a_hash.clone
+      return res if last_slash_idx.nil?
+      service_name = method[0..(last_slash_idx - 1)]
+      res[:jwt_aud_uri] = "https://#{host}#{service_name}"
+      res
+    end
+
     # check_update_metadata is used by #initialize verify that it's a Proc.
     def self.check_update_metadata(update_metadata)
       return update_metadata if update_metadata.nil?
@@ -147,7 +155,8 @@ module GRPC
     def request_response(method, req, marshal, unmarshal, timeout = nil,
                          return_op: false, **kw)
       c = new_active_call(method, marshal, unmarshal, timeout)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.request_response(req, **md) unless return_op
 
       # return the operation view of the active_call; define #execute as a
@@ -204,7 +213,8 @@ module GRPC
     def client_streamer(method, requests, marshal, unmarshal, timeout = nil,
                         return_op: false, **kw)
       c = new_active_call(method, marshal, unmarshal, timeout)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.client_streamer(requests, **md) unless return_op
 
       # return the operation view of the active_call; define #execute as a
@@ -270,7 +280,8 @@ module GRPC
     def server_streamer(method, req, marshal, unmarshal, timeout = nil,
                         return_op: false, **kw, &blk)
       c = new_active_call(method, marshal, unmarshal, timeout)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.server_streamer(req, **md, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
@@ -375,7 +386,8 @@ module GRPC
     def bidi_streamer(method, requests, marshal, unmarshal, timeout = nil,
                       return_op: false, **kw, &blk)
       c = new_active_call(method, marshal, unmarshal, timeout)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw.clone)
+      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
+      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
       return c.bidi_streamer(requests, **md, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute

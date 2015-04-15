@@ -31,52 +31,53 @@
  *
  */
 
-#include <sys/signal.h>
+#include "src/core/profiling/timers.h"
+#include <stdlib.h>
+#include "test/core/util/test_config.h"
 
-#include <chrono>
-#include <thread>
+void test_log_events(int num_seqs) {
+  int start = 0;
+  int *state;
+  state = calloc(num_seqs, sizeof(state[0]));
+  while (start < num_seqs) {
+    int i;
+    int row;
+    if (state[start] == 3) { /* Already done with this posn */
+      start++;
+      continue;
+    }
 
-#include <grpc/grpc.h>
-#include <gflags/gflags.h>
-
-#include "qps_worker.h"
-
-DEFINE_int32(driver_port, 0, "Driver server port.");
-DEFINE_int32(server_port, 0, "Spawned server port.");
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
-static bool got_sigint = false;
-
-static void sigint_handler(int x) {got_sigint = true;}
-
-namespace grpc {
-namespace testing {
-
-static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
-
-  while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    row = rand() % 10; /* how many in a row */
+    for (i = start; (i < start + row) && (i < num_seqs); i++) {
+      int j;
+      int advance = 1 + rand() % 3; /* how many to advance by */
+      for (j = 0; j < advance; j++) {
+        switch (state[i]) {
+          case 0:
+            GRPC_TIMER_MARK(STATE_0, i);
+            state[i]++;
+            break;
+          case 1:
+            GRPC_TIMER_MARK(STATE_1, i);
+            state[i]++;
+            break;
+          case 2:
+            GRPC_TIMER_MARK(STATE_2, i);
+            state[i]++;
+            break;
+          case 3:
+            break;
+        }
+      }
+    }
   }
+  free(state);
 }
 
-}  // namespace testing
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
-
-  signal(SIGINT, sigint_handler);
-
-  grpc::testing::RunServer();
-
-  grpc_shutdown();
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_timers_log_global_init();
+  test_log_events(1000000);
+  grpc_timers_log_global_destroy();
   return 0;
 }

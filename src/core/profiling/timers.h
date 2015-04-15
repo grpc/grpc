@@ -31,52 +31,40 @@
  *
  */
 
-#include <sys/signal.h>
+#ifndef GRPC_CORE_PROFILING_TIMERS_H
+#define GRPC_CORE_PROFILING_TIMERS_H
 
-#include <chrono>
-#include <thread>
+#include <stdio.h>
 
-#include <grpc/grpc.h>
-#include <gflags/gflags.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "qps_worker.h"
+#ifdef GRPC_LATENCY_PROFILER
 
-DEFINE_int32(driver_port, 0, "Driver server port.");
-DEFINE_int32(server_port, 0, "Spawned server port.");
+typedef struct grpc_timers_log grpc_timers_log;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
+grpc_timers_log *grpc_timers_log_create(int capacity_limit, FILE *dump);
+void grpc_timers_log_add(grpc_timers_log *, const char *tag, int seq,
+                         const char *file, int line);
+void grpc_timers_log_destroy(grpc_timers_log *);
 
-static bool got_sigint = false;
+extern grpc_timers_log *grpc_timers_log_global;
 
-static void sigint_handler(int x) {got_sigint = true;}
+#define GRPC_TIMER_MARK(x, s) \
+  grpc_timers_log_add(grpc_timers_log_global, #x, s, __FILE__, __LINE__)
 
-namespace grpc {
-namespace testing {
+#else /* !GRPC_LATENCY_PROFILER */
+#define GRPC_TIMER_MARK(x, s) \
+  do {                        \
+  } while (0)
+#endif /* GRPC_LATENCY_PROFILER */
 
-static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
+void grpc_timers_log_global_init(void);
+void grpc_timers_log_global_destroy(void);
 
-  while (!got_sigint) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-  }
+#ifdef __cplusplus
 }
+#endif
 
-}  // namespace testing
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
-
-  signal(SIGINT, sigint_handler);
-
-  grpc::testing::RunServer();
-
-  grpc_shutdown();
-  return 0;
-}
+#endif /* GRPC_CORE_PROFILING_TIMERS_H */

@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,7 +29,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# GRPC contains the General RPC module.
-module GRPC
-  VERSION = '0.6.1'
-end
+
+set -e
+
+export TEST=true
+
+cd `dirname $0`/../..
+
+./tools/buildgen/generate_projects.sh

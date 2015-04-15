@@ -165,6 +165,16 @@ static int check_request_metadata_creds(grpc_credentials *creds) {
   return 1;
 }
 
+static grpc_mdctx *get_or_create_mdctx(grpc_credentials *creds) {
+  grpc_mdctx *mdctx = grpc_credentials_get_metadata_context(creds);
+  if (mdctx == NULL) {
+    mdctx = grpc_mdctx_create();
+  } else {
+    grpc_mdctx_ref(mdctx);
+  }
+  return mdctx;
+}
+
 /* -- Fake implementation. -- */
 
 typedef struct {
@@ -626,7 +636,8 @@ grpc_channel *grpc_ssl_channel_create(grpc_credentials *ssl_creds,
   arg.key = GRPC_ARG_HTTP2_SCHEME;
   arg.value.string = "https";
   new_args = grpc_channel_args_copy_and_add(args, &arg);
-  channel = grpc_secure_channel_create_internal(target, new_args, ctx);
+  channel = grpc_secure_channel_create_internal(
+      target, new_args, ctx, get_or_create_mdctx(request_metadata_creds));
   grpc_security_context_unref(&ctx->base);
   grpc_channel_args_destroy(new_args);
   return channel;
@@ -637,8 +648,8 @@ grpc_channel *grpc_fake_transport_security_channel_create(
     const char *target, const grpc_channel_args *args) {
   grpc_channel_security_context *ctx =
       grpc_fake_channel_security_context_create(request_metadata_creds, 1);
-  grpc_channel *channel =
-      grpc_secure_channel_create_internal(target, args, ctx);
+  grpc_channel *channel = grpc_secure_channel_create_internal(
+      target, args, ctx, get_or_create_mdctx(request_metadata_creds));
   grpc_security_context_unref(&ctx->base);
   return channel;
 }

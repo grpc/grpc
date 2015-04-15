@@ -32,6 +32,7 @@ thisfile=$(readlink -ne "${BASH_SOURCE[0]}")
 current_time=$(date "+%Y-%m-%d-%H-%M-%S")
 result_file_name=interop_result.$current_time.html
 echo $result_file_name
+log_link=https://pantheon.corp.google.com/m/cloudstorage/b/stoked-keyword-656-output/o/log_history
 
 main() {
   source grpc_docker.sh
@@ -44,11 +45,14 @@ main() {
     do
       for server in "${servers[@]}"
       do
-        if grpc_interop_test $test_case grpc-docker-testclients $client grpc-docker-server $server
+        log_file_name=interop_{$test_case}_{$client}_{$server}.txt
+        if grpc_interop_test $test_case grpc-docker-testclients $client grpc-docker-server $server > /tmp/$log_file_name 2>&1
         then
-          echo "          ['$test_case', '$client', '$server', true]," >> /tmp/interop_result.txt
+          gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/log_history/$log_file_name
+          echo "          ['$test_case', '$client', '$server', true, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/interop_result.txt
         else
-          echo "          ['$test_case', '$client', '$server', false]," >> /tmp/interop_result.txt
+          gsutil cp /tmp/$log_file_name gs://stoked-keyword-656-output/log_history/$log_file_name
+          echo "          ['$test_case', '$client', '$server', false, '<a href="$log_link/$log_file_name">log</a>']," >> /tmp/interop_result.txt
         fi
       done
     done
@@ -60,6 +64,7 @@ main() {
     gsutil cp /tmp/interop_result.html gs://stoked-keyword-656-output/result_history/$result_file_name
     rm /tmp/interop_result.txt
     rm /tmp/interop_result.html
+    rm /tmp/interop*.txt
   fi
 }
 

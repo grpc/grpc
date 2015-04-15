@@ -137,6 +137,8 @@
         "src/core/json/json_common.h",
         "src/core/json/json_reader.h",
         "src/core/json/json_writer.h",
+        "src/core/profiling/timers.h",
+        "src/core/profiling/timers_preciseclock.h",
         "src/core/statistics/census_interface.h",
         "src/core/statistics/census_log.h",
         "src/core/statistics/census_rpc_stats.h",
@@ -197,6 +199,7 @@
         "src/core/iomgr/alarm_heap.c",
         "src/core/iomgr/endpoint.c",
         "src/core/iomgr/endpoint_pair_posix.c",
+        "src/core/iomgr/endpoint_pair_windows.c",
         "src/core/iomgr/fd_posix.c",
         "src/core/iomgr/iocp_windows.c",
         "src/core/iomgr/iomgr.c",
@@ -229,6 +232,7 @@
         "src/core/json/json_reader.c",
         "src/core/json/json_string.c",
         "src/core/json/json_writer.c",
+        "src/core/profiling/timers.c",
         "src/core/statistics/census_init.c",
         "src/core/statistics/census_log.c",
         "src/core/statistics/census_rpc_stats.c",
@@ -444,6 +448,7 @@
         "test/core/util/grpc_profiler.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
+        "test/core/util/port_windows.c",
         "test/core/util/slice_splitter.c"
       ],
       "deps": [
@@ -636,13 +641,19 @@
       "language": "c++",
       "headers": [
         "test/cpp/qps/driver.h",
+        "test/cpp/qps/qps_worker.h",
         "test/cpp/qps/report.h",
         "test/cpp/qps/timer.h"
       ],
       "src": [
         "test/cpp/qps/qpstest.proto",
+        "test/cpp/qps/client_async.cc",
+        "test/cpp/qps/client_sync.cc",
         "test/cpp/qps/driver.cc",
+        "test/cpp/qps/qps_worker.cc",
         "test/cpp/qps/report.cc",
+        "test/cpp/qps/server_async.cc",
+        "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/timer.cc"
       ]
     },
@@ -941,6 +952,9 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ],
+      "platforms": [
+        "posix"
       ]
     },
     {
@@ -1755,6 +1769,20 @@
       ]
     },
     {
+      "name": "timers_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/profiling/timers_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "transport_metadata_test",
       "build": "test",
       "language": "c",
@@ -2097,10 +2125,6 @@
         "test/cpp/qps/server.h"
       ],
       "src": [
-        "test/cpp/qps/client_async.cc",
-        "test/cpp/qps/client_sync.cc",
-        "test/cpp/qps/server_async.cc",
-        "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/worker.cc"
       ],
       "deps": [

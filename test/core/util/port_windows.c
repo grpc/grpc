@@ -33,51 +33,23 @@
 
 #include <grpc/support/port_platform.h>
 #include "test/core/util/test_config.h"
-#if defined(GPR_POSIX_SOCKET) && defined(GRPC_TEST_PICK_PORT)
+#if defined(GPR_WINSOCK_SOCKET) && defined(GRPC_TEST_PICK_PORT)
 
+#include "src/core/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 
-#include <netinet/in.h>
-#include <sys/socket.h>
+#include <process.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #define NUM_RANDOM_PORTS_TO_PICK 100
 
-static int *chosen_ports = NULL;
-static size_t num_chosen_ports = 0;
-
-static int has_port_been_chosen(int port) {
-  size_t i;
-  for (i = 0; i < num_chosen_ports; i++) {
-    if (chosen_ports[i] == port) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-static void free_chosen_ports() {
-  gpr_free(chosen_ports);
-}
-
-static void chose_port(int port) {
-  if (chosen_ports == NULL) {
-    atexit(free_chosen_ports);
-  }
-  num_chosen_ports++;
-  chosen_ports = gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
-  chosen_ports[num_chosen_ports - 1] = port;
-}
-
 static int is_port_available(int *port, int is_tcp) {
   const int proto = is_tcp ? IPPROTO_TCP : 0;
-  const int fd = socket(AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
+  const SOCKET fd = socket(AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
   int one = 1;
   struct sockaddr_in addr;
   socklen_t alen = sizeof(addr);
@@ -91,9 +63,9 @@ static int is_port_available(int *port, int is_tcp) {
   }
 
   /* Reuseaddr lets us start up a server immediately after it exits */
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) {
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&one, sizeof(one)) < 0) {
     gpr_log(GPR_ERROR, "setsockopt() failed: %s", strerror(errno));
-    close(fd);
+    closesocket(fd);
     return 0;
   }
 
@@ -103,14 +75,14 @@ static int is_port_available(int *port, int is_tcp) {
   addr.sin_port = htons(*port);
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
-    close(fd);
+	closesocket(fd);
     return 0;
   }
 
   /* Get the bound port number */
   if (getsockname(fd, (struct sockaddr *)&addr, &alen) < 0) {
     gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
-    close(fd);
+	closesocket(fd);
     return 0;
   }
   GPR_ASSERT(alen <= sizeof(addr));
@@ -122,7 +94,7 @@ static int is_port_available(int *port, int is_tcp) {
     GPR_ASSERT(*port == actual_port);
   }
 
-  close(fd);
+  closesocket(fd);
   return 1;
 }
 
@@ -147,15 +119,11 @@ int grpc_pick_unused_port(void) {
     int port;
     try++;
     if (try == 1) {
-      port = getpid() % (65536 - 30000) + 30000;
+      port = _getpid() % (65536 - 30000) + 30000;
     } else if (try <= NUM_RANDOM_PORTS_TO_PICK) {
       port = rand() % (65536 - 30000) + 30000;
     } else {
       port = 0;
-    }
-
-    if (has_port_been_chosen(port)) {
-      continue;
     }
 
     if (!is_port_available(&port, is_tcp)) {
@@ -171,7 +139,9 @@ int grpc_pick_unused_port(void) {
       continue;
     }
 
-    chose_port(port);
+    /* TODO(ctiller): consider caching this port in some structure, to avoid
+                      handing it out again */
+
     return port;
   }
 
@@ -185,4 +155,4 @@ int grpc_pick_unused_port_or_die(void) {
   return port;
 }
 
-#endif /* GPR_POSIX_SOCKET && GRPC_TEST_PICK_PORT */
+#endif /* GPR_WINSOCK_SOCKET && GRPC_TEST_PICK_PORT */

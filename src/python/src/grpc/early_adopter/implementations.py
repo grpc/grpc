@@ -223,7 +223,8 @@ def stub(
   breakdown = _face_utilities.break_down_invocation(service_name, methods)
   return _Stub(
       breakdown, host, port, secure, root_certificates, private_key,
-      certificate_chain, server_host_override=server_host_override)
+      certificate_chain, server_host_override=server_host_override,
+      metadata_transformer=metadata_transformer)
 
 
 def server(

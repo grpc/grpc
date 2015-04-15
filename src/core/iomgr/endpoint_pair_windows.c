@@ -31,38 +31,55 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#ifdef GPR_WINSOCK_SOCKET
+#include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/iomgr/endpoint_pair.h"
+
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 
-#include <grpc/grpc.h>
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
-#include <grpc/support/alloc.h>
+#include "src/core/iomgr/tcp_windows.h"
+#include "src/core/iomgr/socket_windows.h"
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
-grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
-                                         const char *target,
-                                         const grpc_channel_args *args) {
-  grpc_secure_channel_factory factories[] = {
-      {GRPC_CREDENTIALS_TYPE_SSL, grpc_ssl_channel_create},
-      {GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY,
-       grpc_fake_transport_security_channel_create}};
-  return grpc_secure_channel_create_with_factories(
-      factories, GPR_ARRAY_SIZE(factories), creds, target, args);
+static void create_sockets(SOCKET sv[2]) {
+  SOCKET svr_sock = INVALID_SOCKET;
+  SOCKET lst_sock = INVALID_SOCKET;
+  SOCKET cli_sock = INVALID_SOCKET;
+  SOCKADDR_IN addr;
+  int addr_len;
+
+  lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+  GPR_ASSERT(lst_sock != INVALID_SOCKET);
+
+  memset(&addr, 0, sizeof(addr));
+  GPR_ASSERT(bind(lst_sock, (struct sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
+  GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
+  GPR_ASSERT(getsockname(lst_sock, (struct sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
+
+  cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+  GPR_ASSERT(cli_sock != INVALID_SOCKET);
+
+  GPR_ASSERT(WSAConnect(cli_sock, (struct sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL) == 0);
+  svr_sock = accept(lst_sock, (struct sockaddr*)&addr, &addr_len);
+  GPR_ASSERT(svr_sock != INVALID_SOCKET);
+
+  closesocket(lst_sock);
+
+  sv[1] = cli_sock;
+  sv[0] = svr_sock;
 }
 
-grpc_security_status grpc_server_security_context_create(
-    grpc_server_credentials *creds, grpc_security_context **ctx) {
-  grpc_security_status status = GRPC_SECURITY_ERROR;
-
-  *ctx = NULL;
-  if (strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL) == 0) {
-    status = grpc_ssl_server_security_context_create(
-        grpc_ssl_server_credentials_get_config(creds), ctx);
-  } else if (strcmp(creds->type,
-                    GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) == 0) {
-    *ctx = grpc_fake_server_security_context_create();
-    status = GRPC_SECURITY_OK;
-  }
-  return status;
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(size_t read_slice_size) {
+  SOCKET sv[2];
+  grpc_endpoint_pair p;
+  create_sockets(sv);
+  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1]));
+  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0]));
+  return p;
 }
+
+#endif
