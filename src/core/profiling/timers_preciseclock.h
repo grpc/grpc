@@ -31,59 +31,26 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include "src/core/channel/channel_stack.h"
-#include "src/core/debug/trace.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/statistics/census_interface.h"
-#include "src/core/profiling/timers.h"
-#include "src/core/surface/call.h"
-#include "src/core/surface/init.h"
-#include "src/core/surface/surface_trace.h"
-#include "src/core/transport/chttp2_transport.h"
+#ifndef GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H
+#define GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H
 
-static gpr_once g_basic_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
-static int g_initializations;
+#include <grpc/support/time.h>
+#include <stdio.h>
 
-static void do_basic_init(void) {
-  gpr_mu_init(&g_init_mu);
-  g_initializations = 0;
+typedef struct grpc_precise_clock grpc_precise_clock;
+
+#ifdef GRPC_TIMERS_RDTSC
+#error RDTSC timers not currently supported
+#else
+struct grpc_precise_clock {
+  gpr_timespec clock;
+};
+static void grpc_precise_clock_now(grpc_precise_clock* clk) {
+  clk->clock = gpr_now();
 }
-
-void grpc_init(void) {
-  gpr_once_init(&g_basic_init, do_basic_init);
-
-  gpr_mu_lock(&g_init_mu);
-  if (++g_initializations == 1) {
-    grpc_register_tracer("channel", &grpc_trace_channel);
-    grpc_register_tracer("surface", &grpc_surface_trace);
-    grpc_register_tracer("http", &grpc_http_trace);
-    grpc_register_tracer("batch", &grpc_trace_batch);
-    grpc_security_pre_init();
-    grpc_tracer_init("GRPC_TRACE");
-    grpc_iomgr_init();
-    census_init();
-    grpc_timers_log_global_init();
-  }
-  gpr_mu_unlock(&g_init_mu);
+static void grpc_precise_clock_print(const grpc_precise_clock* clk, FILE* fp) {
+  fprintf(fp, "%ld.%09d", clk->clock.tv_sec, clk->clock.tv_nsec);
 }
+#endif /* GRPC_TIMERS_RDTSC */
 
-void grpc_shutdown(void) {
-  gpr_mu_lock(&g_init_mu);
-  if (--g_initializations == 0) {
-    grpc_iomgr_shutdown();
-    census_shutdown();
-    grpc_timers_log_global_destroy();
-  }
-  gpr_mu_unlock(&g_init_mu);
-}
-
-int grpc_is_initialized(void) {
-  int r;
-  gpr_once_init(&g_basic_init, do_basic_init);
-  gpr_mu_lock(&g_init_mu);
-  r = g_initializations > 0;
-  gpr_mu_unlock(&g_init_mu);
-  return r;
-}
+#endif /* GRPC_CORE_PROFILING_TIMERS_PRECISECLOCK_H */

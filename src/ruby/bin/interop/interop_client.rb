@@ -110,6 +110,11 @@ def create_stub(opts)
       end
     end
 
+    if opts.test_case == 'jwt_token_creds'  # don't use a scope
+      auth_creds = Google::Auth.get_application_default
+      stub_opts[:update_metadata] = auth_creds.updater_proc
+    end
+
     logger.info("... connecting securely to #{address}")
     Grpc::Testing::TestService::Stub.new(address, **stub_opts)
   else
@@ -199,6 +204,15 @@ class NamedTests
     assert(@args.oauth_scope.include?(resp.oauth_scope),
            'service_account_creds: incorrect oauth_scope')
     p 'OK: service_account_creds'
+  end
+
+  def jwt_token_creds
+    json_key = File.read(ENV[AUTH_ENV])
+    wanted_email = MultiJson.load(json_key)['client_email']
+    resp = perform_large_unary(fill_username: true)
+    assert_equal(wanted_email, resp.username,
+                 'service_account_creds: incorrect username')
+    p 'OK: jwt_token_creds'
   end
 
   def compute_engine_creds
