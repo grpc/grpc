@@ -696,24 +696,6 @@
   {
     "flaky": false, 
     "language": "c++", 
-    "name": "pubsub_publisher_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c++", 
-    "name": "pubsub_subscriber_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c++", 
     "name": "status_test", 
     "platforms": [
       "windows", 
