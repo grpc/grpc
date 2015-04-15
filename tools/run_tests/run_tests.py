@@ -235,6 +235,24 @@ class CSharpLanguage(object):
     return 'csharp'
 
 
+class Sanity(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec('tools/run_tests/run_sanity.sh', None)]
+
+  def make_targets(self):
+    return ['run_dep_checks']
+
+  def build_steps(self):
+    return []
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'sanity'
+
+
 class Build(object):
 
   def test_specs(self, config, travis):
@@ -278,6 +296,7 @@ _LANGUAGES = {
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
+    'sanity': Sanity(),
     'build': Build(),
     }
 
