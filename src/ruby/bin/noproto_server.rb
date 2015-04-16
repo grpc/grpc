@@ -105,7 +105,7 @@ def main
   end
 
   s.handle(NoProto)
-  s.run
+  s.run_till_terminated
 end
 
 main
