@@ -58,6 +58,8 @@ static ID id_target;
  * GCed before the channel */
 static ID id_cqueue;
 
+/* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
+static VALUE grpc_rb_cChannel = Qnil;
 
 /* Used during the conversion of a hash to channel args during channel setup */
 static VALUE grpc_rb_cChannelArgs;
@@ -245,9 +247,6 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
 
   return Qnil;
 }
-
-/* grpc_rb_cChannel is the ruby class that proxies grpc_channel. */
-VALUE grpc_rb_cChannel = Qnil;
 
 void Init_grpc_channel() {
   grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);

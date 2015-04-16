@@ -44,7 +44,7 @@
 #include "rb_grpc.h"
 
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
-VALUE grpc_rb_cServer = Qnil;
+static VALUE grpc_rb_cServer = Qnil;
 
 /* id_at is the constructor method of the ruby standard Time class. */
 static ID id_at;

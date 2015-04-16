@@ -41,9 +41,6 @@
 /* grpc_rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
 extern VALUE grpc_rb_mGrpcCore;
 
-/* Class used to wrap timeval structs. */
-extern VALUE grpc_rb_cTimeVal;
-
 /* grpc_rb_sNewServerRpc is the struct that holds new server rpc details. */
 extern VALUE grpc_rb_sNewServerRpc;
 
@@ -51,13 +48,13 @@ extern VALUE grpc_rb_sNewServerRpc;
 extern VALUE grpc_rb_sStatus;
 
 /* sym_code is the symbol for the code attribute of grpc_rb_sStatus. */
-VALUE sym_code;
+extern VALUE sym_code;
 
 /* sym_details is the symbol for the details attribute of grpc_rb_sStatus. */
-VALUE sym_details;
+extern VALUE sym_details;
 
 /* sym_metadata is the symbol for the metadata attribute of grpc_rb_sStatus. */
-VALUE sym_metadata;
+extern VALUE sym_metadata;
 
 /* GC_NOT_MARKED is used in calls to Data_Wrap_Struct to indicate that the
    wrapped struct does not need to participate in ruby gc. */

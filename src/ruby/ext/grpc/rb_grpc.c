@@ -46,7 +46,7 @@
 #include "rb_credentials.h"
 #include "rb_server_credentials.h"
 
-VALUE grpc_rb_cTimeVal = Qnil;
+static VALUE grpc_rb_cTimeVal = Qnil;
 
 static rb_data_type_t grpc_rb_timespec_data_type = {
     "gpr_timespec",
@@ -154,7 +154,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   return t;
 }
 
-void Init_grpc_status_codes() {
+static void Init_grpc_status_codes() {
   /* Constants representing the status codes or grpc_status_code in status.h */
   VALUE grpc_rb_mStatusCodes =
       rb_define_module_under(grpc_rb_mGrpcCore, "StatusCodes");
@@ -203,7 +203,7 @@ static ID id_inspect;
 static ID id_to_s;
 
 /* Converts a wrapped time constant to a standard time. */
-VALUE grpc_rb_time_val_to_time(VALUE self) {
+static VALUE grpc_rb_time_val_to_time(VALUE self) {
   gpr_timespec *time_const = NULL;
   TypedData_Get_Struct(self, gpr_timespec, &grpc_rb_timespec_data_type,
                        time_const);
@@ -212,17 +212,17 @@ VALUE grpc_rb_time_val_to_time(VALUE self) {
 }
 
 /* Invokes inspect on the ctime version of the time val. */
-VALUE grpc_rb_time_val_inspect(VALUE self) {
+static VALUE grpc_rb_time_val_inspect(VALUE self) {
   return rb_funcall(grpc_rb_time_val_to_time(self), id_inspect, 0);
 }
 
 /* Invokes to_s on the ctime version of the time val. */
-VALUE grpc_rb_time_val_to_s(VALUE self) {
+static VALUE grpc_rb_time_val_to_s(VALUE self) {
   return rb_funcall(grpc_rb_time_val_to_time(self), id_to_s, 0);
 }
 
 /* Adds a module with constants that map to gpr's static timeval structs. */
-void Init_grpc_time_consts() {
+static void Init_grpc_time_consts() {
   VALUE grpc_rb_mTimeConsts =
       rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
   grpc_rb_cTimeVal =
@@ -249,7 +249,7 @@ void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
-void grpc_rb_shutdown(void *vm) { grpc_shutdown(); }
+static void grpc_rb_shutdown(void *vm) { grpc_shutdown(); }
 
 /* Initialize the GRPC module structs */
 
@@ -261,6 +261,11 @@ VALUE grpc_rb_sStatus = Qnil;
 /* Initialize the GRPC module. */
 VALUE grpc_rb_mGRPC = Qnil;
 VALUE grpc_rb_mGrpcCore = Qnil;
+
+/* cached Symbols for members in Status struct */
+VALUE sym_code = Qundef;
+VALUE sym_details = Qundef;
+VALUE sym_metadata = Qundef;
 
 void Init_grpc() {
   grpc_init();

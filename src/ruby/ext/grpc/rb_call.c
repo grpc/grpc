@@ -42,6 +42,17 @@
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 
+/* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
+static VALUE grpc_rb_cCall;
+
+/* grpc_rb_eCallError is the ruby class of the exception thrown during call
+   operations; */
+VALUE grpc_rb_eCallError = Qnil;
+
+/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
+   a timeout. */
+static VALUE grpc_rb_eOutOfTime = Qnil;
+
 /* grpc_rb_sBatchResult is struct class used to hold the results of a batch
  * call. */
 static VALUE grpc_rb_sBatchResult;
@@ -219,7 +230,7 @@ static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
    it's capacity should have been computed via a prior call to
    grpc_rb_md_ary_fill_hash_cb
 */
-int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
+static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
   int array_length;
   int i;
@@ -259,7 +270,8 @@ int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
 /* grpc_rb_md_ary_capacity_hash_cb is the hash iteration callback used
    to pre-compute the capacity a grpc_metadata_array.
 */
-int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
+static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val,
+                                           VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
 
   /* Construct a metadata object from key and value and add it */
@@ -278,7 +290,7 @@ int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
 /* grpc_rb_md_ary_convert converts a ruby metadata hash into
    a grpc_metadata_array.
 */
-void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
+static void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
   VALUE md_ary_obj = Qnil;
   if (md_ary_hash == Qnil) {
     return;  /* Do nothing if the expected has value is nil */
@@ -334,7 +346,8 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary) {
 /* grpc_rb_call_check_op_keys_hash_cb is a hash iteration func that checks
    each key of an ops hash is valid.
 */
-int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val, VALUE ops_ary) {
+static int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val,
+                                              VALUE ops_ary) {
   /* Update the capacity; the value is an array, add capacity for each value in
    * the array */
   if (TYPE(key) != T_FIXNUM) {
@@ -363,7 +376,7 @@ int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val, VALUE ops_ary) {
 /* grpc_rb_op_update_status_from_server adds the values in a ruby status
    struct to the 'send_status_from_server' portion of an op.
 */
-void grpc_rb_op_update_status_from_server(grpc_op *op,
+static void grpc_rb_op_update_status_from_server(grpc_op *op,
                                           grpc_metadata_array* md_ary,
                                           VALUE status) {
   VALUE code = rb_struct_aref(status, sym_code);
@@ -615,18 +628,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   return result;
 }
 
-/* grpc_rb_cCall is the ruby class that proxies grpc_call. */
-VALUE grpc_rb_cCall = Qnil;
-
-/* grpc_rb_eCallError is the ruby class of the exception thrown during call
-   operations; */
-VALUE grpc_rb_eCallError = Qnil;
-
-/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
-   a timeout. */
-VALUE grpc_rb_eOutOfTime = Qnil;
-
-void Init_grpc_error_codes() {
+static void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
   VALUE grpc_rb_mRpcErrors =
       rb_define_module_under(grpc_rb_mGrpcCore, "RpcErrors");
@@ -678,7 +680,7 @@ void Init_grpc_error_codes() {
   rb_obj_freeze(rb_error_code_details);
 }
 
-void Init_grpc_op_codes() {
+static void Init_grpc_op_codes() {
   /* Constants representing operation type codes in grpc.h */
   VALUE grpc_rb_mCallOps =
       rb_define_module_under(grpc_rb_mGrpcCore, "CallOps");
