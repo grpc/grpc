@@ -7,7 +7,6 @@ Pod::Spec.new do |s|
   }
   s.source_files = '*.{h,m}', 'private/*.{h,m}'
   s.private_header_files = 'private/*.h'
-  s.platform = :ios
   s.ios.deployment_target = '6.0'
   s.requires_arc = true
   s.dependency 'RxLibrary', '~> 0.0'
