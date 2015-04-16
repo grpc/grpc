@@ -86,6 +86,7 @@ int main(int argc, char** argv) {
 
   ParseCommandLineFlags(&argc, &argv, true);
 
+  int ret = 0;
   grpc::testing::InteropClient client(
       CreateChannelForTestCase(FLAGS_test_case));
   if (FLAGS_test_case == "empty_unary") {
@@ -132,9 +133,10 @@ int main(int argc, char** argv) {
         "large_unary|client_streaming|server_streaming|half_duplex|ping_pong|"
         "service_account_creds|compute_engine_creds|jwt_token_creds",
         FLAGS_test_case.c_str());
+    ret = 1;
   }
   client.Reset(nullptr);
 
   grpc_shutdown();
-  return 0;
+  return ret;
 }
