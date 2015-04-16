@@ -766,29 +766,6 @@ cc_library(
 
 
 cc_library(
-  name = "pubsub_client_lib",
-  srcs = [
-    "examples/pubsub/label.proto",
-    "examples/pubsub/empty.proto",
-    "examples/pubsub/pubsub.proto",
-    "examples/pubsub/publisher.cc",
-    "examples/pubsub/subscriber.cc",
-  ],
-  hdrs = [
-  ],
-  includes = [
-    "include",
-    ".",
-  ],
-  deps = [
-    ":grpc++",
-    ":grpc",
-    ":gpr",
-  ],
-)
-
-
-cc_library(
   name = "grpc_csharp_ext",
   srcs = [
     "src/csharp/ext/grpc_csharp_ext.c",
