@@ -257,6 +257,11 @@ VALUE grpc_rb_sStatus = Qnil;
 VALUE grpc_rb_mGRPC = Qnil;
 VALUE grpc_rb_mGrpcCore = Qnil;
 
+/* cached Symbols for members in Status struct */
+VALUE sym_code = Qundef;
+VALUE sym_details = Qundef;
+VALUE sym_metadata = Qundef;
+
 void Init_grpc() {
   grpc_init();
   ruby_vm_at_exit(grpc_rb_shutdown);
