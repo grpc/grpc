@@ -54,4 +54,8 @@ module GRPC
       Status.new(code, details)
     end
   end
+
+  # Cancelled is an exception class that indicates that an rpc was cancelled.
+  class Cancelled < StandardError
+  end
 end
