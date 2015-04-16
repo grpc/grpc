@@ -83,7 +83,7 @@ struct call_data {
   grpc_call_element *elem;
 
   call_state state;
-  grpc_call_op_metadata pending_metadata;
+  grpc_metadata_batch pending_metadata;
   gpr_uint32 pending_metadata_flags;
   gpr_timespec deadline;
   union {
@@ -257,7 +257,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
 
   switch (op->type) {
     case GRPC_SEND_METADATA:
-      grpc_call_op_metadata_merge(&calld->pending_metadata, &op->data.metadata);
+      grpc_metadata_batch_merge(&calld->pending_metadata, &op->data.metadata);
       op->done_cb(op->user_data, GRPC_OP_OK);
       break;
     case GRPC_SEND_START:
@@ -383,7 +383,7 @@ static void init_call_elem(grpc_call_element *elem,
   calld->deadline = gpr_inf_future;
   calld->s.waiting.on_complete = error_bad_on_complete;
   calld->s.waiting.on_complete_user_data = NULL;
-  grpc_call_op_metadata_init(&calld->pending_metadata);
+  grpc_metadata_batch_init(&calld->pending_metadata);
 }
 
 /* Destructor for call_data */
@@ -391,7 +391,7 @@ static void destroy_call_elem(grpc_call_element *elem) {
   call_data *calld = elem->call_data;
 
   /* if the metadata buffer is not flushed, destroy it here. */
-  grpc_call_op_metadata_destroy(&calld->pending_metadata);
+  grpc_metadata_batch_destroy(&calld->pending_metadata);
   /* if the call got activated, we need to destroy the child stack also, and
      remove it from the in-flight requests tracked by the child_entry we
      picked */

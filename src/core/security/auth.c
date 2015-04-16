@@ -79,7 +79,7 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
   size_t i;
   GPR_ASSERT(num_md <= MAX_CREDENTIAL_METADATA_COUNT);
   for (i = 0; i < num_md; i++) {
-    grpc_call_op_metadata_add_tail(&op.data.metadata, &calld->md_links[i],
+    grpc_metadata_batch_add_tail(&op.data.metadata, &calld->md_links[i],
                                    grpc_mdelem_ref(md_elems[i]));
   }
   grpc_call_next_op(elem, &op);

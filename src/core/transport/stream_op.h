@@ -76,6 +76,45 @@ typedef struct grpc_flow_ctl_cb {
   void *arg;
 } grpc_flow_ctl_cb;
 
+typedef struct grpc_linked_mdelem {
+  grpc_mdelem *md;
+  struct grpc_linked_mdelem *next;
+  struct grpc_linked_mdelem *prev;
+} grpc_linked_mdelem;
+
+typedef struct grpc_mdelem_list {
+  grpc_linked_mdelem *head;
+  grpc_linked_mdelem *tail;
+} grpc_mdelem_list;
+
+typedef struct grpc_metadata_batch {
+  grpc_mdelem_list list;
+  grpc_mdelem_list garbage;
+  gpr_timespec deadline;
+} grpc_metadata_batch;
+
+void grpc_metadata_batch_init(grpc_metadata_batch *comd);
+void grpc_metadata_batch_destroy(grpc_metadata_batch *comd);
+void grpc_metadata_batch_merge(grpc_metadata_batch *target,
+                                 grpc_metadata_batch *add);
+
+void grpc_metadata_batch_link_head(grpc_metadata_batch *comd,
+                                     grpc_linked_mdelem *storage);
+void grpc_metadata_batch_link_tail(grpc_metadata_batch *comd,
+                                     grpc_linked_mdelem *storage);
+
+void grpc_metadata_batch_add_head(grpc_metadata_batch *comd,
+                                    grpc_linked_mdelem *storage,
+                                    grpc_mdelem *elem_to_add);
+void grpc_metadata_batch_add_tail(grpc_metadata_batch *comd,
+                                    grpc_linked_mdelem *storage,
+                                    grpc_mdelem *elem_to_add);
+
+void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
+                                  grpc_mdelem *(*filter)(void *user_data,
+                                                         grpc_mdelem *elem),
+                                  void *user_data);
+
 /* Represents a single operation performed on a stream/transport */
 typedef struct grpc_stream_op {
   /* the operation to be applied */

@@ -89,45 +89,6 @@ typedef enum {
    or decrement a pointer to find the next element to call */
 typedef enum { GRPC_CALL_DOWN = 1, GRPC_CALL_UP = -1 } grpc_call_dir;
 
-typedef struct grpc_linked_mdelem {
-  grpc_mdelem *md;
-  struct grpc_linked_mdelem *next;
-  struct grpc_linked_mdelem *prev;
-} grpc_linked_mdelem;
-
-typedef struct grpc_mdelem_list {
-  grpc_linked_mdelem *head;
-  grpc_linked_mdelem *tail;
-} grpc_mdelem_list;
-
-typedef struct grpc_call_op_metadata {
-  grpc_mdelem_list list;
-  grpc_mdelem_list garbage;
-  gpr_timespec deadline;
-} grpc_call_op_metadata;
-
-void grpc_call_op_metadata_init(grpc_call_op_metadata *comd);
-void grpc_call_op_metadata_destroy(grpc_call_op_metadata *comd);
-void grpc_call_op_metadata_merge(grpc_call_op_metadata *target,
-                                 grpc_call_op_metadata *add);
-
-void grpc_call_op_metadata_link_head(grpc_call_op_metadata *comd,
-                                     grpc_linked_mdelem *storage);
-void grpc_call_op_metadata_link_tail(grpc_call_op_metadata *comd,
-                                     grpc_linked_mdelem *storage);
-
-void grpc_call_op_metadata_add_head(grpc_call_op_metadata *comd,
-                                    grpc_linked_mdelem *storage,
-                                    grpc_mdelem *elem_to_add);
-void grpc_call_op_metadata_add_tail(grpc_call_op_metadata *comd,
-                                    grpc_linked_mdelem *storage,
-                                    grpc_mdelem *elem_to_add);
-
-void grpc_call_op_metadata_filter(grpc_call_op_metadata *comd,
-                                  grpc_mdelem *(*filter)(void *user_data,
-                                                         grpc_mdelem *elem),
-                                  void *user_data);
-
 /* A single filterable operation to be performed on a call */
 typedef struct {
   /* The type of operation we're performing */
@@ -146,7 +107,7 @@ typedef struct {
       grpc_pollset *pollset;
     } start;
     grpc_byte_buffer *message;
-    grpc_call_op_metadata metadata;
+    grpc_metadata_batch metadata;
   } data;
 
   /* Must be called when processing of this call-op is complete.

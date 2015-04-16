@@ -431,7 +431,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elemn,
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   switch (op->type) {
     case GRPC_RECV_METADATA:
-      grpc_call_op_metadata_filter(&op->data.metadata, server_filter, elem);
+      grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
       if (grpc_call_recv_metadata(elem, &op->data.metadata)) {
         calld->deadline = op->data.metadata.deadline;
         start_new_rpc(elem);

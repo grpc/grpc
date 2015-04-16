@@ -158,7 +158,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
 
   switch (op->type) {
     case GRPC_RECV_METADATA:
-      grpc_call_op_metadata_filter(&op->data.metadata, server_filter, elem);
+      grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
       if (!calld->got_initial_metadata) {
         calld->got_initial_metadata = 1;
         /* Have we seen the required http2 transport headers?
@@ -188,7 +188,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_SEND_METADATA:
       /* If we haven't sent status 200 yet, we need to so so because it needs to
          come before any non : prefixed metadata. */
-      grpc_call_op_metadata_add_head(&op->data.metadata, &calld->status,
+      grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
                                      grpc_mdelem_ref(channeld->status_ok));
       grpc_call_next_op(elem, op);
       break;

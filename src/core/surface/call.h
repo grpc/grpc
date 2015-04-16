@@ -100,7 +100,7 @@ void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);
    the completion queue/surface layer */
 /* receive metadata - returns 1 if this was initial metadata */
 int grpc_call_recv_metadata(grpc_call_element *surface_element,
-                            grpc_call_op_metadata *md);
+                            grpc_metadata_batch *md);
 void grpc_call_recv_message(grpc_call_element *surface_element,
                             grpc_byte_buffer *message);
 void grpc_call_read_closed(grpc_call_element *surface_element);

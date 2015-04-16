@@ -53,7 +53,7 @@ static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
                                 GPR_HEXDUMP_PLAINTEXT));
 }
 
-static void put_metadata_list(gpr_strvec *b, grpc_call_op_metadata md) {
+static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   grpc_linked_mdelem *m;
   for (m = md.list.head; m; m = m->next) {
     put_metadata(b, m->md);
