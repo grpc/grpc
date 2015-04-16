@@ -30,9 +30,11 @@
 
 // Message definitions to be used by integration test service definitions.
 
-syntax = "proto2";
+syntax = "proto3";
 
 package grpc.testing;
+
+option java_package = "io.grpc.testing.integration";
 
 // The type of payload that should be returned.
 enum PayloadType {
@@ -83,6 +85,10 @@ message SimpleResponse {
   optional string username = 2;
   // OAuth scope.
   optional string oauth_scope = 3;
+}
+
+message SimpleContext {
+  optional string value = 1;
 }
 
 // Client-streaming request.
