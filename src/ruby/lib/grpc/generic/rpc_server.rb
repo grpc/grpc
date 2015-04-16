@@ -386,9 +386,8 @@ module GRPC
         @workers.size.times { schedule { throw :exit } }
         @stopped = true
 
-        keep_alive = 5
         @stop_mutex.synchronize do
-          @stop_cond.wait(@stop_mutex, keep_alive) if @workers.size > 0
+          @stop_cond.wait(@stop_mutex, @keep_alive) if @workers.size > 0
         end
 
         # Forcibly shutdown any threads that are still alive.
