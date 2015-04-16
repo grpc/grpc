@@ -131,7 +131,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         grpc_sopb_add_metadata(&calld->outgoing_sopb, m->md);
       }
       if (gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future) != 0) {
-        grpc_sopb_add_deadline(&calld->outgoing_sopb, op->data.metadata.deadline);
+        grpc_sopb_add_deadline(&calld->outgoing_sopb,
+                               op->data.metadata.deadline);
       }
       grpc_sopb_add_flow_ctl_cb(&calld->outgoing_sopb, op->done_cb,
                                 op->user_data);
@@ -145,7 +146,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       grpc_sopb_add_begin_message(&calld->outgoing_sopb,
                                   grpc_byte_buffer_length(op->data.message),
                                   op->flags);
-      /* fall-through */
+    /* fall-through */
     case GRPC_SEND_PREFORMATTED_MESSAGE:
       copy_byte_buffer_to_stream_ops(op->data.message, &calld->outgoing_sopb);
       calld->outgoing_buffer_length_estimate +=
@@ -266,9 +267,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_connected_channel_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "connected", };
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "connected",
+};
 
 static gpr_slice alloc_recv_buffer(void *user_data, grpc_transport *transport,
                                    grpc_stream *stream, size_t size_hint) {
@@ -314,8 +315,8 @@ static void finish_message(channel_data *chand, call_data *calld) {
   call_op.type = GRPC_RECV_MESSAGE;
   call_op.done_cb = do_nothing;
   /* TODO(ctiller): this could be a lot faster if coded directly */
-  call_op.data.message = grpc_byte_buffer_create(
-      calld->incoming_message.slices, calld->incoming_message.count);
+  call_op.data.message = grpc_byte_buffer_create(calld->incoming_message.slices,
+                                                 calld->incoming_message.count);
   gpr_slice_buffer_reset_and_unref(&calld->incoming_message);
 
   /* disable window updates until we get a request more from above */
@@ -327,14 +328,15 @@ static void finish_message(channel_data *chand, call_data *calld) {
   grpc_call_next_op(elem, &call_op);
 }
 
-static void metadata_done_cb(void *ptr, grpc_op_error error) {
-  gpr_free(ptr);
-}
+static void metadata_done_cb(void *ptr, grpc_op_error error) { gpr_free(ptr); }
 
 static void add_incoming_metadata(call_data *calld, grpc_mdelem *elem) {
   if (calld->incoming_metadata_count == calld->incoming_metadata_capacity) {
-    calld->incoming_metadata_capacity = GPR_MAX(8, 2 * calld->incoming_metadata_capacity);
-    calld->incoming_metadata = gpr_realloc(calld->incoming_metadata, sizeof(*calld->incoming_metadata) * calld->incoming_metadata_capacity);
+    calld->incoming_metadata_capacity =
+        GPR_MAX(8, 2 * calld->incoming_metadata_capacity);
+    calld->incoming_metadata = gpr_realloc(
+        calld->incoming_metadata,
+        sizeof(*calld->incoming_metadata) * calld->incoming_metadata_capacity);
   }
   calld->incoming_metadata[calld->incoming_metadata_count++].md = elem;
 }
@@ -345,19 +347,21 @@ static void flush_metadata(grpc_call_element *elem) {
   size_t i;
 
   for (i = 1; i < calld->incoming_metadata_count; i++) {
-    calld->incoming_metadata[i].prev = &calld->incoming_metadata[i-1];
+    calld->incoming_metadata[i].prev = &calld->incoming_metadata[i - 1];
   }
   for (i = 0; i < calld->incoming_metadata_count - 1; i++) {
-    calld->incoming_metadata[i].next = &calld->incoming_metadata[i+1];
+    calld->incoming_metadata[i].next = &calld->incoming_metadata[i + 1];
   }
 
-  calld->incoming_metadata[0].prev = calld->incoming_metadata[calld->incoming_metadata_count-1].next = NULL;
+  calld->incoming_metadata[0].prev =
+      calld->incoming_metadata[calld->incoming_metadata_count - 1].next = NULL;
 
   op.type = GRPC_RECV_METADATA;
   op.dir = GRPC_CALL_UP;
   op.flags = 0;
   op.data.metadata.list.head = &calld->incoming_metadata[0];
-  op.data.metadata.list.tail = &calld->incoming_metadata[calld->incoming_metadata_count - 1];
+  op.data.metadata.list.tail =
+      &calld->incoming_metadata[calld->incoming_metadata_count - 1];
   op.data.metadata.garbage.head = op.data.metadata.garbage.tail = NULL;
   op.data.metadata.deadline = calld->deadline;
   op.done_cb = metadata_done_cb;
@@ -525,7 +529,8 @@ static void transport_closed(void *user_data, grpc_transport *transport) {
 
 const grpc_transport_callbacks connected_channel_transport_callbacks = {
     alloc_recv_buffer, accept_stream,    recv_batch,
-    transport_goaway,  transport_closed, };
+    transport_goaway,  transport_closed,
+};
 
 grpc_transport_setup_result grpc_connected_channel_bind_transport(
     grpc_channel_stack *channel_stack, grpc_transport *transport) {

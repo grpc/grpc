@@ -217,7 +217,7 @@ struct grpc_call {
   legacy_state *legacy_state;
 };
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call)+1))
+#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack *)((call) + 1))
 #define CALL_FROM_CALL_STACK(call_stack) (((grpc_call *)(call_stack)) - 1)
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -237,8 +237,10 @@ static void enact_send_action(grpc_call *call, send_action sa);
 static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
-                            const void *server_transport_data, grpc_mdelem **add_initial_metadata,
-                            size_t add_initial_metadata_count, gpr_timespec send_deadline) {
+                            const void *server_transport_data,
+                            grpc_mdelem **add_initial_metadata,
+                            size_t add_initial_metadata_count,
+                            gpr_timespec send_deadline) {
   size_t i;
   grpc_channel_stack *channel_stack = grpc_channel_get_channel_stack(channel);
   grpc_call *call =
@@ -606,7 +608,8 @@ static send_action choose_send_action(grpc_call *call) {
   return SEND_NOTHING;
 }
 
-static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count, grpc_metadata *metadata) {
+static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,
+                                                grpc_metadata *metadata) {
   size_t i;
   grpc_mdelem_list out;
   if (count == 0) {
@@ -615,18 +618,18 @@ static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count, g
   }
   for (i = 0; i < count; i++) {
     grpc_metadata *md = &metadata[i];
-    grpc_metadata *next_md = (i == count-1) ? NULL : &metadata[i+1];
-    grpc_metadata *prev_md = (i == 0) ? NULL : &metadata[i-1];
-    grpc_linked_mdelem *l = (grpc_linked_mdelem*)&md->internal_data;
+    grpc_metadata *next_md = (i == count - 1) ? NULL : &metadata[i + 1];
+    grpc_metadata *prev_md = (i == 0) ? NULL : &metadata[i - 1];
+    grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     assert(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    l->md = grpc_mdelem_from_string_and_buffer(
-                      call->metadata_context, md->key,
-                      (const gpr_uint8 *)md->value, md->value_length);
-    l->next = next_md ? (grpc_linked_mdelem*)&next_md->internal_data : NULL;
-    l->prev = prev_md ? (grpc_linked_mdelem*)&prev_md->internal_data : NULL;
+    l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
+                                               (const gpr_uint8 *)md->value,
+                                               md->value_length);
+    l->next = next_md ? (grpc_linked_mdelem *)&next_md->internal_data : NULL;
+    l->prev = prev_md ? (grpc_linked_mdelem *)&prev_md->internal_data : NULL;
   }
-  out.head = (grpc_linked_mdelem*)&(metadata[0].internal_data);
-  out.tail = (grpc_linked_mdelem*)&(metadata[count-1].internal_data);
+  out.head = (grpc_linked_mdelem *)&(metadata[0].internal_data);
+  out.tail = (grpc_linked_mdelem *)&(metadata[count - 1].internal_data);
   return out;
 }
 
@@ -649,11 +652,13 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       op.type = GRPC_SEND_METADATA;
       op.dir = GRPC_CALL_DOWN;
       op.flags = flags;
-      op.data.metadata.list = chain_metadata_from_app(call, data.send_metadata.count, data.send_metadata.metadata);
+      op.data.metadata.list = chain_metadata_from_app(
+          call, data.send_metadata.count, data.send_metadata.metadata);
       op.data.metadata.garbage.head = op.data.metadata.garbage.tail = NULL;
       op.data.metadata.deadline = call->send_deadline;
       for (i = 0; i < call->send_initial_metadata_count; i++) {
-        grpc_call_op_metadata_link_head(&op.data.metadata, &call->send_initial_metadata[i]);
+        grpc_call_op_metadata_link_head(&op.data.metadata,
+                                        &call->send_initial_metadata[i]);
       }
       op.done_cb = do_nothing;
       op.user_data = NULL;
@@ -685,20 +690,23 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       op.type = GRPC_SEND_METADATA;
       op.dir = GRPC_CALL_DOWN;
       op.flags = flags;
-      op.data.metadata.list = chain_metadata_from_app(call, data.send_metadata.count, data.send_metadata.metadata);
+      op.data.metadata.list = chain_metadata_from_app(
+          call, data.send_metadata.count, data.send_metadata.metadata);
       op.data.metadata.garbage.head = op.data.metadata.garbage.tail = NULL;
       op.data.metadata.deadline = call->send_deadline;
       /* send status */
       /* TODO(ctiller): cache common status values */
       data = call->request_data[GRPC_IOREQ_SEND_STATUS];
       gpr_ltoa(data.send_status.code, status_str);
-      grpc_call_op_metadata_add_tail(&op.data.metadata, &call->status_link, 
-        grpc_mdelem_from_metadata_strings(
+      grpc_call_op_metadata_add_tail(
+          &op.data.metadata, &call->status_link,
+          grpc_mdelem_from_metadata_strings(
               call->metadata_context,
               grpc_mdstr_ref(grpc_channel_get_status_string(call->channel)),
               grpc_mdstr_from_string(call->metadata_context, status_str)));
       if (data.send_status.details) {
-        grpc_call_op_metadata_add_tail(&op.data.metadata, &call->details_link,
+        grpc_call_op_metadata_add_tail(
+            &op.data.metadata, &call->details_link,
             grpc_mdelem_from_metadata_strings(
                 call->metadata_context,
                 grpc_mdstr_ref(grpc_channel_get_message_string(call->channel)),
@@ -953,7 +961,7 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
   void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data) {
-    status = ((gpr_uint32)(gpr_intptr) user_data) - STATUS_OFFSET;
+    status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
                                    GPR_SLICE_LENGTH(md->value->slice),
@@ -975,7 +983,8 @@ void grpc_call_recv_message(grpc_call_element *elem,
   unlock(call);
 }
 
-int grpc_call_recv_metadata(grpc_call_element *elem, grpc_call_op_metadata *md) {
+int grpc_call_recv_metadata(grpc_call_element *elem,
+                            grpc_call_op_metadata *md) {
   grpc_call *call = CALL_FROM_TOP_ELEM(elem);
   grpc_linked_mdelem *l;
   grpc_metadata_array *dest;
@@ -1005,8 +1014,9 @@ int grpc_call_recv_metadata(grpc_call_element *elem, grpc_call_op_metadata *md) 
       mdusr->value = grpc_mdstr_as_c_string(md->value);
       mdusr->value_length = GPR_SLICE_LENGTH(md->value->slice);
       if (call->owned_metadata_count == call->owned_metadata_capacity) {
-        call->owned_metadata_capacity = GPR_MAX(
-            call->owned_metadata_capacity + 8, call->owned_metadata_capacity * 2);
+        call->owned_metadata_capacity =
+            GPR_MAX(call->owned_metadata_capacity + 8,
+                    call->owned_metadata_capacity * 2);
         call->owned_metadata =
             gpr_realloc(call->owned_metadata,
                         sizeof(grpc_mdelem *) * call->owned_metadata_capacity);

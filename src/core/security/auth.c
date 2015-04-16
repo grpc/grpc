@@ -79,7 +79,8 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
   size_t i;
   GPR_ASSERT(num_md <= MAX_CREDENTIAL_METADATA_COUNT);
   for (i = 0; i < num_md; i++) {
-    grpc_call_op_metadata_add_tail(&op.data.metadata, &calld->md_links[i], grpc_mdelem_ref(md_elems[i]));
+    grpc_call_op_metadata_add_tail(&op.data.metadata, &calld->md_links[i],
+                                   grpc_mdelem_ref(md_elems[i]));
   }
   grpc_call_next_op(elem, &op);
 }
@@ -164,7 +165,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_SEND_METADATA:
       for (l = op->data.metadata.list.head; l; l = l->next) {
         grpc_mdelem *md = l->md;
-        /* Pointer comparison is OK for md_elems created from the same context. */
+        /* Pointer comparison is OK for md_elems created from the same context.
+         */
         if (md->key == channeld->authority_string) {
           if (calld->host != NULL) grpc_mdstr_unref(calld->host);
           calld->host = grpc_mdstr_ref(md->value);
@@ -264,7 +266,8 @@ static void init_channel_elem(grpc_channel_element *elem,
   channeld->path_string = grpc_mdstr_from_string(channeld->md_ctx, ":path");
   channeld->error_msg_key =
       grpc_mdstr_from_string(channeld->md_ctx, "grpc-message");
-  channeld->status_key = grpc_mdstr_from_string(channeld->md_ctx, "grpc-status");
+  channeld->status_key =
+      grpc_mdstr_from_string(channeld->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */
@@ -288,6 +291,5 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "auth"};
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "auth"};

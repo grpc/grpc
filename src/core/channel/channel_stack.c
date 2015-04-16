@@ -77,9 +77,9 @@ size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
   return size;
 }
 
-#define CHANNEL_ELEMS_FROM_STACK(stk) \
-  ((grpc_channel_element *)(          \
-      (char *)(stk) + ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack))))
+#define CHANNEL_ELEMS_FROM_STACK(stk)                                   \
+  ((grpc_channel_element *)((char *)(stk) + ROUND_UP_TO_ALIGNMENT_SIZE( \
+                                                sizeof(grpc_channel_stack))))
 
 #define CALL_ELEMS_FROM_STACK(stk)       \
   ((grpc_call_element *)((char *)(stk) + \
@@ -193,14 +193,13 @@ void grpc_channel_next_op(grpc_channel_element *elem, grpc_channel_op *op) {
 
 grpc_channel_stack *grpc_channel_stack_from_top_element(
     grpc_channel_element *elem) {
-  return (grpc_channel_stack *)((char *)(elem) -
-                                ROUND_UP_TO_ALIGNMENT_SIZE(
-                                    sizeof(grpc_channel_stack)));
+  return (grpc_channel_stack *)((char *)(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
+      sizeof(grpc_channel_stack)));
 }
 
 grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem) {
-  return (grpc_call_stack *)((char *)(elem) - ROUND_UP_TO_ALIGNMENT_SIZE(
-                                                  sizeof(grpc_call_stack)));
+  return (grpc_call_stack *)((char *)(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
+      sizeof(grpc_call_stack)));
 }
 
 static void do_nothing(void *user_data, grpc_op_error error) {}
@@ -225,7 +224,9 @@ void grpc_call_element_send_finish(grpc_call_element *cur_elem) {
   grpc_call_next_op(cur_elem, &finish_op);
 }
 
-void grpc_call_element_recv_status(grpc_call_element *cur_elem, grpc_status_code status, const char *message) {
+void grpc_call_element_recv_status(grpc_call_element *cur_elem,
+                                   grpc_status_code status,
+                                   const char *message) {
   abort();
 }
 
@@ -246,19 +247,18 @@ static void assert_valid_list(grpc_mdelem_list *list) {
   }
 }
 
-void grpc_call_op_metadata_init(grpc_call_op_metadata *comd) {
+void grpc_call_op_metadata_init(grpc_call_op_metadata *comd) { abort(); }
+
+void grpc_call_op_metadata_destroy(grpc_call_op_metadata *comd) { abort(); }
+
+void grpc_call_op_metadata_merge(grpc_call_op_metadata *target,
+                                 grpc_call_op_metadata *add) {
   abort();
 }
 
-void grpc_call_op_metadata_destroy(grpc_call_op_metadata *comd) {
-  abort();
-}
-
-void grpc_call_op_metadata_merge(grpc_call_op_metadata *target, grpc_call_op_metadata *add) {
-  abort();
-}
-
-void grpc_call_op_metadata_add_head(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage, grpc_mdelem *elem_to_add) {
+void grpc_call_op_metadata_add_head(grpc_call_op_metadata *comd,
+                                    grpc_linked_mdelem *storage,
+                                    grpc_mdelem *elem_to_add) {
   storage->md = elem_to_add;
   grpc_call_op_metadata_link_head(comd, storage);
 }
@@ -276,11 +276,14 @@ static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-void grpc_call_op_metadata_link_head(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage) {
+void grpc_call_op_metadata_link_head(grpc_call_op_metadata *comd,
+                                     grpc_linked_mdelem *storage) {
   link_head(&comd->list, storage);
 }
 
-void grpc_call_op_metadata_add_tail(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage, grpc_mdelem *elem_to_add) {
+void grpc_call_op_metadata_add_tail(grpc_call_op_metadata *comd,
+                                    grpc_linked_mdelem *storage,
+                                    grpc_mdelem *elem_to_add) {
   storage->md = elem_to_add;
   grpc_call_op_metadata_link_tail(comd, storage);
 }
@@ -298,11 +301,15 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
   assert_valid_list(list);
 }
 
-void grpc_call_op_metadata_link_tail(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage) {
+void grpc_call_op_metadata_link_tail(grpc_call_op_metadata *comd,
+                                     grpc_linked_mdelem *storage) {
   link_tail(&comd->list, storage);
 }
 
-void grpc_call_op_metadata_filter(grpc_call_op_metadata *comd, grpc_mdelem *(*filter)(void *user_data, grpc_mdelem *elem), void *user_data) {
+void grpc_call_op_metadata_filter(grpc_call_op_metadata *comd,
+                                  grpc_mdelem *(*filter)(void *user_data,
+                                                         grpc_mdelem *elem),
+                                  void *user_data) {
   grpc_linked_mdelem *l;
   grpc_linked_mdelem *next;
 

@@ -43,12 +43,14 @@
 
 static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
   gpr_strvec_add(b, gpr_strdup(" key="));
-  gpr_strvec_add(b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->key->slice),
-                    GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT));
+  gpr_strvec_add(
+      b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->key->slice),
+                     GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT));
 
   gpr_strvec_add(b, gpr_strdup(" value="));
   gpr_strvec_add(b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->value->slice),
-                    GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT));
+                                GPR_SLICE_LENGTH(md->value->slice),
+                                GPR_HEXDUMP_PLAINTEXT));
 }
 
 static void put_metadata_list(gpr_strvec *b, grpc_call_op_metadata md) {
@@ -58,7 +60,8 @@ static void put_metadata_list(gpr_strvec *b, grpc_call_op_metadata md) {
   }
   if (gpr_time_cmp(md.deadline, gpr_inf_future) != 0) {
     char *tmp;
-    gpr_asprintf(&tmp, " deadline=%d.%09d", md.deadline.tv_sec, md.deadline.tv_nsec);
+    gpr_asprintf(&tmp, " deadline=%d.%09d", md.deadline.tv_sec,
+                 md.deadline.tv_nsec);
     gpr_strvec_add(b, tmp);
   }
 }

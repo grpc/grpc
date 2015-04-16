@@ -83,12 +83,9 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   call_data *calld = elem->call_data;
 
   /* Check if it is one of the headers we care about. */
-  if (md == channeld->te_trailers ||
-      md == channeld->method_post ||
-      md == channeld->http_scheme ||
-      md == channeld->https_scheme ||
-      md == channeld->grpc_scheme ||
-      md == channeld->content_type) {
+  if (md == channeld->te_trailers || md == channeld->method_post ||
+      md == channeld->http_scheme || md == channeld->https_scheme ||
+      md == channeld->grpc_scheme || md == channeld->content_type) {
     /* swallow it */
     if (md == channeld->method_post) {
       calld->seen_post = 1;
@@ -101,8 +98,8 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        require */
     return NULL;
   } else if (md->key == channeld->content_type->key) {
-    if (strncmp(grpc_mdstr_as_c_string(md->value),
-                "application/grpc+", 17) == 0) {
+    if (strncmp(grpc_mdstr_as_c_string(md->value), "application/grpc+", 17) ==
+        0) {
       /* Although the C implementation doesn't (currently) generate them,
          any
          custom +-suffix is explicitly valid. */
@@ -121,8 +118,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
              md->key == channeld->http_scheme->key ||
              md->key == channeld->content_type->key) {
     gpr_log(GPR_ERROR, "Invalid %s: header: '%s'",
-            grpc_mdstr_as_c_string(md->key),
-            grpc_mdstr_as_c_string(md->value));
+            grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
     /* swallow it and error everything out. */
     /* TODO(klempner): We ought to generate more descriptive error messages
        on the wire here. */
@@ -168,8 +164,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         /* Have we seen the required http2 transport headers?
            (:method, :scheme, content-type, with :path and :authority covered
            at the channel level right now) */
-        if (calld->seen_post && calld->seen_scheme &&
-            calld->seen_te_trailers && calld->seen_path) {
+        if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
+            calld->seen_path) {
           grpc_call_next_op(elem, op);
         } else {
           if (!calld->seen_post) {
@@ -192,7 +188,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_SEND_METADATA:
       /* If we haven't sent status 200 yet, we need to so so because it needs to
          come before any non : prefixed metadata. */
-      grpc_call_op_metadata_add_head(&op->data.metadata, &calld->status, grpc_mdelem_ref(channeld->status_ok));
+      grpc_call_op_metadata_add_head(&op->data.metadata, &calld->status,
+                                     grpc_mdelem_ref(channeld->status_ok));
       grpc_call_next_op(elem, op);
       break;
     default:
@@ -233,8 +230,7 @@ static void init_call_elem(grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {
-}
+static void destroy_call_elem(grpc_call_element *elem) {}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_channel_element *elem,

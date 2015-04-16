@@ -85,8 +85,10 @@ typedef void (*grpc_ioreq_completion_func)(grpc_call *call,
                                            void *user_data);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
-                            const void *server_transport_data, grpc_mdelem **add_initial_metadata,
-                            size_t add_initial_metadata_count, gpr_timespec send_deadline);
+                            const void *server_transport_data,
+                            grpc_mdelem **add_initial_metadata,
+                            size_t add_initial_metadata_count,
+                            gpr_timespec send_deadline);
 
 void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
@@ -98,7 +100,7 @@ void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);
    the completion queue/surface layer */
 /* receive metadata - returns 1 if this was initial metadata */
 int grpc_call_recv_metadata(grpc_call_element *surface_element,
-                             grpc_call_op_metadata *md);
+                            grpc_call_op_metadata *md);
 void grpc_call_recv_message(grpc_call_element *surface_element,
                             grpc_byte_buffer *message);
 void grpc_call_read_closed(grpc_call_element *surface_element);
@@ -123,4 +125,4 @@ void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
   if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
 
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */
+#endif /* GRPC_INTERNAL_CORE_SURFACE_CALL_H */

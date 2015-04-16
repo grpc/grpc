@@ -108,15 +108,25 @@ typedef struct grpc_call_op_metadata {
 
 void grpc_call_op_metadata_init(grpc_call_op_metadata *comd);
 void grpc_call_op_metadata_destroy(grpc_call_op_metadata *comd);
-void grpc_call_op_metadata_merge(grpc_call_op_metadata *target, grpc_call_op_metadata *add);
+void grpc_call_op_metadata_merge(grpc_call_op_metadata *target,
+                                 grpc_call_op_metadata *add);
 
-void grpc_call_op_metadata_link_head(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage);
-void grpc_call_op_metadata_link_tail(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage);
+void grpc_call_op_metadata_link_head(grpc_call_op_metadata *comd,
+                                     grpc_linked_mdelem *storage);
+void grpc_call_op_metadata_link_tail(grpc_call_op_metadata *comd,
+                                     grpc_linked_mdelem *storage);
 
-void grpc_call_op_metadata_add_head(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage, grpc_mdelem *elem_to_add);
-void grpc_call_op_metadata_add_tail(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage, grpc_mdelem *elem_to_add);
+void grpc_call_op_metadata_add_head(grpc_call_op_metadata *comd,
+                                    grpc_linked_mdelem *storage,
+                                    grpc_mdelem *elem_to_add);
+void grpc_call_op_metadata_add_tail(grpc_call_op_metadata *comd,
+                                    grpc_linked_mdelem *storage,
+                                    grpc_mdelem *elem_to_add);
 
-void grpc_call_op_metadata_filter(grpc_call_op_metadata *comd, grpc_mdelem *(*filter)(void *user_data, grpc_mdelem *elem), void *user_data);
+void grpc_call_op_metadata_filter(grpc_call_op_metadata *comd,
+                                  grpc_mdelem *(*filter)(void *user_data,
+                                                         grpc_mdelem *elem),
+                                  void *user_data);
 
 /* A single filterable operation to be performed on a call */
 typedef struct {
@@ -315,11 +325,13 @@ void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
 
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
 void grpc_call_element_send_finish(grpc_call_element *cur_elem);
-void grpc_call_element_recv_status(grpc_call_element *cur_elem, grpc_status_code status, const char *message);
+void grpc_call_element_recv_status(grpc_call_element *cur_elem,
+                                   grpc_status_code status,
+                                   const char *message);
 
 extern int grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
   if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */
