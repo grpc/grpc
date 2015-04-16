@@ -54,7 +54,7 @@ def get_deps(target_dict):
 %>
 
 % for lib in libs:
-% if lib.build != "private":
+% if lib.build in ("all", "protoc"):
 ${cc_library(lib)}
 % endif
 % endfor
