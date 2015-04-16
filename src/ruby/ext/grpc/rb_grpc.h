@@ -41,9 +41,6 @@
 /* grpc_rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
 extern VALUE grpc_rb_mGrpcCore;
 
-/* Class used to wrap timeval structs. */
-extern VALUE grpc_rb_cTimeVal;
-
 /* grpc_rb_sNewServerRpc is the struct that holds new server rpc details. */
 extern VALUE grpc_rb_sNewServerRpc;
 

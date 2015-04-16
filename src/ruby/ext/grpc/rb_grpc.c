@@ -50,7 +50,7 @@
 const RUBY_DATA_FUNC GC_NOT_MARKED = NULL;
 const RUBY_DATA_FUNC GC_DONT_FREE = NULL;
 
-VALUE grpc_rb_cTimeVal = Qnil;
+static VALUE grpc_rb_cTimeVal = Qnil;
 
 /* Alloc func that blocks allocation of a given object by raising an
  * exception. */

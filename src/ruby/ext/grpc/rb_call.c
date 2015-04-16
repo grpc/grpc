@@ -42,6 +42,18 @@
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 
+/* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
+static VALUE grpc_rb_cCall;
+
+/* grpc_rb_eCallError is the ruby class of the exception thrown during call
+   operations; */
+VALUE grpc_rb_eCallError = Qnil;
+
+/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
+   a timeout. */
+static VALUE grpc_rb_eOutOfTime = Qnil;
+
+
 /* grpc_rb_sBatchResult is struct class used to hold the results of a batch
  * call. */
 static VALUE grpc_rb_sBatchResult;
@@ -581,17 +593,6 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   grpc_run_batch_stack_cleanup(&st);
   return result;
 }
-
-/* grpc_rb_cCall is the ruby class that proxies grpc_call. */
-VALUE grpc_rb_cCall = Qnil;
-
-/* grpc_rb_eCallError is the ruby class of the exception thrown during call
-   operations; */
-VALUE grpc_rb_eCallError = Qnil;
-
-/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
-   a timeout. */
-VALUE grpc_rb_eOutOfTime = Qnil;
 
 void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */

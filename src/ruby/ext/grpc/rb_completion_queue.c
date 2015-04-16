@@ -39,6 +39,10 @@
 #include <grpc/support/time.h>
 #include "rb_grpc.h"
 
+/* grpc_rb_cCompletionQueue is the ruby class that proxies
+ * grpc_completion_queue. */
+static VALUE grpc_rb_cCompletionQueue = Qnil;
+
 /* Used to allow grpc_completion_queue_next call to release the GIL */
 typedef struct next_call_stack {
   grpc_completion_queue *cq;
@@ -165,10 +169,6 @@ grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
   }
   return next_call.event;
 }
-
-/* grpc_rb_cCompletionQueue is the ruby class that proxies
- * grpc_completion_queue. */
-VALUE grpc_rb_cCompletionQueue = Qnil;
 
 void Init_grpc_completion_queue() {
   grpc_rb_cCompletionQueue =
