@@ -130,47 +130,65 @@ static void test_small_data_framing(void) {
   verify_sopb(10, 0, 5, "000005 0000 deadbeef 00000000ff");
 }
 
-static void add_sopb_header(const char *key, const char *value) {
-  grpc_sopb_add_metadata(&g_sopb,
-                         grpc_mdelem_from_strings(g_mdctx, key, value));
+static void free_md(void *p, grpc_op_error err) {
+  gpr_free(p);
+}
+
+static void add_sopb_headers(int n, ...) {
+  int i;
+  grpc_metadata_batch b;
+  va_list l;
+  grpc_linked_mdelem *e = gpr_malloc(sizeof(*e) * n);
+
+  va_start(l, n);
+  for (i = 0; i < n; i++) {
+    char *key = va_arg(l, char *);
+    char *value = va_arg(l, char *);
+    if (i) {
+      e[i-1].next = &e[i];
+      e[i].prev = &e[i-1];
+    }
+    e[i].md = grpc_mdelem_from_strings(g_mdctx, key, value);
+  }
+  e[0].prev = NULL;
+  e[n-1].next = NULL;
+  va_end(l);
+
+  grpc_sopb_add_metadata(&g_sopb, b);
+  grpc_sopb_add_flow_ctl_cb(&g_sopb, free_md, e);
 }
 
 static void test_basic_headers(void) {
   int i;
 
-  add_sopb_header("a", "a");
+  add_sopb_headers(1, "a", "a");
   verify_sopb(0, 0, 0, "000005 0104 deadbeef 40 0161 0161");
 
-  add_sopb_header("a", "a");
+  add_sopb_headers(1, "a", "a");
   verify_sopb(0, 0, 0, "000001 0104 deadbeef be");
 
-  add_sopb_header("a", "a");
+  add_sopb_headers(1, "a", "a");
   verify_sopb(0, 0, 0, "000001 0104 deadbeef be");
 
-  add_sopb_header("a", "a");
-  add_sopb_header("b", "c");
+  add_sopb_headers(2, "a", "a", "b", "c");
   verify_sopb(0, 0, 0, "000006 0104 deadbeef be 40 0162 0163");
 
-  add_sopb_header("a", "a");
-  add_sopb_header("b", "c");
+  add_sopb_headers(2, "a", "a", "b", "c");
   verify_sopb(0, 0, 0, "000002 0104 deadbeef bf be");
 
-  add_sopb_header("a", "d");
+  add_sopb_headers(1, "a", "d");
   verify_sopb(0, 0, 0, "000004 0104 deadbeef 7f 00 0164");
 
   /* flush out what's there to make a few values look very popular */
   for (i = 0; i < 350; i++) {
-    add_sopb_header("a", "a");
-    add_sopb_header("b", "c");
-    add_sopb_header("a", "d");
+    add_sopb_headers(3, "a", "a", "b", "c", "a", "d");
     verify_sopb(0, 0, 0, "000003 0104 deadbeef c0 bf be");
   }
 
-  add_sopb_header("a", "a");
-  add_sopb_header("k", "v");
+  add_sopb_headers(2, "a", "a", "k", "v");
   verify_sopb(0, 0, 0, "000006 0104 deadbeef c0 00 016b 0176");
 
-  add_sopb_header("a", "v");
+  add_sopb_headers(1, "a", "v");
   /* this could be      000004 0104 deadbeef 0f 30 0176 also */
   verify_sopb(0, 0, 0, "000004 0104 deadbeef 0f 2f 0176");
 }
@@ -190,7 +208,7 @@ static void test_decode_table_overflow(void) {
 
   for (i = 0; i < 114; i++) {
     if (i > 0) {
-      add_sopb_header("aa", "ba");
+      add_sopb_headers(1, "aa", "ba");
     }
 
     encode_int_to_str(i, key);
@@ -209,14 +227,14 @@ static void test_decode_table_overflow(void) {
                    key[0], key[1], value[0], value[1]);
     }
 
-    add_sopb_header(key, value);
+    add_sopb_headers(1, key, value);
     verify_sopb(0, 0, 0, expect);
     gpr_free(expect);
   }
 
   /* if the above passes, then we must have just knocked this pair out of the
      decoder stack, and so we'll be forced to re-encode it */
-  add_sopb_header("aa", "ba");
+  add_sopb_headers(1, "aa", "ba");
   verify_sopb(0, 0, 0, "000007 0104 deadbeef 40 026161 026261");
 }
 
@@ -260,7 +278,7 @@ static void test_decode_random_headers_inner(int max_len) {
     randstr(st.key, max_len);
     randstr(st.value, max_len);
 
-    add_sopb_header(st.key, st.value);
+    add_sopb_headers(1, st.key, st.value);
     gpr_slice_buffer_init(&output);
     GPR_ASSERT(0 ==
                grpc_chttp2_preencode(g_sopb.ops, &g_sopb.nops, 0, &encops));

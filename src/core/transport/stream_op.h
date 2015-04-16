@@ -50,8 +50,6 @@ typedef enum grpc_stream_op_code {
      Must be ignored by receivers */
   GRPC_NO_OP,
   GRPC_OP_METADATA,
-  GRPC_OP_DEADLINE,
-  GRPC_OP_METADATA_BOUNDARY,
   /* Begin a message/metadata element/status - as defined by
      grpc_message_type. */
   GRPC_OP_BEGIN_MESSAGE,
@@ -115,6 +113,8 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
                                                          grpc_mdelem *elem),
                                   void *user_data);
 
+void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
+
 /* Represents a single operation performed on a stream/transport */
 typedef struct grpc_stream_op {
   /* the operation to be applied */
@@ -123,8 +123,7 @@ typedef struct grpc_stream_op {
      associated op-code */
   union {
     grpc_begin_message begin_message;
-    grpc_mdelem *metadata;
-    gpr_timespec deadline;
+    grpc_metadata_batch metadata;
     gpr_slice slice;
     grpc_flow_ctl_cb flow_ctl_cb;
   } data;
@@ -157,9 +156,7 @@ void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb);
 /* Append a GRPC_OP_BEGIN to a buffer */
 void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
                                  gpr_uint32 flags);
-void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb, grpc_mdelem *metadata);
-void grpc_sopb_add_deadline(grpc_stream_op_buffer *sopb, gpr_timespec deadline);
-void grpc_sopb_add_metadata_boundary(grpc_stream_op_buffer *sopb);
+void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb, grpc_metadata_batch metadata);
 /* Append a GRPC_SLICE to a buffer - does not ref/unref the slice */
 void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
 /* Append a GRPC_OP_FLOW_CTL_CB to a buffer */

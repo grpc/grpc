@@ -480,9 +480,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
         curop++;
         break;
       case GRPC_OP_FLOW_CTL_CB:
-      case GRPC_OP_DEADLINE:
       case GRPC_OP_METADATA:
-      case GRPC_OP_METADATA_BOUNDARY:
         /* these just get copied as they don't impact the number of flow
            controlled bytes */
         grpc_sopb_append(outops, op, 1);
@@ -543,6 +541,7 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
   gpr_uint32 curop = 0;
   gpr_uint32 unref_op;
   grpc_mdctx *mdctx = compressor->mdctx;
+  grpc_linked_mdelem *l;
   int need_unref = 0;
 
   GPR_ASSERT(stream_id != 0);
@@ -566,19 +565,19 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
         curop++;
         break;
       case GRPC_OP_METADATA:
-        /* Encode a metadata element; store the returned value, representing
+        /* Encode a metadata batch; store the returned values, representing
            a metadata element that needs to be unreffed back into the metadata
            slot. THIS MAY NOT BE THE SAME ELEMENT (if a decoder table slot got
            updated). After this loop, we'll do a batch unref of elements. */
-        op->data.metadata = hpack_enc(compressor, op->data.metadata, &st);
-        need_unref |= op->data.metadata != NULL;
-        curop++;
-        break;
-      case GRPC_OP_DEADLINE:
-        deadline_enc(compressor, op->data.deadline, &st);
-        curop++;
-        break;
-      case GRPC_OP_METADATA_BOUNDARY:
+        need_unref |= op->data.metadata.garbage.head != NULL;
+        grpc_metadata_batch_assert_ok(&op->data.metadata);
+        for (l = op->data.metadata.list.head; l; l = l->next) {
+          l->md = hpack_enc(compressor, l->md, &st);
+          need_unref |= l->md != NULL;
+        }
+        if (gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future) != 0) {
+          deadline_enc(compressor, op->data.metadata.deadline, &st);
+        }
         ensure_frame_type(&st, HEADER, 0);
         finish_frame(&st, 1, 0);
         st.last_was_header = 0; /* force a new header frame */
@@ -614,8 +613,12 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
     for (unref_op = 0; unref_op < curop; unref_op++) {
       op = &ops[unref_op];
       if (op->type != GRPC_OP_METADATA) continue;
-      if (!op->data.metadata) continue;
-      grpc_mdctx_locked_mdelem_unref(mdctx, op->data.metadata);
+      for (l = op->data.metadata.list.head; l; l = l->next) {
+        if (l->md) grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+      }
+      for (l = op->data.metadata.garbage.head; l; l = l->next) {
+        grpc_mdctx_locked_mdelem_unref(mdctx, l->md);
+      }
     }
     grpc_mdctx_unlock(mdctx);
   }
