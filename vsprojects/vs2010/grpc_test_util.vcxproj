@@ -88,8 +88,6 @@
     </ClCompile>
     <ClCompile Include="..\..\test\core\statistics\census_log_tests.c">
     </ClCompile>
-    <ClCompile Include="..\..\test\core\transport\transport_end2end_tests.c">
-    </ClCompile>
     <ClCompile Include="..\..\test\core\util\grpc_profiler.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\util\parse_hexstring.c">
