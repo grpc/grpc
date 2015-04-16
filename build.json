@@ -499,6 +499,14 @@
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
     },
     {
+      "name": "grpc++_test_config",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/test_config.cc"
+      ]
+    },
+    {
       "name": "grpc++_test_util",
       "build": "private",
       "language": "c++",
@@ -582,7 +590,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -615,7 +624,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -1929,7 +1939,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -1994,7 +2005,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -2011,7 +2023,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -2042,7 +2055,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -2094,7 +2108,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -2134,7 +2149,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {

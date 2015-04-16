@@ -54,6 +54,7 @@ class Channel GRPC_FINAL : public ChannelInterface {
   Channel(const grpc::string& target, grpc_channel* c_channel);
   ~Channel() GRPC_OVERRIDE;
 
+  virtual void *RegisterMethod(const char *method) GRPC_OVERRIDE;
   virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
                           CompletionQueue* cq) GRPC_OVERRIDE;
   virtual void PerformOpsOnCall(CallOpBuffer* ops, Call* call) GRPC_OVERRIDE;

@@ -36,6 +36,7 @@
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(num_clients, 1, "Number of client binaries");
 DEFINE_int32(num_servers, 1, "Number of server binaries");
@@ -67,16 +68,9 @@ using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
 
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
-
 int main(int argc, char** argv) {
   grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   RpcType rpc_type;
   GPR_ASSERT(RpcType_Parse(FLAGS_rpc_type, &rpc_type));
