@@ -411,28 +411,31 @@ static void read_closed(grpc_call_element *elem) {
   gpr_mu_unlock(&chand->server->mu);
 }
 
-static void call_op(grpc_call_element *elem, grpc_call_element *from_elemn,
-                    grpc_call_op *op) {
+static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
+  grpc_call_element *elem = user_data;
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  grpc_mdelem *md;
+  if (md->key == chand->path_key) {
+    calld->path = grpc_mdstr_ref(md->value);
+    return NULL;
+  } else if (md->key == chand->authority_key) {
+    calld->host = grpc_mdstr_ref(md->value);
+    return NULL;
+  }
+  return md;
+}
+
+static void call_op(grpc_call_element *elem, grpc_call_element *from_elemn,
+                    grpc_call_op *op) {
+  call_data *calld = elem->call_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   switch (op->type) {
     case GRPC_RECV_METADATA:
-      md = op->data.metadata;
-      if (md->key == chand->path_key) {
-        calld->path = grpc_mdstr_ref(md->value);
-        grpc_mdelem_unref(md);
-      } else if (md->key == chand->authority_key) {
-        calld->host = grpc_mdstr_ref(md->value);
-        grpc_mdelem_unref(md);
-      } else {
-        grpc_call_recv_metadata(elem, md);
+      grpc_call_op_metadata_filter(&op->data.metadata, server_filter, elem);
+      if (grpc_call_recv_metadata(elem, &op->data.metadata)) {
+        calld->deadline = op->data.metadata.deadline;
+        start_new_rpc(elem);
       }
-      break;
-    case GRPC_RECV_END_OF_INITIAL_METADATA:
-      start_new_rpc(elem);
-      grpc_call_initial_metadata_complete(elem);
       break;
     case GRPC_RECV_MESSAGE:
       grpc_call_recv_message(elem, op->data.message);
@@ -443,10 +446,6 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elemn,
       break;
     case GRPC_RECV_FINISH:
       stream_closed(elem);
-      break;
-    case GRPC_RECV_DEADLINE:
-      grpc_call_set_deadline(elem, op->data.deadline);
-      ((call_data *)elem->call_data)->deadline = op->data.deadline;
       break;
     default:
       GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
@@ -464,7 +463,7 @@ static void channel_op(grpc_channel_element *elem,
     case GRPC_ACCEPT_CALL:
       /* create a call */
       grpc_call_create(chand->channel, NULL,
-                       op->data.accept_call.transport_server_data);
+                       op->data.accept_call.transport_server_data, NULL, 0, gpr_inf_future);
       break;
     case GRPC_TRANSPORT_CLOSED:
       /* if the transport is closed for a server channel, we destroy the

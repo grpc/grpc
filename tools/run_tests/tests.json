@@ -471,15 +471,6 @@
   {
     "flaky": false, 
     "language": "c", 
-    "name": "metadata_buffer_test", 
-    "platforms": [
-      "windows", 
-      "posix"
-    ]
-  }, 
-  {
-    "flaky": false, 
-    "language": "c", 
     "name": "multi_init_test", 
     "platforms": [
       "windows", 

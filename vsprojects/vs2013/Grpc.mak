@@ -55,7 +55,7 @@ $(OUT_DIR):
 
 buildtests: buildtests_c buildtests_cxx
 
-buildtests_c: alarm_heap_test.exe alarm_list_test.exe alarm_test.exe alpn_test.exe bin_encoder_test.exe census_hash_table_test.exe census_statistics_multiple_writers_circular_buffer_test.exe census_statistics_multiple_writers_test.exe census_statistics_performance_test.exe census_statistics_quick_test.exe census_statistics_small_log_test.exe census_stub_test.exe census_window_stats_test.exe chttp2_status_conversion_test.exe chttp2_stream_encoder_test.exe chttp2_stream_map_test.exe chttp2_transport_end2end_test.exe echo_client.exe echo_server.exe echo_test.exe fd_posix_test.exe fling_client.exe fling_server.exe fling_stream_test.exe fling_test.exe gpr_cancellable_test.exe gpr_cmdline_test.exe gpr_env_test.exe gpr_file_test.exe gpr_histogram_test.exe gpr_host_port_test.exe gpr_log_test.exe gpr_slice_buffer_test.exe gpr_slice_test.exe gpr_string_test.exe gpr_sync_test.exe gpr_thd_test.exe gpr_time_test.exe gpr_tls_test.exe gpr_useful_test.exe grpc_base64_test.exe grpc_byte_buffer_reader_test.exe grpc_channel_stack_test.exe grpc_completion_queue_test.exe grpc_credentials_test.exe grpc_json_token_test.exe grpc_stream_op_test.exe hpack_parser_test.exe hpack_table_test.exe httpcli_format_request_test.exe httpcli_parser_test.exe httpcli_test.exe json_rewrite.exe json_rewrite_test.exe json_test.exe lame_client_test.exe message_compress_test.exe metadata_buffer_test.exe multi_init_test.exe murmur_hash_test.exe no_server_test.exe poll_kick_posix_test.exe resolve_address_test.exe secure_endpoint_test.exe sockaddr_utils_test.exe tcp_client_posix_test.exe tcp_posix_test.exe tcp_server_posix_test.exe time_averaged_stats_test.exe time_test.exe timeout_encoding_test.exe timers_test.exe transport_metadata_test.exe transport_security_test.exe 
+buildtests_c: alarm_heap_test.exe alarm_list_test.exe alarm_test.exe alpn_test.exe bin_encoder_test.exe census_hash_table_test.exe census_statistics_multiple_writers_circular_buffer_test.exe census_statistics_multiple_writers_test.exe census_statistics_performance_test.exe census_statistics_quick_test.exe census_statistics_small_log_test.exe census_stub_test.exe census_window_stats_test.exe chttp2_status_conversion_test.exe chttp2_stream_encoder_test.exe chttp2_stream_map_test.exe chttp2_transport_end2end_test.exe echo_client.exe echo_server.exe echo_test.exe fd_posix_test.exe fling_client.exe fling_server.exe fling_stream_test.exe fling_test.exe gpr_cancellable_test.exe gpr_cmdline_test.exe gpr_env_test.exe gpr_file_test.exe gpr_histogram_test.exe gpr_host_port_test.exe gpr_log_test.exe gpr_slice_buffer_test.exe gpr_slice_test.exe gpr_string_test.exe gpr_sync_test.exe gpr_thd_test.exe gpr_time_test.exe gpr_tls_test.exe gpr_useful_test.exe grpc_base64_test.exe grpc_byte_buffer_reader_test.exe grpc_channel_stack_test.exe grpc_completion_queue_test.exe grpc_credentials_test.exe grpc_json_token_test.exe grpc_stream_op_test.exe hpack_parser_test.exe hpack_table_test.exe httpcli_format_request_test.exe httpcli_parser_test.exe httpcli_test.exe json_rewrite.exe json_rewrite_test.exe json_test.exe lame_client_test.exe message_compress_test.exe multi_init_test.exe murmur_hash_test.exe no_server_test.exe poll_kick_posix_test.exe resolve_address_test.exe secure_endpoint_test.exe sockaddr_utils_test.exe tcp_client_posix_test.exe tcp_posix_test.exe tcp_server_posix_test.exe time_averaged_stats_test.exe time_test.exe timeout_encoding_test.exe timers_test.exe transport_metadata_test.exe transport_security_test.exe 
 	echo All tests built.
 
 buildtests_cxx: 
@@ -580,14 +580,6 @@ message_compress_test.exe: grpc_test_util $(OUT_DIR)
 message_compress_test: message_compress_test.exe
 	echo Running message_compress_test
 	$(OUT_DIR)\message_compress_test.exe
-
-metadata_buffer_test.exe: grpc_test_util $(OUT_DIR)
-	echo Building metadata_buffer_test
-	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ ..\..\test\core\channel\metadata_buffer_test.c 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\metadata_buffer_test.exe" Debug\grpc_test_util.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(LIBS) $(OUT_DIR)\metadata_buffer_test.obj 
-metadata_buffer_test: metadata_buffer_test.exe
-	echo Running metadata_buffer_test
-	$(OUT_DIR)\metadata_buffer_test.exe
 
 multi_init_test.exe: grpc_test_util $(OUT_DIR)
 	echo Building multi_init_test

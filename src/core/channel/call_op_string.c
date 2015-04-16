@@ -51,6 +51,18 @@ static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
                     GPR_SLICE_LENGTH(md->value->slice), GPR_HEXDUMP_PLAINTEXT));
 }
 
+static void put_metadata_list(gpr_strvec *b, grpc_call_op_metadata md) {
+  grpc_linked_mdelem *m;
+  for (m = md.list.head; m; m = m->next) {
+    put_metadata(b, m->md);
+  }
+  if (gpr_time_cmp(md.deadline, gpr_inf_future) != 0) {
+    char *tmp;
+    gpr_asprintf(&tmp, " deadline=%d.%09d", md.deadline.tv_sec, md.deadline.tv_nsec);
+    gpr_strvec_add(b, tmp);
+  }
+}
+
 char *grpc_call_op_string(grpc_call_op *op) {
   char *tmp;
   char *out;
@@ -69,12 +81,7 @@ char *grpc_call_op_string(grpc_call_op *op) {
   switch (op->type) {
     case GRPC_SEND_METADATA:
       gpr_strvec_add(&b, gpr_strdup("SEND_METADATA"));
-      put_metadata(&b, op->data.metadata);
-      break;
-    case GRPC_SEND_DEADLINE:
-      gpr_asprintf(&tmp, "SEND_DEADLINE %d.%09d", op->data.deadline.tv_sec,
-              op->data.deadline.tv_nsec);
-      gpr_strvec_add(&b, tmp);
+      put_metadata_list(&b, op->data.metadata);
       break;
     case GRPC_SEND_START:
       gpr_asprintf(&tmp, "SEND_START pollset=%p", op->data.start.pollset);
@@ -94,15 +101,7 @@ char *grpc_call_op_string(grpc_call_op *op) {
       break;
     case GRPC_RECV_METADATA:
       gpr_strvec_add(&b, gpr_strdup("RECV_METADATA"));
-      put_metadata(&b, op->data.metadata);
-      break;
-    case GRPC_RECV_DEADLINE:
-      gpr_asprintf(&tmp, "RECV_DEADLINE %d.%09d", op->data.deadline.tv_sec,
-              op->data.deadline.tv_nsec);
-      gpr_strvec_add(&b, tmp);
-      break;
-    case GRPC_RECV_END_OF_INITIAL_METADATA:
-      gpr_strvec_add(&b, gpr_strdup("RECV_END_OF_INITIAL_METADATA"));
+      put_metadata_list(&b, op->data.metadata);
       break;
     case GRPC_RECV_MESSAGE:
       gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));

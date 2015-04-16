@@ -62,8 +62,6 @@ typedef struct grpc_call_element grpc_call_element;
 typedef enum {
   /* send metadata to the channels peer */
   GRPC_SEND_METADATA,
-  /* send a deadline */
-  GRPC_SEND_DEADLINE,
   /* start a connection (corresponds to start_invoke/accept) */
   GRPC_SEND_START,
   /* send a message to the channels peer */
@@ -76,10 +74,6 @@ typedef enum {
   GRPC_REQUEST_DATA,
   /* metadata was received from the channels peer */
   GRPC_RECV_METADATA,
-  /* receive a deadline */
-  GRPC_RECV_DEADLINE,
-  /* the end of the first batch of metadata was received */
-  GRPC_RECV_END_OF_INITIAL_METADATA,
   /* a message was received from the channels peer */
   GRPC_RECV_MESSAGE,
   /* half-close was received from the channels peer */
@@ -94,6 +88,35 @@ typedef enum {
    The values of the enums (1, -1) matter here - they are used to increment
    or decrement a pointer to find the next element to call */
 typedef enum { GRPC_CALL_DOWN = 1, GRPC_CALL_UP = -1 } grpc_call_dir;
+
+typedef struct grpc_linked_mdelem {
+  grpc_mdelem *md;
+  struct grpc_linked_mdelem *next;
+  struct grpc_linked_mdelem *prev;
+} grpc_linked_mdelem;
+
+typedef struct grpc_mdelem_list {
+  grpc_linked_mdelem *head;
+  grpc_linked_mdelem *tail;
+} grpc_mdelem_list;
+
+typedef struct grpc_call_op_metadata {
+  grpc_mdelem_list list;
+  grpc_mdelem_list garbage;
+  gpr_timespec deadline;
+} grpc_call_op_metadata;
+
+void grpc_call_op_metadata_init(grpc_call_op_metadata *comd);
+void grpc_call_op_metadata_destroy(grpc_call_op_metadata *comd);
+void grpc_call_op_metadata_merge(grpc_call_op_metadata *target, grpc_call_op_metadata *add);
+
+void grpc_call_op_metadata_link_head(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage);
+void grpc_call_op_metadata_link_tail(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage);
+
+void grpc_call_op_metadata_add_head(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage, grpc_mdelem *elem_to_add);
+void grpc_call_op_metadata_add_tail(grpc_call_op_metadata *comd, grpc_linked_mdelem *storage, grpc_mdelem *elem_to_add);
+
+void grpc_call_op_metadata_filter(grpc_call_op_metadata *comd, grpc_mdelem *(*filter)(void *user_data, grpc_mdelem *elem), void *user_data);
 
 /* A single filterable operation to be performed on a call */
 typedef struct {
@@ -113,8 +136,7 @@ typedef struct {
       grpc_pollset *pollset;
     } start;
     grpc_byte_buffer *message;
-    grpc_mdelem *metadata;
-    gpr_timespec deadline;
+    grpc_call_op_metadata metadata;
   } data;
 
   /* Must be called when processing of this call-op is complete.
@@ -291,12 +313,9 @@ grpc_call_stack *grpc_call_stack_from_top_element(grpc_call_element *elem);
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem, grpc_call_op *op);
 
-void grpc_call_element_send_metadata(grpc_call_element *cur_elem,
-                                     grpc_mdelem *elem);
-void grpc_call_element_recv_metadata(grpc_call_element *cur_elem,
-                                     grpc_mdelem *elem);
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
 void grpc_call_element_send_finish(grpc_call_element *cur_elem);
+void grpc_call_element_recv_status(grpc_call_element *cur_elem, grpc_status_code status, const char *message);
 
 extern int grpc_trace_channel;
 

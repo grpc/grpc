@@ -98,7 +98,6 @@
         "src/core/channel/http_client_filter.h",
         "src/core/channel/http_filter.h",
         "src/core/channel/http_server_filter.h",
-        "src/core/channel/metadata_buffer.h",
         "src/core/channel/noop_filter.h",
         "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
@@ -190,7 +189,6 @@
         "src/core/channel/http_client_filter.c",
         "src/core/channel/http_filter.c",
         "src/core/channel/http_server_filter.c",
-        "src/core/channel/metadata_buffer.c",
         "src/core/channel/noop_filter.c",
         "src/core/compression/algorithm.c",
         "src/core/compression/message_compress.c",
@@ -1566,20 +1564,6 @@
       "language": "c",
       "src": [
         "test/core/compression/message_compress_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "metadata_buffer_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/channel/metadata_buffer_test.c"
       ],
       "deps": [
         "grpc_test_util",
