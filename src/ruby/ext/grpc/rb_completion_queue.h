@@ -48,10 +48,6 @@ grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v);
 grpc_event* grpc_rb_completion_queue_pluck_event(VALUE cqueue, VALUE tag,
                                                  VALUE timeout);
 
-/* grpc_rb_cCompletionQueue is the CompletionQueue class whose instances proxy
-   grpc_completion_queue. */
-extern VALUE grpc_rb_cCompletionQueue;
-
 /* Initializes the CompletionQueue class. */
 void Init_grpc_completion_queue();
 

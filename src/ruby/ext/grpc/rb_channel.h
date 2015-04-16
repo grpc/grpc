@@ -37,9 +37,6 @@
 #include <ruby.h>
 #include <grpc/grpc.h>
 
-/* grpc_rb_cChannel is the Channel class whose instances proxy grpc_channel. */
-extern VALUE grpc_rb_cChannel;
-
 /* Initializes the Channel class. */
 void Init_grpc_channel();
 

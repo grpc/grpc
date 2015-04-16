@@ -49,16 +49,9 @@ const char* grpc_call_error_detail_of(grpc_call_error err);
 /* Converts a metadata array to a hash. */
 VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
 
-/* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
-extern VALUE grpc_rb_cCall;
-
 /* grpc_rb_eCallError is the ruby class of the exception thrown during call
    operations. */
 extern VALUE grpc_rb_eCallError;
-
-/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
-   a timeout. */
-extern VALUE grpc_rb_eOutOfTime;
 
 /* Initializes the Call class. */
 void Init_grpc_call();

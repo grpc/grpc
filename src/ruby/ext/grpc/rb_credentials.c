@@ -40,6 +40,9 @@
 
 #include "rb_grpc.h"
 
+/* grpc_rb_cCredentials is the ruby class that proxies grpc_credentials. */
+static VALUE grpc_rb_cCredentials = Qnil;
+
 /* grpc_rb_credentials wraps a grpc_credentials.  It provides a
  * peer ruby object, 'mark' to minimize copying when a credential is
  * created from ruby. */
@@ -241,9 +244,6 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
 
   return self;
 }
-
-/* grpc_rb_cCredentials is the ruby class that proxies grpc_credentials. */
-VALUE grpc_rb_cCredentials = Qnil;
 
 void Init_grpc_credentials() {
   grpc_rb_cCredentials =
