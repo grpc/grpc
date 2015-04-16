@@ -444,6 +444,7 @@ if forever:
     previous_success = success
     success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
+                             travis=args.travis,
                              cache=test_cache) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',
