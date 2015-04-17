@@ -50,6 +50,10 @@ grpc_chttp2_hpack_compressor g_compressor;
 int g_failure = 0;
 grpc_stream_op_buffer g_sopb;
 
+void **to_delete = NULL;
+int num_to_delete = 0;
+int cap_to_delete = 0;
+
 static gpr_slice create_test_slice(size_t length) {
   gpr_slice slice = gpr_slice_malloc(length);
   size_t i;
@@ -130,15 +134,13 @@ static void test_small_data_framing(void) {
   verify_sopb(10, 0, 5, "000005 0000 deadbeef 00000000ff");
 }
 
-static void free_md(void *p, grpc_op_error err) {
-  gpr_free(p);
-}
-
 static void add_sopb_headers(int n, ...) {
   int i;
   grpc_metadata_batch b;
   va_list l;
   grpc_linked_mdelem *e = gpr_malloc(sizeof(*e) * n);
+
+  grpc_metadata_batch_init(&b);
 
   va_start(l, n);
   for (i = 0; i < n; i++) {
@@ -154,8 +156,16 @@ static void add_sopb_headers(int n, ...) {
   e[n-1].next = NULL;
   va_end(l);
 
+  b.list.head = &e[0];
+  b.list.tail = &e[n-1];
+
+  if (cap_to_delete == num_to_delete) {
+    cap_to_delete = GPR_MAX(2*cap_to_delete, 1000);
+    to_delete = gpr_realloc(to_delete, sizeof(*to_delete) * cap_to_delete);
+  }
+  to_delete[num_to_delete++] = e;
+
   grpc_sopb_add_metadata(&g_sopb, b);
-  grpc_sopb_add_flow_ctl_cb(&g_sopb, free_md, e);
 }
 
 static void test_basic_headers(void) {
@@ -216,11 +226,11 @@ static void test_decode_table_overflow(void) {
 
     if (i + 61 >= 127) {
       gpr_asprintf(&expect,
-                   "000009 0104 deadbeef ff%02x 40 02%02x%02x 02%02x%02x",
+                   "000002 0104 deadbeef ff%02x 000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",
                    i + 61 - 127, key[0], key[1], value[0], value[1]);
     } else if (i > 0) {
       gpr_asprintf(&expect,
-                   "000008 0104 deadbeef %02x 40 02%02x%02x 02%02x%02x",
+                   "000001 0104 deadbeef %02x 000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",
                    0x80 + 61 + i, key[0], key[1], value[0], value[1]);
     } else {
       gpr_asprintf(&expect, "000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",
@@ -332,6 +342,7 @@ static void run_test(void (*test)(), const char *name) {
 }
 
 int main(int argc, char **argv) {
+  int i;
   grpc_test_init(argc, argv);
   TEST(test_small_data_framing);
   TEST(test_basic_headers);
@@ -347,5 +358,8 @@ int main(int argc, char **argv) {
   TEST(test_decode_random_headers_55);
   TEST(test_decode_random_headers_89);
   TEST(test_decode_random_headers_144);
+  for (i = 0; i < num_to_delete; i++) {
+    gpr_free(to_delete[i]);
+  }
   return g_failure;
 }

@@ -1095,6 +1095,13 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
 
       gpr_ltoa(local_status, buffer);
       add_incoming_metadata(t, s, grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));
+      switch (local_status) {
+        case GRPC_STATUS_CANCELLED:
+          add_incoming_metadata(t, s, grpc_mdelem_from_strings(t->metadata_context, "grpc-message", "Cancelled"));
+          break;
+        default:
+          break;
+      }
 
       stream_list_join(t, s, PENDING_CALLBACKS);
     }
@@ -1453,9 +1460,8 @@ static void free_md(void *p, grpc_op_error result) {
   gpr_free(p);
 }
 
-static void add_metadata_batch(transport *t) {
+static void add_metadata_batch(transport *t, stream *s) {
   grpc_metadata_batch b;
-  stream *s = t->incoming_stream;
   size_t i;
 
   b.list.head = &s->incoming_metadata[0];
@@ -1494,7 +1500,7 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
         stream_list_join(t, t->incoming_stream, PENDING_CALLBACKS);
       }
       if (st.metadata_boundary) {
-        add_metadata_batch(t);
+        add_metadata_batch(t, t->incoming_stream);
         stream_list_join(t, t->incoming_stream, PENDING_CALLBACKS);
       }
       if (st.ack_settings) {
@@ -1811,16 +1817,19 @@ static int prepare_callbacks(transport *t) {
   int n = 0;
   while ((s = stream_list_remove_head(t, PENDING_CALLBACKS))) {
     int execute = 1;
-    grpc_sopb_swap(&s->parser.incoming_sopb, &s->callback_sopb);
 
     s->callback_state = compute_state(s->sent_write_closed, s->read_closed);
     if (s->callback_state == GRPC_STREAM_CLOSED) {
       remove_from_stream_map(t, s);
       if (s->published_close) {
         execute = 0;
+      } else if (s->incoming_metadata_count) {
+        add_metadata_batch(t, s);
       }
       s->published_close = 1;
     }
+
+    grpc_sopb_swap(&s->parser.incoming_sopb, &s->callback_sopb);
 
     if (execute) {
       stream_list_add_tail(t, s, EXECUTING_CALLBACKS);
