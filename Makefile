@@ -2591,19 +2591,18 @@ $(OBJDIR)/$(CONFIG)/test/core/util/test_config.o:
 LIBGRPC_SRC = \
     src/core/httpcli/format_request.c \
     src/core/httpcli/httpcli.c \
-    src/core/httpcli/httpcli_security_context.c \
+    src/core/httpcli/httpcli_security_connector.c \
     src/core/httpcli/parser.c \
     src/core/security/auth.c \
     src/core/security/base64.c \
     src/core/security/credentials.c \
     src/core/security/credentials_posix.c \
     src/core/security/credentials_win32.c \
-    src/core/security/factories.c \
     src/core/security/google_default_credentials.c \
     src/core/security/json_token.c \
     src/core/security/secure_endpoint.c \
     src/core/security/secure_transport_setup.c \
-    src/core/security/security_context.c \
+    src/core/security/security_connector.c \
     src/core/security/server_secure_chttp2.c \
     src/core/surface/init_secure.c \
     src/core/surface/secure_channel_create.c \
@@ -2740,19 +2739,18 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/httpcli/format_request.c: $(OPENSSL_DEP)
 src/core/httpcli/httpcli.c: $(OPENSSL_DEP)
-src/core/httpcli/httpcli_security_context.c: $(OPENSSL_DEP)
+src/core/httpcli/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/httpcli/parser.c: $(OPENSSL_DEP)
 src/core/security/auth.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/credentials.c: $(OPENSSL_DEP)
 src/core/security/credentials_posix.c: $(OPENSSL_DEP)
 src/core/security/credentials_win32.c: $(OPENSSL_DEP)
-src/core/security/factories.c: $(OPENSSL_DEP)
 src/core/security/google_default_credentials.c: $(OPENSSL_DEP)
 src/core/security/json_token.c: $(OPENSSL_DEP)
 src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/secure_transport_setup.c: $(OPENSSL_DEP)
-src/core/security/security_context.c: $(OPENSSL_DEP)
+src/core/security/security_connector.c: $(OPENSSL_DEP)
 src/core/security/server_secure_chttp2.c: $(OPENSSL_DEP)
 src/core/surface/init_secure.c: $(OPENSSL_DEP)
 src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
@@ -2905,19 +2903,18 @@ endif
 
 $(OBJDIR)/$(CONFIG)/src/core/httpcli/format_request.o: 
 $(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli.o: 
-$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli_security_context.o: 
+$(OBJDIR)/$(CONFIG)/src/core/httpcli/httpcli_security_connector.o: 
 $(OBJDIR)/$(CONFIG)/src/core/httpcli/parser.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/auth.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/base64.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials_posix.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/credentials_win32.o: 
-$(OBJDIR)/$(CONFIG)/src/core/security/factories.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/google_default_credentials.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/json_token.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_endpoint.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/secure_transport_setup.o: 
-$(OBJDIR)/$(CONFIG)/src/core/security/security_context.o: 
+$(OBJDIR)/$(CONFIG)/src/core/security/security_connector.o: 
 $(OBJDIR)/$(CONFIG)/src/core/security/server_secure_chttp2.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/init_secure.o: 
 $(OBJDIR)/$(CONFIG)/src/core/surface/secure_channel_create.o: 

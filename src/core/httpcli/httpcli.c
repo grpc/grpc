@@ -40,9 +40,8 @@
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/httpcli/format_request.h"
-#include "src/core/httpcli/httpcli_security_context.h"
+#include "src/core/httpcli/httpcli_security_connector.h"
 #include "src/core/httpcli/parser.h"
-#include "src/core/security/security_context.h"
 #include "src/core/security/secure_transport_setup.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
@@ -180,7 +179,7 @@ static void on_connected(void *arg, grpc_endpoint *tcp) {
   }
   req->ep = tcp;
   if (req->use_ssl) {
-    grpc_channel_security_context *ctx = NULL;
+    grpc_channel_security_connector *sc = NULL;
     const unsigned char *pem_root_certs = NULL;
     size_t pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
     if (pem_root_certs == NULL || pem_root_certs_size == 0) {
@@ -188,12 +187,12 @@ static void on_connected(void *arg, grpc_endpoint *tcp) {
       finish(req, 0);
       return;
     }
-    GPR_ASSERT(grpc_httpcli_ssl_channel_security_context_create(
-                   pem_root_certs, pem_root_certs_size, req->host, &ctx) ==
+    GPR_ASSERT(grpc_httpcli_ssl_channel_security_connector_create(
+                   pem_root_certs, pem_root_certs_size, req->host, &sc) ==
                GRPC_SECURITY_OK);
-    grpc_setup_secure_transport(&ctx->base, tcp, on_secure_transport_setup_done,
+    grpc_setup_secure_transport(&sc->base, tcp, on_secure_transport_setup_done,
                                 req);
-    grpc_security_context_unref(&ctx->base);
+    grpc_security_connector_unref(&sc->base);
   } else {
     start_write(req);
   }
