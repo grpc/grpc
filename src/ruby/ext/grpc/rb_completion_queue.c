@@ -116,21 +116,31 @@ static void grpc_rb_completion_queue_destroy(void *p) {
   grpc_completion_queue_destroy(cq);
 }
 
+static rb_data_type_t grpc_rb_completion_queue_data_type = {
+    "grpc_completion_queue",
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
+     GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL, NULL,
+    /* cannot immediately free because grpc_rb_completion_queue_shutdown_drain
+     * calls rb_thread_call_without_gvl. */
+    0
+};
+
 /* Allocates a completion queue. */
 static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
   grpc_completion_queue *cq = grpc_completion_queue_create();
   if (cq == NULL) {
     rb_raise(rb_eArgError, "could not create a completion queue: not sure why");
   }
-  return Data_Wrap_Struct(cls, GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
-                          cq);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_completion_queue_data_type, cq);
 }
 
 /* Blocks until the next event is available, and returns the event. */
 static VALUE grpc_rb_completion_queue_next(VALUE self, VALUE timeout) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
-  Data_Get_Struct(self, grpc_completion_queue, next_call.cq);
+  TypedData_Get_Struct(self, grpc_completion_queue,
+                       &grpc_rb_completion_queue_data_type, next_call.cq);
   next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   next_call.event = NULL;
   rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
@@ -158,7 +168,8 @@ grpc_event* grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
                                                  VALUE timeout) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
-  Data_Get_Struct(self, grpc_completion_queue, next_call.cq);
+  TypedData_Get_Struct(self, grpc_completion_queue,
+                       &grpc_rb_completion_queue_data_type, next_call.cq);
   next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   next_call.tag = ROBJECT(tag);
   next_call.event = NULL;
@@ -192,6 +203,7 @@ void Init_grpc_completion_queue() {
 /* Gets the wrapped completion queue from the ruby wrapper */
 grpc_completion_queue *grpc_rb_get_wrapped_completion_queue(VALUE v) {
   grpc_completion_queue *cq = NULL;
-  Data_Get_Struct(v, grpc_completion_queue, cq);
+  TypedData_Get_Struct(v, grpc_completion_queue,
+                       &grpc_rb_completion_queue_data_type, cq);
   return cq;
 }
