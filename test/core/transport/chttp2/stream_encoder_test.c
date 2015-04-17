@@ -147,20 +147,20 @@ static void add_sopb_headers(int n, ...) {
     char *key = va_arg(l, char *);
     char *value = va_arg(l, char *);
     if (i) {
-      e[i-1].next = &e[i];
-      e[i].prev = &e[i-1];
+      e[i - 1].next = &e[i];
+      e[i].prev = &e[i - 1];
     }
     e[i].md = grpc_mdelem_from_strings(g_mdctx, key, value);
   }
   e[0].prev = NULL;
-  e[n-1].next = NULL;
+  e[n - 1].next = NULL;
   va_end(l);
 
   b.list.head = &e[0];
-  b.list.tail = &e[n-1];
+  b.list.tail = &e[n - 1];
 
   if (cap_to_delete == num_to_delete) {
-    cap_to_delete = GPR_MAX(2*cap_to_delete, 1000);
+    cap_to_delete = GPR_MAX(2 * cap_to_delete, 1000);
     to_delete = gpr_realloc(to_delete, sizeof(*to_delete) * cap_to_delete);
   }
   to_delete[num_to_delete++] = e;
@@ -226,11 +226,13 @@ static void test_decode_table_overflow(void) {
 
     if (i + 61 >= 127) {
       gpr_asprintf(&expect,
-                   "000002 0104 deadbeef ff%02x 000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",
+                   "000002 0104 deadbeef ff%02x 000007 0104 deadbeef 40 "
+                   "02%02x%02x 02%02x%02x",
                    i + 61 - 127, key[0], key[1], value[0], value[1]);
     } else if (i > 0) {
       gpr_asprintf(&expect,
-                   "000001 0104 deadbeef %02x 000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",
+                   "000001 0104 deadbeef %02x 000007 0104 deadbeef 40 "
+                   "02%02x%02x 02%02x%02x",
                    0x80 + 61 + i, key[0], key[1], value[0], value[1]);
     } else {
       gpr_asprintf(&expect, "000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",

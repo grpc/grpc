@@ -53,7 +53,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
   switch (op->type) {
     case GRPC_SEND_METADATA:
       grpc_metadata_batch_destroy(&op->data.metadata);
-      grpc_call_recv_synthetic_status(elem, GRPC_STATUS_UNKNOWN, "Rpc sent on a lame channel.");
+      grpc_call_recv_synthetic_status(elem, GRPC_STATUS_UNKNOWN,
+                                      "Rpc sent on a lame channel.");
       grpc_call_stream_closed(elem);
       break;
     default:
