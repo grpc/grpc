@@ -58,7 +58,7 @@ class NoRpcImplementation
   rpc :an_rpc, EchoMsg, EchoMsg
 end
 
-# A test service with an implementation.
+# A test service with an echo implementation.
 class EchoService
   include GRPC::GenericService
   rpc :an_rpc, EchoMsg, EchoMsg
@@ -76,6 +76,25 @@ class EchoService
 end
 
 EchoStub = EchoService.rpc_stub_class
+
+# A test service with an implementation that fails with BadStatus
+class FailingService
+  include GRPC::GenericService
+  rpc :an_rpc, EchoMsg, EchoMsg
+  attr_reader :details, :code, :md
+
+  def initialize(_default_var = 'ignored')
+    @details = 'app error'
+    @code = 101
+    @md = { failed_method: 'an_rpc' }
+  end
+
+  def an_rpc(_req, _call)
+    fail GRPC::BadStatus.new(@code, @details, **@md)
+  end
+end
+
+FailingStub = FailingService.rpc_stub_class
 
 # A slow test service.
 class SlowService
@@ -510,6 +529,41 @@ describe GRPC::RpcServer do
           'connect_k1' => 'connect_v1'
         }
         expect(op.metadata).to eq(wanted_md)
+        @srv.stop
+        t.join
+      end
+    end
+
+    context 'with metadata on failing' do
+      before(:each) do
+        server_opts = {
+          server_override: @server,
+          completion_queue_override: @server_queue,
+          poll_period: 1
+        }
+        @srv = RpcServer.new(**server_opts)
+      end
+
+      it 'should send receive metadata failed response', server: true do
+        service = FailingService.new
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = FailingStub.new(@host, **client_opts)
+        blk = proc { stub.an_rpc(req) }
+
+        # confirm it raise the expected error
+        expect(&blk).to raise_error GRPC::BadStatus
+
+        # call again and confirm exception has the expected fields
+        begin
+          blk.call
+        rescue GRPC::BadStatus => e
+          expect(e.code).to eq(service.code)
+          expect(e.details).to eq(service.details)
+          expect(e.metadata).to eq(service.md)
+        end
         @srv.stop
         t.join
       end

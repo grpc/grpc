@@ -39,7 +39,10 @@ class Struct
       return nil if status.nil?
       fail GRPC::Cancelled if status.code == GRPC::Core::StatusCodes::CANCELLED
       if status.code != GRPC::Core::StatusCodes::OK
-        fail GRPC::BadStatus.new(status.code, status.details)
+        # raise BadStatus, propagating the metadata if present.
+        md = status.metadata
+        with_sym_keys = Hash[md.each_pair.collect { |x, y| [x.to_sym, y] }]
+        fail GRPC::BadStatus.new(status.code, status.details, **with_sym_keys)
       end
       status
     end
@@ -192,9 +195,13 @@ module GRPC
     # @param details [String] details
     # @param assert_finished [true, false] when true(default), waits for
     # FINISHED.
-    def send_status(code = OK, details = '', assert_finished = false)
+    #
+    # == Keyword Arguments ==
+    # any keyword arguments are treated as metadata to be sent to the server
+    # if a keyword value is a list, multiple metadata for it's key are sent
+    def send_status(code = OK, details = '', assert_finished = false, **kw)
       ops = {
-        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details)
+        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, kw)
       }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
       @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
