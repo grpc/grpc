@@ -281,7 +281,7 @@ be passed in as ```--oauth_scope```.
 Server features:
 * [UnaryCall][]
 * [Compressable Payload][]
-* [Echo Username][]
+* [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
 Procedure:
@@ -318,13 +318,13 @@ signing keys (redeemed for OAuth2 access tokens by the auth implementation)
 The test sets ```--service_account_key_file``` with the path to a json key file
 downloaded from https://console.developers.google.com, and ```--oauth_scope```
 to the oauth scope. For testing against grpc-test.sandbox.google.com,
-"https://www.googleapis.com/auth/xapi.zoo" should be passed in as
-```--oauth_scope```.
+"https://www.googleapis.com/auth/xapi.zoo" should be passed in
+as ```--oauth_scope```.
 
 Server features:
 * [UnaryCall][]
 * [Compressable Payload][]
-* [Echo Username][]
+* [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
 Procedure:
@@ -365,7 +365,7 @@ file downloaded from https://console.developers.google.com.
 Server features:
 * [UnaryCall][]
 * [Compressable Payload][]
-* [Echo Username][]
+* [Echo Authenticated Username][]
 * [Echo OAuth Scope][]
 
 Procedure:
@@ -679,8 +679,8 @@ Interaction with flow control is unspecified.
 
 Status: Pending
 
-#### Echo authenticated user name
-[Echo Username]: #echo-username
+#### Echo Authenticated Username
+[Echo Authenticated Username]: #echo-username
 
 If a SimpleRequest has fill_username=true and that request was successfully
 authenticated, then the SimpleResponse should have username filled with the
