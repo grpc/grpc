@@ -2,23 +2,24 @@ This directory contains MS Visual Studio project & solution files.
 
 #Supported Visual Studio versions
 
-Currently supported versions are Visual Studio 2013 (primary), 2012 and 2010.
+Currently supported versions are Visual Studio 2013 (our primary focus) and 2010.
 
 #Building
-We are using nuget to pull zlib and openssl dependencies.
+We are using [NuGet](http://www.nuget.org) to pull zlib and openssl dependencies.
 If you don't have Visual Studio NuGet plugin installed, you'll need to
-manually restore the NuGet packages.
+download nuget.exe from web and manually restore the NuGet packages.
 
 ```
-REM no need to do this if you have NuGet visual studio extension.
-nuget restore
+> REM Run from this directory.
+> REM No need to do this if you have NuGet visual studio extension.
+> nuget restore
 ```
 
 After that, open `grpc.sln` with Visual Studio and hit "Build".
 
 #Testing
 
-Use make.bat to build are run gRPC tests.
+Use `make.bat` to build gRPC tests.
 ```
 make.bat test
 ```
