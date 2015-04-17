@@ -518,7 +518,9 @@ TEST_F(End2endTest, ServerCancelsRpc) {
   }
 
   Status s = stream->Finish();
-  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
+  // The final status could be either of CANCELLED or OK depending on
+  // who won the race.
+  EXPECT_GE(grpc::StatusCode::CANCELLED, s.code());
 }
 
 // Client cancels bidi stream after sending some messages
