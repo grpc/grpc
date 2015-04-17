@@ -48,9 +48,9 @@
 #include <grpc++/server_credentials.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/cpp/interop/test.grpc.pb.h"
-#include "test/cpp/interop/empty.grpc.pb.h"
-#include "test/cpp/interop/messages.grpc.pb.h"
+#include "test/proto/test.grpc.pb.h"
+#include "test/proto/empty.grpc.pb.h"
+#include "test/proto/messages.grpc.pb.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
