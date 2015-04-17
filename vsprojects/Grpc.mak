@@ -35,16 +35,16 @@ CC=cl.exe
 LINK=link.exe
 
 REPO_ROOT=..
-OPENSSL_INCLUDES = .\packages\openssl.1.0.2.1\build\native\include\v120\Win32\Debug\static
-ZLIB_INCLUDES = .\packages\zlib.1.2.8.7\build\native\include
+OPENSSL_INCLUDES = .\packages\grpc.dependencies.openssl.1.0.2.2\build\native\include\v120\Win32\Debug\static
+ZLIB_INCLUDES = .\packages\grpc.dependencies.zlib.1.2.8.9\build\native\include
 INCLUDES=/I$(REPO_ROOT) /I$(REPO_ROOT)\include /I$(OPENSSL_INCLUDES) /I$(ZLIB_INCLUDES)
 DEFINES=/D WIN32 /D _LIB /D _USE_32BIT_TIME_T /D _UNICODE /D UNICODE /D _CRT_SECURE_NO_WARNINGS
 CFLAGS=/c $(INCLUDES) /nologo /Z7 /W3 /WX- /sdl $(DEFINES) /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Gd /TC /analyze-
 LFLAGS=/DEBUG /INCREMENTAL /NOLOGO /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /MACHINE:X86
 
-OPENSSL_LIBS=.\packages\openssl.1.0.2.1\build\native\lib\v120\Win32\Debug\static\ssleay32.lib .\packages\openssl.1.0.2.1\build\native\lib\v120\Win32\Debug\static\libeay32.lib
+OPENSSL_LIBS=.\packages\grpc.dependencies.openssl.1.0.2.2\build\native\lib\v120\Win32\Debug\static\ssleay32.lib .\packages\grpc.dependencies.openssl.1.0.2.2\build\native\lib\v120\Win32\Debug\static\libeay32.lib
 WINSOCK_LIBS=ws2_32.lib
-ZLIB_LIBS=.\packages\zlib.1.2.8.7\build\native\lib\v120\Win32\Debug\static\cdecl\zlib.lib
+ZLIB_LIBS=.\packages\grpc.dependencies.zlib.1.2.8.9\build\native\lib\v120\Win32\Debug\static\cdecl\zlib.lib
 LIBS=$(OPENSSL_LIBS) $(WINSOCK_LIBS) $(ZLIB_LIBS)
 
 gpr_test_util:

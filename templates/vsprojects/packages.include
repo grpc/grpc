@@ -4,6 +4,8 @@
   zlib_pkg_name = "grpc.dependencies.zlib"
   zlib_pkg_version = "1.2.8.9"
 %>\
+<%def name="get_openssl()">${openssl_pkg_name}.${openssl_pkg_version}</%def>\
+<%def name="get_zlib()">${zlib_pkg_name}.${zlib_pkg_version}</%def>\
 <%def name="gen_packages_config(packages)">\
 <?xml version="1.0" encoding="utf-8"?>
 <packages>
