@@ -307,6 +307,9 @@ static void destroy_call(void *call, int ignored_success) {
   for (i = 0; i < GPR_ARRAY_SIZE(c->buffered_metadata); i++) {
     gpr_free(c->buffered_metadata[i].metadata);
   }
+  for (i = 0; i < c->send_initial_metadata_count; i++) {
+    grpc_mdelem_unref(c->send_initial_metadata[i].md);
+  }
   if (c->legacy_state) {
     destroy_legacy_state(c->legacy_state);
   }
@@ -663,6 +666,7 @@ static void enact_send_action(grpc_call *call, send_action sa) {
         grpc_metadata_batch_link_head(&op.data.metadata,
                                       &call->send_initial_metadata[i]);
       }
+      call->send_initial_metadata_count = 0;
       op.done_cb = finish_start_step;
       op.user_data = call;
       op.bind_pollset = grpc_cq_pollset(call->cq);

@@ -144,6 +144,7 @@ static void on_host_checked(void *user_data, grpc_security_status status) {
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  grpc_mdstr_as_c_string(calld->host));
     bubbleup_error(elem, error_msg);
+    grpc_metadata_batch_destroy(&calld->op.data.metadata);
     gpr_free(error_msg);
     calld->op.done_cb(calld->op.user_data, GRPC_OP_ERROR);
   }
@@ -188,6 +189,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                          "Invalid host %s set in :authority metadata.",
                          call_host);
             bubbleup_error(elem, error_msg);
+            grpc_metadata_batch_destroy(&calld->op.data.metadata);
             gpr_free(error_msg);
             op->done_cb(op->user_data, GRPC_OP_ERROR);
           }

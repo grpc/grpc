@@ -79,7 +79,7 @@ void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops) {
         gpr_slice_unref(ops[i].data.slice);
         break;
       case GRPC_OP_METADATA:
-        /* grpc_mdelem_unref(ops[i].data.metadata); */
+        grpc_metadata_batch_destroy(&ops[i].data.metadata);
         break;
       case GRPC_OP_FLOW_CTL_CB:
         ops[i].data.flow_ctl_cb.cb(ops[i].data.flow_ctl_cb.arg, GRPC_OP_ERROR);

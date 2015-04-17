@@ -178,6 +178,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
             gpr_log(GPR_ERROR, "Missing te trailers header");
           }
           /* Error this call out */
+          grpc_metadata_batch_destroy(&op->data.metadata);
           op->done_cb(op->user_data, GRPC_OP_OK);
           grpc_call_element_send_cancel(elem);
         }

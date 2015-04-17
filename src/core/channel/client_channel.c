@@ -130,6 +130,7 @@ static void start_rpc(grpc_call_element *elem, grpc_call_op *op) {
   gpr_mu_lock(&chand->mu);
   if (calld->state == CALL_CANCELLED) {
     gpr_mu_unlock(&chand->mu);
+    grpc_metadata_batch_destroy(&op->data.metadata);
     op->done_cb(op->user_data, GRPC_OP_ERROR);
     return;
   }
@@ -211,6 +212,7 @@ static void cancel_rpc(grpc_call_element *elem, grpc_call_op *op) {
       child_elem->filter->call_op(child_elem, elem, op);
       return; /* early out */
     case CALL_WAITING:
+      grpc_metadata_batch_destroy(&calld->s.waiting_op.data.metadata);
       remove_waiting_child(chand, calld);
       calld->state = CALL_CANCELLED;
       gpr_mu_unlock(&chand->mu);
@@ -369,6 +371,9 @@ static void destroy_call_elem(grpc_call_element *elem) {
      picked */
   if (calld->state == CALL_ACTIVE) {
     grpc_child_call_destroy(calld->s.active.child_call);
+  }
+  if (calld->state == CALL_WAITING) {
+    grpc_metadata_batch_destroy(&calld->s.waiting_op.data.metadata);
   }
 }
 
