@@ -665,6 +665,9 @@
         "test/cpp/qps/server_async.cc",
         "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/timer.cc"
+      ],
+      "deps": [
+        "grpc_test_util"
       ]
     },
     {
