@@ -185,7 +185,7 @@ def main
     logger.info("... running insecurely on #{host}")
   end
   s.handle(TestTarget)
-  s.run
+  s.run_till_terminated
 end
 
 main
