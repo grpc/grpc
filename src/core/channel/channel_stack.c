@@ -183,6 +183,9 @@ void grpc_call_stack_destroy(grpc_call_stack *stack) {
 
 void grpc_call_next_op(grpc_call_element *elem, grpc_call_op *op) {
   grpc_call_element *next_elem = elem + op->dir;
+  if (op->type == GRPC_SEND_METADATA || op->type == GRPC_RECV_METADATA) {
+    grpc_metadata_batch_assert_ok(&op->data.metadata);
+  }
   next_elem->filter->call_op(next_elem, elem, op);
 }
 
@@ -211,6 +214,7 @@ void grpc_call_element_send_cancel(grpc_call_element *cur_elem) {
   cancel_op.done_cb = do_nothing;
   cancel_op.user_data = NULL;
   cancel_op.flags = 0;
+  cancel_op.bind_pollset = NULL;
   grpc_call_next_op(cur_elem, &cancel_op);
 }
 
@@ -221,11 +225,19 @@ void grpc_call_element_send_finish(grpc_call_element *cur_elem) {
   finish_op.done_cb = do_nothing;
   finish_op.user_data = NULL;
   finish_op.flags = 0;
+  finish_op.bind_pollset = NULL;
   grpc_call_next_op(cur_elem, &finish_op);
 }
 
 void grpc_call_element_recv_status(grpc_call_element *cur_elem,
                                    grpc_status_code status,
                                    const char *message) {
-  abort();
+  grpc_call_op op;
+  op.type = GRPC_RECV_SYNTHETIC_STATUS;
+  op.dir = GRPC_CALL_UP;
+  op.done_cb = do_nothing;
+  op.user_data = NULL;
+  op.data.synthetic_status.status = status;
+  op.data.synthetic_status.message = message;
+  grpc_call_next_op(cur_elem, &op);
 }

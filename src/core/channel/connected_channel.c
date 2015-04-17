@@ -119,14 +119,13 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
+  if (op->bind_pollset) {
+    grpc_transport_add_to_pollset(chand->transport, op->bind_pollset);
+  }
+
   switch (op->type) {
     case GRPC_SEND_METADATA:
       grpc_sopb_add_metadata(&calld->outgoing_sopb, op->data.metadata);
-      grpc_sopb_add_flow_ctl_cb(&calld->outgoing_sopb, op->done_cb,
-                                op->user_data);
-      break;
-    case GRPC_SEND_START:
-      grpc_transport_add_to_pollset(chand->transport, op->data.start.pollset);
       end_bufferable_op(op, chand, calld, 0);
       break;
     case GRPC_SEND_MESSAGE:

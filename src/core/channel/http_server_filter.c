@@ -188,8 +188,11 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_SEND_METADATA:
       /* If we haven't sent status 200 yet, we need to so so because it needs to
          come before any non : prefixed metadata. */
-      grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
-                                     grpc_mdelem_ref(channeld->status_ok));
+      if (!calld->sent_status) {
+        calld->sent_status = 1;
+        grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
+                                       grpc_mdelem_ref(channeld->status_ok));
+      }
       grpc_call_next_op(elem, op);
       break;
     default:

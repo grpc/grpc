@@ -175,10 +175,6 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
           calld->method = grpc_mdstr_ref(md->value);
         }
       }
-      grpc_call_next_op(elem, op);
-      break;
-
-    case GRPC_SEND_START:
       if (calld->host != NULL) {
         grpc_security_status status;
         const char *call_host = grpc_mdstr_as_c_string(calld->host);
@@ -200,7 +196,6 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       }
       send_security_metadata(elem, op);
       break;
-
     default:
       /* pass control up or down the stack depending on op->dir */
       grpc_call_next_op(elem, op);

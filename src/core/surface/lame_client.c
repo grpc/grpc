@@ -51,13 +51,10 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
   switch (op->type) {
-    case GRPC_SEND_START:
+    case GRPC_SEND_METADATA:
       grpc_call_element_recv_status(elem, GRPC_STATUS_UNKNOWN,
                                     "Rpc sent on a lame channel.");
       grpc_call_stream_closed(elem);
-      break;
-    case GRPC_SEND_METADATA:
-      abort();
       break;
     default:
       break;

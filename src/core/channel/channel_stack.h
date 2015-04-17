@@ -62,8 +62,6 @@ typedef struct grpc_call_element grpc_call_element;
 typedef enum {
   /* send metadata to the channels peer */
   GRPC_SEND_METADATA,
-  /* start a connection (corresponds to start_invoke/accept) */
-  GRPC_SEND_START,
   /* send a message to the channels peer */
   GRPC_SEND_MESSAGE,
   /* send a pre-formatted message to the channels peer */
@@ -80,6 +78,8 @@ typedef enum {
   GRPC_RECV_HALF_CLOSE,
   /* full close was received from the channels peer */
   GRPC_RECV_FINISH,
+  /* a status has been sythesized locally */
+  GRPC_RECV_SYNTHETIC_STATUS,
   /* the call has been abnormally terminated */
   GRPC_CANCEL_OP
 } grpc_call_op_type;
@@ -103,12 +103,15 @@ typedef struct {
 
   /* Argument data, matching up with grpc_call_op_type names */
   union {
-    struct {
-      grpc_pollset *pollset;
-    } start;
     grpc_byte_buffer *message;
     grpc_metadata_batch metadata;
+    struct {
+      grpc_status_code status;
+      const char *message;
+    } synthetic_status;
   } data;
+
+  grpc_pollset *bind_pollset;
 
   /* Must be called when processing of this call-op is complete.
      Signature chosen to match transport flow control callbacks */

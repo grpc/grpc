@@ -479,8 +479,9 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
         /* skip */
         curop++;
         break;
-      case GRPC_OP_FLOW_CTL_CB:
       case GRPC_OP_METADATA:
+        grpc_metadata_batch_assert_ok(&op->data.metadata);
+      case GRPC_OP_FLOW_CTL_CB:
         /* these just get copied as they don't impact the number of flow
            controlled bytes */
         grpc_sopb_append(outops, op, 1);
@@ -526,6 +527,12 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
 exit_loop:
   *inops_count -= curop;
   memmove(inops, inops + curop, *inops_count * sizeof(grpc_stream_op));
+
+  for (curop = 0; curop < *inops_count; curop++) {
+    if (inops[curop].type == GRPC_OP_METADATA) {
+      grpc_metadata_batch_assert_ok(&inops[curop].data.metadata);
+    }
+  }
 
   return flow_controlled_bytes_taken;
 }

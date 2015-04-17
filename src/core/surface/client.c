@@ -61,6 +61,9 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_RECV_FINISH:
       grpc_call_stream_closed(elem);
       break;
+    case GRPC_RECV_SYNTHETIC_STATUS:
+      grpc_call_recv_synthetic_status(elem, op->data.synthetic_status.status, op->data.synthetic_status.message);
+      break;
     default:
       GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
       grpc_call_next_op(elem, op);

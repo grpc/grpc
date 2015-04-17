@@ -86,10 +86,6 @@ char *grpc_call_op_string(grpc_call_op *op) {
       gpr_strvec_add(&b, gpr_strdup("SEND_METADATA"));
       put_metadata_list(&b, op->data.metadata);
       break;
-    case GRPC_SEND_START:
-      gpr_asprintf(&tmp, "SEND_START pollset=%p", op->data.start.pollset);
-      gpr_strvec_add(&b, tmp);
-      break;
     case GRPC_SEND_MESSAGE:
       gpr_strvec_add(&b, gpr_strdup("SEND_MESSAGE"));
       break;
@@ -115,12 +111,19 @@ char *grpc_call_op_string(grpc_call_op *op) {
     case GRPC_RECV_FINISH:
       gpr_strvec_add(&b, gpr_strdup("RECV_FINISH"));
       break;
+    case GRPC_RECV_SYNTHETIC_STATUS:
+      gpr_asprintf(&tmp, "RECV_SYNTHETIC_STATUS status=%d message='%s'", op->data.synthetic_status.status, op->data.synthetic_status.message);
+      gpr_strvec_add(&b, tmp);
+      break;
     case GRPC_CANCEL_OP:
       gpr_strvec_add(&b, gpr_strdup("CANCEL_OP"));
       break;
   }
   gpr_asprintf(&tmp, " flags=0x%08x", op->flags);
   gpr_strvec_add(&b, tmp);
+  if (op->bind_pollset) {
+    gpr_strvec_add(&b, gpr_strdup("bind_pollset"));
+  }
 
   out = gpr_strvec_flatten(&b, NULL);
   gpr_strvec_destroy(&b);
