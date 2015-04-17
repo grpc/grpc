@@ -139,7 +139,8 @@ void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
   assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
-void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb, grpc_metadata_batch b) {
+void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb,
+                            grpc_metadata_batch b) {
   grpc_stream_op *op = add(sopb);
   grpc_metadata_batch_assert_ok(&b);
   op->type = GRPC_OP_METADATA;
@@ -181,7 +182,6 @@ void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
   assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
-
 static void assert_valid_list(grpc_mdelem_list *list) {
   grpc_linked_mdelem *l;
 
@@ -205,12 +205,13 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd) {
   assert_valid_list(&comd->garbage);
 }
 
-void grpc_metadata_batch_init(grpc_metadata_batch *comd) { 
-  comd->list.head = comd->list.tail = comd->garbage.head = comd->garbage.tail = NULL;
+void grpc_metadata_batch_init(grpc_metadata_batch *comd) {
+  comd->list.head = comd->list.tail = comd->garbage.head = comd->garbage.tail =
+      NULL;
   comd->deadline = gpr_inf_future;
 }
 
-void grpc_metadata_batch_destroy(grpc_metadata_batch *comd) { 
+void grpc_metadata_batch_destroy(grpc_metadata_batch *comd) {
   grpc_linked_mdelem *l;
   for (l = comd->list.head; l; l = l->next) {
     grpc_mdelem_unref(l->md);
@@ -221,8 +222,8 @@ void grpc_metadata_batch_destroy(grpc_metadata_batch *comd) {
 }
 
 void grpc_metadata_batch_add_head(grpc_metadata_batch *comd,
-                                    grpc_linked_mdelem *storage,
-                                    grpc_mdelem *elem_to_add) {
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add) {
   GPR_ASSERT(elem_to_add);
   storage->md = elem_to_add;
   grpc_metadata_batch_link_head(comd, storage);
@@ -243,13 +244,13 @@ static void link_head(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
 }
 
 void grpc_metadata_batch_link_head(grpc_metadata_batch *comd,
-                                     grpc_linked_mdelem *storage) {
+                                   grpc_linked_mdelem *storage) {
   link_head(&comd->list, storage);
 }
 
 void grpc_metadata_batch_add_tail(grpc_metadata_batch *comd,
-                                    grpc_linked_mdelem *storage,
-                                    grpc_mdelem *elem_to_add) {
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add) {
   GPR_ASSERT(elem_to_add);
   storage->md = elem_to_add;
   grpc_metadata_batch_link_tail(comd, storage);
@@ -270,28 +271,28 @@ static void link_tail(grpc_mdelem_list *list, grpc_linked_mdelem *storage) {
 }
 
 void grpc_metadata_batch_link_tail(grpc_metadata_batch *comd,
-                                     grpc_linked_mdelem *storage) {
+                                   grpc_linked_mdelem *storage) {
   link_tail(&comd->list, storage);
 }
 
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
-                                 grpc_metadata_batch *add) {
+                               grpc_metadata_batch *add) {
   grpc_linked_mdelem *l;
   grpc_linked_mdelem *next;
   for (l = add->list.head; l; l = next) {
     next = l->next;
     link_tail(&target->list, l);
-  }  
+  }
   for (l = add->garbage.head; l; l = next) {
     next = l->next;
     link_tail(&target->garbage, l);
-  }  
+  }
 }
 
 void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
-                                  grpc_mdelem *(*filter)(void *user_data,
-                                                         grpc_mdelem *elem),
-                                  void *user_data) {
+                                grpc_mdelem *(*filter)(void *user_data,
+                                                       grpc_mdelem *elem),
+                                void *user_data) {
   grpc_linked_mdelem *l;
   grpc_linked_mdelem *next;
 

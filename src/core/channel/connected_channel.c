@@ -311,7 +311,8 @@ static void finish_message(channel_data *chand, call_data *calld) {
   grpc_call_next_op(elem, &call_op);
 }
 
-static void got_metadata(grpc_call_element *elem, grpc_metadata_batch metadata) {
+static void got_metadata(grpc_call_element *elem,
+                         grpc_metadata_batch metadata) {
   grpc_call_op op;
   op.type = GRPC_RECV_METADATA;
   op.dir = GRPC_CALL_UP;

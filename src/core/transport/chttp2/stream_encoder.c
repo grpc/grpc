@@ -43,7 +43,7 @@
 #include "src/core/transport/chttp2/timeout_encoding.h"
 #include "src/core/transport/chttp2/varint.h"
 
-#define HASH_FRAGMENT_1(x) ((x) & 255)
+#define HASH_FRAGMENT_1(x) ((x)&255)
 #define HASH_FRAGMENT_2(x) ((x >> 8) & 255)
 #define HASH_FRAGMENT_3(x) ((x >> 16) & 255)
 #define HASH_FRAGMENT_4(x) ((x >> 24) & 255)

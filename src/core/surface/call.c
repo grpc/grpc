@@ -661,7 +661,7 @@ static void enact_send_action(grpc_call *call, send_action sa) {
       op.data.metadata.deadline = call->send_deadline;
       for (i = 0; i < call->send_initial_metadata_count; i++) {
         grpc_metadata_batch_link_head(&op.data.metadata,
-                                        &call->send_initial_metadata[i]);
+                                      &call->send_initial_metadata[i]);
       }
       op.done_cb = finish_start_step;
       op.user_data = call;
@@ -984,16 +984,18 @@ void grpc_call_recv_message(grpc_call_element *elem,
   unlock(call);
 }
 
-void grpc_call_recv_synthetic_status(grpc_call_element *elem, grpc_status_code status, const char *message) {
+void grpc_call_recv_synthetic_status(grpc_call_element *elem,
+                                     grpc_status_code status,
+                                     const char *message) {
   grpc_call *call = CALL_FROM_TOP_ELEM(elem);
   lock(call);
   set_status_code(call, STATUS_FROM_CORE, status);
-  set_status_details(call, STATUS_FROM_CORE, grpc_mdstr_from_string(call->metadata_context, message));
+  set_status_details(call, STATUS_FROM_CORE,
+                     grpc_mdstr_from_string(call->metadata_context, message));
   unlock(call);
 }
 
-int grpc_call_recv_metadata(grpc_call_element *elem,
-                            grpc_metadata_batch *md) {
+int grpc_call_recv_metadata(grpc_call_element *elem, grpc_metadata_batch *md) {
   grpc_call *call = CALL_FROM_TOP_ELEM(elem);
   grpc_linked_mdelem *l;
   grpc_metadata_array *dest;

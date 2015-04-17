@@ -113,7 +113,9 @@ grpc_call_error grpc_call_start_ioreq_and_call_back(
 
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 
-void grpc_call_recv_synthetic_status(grpc_call_element *elem, grpc_status_code status, const char *message);
+void grpc_call_recv_synthetic_status(grpc_call_element *elem,
+                                     grpc_status_code status,
+                                     const char *message);
 
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);

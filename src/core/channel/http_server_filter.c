@@ -191,7 +191,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
       if (!calld->sent_status) {
         calld->sent_status = 1;
         grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
-                                       grpc_mdelem_ref(channeld->status_ok));
+                                     grpc_mdelem_ref(channeld->status_ok));
       }
       grpc_call_next_op(elem, op);
       break;

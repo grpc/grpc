@@ -112,7 +112,9 @@ char *grpc_call_op_string(grpc_call_op *op) {
       gpr_strvec_add(&b, gpr_strdup("RECV_FINISH"));
       break;
     case GRPC_RECV_SYNTHETIC_STATUS:
-      gpr_asprintf(&tmp, "RECV_SYNTHETIC_STATUS status=%d message='%s'", op->data.synthetic_status.status, op->data.synthetic_status.message);
+      gpr_asprintf(&tmp, "RECV_SYNTHETIC_STATUS status=%d message='%s'",
+                   op->data.synthetic_status.status,
+                   op->data.synthetic_status.message);
       gpr_strvec_add(&b, tmp);
       break;
     case GRPC_CANCEL_OP:
