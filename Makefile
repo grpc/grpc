@@ -2108,21 +2108,6 @@ $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc: test/cpp/interop/messages.proto 
 endif
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/cpp/interop/test.pb.cc: protoc_dep_error
-$(GENDIR)/test/cpp/interop/test.grpc.pb.cc: protoc_dep_error
-else
-$(GENDIR)/test/cpp/interop/test.pb.cc: test/cpp/interop/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
-
-$(GENDIR)/test/cpp/interop/test.grpc.pb.cc: test/cpp/interop/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
-endif
-
-ifeq ($(NO_PROTOC),true)
 $(GENDIR)/test/cpp/qps/qpstest.pb.cc: protoc_dep_error
 $(GENDIR)/test/cpp/qps/qpstest.grpc.pb.cc: protoc_dep_error
 else
@@ -2177,6 +2162,21 @@ $(GENDIR)/test/cpp/util/messages.pb.cc: test/cpp/util/messages.proto $(PROTOBUF_
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/test/cpp/util/messages.grpc.pb.cc: test/cpp/util/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/test/proto/test.pb.cc: protoc_dep_error
+$(GENDIR)/test/proto/test.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/test/proto/test.pb.cc: test/proto/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/test/proto/test.grpc.pb.cc: test/proto/test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
@@ -3900,7 +3900,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/client_helper.o:
 LIBINTEROP_CLIENT_MAIN_SRC = \
     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc \
     $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc \
-    $(GENDIR)/test/cpp/interop/test.pb.cc $(GENDIR)/test/cpp/interop/test.grpc.pb.cc \
+    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc \
     test/cpp/interop/client.cc \
     test/cpp/interop/interop_client.cc \
 
@@ -3931,7 +3931,7 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 test/cpp/interop/empty.proto: $(OPENSSL_DEP)
 test/cpp/interop/messages.proto: $(OPENSSL_DEP)
-test/cpp/interop/test.proto: $(OPENSSL_DEP)
+test/proto/test.proto: $(OPENSSL_DEP)
 test/cpp/interop/client.cc: $(OPENSSL_DEP)
 test/cpp/interop/interop_client.cc: $(OPENSSL_DEP)
 endif
@@ -3961,8 +3961,8 @@ endif
 
 
 
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/client.o:     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc    $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc    $(GENDIR)/test/cpp/interop/test.pb.cc $(GENDIR)/test/cpp/interop/test.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o:     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc    $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc    $(GENDIR)/test/cpp/interop/test.pb.cc $(GENDIR)/test/cpp/interop/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/client.o:     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc    $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o:     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc    $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
 
 
 LIBINTEROP_SERVER_HELPER_SRC = \
@@ -4024,7 +4024,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/server_helper.o:
 LIBINTEROP_SERVER_MAIN_SRC = \
     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc \
     $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc \
-    $(GENDIR)/test/cpp/interop/test.pb.cc $(GENDIR)/test/cpp/interop/test.grpc.pb.cc \
+    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc \
     test/cpp/interop/server.cc \
 
 
@@ -4054,7 +4054,7 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 test/cpp/interop/empty.proto: $(OPENSSL_DEP)
 test/cpp/interop/messages.proto: $(OPENSSL_DEP)
-test/cpp/interop/test.proto: $(OPENSSL_DEP)
+test/proto/test.proto: $(OPENSSL_DEP)
 test/cpp/interop/server.cc: $(OPENSSL_DEP)
 endif
 
@@ -4083,7 +4083,7 @@ endif
 
 
 
-$(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o:     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc    $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc    $(GENDIR)/test/cpp/interop/test.pb.cc $(GENDIR)/test/cpp/interop/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o:     $(GENDIR)/test/cpp/interop/empty.pb.cc $(GENDIR)/test/cpp/interop/empty.grpc.pb.cc    $(GENDIR)/test/cpp/interop/messages.pb.cc $(GENDIR)/test/cpp/interop/messages.grpc.pb.cc    $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
 
 
 LIBPUBSUB_CLIENT_LIB_SRC = \

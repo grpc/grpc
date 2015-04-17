@@ -580,7 +580,7 @@
       "src": [
         "test/cpp/interop/empty.proto",
         "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
+        "test/proto/test.proto",
         "test/cpp/interop/client.cc",
         "test/cpp/interop/interop_client.cc"
       ],
@@ -615,7 +615,7 @@
       "src": [
         "test/cpp/interop/empty.proto",
         "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
+        "test/proto/test.proto",
         "test/cpp/interop/server.cc"
       ],
       "deps": [
