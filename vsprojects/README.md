@@ -15,7 +15,9 @@ download nuget.exe from web and manually restore the NuGet packages.
 > nuget restore
 ```
 
-After that, open `grpc.sln` with Visual Studio and hit "Build".
+After that, you can build the solution using one of these options:
+1. open `grpc.sln` with Visual Studio and hit "Build".
+2. build from commandline using `msbuild grpc.sln /p:Configuration=Debug`
 
 #Testing
 
