@@ -491,6 +491,41 @@ TEST_F(End2endTest, ServerCancelsRpc) {
   EXPECT_TRUE(s.details().empty());
 }
 
+// Client cancels bidi stream after sending some messages
+TEST_F(End2endTest, ClientCancelsBidi) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  grpc::string msg("hello");
+
+  auto stream = stub_->BidiStream(&context);
+
+  request.set_message(msg + "0");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  request.set_message(msg + "1");
+  EXPECT_TRUE(stream->Write(request));
+
+  context.TryCancel();
+
+  // The cancellation races with responses, so there might be zero or
+  // one responses pending, read till failure
+
+  if (stream->Read(&response)) {
+    EXPECT_EQ(response.message(), request.message());
+    // Since we have cancelled, we expect the next attempt to read to fail
+    EXPECT_FALSE(stream->Read(&response));
+  }
+
+  Status s = stream->Finish();
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
+}
+
+
+
 }  // namespace testing
 }  // namespace grpc
 
