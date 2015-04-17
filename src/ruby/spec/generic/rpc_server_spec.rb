@@ -536,7 +536,7 @@ describe GRPC::RpcServer do
       end
     end
 
-    context 'with returned metadata on failing' do
+    context 'with trailing metadata' do
       before(:each) do
         server_opts = {
           server_override: @server,
@@ -546,7 +546,7 @@ describe GRPC::RpcServer do
         @srv = RpcServer.new(**server_opts)
       end
 
-      it 'should receive the metadata in the BadStatus', server: true do
+      it 'should be added to BadStatus when requests fail', server: true do
         service = FailingService.new
         @srv.handle(service)
         t = Thread.new { @srv.run }
@@ -558,7 +558,7 @@ describe GRPC::RpcServer do
         # confirm it raise the expected error
         expect(&blk).to raise_error GRPC::BadStatus
 
-        # call again and confirm exception has the expected fields
+        # call again and confirm exception contained the trailing metadata.
         begin
           blk.call
         rescue GRPC::BadStatus => e
@@ -569,19 +569,8 @@ describe GRPC::RpcServer do
         @srv.stop
         t.join
       end
-    end
 
-    context 'with returned metadata on passing' do
-      before(:each) do
-        server_opts = {
-          server_override: @server,
-          completion_queue_override: @server_queue,
-          poll_period: 1
-        }
-        @srv = RpcServer.new(**server_opts)
-      end
-
-      it 'should send connect metadata to the client', server: true do
+      it 'should be received by the client', server: true do
         wanted_trailers = { 'k1' => 'out_v1', 'k2' => 'out_v2' }
         service = EchoService.new(k1: 'out_v1', k2: 'out_v2')
         @srv.handle(service)
