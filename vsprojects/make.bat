@@ -2,8 +2,11 @@
 @rem Usage: make.bat TARGET_NAME
 
 setlocal
-@rem Set VS variables
+@rem Set VS variables (uses Visual Studio 2013)
 @call "%VS120COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
 
-nmake.exe /f Grpc.mak %1
+echo %*
+
+nmake /f Grpc.mak %*
+exit /b %ERRORLEVEL%
 endlocal

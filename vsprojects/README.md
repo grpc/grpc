@@ -19,9 +19,14 @@ After that, open `grpc.sln` with Visual Studio and hit "Build".
 
 #Testing
 
-Use `make.bat` to build gRPC tests.
+Use `run_tests.py`, that also supports Windows (with a bit limited experience).
 ```
-make.bat test
+REM Run from repository root.
+python tools\run_tests\run_tests.py -l c
 ```
 
-
+Also, you can `make.bat` directly to build and run gRPC tests.
+```
+REM Run from this directory.
+make.bat alarm_test
+```
