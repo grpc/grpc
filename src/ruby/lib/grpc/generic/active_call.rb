@@ -122,6 +122,12 @@ module GRPC
       @metadata_tag = metadata_tag
     end
 
+    # output_metadata are provides access to hash that can be used to
+    # save metadata to be sent as trailer
+    def output_metadata
+      @output_metadata ||= {}
+    end
+
     # multi_req_view provides a restricted view of this ActiveCall for use
     # in a server client-streaming handler.
     def multi_req_view
@@ -164,10 +170,12 @@ module GRPC
     def finished
       batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE,
                                      RECV_STATUS_ON_CLIENT => nil)
-      if @call.metadata.nil?
-        @call.metadata = batch_result.metadata
-      elsif !batch_result.metadata.nil?
-        @call.metadata.merge!(batch_result.metadata)
+      unless batch_result.status.nil?
+        if @call.metadata.nil?
+          @call.metadata = batch_result.status.metadata
+        else
+          @call.metadata.merge!(batch_result.status.metadata)
+        end
       end
       batch_result.check_status
     end
@@ -445,12 +453,13 @@ module GRPC
 
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
-    SingleReqView = view_class(:cancelled, :deadline, :metadata)
+    SingleReqView = view_class(:cancelled, :deadline, :metadata,
+                               :output_metadata)
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
     MultiReqView = view_class(:cancelled, :deadline, :each_queued_msg,
-                              :each_remote_read, :metadata)
+                              :each_remote_read, :metadata, :output_metadata)
 
     # Operation limits access to an ActiveCall's methods for use as
     # a Operation on the client.

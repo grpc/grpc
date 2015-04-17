@@ -77,12 +77,12 @@ describe GRPC::RpcDesc do
   end
 
   describe '#run_server_method' do
+    let(:fake_md) { { k1: 'v1', k2: 'v2' } }
     describe 'for request responses' do
       let(:this_desc) { @request_response }
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:single_req_view).and_return(@call)
-        allow(@call).to receive(:gc)
       end
 
       it_behaves_like 'it handles errors'
@@ -91,7 +91,9 @@ describe GRPC::RpcDesc do
         req = Object.new
         expect(@call).to receive(:remote_read).once.and_return(req)
         expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true, {})
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
         this_desc.run_server_method(@call, method(:fake_reqresp))
       end
     end
@@ -100,7 +102,6 @@ describe GRPC::RpcDesc do
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:multi_req_view).and_return(@call)
-        allow(@call).to receive(:gc)
       end
 
       it 'sends the specified status if BadStatus is raised' do
@@ -125,7 +126,9 @@ describe GRPC::RpcDesc do
 
       it 'sends a response and closes the stream if there no errors' do
         expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true, {})
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
         @client_streamer.run_server_method(@call, method(:fake_clstream))
       end
     end
@@ -135,7 +138,6 @@ describe GRPC::RpcDesc do
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:single_req_view).and_return(@call)
-        allow(@call).to receive(:gc)
       end
 
       it_behaves_like 'it handles errors'
@@ -144,7 +146,9 @@ describe GRPC::RpcDesc do
         req = Object.new
         expect(@call).to receive(:remote_read).once.and_return(req)
         expect(@call).to receive(:remote_send).twice.with(@ok_response)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true, {})
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
         @server_streamer.run_server_method(@call, method(:fake_svstream))
       end
     end
@@ -155,7 +159,6 @@ describe GRPC::RpcDesc do
         enq_th, rwl_th = double('enqueue_th'), ('read_write_loop_th')
         allow(enq_th).to receive(:join)
         allow(rwl_th).to receive(:join)
-        allow(@call).to receive(:gc)
       end
 
       it 'sends the specified status if BadStatus is raised' do
@@ -175,7 +178,9 @@ describe GRPC::RpcDesc do
 
       it 'closes the stream if there no errors' do
         expect(@call).to receive(:run_server_bidi)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true, {})
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
         @bidi_streamer.run_server_method(@call, method(:fake_bidistream))
       end
     end

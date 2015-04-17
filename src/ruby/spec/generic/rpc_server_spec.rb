@@ -64,12 +64,14 @@ class EchoService
   rpc :an_rpc, EchoMsg, EchoMsg
   attr_reader :received_md
 
-  def initialize(_default_var = 'ignored')
+  def initialize(**kw)
+    @trailing_metadata = kw
     @received_md = []
   end
 
   def an_rpc(req, call)
     logger.info('echo service received a request')
+    call.output_metadata.update(@trailing_metadata)
     @received_md << call.metadata unless call.metadata.nil?
     req
   end
@@ -534,7 +536,7 @@ describe GRPC::RpcServer do
       end
     end
 
-    context 'with metadata on failing' do
+    context 'with returned metadata on failing' do
       before(:each) do
         server_opts = {
           server_override: @server,
@@ -544,7 +546,7 @@ describe GRPC::RpcServer do
         @srv = RpcServer.new(**server_opts)
       end
 
-      it 'should send receive metadata failed response', server: true do
+      it 'should receive the metadata in the BadStatus', server: true do
         service = FailingService.new
         @srv.handle(service)
         t = Thread.new { @srv.run }
@@ -564,6 +566,33 @@ describe GRPC::RpcServer do
           expect(e.details).to eq(service.details)
           expect(e.metadata).to eq(service.md)
         end
+        @srv.stop
+        t.join
+      end
+    end
+
+    context 'with returned metadata on passing' do
+      before(:each) do
+        server_opts = {
+          server_override: @server,
+          completion_queue_override: @server_queue,
+          poll_period: 1
+        }
+        @srv = RpcServer.new(**server_opts)
+      end
+
+      it 'should send connect metadata to the client', server: true do
+        wanted_trailers = { 'k1' => 'out_v1', 'k2' => 'out_v2' }
+        service = EchoService.new(k1: 'out_v1', k2: 'out_v2')
+        @srv.handle(service)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        req = EchoMsg.new
+        stub = EchoStub.new(@host, **client_opts)
+        op = stub.an_rpc(req, k1: 'v1', k2: 'v2', return_op: true)
+        expect(op.metadata).to be nil
+        expect(op.execute).to be_a(EchoMsg)
+        expect(op.metadata).to eq(wanted_trailers)
         @srv.stop
         t.join
       end

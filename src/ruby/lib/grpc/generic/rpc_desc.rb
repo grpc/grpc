@@ -80,7 +80,7 @@ module GRPC
       else  # is a bidi_stream
         active_call.run_server_bidi(mth)
       end
-      send_status(active_call, OK, 'OK')
+      send_status(active_call, OK, 'OK', **active_call.output_metadata)
     rescue BadStatus => e
       # this is raised by handlers that want GRPC to send an application error
       # code and detail message and some additional app-specific metadata.
