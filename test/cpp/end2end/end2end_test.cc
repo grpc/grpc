@@ -491,6 +491,36 @@ TEST_F(End2endTest, ServerCancelsRpc) {
   EXPECT_TRUE(s.details().empty());
 }
 
+// Client cancels server stream after sending some messages
+  TEST_F(End2endTest, ClientCancelsResponseStream) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+
+  auto stream = stub_->ResponseStream(&context, request);
+
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "0");
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "1");
+
+  context.TryCancel();
+
+  // The cancellation races with responses, so there might be zero or
+  // one responses pending, read till failure
+
+  if (stream->Read(&response)) {
+    EXPECT_EQ(response.message(), request.message() + "2");
+    // Since we have cancelled, we expect the next attempt to read to fail
+    EXPECT_FALSE(stream->Read(&response));
+  }
+
+  Status s = stream->Finish();
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
+}
+
 // Client cancels bidi stream after sending some messages
 TEST_F(End2endTest, ClientCancelsBidi) {
   ResetStub();
@@ -523,7 +553,6 @@ TEST_F(End2endTest, ClientCancelsBidi) {
   Status s = stream->Finish();
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
 }
-
 
 
 }  // namespace testing
