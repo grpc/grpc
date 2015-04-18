@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'xray/thread_dump_signal_handler'
 
 def load_test_certs
   test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')

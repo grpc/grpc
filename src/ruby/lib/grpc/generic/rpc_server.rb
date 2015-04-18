@@ -31,7 +31,6 @@ require 'grpc/grpc'
 require 'grpc/generic/active_call'
 require 'grpc/generic/service'
 require 'thread'
-require 'xray/thread_dump_signal_handler'
 
 # A global that contains signals the gRPC servers should respond to.
 $grpc_signals = []
