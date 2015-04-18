@@ -27,6 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'minitest', '~> 5.4'  # reqd for interop tests
   s.add_dependency 'xray', '~> 1.1'
 
+  s.add_development_dependency 'simplecov', '~> 0.9'
   s.add_development_dependency 'bundler', '~> 1.9'
   s.add_development_dependency 'rake', '~> 10.4'
   s.add_development_dependency 'rake-compiler', '~> 0.9'
