@@ -1485,6 +1485,18 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
           }
         }
       }
+      if (st.initial_window_update) {
+        for (i = 0; i < t->stream_map.count; i++) {
+          stream *s = (stream*)(t->stream_map.values[i]);
+          /* TODO there are other scenarios */
+          if (s->outgoing_window == 0) {
+            s->outgoing_window += st.initial_window_update;
+            if (s->outgoing_sopb.nops) {
+                stream_list_join(t, s, WRITABLE);
+            }
+          }
+        }
+      }
       if (st.window_update) {
         if (t->incoming_stream_id) {
           /* if there was a stream id, this is for some stream */
