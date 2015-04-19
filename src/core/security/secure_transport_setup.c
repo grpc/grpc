@@ -43,7 +43,7 @@
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
 typedef struct {
-  grpc_security_context *ctx;
+  grpc_security_connector *connector;
   tsi_handshaker *handshaker;
   unsigned char *handshake_buffer;
   size_t handshake_buffer_size;
@@ -74,7 +74,7 @@ static void secure_transport_setup_done(grpc_secure_transport_setup *s,
   if (s->handshaker != NULL) tsi_handshaker_destroy(s->handshaker);
   if (s->handshake_buffer != NULL) gpr_free(s->handshake_buffer);
   gpr_slice_buffer_destroy(&s->left_overs);
-  grpc_security_context_unref(s->ctx);
+  grpc_security_connector_unref(s->connector);
   gpr_free(s);
 }
 
@@ -112,8 +112,8 @@ static void check_peer(grpc_secure_transport_setup *s) {
     secure_transport_setup_done(s, 0);
     return;
   }
-  peer_status =
-      grpc_security_context_check_peer(s->ctx, peer, on_peer_checked, s);
+  peer_status = grpc_security_connector_check_peer(s->connector, peer,
+                                                   on_peer_checked, s);
   if (peer_status == GRPC_SECURITY_ERROR) {
     gpr_log(GPR_ERROR, "Peer check failed.");
     secure_transport_setup_done(s, 0);
@@ -262,7 +262,7 @@ static void on_handshake_data_sent_to_peer(void *setup,
   }
 }
 
-void grpc_setup_secure_transport(grpc_security_context *ctx,
+void grpc_setup_secure_transport(grpc_security_connector *connector,
                                  grpc_endpoint *nonsecure_endpoint,
                                  grpc_secure_transport_setup_done_cb cb,
                                  void *user_data) {
@@ -270,12 +270,12 @@ void grpc_setup_secure_transport(grpc_security_context *ctx,
   grpc_secure_transport_setup *s =
       gpr_malloc(sizeof(grpc_secure_transport_setup));
   memset(s, 0, sizeof(grpc_secure_transport_setup));
-  result = grpc_security_context_create_handshaker(ctx, &s->handshaker);
+  result = grpc_security_connector_create_handshaker(connector, &s->handshaker);
   if (result != GRPC_SECURITY_OK) {
     secure_transport_setup_done(s, 0);
     return;
   }
-  s->ctx = grpc_security_context_ref(ctx);
+  s->connector = grpc_security_connector_ref(connector);
   s->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
   s->handshake_buffer = gpr_malloc(s->handshake_buffer_size);
   s->endpoint = nonsecure_endpoint;

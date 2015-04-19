@@ -40,7 +40,7 @@
 
 #include "src/core/support/string.h"
 #include "src/core/channel/channel_stack.h"
-#include "src/core/security/security_context.h"
+#include "src/core/security/security_connector.h"
 #include "src/core/security/credentials.h"
 #include "src/core/surface/call.h"
 
@@ -54,7 +54,7 @@ typedef struct {
 
 /* We can have a per-channel credentials. */
 typedef struct {
-  grpc_channel_security_context *security_context;
+  grpc_channel_security_connector *security_connector;
   grpc_mdctx *md_ctx;
   grpc_mdstr *authority_string;
   grpc_mdstr *path_string;
@@ -126,7 +126,7 @@ static void send_security_metadata(grpc_call_element *elem, grpc_call_op *op) {
   channel_data *channeld = elem->channel_data;
 
   grpc_credentials *channel_creds =
-      channeld->security_context->request_metadata_creds;
+      channeld->security_connector->request_metadata_creds;
   /* TODO(jboeuf):
      Decide on the policy in this case:
      - populate both channel and call?
@@ -138,7 +138,7 @@ static void send_security_metadata(grpc_call_element *elem, grpc_call_op *op) {
   if (channel_creds != NULL &&
       grpc_credentials_has_request_metadata(channel_creds)) {
     char *service_url =
-        build_service_url(channeld->security_context->base.url_scheme, calld);
+        build_service_url(channeld->security_connector->base.url_scheme, calld);
     calld->op = *op; /* Copy op (originates from the caller's stack). */
     grpc_credentials_get_request_metadata(channel_creds, service_url,
                                           on_credentials_metadata, elem);
@@ -193,8 +193,8 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
         grpc_security_status status;
         const char *call_host = grpc_mdstr_as_c_string(calld->host);
         calld->op = *op; /* Copy op (originates from the caller's stack). */
-        status = grpc_channel_security_context_check_call_host(
-            channeld->security_context, call_host, on_host_checked, elem);
+        status = grpc_channel_security_connector_check_call_host(
+            channeld->security_connector, call_host, on_host_checked, elem);
         if (status != GRPC_SECURITY_OK) {
           if (status == GRPC_SECURITY_ERROR) {
             char *error_msg;
@@ -255,7 +255,7 @@ static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
-  grpc_security_context *ctx = grpc_find_security_context_in_args(args);
+  grpc_security_connector *ctx = grpc_find_security_connector_in_args(args);
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
@@ -268,23 +268,24 @@ static void init_channel_elem(grpc_channel_element *elem,
 
   /* initialize members */
   GPR_ASSERT(ctx->is_client_side);
-  channeld->security_context =
-      (grpc_channel_security_context *)grpc_security_context_ref(ctx);
+  channeld->security_connector =
+      (grpc_channel_security_connector *)grpc_security_connector_ref(ctx);
   channeld->md_ctx = metadata_context;
   channeld->authority_string =
       grpc_mdstr_from_string(channeld->md_ctx, ":authority");
   channeld->path_string = grpc_mdstr_from_string(channeld->md_ctx, ":path");
   channeld->error_msg_key =
       grpc_mdstr_from_string(channeld->md_ctx, "grpc-message");
-  channeld->status_key = grpc_mdstr_from_string(channeld->md_ctx, "grpc-status");
+  channeld->status_key =
+      grpc_mdstr_from_string(channeld->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
-  grpc_channel_security_context *ctx = channeld->security_context;
-  if (ctx != NULL) grpc_security_context_unref(&ctx->base);
+  grpc_channel_security_connector *ctx = channeld->security_connector;
+  if (ctx != NULL) grpc_security_connector_unref(&ctx->base);
   if (channeld->authority_string != NULL) {
     grpc_mdstr_unref(channeld->authority_string);
   }
@@ -300,6 +301,5 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "auth"};
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "auth"};
