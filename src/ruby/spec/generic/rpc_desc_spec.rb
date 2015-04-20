@@ -52,41 +52,49 @@ describe GRPC::RpcDesc do
     @ok_response = Object.new
   end
 
+  shared_examples 'it handles errors' do
+    it 'sends the specified status if BadStatus is raised' do
+      expect(@call).to receive(:remote_read).once.and_return(Object.new)
+      expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
+                                                       {})
+      this_desc.run_server_method(@call, method(:bad_status))
+    end
+
+    it 'sends status UNKNOWN if other StandardErrors are raised' do
+      expect(@call).to receive(:remote_read).once.and_return(Object.new)
+      expect(@call).to receive(:send_status) .once.with(UNKNOWN, @no_reason,
+                                                        false, {})
+      this_desc.run_server_method(@call, method(:other_error))
+    end
+
+    it 'absorbs CallError with no further action' do
+      expect(@call).to receive(:remote_read).once.and_raise(CallError)
+      blk = proc do
+        this_desc.run_server_method(@call, method(:fake_reqresp))
+      end
+      expect(&blk).to_not raise_error
+    end
+  end
+
   describe '#run_server_method' do
+    let(:fake_md) { { k1: 'v1', k2: 'v2' } }
     describe 'for request responses' do
+      let(:this_desc) { @request_response }
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:single_req_view).and_return(@call)
-        allow(@call).to receive(:gc)
       end
 
-      it 'sends the specified status if BadStatus is raised' do
-        expect(@call).to receive(:remote_read).once.and_return(Object.new)
-        expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false)
-        @request_response.run_server_method(@call, method(:bad_status))
-      end
-
-      it 'sends status UNKNOWN if other StandardErrors are raised' do
-        expect(@call).to receive(:remote_read).once.and_return(Object.new)
-        expect(@call).to receive(:send_status) .once.with(UNKNOWN, @no_reason,
-                                                          false)
-        @request_response.run_server_method(@call, method(:other_error))
-      end
-
-      it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_read).once.and_raise(CallError)
-        blk = proc do
-          @request_response.run_server_method(@call, method(:fake_reqresp))
-        end
-        expect(&blk).to_not raise_error
-      end
+      it_behaves_like 'it handles errors'
 
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
         expect(@call).to receive(:remote_read).once.and_return(req)
         expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true)
-        @request_response.run_server_method(@call, method(:fake_reqresp))
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
+        this_desc.run_server_method(@call, method(:fake_reqresp))
       end
     end
 
@@ -94,17 +102,17 @@ describe GRPC::RpcDesc do
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:multi_req_view).and_return(@call)
-        allow(@call).to receive(:gc)
       end
 
       it 'sends the specified status if BadStatus is raised' do
-        expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false)
+        expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
+                                                         {})
         @client_streamer.run_server_method(@call, method(:bad_status_alt))
       end
 
       it 'sends status UNKNOWN if other StandardErrors are raised' do
         expect(@call).to receive(:send_status) .once.with(UNKNOWN, @no_reason,
-                                                          false)
+                                                          false, {})
         @client_streamer.run_server_method(@call, method(:other_error_alt))
       end
 
@@ -118,44 +126,29 @@ describe GRPC::RpcDesc do
 
       it 'sends a response and closes the stream if there no errors' do
         expect(@call).to receive(:remote_send).once.with(@ok_response)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true)
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
         @client_streamer.run_server_method(@call, method(:fake_clstream))
       end
     end
 
     describe 'for server streaming' do
+      let(:this_desc) { @request_response }
       before(:each) do
         @call = double('active_call')
         allow(@call).to receive(:single_req_view).and_return(@call)
-        allow(@call).to receive(:gc)
       end
 
-      it 'sends the specified status if BadStatus is raised' do
-        expect(@call).to receive(:remote_read).once.and_return(Object.new)
-        expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false)
-        @server_streamer.run_server_method(@call, method(:bad_status))
-      end
-
-      it 'sends status UNKNOWN if other StandardErrors are raised' do
-        expect(@call).to receive(:remote_read).once.and_return(Object.new)
-        expect(@call).to receive(:send_status) .once.with(UNKNOWN, @no_reason,
-                                                          false)
-        @server_streamer.run_server_method(@call, method(:other_error))
-      end
-
-      it 'absorbs CallError with no further action' do
-        expect(@call).to receive(:remote_read).once.and_raise(CallError)
-        blk = proc do
-          @server_streamer.run_server_method(@call, method(:fake_svstream))
-        end
-        expect(&blk).to_not raise_error
-      end
+      it_behaves_like 'it handles errors'
 
       it 'sends a response and closes the stream if there no errors' do
         req = Object.new
         expect(@call).to receive(:remote_read).once.and_return(req)
         expect(@call).to receive(:remote_send).twice.with(@ok_response)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true)
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
         @server_streamer.run_server_method(@call, method(:fake_svstream))
       end
     end
@@ -166,26 +159,28 @@ describe GRPC::RpcDesc do
         enq_th, rwl_th = double('enqueue_th'), ('read_write_loop_th')
         allow(enq_th).to receive(:join)
         allow(rwl_th).to receive(:join)
-        allow(@call).to receive(:gc)
       end
 
       it 'sends the specified status if BadStatus is raised' do
         e = GRPC::BadStatus.new(@bs_code, 'NOK')
         expect(@call).to receive(:run_server_bidi).and_raise(e)
-        expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false)
+        expect(@call).to receive(:send_status).once.with(@bs_code, 'NOK', false,
+                                                         {})
         @bidi_streamer.run_server_method(@call, method(:bad_status_alt))
       end
 
       it 'sends status UNKNOWN if other StandardErrors are raised' do
         expect(@call).to receive(:run_server_bidi).and_raise(StandardError)
         expect(@call).to receive(:send_status).once.with(UNKNOWN, @no_reason,
-                                                         false)
+                                                         false, {})
         @bidi_streamer.run_server_method(@call, method(:other_error_alt))
       end
 
       it 'closes the stream if there no errors' do
         expect(@call).to receive(:run_server_bidi)
-        expect(@call).to receive(:send_status).once.with(OK, 'OK', true)
+        expect(@call).to receive(:output_metadata).and_return(fake_md)
+        expect(@call).to receive(:send_status).once.with(OK, 'OK', true,
+                                                         **fake_md)
         @bidi_streamer.run_server_method(@call, method(:fake_bidistream))
       end
     end
