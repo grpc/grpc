@@ -273,10 +273,10 @@ This test verifies unary calls succeed in sending messages while using Service
 Credentials from GCE metadata server. The client instance needs to be created
 with desired oauth scope.
 
-The test uses ```--default_service_account``` with GCE service account email and
-```--oauth_scope``` with the OAuth scope to use. For testing against
+The test uses `--default_service_account` with GCE service account email and
+`--oauth_scope` with the OAuth scope to use. For testing against
 grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
-be passed in as ```--oauth_scope```.
+be passed in as `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
@@ -302,8 +302,8 @@ Procedure:
 
 Asserts:
 * call was successful
-* received SimpleResponse.username equals the value of ```--default_service_account``` flag
-* received SimpleResponse.oauth_scope is in ```--oauth_scope```
+* received SimpleResponse.username equals the value of `--default_service_account` flag
+* received SimpleResponse.oauth_scope is in `--oauth_scope`
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
@@ -315,11 +315,11 @@ This test is only for cloud-to-prod path.
 This test verifies unary calls succeed in sending messages while using JWT
 signing keys (redeemed for OAuth2 access tokens by the auth implementation)
 
-The test uses ```--service_account_key_file``` with the path to a json key file
-downloaded from https://console.developers.google.com, and ```--oauth_scope```
+The test uses `--service_account_key_file` with the path to a json key file
+downloaded from https://console.developers.google.com, and `--oauth_scope`
 to the oauth scope. For testing against grpc-test.sandbox.google.com,
 "https://www.googleapis.com/auth/xapi.zoo" should be passed in
-as ```--oauth_scope```.
+as `--oauth_scope`.
 
 Server features:
 * [UnaryCall][]
@@ -346,8 +346,8 @@ Procedure:
 Asserts:
 * call was successful
 * received SimpleResponse.username is in the json key file read from
-   ```--service_account_key_file```
-* received SimpleResponse.oauth_scope is in ```--oauth_scope```
+   `--service_account_key_file`
+* received SimpleResponse.oauth_scope is in `--oauth_scope`
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
@@ -359,7 +359,7 @@ This test is only for cloud-to-prod path.
 This test verifies unary calls succeed in sending messages while using JWT
 token (created by the project's key file)
 
-Test caller should set flag ```--service_account_key_file``` with the
+Test caller should set flag `--service_account_key_file` with the
 path to json key file downloaded from
 https://console.developers.google.com.
 
@@ -387,7 +387,7 @@ Procedure:
 Asserts:
 * call was successful
 * received SimpleResponse.username is in the json key file read from
-  ```--service_account_key_file```
+  `--service_account_key_file`
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
@@ -699,7 +699,7 @@ with the scope of the method being invoked.
 Although a general server-side feature, most test servers won't implement this
 feature. The TLS server grpc-test.sandbox.google.com:443 supports this feature.
 It requires at least the OAuth scope
-```https://www.googleapis.com/auth/xapi.zoo``` for authentication to succeed.
+`https://www.googleapis.com/auth/xapi.zoo` for authentication to succeed.
 
 Discussion:
 
