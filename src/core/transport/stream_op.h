@@ -113,7 +113,11 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
                                                          grpc_mdelem *elem),
                                   void *user_data);
 
+#ifndef NDEBUG
 void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
+#else
+#define grpc_metadata_batch_assert_ok(comd) do {} while (0)
+#endif
 
 /* Represents a single operation performed on a stream/transport */
 typedef struct grpc_stream_op {
