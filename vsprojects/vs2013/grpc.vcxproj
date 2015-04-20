@@ -88,7 +88,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\core\httpcli\format_request.h" />
     <ClInclude Include="..\..\src\core\httpcli\httpcli.h" />
-    <ClInclude Include="..\..\src\core\httpcli\httpcli_security_context.h" />
+    <ClInclude Include="..\..\src\core\httpcli\httpcli_security_connector.h" />
     <ClInclude Include="..\..\src\core\httpcli\parser.h" />
     <ClInclude Include="..\..\src\core\security\auth.h" />
     <ClInclude Include="..\..\src\core\security\base64.h" />
@@ -96,7 +96,7 @@
     <ClInclude Include="..\..\src\core\security\json_token.h" />
     <ClInclude Include="..\..\src\core\security\secure_endpoint.h" />
     <ClInclude Include="..\..\src\core\security\secure_transport_setup.h" />
-    <ClInclude Include="..\..\src\core\security\security_context.h" />
+    <ClInclude Include="..\..\src\core\security\security_connector.h" />
     <ClInclude Include="..\..\src\core\tsi\fake_transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\ssl_transport_security.h" />
     <ClInclude Include="..\..\src\core\tsi\transport_security.h" />
@@ -195,7 +195,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\httpcli\httpcli_security_context.c">
+    <ClCompile Include="..\..\src\core\httpcli\httpcli_security_connector.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\httpcli\parser.c">
     </ClCompile>
@@ -209,8 +209,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\credentials_win32.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\factories.c">
-    </ClCompile>
     <ClCompile Include="..\..\src\core\security\google_default_credentials.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\json_token.c">
@@ -219,7 +217,7 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\secure_transport_setup.c">
     </ClCompile>
-    <ClCompile Include="..\..\src\core\security\security_context.c">
+    <ClCompile Include="..\..\src\core\security\security_connector.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\security\server_secure_chttp2.c">
     </ClCompile>

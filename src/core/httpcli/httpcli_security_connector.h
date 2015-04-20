@@ -31,13 +31,13 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONTEXT_H
-#define GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONTEXT_H
+#ifndef GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H
+#define GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H
 
-#include "src/core/security/security_context.h"
+#include "src/core/security/security_connector.h"
 
-grpc_security_status grpc_httpcli_ssl_channel_security_context_create(
+grpc_security_status grpc_httpcli_ssl_channel_security_connector_create(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const char *secure_peer_name, grpc_channel_security_context **ctx);
+    const char *secure_peer_name, grpc_channel_security_connector **sc);
 
-#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONTEXT_H */
+#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_HTTPCLI_SECURITY_CONNECTOR_H */

@@ -31,38 +31,15 @@
  *
  */
 
-#include <string.h>
+#ifndef GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
+#define GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
 
-#include <grpc/grpc.h>
-#include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+namespace grpc {
+namespace testing {
 
-grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
-                                         const char *target,
-                                         const grpc_channel_args *args) {
-  grpc_secure_channel_factory factories[] = {
-      {GRPC_CREDENTIALS_TYPE_SSL, grpc_ssl_channel_create},
-      {GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY,
-       grpc_fake_transport_security_channel_create}};
-  return grpc_secure_channel_create_with_factories(
-      factories, GPR_ARRAY_SIZE(factories), creds, target, args);
-}
+void InitTest(int* argc, char*** argv, bool remove_flags);
 
-grpc_security_status grpc_server_security_context_create(
-    grpc_server_credentials *creds, grpc_security_context **ctx) {
-  grpc_security_status status = GRPC_SECURITY_ERROR;
+}  // namespace testing
+}  // namespace grpc
 
-  *ctx = NULL;
-  if (strcmp(creds->type, GRPC_CREDENTIALS_TYPE_SSL) == 0) {
-    status = grpc_ssl_server_security_context_create(
-        grpc_ssl_server_credentials_get_config(creds), ctx);
-  } else if (strcmp(creds->type,
-                    GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) == 0) {
-    *ctx = grpc_fake_server_security_context_create();
-    status = GRPC_SECURITY_OK;
-  }
-  return status;
-}
+#endif  // GRPC_TEST_CPP_UTIL_TEST_CONFIG_H

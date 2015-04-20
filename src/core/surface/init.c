@@ -61,8 +61,8 @@ void grpc_init(void) {
     grpc_register_tracer("http", &grpc_http_trace);
     grpc_register_tracer("batch", &grpc_trace_batch);
     grpc_security_pre_init();
-    grpc_tracer_init("GRPC_TRACE");
     grpc_iomgr_init();
+    grpc_tracer_init("GRPC_TRACE");
     census_init();
     grpc_timers_log_global_init();
   }
