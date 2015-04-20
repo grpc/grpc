@@ -31,8 +31,8 @@ Clients should accept these arguments:
       [ca.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/ca.pem)
       as the CA root
 * --default_service_account=ACCOUNT_EMAIL
-    * Email of the GCE default service account. Only applicable when running in
-    GCE.
+    * Email of the GCE default service account. Only applicable
+      for compute_engine_creds test.
 * --oauth_scope=SCOPE
     * OAuth scope. For example, "https://www.googleapis.com/auth/xapi.zoo"
 * --service_account_key_file=PATH
@@ -346,7 +346,7 @@ Procedure:
 Asserts:
 * call was successful
 * received SimpleResponse.username is in the json key file read from
-  ```--service_account_key_file```
+   ```--service_account_key_file```
 * received SimpleResponse.oauth_scope is in ```--oauth_scope```
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
@@ -359,8 +359,9 @@ This test is only for cloud-to-prod path.
 This test verifies unary calls succeed in sending messages while using JWT
 token (created by the project's key file)
 
-Client sets flag ```--service_account_key_file``` with the path to json key
-file downloaded from https://console.developers.google.com.
+Test caller should set flag ```--service_account_key_file``` with the
+path to json key file downloaded from
+https://console.developers.google.com.
 
 Server features:
 * [UnaryCall][]
