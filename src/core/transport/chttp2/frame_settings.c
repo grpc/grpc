@@ -218,9 +218,13 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
                 return GRPC_CHTTP2_CONNECTION_ERROR;
             }
           }
-          if (parser->id == 4 && parser->incoming_settings[parser->id] != parser->value) {
-            state->initial_window_update = parser->value - parser->incoming_settings[parser->id];
-            gpr_log(GPR_DEBUG, "adding %d for initial_window change", state->window_update);
+          if (parser->id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
+              parser->incoming_settings[parser->id] != parser->value) {
+            state->initial_window_update =
+                (gpr_int64)parser->value -
+                parser->incoming_settings[parser->id];
+            gpr_log(GPR_DEBUG, "adding %d for initial_window change",
+                    (int)state->initial_window_update);
           }
           parser->incoming_settings[parser->id] = parser->value;
           if (grpc_http_trace) {
