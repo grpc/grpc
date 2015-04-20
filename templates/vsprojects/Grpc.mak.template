@@ -61,11 +61,11 @@ WINSOCK_LIBS=ws2_32.lib
 ZLIB_LIBS=.\packages\${get_zlib()}\build\native\lib\v120\Win32\Debug\static\cdecl\zlib.lib
 LIBS=$(OPENSSL_LIBS) $(WINSOCK_LIBS) $(ZLIB_LIBS)
 
-gpr_test_util:
-	MSBuild.exe gpr_test_util\gpr_test_util.vcxproj /p:Configuration=Debug
+build_gpr_test_util:
+	msbuild grpc.sln /t:gpr_test_util /p:Configuration=Debug
 
-grpc_test_util:
-	MSBuild.exe grpc_test_util\grpc_test_util.vcxproj /p:Configuration=Debug
+build_grpc_test_util:
+	msbuild grpc.sln /t:grpc_test_util /p:Configuration=Debug
 
 $(OUT_DIR):
 	mkdir $(OUT_DIR)
@@ -87,7 +87,7 @@ ${target.name}.exe \
 	echo All tests built.
 
 % for target in buildable_targets:
-${target.name}.exe: grpc_test_util $(OUT_DIR)
+${target.name}.exe: build_grpc_test_util $(OUT_DIR)
 	echo Building ${target.name}
 	$(CC) $(CFLAGS) /Fo:$(OUT_DIR)\ \
 %for source in target.src:
