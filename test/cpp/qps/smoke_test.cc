@@ -62,6 +62,7 @@ static void RunSynchronousUnaryPingPong() {
 
   ReportQPS(result);
   ReportLatency(result);
+  ReportCallCounts(result);
 }
 
 static void RunSynchronousStreamingPingPong() {
@@ -84,6 +85,7 @@ static void RunSynchronousStreamingPingPong() {
 
   ReportQPS(result);
   ReportLatency(result);
+  ReportCallCounts(result);
 }
 
 static void RunAsyncUnaryPingPong() {
@@ -107,6 +109,7 @@ static void RunAsyncUnaryPingPong() {
 
   ReportQPS(result);
   ReportLatency(result);
+  ReportCallCounts(result);
 }
 
 static void RunQPS() {
@@ -130,6 +133,7 @@ static void RunQPS() {
 
   ReportQPSPerCore(result, server_config);
   ReportLatency(result);
+  ReportCallCounts(result);
 }
 
 }  // namespace testing
@@ -139,10 +143,10 @@ int main(int argc, char** argv) {
   grpc_init();
 
   using namespace grpc::testing;
-  RunSynchronousStreamingPingPong();
+  if (false) RunSynchronousStreamingPingPong();
   RunSynchronousUnaryPingPong();
-  RunAsyncUnaryPingPong();
-  RunQPS();
+  if (false) RunAsyncUnaryPingPong();
+  if (false) RunQPS();
 
   grpc_shutdown();
   return 0;

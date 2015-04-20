@@ -71,6 +71,11 @@
 extern "C" {
 #endif
 
+#ifdef GPR_PERF_COUNTERS
+extern gpr_stats_counter gpr_mutex_locks;
+extern gpr_stats_counter gpr_cv_waits;
+#endif
+
 /* --- Mutex interface ---
 
    At most one thread may hold an exclusive lock on a mutex at any given time.

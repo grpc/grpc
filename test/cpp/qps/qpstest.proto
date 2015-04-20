@@ -59,6 +59,10 @@ message ServerStats {
 
   // server time used by the server process and all threads
   required double time_system = 3;
+
+  optional int64 malloc_calls = 100;
+  optional int64 mutex_locks = 101;
+  optional int64 cv_waits = 102;
 }
 
 message Payload {
@@ -119,6 +123,9 @@ message ClientStats {
   required double time_elapsed = 3;
   required double time_user = 4;
   required double time_system = 5;
+  optional int64 malloc_calls = 100;
+  optional int64 mutex_locks = 101;
+  optional int64 cv_waits = 102;
 }
 
 message ClientStatus {

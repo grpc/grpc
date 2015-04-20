@@ -43,7 +43,7 @@ namespace testing {
 template <class T, class F>
 double sum(const T& container, F functor) {
   double r = 0;
-  for (auto v = container.begin(); v != container.end(); v++) {
+  for (auto v = container.begin(); v != container.end(); ++v) {
     r += functor(*v);
   }
   return r;

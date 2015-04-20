@@ -36,17 +36,35 @@
 #include <stdlib.h>
 #include <grpc/support/port_platform.h>
 
+#ifdef GPR_PERF_COUNTERS
+gpr_stats_counter gpr_alloc_calls = GPR_STATS_INIT;
+gpr_stats_counter gpr_free_calls = GPR_STATS_INIT;
+#endif
+
 void *gpr_malloc(size_t size) {
   void *p = malloc(size);
+#ifdef GPR_PERF_COUNTERS
+  gpr_stats_inc(&gpr_alloc_calls, 1);
+#endif
   if (!p) {
     abort();
   }
   return p;
 }
 
-void gpr_free(void *p) { free(p); }
+void gpr_free(void *p) {
+#ifdef GPR_PERF_COUNTERS
+  gpr_stats_inc(&gpr_free_calls, 1);
+#endif
+
+  free(p);
+}
 
 void *gpr_realloc(void *p, size_t size) {
+#ifdef GPR_PERF_COUNTERS
+  gpr_stats_inc(&gpr_alloc_calls, 1);
+#endif
+
   p = realloc(p, size);
   if (!p) {
     abort();
@@ -59,8 +77,16 @@ void *gpr_malloc_aligned(size_t size, size_t alignment_log) {
   size_t extra = alignment - 1 + sizeof(void *);
   void *p = gpr_malloc(size + extra);
   void **ret = (void **)(((gpr_uintptr)p + extra) & ~(alignment - 1));
+#ifdef GPR_PERF_COUNTERS
+  gpr_stats_inc(&gpr_alloc_calls, 1);
+#endif
   ret[-1] = p;
   return (void *)ret;
 }
 
-void gpr_free_aligned(void *ptr) { free(((void **)ptr)[-1]); }
+void gpr_free_aligned(void *ptr) {
+#ifdef GPR_PERF_COUNTERS
+  gpr_stats_inc(&gpr_free_calls, 1);
+#endif
+  free(((void **)ptr)[-1]);
+}

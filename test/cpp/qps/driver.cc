@@ -75,6 +75,15 @@ static deque<string> get_hosts(const string& name) {
   }
 }
 
+template <class T>
+ResourceUsage MakeResourceUsage(const T& stats) {
+  return ResourceUsage{stats.time_elapsed(), stats.time_user(),
+                       stats.time_system(),
+                       stats.has_malloc_calls() ? stats.malloc_calls() : 0.0,
+                       stats.has_mutex_locks() ? stats.mutex_locks() : 0.0,
+                       stats.has_cv_waits() ? stats.cv_waits() : 0.0};
+}
+
 ScenarioResult RunScenario(const ClientConfig& initial_client_config,
                            size_t num_clients,
                            const ServerConfig& server_config,
@@ -207,15 +216,13 @@ ScenarioResult RunScenario(const ClientConfig& initial_client_config,
   for (auto server = servers.begin(); server != servers.end(); server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
-    result.server_resources.push_back(ResourceUsage{
-        stats.time_elapsed(), stats.time_user(), stats.time_system()});
+    result.server_resources.push_back(MakeResourceUsage(stats));
   }
   for (auto client = clients.begin(); client != clients.end(); client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result.latencies.MergeProto(stats.latencies());
-    result.client_resources.push_back(ResourceUsage{
-        stats.time_elapsed(), stats.time_user(), stats.time_system()});
+    result.client_resources.push_back(MakeResourceUsage(stats));
   }
 
   for (auto client = clients.begin(); client != clients.end(); client++) {
