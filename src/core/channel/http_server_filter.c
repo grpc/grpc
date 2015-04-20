@@ -101,8 +101,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     if (strncmp(grpc_mdstr_as_c_string(md->value), "application/grpc+", 17) ==
         0) {
       /* Although the C implementation doesn't (currently) generate them,
-         any
-         custom +-suffix is explicitly valid. */
+         any custom +-suffix is explicitly valid. */
       /* TODO(klempner): We should consider preallocating common values such
          as +proto or +json, or at least stashing them if we see them. */
       /* TODO(klempner): Should we be surfacing this to application code? */

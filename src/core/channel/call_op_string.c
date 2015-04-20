@@ -55,7 +55,7 @@ static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
 
 static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   grpc_linked_mdelem *m;
-  for (m = md.list.head; m; m = m->next) {
+  for (m = md.list.head; m != NULL; m = m->next) {
     put_metadata(b, m->md);
   }
   if (gpr_time_cmp(md.deadline, gpr_inf_future) != 0) {

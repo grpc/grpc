@@ -44,7 +44,7 @@
 #include "src/core/security/credentials.h"
 #include "src/core/surface/call.h"
 
-#define MAX_CREDENTIAL_METADATA_COUNT 4
+#define MAX_CREDENTIALS_METADATA_COUNT 4
 
 /* We can have a per-call credentials. */
 typedef struct {
@@ -52,7 +52,7 @@ typedef struct {
   grpc_mdstr *host;
   grpc_mdstr *method;
   grpc_call_op op;
-  grpc_linked_mdelem md_links[MAX_CREDENTIAL_METADATA_COUNT];
+  grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
 } call_data;
 
 /* We can have a per-channel credentials. */
@@ -77,7 +77,7 @@ static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
   call_data *calld = elem->call_data;
   grpc_call_op op = calld->op;
   size_t i;
-  GPR_ASSERT(num_md <= MAX_CREDENTIAL_METADATA_COUNT);
+  GPR_ASSERT(num_md <= MAX_CREDENTIALS_METADATA_COUNT);
   for (i = 0; i < num_md; i++) {
     grpc_metadata_batch_add_tail(&op.data.metadata, &calld->md_links[i],
                                  grpc_mdelem_ref(md_elems[i]));

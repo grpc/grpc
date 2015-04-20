@@ -191,7 +191,7 @@ typedef struct grpc_metadata {
      There is no need to initialize them, and they will be set to garbage during
      calls to grpc. */
   struct {
-    void *some_random_pointers[3];
+    void *obfuscated[3];
   } internal_data;
 } grpc_metadata;
 
