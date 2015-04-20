@@ -273,7 +273,7 @@ This test verifies unary calls succeed in sending messages while using Service
 Credentials from GCE metadata server. The client instance needs to be created
 with desired oauth scope.
 
-The test sets ```--default_service_account``` with GCE service account email and
+The test uses ```--default_service_account``` with GCE service account email and
 ```--oauth_scope``` with the OAuth scope to use. For testing against
 grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
 be passed in as ```--oauth_scope```.
@@ -315,7 +315,7 @@ This test is only for cloud-to-prod path.
 This test verifies unary calls succeed in sending messages while using JWT
 signing keys (redeemed for OAuth2 access tokens by the auth implementation)
 
-The test sets ```--service_account_key_file``` with the path to a json key file
+The test uses ```--service_account_key_file``` with the path to a json key file
 downloaded from https://console.developers.google.com, and ```--oauth_scope```
 to the oauth scope. For testing against grpc-test.sandbox.google.com,
 "https://www.googleapis.com/auth/xapi.zoo" should be passed in
@@ -680,7 +680,7 @@ Interaction with flow control is unspecified.
 Status: Pending
 
 #### Echo Authenticated Username
-[Echo Authenticated Username]: #echo-username
+[Echo Authenticated Username]: #echo-authenticated-username
 
 If a SimpleRequest has fill_username=true and that request was successfully
 authenticated, then the SimpleResponse should have username filled with the
