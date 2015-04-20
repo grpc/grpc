@@ -62,7 +62,6 @@ static void RunSynchronousUnaryPingPong() {
 
   ReportQPS(result);
   ReportLatency(result);
-  ReportCallCounts(result);
 }
 
 static void RunSynchronousStreamingPingPong() {
@@ -85,7 +84,6 @@ static void RunSynchronousStreamingPingPong() {
 
   ReportQPS(result);
   ReportLatency(result);
-  ReportCallCounts(result);
 }
 
 static void RunAsyncUnaryPingPong() {
@@ -109,7 +107,6 @@ static void RunAsyncUnaryPingPong() {
 
   ReportQPS(result);
   ReportLatency(result);
-  ReportCallCounts(result);
 }
 
 static void RunQPS() {
@@ -133,7 +130,6 @@ static void RunQPS() {
 
   ReportQPSPerCore(result, server_config);
   ReportLatency(result);
-  ReportCallCounts(result);
 }
 
 }  // namespace testing
