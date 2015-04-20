@@ -474,7 +474,7 @@ TEST_F(End2endTest, ClientCancelsRpc) {
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.code());
-  EXPECT_TRUE(s.details().empty());
+  EXPECT_EQ(s.details(), "Cancelled");
 }
 
 // Server cancels rpc after 1ms
