@@ -47,6 +47,28 @@ var mathService = math_proto.lookup('math.Math');
 
 var capitalize = require('underscore.string/capitalize');
 
+describe('File loader', function() {
+  it('Should load a proto file by default', function() {
+    assert.doesNotThrow(function() {
+      grpc.load(__dirname + '/test_service.proto');
+    });
+  });
+  it('Should load a proto file with the proto format', function() {
+    assert.doesNotThrow(function() {
+      grpc.load(__dirname + '/test_service.proto', 'proto');
+    });
+  });
+  it('Should load a json file with the json format', function() {
+    assert.doesNotThrow(function() {
+      grpc.load(__dirname + '/test_service.json', 'json');
+    });
+  });
+  it('Should fail to load a file with an unknown format', function() {
+    assert.throws(function() {
+      grpc.load(__dirname + '/test_service.proto', 'fake_format');
+    });
+  });
+});
 describe('Surface server constructor', function() {
   it('Should fail with conflicting method names', function() {
     assert.throws(function() {
