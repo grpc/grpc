@@ -43,7 +43,6 @@ _BYTE_SEQUENCE_SEQUENCE = tuple(
     bytes(bytearray((row + column) % 256 for column in range(row)))
     for row in range(_STREAM_LENGTH))
 
-"""
 class LonelyClientTest(unittest.TestCase):
 
   def testLonelyClient(self):
@@ -295,7 +294,6 @@ class EchoTest(unittest.TestCase):
 
   def testManyManyByteEchoes(self):
     self._perform_echo_test(_BYTE_SEQUENCE_SEQUENCE)
-"""
 
 class CancellationTest(unittest.TestCase):
 
@@ -404,13 +402,11 @@ class CancellationTest(unittest.TestCase):
     self.assertSequenceEqual(test_data, client_data)
 
 
-"""
 class ExpirationTest(unittest.TestCase):
 
   @unittest.skip('TODO(nathaniel): Expiration test!')
   def testExpiration(self):
     pass
-"""
 
 
 if __name__ == '__main__':
