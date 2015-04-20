@@ -39,28 +39,17 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-typedef struct {
-  void *unused;
-} call_data;
+typedef struct { void *unused; } call_data;
 
-typedef struct {
-  void *unused;
-} channel_data;
+typedef struct { void *unused; } channel_data;
 
 static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
                     grpc_call_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
   switch (op->type) {
-    case GRPC_SEND_DEADLINE:
-      grpc_call_set_deadline(elem, op->data.deadline);
-      grpc_call_next_op(elem, op);
-      break;
     case GRPC_RECV_METADATA:
-      grpc_call_recv_metadata(elem, op->data.metadata);
-      break;
-    case GRPC_RECV_DEADLINE:
-      gpr_log(GPR_ERROR, "Deadline received by client (ignored)");
+      grpc_call_recv_metadata(elem, &op->data.metadata);
       break;
     case GRPC_RECV_MESSAGE:
       grpc_call_recv_message(elem, op->data.message);
@@ -72,8 +61,9 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
     case GRPC_RECV_FINISH:
       grpc_call_stream_closed(elem);
       break;
-    case GRPC_RECV_END_OF_INITIAL_METADATA:
-      grpc_call_initial_metadata_complete(elem);
+    case GRPC_RECV_SYNTHETIC_STATUS:
+      grpc_call_recv_synthetic_status(elem, op->data.synthetic_status.status,
+                                      op->data.synthetic_status.message);
       break;
     default:
       GPR_ASSERT(op->dir == GRPC_CALL_DOWN);
@@ -114,6 +104,6 @@ static void init_channel_elem(grpc_channel_element *elem,
 static void destroy_channel_elem(grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_client_surface_filter = {
-    call_op,           channel_op,           sizeof(call_data),
-    init_call_elem,    destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem, destroy_channel_elem, "client", };
+    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "client",
+};
