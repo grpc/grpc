@@ -868,7 +868,7 @@ static int prepare_write(transport *t) {
 
     /* if there are still writes to do and the stream still has window
        available, then schedule a further write */
-    if (s->outgoing_sopb.nops && s->outgoing_window > 0) {
+    if (s->outgoing_sopb.nops > 0 && s->outgoing_window > 0) {
       GPR_ASSERT(!t->outgoing_window);
       stream_list_add_tail(t, s, WRITABLE);
     }
