@@ -139,10 +139,10 @@ int main(int argc, char** argv) {
   grpc_init();
 
   using namespace grpc::testing;
-  if (false) RunSynchronousStreamingPingPong();
+  RunSynchronousStreamingPingPong();
   RunSynchronousUnaryPingPong();
-  if (false) RunAsyncUnaryPingPong();
-  if (false) RunQPS();
+  RunAsyncUnaryPingPong();
+  RunQPS();
 
   grpc_shutdown();
   return 0;
