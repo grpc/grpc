@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/httpcli/httpcli_security_context.h"
+#include "src/core/httpcli/httpcli_security_connector.h"
 
 #include <string.h>
 
@@ -42,25 +42,25 @@
 #include "src/core/tsi/ssl_transport_security.h"
 
 typedef struct {
-  grpc_channel_security_context base;
+  grpc_channel_security_connector base;
   tsi_ssl_handshaker_factory *handshaker_factory;
   char *secure_peer_name;
-} grpc_httpcli_ssl_channel_security_context;
+} grpc_httpcli_ssl_channel_security_connector;
 
-static void httpcli_ssl_destroy(grpc_security_context *ctx) {
-  grpc_httpcli_ssl_channel_security_context *c =
-      (grpc_httpcli_ssl_channel_security_context *)ctx;
+static void httpcli_ssl_destroy(grpc_security_connector *sc) {
+  grpc_httpcli_ssl_channel_security_connector *c =
+      (grpc_httpcli_ssl_channel_security_connector *)sc;
   if (c->handshaker_factory != NULL) {
     tsi_ssl_handshaker_factory_destroy(c->handshaker_factory);
   }
   if (c->secure_peer_name != NULL) gpr_free(c->secure_peer_name);
-  gpr_free(ctx);
+  gpr_free(sc);
 }
 
 static grpc_security_status httpcli_ssl_create_handshaker(
-    grpc_security_context *ctx, tsi_handshaker **handshaker) {
-  grpc_httpcli_ssl_channel_security_context *c =
-      (grpc_httpcli_ssl_channel_security_context *)ctx;
+    grpc_security_connector *sc, tsi_handshaker **handshaker) {
+  grpc_httpcli_ssl_channel_security_connector *c =
+      (grpc_httpcli_ssl_channel_security_connector *)sc;
   tsi_result result = TSI_OK;
   if (c->handshaker_factory == NULL) return GRPC_SECURITY_ERROR;
   result = tsi_ssl_handshaker_factory_create_handshaker(
@@ -73,12 +73,12 @@ static grpc_security_status httpcli_ssl_create_handshaker(
   return GRPC_SECURITY_OK;
 }
 
-static grpc_security_status httpcli_ssl_check_peer(grpc_security_context *ctx,
+static grpc_security_status httpcli_ssl_check_peer(grpc_security_connector *sc,
                                                    tsi_peer peer,
                                                    grpc_security_check_cb cb,
                                                    void *user_data) {
-  grpc_httpcli_ssl_channel_security_context *c =
-      (grpc_httpcli_ssl_channel_security_context *)ctx;
+  grpc_httpcli_ssl_channel_security_connector *c =
+      (grpc_httpcli_ssl_channel_security_connector *)sc;
   grpc_security_status status = GRPC_SECURITY_OK;
 
   /* Check the peer name. */
@@ -92,14 +92,14 @@ static grpc_security_status httpcli_ssl_check_peer(grpc_security_context *ctx,
   return status;
 }
 
-static grpc_security_context_vtable httpcli_ssl_vtable = {
+static grpc_security_connector_vtable httpcli_ssl_vtable = {
     httpcli_ssl_destroy, httpcli_ssl_create_handshaker, httpcli_ssl_check_peer};
 
-grpc_security_status grpc_httpcli_ssl_channel_security_context_create(
+grpc_security_status grpc_httpcli_ssl_channel_security_connector_create(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
-    const char *secure_peer_name, grpc_channel_security_context **ctx) {
+    const char *secure_peer_name, grpc_channel_security_connector **sc) {
   tsi_result result = TSI_OK;
-  grpc_httpcli_ssl_channel_security_context *c;
+  grpc_httpcli_ssl_channel_security_connector *c;
 
   if (secure_peer_name != NULL && pem_root_certs == NULL) {
     gpr_log(GPR_ERROR,
@@ -107,8 +107,8 @@ grpc_security_status grpc_httpcli_ssl_channel_security_context_create(
     return GRPC_SECURITY_ERROR;
   }
 
-  c = gpr_malloc(sizeof(grpc_httpcli_ssl_channel_security_context));
-  memset(c, 0, sizeof(grpc_httpcli_ssl_channel_security_context));
+  c = gpr_malloc(sizeof(grpc_httpcli_ssl_channel_security_connector));
+  memset(c, 0, sizeof(grpc_httpcli_ssl_channel_security_connector));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.is_client_side = 1;
@@ -123,9 +123,9 @@ grpc_security_status grpc_httpcli_ssl_channel_security_context_create(
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
     httpcli_ssl_destroy(&c->base.base);
-    *ctx = NULL;
+    *sc = NULL;
     return GRPC_SECURITY_ERROR;
   }
-  *ctx = &c->base;
+  *sc = &c->base;
   return GRPC_SECURITY_OK;
 }

@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc/generic/active_call'
-require 'xray/thread_dump_signal_handler'
 
 # GRPC contains the General RPC module.
 module GRPC
