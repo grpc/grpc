@@ -28,7 +28,7 @@ dependencies {
     // You need to build the https://github.com/grpc/grpc-java
     // to obtain these libraries below.
     compile 'io.grpc:grpc-core:0.1.0-SNAPSHOT'
-    compile 'io.grpc:grpc-nano:0.1.0-SNAPSHOT'
+    compile 'io.grpc:grpc-protobuf-nano:0.1.0-SNAPSHOT'
     compile 'io.grpc:grpc-okhttp:0.1.0-SNAPSHOT'
     compile 'io.grpc:grpc-stub:0.1.0-SNAPSHOT'
 }

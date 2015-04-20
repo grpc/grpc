@@ -15,15 +15,15 @@ public class GreeterGrpc {
             Helloworld.HelloReply> METHOD_SAY_HELLO =
             io.grpc.stub.Method.create(
                     io.grpc.MethodType.UNARY, "SayHello",
-                    io.grpc.nano.NanoUtils.<Helloworld.HelloRequest>marshaller(
-                            new io.grpc.nano.Parser<Helloworld.HelloRequest>() {
+                    io.grpc.protobuf.nano.NanoUtils.<Helloworld.HelloRequest>marshaller(
+                            new io.grpc.protobuf.nano.Parser<Helloworld.HelloRequest>() {
                                 @Override
                                 public Helloworld.HelloRequest parse(com.google.protobuf.nano.CodedInputByteBufferNano input) throws IOException {
                                     return Helloworld.HelloRequest.parseFrom(input);
                                 }
                             }),
-                    io.grpc.nano.NanoUtils.<Helloworld.HelloReply>marshaller(
-                            new io.grpc.nano.Parser<Helloworld.HelloReply>() {
+                    io.grpc.protobuf.nano.NanoUtils.<Helloworld.HelloReply>marshaller(
+                            new io.grpc.protobuf.nano.Parser<Helloworld.HelloReply>() {
                                 @Override
                                 public Helloworld.HelloReply parse(com.google.protobuf.nano.CodedInputByteBufferNano input) throws IOException {
                                     return Helloworld.HelloReply.parseFrom(input);
