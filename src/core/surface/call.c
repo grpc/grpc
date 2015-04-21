@@ -1009,7 +1009,7 @@ int grpc_call_recv_metadata(grpc_call_element *elem, grpc_metadata_batch *md) {
 
   lock(call);
   is_trailing = call->read_state >= READ_STATE_GOT_INITIAL_METADATA;
-  for (l = md->list.head; l; l = l->next) {
+  for (l = md->list.head; l != NULL; l = l->next) {
     grpc_mdelem *md = l->md;
     grpc_mdstr *key = md->key;
     if (key == grpc_channel_get_status_string(call->channel)) {
