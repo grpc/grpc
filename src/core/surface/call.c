@@ -627,7 +627,7 @@ static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,
     grpc_metadata *next_md = (i == count - 1) ? NULL : &metadata[i + 1];
     grpc_metadata *prev_md = (i == 0) ? NULL : &metadata[i - 1];
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-    assert(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
+    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
                                                (const gpr_uint8 *)md->value,
                                                md->value_length);
