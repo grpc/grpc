@@ -7,7 +7,7 @@ Currently supported versions are Visual Studio 2013 (our primary focus) and 2010
 #Building
 We are using [NuGet](http://www.nuget.org) to pull zlib and openssl dependencies.
 If you don't have Visual Studio NuGet plugin installed, you'll need to
-download nuget.exe from web and manually restore the NuGet packages.
+download nuget.exe from the web and manually restore the NuGet packages.
 
 ```
 > REM Run from this directory.
