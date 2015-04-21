@@ -55,9 +55,7 @@ typedef enum grpc_stream_op_code {
   GRPC_OP_BEGIN_MESSAGE,
   /* Add a slice of data to the current message/metadata element/status.
      Must not overflow the forward declared length. */
-  GRPC_OP_SLICE,
-  /* Call some function once this operation has passed flow control. */
-  GRPC_OP_FLOW_CTL_CB
+  GRPC_OP_SLICE
 } grpc_stream_op_code;
 
 /* Arguments for GRPC_OP_BEGIN */
@@ -67,12 +65,6 @@ typedef struct grpc_begin_message {
   /* Write flags for the message: see grpc.h GRPC_WRITE_xxx */
   gpr_uint32 flags;
 } grpc_begin_message;
-
-/* Arguments for GRPC_OP_FLOW_CTL_CB */
-typedef struct grpc_flow_ctl_cb {
-  void (*cb)(void *arg, grpc_op_error error);
-  void *arg;
-} grpc_flow_ctl_cb;
 
 typedef struct grpc_linked_mdelem {
   grpc_mdelem *md;
@@ -129,7 +121,6 @@ typedef struct grpc_stream_op {
     grpc_begin_message begin_message;
     grpc_metadata_batch metadata;
     gpr_slice slice;
-    grpc_flow_ctl_cb flow_ctl_cb;
   } data;
 } grpc_stream_op;
 
