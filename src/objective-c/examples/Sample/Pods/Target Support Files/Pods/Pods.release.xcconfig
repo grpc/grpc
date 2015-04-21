@@ -1,6 +1,7 @@
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
-HEADER_SEARCH_PATHS = "${PODS_ROOT}/Headers/Public" "${PODS_ROOT}/Headers/Public/GRPCClient" "${PODS_ROOT}/Headers/Public/RxLibrary"
-OTHER_CFLAGS = $(inherited) -isystem "${PODS_ROOT}/Headers/Public" -isystem "${PODS_ROOT}/Headers/Public/GRPCClient" -isystem "${PODS_ROOT}/Headers/Public/RxLibrary"
-OTHER_LDFLAGS = -ObjC -l"Pods-GRPCClient" -l"Pods-RxLibrary"
+HEADER_SEARCH_PATHS = $(inherited) "${PODS_ROOT}/Headers/Public" "${PODS_ROOT}/Headers/Public/OpenSSL" "${PODS_ROOT}/Headers/Public/OpenSSL/openssl" "${PODS_ROOT}/Headers/Public/RxLibrary" "${PODS_ROOT}/Headers/Public/gRPC" "${PODS_ROOT}/Headers/Public/gRPC/include/grpc" "${PODS_ROOT}/Headers/Public/gRPC/include/grpc/support" "$(PODS_ROOT)/Headers/Public/gRPC/include" "$(PODS_ROOT)/Headers/Public/gRPC/include" "$(PODS_ROOT)/Headers/Build/gRPC" "$(PODS_ROOT)/Headers/Build/gRPC/include"
+LIBRARY_SEARCH_PATHS = "$(PODS_ROOT)/OpenSSL/lib" "$(PODS_ROOT)/OpenSSL/lib"
+OTHER_CFLAGS = $(inherited) -isystem "${PODS_ROOT}/Headers/Public" -isystem "${PODS_ROOT}/Headers/Public/OpenSSL" -isystem "${PODS_ROOT}/Headers/Public/OpenSSL/openssl" -isystem "${PODS_ROOT}/Headers/Public/RxLibrary" -isystem "${PODS_ROOT}/Headers/Public/gRPC" -isystem "${PODS_ROOT}/Headers/Public/gRPC/include/grpc" -isystem "${PODS_ROOT}/Headers/Public/gRPC/include/grpc/support"
+OTHER_LDFLAGS = $(inherited) -ObjC -l"Pods-OpenSSL" -l"Pods-RxLibrary" -l"Pods-gRPC" -l"crypto" -l"ssl" -l"z"
 OTHER_LIBTOOLFLAGS = $(OTHER_LDFLAGS)
 PODS_ROOT = ${SRCROOT}/Pods
