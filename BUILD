@@ -1,5 +1,7 @@
 # GRPC Bazel BUILD file.
 # This currently builds C and C++ code.
+# This file has been automatically generated from a template file.
+# Please look at the templates directory instead.
 
 # Copyright 2015, Google Inc.
 # All rights reserved.

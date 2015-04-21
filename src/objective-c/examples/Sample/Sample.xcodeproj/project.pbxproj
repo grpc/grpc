@@ -77,6 +77,13 @@ fi
 			<key>showEnvVarsInLog</key>
 			<string>0</string>
 		</dict>
+		<key>60BBBBB15823BBF7639D7AA9</key>
+		<dict>
+			<key>fileRef</key>
+			<string>2DC7B7C4C0410F43B9621631</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
 		<key>6369A2611A9322E20015FC5C</key>
 		<dict>
 			<key>children</key>
@@ -481,7 +488,9 @@ fi
 			<key>buildActionMask</key>
 			<string>2147483647</string>
 			<key>files</key>
-			<array/>
+			<array>
+				<string>60BBBBB15823BBF7639D7AA9</string>
+			</array>
 			<key>isa</key>
 			<string>PBXFrameworksBuildPhase</string>
 			<key>runOnlyForDeploymentPostprocessing</key>
@@ -504,9 +513,11 @@ fi
 			<string>6369A2901A9322E20015FC5C</string>
 			<key>buildPhases</key>
 			<array>
+				<string>75C393B2FDC60A22B2121058</string>
 				<string>6369A27F1A9322E20015FC5C</string>
 				<string>6369A2801A9322E20015FC5C</string>
 				<string>6369A2811A9322E20015FC5C</string>
+				<string>7B8CDC152F76D6014A96C798</string>
 			</array>
 			<key>buildRules</key>
 			<array/>
@@ -831,6 +842,8 @@ fi
 		</dict>
 		<key>6369A2911A9322E20015FC5C</key>
 		<dict>
+			<key>baseConfigurationReference</key>
+			<string>AC29DD6FCDF962F519FEBB0D</string>
 			<key>buildSettings</key>
 			<dict>
 				<key>BUNDLE_LOADER</key>
@@ -861,6 +874,8 @@ fi
 		</dict>
 		<key>6369A2921A9322E20015FC5C</key>
 		<dict>
+			<key>baseConfigurationReference</key>
+			<string>C68330F8D451CC6ACEABA09F</string>
 			<key>buildSettings</key>
 			<dict>
 				<key>BUNDLE_LOADER</key>
@@ -883,6 +898,60 @@ fi
 			<string>XCBuildConfiguration</string>
 			<key>name</key>
 			<string>Release</string>
+		</dict>
+		<key>75C393B2FDC60A22B2121058</key>
+		<dict>
+			<key>buildActionMask</key>
+			<string>2147483647</string>
+			<key>files</key>
+			<array/>
+			<key>inputPaths</key>
+			<array/>
+			<key>isa</key>
+			<string>PBXShellScriptBuildPhase</string>
+			<key>name</key>
+			<string>Check Pods Manifest.lock</string>
+			<key>outputPaths</key>
+			<array/>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<string>0</string>
+			<key>shellPath</key>
+			<string>/bin/sh</string>
+			<key>shellScript</key>
+			<string>diff "${PODS_ROOT}/../Podfile.lock" "${PODS_ROOT}/Manifest.lock" &gt; /dev/null
+if [[ $? != 0 ]] ; then
+    cat &lt;&lt; EOM
+error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.
+EOM
+    exit 1
+fi
+</string>
+			<key>showEnvVarsInLog</key>
+			<string>0</string>
+		</dict>
+		<key>7B8CDC152F76D6014A96C798</key>
+		<dict>
+			<key>buildActionMask</key>
+			<string>2147483647</string>
+			<key>files</key>
+			<array/>
+			<key>inputPaths</key>
+			<array/>
+			<key>isa</key>
+			<string>PBXShellScriptBuildPhase</string>
+			<key>name</key>
+			<string>Copy Pods Resources</string>
+			<key>outputPaths</key>
+			<array/>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<string>0</string>
+			<key>shellPath</key>
+			<string>/bin/sh</string>
+			<key>shellScript</key>
+			<string>"${SRCROOT}/Pods/Target Support Files/Pods/Pods-resources.sh"
+</string>
+			<key>showEnvVarsInLog</key>
+			<string>0</string>
 		</dict>
 		<key>AB3331C9AE6488E61B2B094E</key>
 		<dict>
