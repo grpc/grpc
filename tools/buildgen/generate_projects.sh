@@ -40,7 +40,9 @@ cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
 gen_build_json=test/core/end2end/gen_build_json.py
 
-tools/buildgen/build-cleaner.py build.json
+if [ "x$TEST" != "x" ] ; then
+  tools/buildgen/build-cleaner.py build.json
+fi
 
 end2end_test_build=`mktemp /tmp/genXXXXXX`
 $gen_build_json > $end2end_test_build
