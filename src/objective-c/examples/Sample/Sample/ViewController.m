@@ -35,8 +35,8 @@
 
 #import <gRPC/GRPCCall.h>
 #import <gRPC/GRPCMethodName.h>
-#import <RxLibrary/GRXWriter+Immediate.h>
-#import <RxLibrary/GRXWriteable.h>
+#import <gRPC/GRXWriter+Immediate.h>
+#import <gRPC/GRXWriteable.h>
 
 @interface ViewController ()
 
