@@ -33,7 +33,7 @@
  */
 require 'AbstractGeneratedCodeTest.php';
 
-class GeneratedCodeWithAuthTest extends AbstractGeneratedCodeTest {
+class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest {
   public static function setUpBeforeClass() {
     self::$client = new math\MathClient(new Grpc\BaseStub(
         getenv('GRPC_TEST_HOST'), ['update_metadata' =>
