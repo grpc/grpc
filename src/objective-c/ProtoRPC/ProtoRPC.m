@@ -31,60 +31,51 @@
  *
  */
 
-#import "GRXWriteable.h"
+#import "ProtoRPC.h"
 
-@implementation GRXWriteable {
-  GRXValueHandler _valueHandler;
-  GRXCompletionHandler _completionHandler;
+#import <RxLibrary/GRXWriteable.h>
+
+@implementation ProtoRPC {
+  id<GRXWriteable> _responseWriteable;
 }
 
-+ (instancetype)writeableWithSingleValueHandler:(GRXSingleValueHandler)handler {
-  if (!handler) {
-    return [[self alloc] init];
-  }
-  return [[self alloc] initWithValueHandler:^(id value) {
-    handler(value, nil);
-  } completionHandler:^(NSError *errorOrNil) {
-    if (errorOrNil) {
-      handler(nil, errorOrNil);
-    }
-  }];
-}
-
-+ (instancetype)writeableWithStreamHandler:(GRXStreamHandler)handler {
-  if (!handler) {
-    return [[self alloc] init];
-  }
-  return [[self alloc] initWithValueHandler:^(id value) {
-    handler(NO, value, nil);
-  } completionHandler:^(NSError *errorOrNil) {
-    handler(YES, nil, errorOrNil);
-  }];
-}
-
-- (instancetype)init {
-  return [self initWithValueHandler:nil completionHandler:nil];
+- (instancetype)initWithHost:(NSString *)host
+                      method:(GRPCMethodName *)method
+              requestsWriter:(id<GRXWriter>)requestWriter {
+  return [self initWithHost:host
+                     method:method
+             requestsWriter:requestsWriter
+              responseClass:nil
+        responsesWriteable:nil];
 }
 
 // Designated initializer
-- (instancetype)initWithValueHandler:(GRXValueHandler)valueHandler
-                   completionHandler:(GRXCompletionHandler)completionHandler {
-  if ((self = [super init])) {
-    _valueHandler = valueHandler;
-    _completionHandler = completionHandler;
+- (instancetype)initWithHost:(NSString *)host
+                      method:(GRPCMethodName *)method
+              requestsWriter:(id<GRXWriter>)requestsWriter
+               responseClass:(Class)responseClass
+          responsesWriteable:(id<GRXWriteable>)responsesWriteable {
+  // Because we can't tell the type system to constrain the class, we need to check at runtime:
+  if (![class respondsToSelector:@selector(parseFromData:)]) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"A protobuf class to parse the responses must be provided."];
+  }
+  if ((self = [super initWithHost:host method:method requestsWriter:requestsWriter])) {
+    _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+      [responsesWriteable didReceiveValue:[responseClass parseFromData:value]];
+    } completionHandler:^(NSError *errorOrNil) {
+      [responsesWriteable didFinishWithError:errorOrNil];
+    }];
   }
   return self;
 }
 
-- (void)didReceiveValue:(id)value {
-  if (_valueHandler) {
-    _valueHandler(value);
-  }
+- (void)start {
+  [self startWithWriteable:_responseWriteable];
 }
 
-- (void)didFinishWithError:(NSError *)errorOrNil {
-  if (_completionHandler) {
-    _completionHandler(errorOrNil);
-  }
+- (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  [super startWithWriteable:writeable];
+  _responseWriteable = nil;
 }
 @end

@@ -4,6 +4,7 @@
 
 #import "Empty.pb.h"
 #import "Messages.pb.h"
+#import <ProtoRPC/ProtoService.h>
 // @@protoc_insertion_point(imports)
 
 @class ObjectiveCFileOptions;
@@ -77,5 +78,89 @@
 + (void) registerAllExtensions:(PBMutableExtensionRegistry*) registry;
 @end
 
+
+
+@protocol GRXWriteable;
+@protocol GRXWriter;
+
+@protocol RMTTestService <NSObject>
+
+#pragma mark EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty)
+
+// One empty request followed by one empty response.
+- (void)emptyCallWithRequest:(RMTEmpty *)request
+                     handler:(void(^)(RMTEmpty *response, NSError *error))handler;
+
+// Returns a not-yet-started RPC object.
+- (ProtoRPC *)RPCToEmptyCallWithRequest:(RMTEmpty *)request
+                                handler:(void(^)(RMTEmpty *response, NSError *error))handler;
+
+
+#pragma mark UnaryCall(SimpleRequest) returns (SimpleResponse)
+
+// One request followed by one response.
+- (void)unaryCallWithRequest:(RMTSimpleRequest *)request
+                     handler:(void(^)(RMTSimpleResponse *response, NSError *error))handler;
+
+// Returns a not-yet-started RPC object.
+- (ProtoRPC *)RPCToUnaryCallWithRequest:(RMTSimpleRequest *)request
+                                handler:(void(^)(RMTSimpleResponse *response, NSError *error))handler;
+
+
+#pragma mark StreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse)
+
+// One request followed by a sequence of responses (streamed download).
+// The server returns the payload with client desired type and sizes.
+- (void)streamingOutputCallWithRequest:(RMTStreamingOutputCallRequest *)request
+                               handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler;
+
+// Returns a not-yet-started RPC object.
+- (ProtoRPC *)RPCToStreamingOutputCallWithRequest:(RMTStreamingOutputCallRequest *)request
+                                          handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler;
+
+
+#pragma mark StreamingInputCall(stream StreamingInputCallRequest) returns (StreamingInputCallResponse)
+
+// A sequence of requests followed by one response (streamed upload).
+// The server returns the aggregated size of client payload as the result.
+- (void)streamingInputCallWithRequestsWriter:(id<GRXWriter>)request
+                                     handler:(void(^)(RMTStreamingInputCallResponse *response, NSError *error))handler;
+
+// Returns a not-yet-started RPC object.
+- (ProtoRPC *)RPCToStreamingInputCallWithRequestsWriter:(id<GRXWriter>)request
+                                                handler:(void(^)(RMTStreamingInputCallResponse *response, NSError *error))handler;
+
+
+#pragma mark FullDuplexCall(stream StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse)
+
+// A sequence of requests with each request served by the server immediately.
+// As one request could lead to multiple responses, this interface
+// demonstrates the idea of full duplexing.
+- (void)fullDuplexCallWithRequestsWriter:(id<GRXWriter>)request
+                                 handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler;
+
+// Returns a not-yet-started RPC object.
+- (ProtoRPC *)RPCToFullDuplexCallWithRequestsWriter:(id<GRXWriter>)request
+                                            handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler;
+
+
+#pragma mark HalfDuplexCall(stream StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse)
+
+// A sequence of requests followed by a sequence of responses.
+// The server buffers all the client requests and then serves them in order. A
+// stream of responses are returned to the client when the server starts with
+// first request.
+- (void)halfDuplexCallWithRequestsWriter:(id<GRXWriter>)request
+                                 handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler;
+
+// Returns a not-yet-started RPC object.
+- (ProtoRPC *)RPCToHalfDuplexCallWithRequestsWriter:(id<GRXWriter>)request
+                                            handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler;
+
+@end
+
+// Basic service implementation, over gRPC, that only does marshalling and parsing.
+@interface RMTTestService : ProtoService<RMTTestService>
+@end
 
 // @@protoc_insertion_point(global_scope)

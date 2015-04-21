@@ -14,4 +14,5 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency 'ProtocolBuffers', '~> 1.9'
+  s.dependency 'ProtoRPC', '~> 0.0'
 end
