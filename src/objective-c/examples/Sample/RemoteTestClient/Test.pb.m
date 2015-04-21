@@ -2,6 +2,7 @@
 
 #import "Test.pb.h"
 
+#import <ProtoRPC/ProtoRPC.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 // @@protoc_insertion_point(imports)
@@ -27,12 +28,13 @@ static PBExtensionRegistry* extensionRegistry = nil;
 @end
 
 
-static NSString *const kServiceName = @"grpc.testing.TestService";
+static NSString *const kPackageName = @"grpc.testing";
+static NSString *const kServiceName = @"TestService";
 
 @implementation RMTTestService
 
 - (instancetype)initWithHost:(NSString *)host {
-  return (self = [super initWithHost:host serviceName:kServiceName]);
+  return (self = [super initWithHost:host packageName:kPackageName serviceName:kServiceName]);
 }
 
 
@@ -48,7 +50,7 @@ static NSString *const kServiceName = @"grpc.testing.TestService";
 - (ProtoRPC *)RPCToEmptyCallWithRequest:(RMTEmpty *)request
                                 handler:(void(^)(RMTEmpty *response, NSError *error))handler {
   return [self RPCToMethod:@"EmptyCall"
-            requestsWriter:[GRXWriter writerWithValue:request];
+            requestsWriter:[GRXWriter writerWithValue:request]
              responseClass:[RMTEmpty class]
         responsesWriteable:[GRXWriteable writeableWithSingleValueHandler:handler]];
 }
@@ -66,7 +68,7 @@ static NSString *const kServiceName = @"grpc.testing.TestService";
 - (ProtoRPC *)RPCToUnaryCallWithRequest:(RMTSimpleRequest *)request
                                 handler:(void(^)(RMTSimpleResponse *response, NSError *error))handler {
   return [self RPCToMethod:@"UnaryCall"
-            requestsWriter:[GRXWriter writerWithValue:request];
+            requestsWriter:[GRXWriter writerWithValue:request]
              responseClass:[RMTSimpleResponse class]
         responsesWriteable:[GRXWriteable writeableWithSingleValueHandler:handler]];
 }
@@ -85,7 +87,7 @@ static NSString *const kServiceName = @"grpc.testing.TestService";
 - (ProtoRPC *)RPCToStreamingOutputCallWithRequest:(RMTStreamingOutputCallRequest *)request
                                           handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler {
   return [self RPCToMethod:@"StreamingOutputCall"
-            requestsWriter:[GRXWriter writerWithValue:request];
+            requestsWriter:[GRXWriter writerWithValue:request]
              responseClass:[RMTStreamingOutputCallResponse class]
         responsesWriteable:[GRXWriteable writeableWithStreamHandler:handler]];
 }
@@ -104,7 +106,7 @@ static NSString *const kServiceName = @"grpc.testing.TestService";
 - (ProtoRPC *)RPCToStreamingInputCallWithRequestsWriter:(id<GRXWriter>)requestsWriter
                                                 handler:(void(^)(RMTStreamingInputCallResponse *response, NSError *error))handler {
   return [self RPCToMethod:@"StreamingInputCall"
-            requestsWriter:requestsWriter;
+            requestsWriter:requestsWriter
              responseClass:[RMTStreamingInputCallResponse class]
         responsesWriteable:[GRXWriteable writeableWithSingleValueHandler:handler]];
 }
@@ -124,7 +126,7 @@ static NSString *const kServiceName = @"grpc.testing.TestService";
 - (ProtoRPC *)RPCToFullDuplexCallWithRequestsWriter:(id<GRXWriter>)requestsWriter
                                             handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler {
   return [self RPCToMethod:@"FullDuplexCall"
-            requestsWriter:requestsWriter;
+            requestsWriter:requestsWriter
              responseClass:[RMTStreamingOutputCallResponse class]
         responsesWriteable:[GRXWriteable writeableWithStreamHandler:handler]];
 }
@@ -145,7 +147,7 @@ static NSString *const kServiceName = @"grpc.testing.TestService";
 - (ProtoRPC *)RPCToHalfDuplexCallWithRequestsWriter:(id<GRXWriter>)requestsWriter
                                             handler:(void(^)(BOOL done, RMTStreamingOutputCallResponse *response, NSError *error))handler {
   return [self RPCToMethod:@"HalfDuplexCall"
-            requestsWriter:requestsWriter;
+            requestsWriter:requestsWriter
              responseClass:[RMTStreamingOutputCallResponse class]
         responsesWriteable:[GRXWriteable writeableWithStreamHandler:handler]];
 }

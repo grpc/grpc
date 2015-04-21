@@ -44,7 +44,7 @@
 
 - (instancetype)initWithHost:(NSString *)host
                       method:(GRPCMethodName *)method
-              requestsWriter:(id<GRXWriter>)requestWriter {
+              requestsWriter:(id<GRXWriter>)requestsWriter {
   return [self initWithHost:host
                      method:method
              requestsWriter:requestsWriter
@@ -59,7 +59,7 @@
                responseClass:(Class)responseClass
           responsesWriteable:(id<GRXWriteable>)responsesWriteable {
   // Because we can't tell the type system to constrain the class, we need to check at runtime:
-  if (![class respondsToSelector:@selector(parseFromData:)]) {
+  if (![responseClass respondsToSelector:@selector(parseFromData:)]) {
     [NSException raise:NSInvalidArgumentException
                 format:@"A protobuf class to parse the responses must be provided."];
   }

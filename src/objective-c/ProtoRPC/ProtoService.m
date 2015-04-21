@@ -46,7 +46,7 @@
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil];
+  return [self initWithHost:nil packageName:nil serviceName:nil];
 }
 
 // Designated initializer
@@ -71,7 +71,7 @@
        responsesWriteable:(id<GRXWriteable>)responsesWriteable {
   GRPCMethodName *methodName = [[GRPCMethodName alloc] initWithPackage:_packageName
                                                              interface:_serviceName
-                                                                method:_method];
+                                                                method:method];
   return [[ProtoRPC alloc] initWithHost:_host
                                  method:methodName
                          requestsWriter:requestsWriter
