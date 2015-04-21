@@ -18,9 +18,7 @@
     <tags>gRPC RPC Protocol HTTP/2</tags>
 	<dependencies>
 	  <dependency id="Microsoft.Bcl.Immutable" version="1.0.34" />
-      <dependency id="grpc.dependencies.zlib.redist" version="1.2.8.9" />
-	  <dependency id="grpc.dependencies.openssl.redist" version="1.0.2.2" />
-	  <dependency id="grpc.native.csharp_ext.redist" version="0.6.0.0" />
+	  <dependency id="grpc.native.csharp_ext" version="0.6.0.0" />
     </dependencies>
   </metadata>
   <files>
