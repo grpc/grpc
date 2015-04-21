@@ -33,7 +33,10 @@
 
 #import "ProtoRPC.h"
 
+#import <ProtocolBuffers/ProtocolBuffers.h>
 #import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
+#import <RxLibrary/GRXWriter+Transformations.h>
 
 @implementation ProtoRPC {
   id<GRXWriteable> _responseWriteable;
@@ -60,7 +63,13 @@
     [NSException raise:NSInvalidArgumentException
                 format:@"A protobuf class to parse the responses must be provided."];
   }
-  if ((self = [super initWithHost:host method:method requestsWriter:requestsWriter])) {
+  // A writer that serializes the proto messages to send.
+  id<GRXWriter> bytesWriter =
+      [[[GRXWriter alloc] initWithWriter:requestsWriter] map:^id(PBGeneratedMessage *proto) {
+        return [proto data];
+      }];
+  if ((self = [super initWithHost:host method:method requestsWriter:bytesWriter])) {
+    // A writeable that parses the proto messages received.
     _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
       [responsesWriteable didReceiveValue:[responseClass parseFromData:value]];
     } completionHandler:^(NSError *errorOrNil) {
@@ -76,6 +85,7 @@
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   [super startWithWriteable:writeable];
+  // Break retain cycles.
   _responseWriteable = nil;
 }
 @end
