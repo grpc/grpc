@@ -14,7 +14,16 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '6.0'
   s.requires_arc = true
 
+  s.subspec 'RxLibrary' do |rs|
+    rs.summary  = 'Reactive Extensions library for iOS'
+    rs.authors  = { 'Jorge Canizales' => 'jcanizales@google.com' }
+
+    rs.source_files = 'src/objective-c/RxLibrary/*.{h,m}', 'src/objective-c/RxLibrary/transformations/*.{h,m}', 'src/objective-c/RxLibrary/private/*.{h,m}'
+    rs.private_header_files = 'src/objective-c/RxLibrary/private/*.h'
+  end
+
   s.subspec 'C-Core' do |cs|
+    cs.summary  = 'Core gRPC library, written in C'
   	cs.authors = { 'Craig Tiller'   => 'ctiller@google.com',
   		           'David Klempner' => 'klempner@google.com',
   		           'Nicolas Noble'  => 'nnoble@google.com',
@@ -54,5 +63,4 @@ Pod::Spec.new do |s|
   CMD
 
   s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Public/gRPC/include"' }
-  s.dependency 'RxLibrary', '~> 0.0'
 end
