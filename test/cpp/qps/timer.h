@@ -43,9 +43,9 @@ class Timer {
     double user;
     double system;
 
-    double malloc_calls;
-    double mutex_locks;
-    double cv_waits;
+    int64_t malloc_calls;
+    int64_t mutex_locks;
+    int64_t cv_waits;
   };
 
   Result Mark();
