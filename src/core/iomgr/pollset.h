@@ -58,6 +58,10 @@ void grpc_pollset_shutdown(grpc_pollset *pollset,
                            void (*shutdown_done)(void *arg),
                            void *shutdown_done_arg);
 void grpc_pollset_destroy(grpc_pollset *pollset);
+/* Turn src into a pointer to dst: all operations on src will become
+   operations on dst. dst must survive for longer than src, and ensuring
+   this is the callers responsibility. */
+void grpc_pollset_become_pointer(grpc_pollset *src, grpc_pollset *dst);
 
 
 /* Do some work on a pollset.
