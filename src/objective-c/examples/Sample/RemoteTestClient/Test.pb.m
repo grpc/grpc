@@ -33,10 +33,16 @@ static NSString *const kServiceName = @"TestService";
 
 @implementation RMTTestService
 
+// Designated initializer
 - (instancetype)initWithHost:(NSString *)host {
   return (self = [super initWithHost:host packageName:kPackageName serviceName:kServiceName]);
 }
 
+- (instancetype)initWithHost:(NSString *)host
+                 packageName:(NSString *)packageName
+                 serviceName:(NSString *)serviceName {
+  return [self initWithHost:host];
+}
 
 #pragma mark EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty)
 

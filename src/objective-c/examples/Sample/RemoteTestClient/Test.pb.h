@@ -161,6 +161,7 @@
 
 // Basic service implementation, over gRPC, that only does marshalling and parsing.
 @interface RMTTestService : ProtoService<RMTTestService>
+- (instancetype)initWithHost:(NSString *)host NS_DESIGNATED_INITIALIZER;
 @end
 
 // @@protoc_insertion_point(global_scope)
