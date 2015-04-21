@@ -167,6 +167,9 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
             calld->seen_path) {
           grpc_call_next_op(elem, op);
         } else {
+          if (!calld->seen_path) {
+            gpr_log(GPR_ERROR, "Missing :path header");
+          }
           if (!calld->seen_post) {
             gpr_log(GPR_ERROR, "Missing :method header");
           }
