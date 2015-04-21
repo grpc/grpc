@@ -666,7 +666,8 @@
         "test/cpp/qps/timer.cc"
       ],
       "deps": [
-        "grpc_test_util"
+        "grpc_test_util",
+        "grpc++_test_util"
       ]
     },
     {
