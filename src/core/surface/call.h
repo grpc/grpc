@@ -106,7 +106,6 @@ void grpc_call_recv_message(grpc_call_element *surface_element,
 void grpc_call_read_closed(grpc_call_element *surface_element);
 void grpc_call_stream_closed(grpc_call_element *surface_element);
 
-void grpc_call_execute_op(grpc_call *call, grpc_call_op *op);
 grpc_call_error grpc_call_start_ioreq_and_call_back(
     grpc_call *call, const grpc_ioreq *reqs, size_t nreqs,
     grpc_ioreq_completion_func on_complete, void *user_data);

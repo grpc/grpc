@@ -78,6 +78,8 @@ struct grpc_transport_callbacks {
   void (*accept_stream)(void *user_data, grpc_transport *transport,
                         const void *server_data);
 
+  void (*goaway)(void *user_data, grpc_transport *transport, grpc_status_code status, gpr_slice debug);
+
   /* The transport has been closed */
   void (*closed)(void *user_data, grpc_transport *transport);
 };
@@ -139,7 +141,13 @@ typedef struct grpc_transport_op {
   void *recv_user_data;
 
   grpc_pollset *bind_pollset;
+
+  grpc_status_code cancel_with_status;
 } grpc_transport_op;
+
+void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
+
+char *grpc_transport_op_string(grpc_transport_op *op);
 
 /* Send a batch of operations on a transport
 
@@ -160,19 +168,6 @@ void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,
    to call into the transport during cb. */
 void grpc_transport_ping(grpc_transport *transport, void (*cb)(void *user_data),
                          void *user_data);
-
-/* Abort a stream
-
-   Terminate reading and writing for a stream. A final recv_batch with no
-   operations and final_state == GRPC_STREAM_CLOSED will be received locally,
-   and no more data will be presented to the up-layer.
-
-   TODO(ctiller): consider adding a HTTP/2 reason to this function. */
-void grpc_transport_abort_stream(grpc_transport *transport, grpc_stream *stream,
-                                 grpc_status_code status);
-
-void grpc_transport_add_to_pollset(grpc_transport *transport,
-                                   grpc_pollset *pollset);
 
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,

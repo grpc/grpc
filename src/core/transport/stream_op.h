@@ -50,21 +50,8 @@ typedef enum grpc_stream_op_code {
      Must be ignored by receivers */
   GRPC_NO_OP,
   GRPC_OP_METADATA,
-  /* Begin a message/metadata element/status - as defined by
-     grpc_message_type. */
-  GRPC_OP_BEGIN_MESSAGE,
-  /* Add a slice of data to the current message/metadata element/status.
-     Must not overflow the forward declared length. */
-  GRPC_OP_SLICE
+  GRPC_OP_MESSAGE
 } grpc_stream_op_code;
-
-/* Arguments for GRPC_OP_BEGIN */
-typedef struct grpc_begin_message {
-  /* How many bytes of data will this message contain */
-  gpr_uint32 length;
-  /* Write flags for the message: see grpc.h GRPC_WRITE_xxx */
-  gpr_uint32 flags;
-} grpc_begin_message;
 
 typedef struct grpc_linked_mdelem {
   grpc_mdelem *md;
@@ -118,9 +105,8 @@ typedef struct grpc_stream_op {
   /* the arguments to this operation. union fields are named according to the
      associated op-code */
   union {
-    grpc_begin_message begin_message;
+    grpc_byte_buffer *message;
     grpc_metadata_batch metadata;
-    gpr_slice slice;
   } data;
 } grpc_stream_op;
 
@@ -148,16 +134,8 @@ void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops);
 
 /* Append a GRPC_NO_OP to a buffer */
 void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb);
-/* Append a GRPC_OP_BEGIN to a buffer */
-void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
-                                 gpr_uint32 flags);
+void grpc_sopb_add_message(grpc_stream_op_buffer *sopb, grpc_byte_buffer *bb);
 void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb, grpc_metadata_batch metadata);
-/* Append a GRPC_SLICE to a buffer - does not ref/unref the slice */
-void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
-/* Append a GRPC_OP_FLOW_CTL_CB to a buffer */
-void grpc_sopb_add_flow_ctl_cb(grpc_stream_op_buffer *sopb,
-                               void (*cb)(void *arg, grpc_op_error error),
-                               void *arg);
 /* Append a buffer to a buffer - does not ref/unref any internal objects */
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);

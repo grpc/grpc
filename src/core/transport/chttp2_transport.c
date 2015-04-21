@@ -503,7 +503,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
 
   gpr_mu_lock(&t->mu);
   t->calling_back = 1;
-  ref_transport(t);
+  ref_transport(t);  /* matches unref at end of this function */
   gpr_mu_unlock(&t->mu);
 
   sr = setup(arg, &t->base, t->metadata_context);
@@ -515,7 +515,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   if (t->destroying) gpr_cv_signal(&t->cv);
   unlock(t);
 
-  ref_transport(t);
+  ref_transport(t);  /* matches unref inside recv_data */
   recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
 
   unref_transport(t);

@@ -52,6 +52,10 @@ typedef struct call_data {
   gpr_uint8 seen_scheme;
   gpr_uint8 seen_te_trailers;
   grpc_linked_mdelem status;
+
+  grpc_stream_op_buffer *recv_ops;
+  void (*on_done_recv)(void *user_data, int success);
+  void *recv_user_data;
 } call_data;
 
 typedef struct channel_data {
@@ -143,63 +147,73 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   }
 }
 
-/* Called either:
-     - in response to an API call (or similar) from above, to send something
-     - a network event (or similar) from below, to receive something
-   op contains type and call direction information, in addition to the data
-   that is being sent or received. */
-static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
-                    grpc_call_op *op) {
+static void hs_on_recv(void *user_data, int success) {
+  grpc_call_element *elem = user_data;
+  call_data *calld = elem->call_data;
+  if (success) {
+    size_t i;
+    size_t nops = calld->recv_ops->nops;
+    grpc_stream_op *ops = calld->recv_ops->ops;
+    for (i = 0; i < nops; i++) {
+      grpc_stream_op *op = &ops[i];
+      if (op->type != GRPC_OP_METADATA) continue;
+      calld->got_initial_metadata = 1;
+      grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
+      /* Have we seen the required http2 transport headers?
+         (:method, :scheme, content-type, with :path and :authority covered
+         at the channel level right now) */
+      if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
+          calld->seen_path) {
+        /* do nothing */
+      } else {
+        if (!calld->seen_post) {
+          gpr_log(GPR_ERROR, "Missing :method header");
+        }
+        if (!calld->seen_scheme) {
+          gpr_log(GPR_ERROR, "Missing :scheme header");
+        }
+        if (!calld->seen_te_trailers) {
+          gpr_log(GPR_ERROR, "Missing te trailers header");
+        }
+        /* Error this call out */
+        success = 0;
+        grpc_call_element_send_cancel(elem);
+      }
+    }
+  }
+  calld->on_done_recv(calld->recv_user_data, success);
+}
+
+static void hs_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
+  size_t i;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
-  switch (op->type) {
-    case GRPC_RECV_METADATA:
-      grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
-      if (!calld->got_initial_metadata) {
-        calld->got_initial_metadata = 1;
-        /* Have we seen the required http2 transport headers?
-           (:method, :scheme, content-type, with :path and :authority covered
-           at the channel level right now) */
-        if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
-            calld->seen_path) {
-          grpc_call_next_op(elem, op);
-        } else {
-          if (!calld->seen_post) {
-            gpr_log(GPR_ERROR, "Missing :method header");
-          }
-          if (!calld->seen_scheme) {
-            gpr_log(GPR_ERROR, "Missing :scheme header");
-          }
-          if (!calld->seen_te_trailers) {
-            gpr_log(GPR_ERROR, "Missing te trailers header");
-          }
-          /* Error this call out */
-          grpc_metadata_batch_destroy(&op->data.metadata);
-          op->done_cb(op->user_data, GRPC_OP_OK);
-          grpc_call_element_send_cancel(elem);
-        }
-      } else {
-        grpc_call_next_op(elem, op);
-      }
+  if (op->send_ops && !calld->sent_status) {
+    size_t nops = op->send_ops->nops;
+    grpc_stream_op *ops = op->send_ops->ops;
+    for (i = 0; i < nops; i++) {
+      grpc_stream_op *op = &ops[i];
+      if (op->type != GRPC_OP_METADATA) continue;
+      calld->sent_status = 1;
+      grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
+                                   grpc_mdelem_ref(channeld->status_ok));
       break;
-    case GRPC_SEND_METADATA:
-      /* If we haven't sent status 200 yet, we need to so so because it needs to
-         come before any non : prefixed metadata. */
-      if (!calld->sent_status) {
-        calld->sent_status = 1;
-        grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
-                                     grpc_mdelem_ref(channeld->status_ok));
-      }
-      grpc_call_next_op(elem, op);
-      break;
-    default:
-      /* pass control up or down the stack depending on op->dir */
-      grpc_call_next_op(elem, op);
-      break;
+    }
   }
+
+  if (op->recv_ops && !calld->got_initial_metadata) {
+    /* substitute our callback for the higher callback */
+    calld->recv_ops = op->recv_ops;
+    calld->on_done_recv = op->on_done_recv;
+    calld->recv_user_data = op->recv_user_data;
+    op->on_done_recv = hs_on_recv;
+    op->recv_user_data = elem;
+  }
+
+  grpc_call_next_op(elem, op);
 }
 
 /* Called on special channel events, such as disconnection or new incoming
@@ -321,6 +335,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_server_filter = {
-    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    hs_start_transport_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
     "http-server"};
