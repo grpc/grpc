@@ -830,7 +830,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "$Response$>(\n"
           "        std::function< ::grpc::Status($ns$$Service$::Service*, "
           "::grpc::ServerContext*, const $Request$*, $Response$*)>("
-          "&$ns$$Service$::Service::$Method$), this),\n"
+          "std::mem_fn(&$ns$$Service$::Service::$Method$)), this),\n"
           "    new $Request$, new $Response$));\n");
     } else if (ClientOnlyStreaming(method)) {
       printer->Print(
@@ -843,7 +843,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "        std::function< ::grpc::Status($ns$$Service$::Service*, "
           "::grpc::ServerContext*, "
           "::grpc::ServerReader< $Request$>*, $Response$*)>("
-          "&$ns$$Service$::Service::$Method$), this),\n"
+          "std::mem_fn(&$ns$$Service$::Service::$Method$)), this),\n"
           "    new $Request$, new $Response$));\n");
     } else if (ServerOnlyStreaming(method)) {
       printer->Print(
@@ -856,7 +856,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "        std::function< ::grpc::Status($ns$$Service$::Service*, "
           "::grpc::ServerContext*, "
           "const $Request$*, ::grpc::ServerWriter< $Response$>*)>("
-          "&$ns$$Service$::Service::$Method$), this),\n"
+          "std::mem_fn(&$ns$$Service$::Service::$Method$)), this),\n"
           "    new $Request$, new $Response$));\n");
     } else if (BidiStreaming(method)) {
       printer->Print(
@@ -869,7 +869,7 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
           "        std::function< ::grpc::Status($ns$$Service$::Service*, "
           "::grpc::ServerContext*, "
           "::grpc::ServerReaderWriter< $Response$, $Request$>*)>("
-          "&$ns$$Service$::Service::$Method$), this),\n"
+          "std::mem_fn(&$ns$$Service$::Service::$Method$)), this),\n"
           "    new $Request$, new $Response$));\n");
     }
   }
