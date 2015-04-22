@@ -33,9 +33,16 @@
  */
 require 'AbstractGeneratedCodeTest.php';
 
-class GeneratedCodeTest extends AbstractGeneratedCodeTest {
+class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest {
   public static function setUpBeforeClass() {
     self::$client = new math\MathClient(new Grpc\BaseStub(
-        getenv('GRPC_TEST_HOST'), []));
+        getenv('GRPC_TEST_HOST'), ['update_metadata' =>
+                                   function($a_hash,
+                                            $opts = array(),
+                                            $client = array()) {
+                                     $a_copy = $a_hash;
+                                     $a_copy['foo'] = ['bar'];
+                                     return $a_copy;
+                                   }]));
   }
 }

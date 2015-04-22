@@ -191,13 +191,13 @@ static void start_accept(server_port *port) {
     goto failure;
   }
 
+  /* TODO(jtattermusch): probably a race here, we regularly get use-after-free on server shutdown */
+  GPR_ASSERT(port->socket != 0xfeeefeee);
   success = port->AcceptEx(port->socket->socket, sock, port->addresses, 0,
                            addrlen, addrlen, &bytes_received,
                            &port->socket->read_info.overlapped);
 
-  if (success) {
-    gpr_log(GPR_DEBUG, "accepted immediately - but we still go to sleep");
-  } else {
+  if (!success) {
     int error = WSAGetLastError();
     if (error != ERROR_IO_PENDING) {
       message = "AcceptEx failed: %s";
@@ -234,11 +234,9 @@ static void on_accept(void *arg, int success) {
       gpr_free(utf8_message);
       closesocket(sock);
     } else {
-      gpr_log(GPR_DEBUG, "on_accept: accepted connection");
       ep = grpc_tcp_create(grpc_winsocket_create(sock));
     }
   } else {
-    gpr_log(GPR_DEBUG, "on_accept: shutting down");
     closesocket(sock);
     gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports) {
@@ -248,7 +246,9 @@ static void on_accept(void *arg, int success) {
   }
 
   if (ep) sp->server->cb(sp->server->cb_arg, ep);
-  start_accept(sp);
+  if (success) {
+    start_accept(sp);
+  }
 }
 
 static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,

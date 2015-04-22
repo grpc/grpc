@@ -56,7 +56,7 @@ ${gen_package_props(packages)}\
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\global.props" />
     % for prop in additional_props:
-    <Import Project="..\${prop}." />
+    <Import Project="..\${prop}.props" />
     % endfor
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
