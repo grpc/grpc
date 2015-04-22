@@ -78,7 +78,6 @@ static void do_iocp_work() {
   if (overlapped == &g_iocp_custom_overlap) {
     if (completion_key == (ULONG_PTR) &g_iocp_kick_token) {
       /* We were awoken from a kick. */
-      gpr_log(GPR_DEBUG, "do_iocp_work - got a kick");
       return;
     }
     gpr_log(GPR_ERROR, "Unknown custom completion key.");
@@ -87,10 +86,8 @@ static void do_iocp_work() {
 
   socket = (grpc_winsocket*) completion_key;
   if (overlapped == &socket->write_info.overlapped) {
-    gpr_log(GPR_DEBUG, "do_iocp_work - got write packet");
     info = &socket->write_info;
   } else if (overlapped == &socket->read_info.overlapped) {
-    gpr_log(GPR_DEBUG, "do_iocp_work - got read packet");
     info = &socket->read_info;
   } else {
     gpr_log(GPR_ERROR, "Unknown IOCP operation");
@@ -98,8 +95,6 @@ static void do_iocp_work() {
   }
   success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
                                    FALSE, &flags);
-  gpr_log(GPR_DEBUG, "bytes: %u, flags: %u - op %s %s", bytes, flags,
-          success ? "succeeded" : "failed", socket->orphan ? "orphan" : "");
   if (socket->orphan) {
     grpc_winsocket_destroy(socket);
     gpr_atm_full_fetch_add(&g_orphans, -1);
@@ -189,11 +184,9 @@ static void socket_notify_on_iocp(grpc_winsocket *socket,
   if (info->has_pending_iocp) {
     run_now = 1;
     info->has_pending_iocp = 0;
-    gpr_log(GPR_DEBUG, "socket_notify_on_iocp - runs now");
   } else {
     info->cb = cb;
     info->opaque = opaque;
-    gpr_log(GPR_DEBUG, "socket_notify_on_iocp - queued");
   }
   gpr_mu_unlock(&socket->state_mu);
   if (run_now) cb(opaque, 1);
@@ -201,13 +194,11 @@ static void socket_notify_on_iocp(grpc_winsocket *socket,
 
 void grpc_socket_notify_on_write(grpc_winsocket *socket,
                                  void(*cb)(void *, int), void *opaque) {
-  gpr_log(GPR_DEBUG, "grpc_socket_notify_on_write");
   socket_notify_on_iocp(socket, cb, opaque, &socket->write_info);
 }
 
 void grpc_socket_notify_on_read(grpc_winsocket *socket,
                                 void(*cb)(void *, int), void *opaque) {
-  gpr_log(GPR_DEBUG, "grpc_socket_notify_on_read");
   socket_notify_on_iocp(socket, cb, opaque, &socket->read_info);
 }
 

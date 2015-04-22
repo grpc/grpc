@@ -24,9 +24,9 @@ Pod::Spec.new do |s|
 
   s.subspec 'C-Core' do |cs|
     cs.summary  = 'Core gRPC library, written in C'
-  	cs.authors = { 'Craig Tiller'   => 'ctiller@google.com',
-  		           'David Klempner' => 'klempner@google.com',
-  		           'Nicolas Noble'  => 'nnoble@google.com',
+    cs.authors = { 'Craig Tiller'   => 'ctiller@google.com',
+                   'David Klempner' => 'klempner@google.com',
+                   'Nicolas Noble'  => 'nnoble@google.com',
                    'Vijay Pai'      => 'vpai@google.com',
                    'Yang Gao'       => 'yangg@google.com' }
 
@@ -63,4 +63,7 @@ Pod::Spec.new do |s|
   CMD
 
   s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Public/gRPC/include"' }
+
+  # Certificates, to be able to establish TLS connections:
+  s.resource_bundles = { 'gRPC' => ['etc/roots.pem'] }
 end

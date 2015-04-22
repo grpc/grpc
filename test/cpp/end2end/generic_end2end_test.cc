@@ -149,7 +149,8 @@ class GenericEnd2endTest : public ::testing::Test {
       GenericServerContext srv_ctx;
       GenericServerAsyncReaderWriter stream(&srv_ctx);
 
-      send_request.set_message("Hello");
+      // The string needs to be long enough to test heap-based slice.
+      send_request.set_message("Hello world. Hello world. Hello world.");
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
           generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
       client_ok(1);

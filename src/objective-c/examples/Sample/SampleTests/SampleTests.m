@@ -38,6 +38,7 @@
 #import <gRPC/GRPCMethodName.h>
 #import <gRPC/GRXWriter+Immediate.h>
 #import <gRPC/GRXWriteable.h>
+#import <Route_guide/Route_guide.pb.h>
 
 @interface SampleTests : XCTestCase
 @end
@@ -57,7 +58,7 @@
 
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
                                            method:method
                                    requestsWriter:requestsWriter];
 
@@ -84,7 +85,7 @@
 
   id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
                                            method:method
                                    requestsWriter:requestsWriter];
 
@@ -92,6 +93,40 @@
     XCTAssertNotNil(value, @"nil value received as response.");
     XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
     [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:2.0 handler:nil];
+}
+
+- (void)testSimpleProtoRPC {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Response received."];
+  __weak XCTestExpectation *expectedResponse =
+      [self expectationWithDescription:@"Expected response."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
+
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.example.routeguide"
+                                                         interface:@"RouteGuide"
+                                                            method:@"GetFeature"];
+
+  RGDPoint *point = [[[[[RGDPointBuilder alloc] init] setLatitude:28E7] setLongitude:-15E7] build];
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
+                                           method:method
+                                   requestsWriter:requestsWriter];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    [response fulfill];
+    RGDFeature *feature = [RGDFeature parseFromData:value];
+    XCTAssertEqualObjects(point, feature.location);
+    XCTAssertNotNil(feature.name, @"Response's name is nil.");
+    [expectedResponse fulfill];
   } completionHandler:^(NSError *errorOrNil) {
     XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
     [completion fulfill];
