@@ -44,15 +44,16 @@ extern "C" {
 
 typedef struct grpc_timers_log grpc_timers_log;
 
-grpc_timers_log *grpc_timers_log_create(int capacity_limit, FILE *dump);
-void grpc_timers_log_add(grpc_timers_log *, const char *tag, int seq,
-                         const char *file, int line);
+grpc_timers_log* grpc_timers_log_create(int capacity_limit, FILE* dump);
+void grpc_timers_log_add(grpc_timers_log*, const char* tag, void* id,
+                         const char* file, int line);
 void grpc_timers_log_destroy(grpc_timers_log *);
 
 extern grpc_timers_log *grpc_timers_log_global;
 
 #define GRPC_TIMER_MARK(x, s) \
-  grpc_timers_log_add(grpc_timers_log_global, #x, s, __FILE__, __LINE__)
+  grpc_timers_log_add(grpc_timers_log_global, #x, ((void *)(gpr_intptr)(s)), \
+                      __FILE__, __LINE__)
 
 #else /* !GRPC_LATENCY_PROFILER */
 #define GRPC_TIMER_MARK(x, s) \

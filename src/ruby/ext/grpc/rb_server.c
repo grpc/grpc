@@ -44,7 +44,7 @@
 #include "rb_grpc.h"
 
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
-VALUE grpc_rb_cServer = Qnil;
+static VALUE grpc_rb_cServer = Qnil;
 
 /* id_at is the constructor method of the ruby standard Time class. */
 static ID id_at;
@@ -88,13 +88,23 @@ static void grpc_rb_server_mark(void *p) {
   }
 }
 
+static const rb_data_type_t grpc_rb_server_data_type = {
+    "grpc_server",
+    {grpc_rb_server_mark, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL,
+    NULL,
+    /* It is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because the free function would block
+     * and we might want to unlock GVL
+     * TODO(yugui) Unlock GVL?
+     */
+    0};
+
 /* Allocates grpc_rb_server instances. */
 static VALUE grpc_rb_server_alloc(VALUE cls) {
   grpc_rb_server *wrapper = ALLOC(grpc_rb_server);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return Data_Wrap_Struct(cls, grpc_rb_server_mark, grpc_rb_server_free,
-                          wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_server_data_type, wrapper);
 }
 
 /*
@@ -110,7 +120,8 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE cqueue, VALUE channel_args) {
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
   cq = grpc_rb_get_wrapped_completion_queue(cqueue);
-  Data_Get_Struct(self, grpc_rb_server, wrapper);
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
+                       wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   srv = grpc_server_create(cq, &args);
 
@@ -146,8 +157,10 @@ static VALUE grpc_rb_server_init_copy(VALUE copy, VALUE orig) {
     rb_raise(rb_eTypeError, "not a %s", rb_obj_classname(grpc_rb_cServer));
   }
 
-  Data_Get_Struct(orig, grpc_rb_server, orig_srv);
-  Data_Get_Struct(copy, grpc_rb_server, copy_srv);
+  TypedData_Get_Struct(orig, grpc_rb_server, &grpc_rb_server_data_type,
+                       orig_srv);
+  TypedData_Get_Struct(copy, grpc_rb_server, &grpc_rb_server_data_type,
+                       copy_srv);
 
   /* use ruby's MEMCPY to make a byte-for-byte copy of the server wrapper
      object. */
@@ -194,7 +207,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
   grpc_call_error err;
   request_call_stack st;
   VALUE result;
-  Data_Get_Struct(self, grpc_rb_server, s);
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
@@ -245,7 +258,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
 
 static VALUE grpc_rb_server_start(VALUE self) {
   grpc_rb_server *s = NULL;
-  Data_Get_Struct(self, grpc_rb_server, s);
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
   } else {
@@ -256,7 +269,7 @@ static VALUE grpc_rb_server_start(VALUE self) {
 
 static VALUE grpc_rb_server_destroy(VALUE self) {
   grpc_rb_server *s = NULL;
-  Data_Get_Struct(self, grpc_rb_server, s);
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped != NULL) {
     grpc_server_shutdown(s->wrapped);
     grpc_server_destroy(s->wrapped);
@@ -288,7 +301,7 @@ static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
   /* "11" == 1 mandatory args, 1 (rb_creds) is optional */
   rb_scan_args(argc, argv, "11", &port, &rb_creds);
 
-  Data_Get_Struct(self, grpc_rb_server, s);
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "closed!");
     return Qnil;
@@ -340,6 +353,6 @@ void Init_grpc_server() {
 /* Gets the wrapped server from the ruby wrapper */
 grpc_server *grpc_rb_get_wrapped_server(VALUE v) {
   grpc_rb_server *wrapper = NULL;
-  Data_Get_Struct(v, grpc_rb_server, wrapper);
+  TypedData_Get_Struct(v, grpc_rb_server, &grpc_rb_server_data_type, wrapper);
   return wrapper->wrapped;
 }

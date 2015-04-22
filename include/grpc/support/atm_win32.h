@@ -73,7 +73,7 @@ static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
 
 static __inline int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
 #ifdef GPR_ARCH_64
-  return o == (gpr_atm)InterlockedCompareExchangeAcquire64((volatile LONGLONG) p,
+  return o == (gpr_atm)InterlockedCompareExchangeAcquire64((volatile LONGLONG *) p,
                                                            (LONGLONG) n, (LONGLONG) o);
 #else
   return o == (gpr_atm)InterlockedCompareExchangeAcquire((volatile LONG *) p,

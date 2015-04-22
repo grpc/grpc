@@ -39,7 +39,6 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/security/credentials.h"
-#include "src/core/security/security_context.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>

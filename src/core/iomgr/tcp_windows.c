@@ -93,14 +93,11 @@ typedef struct grpc_tcp {
 } grpc_tcp;
 
 static void tcp_ref(grpc_tcp *tcp) {
-  gpr_log(GPR_DEBUG, "tcp_ref");
   gpr_ref(&tcp->refcount);
 }
 
 static void tcp_unref(grpc_tcp *tcp) {
-  gpr_log(GPR_DEBUG, "tcp_unref");
   if (gpr_unref(&tcp->refcount)) {
-    gpr_log(GPR_DEBUG, "tcp_unref: destroying");
     gpr_slice_buffer_destroy(&tcp->write_slices);
     grpc_winsocket_orphan(tcp->socket);
     gpr_free(tcp);
@@ -126,24 +123,20 @@ static void on_read(void *tcpp, int success) {
     return;
   }
 
-  gpr_log(GPR_DEBUG, "on_read");
   tcp->outstanding_read = 0;
 
   if (socket->read_info.wsa_error != 0) {
     char *utf8_message = gpr_format_message(info->wsa_error);
-    __debugbreak();
     gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
     gpr_free(utf8_message);
     status = GRPC_ENDPOINT_CB_ERROR;
   } else {
     if (info->bytes_transfered != 0) {
       sub = gpr_slice_sub(tcp->read_slice, 0, info->bytes_transfered);
-      gpr_log(GPR_DEBUG, "on_read: calling callback");
       status = GRPC_ENDPOINT_CB_OK;
       slice = &sub;
       nslices = 1;
     } else {
-      gpr_log(GPR_DEBUG, "on_read: closed socket");
       gpr_slice_unref(tcp->read_slice);
       status = GRPC_ENDPOINT_CB_EOF;
     }
@@ -174,27 +167,22 @@ static void win_notify_on_read(grpc_endpoint *ep,
   buffer.len = GPR_SLICE_LENGTH(tcp->read_slice);
   buffer.buf = (char *)GPR_SLICE_START_PTR(tcp->read_slice);
 
-  gpr_log(GPR_DEBUG, "win_notify_on_read: calling WSARecv without overlap");
   status = WSARecv(tcp->socket->socket, &buffer, 1, &bytes_read, &flags,
                    NULL, NULL);
   info->wsa_error = status == 0 ? 0 : WSAGetLastError();
 
   if (info->wsa_error != WSAEWOULDBLOCK) {
-    gpr_log(GPR_DEBUG, "got response immediately, calling on_read");
     info->bytes_transfered = bytes_read;
     /* This might heavily recurse. */
     on_read(tcp, 1);
     return;
   }
 
-  gpr_log(GPR_DEBUG, "got WSAEWOULDBLOCK - calling WSARecv with overlap");
-
   memset(&tcp->socket->read_info.overlapped, 0, sizeof(OVERLAPPED));
   status = WSARecv(tcp->socket->socket, &buffer, 1, &bytes_read, &flags,
                    &info->overlapped, NULL);
 
   if (status == 0) {
-    gpr_log(GPR_DEBUG, "got response immediately, but we're going to sleep");
     grpc_socket_notify_on_read(tcp->socket, on_read, tcp);
     return;
   }
@@ -213,7 +201,6 @@ static void win_notify_on_read(grpc_endpoint *ep,
     return;
   }
 
-  gpr_log(GPR_DEBUG, "waiting on the IO completion port now");
   grpc_socket_notify_on_read(tcp->socket, on_read, tcp);
 }
 
@@ -226,8 +213,6 @@ static void on_write(void *tcpp, int success) {
   void *opaque = tcp->write_user_data;
 
   GPR_ASSERT(tcp->outstanding_write);
-
-  gpr_log(GPR_DEBUG, "on_write");
 
   if (!success) {
     tcp_unref(tcp);
@@ -265,12 +250,8 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
   WSABUF *allocated = NULL;
   WSABUF *buffers = local_buffers;
 
-  GPR_ASSERT(nslices != 0);
-  GPR_ASSERT(GPR_SLICE_LENGTH(slices[0]) != 0);
   GPR_ASSERT(!tcp->outstanding_write);
   tcp_ref(tcp);
-
-  gpr_log(GPR_DEBUG, "win_write");
 
   tcp->outstanding_write = 1;
   tcp->write_cb = cb;
@@ -287,14 +268,12 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
     buffers[i].buf = (char *)GPR_SLICE_START_PTR(tcp->write_slices.slices[i]);
   }
 
-  gpr_log(GPR_DEBUG, "win_write: calling WSASend without overlap");
   status = WSASend(socket->socket, buffers, tcp->write_slices.count,
                    &bytes_sent, 0, NULL, NULL);
   info->wsa_error = status == 0 ? 0 : WSAGetLastError();
 
   if (info->wsa_error != WSAEWOULDBLOCK) {
     grpc_endpoint_write_status ret = GRPC_ENDPOINT_WRITE_ERROR;
-    gpr_log(GPR_DEBUG, "got response immediately, cleaning up and leaving");
     if (status == 0) {
       ret = GRPC_ENDPOINT_WRITE_DONE;
       GPR_ASSERT(bytes_sent == tcp->write_slices.length);
@@ -309,8 +288,6 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
     tcp_unref(tcp);
     return ret;
   }
-
-  gpr_log(GPR_DEBUG, "got WSAEWOULDBLOCK - calling WSASend with overlap");
 
   memset(&socket->write_info, 0, sizeof(OVERLAPPED));
   status = WSASend(socket->socket, buffers, tcp->write_slices.count,
@@ -329,9 +306,6 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
       tcp_unref(tcp);
       return GRPC_ENDPOINT_WRITE_ERROR;
     }
-    gpr_log(GPR_DEBUG, "win_write: got pending op");
-  } else {
-    gpr_log(GPR_DEBUG, "wrote data immediately - but we're going to sleep");
   }
 
   grpc_socket_notify_on_write(socket, on_write, tcp);
@@ -340,19 +314,16 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
 
 static void win_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
   grpc_tcp *tcp = (grpc_tcp *) ep;
-  gpr_log(GPR_DEBUG, "win_add_to_pollset");
   grpc_iocp_add_socket(tcp->socket);
 }
 
 static void win_shutdown(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *) ep;
-  gpr_log(GPR_DEBUG, "win_shutdown");
   grpc_winsocket_shutdown(tcp->socket);
 }
 
 static void win_destroy(grpc_endpoint *ep) {
   grpc_tcp *tcp = (grpc_tcp *) ep;
-  gpr_log(GPR_DEBUG, "win_destroy");
   tcp_unref(tcp);
 }
 

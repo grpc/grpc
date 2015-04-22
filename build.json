@@ -386,7 +386,7 @@
       "headers": [
         "src/core/httpcli/format_request.h",
         "src/core/httpcli/httpcli.h",
-        "src/core/httpcli/httpcli_security_context.h",
+        "src/core/httpcli/httpcli_security_connector.h",
         "src/core/httpcli/parser.h",
         "src/core/security/auth.h",
         "src/core/security/base64.h",
@@ -394,7 +394,7 @@
         "src/core/security/json_token.h",
         "src/core/security/secure_endpoint.h",
         "src/core/security/secure_transport_setup.h",
-        "src/core/security/security_context.h",
+        "src/core/security/security_connector.h",
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/transport_security.h",
@@ -403,19 +403,18 @@
       "src": [
         "src/core/httpcli/format_request.c",
         "src/core/httpcli/httpcli.c",
-        "src/core/httpcli/httpcli_security_context.c",
+        "src/core/httpcli/httpcli_security_connector.c",
         "src/core/httpcli/parser.c",
         "src/core/security/auth.c",
         "src/core/security/base64.c",
         "src/core/security/credentials.c",
         "src/core/security/credentials_posix.c",
         "src/core/security/credentials_win32.c",
-        "src/core/security/factories.c",
         "src/core/security/google_default_credentials.c",
         "src/core/security/json_token.c",
         "src/core/security/secure_endpoint.c",
         "src/core/security/secure_transport_setup.c",
-        "src/core/security/security_context.c",
+        "src/core/security/security_connector.c",
         "src/core/security/server_secure_chttp2.c",
         "src/core/surface/init_secure.c",
         "src/core/surface/secure_channel_create.c",
@@ -499,6 +498,14 @@
       "vs_project_guid": "{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}"
     },
     {
+      "name": "grpc++_test_config",
+      "build": "private",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/test_config.cc"
+      ]
+    },
+    {
       "name": "grpc++_test_util",
       "build": "private",
       "language": "c++",
@@ -570,9 +577,9 @@
       "build": "private",
       "language": "c++",
       "src": [
-        "test/cpp/interop/empty.proto",
-        "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
+        "test/proto/empty.proto",
+        "test/proto/messages.proto",
+        "test/proto/test.proto",
         "test/cpp/interop/client.cc",
         "test/cpp/interop/interop_client.cc"
       ],
@@ -582,7 +589,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -604,9 +612,9 @@
       "build": "private",
       "language": "c++",
       "src": [
-        "test/cpp/interop/empty.proto",
-        "test/cpp/interop/messages.proto",
-        "test/cpp/interop/test.proto",
+        "test/proto/empty.proto",
+        "test/proto/messages.proto",
+        "test/proto/test.proto",
         "test/cpp/interop/server.cc"
       ],
       "deps": [
@@ -615,12 +623,13 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
       "name": "pubsub_client_lib",
-      "build": "private",
+      "build": "do_not_build",
       "language": "c++",
       "src": [
         "examples/pubsub/label.proto",
@@ -655,6 +664,10 @@
         "test/cpp/qps/server_async.cc",
         "test/cpp/qps/server_sync.cc",
         "test/cpp/qps/timer.cc"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc++_test_util"
       ]
     },
     {
@@ -1929,7 +1942,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -1994,7 +2008,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -2011,7 +2026,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -2030,7 +2046,7 @@
     },
     {
       "name": "pubsub_client",
-      "build": "test",
+      "build": "do_not_build",
       "run": false,
       "language": "c++",
       "src": [
@@ -2042,12 +2058,13 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
       "name": "pubsub_publisher_test",
-      "build": "test",
+      "build": "do_not_build",
       "language": "c++",
       "src": [
         "examples/pubsub/publisher_test.cc"
@@ -2064,7 +2081,7 @@
     },
     {
       "name": "pubsub_subscriber_test",
-      "build": "test",
+      "build": "do_not_build",
       "language": "c++",
       "src": [
         "examples/pubsub/subscriber_test.cc"
@@ -2094,7 +2111,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {
@@ -2134,7 +2152,8 @@
         "grpc++",
         "grpc",
         "gpr_test_util",
-        "gpr"
+        "gpr",
+        "grpc++_test_config"
       ]
     },
     {

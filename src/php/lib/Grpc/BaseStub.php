@@ -41,7 +41,24 @@ class BaseStub {
 
   private $channel;
 
+  // a callback function
+  private $update_metadata;
+
+  /**
+   * @param $hostname string
+   * @param $opts array
+   *  - 'update_metadata': (optional) a callback function which takes in a
+   * metadata array, and returns an updated metadata array
+   */
   public function __construct($hostname, $opts) {
+    $this->update_metadata = null;
+    if (isset($opts['update_metadata'])) {
+      if (is_callable($opts['update_metadata'])) {
+        $this->update_metadata = $opts['update_metadata'];
+      }
+      unset($opts['update_metadata']);
+    }
+         
     $this->channel = new Channel($hostname, $opts);
   }
 
@@ -69,7 +86,12 @@ class BaseStub {
                                  callable $deserialize,
                                  $metadata = array()) {
     $call = new UnaryCall($this->channel, $method, $deserialize);
-    $call->start($argument, $metadata);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($argument, $actual_metadata);
     return $call;
   }
 
@@ -89,7 +111,12 @@ class BaseStub {
                                        callable $deserialize,
                                        $metadata = array()) {
     $call = new ClientStreamingCall($this->channel, $method, $deserialize);
-    $call->start($arguments, $metadata);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($arguments, $actual_metadata);
     return $call;
   }
 
@@ -108,7 +135,12 @@ class BaseStub {
                                        callable $deserialize,
                                        $metadata = array()) {
     $call = new ServerStreamingCall($this->channel, $method, $deserialize);
-    $call->start($argument, $metadata);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($argument, $actual_metadata);
     return $call;
   }
 
@@ -124,7 +156,12 @@ class BaseStub {
                                callable $deserialize,
                                $metadata = array()) {
     $call = new BidiStreamingCall($this->channel, $method, $deserialize);
-    $call->start($metadata);
+    $actual_metadata = $metadata;
+    if (is_callable($this->update_metadata)) {
+      $actual_metadata = call_user_func($this->update_metadata,
+                                        $actual_metadata);
+    }
+    $call->start($actual_metadata);
     return $call;
   }
 }

@@ -43,9 +43,9 @@
 #include <grpc++/client_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>
-#include "test/cpp/interop/test.grpc.pb.h"
-#include "test/cpp/interop/empty.grpc.pb.h"
-#include "test/cpp/interop/messages.grpc.pb.h"
+#include "test/proto/test.grpc.pb.h"
+#include "test/proto/empty.grpc.pb.h"
+#include "test/proto/messages.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

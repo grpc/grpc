@@ -346,8 +346,8 @@ if len(build_configs) > 1:
 
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['nmake', '/f', 'Grpc.mak', 'CONFIG=%s' % cfg] + targets,
-                          cwd='vsprojects\\vs2013')
+    return jobset.JobSpec(['make.bat', 'CONFIG=%s' % cfg] + targets,
+                          cwd='vsprojects', shell=True)
 else:
   def make_jobspec(cfg, targets):
     return jobset.JobSpec(['make',
@@ -444,6 +444,7 @@ if forever:
     previous_success = success
     success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
+                             travis=args.travis,
                              cache=test_cache) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',

@@ -38,6 +38,13 @@
 
 #include "rb_grpc.h"
 
+static rb_data_type_t grpc_rb_channel_args_data_type = {
+    "grpc_channel_args",
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL, NULL,
+    RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 /* A callback the processes the hash key values in channel_args hash */
 static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
                                                               VALUE val,
@@ -60,7 +67,8 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
       return ST_STOP;
   }
 
-  Data_Get_Struct(args_obj, grpc_channel_args, args);
+  TypedData_Get_Struct(args_obj, grpc_channel_args,
+                       &grpc_rb_channel_args_data_type, args);
   if (args->num_args <= 0) {
     rb_raise(rb_eRuntimeError, "hash_cb bug: num_args is %lu for key:%s",
              args->num_args, StringValueCStr(key));
@@ -126,8 +134,9 @@ static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
     MEMZERO(params->dst->args, grpc_arg, num_args);
     rb_hash_foreach(params->src_hash,
                     grpc_rb_channel_create_in_process_add_args_hash_cb,
-                    Data_Wrap_Struct(grpc_rb_cChannelArgs, GC_NOT_MARKED,
-                                     GC_DONT_FREE, params->dst));
+                    TypedData_Wrap_Struct(grpc_rb_cChannelArgs,
+                                          &grpc_rb_channel_args_data_type,
+                                          params->dst));
     /* reset num_args as grpc_rb_channel_create_in_process_add_args_hash_cb
      * decrements it during has processing */
     params->dst->num_args = num_args;

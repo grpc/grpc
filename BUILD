@@ -1,5 +1,7 @@
 # GRPC Bazel BUILD file.
 # This currently builds C and C++ code.
+# This file has been automatically generated from a template file.
+# Please look at the templates directory instead.
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -124,7 +126,7 @@ cc_library(
   srcs = [
     "src/core/httpcli/format_request.h",
     "src/core/httpcli/httpcli.h",
-    "src/core/httpcli/httpcli_security_context.h",
+    "src/core/httpcli/httpcli_security_connector.h",
     "src/core/httpcli/parser.h",
     "src/core/security/auth.h",
     "src/core/security/base64.h",
@@ -132,7 +134,7 @@ cc_library(
     "src/core/security/json_token.h",
     "src/core/security/secure_endpoint.h",
     "src/core/security/secure_transport_setup.h",
-    "src/core/security/security_context.h",
+    "src/core/security/security_connector.h",
     "src/core/tsi/fake_transport_security.h",
     "src/core/tsi/ssl_transport_security.h",
     "src/core/tsi/transport_security.h",
@@ -228,19 +230,18 @@ cc_library(
     "src/core/transport/transport_impl.h",
     "src/core/httpcli/format_request.c",
     "src/core/httpcli/httpcli.c",
-    "src/core/httpcli/httpcli_security_context.c",
+    "src/core/httpcli/httpcli_security_connector.c",
     "src/core/httpcli/parser.c",
     "src/core/security/auth.c",
     "src/core/security/base64.c",
     "src/core/security/credentials.c",
     "src/core/security/credentials_posix.c",
     "src/core/security/credentials_win32.c",
-    "src/core/security/factories.c",
     "src/core/security/google_default_credentials.c",
     "src/core/security/json_token.c",
     "src/core/security/secure_endpoint.c",
     "src/core/security/secure_transport_setup.c",
-    "src/core/security/security_context.c",
+    "src/core/security/security_connector.c",
     "src/core/security/server_secure_chttp2.c",
     "src/core/surface/init_secure.c",
     "src/core/surface/secure_channel_create.c",

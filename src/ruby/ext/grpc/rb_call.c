@@ -42,6 +42,17 @@
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 
+/* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
+static VALUE grpc_rb_cCall;
+
+/* grpc_rb_eCallError is the ruby class of the exception thrown during call
+   operations; */
+VALUE grpc_rb_eCallError = Qnil;
+
+/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
+   a timeout. */
+static VALUE grpc_rb_eOutOfTime = Qnil;
+
 /* grpc_rb_sBatchResult is struct class used to hold the results of a batch
  * call. */
 static VALUE grpc_rb_sBatchResult;
@@ -86,7 +97,7 @@ static VALUE sym_cancelled;
 static VALUE hash_all_calls;
 
 /* Destroys a Call. */
-void grpc_rb_call_destroy(void *p) {
+static void grpc_rb_call_destroy(void *p) {
   grpc_call *call = NULL;
   VALUE ref_count = Qnil;
   if (p == NULL) {
@@ -106,6 +117,37 @@ void grpc_rb_call_destroy(void *p) {
   }
 }
 
+static size_t md_ary_datasize(const void *p) {
+    const grpc_metadata_array* const ary = (grpc_metadata_array*)p;
+    size_t i, datasize = sizeof(grpc_metadata_array);
+    for (i = 0; i < ary->count; ++i) {
+        const grpc_metadata* const md = &ary->metadata[i];
+        datasize += strlen(md->key);
+        datasize += md->value_length;
+    }
+    datasize += ary->capacity * sizeof(grpc_metadata);
+    return datasize;
+}
+
+static const rb_data_type_t grpc_rb_md_ary_data_type = {
+    "grpc_metadata_array",
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, md_ary_datasize},
+    NULL, NULL,
+    0
+};
+
+/* Describes grpc_call struct for RTypedData */
+static const rb_data_type_t grpc_call_data_type = {
+    "grpc_call",
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_call_destroy, GRPC_RB_MEMSIZE_UNAVAILABLE},
+    NULL, NULL,
+    /* it is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because grpc_rb_call_destroy
+     * touches a hash object.
+     * TODO(yugui) Directly use st_table and call the free function earlier?
+     */
+    0
+};
+
 /* Error code details is a hash containing text strings describing errors */
 VALUE rb_error_code_details;
 
@@ -124,7 +166,7 @@ const char *grpc_call_error_detail_of(grpc_call_error err) {
 static VALUE grpc_rb_call_cancel(VALUE self) {
   grpc_call *call = NULL;
   grpc_call_error err;
-  Data_Get_Struct(self, grpc_call, call);
+  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
   err = grpc_call_cancel(call);
   if (err != GRPC_CALL_OK) {
     rb_raise(grpc_rb_eCallError, "cancel failed: %s (code=%d)",
@@ -188,13 +230,14 @@ static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
    it's capacity should have been computed via a prior call to
    grpc_rb_md_ary_fill_hash_cb
 */
-int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
+static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
   int array_length;
   int i;
 
   /* Construct a metadata object from key and value and add it */
-  Data_Get_Struct(md_ary_obj, grpc_metadata_array, md_ary);
+  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
+                       &grpc_rb_md_ary_data_type, md_ary);
 
   if (TYPE(val) == T_ARRAY) {
     /* If the value is an array, add capacity for each value in the array */
@@ -227,11 +270,13 @@ int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
 /* grpc_rb_md_ary_capacity_hash_cb is the hash iteration callback used
    to pre-compute the capacity a grpc_metadata_array.
 */
-int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
+static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val,
+                                           VALUE md_ary_obj) {
   grpc_metadata_array *md_ary = NULL;
 
   /* Construct a metadata object from key and value and add it */
-  Data_Get_Struct(md_ary_obj, grpc_metadata_array, md_ary);
+  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
+                       &grpc_rb_md_ary_data_type, md_ary);
 
   if (TYPE(val) == T_ARRAY) {
     /* If the value is an array, add capacity for each value in the array */
@@ -245,7 +290,7 @@ int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
 /* grpc_rb_md_ary_convert converts a ruby metadata hash into
    a grpc_metadata_array.
 */
-void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
+static void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
   VALUE md_ary_obj = Qnil;
   if (md_ary_hash == Qnil) {
     return;  /* Do nothing if the expected has value is nil */
@@ -258,8 +303,8 @@ void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array *md_ary) {
 
   /* Initialize the array, compute it's capacity, then fill it. */
   grpc_metadata_array_init(md_ary);
-  md_ary_obj =
-      Data_Wrap_Struct(grpc_rb_cMdAry, GC_NOT_MARKED, GC_DONT_FREE, md_ary);
+  md_ary_obj = TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type,
+                                     md_ary);
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_capacity_hash_cb, md_ary_obj);
   md_ary->metadata = gpr_malloc(md_ary->capacity * sizeof(grpc_metadata));
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_fill_hash_cb, md_ary_obj);
@@ -301,7 +346,8 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary) {
 /* grpc_rb_call_check_op_keys_hash_cb is a hash iteration func that checks
    each key of an ops hash is valid.
 */
-int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val, VALUE ops_ary) {
+static int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val,
+                                              VALUE ops_ary) {
   /* Update the capacity; the value is an array, add capacity for each value in
    * the array */
   if (TYPE(key) != T_FIXNUM) {
@@ -330,7 +376,7 @@ int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val, VALUE ops_ary) {
 /* grpc_rb_op_update_status_from_server adds the values in a ruby status
    struct to the 'send_status_from_server' portion of an op.
 */
-void grpc_rb_op_update_status_from_server(grpc_op *op,
+static void grpc_rb_op_update_status_from_server(grpc_op *op,
                                           grpc_metadata_array* md_ary,
                                           VALUE status) {
   VALUE code = rb_struct_aref(status, sym_code);
@@ -543,7 +589,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   grpc_event *ev = NULL;
   grpc_call_error err;
   VALUE result = Qnil;
-  Data_Get_Struct(self, grpc_call, call);
+  TypedData_Get_Struct(self, grpc_call, &grpc_call_data_type, call);
 
   /* Validate the ops args, adding them to a ruby array */
   if (TYPE(ops_hash) != T_HASH) {
@@ -582,18 +628,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
   return result;
 }
 
-/* grpc_rb_cCall is the ruby class that proxies grpc_call. */
-VALUE grpc_rb_cCall = Qnil;
-
-/* grpc_rb_eCallError is the ruby class of the exception thrown during call
-   operations; */
-VALUE grpc_rb_eCallError = Qnil;
-
-/* grpc_rb_eOutOfTime is the ruby class of the exception thrown to indicate
-   a timeout. */
-VALUE grpc_rb_eOutOfTime = Qnil;
-
-void Init_grpc_error_codes() {
+static void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
   VALUE grpc_rb_mRpcErrors =
       rb_define_module_under(grpc_rb_mGrpcCore, "RpcErrors");
@@ -645,7 +680,7 @@ void Init_grpc_error_codes() {
   rb_obj_freeze(rb_error_code_details);
 }
 
-void Init_grpc_op_codes() {
+static void Init_grpc_op_codes() {
   /* Constants representing operation type codes in grpc.h */
   VALUE grpc_rb_mCallOps =
       rb_define_module_under(grpc_rb_mGrpcCore, "CallOps");
@@ -734,7 +769,7 @@ void Init_grpc_call() {
 /* Gets the call from the ruby object */
 grpc_call *grpc_rb_get_wrapped_call(VALUE v) {
   grpc_call *c = NULL;
-  Data_Get_Struct(v, grpc_call, c);
+  TypedData_Get_Struct(v, grpc_call, &grpc_call_data_type, c);
   return c;
 }
 
@@ -751,6 +786,5 @@ VALUE grpc_rb_wrap_call(grpc_call *c) {
     rb_hash_aset(hash_all_calls, OFFT2NUM((VALUE)c),
                  UINT2NUM(NUM2UINT(obj) + 1));
   }
-  return Data_Wrap_Struct(grpc_rb_cCall, GC_NOT_MARKED,
-                          grpc_rb_call_destroy, c);
+  return TypedData_Wrap_Struct(grpc_rb_cCall, &grpc_call_data_type, c);
 }
