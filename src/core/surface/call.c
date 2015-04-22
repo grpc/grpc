@@ -283,6 +283,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   call->send_deadline = send_deadline;
   grpc_channel_internal_ref(channel);
   call->metadata_context = grpc_channel_get_metadata_context(channel);
+  grpc_sopb_init(&call->send_ops);
+  grpc_sopb_init(&call->recv_ops);
   /* one ref is dropped in response to destroy, the other in
      stream_closed */
   gpr_ref_init(&call->internal_refcount, 2);
@@ -330,6 +332,8 @@ static void destroy_call(void *call, int ignored_success) {
     destroy_legacy_state(c->legacy_state);
   }
   grpc_bbq_destroy(&c->incoming_queue);
+  grpc_sopb_destroy(&c->send_ops);
+  grpc_sopb_destroy(&c->recv_ops);
   gpr_free(c);
 }
 
@@ -1091,41 +1095,9 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
   grpc_mdctx_unlock(mdctx);
 }
 
-#if 0
-void grpc_call_read_closed(grpc_call_element *elem) {
-  set_read_state(CALL_FROM_TOP_ELEM(elem), READ_STATE_READ_CLOSED);
-}
-
-void grpc_call_stream_closed(grpc_call_element *elem) {
-  grpc_call *call = CALL_FROM_TOP_ELEM(elem);
-  set_read_state(call, READ_STATE_STREAM_CLOSED);
-  grpc_call_internal_unref(call, 0);
-}
-
-void grpc_call_recv_message(grpc_call_element *elem,
-                            grpc_byte_buffer *byte_buffer) {
-  grpc_call *call = CALL_FROM_TOP_ELEM(elem);
-  lock(call);
-  grpc_bbq_push(&call->incoming_queue, byte_buffer);
-  finish_read_ops(call);
-  unlock(call);
-}
-
-void grpc_call_recv_synthetic_status(grpc_call_element *elem,
-                                     grpc_status_code status,
-                                     const char *message) {
-  grpc_call *call = CALL_FROM_TOP_ELEM(elem);
-  lock(call);
-  set_status_code(call, STATUS_FROM_CORE, status);
-  set_status_details(call, STATUS_FROM_CORE,
-                     grpc_mdstr_from_string(call->metadata_context, message));
-  unlock(call);
-}
-
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
   return CALL_STACK_FROM_CALL(call);
 }
-#endif
 
 /*
  * BATCH API IMPLEMENTATION

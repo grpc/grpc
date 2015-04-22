@@ -242,3 +242,7 @@ grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel) {
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel) {
   return channel->grpc_message_string;
 }
+
+gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel) {
+  return channel->max_message_length;
+}

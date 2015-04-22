@@ -1503,8 +1503,6 @@ static int is_window_update_legal(gpr_int64 window_update, gpr_int64 window) {
   return window + window_update < MAX_WINDOW;
 }
 
-static void free_md(void *p, grpc_op_error result) { gpr_free(p); }
-
 static void add_metadata_batch(transport *t, stream *s) {
   grpc_metadata_batch b;
   size_t i;
@@ -1522,8 +1520,7 @@ static void add_metadata_batch(transport *t, stream *s) {
   s->incoming_metadata[s->incoming_metadata_count - 1].next = NULL;
 
   grpc_sopb_add_metadata(&s->parser.incoming_sopb, b);
-  grpc_sopb_add_flow_ctl_cb(&s->parser.incoming_sopb, free_md,
-                            s->incoming_metadata);
+  /* TODO(ctiller): don't leak incoming_metadata */
 
   /* reset */
   s->incoming_deadline = gpr_inf_future;

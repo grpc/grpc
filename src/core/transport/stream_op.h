@@ -154,12 +154,10 @@ void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
 void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb, grpc_metadata_batch metadata);
 /* Append a GRPC_SLICE to a buffer - does not ref/unref the slice */
 void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
-/* Append a GRPC_OP_FLOW_CTL_CB to a buffer */
-void grpc_sopb_add_flow_ctl_cb(grpc_stream_op_buffer *sopb,
-                               void (*cb)(void *arg, grpc_op_error error),
-                               void *arg);
 /* Append a buffer to a buffer - does not ref/unref any internal objects */
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
                       size_t nops);
+
+char *grpc_sopb_string(grpc_stream_op_buffer *sopb);
 
 #endif  /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */

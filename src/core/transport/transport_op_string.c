@@ -66,65 +66,76 @@ static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   }
 }
 
-char *grpc_call_op_string(grpc_call_op *op) {
+char *grpc_sopb_string(grpc_stream_op_buffer *sopb) {
+  char *out;
+  char *tmp;
+  size_t i;
+  gpr_strvec b;
+  gpr_strvec_init(&b);
+
+  for (i = 0; i < sopb->nops; i++) {
+    grpc_stream_op *op = &sopb->ops[i];
+    if (i) gpr_strvec_add(&b, gpr_strdup(", "));
+    switch (op->type) {
+      case GRPC_NO_OP:
+        gpr_strvec_add(&b, gpr_strdup("NO_OP"));
+        break;
+      case GRPC_OP_BEGIN_MESSAGE:
+        gpr_asprintf(&tmp, "BEGIN_MESSAGE:%d", op->data.begin_message.length);
+        gpr_strvec_add(&b, tmp);
+        break;
+      case GRPC_OP_SLICE:
+        gpr_asprintf(&tmp, "SLICE:%d", GPR_SLICE_LENGTH(op->data.slice));
+        break;
+      case GRPC_OP_METADATA:
+        put_metadata_list(&b, op->data.metadata);
+        break;
+    }
+  }
+
+  out = gpr_strvec_flatten(&b, NULL);
+  gpr_strvec_destroy(&b);
+
+  return out;
+}
+
+char *grpc_transport_op_string(grpc_transport_op *op) {
   char *tmp;
   char *out;
+  int first = 1;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
 
-  switch (op->dir) {
-    case GRPC_CALL_DOWN:
-      gpr_strvec_add(&b, gpr_strdup(">"));
-      break;
-    case GRPC_CALL_UP:
-      gpr_strvec_add(&b, gpr_strdup("<"));
-      break;
+  if (op->send_ops) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("SEND"));
+    if (op->is_last_send) {
+      gpr_strvec_add(&b, gpr_strdup("_LAST"));
+    }
+    gpr_strvec_add(&b, gpr_strdup("["));
+    gpr_strvec_add(&b, grpc_sopb_string(op->send_ops));
+    gpr_strvec_add(&b, gpr_strdup("]"));
   }
-  switch (op->type) {
-    case GRPC_SEND_METADATA:
-      gpr_strvec_add(&b, gpr_strdup("SEND_METADATA"));
-      put_metadata_list(&b, op->data.metadata);
-      break;
-    case GRPC_SEND_MESSAGE:
-      gpr_strvec_add(&b, gpr_strdup("SEND_MESSAGE"));
-      break;
-    case GRPC_SEND_PREFORMATTED_MESSAGE:
-      gpr_strvec_add(&b, gpr_strdup("SEND_PREFORMATTED_MESSAGE"));
-      break;
-    case GRPC_SEND_FINISH:
-      gpr_strvec_add(&b, gpr_strdup("SEND_FINISH"));
-      break;
-    case GRPC_REQUEST_DATA:
-      gpr_strvec_add(&b, gpr_strdup("REQUEST_DATA"));
-      break;
-    case GRPC_RECV_METADATA:
-      gpr_strvec_add(&b, gpr_strdup("RECV_METADATA"));
-      put_metadata_list(&b, op->data.metadata);
-      break;
-    case GRPC_RECV_MESSAGE:
-      gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
-      break;
-    case GRPC_RECV_HALF_CLOSE:
-      gpr_strvec_add(&b, gpr_strdup("RECV_HALF_CLOSE"));
-      break;
-    case GRPC_RECV_FINISH:
-      gpr_strvec_add(&b, gpr_strdup("RECV_FINISH"));
-      break;
-    case GRPC_RECV_SYNTHETIC_STATUS:
-      gpr_asprintf(&tmp, "RECV_SYNTHETIC_STATUS status=%d message='%s'",
-                   op->data.synthetic_status.status,
-                   op->data.synthetic_status.message);
-      gpr_strvec_add(&b, tmp);
-      break;
-    case GRPC_CANCEL_OP:
-      gpr_strvec_add(&b, gpr_strdup("CANCEL_OP"));
-      break;
+
+  if (op->recv_ops) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("RECV"));
   }
-  gpr_asprintf(&tmp, " flags=0x%08x", op->flags);
-  gpr_strvec_add(&b, tmp);
+
   if (op->bind_pollset) {
-    gpr_strvec_add(&b, gpr_strdup("bind_pollset"));
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_strvec_add(&b, gpr_strdup("BIND"));
+  }
+
+  if (op->cancel_with_status != GRPC_STATUS_OK) {
+    if (!first) gpr_strvec_add(&b, gpr_strdup(" "));
+    first = 0;
+    gpr_asprintf(&tmp, "CANCEL:%d", op->cancel_with_status);
+    gpr_strvec_add(&b, tmp);
   }
 
   out = gpr_strvec_flatten(&b, NULL);
@@ -134,8 +145,8 @@ char *grpc_call_op_string(grpc_call_op *op) {
 }
 
 void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
-                      grpc_call_element *elem, grpc_call_op *op) {
-  char *str = grpc_call_op_string(op);
+                      grpc_call_element *elem, grpc_transport_op *op) {
+  char *str = grpc_transport_op_string(op);
   gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem, str);
   gpr_free(str);
 }

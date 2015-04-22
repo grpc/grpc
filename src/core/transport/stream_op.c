@@ -81,9 +81,6 @@ void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops) {
       case GRPC_OP_METADATA:
         grpc_metadata_batch_destroy(&ops[i].data.metadata);
         break;
-      case GRPC_OP_FLOW_CTL_CB:
-        ops[i].data.flow_ctl_cb.cb(ops[i].data.flow_ctl_cb.arg, GRPC_OP_ERROR);
-        break;
       case GRPC_NO_OP:
       case GRPC_OP_BEGIN_MESSAGE:
         break;
@@ -119,6 +116,7 @@ static grpc_stream_op *add(grpc_stream_op_buffer *sopb) {
 
   assert_contained_metadata_ok(sopb->ops, sopb->nops);
 
+  GPR_ASSERT(sopb->nops <= sopb->capacity);
   if (sopb->nops == sopb->capacity) {
     expandto(sopb, GROW(sopb->capacity));
   }
@@ -155,16 +153,6 @@ void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice) {
   grpc_stream_op *op = add(sopb);
   op->type = GRPC_OP_SLICE;
   op->data.slice = slice;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
-}
-
-void grpc_sopb_add_flow_ctl_cb(grpc_stream_op_buffer *sopb,
-                               void (*cb)(void *arg, grpc_op_error error),
-                               void *arg) {
-  grpc_stream_op *op = add(sopb);
-  op->type = GRPC_OP_FLOW_CTL_CB;
-  op->data.flow_ctl_cb.cb = cb;
-  op->data.flow_ctl_cb.arg = arg;
   assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
