@@ -1,4 +1,8 @@
 {
+  "#": "This file describes the list of targets and dependencies.",
+  "#": "It is used among other things to generate all of our project files.",
+  "#": "Please refer to the templates directory for more information.",
+
   "settings": {
     "#": "The public version number of the library.",
     "version": {
