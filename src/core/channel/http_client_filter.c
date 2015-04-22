@@ -104,13 +104,13 @@ static void hc_start_transport_op(grpc_call_element *elem, grpc_transport_op *op
       /* Send : prefixed headers, which have to be before any application
          layer headers. */
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->method,
-                                     grpc_mdelem_ref(channeld->method));
+                                   grpc_mdelem_ref(channeld->method));
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->scheme,
-                                     grpc_mdelem_ref(channeld->scheme));
+                                   grpc_mdelem_ref(channeld->scheme));
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->te_trailers,
-                                     grpc_mdelem_ref(channeld->te_trailers));
+                                   grpc_mdelem_ref(channeld->te_trailers));
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
-                                     grpc_mdelem_ref(channeld->content_type));
+                                   grpc_mdelem_ref(channeld->content_type));
       break;
     }
   }

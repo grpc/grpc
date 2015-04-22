@@ -166,6 +166,9 @@ static void hs_on_recv(void *user_data, int success) {
           calld->seen_path) {
         /* do nothing */
       } else {
+        if (!calld->seen_path) {
+          gpr_log(GPR_ERROR, "Missing :path header");
+        }
         if (!calld->seen_post) {
           gpr_log(GPR_ERROR, "Missing :method header");
         }

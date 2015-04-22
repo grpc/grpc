@@ -583,7 +583,7 @@ static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,
     grpc_metadata *next_md = (i == count - 1) ? NULL : &metadata[i + 1];
     grpc_metadata *prev_md = (i == 0) ? NULL : &metadata[i - 1];
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
-    assert(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
+    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
                                                (const gpr_uint8 *)md->value,
                                                md->value_length);
@@ -942,7 +942,7 @@ int grpc_call_recv_metadata(grpc_call_element *elem, grpc_metadata_batch *md) {
 
   lock(call);
   is_trailing = call->read_state >= READ_STATE_GOT_INITIAL_METADATA;
-  for (l = md->list.head; l; l = l->next) {
+  for (l = md->list.head; l != NULL; l = l->next) {
     grpc_mdelem *md = l->md;
     grpc_mdstr *key = md->key;
     if (key == grpc_channel_get_status_string(call->channel)) {

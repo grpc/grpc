@@ -33,7 +33,7 @@
 
 #import "GRPCCompletionQueue.h"
 
-#import <grpc.h>
+#import <grpc/grpc.h>
 
 @implementation GRPCCompletionQueue
 

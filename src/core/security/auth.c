@@ -164,7 +164,7 @@ static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
 
   switch (op->type) {
     case GRPC_SEND_METADATA:
-      for (l = op->data.metadata.list.head; l; l = l->next) {
+      for (l = op->data.metadata.list.head; l != NULL; l = l->next) {
         grpc_mdelem *md = l->md;
         /* Pointer comparison is OK for md_elems created from the same context.
          */

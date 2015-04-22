@@ -99,7 +99,7 @@ static void assert_contained_metadata_ok(grpc_stream_op *ops, size_t nops) {
       grpc_metadata_batch_assert_ok(&ops[i].data.metadata);
     }
   }
-#endif
+#endif /* NDEBUG */
 }
 
 static void expandto(grpc_stream_op_buffer *sopb, size_t new_capacity) {
@@ -201,7 +201,7 @@ static void assert_valid_list(grpc_mdelem_list *list) {
     if (l->next) GPR_ASSERT(l->next->prev == l);
     if (l->prev) GPR_ASSERT(l->prev->next == l);
   }
-#endif
+#endif /* NDEBUG */
 }
 
 #ifndef NDEBUG
@@ -209,7 +209,7 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd) {
   assert_valid_list(&comd->list);
   assert_valid_list(&comd->garbage);
 }
-#endif
+#endif /* NDEBUG */
 
 void grpc_metadata_batch_init(grpc_metadata_batch *comd) {
   comd->list.head = comd->list.tail = comd->garbage.head = comd->garbage.tail =
