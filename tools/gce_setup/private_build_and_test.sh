@@ -17,9 +17,12 @@ TEST=$3
 GIT=$4
 SERVER=${5:-"grpc-docker-server"}
 
+current_time=$(date "+%Y-%m-%d-%H-%M-%S")
+result_file_name=private_result.$current_time.txt
+
 sudo docker run --name="private_images" -v $4:/var/local/git-clone grpc/$1 /var/local/git-clone/grpc/tools/dockerfile/grpc_$1/build.sh
 
-sudo docker commit -m "private image" -a "donnadionne" private_images grpc/private_images
+sudo docker commit -m "private image" -a $USER private_images grpc/private_images
 
 sudo docker tag -f grpc/private_images 0.0.0.0:5000/grpc/private_images
 
@@ -46,7 +49,8 @@ then
 else
   if [ $ENV == 'cloud' ]
   then
-    grpc_cloud_prod_test $TEST grpc-docker-testclients1 $LANGUAGE
+    grpc_cloud_prod_test $TEST grpc-docker-testclients1 $LANGUAGE > /tmp/$result_file_name 2>&1
+    gsutil cp /tmp/$result_file_name gs://stoked-keyword-656-output/private_result/$result_file_name
   else
     grpc_cloud_prod_test $TEST grpc-docker-testclients1 $LANGUAGE
   fi
