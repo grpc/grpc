@@ -113,21 +113,6 @@ int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
 void grpc_transport_destroy_stream(grpc_transport *transport,
                                    grpc_stream *stream);
 
-/* Enable/disable incoming data for a stream.
-
-   This effectively disables new window becoming available for a given stream,
-   but does not prevent existing window from being consumed by a sender: the
-   caller must still be prepared to receive some additional data after this
-   call.
-
-   Arguments:
-     transport - the transport on which to create this stream
-     stream    - the grpc_stream to destroy (memory is still owned by the
-                 caller, but any child memory must be cleaned up)
-     allow     - is it allowed that new window be opened up? */
-void grpc_transport_set_allow_window_updates(grpc_transport *transport,
-                                             grpc_stream *stream, int allow);
-
 /* Transport op: a set of operations to perform on a transport */
 typedef struct grpc_transport_op {
   grpc_stream_op_buffer *send_ops;

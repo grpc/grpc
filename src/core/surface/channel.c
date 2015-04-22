@@ -52,6 +52,7 @@ typedef struct registered_call {
 struct grpc_channel {
   int is_client;
   gpr_refcount refs;
+  gpr_uint32 max_message_length;
   grpc_mdctx *metadata_context;
   grpc_mdstr *grpc_status_string;
   grpc_mdstr *grpc_message_string;
@@ -68,9 +69,13 @@ struct grpc_channel {
 #define CHANNEL_FROM_TOP_ELEM(top_elem) \
   CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
+/* the protobuf library will (by default) start warning at 100megs */
+#define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
+
 grpc_channel *grpc_channel_create_from_filters(
     const grpc_channel_filter **filters, size_t num_filters,
     const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client) {
+  size_t i;
   size_t size =
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
   grpc_channel *channel = gpr_malloc(size);
@@ -88,6 +93,24 @@ grpc_channel *grpc_channel_create_from_filters(
                           CHANNEL_STACK_FROM_CHANNEL(channel));
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
+
+  channel->max_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
+  if (args) {
+    for (i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_MESSAGE_LENGTH)) {
+        if (args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
+                  GRPC_ARG_MAX_MESSAGE_LENGTH);
+        } else if (args->args[i].value.integer < 0) {
+          gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
+                  GRPC_ARG_MAX_MESSAGE_LENGTH);
+        } else {
+          channel->max_message_length = args->args[i].value.integer;
+        }
+      }
+    }
+  }
+
   return channel;
 }
 

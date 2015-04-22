@@ -44,6 +44,7 @@ grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
 grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_status_string(grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
+gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
 
 void grpc_client_channel_closed(grpc_channel_element *elem);
 

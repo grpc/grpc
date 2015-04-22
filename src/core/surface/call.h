@@ -96,25 +96,11 @@ grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 void grpc_call_internal_ref(grpc_call *call);
 void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);
 
-/* Helpers for grpc_client, grpc_server filters to publish received data to
-   the completion queue/surface layer */
-/* receive metadata - returns 1 if this was initial metadata */
-int grpc_call_recv_metadata(grpc_call_element *surface_element,
-                            grpc_metadata_batch *md);
-void grpc_call_recv_message(grpc_call_element *surface_element,
-                            grpc_byte_buffer *message);
-void grpc_call_read_closed(grpc_call_element *surface_element);
-void grpc_call_stream_closed(grpc_call_element *surface_element);
-
 grpc_call_error grpc_call_start_ioreq_and_call_back(
     grpc_call *call, const grpc_ioreq *reqs, size_t nreqs,
     grpc_ioreq_completion_func on_complete, void *user_data);
 
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
-
-void grpc_call_recv_synthetic_status(grpc_call_element *elem,
-                                     grpc_status_code status,
-                                     const char *message);
 
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);

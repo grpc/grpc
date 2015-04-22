@@ -45,8 +45,6 @@
 #include <grpc/support/slice_buffer.h>
 
 #define MAX_BUFFER_LENGTH 8192
-/* the protobuf library will (by default) start warning at 100megs */
-#define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
 typedef struct connected_channel_channel_data {
   grpc_transport *transport;
@@ -62,24 +60,6 @@ typedef struct connected_channel_call_data {
 #define TRANSPORT_STREAM_FROM_CALL_DATA(calld) ((grpc_stream *)((calld) + 1))
 #define CALL_DATA_FROM_TRANSPORT_STREAM(transport_stream) \
   (((call_data *)(transport_stream)) - 1)
-
-#if 0
-/* Copy the contents of a byte buffer into stream ops */
-static void copy_byte_buffer_to_stream_ops(grpc_byte_buffer *byte_buffer,
-                                           grpc_stream_op_buffer *sopb) {
-  size_t i;
-
-  switch (byte_buffer->type) {
-    case GRPC_BB_SLICE_BUFFER:
-      for (i = 0; i < byte_buffer->data.slice_buffer.count; i++) {
-        gpr_slice slice = byte_buffer->data.slice_buffer.slices[i];
-        gpr_slice_ref(slice);
-        grpc_sopb_add_slice(sopb, slice);
-      }
-      break;
-  }
-}
-#endif
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
@@ -145,25 +125,6 @@ static void init_channel_elem(grpc_channel_element *elem,
   GPR_ASSERT(is_last);
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
   cd->transport = NULL;
-
-#if 0
-  cd->max_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
-  if (args) {
-    for (i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_MESSAGE_LENGTH)) {
-        if (args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
-                  GRPC_ARG_MAX_MESSAGE_LENGTH);
-        } else if (args->args[i].value.integer < 0) {
-          gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
-                  GRPC_ARG_MAX_MESSAGE_LENGTH);
-        } else {
-          cd->max_message_length = args->args[i].value.integer;
-        }
-      }
-    }
-  }
-#endif  
 }
 
 /* Destructor for channel_data */
