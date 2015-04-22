@@ -265,8 +265,6 @@ static grpc_endpoint_write_status win_write(grpc_endpoint *ep,
   WSABUF *allocated = NULL;
   WSABUF *buffers = local_buffers;
 
-  GPR_ASSERT(nslices != 0);
-  GPR_ASSERT(GPR_SLICE_LENGTH(slices[0]) != 0);
   GPR_ASSERT(!tcp->outstanding_write);
   tcp_ref(tcp);
 
