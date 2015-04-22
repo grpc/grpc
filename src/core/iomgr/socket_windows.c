@@ -46,7 +46,6 @@
 
 grpc_winsocket *grpc_winsocket_create(SOCKET socket) {
   grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
-  gpr_log(GPR_DEBUG, "grpc_winsocket_create");
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
@@ -61,13 +60,11 @@ static void shutdown_op(grpc_winsocket_callback_info *info) {
 }
 
 void grpc_winsocket_shutdown(grpc_winsocket *socket) {
-  gpr_log(GPR_DEBUG, "grpc_winsocket_shutdown");
   shutdown_op(&socket->read_info);
   shutdown_op(&socket->write_info);
 }
 
 void grpc_winsocket_orphan(grpc_winsocket *socket) {
-  gpr_log(GPR_DEBUG, "grpc_winsocket_orphan");
   grpc_iocp_socket_orphan(socket);
   socket->orphan = 1;
   grpc_iomgr_unref();
