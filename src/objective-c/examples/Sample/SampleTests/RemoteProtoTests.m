@@ -91,7 +91,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:2. handler:nil];
+  [self waitForExpectationsWithTimeout:4. handler:nil];
 }
 
 - (void)testClientStreamingRPC {
