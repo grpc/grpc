@@ -98,7 +98,6 @@
         "src/core/channel/http_client_filter.h",
         "src/core/channel/http_filter.h",
         "src/core/channel/http_server_filter.h",
-        "src/core/channel/metadata_buffer.h",
         "src/core/channel/noop_filter.h",
         "src/core/compression/algorithm.h",
         "src/core/compression/message_compress.h",
@@ -190,7 +189,6 @@
         "src/core/channel/http_client_filter.c",
         "src/core/channel/http_filter.c",
         "src/core/channel/http_server_filter.c",
-        "src/core/channel/metadata_buffer.c",
         "src/core/channel/noop_filter.c",
         "src/core/compression/algorithm.c",
         "src/core/compression/message_compress.c",
@@ -443,7 +441,6 @@
         "test/core/end2end/data/test_root_cert.c",
         "test/core/iomgr/endpoint_tests.c",
         "test/core/statistics/census_log_tests.c",
-        "test/core/transport/transport_end2end_tests.c",
         "test/core/util/grpc_profiler.c",
         "test/core/util/parse_hexstring.c",
         "test/core/util/port_posix.c",
@@ -931,20 +928,6 @@
       "language": "c",
       "src": [
         "test/core/transport/chttp2/stream_map_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "chttp2_transport_end2end_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/transport/chttp2_transport_end2end_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1579,20 +1562,6 @@
       "language": "c",
       "src": [
         "test/core/compression/message_compress_test.c"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "metadata_buffer_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/channel/metadata_buffer_test.c"
       ],
       "deps": [
         "grpc_test_util",
