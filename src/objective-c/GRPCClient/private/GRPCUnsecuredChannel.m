@@ -31,15 +31,14 @@
  *
  */
 
-#import "AppDelegate.h"
+#import "GRPCUnsecuredChannel.h"
 
-@interface AppDelegate ()
-@end
+#include <grpc/grpc.h>
 
-@implementation AppDelegate
+@implementation GRPCUnsecuredChannel
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  return YES;
+- (instancetype)initWithHost:(NSString *)host {
+  return (self = [super initWithChannel:grpc_channel_create(host.UTF8String, NULL)]);
 }
 
 @end

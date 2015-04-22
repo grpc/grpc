@@ -31,15 +31,8 @@
  *
  */
 
-#import "AppDelegate.h"
+#import "GRPCChannel.h"
 
-@interface AppDelegate ()
-@end
-
-@implementation AppDelegate
-
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  return YES;
-}
+@interface GRPCSecureChannel : GRPCChannel
 
 @end
