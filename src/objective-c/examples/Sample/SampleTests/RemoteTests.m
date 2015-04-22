@@ -36,9 +36,9 @@
 
 #import <gRPC/GRPCCall.h>
 #import <gRPC/GRPCMethodName.h>
+#import <gRPC/GRXWriter+Immediate.h>
+#import <gRPC/GRXWriteable.h>
 #import <RemoteTest/Messages.pb.h>
-#import <RxLibrary/GRXWriter+Immediate.h>
-#import <RxLibrary/GRXWriteable.h>
 
 @interface RemoteTests : XCTestCase
 @end
