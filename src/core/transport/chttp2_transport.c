@@ -68,10 +68,10 @@ int grpc_http_trace = 0;
 typedef struct transport transport;
 typedef struct stream stream;
 
-#define IF_TRACING(stmt)                    \
-  if (!(grpc_http_trace))                   \
-    ;                                       \
-  else                                      \
+#define IF_TRACING(stmt)  \
+  if (!(grpc_http_trace)) \
+    ;                     \
+  else                    \
   stmt
 
 /* streams are kept in various linked lists depending on what things need to
@@ -291,6 +291,12 @@ struct stream {
 
   stream_link links[STREAM_LIST_COUNT];
   gpr_uint8 included[STREAM_LIST_COUNT];
+
+  /* incoming metadata */
+  grpc_linked_mdelem *incoming_metadata;
+  size_t incoming_metadata_count;
+  size_t incoming_metadata_capacity;
+  gpr_timespec incoming_deadline;
 
   /* sops from application */
   grpc_stream_op_buffer outgoing_sopb;
@@ -577,7 +583,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     lock(t);
     s->id = 0;
   } else {
-    s->id = (gpr_uint32)(gpr_uintptr) server_data;
+    s->id = (gpr_uint32)(gpr_uintptr)server_data;
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
   }
@@ -593,6 +599,10 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
   s->cancelled = 0;
   s->allow_window_updates = 0;
   s->published_close = 0;
+  s->incoming_metadata_count = 0;
+  s->incoming_metadata_capacity = 0;
+  s->incoming_metadata = NULL;
+  s->incoming_deadline = gpr_inf_future;
   memset(&s->links, 0, sizeof(s->links));
   memset(&s->included, 0, sizeof(s->included));
   grpc_sopb_init(&s->outgoing_sopb);
@@ -698,7 +708,8 @@ static void stream_list_add_tail(transport *t, stream *s, stream_list_id id) {
 }
 
 static void stream_list_join(transport *t, stream *s, stream_list_id id) {
-  if (id == PENDING_CALLBACKS) GPR_ASSERT(t->cb != NULL || t->error_state == ERROR_STATE_NONE);
+  if (id == PENDING_CALLBACKS)
+    GPR_ASSERT(t->cb != NULL || t->error_state == ERROR_STATE_NONE);
   if (s->included[id]) {
     return;
   }
@@ -760,7 +771,7 @@ static void unlock(transport *t) {
     if (t->error_state == ERROR_STATE_SEEN && !t->writing) {
       call_closed = 1;
       t->calling_back = 1;
-      t->cb = NULL;  /* no more callbacks */
+      t->cb = NULL; /* no more callbacks */
       t->error_state = ERROR_STATE_NOTIFIED;
     }
     if (t->num_pending_goaways) {
@@ -782,8 +793,7 @@ static void unlock(transport *t) {
 
   /* perform some callbacks if necessary */
   for (i = 0; i < num_goaways; i++) {
-    cb->goaway(t->cb_user_data, &t->base, goaways[i].status,
-               goaways[i].debug);
+    cb->goaway(t->cb_user_data, &t->base, goaways[i].status, goaways[i].debug);
   }
 
   if (perform_callbacks) {
@@ -1058,6 +1068,17 @@ static void finalize_cancellations(transport *t) {
   }
 }
 
+static void add_incoming_metadata(transport *t, stream *s, grpc_mdelem *elem) {
+  if (s->incoming_metadata_capacity == s->incoming_metadata_count) {
+    s->incoming_metadata_capacity =
+        GPR_MAX(8, 2 * s->incoming_metadata_capacity);
+    s->incoming_metadata =
+        gpr_realloc(s->incoming_metadata, sizeof(*s->incoming_metadata) *
+                                              s->incoming_metadata_capacity);
+  }
+  s->incoming_metadata[s->incoming_metadata_count++].md = elem;
+}
+
 static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 grpc_status_code local_status,
                                 grpc_chttp2_error_code error_code,
@@ -1077,9 +1098,18 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
       stream_list_join(t, s, CANCELLED);
 
       gpr_ltoa(local_status, buffer);
-      grpc_sopb_add_metadata(
-          &s->parser.incoming_sopb,
+      add_incoming_metadata(
+          t, s,
           grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));
+      switch (local_status) {
+        case GRPC_STATUS_CANCELLED:
+          add_incoming_metadata(
+              t, s, grpc_mdelem_from_strings(t->metadata_context,
+                                             "grpc-message", "Cancelled"));
+          break;
+        default:
+          break;
+      }
 
       stream_list_join(t, s, PENDING_CALLBACKS);
     }
@@ -1255,11 +1285,10 @@ static void on_header(void *tp, grpc_mdelem *md) {
       }
       grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
     }
-    grpc_sopb_add_deadline(&s->parser.incoming_sopb,
-                           gpr_time_add(gpr_now(), *cached_timeout));
+    s->incoming_deadline = gpr_time_add(gpr_now(), *cached_timeout);
     grpc_mdelem_unref(md);
   } else {
-    grpc_sopb_add_metadata(&s->parser.incoming_sopb, md);
+    add_incoming_metadata(t, s, md);
   }
 }
 
@@ -1304,7 +1333,7 @@ static int init_header_frame_parser(transport *t, int is_continuation) {
     t->incoming_stream = NULL;
     /* if stream is accepted, we set incoming_stream in init_stream */
     t->cb->accept_stream(t->cb_user_data, &t->base,
-                         (void *)(gpr_uintptr) t->incoming_stream_id);
+                         (void *)(gpr_uintptr)t->incoming_stream_id);
     s = t->incoming_stream;
     if (!s) {
       gpr_log(GPR_ERROR, "stream not accepted");
@@ -1435,6 +1464,35 @@ static int is_window_update_legal(gpr_int64 window_update, gpr_int64 window) {
   return window + window_update < MAX_WINDOW;
 }
 
+static void free_md(void *p, grpc_op_error result) { gpr_free(p); }
+
+static void add_metadata_batch(transport *t, stream *s) {
+  grpc_metadata_batch b;
+  size_t i;
+
+  b.list.head = &s->incoming_metadata[0];
+  b.list.tail = &s->incoming_metadata[s->incoming_metadata_count - 1];
+  b.garbage.head = b.garbage.tail = NULL;
+  b.deadline = s->incoming_deadline;
+
+  for (i = 1; i < s->incoming_metadata_count; i++) {
+    s->incoming_metadata[i].prev = &s->incoming_metadata[i - 1];
+    s->incoming_metadata[i - 1].next = &s->incoming_metadata[i];
+  }
+  s->incoming_metadata[0].prev = NULL;
+  s->incoming_metadata[s->incoming_metadata_count - 1].next = NULL;
+
+  grpc_sopb_add_metadata(&s->parser.incoming_sopb, b);
+  grpc_sopb_add_flow_ctl_cb(&s->parser.incoming_sopb, free_md,
+                            s->incoming_metadata);
+
+  /* reset */
+  s->incoming_deadline = gpr_inf_future;
+  s->incoming_metadata = NULL;
+  s->incoming_metadata_count = 0;
+  s->incoming_metadata_capacity = 0;
+}
+
 static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
   grpc_chttp2_parse_state st;
   size_t i;
@@ -1449,8 +1507,7 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
         stream_list_join(t, t->incoming_stream, PENDING_CALLBACKS);
       }
       if (st.metadata_boundary) {
-        grpc_sopb_add_metadata_boundary(
-            &t->incoming_stream->parser.incoming_sopb);
+        add_metadata_batch(t, t->incoming_stream);
         stream_list_join(t, t->incoming_stream, PENDING_CALLBACKS);
       }
       if (st.ack_settings) {
@@ -1580,8 +1637,8 @@ static int process_read(transport *t, gpr_slice slice) {
                   "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
                   "at byte %d",
                   CLIENT_CONNECT_STRING[t->deframe_state],
-                  (int)(gpr_uint8) CLIENT_CONNECT_STRING[t->deframe_state],
-                  *cur, (int)*cur, t->deframe_state);
+                  (int)(gpr_uint8)CLIENT_CONNECT_STRING[t->deframe_state], *cur,
+                  (int)*cur, t->deframe_state);
           drop_connection(t);
           return 0;
         }
@@ -1778,16 +1835,19 @@ static int prepare_callbacks(transport *t) {
   int n = 0;
   while ((s = stream_list_remove_head(t, PENDING_CALLBACKS))) {
     int execute = 1;
-    grpc_sopb_swap(&s->parser.incoming_sopb, &s->callback_sopb);
 
     s->callback_state = compute_state(s->sent_write_closed, s->read_closed);
     if (s->callback_state == GRPC_STREAM_CLOSED) {
       remove_from_stream_map(t, s);
       if (s->published_close) {
         execute = 0;
+      } else if (s->incoming_metadata_count) {
+        add_metadata_batch(t, s);
       }
       s->published_close = 1;
     }
+
+    grpc_sopb_swap(&s->parser.incoming_sopb, &s->callback_sopb);
 
     if (execute) {
       stream_list_add_tail(t, s, EXECUTING_CALLBACKS);
@@ -1825,9 +1885,9 @@ static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
  */
 
 static const grpc_transport_vtable vtable = {
-    sizeof(stream),  init_stream,    send_batch,       set_allow_window_updates,
-    add_to_pollset,  destroy_stream, abort_stream,     goaway,
-    close_transport, send_ping,      destroy_transport};
+    sizeof(stream), init_stream, send_batch, set_allow_window_updates,
+    add_to_pollset, destroy_stream, abort_stream, goaway, close_transport,
+    send_ping, destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,
