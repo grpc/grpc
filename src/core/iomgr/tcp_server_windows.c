@@ -195,9 +195,7 @@ static void start_accept(server_port *port) {
                            addrlen, addrlen, &bytes_received,
                            &port->socket->read_info.overlapped);
 
-  if (success) {
-    gpr_log(GPR_DEBUG, "accepted immediately - but we still go to sleep");
-  } else {
+  if (!success) {
     int error = WSAGetLastError();
     if (error != ERROR_IO_PENDING) {
       message = "AcceptEx failed: %s";
@@ -234,11 +232,9 @@ static void on_accept(void *arg, int success) {
       gpr_free(utf8_message);
       closesocket(sock);
     } else {
-      gpr_log(GPR_DEBUG, "on_accept: accepted connection");
       ep = grpc_tcp_create(grpc_winsocket_create(sock));
     }
   } else {
-    gpr_log(GPR_DEBUG, "on_accept: shutting down");
     closesocket(sock);
     gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports) {
