@@ -157,6 +157,7 @@ def main():
               'name': '%s_%s_unsecure_test' % (f, t),
               'build': 'test',
               'language': 'c',
+              'secure': 'no',
               'src': [],
               'flaky': 'invoke_large_request' in t,
               'deps': [
