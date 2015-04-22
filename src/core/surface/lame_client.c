@@ -46,22 +46,9 @@ typedef struct { void *unused; } call_data;
 
 typedef struct { void *unused; } channel_data;
 
-static void call_op(grpc_call_element *elem, grpc_call_element *from_elem,
-                    grpc_call_op *op) {
+static void lame_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-
-  switch (op->type) {
-    case GRPC_SEND_METADATA:
-      grpc_metadata_batch_destroy(&op->data.metadata);
-      grpc_call_recv_synthetic_status(elem, GRPC_STATUS_UNKNOWN,
-                                      "Rpc sent on a lame channel.");
-      grpc_call_stream_closed(elem);
-      break;
-    default:
-      break;
-  }
-
-  op->done_cb(op->user_data, GRPC_OP_ERROR);
+  grpc_transport_op_finish_with_failure(op);
 }
 
 static void channel_op(grpc_channel_element *elem,
@@ -93,7 +80,7 @@ static void init_channel_elem(grpc_channel_element *elem,
 static void destroy_channel_elem(grpc_channel_element *elem) {}
 
 static const grpc_channel_filter lame_filter = {
-    call_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
+    lame_start_transport_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
     sizeof(channel_data), init_channel_elem, destroy_channel_elem,
     "lame-client",
 };

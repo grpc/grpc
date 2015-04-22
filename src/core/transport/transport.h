@@ -132,6 +132,9 @@ typedef struct grpc_transport_op {
 
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
 
+/* TODO(ctiller): remove this */
+void grpc_transport_add_to_pollset(grpc_transport *transport, grpc_pollset *pollset);
+
 char *grpc_transport_op_string(grpc_transport_op *op);
 
 /* Send a batch of operations on a transport
