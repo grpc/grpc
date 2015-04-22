@@ -33,17 +33,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.ProtocolBuffers;
-using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
-using NUnit.Framework;
 
 using Google.Apis.Auth.OAuth2;
 using System.Security.Cryptography.X509Certificates;
@@ -59,7 +55,7 @@ namespace Grpc.Auth
             string accessToken = credential.Token.AccessToken;
 
             // TODO: token refresh logic!!
-            return new HeaderInterceptorDelegate((b)=> { b.Add(new Metadata.MetadataEntry("Authorization", "Bearer " + accessToken)); });
+            return new HeaderInterceptorDelegate((b) => { b.Add(new Metadata.MetadataEntry("Authorization", "Bearer " + accessToken)); });
 
         }
     }

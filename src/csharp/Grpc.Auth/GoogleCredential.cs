@@ -41,6 +41,11 @@ using Grpc.Core.Utils;
 
 using Google.Apis.Auth.OAuth2;
 using System.Security.Cryptography.X509Certificates;
+using Newtonsoft.Json.Linq;
+using Mono.Security.Cryptography;
+using Org.BouncyCastle.Crypto.Parameters;
+using System.Security.Cryptography;
+using Org.BouncyCastle.Security;
 
 namespace Grpc.Auth
 {
@@ -53,6 +58,8 @@ namespace Grpc.Auth
     public class GoogleCredential
     {
         private const string GoogleApplicationCredentialsEnvName = "GOOGLE_APPLICATION_CREDENTIALS";
+        private const string ClientEmailFieldName = "client_email";
+        private const string PrivateKeyFieldName = "private_key";
 
         private ServiceCredential credential;
 
@@ -76,31 +83,20 @@ namespace Grpc.Auth
 
         public GoogleCredential CreateScoped(IEnumerable<string> scopes)
         {
+            // TODO(jtattermusch): also support compute credential.
+            var credsPath = Environment.GetEnvironmentVariable(GoogleApplicationCredentialsEnvName);
 
-            // TODO: also support compute credential.
-
-            //var credsPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
-            //var credsPath = "/usr/local/google/home/jtattermusch/certs/service_account/stubbyCloudTestingTest-7dd63462c60c.json";
-
-            //JObject o1 = JObject.Parse(File.ReadAllText(credsPath));
-            //string privateKey = o1.GetValue("private_key").Value<string>();
-            //Console.WriteLine(privateKey);
-
-            //var certificate = new X509Certificate2(System.Text.Encoding.UTF8.GetBytes(privateKey), "notasecret", X509KeyStorageFlags.Exportable);
-
-            // TODO: support JSON key file.
-
-            // TODO: get file location from GoogleApplicationCredential env var
-            var certificate = new X509Certificate2("/usr/local/google/home/jtattermusch/certs/stubbyCloudTestingTest-090796e783f3.p12", "notasecret", X509KeyStorageFlags.Exportable);
-
-            // TODO: auth user will be read from the JSON key
-            string authUser = "155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk@developer.gserviceaccount.com";
+            JObject o1 = JObject.Parse(File.ReadAllText(credsPath));
+            string clientEmail = o1.GetValue(ClientEmailFieldName).Value<string>();
+            string privateKeyString = o1.GetValue(PrivateKeyFieldName).Value<string>();
+            var privateKey = ParsePrivateKeyFromString(privateKeyString);
 
             var serviceCredential = new ServiceAccountCredential(
-                new ServiceAccountCredential.Initializer(authUser)
+                new ServiceAccountCredential.Initializer(clientEmail)
                 {
-                    Scopes = scopes
-                }.FromCertificate(certificate));
+                    Scopes = scopes,
+                    Key = privateKey
+                });
             return new GoogleCredential(serviceCredential);
         }
 
@@ -110,6 +106,18 @@ namespace Grpc.Auth
             {
                 return credential;
             }
+        }
+
+        private RSACryptoServiceProvider ParsePrivateKeyFromString(string base64PrivateKey)
+        {
+            // TODO(jtattermusch): temporary code to create RSACryptoServiceProvider.
+            base64PrivateKey = base64PrivateKey.Replace("-----BEGIN PRIVATE KEY-----", "").Replace("\n", "").Replace("-----END PRIVATE KEY-----", "");
+            PKCS8.PrivateKeyInfo PKI = new PKCS8.PrivateKeyInfo(Convert.FromBase64String(base64PrivateKey));
+            RsaPrivateCrtKeyParameters key = (RsaPrivateCrtKeyParameters)PrivateKeyFactory.CreateKey(PKI.GetBytes());
+            RSAParameters rsaParameters = DotNetUtilities.ToRSAParameters(key);
+            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+            rsa.ImportParameters(rsaParameters);
+            return rsa;
         }
     }
 }
