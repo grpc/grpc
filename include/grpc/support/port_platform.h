@@ -45,8 +45,10 @@
 #define GPR_WINSOCK_SOCKET 1
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
 #else
 #define GPR_WIN32_ATOMIC 1
+#define GPR_MSVC_TLS 1
 #endif
 #elif defined(_WIN32) || defined(WIN32)
 #define GPR_ARCH_32 1
