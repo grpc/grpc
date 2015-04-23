@@ -492,7 +492,7 @@ TEST_F(End2endTest, ServerCancelsRpc) {
 }
 
 // Client cancels request stream after sending two messages
-  TEST_F(End2endTest, ClientCancelsRequestStream) {
+TEST_F(End2endTest, ClientCancelsRequestStream) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
