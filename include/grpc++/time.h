@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_UTIL_TIME_H
-#define GRPC_INTERNAL_CPP_UTIL_TIME_H
+#ifndef GRPCXX_TIME_H
+#define GRPCXX_TIME_H
 
 #include <grpc++/config.h>
 
@@ -103,4 +103,4 @@ class TimePoint<std::chrono::system_clock::time_point> {
 
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
-#endif  // GRPC_INTERNAL_CPP_UTIL_TIME_H
+#endif  // GRPCXX_TIME_H
