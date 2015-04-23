@@ -14,5 +14,4 @@ Pod::Spec.new do |s|
   s.requires_arc = true
 
   s.dependency 'gRPC', '~> 0.0'
-  s.dependency 'RxLibrary', '~> 0.0'
 end
