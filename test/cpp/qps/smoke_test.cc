@@ -136,14 +136,11 @@ static void RunQPS() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
-
   using namespace grpc::testing;
   RunSynchronousStreamingPingPong();
   RunSynchronousUnaryPingPong();
   RunAsyncUnaryPingPong();
   RunQPS();
 
-  grpc_shutdown();
   return 0;
 }

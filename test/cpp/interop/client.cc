@@ -76,8 +76,6 @@ using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
 
 int main(int argc, char** argv) {
-  grpc_init();
-
   grpc::testing::InitTest(&argc, &argv, true);
 
   int ret = 0;
@@ -129,8 +127,6 @@ int main(int argc, char** argv) {
         FLAGS_test_case.c_str());
     ret = 1;
   }
-  client.Reset(nullptr);
 
-  grpc_shutdown();
   return ret;
 }
