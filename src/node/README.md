@@ -17,7 +17,7 @@ This requires `node` to be installed. If you instead have the `nodejs` executabl
 If you install the gRPC C core library in a custom location, then you need to set some environment variables to install this library. The command will look like this:
 
 ```sh
-CXXFLAGS=-I<custom location>/include LDFLAGS=-L<custom location> npm install [grpc]
+CXXFLAGS=-I<custom location>/include LDFLAGS=-L<custom location>/lib npm install [grpc]
 ```
 
 ## Tests
