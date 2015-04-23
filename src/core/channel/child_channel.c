@@ -121,7 +121,7 @@ static void lb_channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void lb_init_call_elem(grpc_call_element *elem,
-                              const void *server_transport_data) {}
+                              const void *server_transport_data, grpc_transport_op *initial_op) {}
 
 /* Destructor for call_data */
 static void lb_destroy_call_elem(grpc_call_element *elem) {}
@@ -261,13 +261,13 @@ void grpc_child_channel_handle_op(grpc_child_channel *channel,
 }
 
 grpc_child_call *grpc_child_channel_create_call(grpc_child_channel *channel,
-                                                grpc_call_element *parent) {
+                                                grpc_call_element *parent, grpc_transport_op *initial_op) {
   grpc_call_stack *stk = gpr_malloc((channel)->call_stack_size);
   grpc_call_element *lbelem;
   lb_call_data *lbcalld;
   lb_channel_data *lbchand;
 
-  grpc_call_stack_init(channel, NULL, stk);
+  grpc_call_stack_init(channel, NULL, initial_op, stk);
   lbelem = LINK_BACK_ELEM_FROM_CALL(stk);
   lbchand = lbelem->channel_data;
   lbcalld = lbelem->call_data;
