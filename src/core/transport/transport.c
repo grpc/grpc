@@ -85,3 +85,12 @@ void grpc_transport_setup_cancel(grpc_transport_setup *setup) {
 void grpc_transport_setup_initiate(grpc_transport_setup *setup) {
   setup->vtable->initiate(setup);
 }
+
+void grpc_transport_op_finish_with_failure(grpc_transport_op *op) {
+  if (op->send_ops) {
+    op->on_done_send(op->send_user_data, 0);
+  }
+  if (op->recv_ops) {
+    op->on_done_recv(op->recv_user_data, 0);
+  }
+}

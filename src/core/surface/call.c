@@ -598,6 +598,8 @@ static void call_on_done_send(void *pc, int success) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_MESSAGE, error);
   }
   if (call->last_send_contains & (1 << GRPC_IOREQ_SEND_CLOSE)) {
+    finish_ioreq_op(call, GRPC_IOREQ_SEND_TRAILING_METADATA, error);
+    finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, error);
     finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, error);
   }
   call->sending = 0;
@@ -684,6 +686,7 @@ static void call_on_done_recv(void *pc, int success) {
   size_t i;
   int unref = 0;
   lock(call);
+  call->receiving = 0;
   for (i = 0; success && i < call->recv_ops.nops; i++) {
     grpc_stream_op *op = &call->recv_ops.ops[i];
     switch (op->type) {

@@ -42,7 +42,7 @@
 #include <grpc/support/useful.h>
 
 static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
-  gpr_strvec_add(b, gpr_strdup(" key="));
+  gpr_strvec_add(b, gpr_strdup("key="));
   gpr_strvec_add(
       b, gpr_hexdump((char *)GPR_SLICE_START_PTR(md->key->slice),
                      GPR_SLICE_LENGTH(md->key->slice), GPR_HEXDUMP_PLAINTEXT));
@@ -56,6 +56,7 @@ static void put_metadata(gpr_strvec *b, grpc_mdelem *md) {
 static void put_metadata_list(gpr_strvec *b, grpc_metadata_batch md) {
   grpc_linked_mdelem *m;
   for (m = md.list.head; m != NULL; m = m->next) {
+    if (m != md.list.head) gpr_strvec_add(b, gpr_strdup(", "));
     put_metadata(b, m->md);
   }
   if (gpr_time_cmp(md.deadline, gpr_inf_future) != 0) {
@@ -75,7 +76,7 @@ char *grpc_sopb_string(grpc_stream_op_buffer *sopb) {
 
   for (i = 0; i < sopb->nops; i++) {
     grpc_stream_op *op = &sopb->ops[i];
-    if (i) gpr_strvec_add(&b, gpr_strdup(", "));
+    if (i > 0) gpr_strvec_add(&b, gpr_strdup(", "));
     switch (op->type) {
       case GRPC_NO_OP:
         gpr_strvec_add(&b, gpr_strdup("NO_OP"));
@@ -88,7 +89,9 @@ char *grpc_sopb_string(grpc_stream_op_buffer *sopb) {
         gpr_asprintf(&tmp, "SLICE:%d", GPR_SLICE_LENGTH(op->data.slice));
         break;
       case GRPC_OP_METADATA:
+        gpr_strvec_add(&b, gpr_strdup("METADATA{"));
         put_metadata_list(&b, op->data.metadata);
+        gpr_strvec_add(&b, gpr_strdup("}"));
         break;
     }
   }

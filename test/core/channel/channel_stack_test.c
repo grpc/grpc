@@ -55,7 +55,7 @@ static void channel_init_func(grpc_channel_element *elem,
 }
 
 static void call_init_func(grpc_call_element *elem,
-                           const void *server_transport_data) {
+                           const void *server_transport_data, grpc_transport_op *initial_op) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
 }
@@ -66,8 +66,8 @@ static void call_destroy_func(grpc_call_element *elem) {
   ++*(int *)(elem->channel_data);
 }
 
-static void call_func(grpc_call_element *elem, grpc_call_element *from_elem,
-                      grpc_call_op *op) {
+static void call_func(grpc_call_element *elem, 
+                      grpc_transport_op *op) {
   ++*(int *)(elem->call_data);
 }
 
@@ -112,7 +112,7 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*channel_data == 0);
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_call_stack_init(channel_stack, NULL, call_stack);
+  grpc_call_stack_init(channel_stack, NULL, NULL, call_stack);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
