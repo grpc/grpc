@@ -73,6 +73,11 @@ class CompletionQueueAsyncWorker : public NanAsyncWorker {
   grpc_event *result;
 
   static grpc_completion_queue *queue;
+
+  // Number of grpc_completion_queue_next calls in the thread pool
+  static int current_threads;
+  // Number of grpc_completion_queue_next calls waiting to enter the thread pool
+  static int waiting_next_calls;
 };
 
 }  // namespace node
