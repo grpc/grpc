@@ -302,6 +302,10 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
     call->receiving = 1;
     grpc_call_internal_ref(call);
     initial_op_ptr = &initial_op;
+  } else {
+    /* we clear this when we've sent initial metadata -- this is very much
+       a hack to avoid two ops ending up in client_channel */
+    call->receiving = 2;
   }
   grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
                        CALL_STACK_FROM_CALL(call));
@@ -595,6 +599,10 @@ static void call_on_done_send(void *pc, int success) {
   lock(call);
   if (call->last_send_contains & (1 << GRPC_IOREQ_SEND_INITIAL_METADATA)) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, error);
+    if (call->is_client) {
+      GPR_ASSERT(call->receiving == 2);
+      call->receiving = 0;
+    }
   }
   if (call->last_send_contains & (1 << GRPC_IOREQ_SEND_MESSAGE)) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_MESSAGE, error);
@@ -604,6 +612,7 @@ static void call_on_done_send(void *pc, int success) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_STATUS, error);
     finish_ioreq_op(call, GRPC_IOREQ_SEND_CLOSE, error);
   }
+  call->last_send_contains = 0;
   call->sending = 0;
   unlock(call);
   grpc_call_internal_unref(call, 0);
