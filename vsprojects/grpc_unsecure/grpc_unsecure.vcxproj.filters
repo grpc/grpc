@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
@@ -585,7 +585,6 @@
       <Filter>src\core\transport</Filter>
     </ClInclude>
   </ItemGroup>
-
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{10076c7e-7c8e-8005-0c81-64454af2cbc8}</UniqueIdentifier>
@@ -630,5 +629,7 @@
       <UniqueIdentifier>{5fcd6206-f774-9ae6-4b85-305d6a723843}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>
-
