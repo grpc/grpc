@@ -821,6 +821,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
           mdb.list = chain_metadata_from_app(call, data.send_metadata.count,
                                              data.send_metadata.metadata);
           mdb.garbage.head = mdb.garbage.tail = NULL;
+          mdb.deadline = gpr_inf_future;
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
