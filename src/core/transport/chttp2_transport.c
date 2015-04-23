@@ -893,10 +893,11 @@ static int prepare_write(transport *t) {
     }
 
     /* we should either exhaust window or have no ops left, but not both */
-    GPR_ASSERT(s->outgoing_sopb->nops == 0 || s->outgoing_window <= 0);
     if (s->outgoing_sopb->nops == 0) {
       s->outgoing_sopb = NULL;
       schedule_cb(t, s->send_done_closure, 1);
+    } else if (s->outgoing_window) {
+      stream_list_add_tail(t, s, WRITABLE);
     }
   }
 
