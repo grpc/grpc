@@ -117,7 +117,7 @@ void gpr_slice_buffer_add(gpr_slice_buffer *sb, gpr_slice s) {
                s.data.inlined.bytes, s.data.inlined.length);
         back->data.inlined.length += s.data.inlined.length;
       } else {
-        size_t cp1 = GPR_SLICE_INLINED_SIZE - back->data.inlined.length;
+		gpr_uint32 cp1 = GPR_SLICE_INLINED_SIZE - back->data.inlined.length;
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, cp1);
         back->data.inlined.length = GPR_SLICE_INLINED_SIZE;
