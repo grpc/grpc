@@ -288,7 +288,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   /* one ref is dropped in response to destroy, the other in
      stream_closed */
   gpr_ref_init(&call->internal_refcount, 2);
-  grpc_call_stack_init(channel_stack, server_transport_data,
+  grpc_call_stack_init(channel_stack, server_transport_data, NULL,
                        CALL_STACK_FROM_CALL(call));
   if (gpr_time_cmp(send_deadline, gpr_inf_future) != 0) {
     set_deadline_alarm(call, send_deadline);

@@ -325,8 +325,11 @@ static void channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data) {
+                           const void *server_transport_data, grpc_transport_op *initial_op) {
   call_data *calld = elem->call_data;
+
+  /* TODO(ctiller): is there something useful we can do here? */
+  GPR_ASSERT(initial_op == NULL);
 
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GPR_ASSERT(server_transport_data == NULL);

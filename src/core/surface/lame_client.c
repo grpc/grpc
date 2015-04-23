@@ -66,7 +66,11 @@ static void channel_op(grpc_channel_element *elem,
 }
 
 static void init_call_elem(grpc_call_element *elem,
-                           const void *transport_server_data) {}
+                           const void *transport_server_data, grpc_transport_op *initial_op) {
+  if (initial_op) {
+    grpc_transport_op_finish_with_failure(initial_op);
+  }
+}
 
 static void destroy_call_elem(grpc_call_element *elem) {}
 

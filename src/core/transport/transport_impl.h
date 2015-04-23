@@ -43,7 +43,7 @@ typedef struct grpc_transport_vtable {
 
   /* implementation of grpc_transport_init_stream */
   int (*init_stream)(grpc_transport *self, grpc_stream *stream,
-                     const void *server_data);
+                     const void *server_data, grpc_transport_op *initial_op);
 
   /* implementation of grpc_transport_send_batch */
   void (*perform_op)(grpc_transport *self, grpc_stream *stream,

@@ -38,12 +38,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-typedef struct {
-  grpc_mdelem *path;
-  grpc_mdelem *content_type;
-  grpc_byte_buffer *content;
-} gettable;
-
 typedef struct call_data {
   gpr_uint8 got_initial_metadata;
   gpr_uint8 seen_path;
@@ -73,9 +67,6 @@ typedef struct channel_data {
   grpc_mdstr *host_key;
 
   grpc_mdctx *mdctx;
-
-  size_t gettable_count;
-  gettable *gettables;
 } channel_data;
 
 /* used to silence 'variable not used' warnings */
@@ -187,12 +178,11 @@ static void hs_on_recv(void *user_data, int success) {
   calld->on_done_recv(calld->recv_user_data, success);
 }
 
-static void hs_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void hs_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   size_t i;
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
   if (op->send_ops && !calld->sent_status) {
     size_t nops = op->send_ops->nops;
@@ -215,7 +205,11 @@ static void hs_start_transport_op(grpc_call_element *elem, grpc_transport_op *op
     op->on_done_recv = hs_on_recv;
     op->recv_user_data = elem;
   }
+}
 
+static void hs_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  hs_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
 }
 
@@ -238,15 +232,12 @@ static void channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data) {
+                           const void *server_transport_data, grpc_transport_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
-
-  ignore_unused(channeld);
-
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
+  if (initial_op) hs_mutate_op(elem, initial_op);
 }
 
 /* Destructor for call_data */
@@ -256,9 +247,6 @@ static void destroy_call_elem(grpc_call_element *elem) {}
 static void init_channel_elem(grpc_channel_element *elem,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
-  size_t i;
-  size_t gettable_capacity = 0;
-
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
@@ -284,45 +272,12 @@ static void init_channel_elem(grpc_channel_element *elem,
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 
   channeld->mdctx = mdctx;
-
-  /* initialize http download support */
-  channeld->gettable_count = 0;
-  channeld->gettables = NULL;
-  for (i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_SERVE_OVER_HTTP)) {
-      gettable *g;
-      gpr_slice slice;
-      grpc_http_server_page *p = args->args[i].value.pointer.p;
-      if (channeld->gettable_count == gettable_capacity) {
-        gettable_capacity =
-            GPR_MAX(gettable_capacity * 3 / 2, gettable_capacity + 1);
-        channeld->gettables = gpr_realloc(channeld->gettables,
-                                          gettable_capacity * sizeof(gettable));
-      }
-      g = &channeld->gettables[channeld->gettable_count++];
-      g->path = grpc_mdelem_from_strings(mdctx, ":path", p->path);
-      g->content_type =
-          grpc_mdelem_from_strings(mdctx, "content-type", p->content_type);
-      slice = gpr_slice_from_copied_string(p->content);
-      g->content = grpc_byte_buffer_create(&slice, 1);
-      gpr_slice_unref(slice);
-    }
-  }
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem) {
-  size_t i;
-
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
-
-  for (i = 0; i < channeld->gettable_count; i++) {
-    grpc_mdelem_unref(channeld->gettables[i].path);
-    grpc_mdelem_unref(channeld->gettables[i].content_type);
-    grpc_byte_buffer_destroy(channeld->gettables[i].content);
-  }
-  gpr_free(channeld->gettables);
 
   grpc_mdelem_unref(channeld->te_trailers);
   grpc_mdelem_unref(channeld->status_ok);

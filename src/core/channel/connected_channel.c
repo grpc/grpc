@@ -102,7 +102,7 @@ static void init_call_elem(grpc_call_element *elem,
   int r;
 
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  r = grpc_transport_1chand->transport,
+  r = grpc_transport_init_stream(chand->transport,
                                  TRANSPORT_STREAM_FROM_CALL_DATA(calld),
                                  server_transport_data, initial_op);
   GPR_ASSERT(r == 0);

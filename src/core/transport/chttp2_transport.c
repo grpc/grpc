@@ -378,7 +378,7 @@ static void maybe_finish_read(transport *t, stream *s);
 static void maybe_join_window_updates(transport *t, stream *s);
 static void finish_reads(transport *t);
 static void add_to_pollset_locked(transport *t, grpc_pollset *pollset);
-
+static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op);
 
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -595,7 +595,7 @@ static void goaway(grpc_transport *gt, grpc_status_code status,
 }
 
 static int init_stream(grpc_transport *gt, grpc_stream *gs,
-                       const void *server_data) {
+                       const void *server_data, grpc_transport_op *initial_op) {
   transport *t = (transport *)gt;
   stream *s = (stream *)gs;
 
@@ -621,6 +621,8 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
   grpc_sopb_init(&s->writing_sopb);
   grpc_sopb_init(&s->callback_sopb);
   grpc_chttp2_data_parser_init(&s->parser);
+
+  if (initial_op) perform_op_locked(t, s, initial_op);
 
   if (!server_data) {
     unlock(t);
@@ -1003,12 +1005,7 @@ static void maybe_start_some_streams(transport *t) {
   }
 }
 
-static void perform_op(grpc_transport *gt, grpc_stream *gs, grpc_transport_op *op) {
-  transport *t = (transport *)gt;
-  stream *s = (stream *)gs;
-
-  lock(t);
-
+static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
   if (op->send_ops) {
     GPR_ASSERT(s->outgoing_sopb == NULL);
     s->send_done_closure.cb = op->on_done_send;
@@ -1053,7 +1050,14 @@ static void perform_op(grpc_transport *gt, grpc_stream *gs, grpc_transport_op *o
     cancel_stream(t, s, op->cancel_with_status, grpc_chttp2_grpc_status_to_http2_error(op->cancel_with_status),
                   1);
   }
+}
 
+static void perform_op(grpc_transport *gt, grpc_stream *gs, grpc_transport_op *op) {
+  transport *t = (transport *)gt;
+  stream *s = (stream *)gs;
+
+  lock(t);
+  perform_op_locked(t, s, op);
   unlock(t);
 }
 

@@ -45,18 +45,24 @@ typedef struct channel_data {
 /* used to silence 'variable not used' warnings */
 static void ignore_unused(void *ignored) {}
 
-/* Called either:
-     - in response to an API call (or similar) from above, to send something
-     - a network event (or similar) from below, to receive something
-   op contains type and call direction information, in addition to the data
-   that is being sent or received. */
-static void noop_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void noop_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
   ignore_unused(calld);
   ignore_unused(channeld);
+
+  /* do nothing */
+}
+
+/* Called either:
+     - in response to an API call (or similar) from above, to send something
+     - a network event (or similar) from below, to receive something
+   op contains type and call direction information, in addition to the data
+   that is being sent or received. */
+static void noop_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+  noop_mutate_op(elem, op);
 
   /* pass control down the stack */
   grpc_call_next_op(elem, op);
@@ -81,13 +87,15 @@ static void channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data) {
+                           const void *server_transport_data, grpc_transport_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
   /* initialize members */
   calld->unused = channeld->unused;
+
+  if (initial_op) noop_mutate_op(elem, initial_op);
 }
 
 /* Destructor for call_data */
