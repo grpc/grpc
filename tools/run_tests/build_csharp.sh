@@ -42,4 +42,9 @@ cd $(dirname $0)/../..
 
 root=`pwd`
 
+if [ -n "$NUGET" ]
+then
+  $NUGET restore src/csharp/Grpc.sln
+fi
+
 xbuild /p:Configuration=$MSBUILD_CONFIG src/csharp/Grpc.sln
