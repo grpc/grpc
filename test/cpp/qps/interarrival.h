@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef TEST_QPS_TIMER_H
-#define TEST_QPS_TIMER_H
+#ifndef TEST_QPS_INTERARRIVAL_H
+#define TEST_QPS_INTERARRIVAL_H
 
 #include <chrono>
 #include <cmath>
@@ -49,7 +49,7 @@ namespace testing {
 // this code is required to serve as the template code for other language
 // stacks. Thus, this code only uses a uniform distribution of doubles [0,1)
 // and then provides the distribution functions itself.
-  
+
 class RandomDist {
  public:
   RandomDist() {}
@@ -59,7 +59,7 @@ class RandomDist {
 };
 
 inline RandomDist::~RandomDist() {}
- 
+
 class UniformDist GRPC_FINAL: public RandomDist {
 public:
  UniformDist(double lo, double hi): lo_(lo), range_(hi-lo) {}
@@ -81,7 +81,7 @@ public:
 private:
   double lambda_recip_;
 };
- 
+
 class DetDist GRPC_FINAL : public RandomDist {
 public:
  explicit DetDist(double val): val_(val) {}
@@ -103,20 +103,26 @@ private:
  double base_;
  double alpha_recip_;
 };
- 
+
 // A class library for generating pseudo-random interarrival times
 // in an efficient re-entrant way. The random table is built at construction
 // time, and each call must include the thread id of the invoker
 
 using qps_random_engine = std::default_random_engine;
- 
+
 class InterarrivalTimer {
 public:
+  InterarrivalTimer() {}
   InterarrivalTimer(const RandomDist& r, int threads, int entries=1000000) {
+    init(r, threads, entries);
+  }
+  void init(const RandomDist& r, int threads, int entries=1000000) {
     qps_random_engine gen;
     std::uniform_real_distribution<double> uniform(0.0,1.0);
     for (int i=0; i<entries; i++) {
-      random_table_.push_back(std::chrono::microseconds(static_cast<int64_t>(1000000.0*r(uniform(gen)))));
+      random_table_.push_back(
+          std::chrono::nanoseconds(
+              static_cast<int64_t>(1e9*r(uniform(gen)))));
     }
     // Now set up the thread positions
     for (int i=0; i<threads; i++) {
@@ -124,15 +130,15 @@ public:
     }
   }
   virtual ~InterarrivalTimer() {};
-  
-  std::chrono::microseconds operator() (int thread_num) {
+
+  std::chrono::nanoseconds operator() (int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);
     if (thread_posns_[thread_num] == random_table_.end())
       thread_posns_[thread_num] = random_table_.begin();
     return ret;
   }
  private:
-  typedef std::vector<std::chrono::microseconds> time_table;
+  typedef std::vector<std::chrono::nanoseconds> time_table;
   std::vector<time_table::const_iterator> thread_posns_;
   time_table random_table_;
 };

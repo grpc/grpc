@@ -69,9 +69,9 @@ int main(int argc, char **argv) {
   RunTest(InterarrivalTimer(ExpDist(10.0), 5), std::string("Exponential(10)"));
   RunTest(InterarrivalTimer(DetDist(5.0), 5), std::string("Det(5)"));
   RunTest(InterarrivalTimer(UniformDist(0.0,10.0), 5),
-	  std::string("Uniform(1,10)"));
+          std::string("Uniform(1,10)"));
   RunTest(InterarrivalTimer(ParetoDist(1.0,1.0), 5),
-	  std::string("Pareto(1,1)"));
-  
+          std::string("Pareto(1,1)"));
+
   return 0;
 }
