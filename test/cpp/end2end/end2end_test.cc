@@ -492,23 +492,6 @@ TEST_F(End2endTest, ServerCancelsRpc) {
 }
 
 
-  auto stream = stub_->RequestStream(&context, &response);
-  EXPECT_TRUE(stream->Write(request));
-  EXPECT_TRUE(stream->Write(request));
-  
-  context.TryCancel();
-
-  Status s = stream->Finish();
-  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
-  
-  EXPECT_EQ(response.message(), "");
-
-}
-
-
-
-
-
 // Client cancels request stream after sending two messages
 TEST_F(End2endTest, ClientCancelsRequestStream) {
   ResetStub();
@@ -527,6 +510,7 @@ TEST_F(End2endTest, ClientCancelsRequestStream) {
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
   
   EXPECT_EQ(response.message(), "");
+
 }
 
 // Client cancels server stream after sending some messages
@@ -592,6 +576,7 @@ TEST_F(End2endTest, ClientCancelsBidi) {
 
   Status s = stream->Finish();
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
+
 }
 
 }  // namespace testing
