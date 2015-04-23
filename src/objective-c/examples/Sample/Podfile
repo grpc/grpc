@@ -2,7 +2,8 @@ source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
 pod 'gRPC', :path => "../../../.."
-pod 'Route_guide', :path => "protos"
+pod 'Route_guide', :path => "RouteGuideClient"
+pod 'RemoteTest', :path => "RemoteTestClient"
 
 link_with 'Sample', 'SampleTests'
 

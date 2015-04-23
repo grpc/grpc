@@ -58,7 +58,7 @@
 
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
                                            method:method
                                    requestsWriter:requestsWriter];
 
@@ -85,7 +85,7 @@
 
   id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
                                            method:method
                                    requestsWriter:requestsWriter];
 
@@ -116,7 +116,7 @@
   RGDPoint *point = [[[[[RGDPointBuilder alloc] init] setLatitude:28E7] setLongitude:-15E7] build];
   id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"127.0.0.1:8980"
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
                                            method:method
                                    requestsWriter:requestsWriter];
 

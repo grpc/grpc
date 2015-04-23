@@ -94,9 +94,6 @@
     <ClCompile Include="..\..\src\core\channel\http_server_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\channel\metadata_buffer.c">
-      <Filter>src\core\channel</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\noop_filter.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -450,9 +447,6 @@
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\http_server_filter.h">
-      <Filter>src\core\channel</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\core\channel\metadata_buffer.h">
       <Filter>src\core\channel</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\noop_filter.h">

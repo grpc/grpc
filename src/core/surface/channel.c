@@ -62,7 +62,7 @@ struct grpc_channel {
   registered_call *registered_calls;
 };
 
-#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c)+1))
+#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
 #define CHANNEL_FROM_CHANNEL_STACK(channel_stack) \
   (((grpc_channel *)(channel_stack)) - 1)
 #define CHANNEL_FROM_TOP_ELEM(top_elem) \
@@ -91,44 +91,25 @@ grpc_channel *grpc_channel_create_from_filters(
   return channel;
 }
 
-static void do_nothing(void *ignored, grpc_op_error error) {}
-
 static grpc_call *grpc_channel_create_call_internal(
     grpc_channel *channel, grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
     grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
-  grpc_call *call;
-  grpc_call_op op;
+  grpc_mdelem *send_metadata[2];
 
-  if (!channel->is_client) {
-    gpr_log(GPR_ERROR, "Cannot create a call on the server.");
-    return NULL;
-  }
+  GPR_ASSERT(channel->is_client);
 
-  call = grpc_call_create(channel, cq, NULL);
+  send_metadata[0] = path_mdelem;
+  send_metadata[1] = authority_mdelem;
 
-  /* Add :path and :authority headers. */
-  op.type = GRPC_SEND_METADATA;
-  op.dir = GRPC_CALL_DOWN;
-  op.flags = 0;
-  op.data.metadata = path_mdelem;
-  op.done_cb = do_nothing;
-  op.user_data = NULL;
-  grpc_call_execute_op(call, &op);
+  return grpc_call_create(channel, cq, NULL, send_metadata,
+                          GPR_ARRAY_SIZE(send_metadata), deadline);
+}
 
-  op.data.metadata = authority_mdelem;
-  grpc_call_execute_op(call, &op);
-
-  if (0 != gpr_time_cmp(deadline, gpr_inf_future)) {
-    op.type = GRPC_SEND_DEADLINE;
-    op.dir = GRPC_CALL_DOWN;
-    op.flags = 0;
-    op.data.deadline = deadline;
-    op.done_cb = do_nothing;
-    op.user_data = NULL;
-    grpc_call_execute_op(call, &op);
-  }
-
-  return call;
+grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
+                                        const char *method, const char *host,
+                                        gpr_timespec absolute_deadline) {
+  return grpc_channel_create_call(channel, NULL, method, host,
+                                  absolute_deadline);
 }
 
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
@@ -144,13 +125,6 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
           channel->metadata_context, grpc_mdstr_ref(channel->authority_string),
           grpc_mdstr_from_string(channel->metadata_context, host)),
       deadline);
-}
-
-grpc_call *grpc_channel_create_call_old(grpc_channel *channel,
-                                        const char *method, const char *host,
-                                        gpr_timespec absolute_deadline) {
-  return grpc_channel_create_call(channel, NULL, method, host,
-                                  absolute_deadline);
 }
 
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
