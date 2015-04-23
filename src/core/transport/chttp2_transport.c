@@ -607,6 +607,7 @@ static int init_stream(grpc_transport *gt, grpc_stream *gs,
     lock(t);
     s->id = 0;
   } else {
+    /* already locked */
     s->id = (gpr_uint32)(gpr_uintptr)server_data;
     t->incoming_stream = s;
     grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);

@@ -95,15 +95,16 @@ static void channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data) {
+                           const void *server_transport_data,
+                           grpc_transport_op *initial_op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   int r;
 
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  r = grpc_transport_init_stream(chand->transport,
+  r = grpc_transport_1chand->transport,
                                  TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-                                 server_transport_data);
+                                 server_transport_data, initial_op);
   GPR_ASSERT(r == 0);
 }
 

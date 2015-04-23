@@ -105,7 +105,8 @@ static int prepare_activate(grpc_call_element *elem,
   calld->state = CALL_ACTIVE;
 
   /* create a child call */
-  calld->s.active.child_call = grpc_child_channel_create_call(on_child, elem);
+  /* TODO(ctiller): pass the waiting op down here */
+  calld->s.active.child_call = grpc_child_channel_create_call(on_child, elem, NULL);
 
   return 1;
 }

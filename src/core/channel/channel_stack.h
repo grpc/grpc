@@ -121,7 +121,8 @@ typedef struct {
      transport and is on the server. Most filters want to ignore this
      argument.*/
   void (*init_call_elem)(grpc_call_element *elem,
-                         const void *server_transport_data);
+                         const void *server_transport_data,
+                         grpc_transport_op *initial_op);
   /* Destroy per call data.
      The filter does not need to do any chaining */
   void (*destroy_call_elem)(grpc_call_element *elem);
@@ -200,6 +201,7 @@ void grpc_channel_stack_destroy(grpc_channel_stack *stack);
    server. */
 void grpc_call_stack_init(grpc_channel_stack *channel_stack,
                           const void *transport_server_data,
+                          grpc_transport_op *initial_op,
                           grpc_call_stack *call_stack);
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_call_stack *stack);

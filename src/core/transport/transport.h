@@ -60,6 +60,23 @@ typedef enum grpc_stream_state {
   GRPC_STREAM_CLOSED
 } grpc_stream_state;
 
+/* Transport op: a set of operations to perform on a transport */
+typedef struct grpc_transport_op {
+  grpc_stream_op_buffer *send_ops;
+  int is_last_send;
+  void (*on_done_send)(void *user_data, int success);
+  void *send_user_data;
+
+  grpc_stream_op_buffer *recv_ops;
+  grpc_stream_state *recv_state;
+  void (*on_done_recv)(void *user_data, int success);
+  void *recv_user_data;
+
+  grpc_pollset *bind_pollset;
+
+  grpc_status_code cancel_with_status;
+} grpc_transport_op;
+
 /* Callbacks made from the transport to the upper layers of grpc. */
 struct grpc_transport_callbacks {
   /* Initialize a new stream on behalf of the transport.
@@ -98,7 +115,7 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
      server_data - either NULL for a client initiated stream, or a pointer
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data);
+                               const void *server_data, grpc_transport_op *initial_op);
 
 /* Destroy transport data for a stream.
 
@@ -112,23 +129,6 @@ int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
                  caller, but any child memory must be cleaned up) */
 void grpc_transport_destroy_stream(grpc_transport *transport,
                                    grpc_stream *stream);
-
-/* Transport op: a set of operations to perform on a transport */
-typedef struct grpc_transport_op {
-  grpc_stream_op_buffer *send_ops;
-  int is_last_send;
-  void (*on_done_send)(void *user_data, int success);
-  void *send_user_data;
-
-  grpc_stream_op_buffer *recv_ops;
-  grpc_stream_state *recv_state;
-  void (*on_done_recv)(void *user_data, int success);
-  void *recv_user_data;
-
-  grpc_pollset *bind_pollset;
-
-  grpc_status_code cancel_with_status;
-} grpc_transport_op;
 
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
 

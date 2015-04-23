@@ -82,15 +82,18 @@ static void extract_and_annotate_method_tag(grpc_stream_op_buffer* sopb, call_da
   }
 }
 
-static void client_start_transport_op(grpc_call_element* elem, grpc_transport_op* op) {
+static void client_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   call_data* calld = elem->call_data;
   channel_data* chand = elem->channel_data;
-  GPR_ASSERT(calld != NULL);
-  GPR_ASSERT(chand != NULL);
-  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   if (op->send_ops) {
     extract_and_annotate_method_tag(op->send_ops, calld, chand);
   }
+}
+
+static void client_start_transport_op(grpc_call_element* elem, grpc_transport_op* op) {
+  call_data* calld = elem->call_data;
+  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
+  client_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
 }
 
@@ -104,12 +107,8 @@ static void server_on_done_recv(void *ptr, int success) {
   calld->on_done_recv(calld->recv_user_data, success);
 }
 
-static void server_start_transport_op(grpc_call_element* elem, grpc_transport_op* op) {
+static void server_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   call_data* calld = elem->call_data;
-  channel_data* chand = elem->channel_data;
-  GPR_ASSERT(calld != NULL);
-  GPR_ASSERT(chand != NULL);
-  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   if (op->recv_ops) {
     /* substitute our callback for the op callback */
     calld->recv_ops = op->recv_ops;
@@ -118,7 +117,12 @@ static void server_start_transport_op(grpc_call_element* elem, grpc_transport_op
     op->on_done_recv = server_on_done_recv;
     op->recv_user_data = elem;
   }
-  /* Always pass control up or down the stack depending on op->dir */
+}
+
+static void server_start_transport_op(grpc_call_element* elem, grpc_transport_op* op) {
+  call_data* calld = elem->call_data;
+  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
+  server_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
 }
 
@@ -136,12 +140,13 @@ static void channel_op(grpc_channel_element* elem,
 }
 
 static void client_init_call_elem(grpc_call_element* elem,
-                                  const void* server_transport_data) {
+                                  const void* server_transport_data, grpc_transport_op *initial_op) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   init_rpc_stats(&d->stats);
   d->start_ts = gpr_now();
   d->op_id = census_tracing_start_op();
+  if (initial_op) client_mutate_op(elem, initial_op);
 }
 
 static void client_destroy_call_elem(grpc_call_element* elem) {
@@ -152,12 +157,13 @@ static void client_destroy_call_elem(grpc_call_element* elem) {
 }
 
 static void server_init_call_elem(grpc_call_element* elem,
-                                  const void* server_transport_data) {
+                                  const void* server_transport_data, grpc_transport_op *initial_op) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   init_rpc_stats(&d->stats);
   d->start_ts = gpr_now();
   d->op_id = census_tracing_start_op();
+  if (initial_op) server_mutate_op(elem, initial_op);
 }
 
 static void server_destroy_call_elem(grpc_call_element* elem) {
