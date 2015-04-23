@@ -32,39 +32,44 @@
  */
 
 #import "ViewController.h"
-#import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/GRPCMethodName.h>
-#import <RxLibrary/GRXWriter+Immediate.h>
-#import <RxLibrary/GRXWriteable.h>
+
+#import <gRPC/GRPCCall.h>
+#import <gRPC/GRPCMethodName.h>
+#import <gRPC/GRXWriter+Immediate.h>
+#import <gRPC/GRXWriteable.h>
+#import <RemoteTest/Messages.pb.h>
 
 @interface ViewController ()
-
 @end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  // Do any additional setup after loading the view, typically from a nib.
 
   GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
                                                          interface:@"TestService"
-                                                            method:@"EmptyCall"];
+                                                            method:@"UnaryCall"];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"localhost"
+  RMTSimpleRequest *request = [[[[[[RMTSimpleRequestBuilder alloc] init]
+                                  setResponseSize:100]
+                                 setFillUsername:YES]
+                                setFillOauthScope:YES]
+                               build];
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"grpc-test.sandbox.google.com"
                                            method:method
-                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+                                   requestsWriter:requestsWriter];
 
-  [call startWithWriteable:[[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-    NSLog(@"Received response: %@", value);
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value];
+    NSLog(@"Received response:\n%@", response);
   } completionHandler:^(NSError *errorOrNil) {
     NSLog(@"Finished with error: %@", errorOrNil);
-  }]];
-}
+  }];
 
-- (void)didReceiveMemoryWarning {
-  [super didReceiveMemoryWarning];
-  // Dispose of any resources that can be recreated.
+  [call startWithWriteable:responsesWriteable];
 }
 
 @end

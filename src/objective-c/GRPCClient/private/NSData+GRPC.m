@@ -33,7 +33,7 @@
 
 #import "NSData+GRPC.h"
 
-#include <byte_buffer.h>
+#include <grpc/byte_buffer.h>
 #include <string.h>
 
 // TODO(jcanizales): Move these two incantations to the C library.

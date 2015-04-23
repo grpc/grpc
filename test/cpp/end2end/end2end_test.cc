@@ -473,7 +473,7 @@ TEST_F(End2endTest, ClientCancelsRpc) {
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.code());
-  EXPECT_TRUE(s.details().empty());
+  EXPECT_EQ(s.details(), "Cancelled");
 }
 
 // Server cancels rpc after 1ms
@@ -489,6 +489,72 @@ TEST_F(End2endTest, ServerCancelsRpc) {
   EXPECT_EQ(StatusCode::CANCELLED, s.code());
   EXPECT_TRUE(s.details().empty());
 }
+
+// Client cancels server stream after sending some messages
+TEST_F(End2endTest, ClientCancelsResponseStream) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+
+  auto stream = stub_->ResponseStream(&context, request);
+
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "0");
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message() + "1");
+
+  context.TryCancel();
+
+  // The cancellation races with responses, so there might be zero or
+  // one responses pending, read till failure
+
+  if (stream->Read(&response)) {
+    EXPECT_EQ(response.message(), request.message() + "2");
+    // Since we have cancelled, we expect the next attempt to read to fail
+    EXPECT_FALSE(stream->Read(&response));
+  }
+
+  Status s = stream->Finish();
+  // The final status could be either of CANCELLED or OK depending on
+  // who won the race.
+  EXPECT_GE(grpc::StatusCode::CANCELLED, s.code());
+}
+
+// Client cancels bidi stream after sending some messages
+TEST_F(End2endTest, ClientCancelsBidi) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  grpc::string msg("hello");
+
+  auto stream = stub_->BidiStream(&context);
+
+  request.set_message(msg + "0");
+  EXPECT_TRUE(stream->Write(request));
+  EXPECT_TRUE(stream->Read(&response));
+  EXPECT_EQ(response.message(), request.message());
+
+  request.set_message(msg + "1");
+  EXPECT_TRUE(stream->Write(request));
+
+  context.TryCancel();
+
+  // The cancellation races with responses, so there might be zero or
+  // one responses pending, read till failure
+
+  if (stream->Read(&response)) {
+    EXPECT_EQ(response.message(), request.message());
+    // Since we have cancelled, we expect the next attempt to read to fail
+    EXPECT_FALSE(stream->Read(&response));
+  }
+
+  Status s = stream->Finish();
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.code());
+}
+
 
 }  // namespace testing
 }  // namespace grpc

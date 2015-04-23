@@ -38,6 +38,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/channel_interface.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/cpp/proto/proto_utils.h"
 
 namespace grpc {
@@ -231,11 +232,13 @@ void CallOpBuffer::FillOps(grpc_op* ops, size_t* nops) {
   }
   if (send_message_ || send_message_buffer_) {
     if (send_message_) {
+      GRPC_TIMER_MARK(SER_PROTO_BEGIN, 0);
       bool success = SerializeProto(*send_message_, &send_buf_);
       if (!success) {
         abort();
         // TODO handle parse failure
       }
+      GRPC_TIMER_MARK(SER_PROTO_END, 0);
     } else {
       send_buf_ = send_message_buffer_->buffer();
     }
@@ -307,8 +310,10 @@ bool CallOpBuffer::FinalizeResult(void** tag, bool* status) {
     if (recv_buf_) {
       got_message = *status;
       if (recv_message_) {
+        GRPC_TIMER_MARK(DESER_PROTO_BEGIN, 0);
         *status = *status && DeserializeProto(recv_buf_, recv_message_);
         grpc_byte_buffer_destroy(recv_buf_);
+        GRPC_TIMER_MARK(DESER_PROTO_END, 0);
       } else {
         recv_message_buffer_->set_buffer(recv_buf_);
       }

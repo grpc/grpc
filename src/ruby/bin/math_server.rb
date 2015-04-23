@@ -183,7 +183,7 @@ def main
   end
 
   s.handle(Calculator)
-  s.run
+  s.run_till_terminated
 end
 
 main

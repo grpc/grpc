@@ -31,43 +31,19 @@
  *
  */
 
-#include <cassert>
-#include <memory>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <vector>
-#include <sstream>
-
 #include <sys/signal.h>
 
+#include <chrono>
+#include <thread>
+
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/histogram.h>
-#include <grpc/support/log.h>
-#include <grpc/support/host_port.h>
 #include <gflags/gflags.h>
-#include <grpc++/client_context.h>
-#include <grpc++/status.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/stream.h>
-#include "test/core/util/grpc_profiler.h"
-#include "test/cpp/util/create_test_channel.h"
-#include "test/cpp/qps/qpstest.grpc.pb.h"
-#include "test/cpp/qps/client.h"
-#include "test/cpp/qps/server.h"
+
+#include "qps_worker.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(driver_port, 0, "Driver server port.");
 DEFINE_int32(server_port, 0, "Spawned server port.");
-
-// In some distros, gflags is in the namespace google, and in some others,
-// in gflags. This hack is enabling us to find both.
-namespace google {}
-namespace gflags {}
-using namespace google;
-using namespace gflags;
 
 static bool got_sigint = false;
 
@@ -76,167 +52,8 @@ static void sigint_handler(int x) {got_sigint = true;}
 namespace grpc {
 namespace testing {
 
-std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
-  switch (config.client_type()) {
-    case ClientType::SYNCHRONOUS_CLIENT:
-      return (config.rpc_type() == RpcType::UNARY) ?
-	CreateSynchronousUnaryClient(config) :
-	CreateSynchronousStreamingClient(config);
-    case ClientType::ASYNC_CLIENT:
-      return (config.rpc_type() == RpcType::UNARY) ?
-	CreateAsyncUnaryClient(config) : CreateAsyncStreamingClient(config);
-  }
-  abort();
-}
-
-std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
-  switch (config.server_type()) {
-    case ServerType::SYNCHRONOUS_SERVER:
-      return CreateSynchronousServer(config, FLAGS_server_port);
-    case ServerType::ASYNC_SERVER:
-      return CreateAsyncServer(config, FLAGS_server_port);
-  }
-  abort();
-}
-
-class WorkerImpl GRPC_FINAL : public Worker::Service {
- public:
-  WorkerImpl() : acquired_(false) {}
-
-  Status RunTest(ServerContext* ctx,
-                 ServerReaderWriter<ClientStatus, ClientArgs>* stream)
-      GRPC_OVERRIDE {
-    InstanceGuard g(this);
-    if (!g.Acquired()) {
-      return Status(RESOURCE_EXHAUSTED);
-    }
-
-    grpc_profiler_start("qps_client.prof");
-    Status ret = RunTestBody(ctx,stream);
-    grpc_profiler_stop();
-    return ret;
-  }
-
-  Status RunServer(ServerContext* ctx,
-                   ServerReaderWriter<ServerStatus, ServerArgs>* stream)
-      GRPC_OVERRIDE {
-    InstanceGuard g(this);
-    if (!g.Acquired()) {
-      return Status(RESOURCE_EXHAUSTED);
-    }
-
-    grpc_profiler_start("qps_server.prof");
-    Status ret = RunServerBody(ctx,stream);
-    grpc_profiler_stop();
-    return ret;
-  }
-
- private:
-  // Protect against multiple clients using this worker at once.
-  class InstanceGuard {
-   public:
-    InstanceGuard(WorkerImpl* impl)
-        : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
-    ~InstanceGuard() {
-      if (acquired_) {
-        impl_->ReleaseInstance();
-      }
-    }
-
-    bool Acquired() const { return acquired_; }
-
-   private:
-    WorkerImpl* const impl_;
-    const bool acquired_;
-  };
-
-  bool TryAcquireInstance() {
-    std::lock_guard<std::mutex> g(mu_);
-    if (acquired_) return false;
-    acquired_ = true;
-    return true;
-  }
-
-  void ReleaseInstance() {
-    std::lock_guard<std::mutex> g(mu_);
-    GPR_ASSERT(acquired_);
-    acquired_ = false;
-  }
-
-  Status RunTestBody(ServerContext* ctx,
-                     ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
-    ClientArgs args;
-    if (!stream->Read(&args)) {
-      return Status(INVALID_ARGUMENT);
-    }
-    if (!args.has_setup()) {
-      return Status(INVALID_ARGUMENT);
-    }
-    auto client = CreateClient(args.setup());
-    if (!client) {
-      return Status(INVALID_ARGUMENT);
-    }
-    ClientStatus status;
-    if (!stream->Write(status)) {
-      return Status(UNKNOWN);
-    }
-    while (stream->Read(&args)) {
-      if (!args.has_mark()) {
-        return Status(INVALID_ARGUMENT);
-      }
-      *status.mutable_stats() = client->Mark();
-      stream->Write(status);
-    }
-
-    return Status::OK;
-  }
-
-  Status RunServerBody(ServerContext* ctx,
-                       ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
-    ServerArgs args;
-    if (!stream->Read(&args)) {
-      return Status(INVALID_ARGUMENT);
-    }
-    if (!args.has_setup()) {
-      return Status(INVALID_ARGUMENT);
-    }
-    auto server = CreateServer(args.setup());
-    if (!server) {
-      return Status(INVALID_ARGUMENT);
-    }
-    ServerStatus status;
-    status.set_port(FLAGS_server_port);
-    if (!stream->Write(status)) {
-      return Status(UNKNOWN);
-    }
-    while (stream->Read(&args)) {
-      if (!args.has_mark()) {
-        return Status(INVALID_ARGUMENT);
-      }
-      *status.mutable_stats() = server->Mark();
-      stream->Write(status);
-    }
-
-    return Status::OK;
-  }
-
-  std::mutex mu_;
-  bool acquired_;
-};
-
 static void RunServer() {
-  char* server_address = NULL;
-  gpr_join_host_port(&server_address, "::", FLAGS_driver_port);
-
-  WorkerImpl service;
-
-  ServerBuilder builder;
-  builder.AddListeningPort(server_address, InsecureServerCredentials());
-  builder.RegisterService(&service);
-
-  gpr_free(server_address);
-
-  auto server = builder.BuildAndStart();
+  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
 
   while (!got_sigint) {
     std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -248,7 +65,7 @@ static void RunServer() {
 
 int main(int argc, char** argv) {
   grpc_init();
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   signal(SIGINT, sigint_handler);
 

@@ -102,7 +102,6 @@ static void on_connect(void *acp, int success) {
       gpr_free(utf8_message);
       goto finish;
     } else {
-      gpr_log(GPR_DEBUG, "on_connect: connection established");
       ep = grpc_tcp_create(ac->socket);
       goto finish;
     }
@@ -179,9 +178,7 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
   info = &socket->write_info;
   success = ConnectEx(sock, addr, addr_len, NULL, 0, NULL, &info->overlapped);
 
-  if (success) {
-    gpr_log(GPR_DEBUG, "connected immediately - but we still go to sleep");
-  } else {
+  if (!success) {
     int error = WSAGetLastError();
     if (error != ERROR_IO_PENDING) {
       message = "ConnectEx failed: %s";
@@ -189,7 +186,6 @@ void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp),
     }
   }
 
-  gpr_log(GPR_DEBUG, "grpc_tcp_client_connect: connection pending");
   ac = gpr_malloc(sizeof(async_connect));
   ac->cb = cb;
   ac->cb_arg = arg;

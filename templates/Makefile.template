@@ -1,5 +1,7 @@
 # GRPC global makefile
 # This currently builds C and C++ code.
+# This file has been automatically generated from a template file.
+# Please look at the templates directory instead.
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -40,6 +42,9 @@
     if not m:
       return filename
     return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
+
+  sources_that_need_openssl = set()
+  sources_that_don_t_need_openssl = set()
 %>
 
 
@@ -96,6 +101,15 @@ CPPFLAGS_opt = -O2
 LDFLAGS_opt =
 DEFINES_opt = NDEBUG
 
+VALID_CONFIG_latprof = 1
+CC_latprof = $(DEFAULT_CC)
+CXX_latprof = $(DEFAULT_CXX)
+LD_latprof = $(DEFAULT_CC)
+LDXX_latprof = $(DEFAULT_CXX)
+CPPFLAGS_latprof = -O2 -DGRPC_LATENCY_PROFILER
+LDFLAGS_latprof =
+DEFINES_latprof = NDEBUG
+
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
@@ -141,9 +155,9 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang
 LDXX_asan = clang++
-CPPFLAGS_asan = -O1 -fsanitize=address -fno-omit-frame-pointer
+CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS_asan = -fsanitize=address
-DEFINES_asan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
+DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=5
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -151,7 +165,7 @@ CC_msan = clang
 CXX_msan = clang++-libc++
 LD_msan = clang
 LDXX_msan = clang++-libc++
-CPPFLAGS_msan = -O1 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 OPENSSL_CFLAGS_msan = -DPURIFY
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
 DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
@@ -1069,15 +1083,6 @@ endif
 else
 % endif
 
-ifneq ($(OPENSSL_DEP),)
-# This is to ensure the embedded OpenSSL is built beforehand, properly
-# installing headers to their final destination on the drive. We need this
-# otherwise parallel compilation will fail if a source is compiled first.
-% for src in lib.src:
-${src}: $(OPENSSL_DEP)
-% endfor
-endif
-
 $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
 ## The else here corresponds to the if secure earlier.
 % else:
@@ -1125,6 +1130,7 @@ ifeq ($(SYSTEM),Darwin)
 endif
 
 <%
+
   if lib.language == 'c++':
     ld = '$(LDXX)'
   else:
@@ -1147,6 +1153,11 @@ endif
 
   if lib.get('secure', 'check') == 'yes':
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    for src in lib.src:
+      sources_that_need_openssl.add(src)
+  else:
+    for src in lib.src:
+      sources_that_don_t_need_openssl.add(src)
 
   if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
@@ -1269,9 +1280,6 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LDXX) $(LDFLAGS) $(${tgt.name.upper()}_OBJS)\
 % endif
-% if tgt.build == 'test':
- $(GTEST_LIB)\
-% endif
 % else:
 ## C-only targets specificities.
 	$(E) "[LD]      Linking $@"
@@ -1297,6 +1305,9 @@ $(BINDIR)/$(CONFIG)/${tgt.name}: $(${tgt.name.upper()}_OBJS)\
  $(HOST_LDLIBS_PROTOC)\
 % elif tgt.get('secure', 'check') == 'yes' or tgt.get('secure', 'check') == 'check':
  $(LDLIBS_SECURE)\
+% endif
+% if tgt.language == 'c++' and tgt.build == 'test':
+ $(GTEST_LIB)\
 % endif
  -o $(BINDIR)/$(CONFIG)/${tgt.name}
 % if tgt.build == 'protoc' or tgt.language == 'c++':
@@ -1328,6 +1339,17 @@ endif
 endif
 % endif
 </%def>
+
+ifneq ($(OPENSSL_DEP),)
+# This is to ensure the embedded OpenSSL is built beforehand, properly
+# installing headers to their final destination on the drive. We need this
+# otherwise parallel compilation will fail if a source is compiled first.
+% for src in sorted(sources_that_need_openssl):
+% if src not in sources_that_don_t_need_openssl:
+${src}: $(OPENSSL_DEP)
+% endif
+% endfor
+endif
 
 .PHONY: all strip tools \
 dep_error openssl_dep_error openssl_dep_message git_update stop \

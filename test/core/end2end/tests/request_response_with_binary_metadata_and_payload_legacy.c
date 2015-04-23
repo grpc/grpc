@@ -116,17 +116,25 @@ static void test_request_response_with_metadata_and_payload(
   gpr_timespec deadline = five_seconds_time();
   /* staggered lengths to ensure we hit various branches in base64 encode/decode
    */
-  grpc_metadata meta1 = {
-      "key1-bin", "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13};
+  grpc_metadata meta1 = {"key1-bin",
+                         "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc",
+                         13,
+                         {{NULL, NULL, NULL}}};
   grpc_metadata meta2 = {
-      "key2-bin", "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-      14};
+      "key2-bin",
+      "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
+      14,
+      {{NULL, NULL, NULL}}};
   grpc_metadata meta3 = {
       "key3-bin",
-      "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15};
+      "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee",
+      15,
+      {{NULL, NULL, NULL}}};
   grpc_metadata meta4 = {
       "key4-bin",
-      "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff", 16};
+      "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff",
+      16,
+      {{NULL, NULL, NULL}}};
   grpc_end2end_test_fixture f = begin_test(config, __FUNCTION__, NULL, NULL);
   cq_verifier *v_client = cq_verifier_create(f.client_cq);
   cq_verifier *v_server = cq_verifier_create(f.server_cq);

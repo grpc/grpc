@@ -39,6 +39,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/security/security_connector.h"
+
 struct grpc_httpcli_response;
 
 /* --- Constants. --- */
@@ -94,10 +96,16 @@ typedef struct {
   void (*destroy)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
+  grpc_mdctx *(*get_metadata_context)(grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c,
                                const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
+  grpc_security_status (*create_security_connector)(
+      grpc_credentials *c, const char *target, const grpc_channel_args *args,
+      grpc_credentials *request_metadata_creds,
+      grpc_channel_security_connector **sc, grpc_channel_args **new_args);
+
 } grpc_credentials_vtable;
 
 struct grpc_credentials {
@@ -114,17 +122,20 @@ void grpc_credentials_get_request_metadata(grpc_credentials *creds,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data);
-typedef struct {
-  unsigned char *pem_private_key;
-  size_t pem_private_key_size;
-  unsigned char *pem_cert_chain;
-  size_t pem_cert_chain_size;
-  unsigned char *pem_root_certs;
-  size_t pem_root_certs_size;
-} grpc_ssl_config;
 
-const grpc_ssl_config *grpc_ssl_credentials_get_config(
-    const grpc_credentials *ssl_creds);
+/* Gets the mdctx from the credentials and increase the refcount if it exists,
+   otherwise, create a new one. */
+grpc_mdctx *grpc_credentials_get_or_create_metadata_context(
+    grpc_credentials *creds);
+
+/* Creates a security connector for the channel. May also create new channel
+   args for the channel to be used in place of the passed in const args if
+   returned non NULL. In that case the caller is responsible for destroying
+   new_args after channel creation. */
+grpc_security_status grpc_credentials_create_security_connector(
+    grpc_credentials *creds, const char *target, const grpc_channel_args *args,
+    grpc_credentials *request_metadata_creds,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args);
 
 typedef struct {
   grpc_credentials **creds_array;
@@ -156,6 +167,8 @@ grpc_credentials *grpc_fake_oauth2_credentials_create(
 
 typedef struct {
   void (*destroy)(grpc_server_credentials *c);
+  grpc_security_status (*create_security_connector)(
+      grpc_server_credentials *c, grpc_security_connector **sc);
 } grpc_server_credentials_vtable;
 
 struct grpc_server_credentials {
@@ -163,17 +176,7 @@ struct grpc_server_credentials {
   const char *type;
 };
 
-typedef struct {
-  unsigned char **pem_private_keys;
-  size_t *pem_private_keys_sizes;
-  unsigned char **pem_cert_chains;
-  size_t *pem_cert_chains_sizes;
-  size_t num_key_cert_pairs;
-  unsigned char *pem_root_certs;
-  size_t pem_root_certs_size;
-} grpc_ssl_server_config;
-
-const grpc_ssl_server_config *grpc_ssl_server_credentials_get_config(
-    const grpc_server_credentials *ssl_creds);
+grpc_security_status grpc_server_credentials_create_security_connector(
+    grpc_server_credentials *creds, grpc_security_connector **sc);
 
 #endif  /* GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H */
