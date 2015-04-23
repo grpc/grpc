@@ -793,7 +793,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fake_security_invoke_large_request_test", 
     "platforms": [
@@ -868,6 +868,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fake_security_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fake_security_request_response_with_payload_and_call_creds_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1027,7 +1036,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_invoke_large_request_test", 
     "platforms": [
@@ -1102,6 +1111,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_request_response_with_payload_and_call_creds_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1261,7 +1279,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_invoke_large_request_test", 
     "platforms": [
@@ -1336,6 +1354,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_fullstack_uds_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_fullstack_uds_request_response_with_payload_and_call_creds_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1495,7 +1522,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_invoke_large_request_test", 
     "platforms": [
@@ -1570,6 +1597,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_fullstack_request_response_with_payload_and_call_creds_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1729,7 +1765,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_invoke_large_request_test", 
     "platforms": [
@@ -1804,6 +1840,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_simple_ssl_with_oauth2_fullstack_request_response_with_payload_and_call_creds_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -1963,7 +2008,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_invoke_large_request_test", 
     "platforms": [
@@ -2038,6 +2083,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_request_response_with_payload_and_call_creds_test", 
     "platforms": [
       "windows", 
       "posix"
@@ -2197,7 +2251,7 @@
     ]
   }, 
   {
-    "flaky": true, 
+    "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_invoke_large_request_test", 
     "platforms": [
@@ -2272,6 +2326,15 @@
     "flaky": false, 
     "language": "c", 
     "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_test", 
+    "platforms": [
+      "windows", 
+      "posix"
+    ]
+  }, 
+  {
+    "flaky": false, 
+    "language": "c", 
+    "name": "chttp2_socket_pair_one_byte_at_a_time_request_response_with_payload_and_call_creds_test", 
     "platforms": [
       "windows", 
       "posix"

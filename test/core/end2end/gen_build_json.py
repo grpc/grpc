@@ -46,34 +46,40 @@ END2END_FIXTURES = {
     'chttp2_socket_pair_one_byte_at_a_time': False,
 }
 
-# maps tests names to whether they run fine or not (aka, not flaky)
+class TestOptions(object):
+  def __init__(self, flaky=False, secure=False):
+    self.flaky = flaky
+    self.secure = secure
+
+# maps test names to options
 END2END_TESTS = {
-    'bad_hostname': True,
-    'cancel_after_accept': False,
-    'cancel_after_accept_and_writes_closed': True,
-    'cancel_after_invoke': True,
-    'cancel_before_invoke': True,
-    'cancel_in_a_vacuum': True,
-    'census_simple_request': True,
-    'disappearing_server': True,
-    'early_server_shutdown_finishes_inflight_calls': True,
-    'early_server_shutdown_finishes_tags': True,
-    'empty_batch': True,
-    'graceful_server_shutdown': True,
-    'invoke_large_request': False,
-    'max_concurrent_streams': True,
-    'max_message_length': True,
-    'no_op': True,
-    'ping_pong_streaming': True,
-    'request_response_with_binary_metadata_and_payload': True,
-    'request_response_with_metadata_and_payload': True,
-    'request_response_with_payload': True,
-    'request_with_large_metadata': True,
-    'request_with_payload': True,
-    'simple_delayed_request': True,
-    'simple_request': True,
-    'simple_request_with_high_initial_sequence_number': True,
-    'registered_call': True,
+    'bad_hostname': TestOptions(),
+    'cancel_after_accept': TestOptions(flaky=True),
+    'cancel_after_accept_and_writes_closed': TestOptions(),
+    'cancel_after_invoke': TestOptions(),
+    'cancel_before_invoke': TestOptions(),
+    'cancel_in_a_vacuum': TestOptions(),
+    'census_simple_request': TestOptions(),
+    'disappearing_server': TestOptions(),
+    'early_server_shutdown_finishes_inflight_calls': TestOptions(),
+    'early_server_shutdown_finishes_tags': TestOptions(),
+    'empty_batch': TestOptions(),
+    'graceful_server_shutdown': TestOptions(),
+    'invoke_large_request': TestOptions(flaky=False),
+    'max_concurrent_streams': TestOptions(),
+    'max_message_length': TestOptions(),
+    'no_op': TestOptions(),
+    'ping_pong_streaming': TestOptions(),
+    'request_response_with_binary_metadata_and_payload': TestOptions(),
+    'request_response_with_metadata_and_payload': TestOptions(),
+    'request_response_with_payload': TestOptions(),
+    'request_response_with_payload_and_call_creds': TestOptions(secure=True),
+    'request_with_large_metadata': TestOptions(),
+    'request_with_payload': TestOptions(),
+    'simple_delayed_request': TestOptions(),
+    'simple_request': TestOptions(),
+    'simple_request_with_high_initial_sequence_number': TestOptions(),
+    'registered_call': TestOptions(),
 }
 
 
@@ -93,7 +99,7 @@ def main():
               'name': 'end2end_test_%s' % t,
               'build': 'private',
               'language': 'c',
-              'secure': 'no',
+              'secure': 'check' if END2END_TESTS[t].secure else 'no',
               'src': ['test/core/end2end/tests/%s.c' % t],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h']
           }
@@ -115,7 +121,7 @@ def main():
               'build': 'test',
               'language': 'c',
               'src': [],
-              'flaky': not END2END_TESTS[t],
+              'flaky': END2END_TESTS[t].flaky,
               'deps': [
                   'end2end_fixture_%s' % f,
                   'end2end_test_%s' % t,
@@ -145,7 +151,7 @@ def main():
               ]
           }
       for f in sorted(END2END_FIXTURES.keys()) if not END2END_FIXTURES[f]
-      for t in sorted(END2END_TESTS.keys())]}
+      for t in sorted(END2END_TESTS.keys()) if not END2END_TESTS[t].secure]}
   print simplejson.dumps(json, sort_keys=True, indent=2 * ' ')
 
 

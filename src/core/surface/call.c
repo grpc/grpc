@@ -1285,3 +1285,5 @@ void grpc_call_context_set(grpc_call *call, grpc_context_index elem, void *value
 void *grpc_call_context_get(grpc_call *call, grpc_context_index elem) {
   return call->context[elem];
 }
+
+gpr_uint8 grpc_call_is_client(grpc_call *call) { return call->is_client; }
