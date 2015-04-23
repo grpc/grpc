@@ -42,6 +42,9 @@
     if not m:
       return filename
     return '$(GENDIR)/' + m.group(1) + '.pb.cc $(GENDIR)/' + m.group(1) + '.grpc.pb.cc'
+
+  sources_that_need_openssl = set()
+  sources_that_don_t_need_openssl = set()
 %>
 
 
@@ -1080,15 +1083,6 @@ endif
 else
 % endif
 
-ifneq ($(OPENSSL_DEP),)
-# This is to ensure the embedded OpenSSL is built beforehand, properly
-# installing headers to their final destination on the drive. We need this
-# otherwise parallel compilation will fail if a source is compiled first.
-% for src in lib.src:
-${src}: $(OPENSSL_DEP)
-% endfor
-endif
-
 $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP)\
 ## The else here corresponds to the if secure earlier.
 % else:
@@ -1136,6 +1130,7 @@ ifeq ($(SYSTEM),Darwin)
 endif
 
 <%
+
   if lib.language == 'c++':
     ld = '$(LDXX)'
   else:
@@ -1158,6 +1153,11 @@ endif
 
   if lib.get('secure', 'check') == 'yes':
     common = common + ' $(LDLIBS_SECURE) $(OPENSSL_MERGE_LIBS)'
+    for src in lib.src:
+      sources_that_need_openssl.add(src)
+  else:
+    for src in lib.src:
+      sources_that_don_t_need_openssl.add(src)
 
   if lib.get('secure', 'check') == 'yes' or lib.get('secure', 'check') == 'check':
     lib_deps = lib_deps + ' $(OPENSSL_DEP)'
@@ -1339,6 +1339,17 @@ endif
 endif
 % endif
 </%def>
+
+ifneq ($(OPENSSL_DEP),)
+# This is to ensure the embedded OpenSSL is built beforehand, properly
+# installing headers to their final destination on the drive. We need this
+# otherwise parallel compilation will fail if a source is compiled first.
+% for src in sorted(sources_that_need_openssl):
+% if src not in sources_that_don_t_need_openssl:
+${src}: $(OPENSSL_DEP)
+% endif
+% endfor
+endif
 
 .PHONY: all strip tools \
 dep_error openssl_dep_error openssl_dep_message git_update stop \

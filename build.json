@@ -277,6 +277,19 @@
         "src/core/transport/transport.c",
         "src/core/transport/transport_op_string.c"
       ]
+    },
+    {
+      "name": "grpc_test_util_base",
+      "src": [
+        "test/core/end2end/cq_verifier.c",
+        "test/core/iomgr/endpoint_tests.c",
+        "test/core/statistics/census_log_tests.c",
+        "test/core/util/grpc_profiler.c",
+        "test/core/util/parse_hexstring.c",
+        "test/core/util/port_posix.c",
+        "test/core/util/port_windows.c",
+        "test/core/util/slice_splitter.c"
+      ]
     }
   ],
   "libs": [
@@ -373,6 +386,7 @@
       "deps": [
         "gpr"
       ],
+      "secure": "no",
       "vs_project_guid": "{EAB0A629-17A9-44DB-B5FF-E91A721FE037}"
     },
     {
@@ -436,24 +450,34 @@
       "build": "private",
       "language": "c",
       "src": [
-        "test/core/end2end/cq_verifier.c",
         "test/core/end2end/data/server1_cert.c",
         "test/core/end2end/data/server1_key.c",
-        "test/core/end2end/data/test_root_cert.c",
-        "test/core/iomgr/endpoint_tests.c",
-        "test/core/statistics/census_log_tests.c",
-        "test/core/util/grpc_profiler.c",
-        "test/core/util/parse_hexstring.c",
-        "test/core/util/port_posix.c",
-        "test/core/util/port_windows.c",
-        "test/core/util/slice_splitter.c"
+        "test/core/end2end/data/test_root_cert.c"
       ],
       "deps": [
         "gpr",
         "gpr_test_util",
         "grpc"
       ],
+      "filegroups": [
+        "grpc_test_util_base"
+      ],
       "vs_project_guid": "{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}"
+    },
+    {
+      "name": "grpc_test_util_unsecure",
+      "build": "private",
+      "language": "c",
+      "deps": [
+        "gpr",
+        "gpr_test_util",
+        "grpc"
+      ],
+      "filegroups": [
+        "grpc_test_util_base"
+      ],
+      "secure": "no",
+      "vs_project_guid": "{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}"
     },
     {
       "name": "grpc_unsecure",
