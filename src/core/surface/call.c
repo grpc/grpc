@@ -287,6 +287,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   call->metadata_context = grpc_channel_get_metadata_context(channel);
   grpc_sopb_init(&call->send_ops);
   grpc_sopb_init(&call->recv_ops);
+  gpr_slice_buffer_init(&call->incoming_message);
   /* one ref is dropped in response to destroy, the other in
      stream_closed */
   gpr_ref_init(&call->internal_refcount, 2);
@@ -348,6 +349,7 @@ static void destroy_call(void *call, int ignored_success) {
   grpc_bbq_destroy(&c->incoming_queue);
   grpc_sopb_destroy(&c->send_ops);
   grpc_sopb_destroy(&c->recv_ops);
+  gpr_slice_buffer_destroy(&c->incoming_message);
   gpr_free(c);
 }
 
@@ -1028,6 +1030,7 @@ static void call_alarm(void *arg, int success) {
 static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   if (call->have_alarm) {
     gpr_log(GPR_ERROR, "Attempt to set deadline alarm twice");
+    assert(0);
     return;
   }
   grpc_call_internal_ref(call);
