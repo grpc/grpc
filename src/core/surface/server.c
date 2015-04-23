@@ -524,7 +524,7 @@ static void init_call_elem(grpc_call_element *elem,
 
   server_ref(chand->server);
 
-  server_mutate_op(elem, initial_op);
+  if (initial_op) server_mutate_op(elem, initial_op);
 }
 
 static void destroy_call_elem(grpc_call_element *elem) {
