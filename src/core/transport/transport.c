@@ -52,8 +52,10 @@ void grpc_transport_destroy(grpc_transport *transport) {
 }
 
 int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data, grpc_transport_op *initial_op) {
-  return transport->vtable->init_stream(transport, stream, server_data, initial_op);
+                               const void *server_data,
+                               grpc_transport_op *initial_op) {
+  return transport->vtable->init_stream(transport, stream, server_data,
+                                        initial_op);
 }
 
 void grpc_transport_perform_op(grpc_transport *transport, grpc_stream *stream,

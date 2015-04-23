@@ -207,7 +207,8 @@ static void hs_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   }
 }
 
-static void hs_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void hs_start_transport_op(grpc_call_element *elem,
+                                  grpc_transport_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   hs_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
@@ -232,7 +233,8 @@ static void channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data, grpc_transport_op *initial_op) {
+                           const void *server_transport_data,
+                           grpc_transport_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   /* initialize members */
@@ -293,6 +295,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_server_filter = {
-    hs_start_transport_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    "http-server"};
+    hs_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
+    destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "http-server"};

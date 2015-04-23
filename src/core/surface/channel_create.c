@@ -175,7 +175,8 @@ static void done_setup(void *sp) {
 static grpc_transport_setup_result complete_setup(void *channel_stack,
                                                   grpc_transport *transport,
                                                   grpc_mdctx *mdctx) {
-  static grpc_channel_filter const *extra_filters[] = {&grpc_http_client_filter};
+  static grpc_channel_filter const *extra_filters[] = {
+      &grpc_http_client_filter};
   return grpc_client_channel_transport_setup_complete(
       channel_stack, transport, extra_filters, GPR_ARRAY_SIZE(extra_filters),
       mdctx);

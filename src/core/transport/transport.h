@@ -95,7 +95,8 @@ struct grpc_transport_callbacks {
   void (*accept_stream)(void *user_data, grpc_transport *transport,
                         const void *server_data);
 
-  void (*goaway)(void *user_data, grpc_transport *transport, grpc_status_code status, gpr_slice debug);
+  void (*goaway)(void *user_data, grpc_transport *transport,
+                 grpc_status_code status, gpr_slice debug);
 
   /* The transport has been closed */
   void (*closed)(void *user_data, grpc_transport *transport);
@@ -115,7 +116,8 @@ size_t grpc_transport_stream_size(grpc_transport *transport);
      server_data - either NULL for a client initiated stream, or a pointer
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data, grpc_transport_op *initial_op);
+                               const void *server_data,
+                               grpc_transport_op *initial_op);
 
 /* Destroy transport data for a stream.
 
@@ -133,7 +135,8 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
 
 /* TODO(ctiller): remove this */
-void grpc_transport_add_to_pollset(grpc_transport *transport, grpc_pollset *pollset);
+void grpc_transport_add_to_pollset(grpc_transport *transport,
+                                   grpc_pollset *pollset);
 
 char *grpc_transport_op_string(grpc_transport_op *op);
 
@@ -205,4 +208,4 @@ void grpc_transport_setup_initiate(grpc_transport_setup *setup);
    used as a destruction call by setup). */
 void grpc_transport_setup_cancel(grpc_transport_setup *setup);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_TRANSPORT_H */

@@ -123,7 +123,8 @@ static void hc_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   }
 }
 
-static void hc_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void hc_start_transport_op(grpc_call_element *elem,
+                                  grpc_transport_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   hc_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
@@ -215,6 +216,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_http_client_filter = {
-    hc_start_transport_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    "http-client"};
+    hc_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
+    destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "http-client"};

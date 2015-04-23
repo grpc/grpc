@@ -414,8 +414,10 @@ static void server_on_recv(void *ptr, int success) {
   }
 
   switch (*calld->recv_state) {
-    case GRPC_STREAM_OPEN: break;
-    case GRPC_STREAM_SEND_CLOSED: break;
+    case GRPC_STREAM_OPEN:
+      break;
+    case GRPC_STREAM_SEND_CLOSED:
+      break;
     case GRPC_STREAM_RECV_CLOSED:
       gpr_mu_lock(&chand->server->mu);
       if (calld->state == NOT_STARTED) {
@@ -453,7 +455,8 @@ static void server_mutate_op(grpc_call_element *elem, grpc_transport_op *op) {
   }
 }
 
-static void server_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void server_start_transport_op(grpc_call_element *elem,
+                                      grpc_transport_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   server_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
@@ -507,7 +510,8 @@ static void shutdown_channel(channel_data *chand) {
 }
 
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data, grpc_transport_op *initial_op) {
+                           const void *server_transport_data,
+                           grpc_transport_op *initial_op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   memset(calld, 0, sizeof(call_data));
@@ -599,8 +603,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    server_start_transport_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "server",
+    server_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
+    destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "server",
 };
 
 static void addcq(grpc_server *server, grpc_completion_queue *cq) {

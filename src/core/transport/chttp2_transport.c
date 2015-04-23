@@ -525,7 +525,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
 
   gpr_mu_lock(&t->mu);
   t->calling_back = 1;
-  ref_transport(t);  /* matches unref at end of this function */
+  ref_transport(t); /* matches unref at end of this function */
   gpr_mu_unlock(&t->mu);
 
   sr = setup(arg, &t->base, t->metadata_context);
@@ -537,7 +537,7 @@ static void init_transport(transport *t, grpc_transport_setup_callback setup,
   if (t->destroying) gpr_cv_signal(&t->cv);
   unlock(t);
 
-  ref_transport(t);  /* matches unref inside recv_data */
+  ref_transport(t); /* matches unref inside recv_data */
   recv_data(t, slices, nslices, GRPC_ENDPOINT_CB_OK);
 
   unref_transport(t);
@@ -884,7 +884,8 @@ static int prepare_write(transport *t) {
     t->outgoing_window -= window_delta;
     s->outgoing_window -= window_delta;
 
-    if (s->write_state == WRITE_STATE_QUEUED_CLOSE && s->outgoing_sopb->nops == 0) {
+    if (s->write_state == WRITE_STATE_QUEUED_CLOSE &&
+        s->outgoing_sopb->nops == 0) {
       s->send_closed = 1;
     }
     if (s->writing_sopb.nops > 0 || s->send_closed) {
@@ -927,8 +928,7 @@ static void finalize_outbuf(transport *t) {
 
   while ((s = stream_list_remove_head(t, WRITING))) {
     grpc_chttp2_encode(s->writing_sopb.ops, s->writing_sopb.nops,
-                       s->send_closed, s->id, &t->hpack_compressor,
-                       &t->outbuf);
+                       s->send_closed, s->id, &t->hpack_compressor, &t->outbuf);
     s->writing_sopb.nops = 0;
     if (s->send_closed) {
       stream_list_join(t, s, WRITTEN_CLOSED);
@@ -1047,12 +1047,14 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
   }
 
   if (op->cancel_with_status != GRPC_STATUS_OK) {
-    cancel_stream(t, s, op->cancel_with_status, grpc_chttp2_grpc_status_to_http2_error(op->cancel_with_status),
-                  1);
+    cancel_stream(
+        t, s, op->cancel_with_status,
+        grpc_chttp2_grpc_status_to_http2_error(op->cancel_with_status), 1);
   }
 }
 
-static void perform_op(grpc_transport *gt, grpc_stream *gs, grpc_transport_op *op) {
+static void perform_op(grpc_transport *gt, grpc_stream *gs,
+                       grpc_transport_op *op) {
   transport *t = (transport *)gt;
   stream *s = (stream *)gs;
 
@@ -1129,7 +1131,8 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
     }
     if (s->cancelled) {
       send_rst = 0;
-    } else if (!s->read_closed || s->write_state != WRITE_STATE_SENT_CLOSE || had_outgoing) {
+    } else if (!s->read_closed || s->write_state != WRITE_STATE_SENT_CLOSE ||
+               had_outgoing) {
       s->cancelled = 1;
       stream_list_join(t, s, CANCELLED);
 
@@ -1586,11 +1589,11 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
       }
       if (st.initial_window_update) {
         for (i = 0; i < t->stream_map.count; i++) {
-          stream *s = (stream*)(t->stream_map.values[i]);
+          stream *s = (stream *)(t->stream_map.values[i]);
           int was_window_empty = s->outgoing_window <= 0;
           s->outgoing_window += st.initial_window_update;
-          if (was_window_empty && s->outgoing_window > 0 &&
-              s->outgoing_sopb && s->outgoing_sopb->nops > 0) {
+          if (was_window_empty && s->outgoing_window > 0 && s->outgoing_sopb &&
+              s->outgoing_sopb->nops > 0) {
             stream_list_join(t, s, WRITABLE);
           }
         }
@@ -1609,7 +1612,8 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
               s->outgoing_window += st.window_update;
               /* if this window update makes outgoing ops writable again,
                  flag that */
-              if (was_window_empty && s->outgoing_sopb && s->outgoing_sopb->nops > 0) {
+              if (was_window_empty && s->outgoing_sopb &&
+                  s->outgoing_sopb->nops > 0) {
                 stream_list_join(t, s, WRITABLE);
               }
             }
@@ -1877,8 +1881,8 @@ static void finish_reads(transport *t) {
   while ((s = stream_list_remove_head(t, FINISHED_READ_OP)) != NULL) {
     int publish = 0;
     GPR_ASSERT(s->incoming_sopb);
-    *s->publish_state = compute_state(s->write_state == WRITE_STATE_SENT_CLOSE,
-                                      s->read_closed);
+    *s->publish_state =
+        compute_state(s->write_state == WRITE_STATE_SENT_CLOSE, s->read_closed);
     if (*s->publish_state != s->published_state) {
       s->published_state = *s->publish_state;
       publish = 1;
@@ -1895,8 +1899,12 @@ static void finish_reads(transport *t) {
 
 static void schedule_cb(transport *t, op_closure closure, int success) {
   if (t->pending_callbacks.capacity == t->pending_callbacks.count) {
-    t->pending_callbacks.capacity = GPR_MAX(t->pending_callbacks.capacity * 2, 8);
-    t->pending_callbacks.callbacks = gpr_realloc(t->pending_callbacks.callbacks, t->pending_callbacks.capacity * sizeof(*t->pending_callbacks.callbacks));
+    t->pending_callbacks.capacity =
+        GPR_MAX(t->pending_callbacks.capacity * 2, 8);
+    t->pending_callbacks.callbacks =
+        gpr_realloc(t->pending_callbacks.callbacks,
+                    t->pending_callbacks.capacity *
+                        sizeof(*t->pending_callbacks.callbacks));
   }
   closure.success = success;
   t->pending_callbacks.callbacks[t->pending_callbacks.count++] = closure;
@@ -1944,9 +1952,9 @@ static void add_to_pollset(grpc_transport *gt, grpc_pollset *pollset) {
  */
 
 static const grpc_transport_vtable vtable = {
-    sizeof(stream), init_stream, perform_op,
-    add_to_pollset, destroy_stream, goaway, close_transport,
-    send_ping, destroy_transport};
+    sizeof(stream),  init_stream,    perform_op,
+    add_to_pollset,  destroy_stream, goaway,
+    close_transport, send_ping,      destroy_transport};
 
 void grpc_create_chttp2_transport(grpc_transport_setup_callback setup,
                                   void *arg,

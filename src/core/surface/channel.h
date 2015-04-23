@@ -51,4 +51,4 @@ void grpc_client_channel_closed(grpc_channel_element *elem);
 void grpc_channel_internal_ref(grpc_channel *channel);
 void grpc_channel_internal_unref(grpc_channel *channel);
 
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H */
+#endif /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H */

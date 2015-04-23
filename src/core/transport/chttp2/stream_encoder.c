@@ -481,10 +481,10 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
         break;
       case GRPC_OP_METADATA:
         grpc_metadata_batch_assert_ok(&op->data.metadata);
-        /* these just get copied as they don't impact the number of flow   
-           controlled bytes */   
-        grpc_sopb_append(outops, op, 1);   
-        curop++;   
+        /* these just get copied as they don't impact the number of flow
+           controlled bytes */
+        grpc_sopb_append(outops, op, 1);
+        curop++;
         break;
       case GRPC_OP_BEGIN_MESSAGE:
         /* begin op: for now we just convert the op to a slice and fall

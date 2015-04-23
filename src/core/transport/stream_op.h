@@ -86,29 +86,31 @@ typedef struct grpc_metadata_batch {
 void grpc_metadata_batch_init(grpc_metadata_batch *comd);
 void grpc_metadata_batch_destroy(grpc_metadata_batch *comd);
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
-                                 grpc_metadata_batch *add);
+                               grpc_metadata_batch *add);
 
 void grpc_metadata_batch_link_head(grpc_metadata_batch *comd,
-                                     grpc_linked_mdelem *storage);
+                                   grpc_linked_mdelem *storage);
 void grpc_metadata_batch_link_tail(grpc_metadata_batch *comd,
-                                     grpc_linked_mdelem *storage);
+                                   grpc_linked_mdelem *storage);
 
 void grpc_metadata_batch_add_head(grpc_metadata_batch *comd,
-                                    grpc_linked_mdelem *storage,
-                                    grpc_mdelem *elem_to_add);
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add);
 void grpc_metadata_batch_add_tail(grpc_metadata_batch *comd,
-                                    grpc_linked_mdelem *storage,
-                                    grpc_mdelem *elem_to_add);
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add);
 
 void grpc_metadata_batch_filter(grpc_metadata_batch *comd,
-                                  grpc_mdelem *(*filter)(void *user_data,
-                                                         grpc_mdelem *elem),
-                                  void *user_data);
+                                grpc_mdelem *(*filter)(void *user_data,
+                                                       grpc_mdelem *elem),
+                                void *user_data);
 
 #ifndef NDEBUG
 void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
 #else
-#define grpc_metadata_batch_assert_ok(comd) do {} while (0)
+#define grpc_metadata_batch_assert_ok(comd) \
+  do {                                      \
+  } while (0)
 #endif
 
 /* Represents a single operation performed on a stream/transport */
@@ -151,7 +153,8 @@ void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb);
 /* Append a GRPC_OP_BEGIN to a buffer */
 void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
                                  gpr_uint32 flags);
-void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb, grpc_metadata_batch metadata);
+void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb,
+                            grpc_metadata_batch metadata);
 /* Append a GRPC_SLICE to a buffer - does not ref/unref the slice */
 void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
 /* Append a buffer to a buffer - does not ref/unref any internal objects */
@@ -160,4 +163,4 @@ void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
 
 char *grpc_sopb_string(grpc_stream_op_buffer *sopb);
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */

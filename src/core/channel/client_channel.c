@@ -106,7 +106,8 @@ static int prepare_activate(grpc_call_element *elem,
 
   /* create a child call */
   /* TODO(ctiller): pass the waiting op down here */
-  calld->s.active.child_call = grpc_child_channel_create_call(on_child, elem, NULL);
+  calld->s.active.child_call =
+      grpc_child_channel_create_call(on_child, elem, NULL);
 
   return 1;
 }
@@ -184,9 +185,7 @@ static void remove_waiting_child(channel_data *chand, call_data *calld) {
   chand->waiting_child_count = new_count;
 }
 
-static void send_up_cancelled_ops(grpc_call_element *elem) {
-  abort();
-}
+static void send_up_cancelled_ops(grpc_call_element *elem) { abort(); }
 
 static void cancel_rpc(grpc_call_element *elem, grpc_transport_op *op) {
   call_data *calld = elem->call_data;
@@ -219,8 +218,8 @@ static void cancel_rpc(grpc_call_element *elem, grpc_transport_op *op) {
   abort();
 }
 
-static void cc_start_transport_op(grpc_call_element *elem, 
-                    grpc_transport_op *op) {
+static void cc_start_transport_op(grpc_call_element *elem,
+                                  grpc_transport_op *op) {
   call_data *calld = elem->call_data;
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
@@ -325,7 +324,8 @@ static void channel_op(grpc_channel_element *elem,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data, grpc_transport_op *initial_op) {
+                           const void *server_transport_data,
+                           grpc_transport_op *initial_op) {
   call_data *calld = elem->call_data;
 
   /* TODO(ctiller): is there something useful we can do here? */
@@ -392,9 +392,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_client_channel_filter = {
-    cc_start_transport_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    "client-channel",
+    cc_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
+    destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "client-channel",
 };
 
 grpc_transport_setup_result grpc_client_channel_transport_setup_complete(

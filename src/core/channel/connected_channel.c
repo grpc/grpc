@@ -50,9 +50,7 @@ typedef struct connected_channel_channel_data {
   grpc_transport *transport;
 } channel_data;
 
-typedef struct connected_channel_call_data {
-  void *unused;
-} call_data;
+typedef struct connected_channel_call_data { void *unused; } call_data;
 
 /* We perform a small hack to locate transport data alongside the connected
    channel data in call allocations, to allow everything to be pulled in minimal
@@ -63,13 +61,15 @@ typedef struct connected_channel_call_data {
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
-static void con_start_transport_op(grpc_call_element *elem, grpc_transport_op *op) {
+static void con_start_transport_op(grpc_call_element *elem,
+                                   grpc_transport_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
-  grpc_transport_perform_op(chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld), op);
+  grpc_transport_perform_op(chand->transport,
+                            TRANSPORT_STREAM_FROM_CALL_DATA(calld), op);
 }
 
 /* Currently we assume all channel operations should just be pushed up. */
@@ -136,8 +136,9 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
 }
 
 const grpc_channel_filter grpc_connected_channel_filter = {
-    con_start_transport_op, channel_op, sizeof(call_data), init_call_elem, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem, "connected",
+    con_start_transport_op, channel_op, sizeof(call_data), init_call_elem,
+    destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, "connected",
 };
 
 /* Transport callback to accept a new stream... calls up to handle it */
@@ -189,8 +190,7 @@ static void transport_closed(void *user_data, grpc_transport *transport) {
 }
 
 const grpc_transport_callbacks connected_channel_transport_callbacks = {
-    accept_stream,
-    transport_goaway,  transport_closed,
+    accept_stream, transport_goaway, transport_closed,
 };
 
 grpc_transport_setup_result grpc_connected_channel_bind_transport(
