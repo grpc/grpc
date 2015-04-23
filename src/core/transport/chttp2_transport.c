@@ -1205,23 +1205,6 @@ static void maybe_join_window_updates(transport *t, stream *s) {
   }
 }
 
-#if 0
-static void set_allow_window_updates(grpc_transport *tp, grpc_stream *sp,
-                                     int allow) {
-  transport *t = (transport *)tp;
-  stream *s = (stream *)sp;
-
-  lock(t);
-  s->allow_window_updates = allow;
-  if (allow) {
-    maybe_join_window_updates(t, s);
-  } else {
-    stream_list_remove(t, s, WINDOW_UPDATE);
-  }
-  unlock(t);
-}
-#endif
-
 static grpc_chttp2_parse_error update_incoming_window(transport *t, stream *s) {
   if (t->incoming_frame_size > t->incoming_window) {
     gpr_log(GPR_ERROR, "frame of size %d overflows incoming window of %d",
@@ -1892,6 +1875,7 @@ static void finish_reads(transport *t) {
       publish = 1;
     }
     if (publish) {
+      s->incoming_sopb = NULL;
       schedule_cb(t, s->recv_done_closure, 1);
     }
   }

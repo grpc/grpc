@@ -260,6 +260,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
                             size_t add_initial_metadata_count,
                             gpr_timespec send_deadline) {
   size_t i;
+  grpc_transport_op initial_op;
+  grpc_transport_op *initial_op_ptr = NULL;
   grpc_channel_stack *channel_stack = grpc_channel_get_channel_stack(channel);
   grpc_call *call =
       gpr_malloc(sizeof(grpc_call) + channel_stack->call_stack_size);
@@ -288,7 +290,19 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   /* one ref is dropped in response to destroy, the other in
      stream_closed */
   gpr_ref_init(&call->internal_refcount, 2);
-  grpc_call_stack_init(channel_stack, server_transport_data, NULL,
+  /* server hack: start reads immediately so we can get initial metadata.
+     TODO(ctiller): figure out a cleaner solution */
+  if (!call->is_client) {
+    memset(&initial_op, 0, sizeof(initial_op));
+    initial_op.recv_ops = &call->recv_ops;
+    initial_op.recv_state = &call->recv_state;
+    initial_op.on_done_recv = call_on_done_recv;
+    initial_op.recv_user_data = call;
+    call->receiving = 1;
+    grpc_call_internal_ref(call);
+    initial_op_ptr = &initial_op;
+  }
+  grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
                        CALL_STACK_FROM_CALL(call));
   if (gpr_time_cmp(send_deadline, gpr_inf_future) != 0) {
     set_deadline_alarm(call, send_deadline);
@@ -793,7 +807,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
           mdb.list = chain_metadata_from_app(call, data.send_metadata.count,
                                              data.send_metadata.metadata);
           mdb.garbage.head = mdb.garbage.tail = NULL;
-          mdb.deadline = call->send_deadline;
           /* send status */
           /* TODO(ctiller): cache common status values */
           data = call->request_data[GRPC_IOREQ_SEND_STATUS];
@@ -814,6 +827,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
                     grpc_mdstr_from_string(call->metadata_context,
                                            data.send_status.details)));
           }
+          grpc_sopb_add_metadata(&call->send_ops, mdb);
         }
       }
       break;
@@ -1011,6 +1025,7 @@ static void call_alarm(void *arg, int success) {
 static void set_deadline_alarm(grpc_call *call, gpr_timespec deadline) {
   if (call->have_alarm) {
     gpr_log(GPR_ERROR, "Attempt to set deadline alarm twice");
+    return;
   }
   grpc_call_internal_ref(call);
   call->have_alarm = 1;
