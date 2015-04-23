@@ -33,34 +33,17 @@
 
 #import <Foundation/Foundation.h>
 
-// A GRXWriteable is an object to which a sequence of values can be sent. The
-// sequence finishes with an optional error.
-@protocol GRXWriteable <NSObject>
+@class ProtoRPC;
+@protocol GRXWriteable;
+@protocol GRXWriter;
 
-// Push the next value of the sequence to the receiving object.
-// TODO(jcanizales): Name it enumerator:(id<GRXEnumerator>) didProduceValue:(id)?
-- (void)didReceiveValue:(id)value;
+@interface ProtoService : NSObject
+- (instancetype)initWithHost:(NSString *)host
+                 packageName:(NSString *)packageName
+                 serviceName:(NSString *)serviceName NS_DESIGNATED_INITIALIZER;
 
-// Signal that the sequence is completed, or that an error ocurred. After this
-// message is sent to the instance, neither it nor didReceiveValue: may be
-// called again.
-// TODO(jcanizales): enumerator:(id<GRXEnumerator>) didFinishWithError:(NSError*)?
-- (void)didFinishWithError:(NSError *)errorOrNil;
-@end
-
-typedef void (^GRXValueHandler)(id value);
-typedef void (^GRXCompletionHandler)(NSError *errorOrNil);
-typedef void (^GRXSingleValueHandler)(id value, NSError *errorOrNil);
-typedef void (^GRXStreamHandler)(BOOL done, id value, NSError *error);
-
-// Utility to create objects that conform to the GRXWriteable protocol, from
-// blocks that handle each of the two methods of the protocol.
-@interface GRXWriteable : NSObject<GRXWriteable>
-
-+ (instancetype)writeableWithSingleValueHandler:(GRXSingleValueHandler)handler;
-+ (instancetype)writeableWithStreamHandler:(GRXStreamHandler)handler;
-
-- (instancetype)initWithValueHandler:(GRXValueHandler)valueHandler
-                   completionHandler:(GRXCompletionHandler)completionHandler
-    NS_DESIGNATED_INITIALIZER;
+- (ProtoRPC *)RPCToMethod:(NSString *)method
+           requestsWriter:(id<GRXWriter>)requestsWriter
+  	        responseClass:(Class)responseClass
+  	   responsesWriteable:(id<GRXWriteable>)responsesWriteable;
 @end

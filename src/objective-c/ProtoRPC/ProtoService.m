@@ -31,36 +31,51 @@
  *
  */
 
-#import <Foundation/Foundation.h>
+#import "ProtoService.h"
 
-// A GRXWriteable is an object to which a sequence of values can be sent. The
-// sequence finishes with an optional error.
-@protocol GRXWriteable <NSObject>
+#import <gRPC/GRPCMethodName.h>
+#import <gRPC/GRXWriteable.h>
+#import <gRPC/GRXWriter.h>
 
-// Push the next value of the sequence to the receiving object.
-// TODO(jcanizales): Name it enumerator:(id<GRXEnumerator>) didProduceValue:(id)?
-- (void)didReceiveValue:(id)value;
+#import "ProtoRPC.h"
 
-// Signal that the sequence is completed, or that an error ocurred. After this
-// message is sent to the instance, neither it nor didReceiveValue: may be
-// called again.
-// TODO(jcanizales): enumerator:(id<GRXEnumerator>) didFinishWithError:(NSError*)?
-- (void)didFinishWithError:(NSError *)errorOrNil;
-@end
+@implementation ProtoService {
+  NSString *_host;
+  NSString *_packageName;
+  NSString *_serviceName;
+}
 
-typedef void (^GRXValueHandler)(id value);
-typedef void (^GRXCompletionHandler)(NSError *errorOrNil);
-typedef void (^GRXSingleValueHandler)(id value, NSError *errorOrNil);
-typedef void (^GRXStreamHandler)(BOOL done, id value, NSError *error);
+- (instancetype)init {
+  return [self initWithHost:nil packageName:nil serviceName:nil];
+}
 
-// Utility to create objects that conform to the GRXWriteable protocol, from
-// blocks that handle each of the two methods of the protocol.
-@interface GRXWriteable : NSObject<GRXWriteable>
+// Designated initializer
+- (instancetype)initWithHost:(NSString *)host
+                 packageName:(NSString *)packageName
+                 serviceName:(NSString *)serviceName {
+  if (!host || !serviceName) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"Neither host nor serviceName can be nil."];
+  }
+  if ((self = [super init])) {
+    _host = [host copy];
+    _packageName = [packageName copy];
+    _serviceName = [serviceName copy];
+  }
+  return self;
+}
 
-+ (instancetype)writeableWithSingleValueHandler:(GRXSingleValueHandler)handler;
-+ (instancetype)writeableWithStreamHandler:(GRXStreamHandler)handler;
-
-- (instancetype)initWithValueHandler:(GRXValueHandler)valueHandler
-                   completionHandler:(GRXCompletionHandler)completionHandler
-    NS_DESIGNATED_INITIALIZER;
+- (ProtoRPC *)RPCToMethod:(NSString *)method
+           requestsWriter:(id<GRXWriter>)requestsWriter
+            responseClass:(Class)responseClass
+       responsesWriteable:(id<GRXWriteable>)responsesWriteable {
+  GRPCMethodName *methodName = [[GRPCMethodName alloc] initWithPackage:_packageName
+                                                             interface:_serviceName
+                                                                method:method];
+  return [[ProtoRPC alloc] initWithHost:_host
+                                 method:methodName
+                         requestsWriter:requestsWriter
+                          responseClass:responseClass
+                     responsesWriteable:responsesWriteable];
+}
 @end
