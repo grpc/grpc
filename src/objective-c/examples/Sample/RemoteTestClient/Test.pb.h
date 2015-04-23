@@ -4,7 +4,7 @@
 
 #import "Empty.pb.h"
 #import "Messages.pb.h"
-#import <ProtoRPC/ProtoService.h>
+#import <gRPC/ProtoService.h>
 // @@protoc_insertion_point(imports)
 
 @class ObjectiveCFileOptions;

@@ -2,9 +2,9 @@
 
 #import "Test.pb.h"
 
-#import <ProtoRPC/ProtoRPC.h>
 #import <gRPC/GRXWriteable.h>
 #import <gRPC/GRXWriter+Immediate.h>
+#import <gRPC/ProtoRPC.h>
 // @@protoc_insertion_point(imports)
 
 @implementation RMTTestRoot
