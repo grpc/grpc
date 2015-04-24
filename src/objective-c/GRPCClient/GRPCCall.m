@@ -41,6 +41,7 @@
 #import "private/GRPCCompletionQueue.h"
 #import "private/GRPCDelegateWrapper.h"
 #import "private/GRPCMethodName+HTTP2Encoding.h"
+#import "GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
@@ -92,7 +93,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 @implementation GRPCCall {
   dispatch_queue_t _callQueue;
 
-  grpc_call *_gRPCCall;
+  GRPCWrappedCall *_wrappedCall;
   dispatch_once_t _callAlreadyInvoked;
 
   GRPCChannel *_channel;
@@ -129,10 +130,8 @@ static void AssertNoErrorInCall(grpc_call_error error) {
     _completionQueue = [GRPCCompletionQueue completionQueue];
 
     _channel = [GRPCChannel channelToHost:host];
-    _gRPCCall = grpc_channel_create_call_old(_channel.unmanagedChannel,
-                                             method.HTTP2Path.UTF8String,
-                                             host.UTF8String,
-                                             gpr_inf_future);
+      
+      _wrappedCall = [[GRPCWrappedCall alloc] initWithChannel:_channel method:method.HTTP2Path host:host];
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("org.grpc.call", NULL);
@@ -156,7 +155,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
 - (void)cancelCall {
   // Can be called from any thread, any number of times.
-  AssertNoErrorInCall(grpc_call_cancel(_gRPCCall));
+    [_wrappedCall cancel];
 }
 
 - (void)cancel {
@@ -167,9 +166,8 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 }
 
 - (void)dealloc {
-  grpc_call *gRPCCall = _gRPCCall;
   dispatch_async(_callQueue, ^{
-    grpc_call_destroy(gRPCCall);
+    _wrappedCall = nil;
   });
 }
 
@@ -177,8 +175,8 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
 // Only called from the call queue.
 // The handler will be called from the network queue.
-- (void)startReadWithHandler:(GRPCEventHandler)handler {
-  AssertNoErrorInCall(grpc_call_start_read_old(_gRPCCall, (__bridge_retained void *)handler));
+- (void)startReadWithHandler:(GRPCCompletionHandler)handler {
+    [_wrappedCall startBatch:@{@(GRPC_OP_RECV_MESSAGE): @YES} handleCompletion:handler];
 }
 
 // Called initially from the network queue once response headers are received,
@@ -193,14 +191,17 @@ static void AssertNoErrorInCall(grpc_call_error error) {
   }
   __weak GRPCCall *weakSelf = self;
   __weak GRPCDelegateWrapper *weakWriteable = _responseWriteable;
-
+  
   dispatch_async(_callQueue, ^{
-    [weakSelf startReadWithHandler:^(grpc_event *event) {
-      if (!event->data.read) {
-        // No more responses from the server.
+    [weakSelf startReadWithHandler:^(NSDictionary *event) {
+      NSData *data = event[[NSNumber numberWithInt:GRPC_OP_RECV_MESSAGE]];
+      if (data == [NSNull null]) {
+        data = nil;
+      }
+      if (data == nil) {
+        // No more responses from the server
         return;
       }
-      NSData *data = [NSData grpc_dataWithByteBuffer:event->data.read];
       if (!data) {
         // The app doesn't have enough memory to hold the server response. We
         // don't want to throw, because the app shouldn't crash for a behavior
@@ -225,35 +226,11 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
 #pragma mark Send headers
 
-- (void)addHeaderWithName:(NSString *)name binaryValue:(NSData *)value {
-  grpc_metadata metadata;
-  // Safe to discard const qualifiers; we're not going to modify the contents.
-  metadata.key = (char *)name.UTF8String;
-  metadata.value = (char *)value.bytes;
-  metadata.value_length = value.length;
-  grpc_call_add_metadata_old(_gRPCCall, &metadata, 0);
-}
-
-- (void)addHeaderWithName:(NSString *)name ASCIIValue:(NSString *)value {
-  grpc_metadata metadata;
-  // Safe to discard const qualifiers; we're not going to modify the contents.
-  metadata.key = (char *)name.UTF8String;
-  metadata.value = (char *)value.UTF8String;
-  // The trailing \0 isn't encoded in HTTP2.
-  metadata.value_length = value.length;
-  grpc_call_add_metadata_old(_gRPCCall, &metadata, 0);
-}
-
-// TODO(jcanizales): Rename to commitHeaders.
 - (void)sendHeaders:(NSDictionary *)metadata {
-  for (NSString *name in metadata) {
-    id value = metadata[name];
-    if ([value isKindOfClass:[NSData class]]) {
-      [self addHeaderWithName:name binaryValue:value];
-    } else if ([value isKindOfClass:[NSString class]]) {
-      [self addHeaderWithName:name ASCIIValue:value];
-    }
+  if (metadata == nil) {
+    metadata = @{};
   }
+  [_wrappedCall startBatch:@{@(GRPC_OP_SEND_INITIAL_METADATA): metadata} handleCompletion:^(NSDictionary * dict){}];
 }
 
 #pragma mark GRXWriteable implementation
@@ -263,10 +240,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 - (void)writeMessage:(NSData *)message withErrorHandler:(void (^)())errorHandler {
 
   __weak GRPCCall *weakSelf = self;
-  GRPCEventHandler resumingHandler = ^(grpc_event *event) {
-    if (event->data.write_accepted != GRPC_OP_OK) {
-      errorHandler();
-    }
+  GRPCCompletionHandler resumingHandler = ^(NSDictionary *event) {
     // Resume the request writer (even in the case of error).
     // TODO(jcanizales): No need to do it in the case of errors anymore?
     GRPCCall *strongSelf = weakSelf;
@@ -274,13 +248,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
       strongSelf->_requestWriter.state = GRXWriterStateStarted;
     }
   };
-
-  grpc_byte_buffer *buffer = message.grpc_byteBuffer;
-  AssertNoErrorInCall(grpc_call_start_write_old(_gRPCCall,
-                                                buffer,
-                                                (__bridge_retained void *)resumingHandler,
-                                                0));
-  grpc_byte_buffer_destroy(buffer);
+  [_wrappedCall startBatch:@{@(GRPC_OP_SEND_MESSAGE): message} handleCompletion:resumingHandler];
 }
 
 - (void)didReceiveValue:(id)value {
@@ -303,12 +271,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 // Only called from the call queue. The error handler will be called from the
 // network queue if the requests stream couldn't be closed successfully.
 - (void)finishRequestWithErrorHandler:(void (^)())errorHandler {
-  GRPCEventHandler handler = ^(grpc_event *event) {
-    if (event->data.finish_accepted != GRPC_OP_OK) {
-      errorHandler();
-    }
-  };
-  AssertNoErrorInCall(grpc_call_writes_done_old(_gRPCCall, (__bridge_retained void *)handler));
+  [_wrappedCall startBatch:@{@(GRPC_OP_SEND_CLOSE_FROM_CLIENT): @YES} handleCompletion:^(NSDictionary *event){}];
 }
 
 - (void)didFinishWithError:(NSError *)errorOrNil {
@@ -332,32 +295,28 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 // after this.
 // The first one (metadataHandler), when the response headers are received.
 // The second one (completionHandler), whenever the RPC finishes for any reason.
-- (void)invokeCallWithMetadataHandler:(GRPCEventHandler)metadataHandler
-                    completionHandler:(GRPCEventHandler)completionHandler {
-  AssertNoErrorInCall(grpc_call_invoke_old(_gRPCCall,
-                                           _completionQueue.unmanagedQueue,
-                                           (__bridge_retained void *)metadataHandler,
-                                           (__bridge_retained void *)completionHandler,
-                                           0));
+- (void)invokeCallWithMetadataHandler:(GRPCCompletionHandler)metadataHandler
+                    completionHandler:(GRPCCompletionHandler)completionHandler {
+  [_wrappedCall startBatch:@{@(GRPC_OP_RECV_INITIAL_METADATA): @YES} handleCompletion:metadataHandler];
+  [_wrappedCall startBatch:@{@(GRPC_OP_RECV_STATUS_ON_CLIENT): @YES} handleCompletion:completionHandler];
 }
 
 - (void)invokeCall {
   __weak GRPCCall *weakSelf = self;
-  [self invokeCallWithMetadataHandler:^(grpc_event *event) {
+  [self invokeCallWithMetadataHandler:^(NSDictionary *event) {
     // Response metadata received.
-    // TODO(jcanizales): Name the type of event->data.client_metadata_read
-    // in the C library so one can actually pass the object to a method.
-    grpc_metadata *entries = event->data.client_metadata_read.elements;
-    size_t count = event->data.client_metadata_read.count;
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      strongSelf.responseMetadata = [NSDictionary grpc_dictionaryFromMetadata:entries
-                                                                        count:count];
+      strongSelf.responseMetadata = event[@(GRPC_OP_RECV_INITIAL_METADATA)];
       [strongSelf startNextRead];
     }
-  } completionHandler:^(grpc_event *event) {
+  } completionHandler:^(NSDictionary *event) {
     // TODO(jcanizales): Merge HTTP2 trailers into response metadata.
-    [weakSelf finishWithError:[NSError grpc_errorFromStatus:&event->data.finished]];
+    id error = event[@(GRPC_OP_RECV_STATUS_ON_CLIENT)];
+    if (error == [NSNull null]) {
+      error = nil;
+    }
+    [weakSelf finishWithError:error];
   }];
   // Now that the RPC has been initiated, request writes can start.
   [_requestWriter startWithWriteable:self];

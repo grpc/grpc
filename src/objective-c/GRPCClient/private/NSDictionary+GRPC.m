@@ -33,7 +33,8 @@
 
 #import "NSDictionary+GRPC.h"
 
-#include <grpc.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
 @implementation NSDictionary (GRPC)
 + (instancetype)grpc_dictionaryFromMetadata:(grpc_metadata *)entries count:(size_t)count {
@@ -52,5 +53,25 @@
                                              length:entry->value_length]];
   }
   return metadata;
+}
+
+- (size_t)grpc_toMetadataArray:(grpc_metadata **)metadata {
+  size_t count = 0;
+  size_t capacity = 0;
+  for (id key in self) {
+    capacity += [self[key] count];
+  }
+  *metadata = gpr_malloc(capacity * sizeof(grpc_metadata));
+  for (id key in self) {
+    id value_array = self[key];
+    for (id value in value_array) {
+      grpc_metadata *current = &(*metadata)[count];
+      current->key = [key UTF8String];
+      current->value = [value UTF8String];
+      current->value_length = [value length];
+      count += 1;
+    }
+  }
+  return count;
 }
 @end

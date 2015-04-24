@@ -32,9 +32,9 @@
  */
 
 #import <Foundation/Foundation.h>
-
-struct grpc_metadata;
+#include <grpc/grpc.h>
 
 @interface NSDictionary (GRPC)
 + (instancetype)grpc_dictionaryFromMetadata:(struct grpc_metadata *)entries count:(size_t)count;
+- (size_t)grpc_toMetadataArray:(grpc_metadata **)metadata;
 @end
