@@ -69,7 +69,6 @@ using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::InitTest(&argc, &argv, true);
 
   RpcType rpc_type;
@@ -104,6 +103,5 @@ int main(int argc, char** argv) {
   ReportLatency(result);
   ReportTimes(result);
 
-  grpc_shutdown();
   return 0;
 }

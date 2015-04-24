@@ -595,9 +595,6 @@ TEST_F(AsyncEnd2endTest, MetadataRpc) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return result;
+  return RUN_ALL_TESTS();
 }

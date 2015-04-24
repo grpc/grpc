@@ -218,13 +218,11 @@ void RunServer() {
 static void sigint_handler(int x) { got_sigint = true; }
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
   GPR_ASSERT(FLAGS_port != 0);
   RunServer();
 
-  grpc_shutdown();
   return 0;
 }
