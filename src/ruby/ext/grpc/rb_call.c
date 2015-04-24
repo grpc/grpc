@@ -602,19 +602,19 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE cqueue, VALUE tag,
     rb_raise(grpc_rb_eCallError,
              "grpc_call_start_batch failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
-    return;
+    return Qnil;
   }
   ev = grpc_rb_completion_queue_pluck_event(cqueue, tag, timeout);
   if (ev == NULL) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eOutOfTime, "grpc_call_start_batch timed out");
-    return;
+    return Qnil;
   }
   if (ev->data.op_complete != GRPC_OP_OK) {
     grpc_run_batch_stack_cleanup(&st);
     rb_raise(grpc_rb_eCallError, "start_batch completion failed, (code=%d)",
              ev->data.op_complete);
-    return;
+    return Qnil;
   }
 
   /* Build and return the BatchResult struct result */
