@@ -687,7 +687,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
 static void call_on_done_recv(void *pc, int success) {
   grpc_call *call = pc;
   size_t i;
-  int unref = 0;
+  int unref_due_to_connection_close = 0;
   lock(call);
   call->receiving = 0;
   if (success) {
@@ -714,7 +714,7 @@ static void call_on_done_recv(void *pc, int success) {
     if (call->recv_state == GRPC_STREAM_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_STREAM_CLOSED);
       call->read_state = READ_STATE_STREAM_CLOSED;
-      unref = 1;
+      unref_due_to_connection_close = 1;
     }
     finish_read_ops(call);
   } else {
@@ -725,9 +725,11 @@ static void call_on_done_recv(void *pc, int success) {
     finish_ioreq_op(call, GRPC_IOREQ_RECV_INITIAL_METADATA, GRPC_OP_ERROR);
     finish_ioreq_op(call, GRPC_IOREQ_RECV_STATUS_DETAILS, GRPC_OP_ERROR);
   }
+  call->recv_ops.nops = 0;
   unlock(call);
 
-  if (unref) {
+  grpc_call_internal_unref(call, 0);
+  if (unref_due_to_connection_close) {
     grpc_call_internal_unref(call, 0);
   }
 }
@@ -798,6 +800,7 @@ static int fill_send_ops(grpc_call *call, grpc_transport_op *op) {
       op->bind_pollset = grpc_cq_pollset(call->cq);
       call->last_send_contains |= 1 << GRPC_IOREQ_SEND_INITIAL_METADATA;
       call->write_state = WRITE_STATE_STARTED;
+      call->send_initial_metadata_count = 0;
     /* fall through intended */
     case WRITE_STATE_STARTED:
       if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE)) {
