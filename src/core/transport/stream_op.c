@@ -88,33 +88,18 @@ void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops) {
   }
 }
 
-static void assert_contained_metadata_ok(grpc_stream_op *ops, size_t nops) {
-#ifndef NDEBUG
-  size_t i;
-  for (i = 0; i < nops; i++) {
-    if (ops[i].type == GRPC_OP_METADATA) {
-      grpc_metadata_batch_assert_ok(&ops[i].data.metadata);
-    }
-  }
-#endif /* NDEBUG */
-}
-
 static void expandto(grpc_stream_op_buffer *sopb, size_t new_capacity) {
   sopb->capacity = new_capacity;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
   if (sopb->ops == sopb->inlined_ops) {
     sopb->ops = gpr_malloc(sizeof(grpc_stream_op) * new_capacity);
     memcpy(sopb->ops, sopb->inlined_ops, sopb->nops * sizeof(grpc_stream_op));
   } else {
     sopb->ops = gpr_realloc(sopb->ops, sizeof(grpc_stream_op) * new_capacity);
   }
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 static grpc_stream_op *add(grpc_stream_op_buffer *sopb) {
   grpc_stream_op *out;
-
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 
   GPR_ASSERT(sopb->nops <= sopb->capacity);
   if (sopb->nops == sopb->capacity) {
@@ -127,7 +112,6 @@ static grpc_stream_op *add(grpc_stream_op_buffer *sopb) {
 
 void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb) {
   add(sopb)->type = GRPC_NO_OP;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
@@ -136,24 +120,19 @@ void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
   op->type = GRPC_OP_BEGIN_MESSAGE;
   op->data.begin_message.length = length;
   op->data.begin_message.flags = flags;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb,
                             grpc_metadata_batch b) {
   grpc_stream_op *op = add(sopb);
-  grpc_metadata_batch_assert_ok(&b);
   op->type = GRPC_OP_METADATA;
   op->data.metadata = b;
-  grpc_metadata_batch_assert_ok(&op->data.metadata);
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice) {
   grpc_stream_op *op = add(sopb);
   op->type = GRPC_OP_SLICE;
   op->data.slice = slice;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
@@ -161,15 +140,12 @@ void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
   size_t orig_nops = sopb->nops;
   size_t new_nops = orig_nops + nops;
 
-  assert_contained_metadata_ok(ops, nops);
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
   if (new_nops > sopb->capacity) {
     expandto(sopb, GPR_MAX(GROW(sopb->capacity), new_nops));
   }
 
   memcpy(sopb->ops + orig_nops, ops, sizeof(grpc_stream_op) * nops);
   sopb->nops = new_nops;
-  assert_contained_metadata_ok(sopb->ops, sopb->nops);
 }
 
 static void assert_valid_list(grpc_mdelem_list *list) {

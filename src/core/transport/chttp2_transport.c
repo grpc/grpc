@@ -661,9 +661,12 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   gpr_mu_unlock(&t->mu);
 
   GPR_ASSERT(s->outgoing_sopb == NULL);
+  GPR_ASSERT(s->incoming_sopb == NULL);
   grpc_sopb_destroy(&s->writing_sopb);
   grpc_sopb_destroy(&s->callback_sopb);
   grpc_chttp2_data_parser_destroy(&s->parser);
+  GPR_ASSERT(s->incoming_metadata_count == 0);
+  gpr_free(s->incoming_metadata);
 
   unref_transport(t);
 }
@@ -1522,28 +1525,18 @@ static int is_window_update_legal(gpr_int64 window_update, gpr_int64 window) {
 
 static void add_metadata_batch(transport *t, stream *s) {
   grpc_metadata_batch b;
-  size_t i;
 
-  b.list.head = &s->incoming_metadata[0];
-  b.list.tail = &s->incoming_metadata[s->incoming_metadata_count - 1];
+  b.list.head = NULL;
+  /* Store away the last element of the list, so that in patch_metadata_ops
+     we can reconstitute the list.
+     We can't do list building here as later incoming metadata may reallocate
+     the underlying array. */
+  b.list.tail = (void*)(gpr_intptr)s->incoming_metadata_count;
   b.garbage.head = b.garbage.tail = NULL;
   b.deadline = s->incoming_deadline;
-
-  for (i = 1; i < s->incoming_metadata_count; i++) {
-    s->incoming_metadata[i].prev = &s->incoming_metadata[i - 1];
-    s->incoming_metadata[i - 1].next = &s->incoming_metadata[i];
-  }
-  s->incoming_metadata[0].prev = NULL;
-  s->incoming_metadata[s->incoming_metadata_count - 1].next = NULL;
+  s->incoming_deadline = gpr_inf_future;
 
   grpc_sopb_add_metadata(&s->parser.incoming_sopb, b);
-  /* TODO(ctiller): don't leak incoming_metadata */
-
-  /* reset */
-  s->incoming_deadline = gpr_inf_future;
-  s->incoming_metadata = NULL;
-  s->incoming_metadata_count = 0;
-  s->incoming_metadata_capacity = 0;
 }
 
 static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
@@ -1884,6 +1877,35 @@ static grpc_stream_state compute_state(gpr_uint8 write_closed,
   return GRPC_STREAM_OPEN;
 }
 
+static void patch_metadata_ops(stream *s) {
+  grpc_stream_op *ops = s->incoming_sopb->ops;
+  size_t nops = s->incoming_sopb->nops;
+  size_t i;
+  size_t j;
+  size_t mdidx = 0;
+  size_t last_mdidx;
+
+  for (i = 0; i < nops; i++) {
+    grpc_stream_op *op = &ops[i];
+    if (op->type != GRPC_OP_METADATA) continue;
+    last_mdidx = (size_t)(gpr_intptr)(op->data.metadata.list.tail);
+    GPR_ASSERT(last_mdidx > mdidx);
+    GPR_ASSERT(last_mdidx <= s->incoming_metadata_count);
+    op->data.metadata.list.head = &s->incoming_metadata[mdidx];
+    op->data.metadata.list.tail = &s->incoming_metadata[last_mdidx - 1];
+    for (j = mdidx + 1; j < last_mdidx; j++) {
+      s->incoming_metadata[j].prev = &s->incoming_metadata[j-1];
+      s->incoming_metadata[j-1].next = &s->incoming_metadata[j];
+    }
+    s->incoming_metadata[mdidx].prev = NULL;
+    s->incoming_metadata[last_mdidx-1].next = NULL;
+    mdidx = last_mdidx;
+  }
+  GPR_ASSERT(mdidx == s->incoming_metadata_count);
+
+  s->incoming_metadata_count = 0;
+}
+
 static void finish_reads(transport *t) {
   stream *s;
 
@@ -1904,10 +1926,14 @@ static void finish_reads(transport *t) {
       publish = 1;
     }
     if (publish) {
+      if (s->incoming_metadata_count > 0) {
+        patch_metadata_ops(s);
+      }
       s->incoming_sopb = NULL;
       schedule_cb(t, s->recv_done_closure, 1);
     }
   }
+
 }
 
 static void schedule_cb(transport *t, op_closure closure, int success) {
