@@ -957,7 +957,7 @@ static void finish_write_common(transport *t, int success) {
   }
   while ((s = stream_list_remove_head(t, WRITTEN_CLOSED))) {
     s->write_state = WRITE_STATE_SENT_CLOSE;
-    if (!s->cancelled) {
+    if (1||!s->cancelled) {
       maybe_finish_read(t, s);
     }
   }
@@ -1916,6 +1916,7 @@ static void finish_reads(transport *t) {
     GPR_ASSERT(s->incoming_sopb);
     *s->publish_state =
         compute_state(s->write_state == WRITE_STATE_SENT_CLOSE, s->read_closed);
+    gpr_log(GPR_DEBUG, "FR: %p pub=%d known=%d ws=%d rc=%d", s, *s->publish_state, s->published_state, s->write_state, s->read_closed);
     if (*s->publish_state != s->published_state) {
       s->published_state = *s->publish_state;
       publish = 1;

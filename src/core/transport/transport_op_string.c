@@ -87,6 +87,7 @@ char *grpc_sopb_string(grpc_stream_op_buffer *sopb) {
         break;
       case GRPC_OP_SLICE:
         gpr_asprintf(&tmp, "SLICE:%d", GPR_SLICE_LENGTH(op->data.slice));
+        gpr_strvec_add(&b, tmp);
         break;
       case GRPC_OP_METADATA:
         gpr_strvec_add(&b, gpr_strdup("METADATA{"));

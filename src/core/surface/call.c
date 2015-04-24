@@ -320,7 +320,7 @@ grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
 }
 
 void grpc_call_internal_ref(grpc_call *c, const char *reason) { 
-gpr_log(GPR_DEBUG, "grpc_call_internal_ref: %p %s %d -> %d", c, reason, c->internal_refcount.count, c->internal_refcount.count+1);
+gpr_log(GPR_DEBUG, "grpc_call_internal_ref: %p %d %s %d -> %d", c, c->is_client, reason, c->internal_refcount.count, c->internal_refcount.count+1);
   gpr_ref(&c->internal_refcount); }
 
 static void destroy_call(void *call, int ignored_success) {
@@ -355,7 +355,7 @@ static void destroy_call(void *call, int ignored_success) {
 }
 
 void grpc_call_internal_unref(grpc_call *c, const char *reason, int allow_immediate_deletion) {
-gpr_log(GPR_DEBUG, "grpc_call_internal_unref: %p %s %d -> %d", c, reason, c->internal_refcount.count, c->internal_refcount.count-1);
+gpr_log(GPR_DEBUG, "grpc_call_internal_unref: %p %d %s %d -> %d", c, c->is_client, reason, c->internal_refcount.count, c->internal_refcount.count-1);
   if (gpr_unref(&c->internal_refcount)) {
     if (allow_immediate_deletion) {
       destroy_call(c, 1);
@@ -408,12 +408,13 @@ static int is_op_live(grpc_call *call, grpc_ioreq_op op) {
 static void lock(grpc_call *call) { gpr_mu_lock(&call->mu); }
 
 static int need_more_data(grpc_call *call) {
+  gpr_log(GPR_DEBUG, "st: %d%d%d%d%d%d%d", is_op_live(call, GRPC_IOREQ_RECV_INITIAL_METADATA), is_op_live(call, GRPC_IOREQ_RECV_MESSAGE), is_op_live(call, GRPC_IOREQ_RECV_TRAILING_METADATA), is_op_live(call, GRPC_IOREQ_RECV_STATUS), is_op_live(call, GRPC_IOREQ_RECV_STATUS_DETAILS), is_op_live(call, GRPC_IOREQ_RECV_CLOSE), (call->write_state == WRITE_STATE_INITIAL && !call->is_client && call->read_state != READ_STATE_STREAM_CLOSED));
   return is_op_live(call, GRPC_IOREQ_RECV_INITIAL_METADATA) ||
          is_op_live(call, GRPC_IOREQ_RECV_MESSAGE) ||
          is_op_live(call, GRPC_IOREQ_RECV_TRAILING_METADATA) ||
          is_op_live(call, GRPC_IOREQ_RECV_STATUS) ||
          is_op_live(call, GRPC_IOREQ_RECV_STATUS_DETAILS) ||
-         is_op_live(call, GRPC_IOREQ_RECV_CLOSE) ||
+         (is_op_live(call, GRPC_IOREQ_RECV_CLOSE) && grpc_bbq_empty(&call->incoming_queue)) ||
          (call->write_state == WRITE_STATE_INITIAL && !call->is_client && call->read_state != READ_STATE_STREAM_CLOSED);
 }
 
@@ -687,7 +688,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
 static void call_on_done_recv(void *pc, int success) {
   grpc_call *call = pc;
   size_t i;
-  gpr_log(GPR_DEBUG, "%s %p", __FUNCTION__, call);
+  gpr_log(GPR_DEBUG, "%s %p succ=%d rcvs=%d rds0=%d", __FUNCTION__, call, success, call->recv_state, call->read_state);
   lock(call);
   call->receiving = 0;
   if (success) {
@@ -715,6 +716,7 @@ static void call_on_done_recv(void *pc, int success) {
       GPR_ASSERT(call->read_state <= READ_STATE_STREAM_CLOSED);
       call->read_state = READ_STATE_STREAM_CLOSED;
     }
+    gpr_log(GPR_DEBUG, "%p rds1=%d", call, call->read_state);
     finish_read_ops(call);
   } else {
     finish_ioreq_op(call, GRPC_IOREQ_RECV_MESSAGE, GRPC_OP_ERROR);
