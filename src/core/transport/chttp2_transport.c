@@ -420,6 +420,9 @@ static void destruct_transport(transport *t) {
   }
   gpr_free(t->pings);
 
+  gpr_free(t->pending_callbacks.callbacks);
+  gpr_free(t->executing_callbacks.callbacks);
+
   for (i = 0; i < t->num_pending_goaways; i++) {
     gpr_slice_unref(t->pending_goaways[i].debug);
   }
