@@ -288,9 +288,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
   grpc_sopb_init(&call->send_ops);
   grpc_sopb_init(&call->recv_ops);
   gpr_slice_buffer_init(&call->incoming_message);
-  /* one ref is dropped in response to destroy, the other in
-     stream_closed */
-  gpr_ref_init(&call->internal_refcount, 2);
+  /* dropped in destroy */
+  gpr_ref_init(&call->internal_refcount, 1);
   /* server hack: start reads immediately so we can get initial metadata.
      TODO(ctiller): figure out a cleaner solution */
   if (!call->is_client) {
@@ -688,7 +687,6 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
 static void call_on_done_recv(void *pc, int success) {
   grpc_call *call = pc;
   size_t i;
-  int unref_due_to_connection_close = 0;
   gpr_log(GPR_DEBUG, "%s %p", __FUNCTION__, call);
   lock(call);
   call->receiving = 0;
@@ -716,7 +714,6 @@ static void call_on_done_recv(void *pc, int success) {
     if (call->recv_state == GRPC_STREAM_CLOSED) {
       GPR_ASSERT(call->read_state <= READ_STATE_STREAM_CLOSED);
       call->read_state = READ_STATE_STREAM_CLOSED;
-      unref_due_to_connection_close = 1;
     }
     finish_read_ops(call);
   } else {
@@ -731,9 +728,6 @@ static void call_on_done_recv(void *pc, int success) {
   unlock(call);
 
   grpc_call_internal_unref(call, "receiving", 0);
-  if (unref_due_to_connection_close) {
-    grpc_call_internal_unref(call, "live", 0);
-  }
 }
 
 static grpc_mdelem_list chain_metadata_from_app(grpc_call *call, size_t count,

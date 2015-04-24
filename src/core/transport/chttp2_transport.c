@@ -665,7 +665,9 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
   grpc_sopb_destroy(&s->writing_sopb);
   grpc_sopb_destroy(&s->callback_sopb);
   grpc_chttp2_data_parser_destroy(&s->parser);
-  GPR_ASSERT(s->incoming_metadata_count == 0);
+  for (i = 0; i < s->incoming_metadata_count; i++) {
+    grpc_mdelem_unref(s->incoming_metadata[i].md);
+  }
   gpr_free(s->incoming_metadata);
 
   unref_transport(t);
