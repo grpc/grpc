@@ -72,7 +72,8 @@ static void state_unref(grpc_server_secure_state *state) {
 static grpc_transport_setup_result setup_transport(void *server,
                                                    grpc_transport *transport,
                                                    grpc_mdctx *mdctx) {
-  static grpc_channel_filter const *extra_filters[] = {&grpc_http_server_filter};
+  static grpc_channel_filter const *extra_filters[] = {
+      &grpc_http_server_filter};
   return grpc_server_setup_transport(server, transport, extra_filters,
                                      GPR_ARRAY_SIZE(extra_filters), mdctx);
 }

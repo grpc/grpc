@@ -139,7 +139,8 @@ static void remove_waiting_child(channel_data *chand, call_data *calld) {
   chand->waiting_child_count = new_count;
 }
 
-static void handle_op_after_cancellation(grpc_call_element *elem, grpc_transport_op *op) {
+static void handle_op_after_cancellation(grpc_call_element *elem,
+                                         grpc_transport_op *op) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   if (op->send_ops) {
@@ -149,10 +150,10 @@ static void handle_op_after_cancellation(grpc_call_element *elem, grpc_transport
     char status[GPR_LTOA_MIN_BUFSIZE];
     grpc_metadata_batch mdb;
     gpr_ltoa(GRPC_STATUS_CANCELLED, status);
-    calld->s.cancelled.status.md = grpc_mdelem_from_strings(chand->mdctx,
-      "grpc-status", status);
-    calld->s.cancelled.details.md = grpc_mdelem_from_strings(chand->mdctx,
-      "grpc-message", "Cancelled");
+    calld->s.cancelled.status.md =
+        grpc_mdelem_from_strings(chand->mdctx, "grpc-status", status);
+    calld->s.cancelled.details.md =
+        grpc_mdelem_from_strings(chand->mdctx, "grpc-message", "Cancelled");
     calld->s.cancelled.status.prev = calld->s.cancelled.details.next = NULL;
     calld->s.cancelled.status.next = &calld->s.cancelled.details;
     calld->s.cancelled.details.prev = &calld->s.cancelled.status;
@@ -199,8 +200,10 @@ static void cc_start_transport_op(grpc_call_element *elem,
             gpr_mu_unlock(&chand->mu);
           }
         } else {
-          /* check to see if we should initiate a connection (if we're not already),
-             but don't do so until outside the lock to avoid re-entrancy problems if
+          /* check to see if we should initiate a connection (if we're not
+             already),
+             but don't do so until outside the lock to avoid re-entrancy
+             problems if
              the callback is immediate */
           int initiate_transport_setup = 0;
           if (!chand->transport_setup_initiated) {
@@ -212,9 +215,9 @@ static void cc_start_transport_op(grpc_call_element *elem,
           if (chand->waiting_child_count == chand->waiting_child_capacity) {
             chand->waiting_child_capacity =
                 GPR_MAX(chand->waiting_child_capacity * 2, 8);
-            chand->waiting_children =
-                gpr_realloc(chand->waiting_children,
-                            chand->waiting_child_capacity * sizeof(call_data *));
+            chand->waiting_children = gpr_realloc(
+                chand->waiting_children,
+                chand->waiting_child_capacity * sizeof(call_data *));
           }
           calld->s.waiting_op = *op;
           chand->waiting_children[chand->waiting_child_count++] = calld;
@@ -236,8 +239,10 @@ static void cc_start_transport_op(grpc_call_element *elem,
         handle_op_after_cancellation(elem, &waiting_op);
         handle_op_after_cancellation(elem, op);
       } else {
-        GPR_ASSERT((calld->s.waiting_op.send_ops == NULL) != (op->send_ops == NULL));
-        GPR_ASSERT((calld->s.waiting_op.recv_ops == NULL) != (op->recv_ops == NULL));
+        GPR_ASSERT((calld->s.waiting_op.send_ops == NULL) !=
+                   (op->send_ops == NULL));
+        GPR_ASSERT((calld->s.waiting_op.recv_ops == NULL) !=
+                   (op->recv_ops == NULL));
         if (op->send_ops) {
           calld->s.waiting_op.send_ops = op->send_ops;
           calld->s.waiting_op.is_last_send = op->is_last_send;

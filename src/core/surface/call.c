@@ -423,8 +423,7 @@ static void unlock(grpc_call *call) {
 
   memset(&op, 0, sizeof(op));
 
-  if (!call->receiving &&
-      need_more_data(call)) {
+  if (!call->receiving && need_more_data(call)) {
     op.recv_ops = &call->recv_ops;
     op.recv_state = &call->recv_state;
     op.on_done_recv = call_on_done_recv;

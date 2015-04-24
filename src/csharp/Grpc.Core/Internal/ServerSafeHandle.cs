@@ -36,84 +36,89 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Grpc.Core.Internal
-{
-    // TODO: we need to make sure that the delegates are not collected before invoked.
-    internal delegate void ServerShutdownCallbackDelegate(IntPtr eventPtr);
+namespace Grpc.Core.Internal {
+  // TODO: we need to make sure that the delegates are not collected before
+  // invoked.
+  internal delegate void ServerShutdownCallbackDelegate(IntPtr eventPtr);
 
-    /// <summary>
-    /// grpc_server from grpc/grpc.h
-    /// </summary>
-    internal sealed class ServerSafeHandle : SafeHandleZeroIsInvalid
-    {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern GRPCCallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate callback);
+  /// <summary>
+  /// grpc_server from grpc/grpc.h
+  /// </summary>
+  internal sealed class ServerSafeHandle : SafeHandleZeroIsInvalid {
+    [DllImport("grpc_csharp_ext.dll")] static extern GRPCCallError
+    grpcsharp_server_request_call(
+        ServerSafeHandle server, CompletionQueueSafeHandle cq,
+        [MarshalAs(UnmanagedType.FunctionPtr)] CompletionCallbackDelegate
+            callback);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern ServerSafeHandle grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
+    [DllImport("grpc_csharp_ext.dll")] static extern ServerSafeHandle
+    grpcsharp_server_create(CompletionQueueSafeHandle cq, IntPtr args);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
+    [DllImport("grpc_csharp_ext.dll")] static extern int
+    grpcsharp_server_add_http2_port(ServerSafeHandle server, string addr);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
+    [DllImport("grpc_csharp_ext.dll")] static extern int
+    grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr,
+                                           ServerCredentialsSafeHandle creds);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_start(ServerSafeHandle server);
+    [DllImport("grpc_csharp_ext.dll")] static extern void
+    grpcsharp_server_start(ServerSafeHandle server);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_shutdown(ServerSafeHandle server);
+    [DllImport("grpc_csharp_ext.dll")] static extern void
+    grpcsharp_server_shutdown(ServerSafeHandle server);
 
-        // TODO: get rid of the old callback style
-        [DllImport("grpc_csharp_ext.dll", EntryPoint = "grpcsharp_server_shutdown_and_notify")]
-        static extern void grpcsharp_server_shutdown_and_notify_CALLBACK(ServerSafeHandle server, [MarshalAs(UnmanagedType.FunctionPtr)] ServerShutdownCallbackDelegate callback);
+    // TODO: get rid of the old callback style
+    [DllImport(
+        "grpc_csharp_ext.dll",
+        EntryPoint = "grpcsharp_server_shutdown_and_notify")] static extern void
+    grpcsharp_server_shutdown_and_notify_CALLBACK(
+        ServerSafeHandle server,
+        [MarshalAs(UnmanagedType.FunctionPtr)] ServerShutdownCallbackDelegate
+            callback);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_server_destroy(IntPtr server);
+    [DllImport("grpc_csharp_ext.dll")] static extern void
+    grpcsharp_server_destroy(IntPtr server);
 
-        private ServerSafeHandle()
-        {
-        }
+   private
+    ServerSafeHandle() {}
 
-        public static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq, IntPtr args)
-        {
-            return grpcsharp_server_create(cq, args);
-        }
-
-        public int AddListeningPort(string addr)
-        {
-            return grpcsharp_server_add_http2_port(this, addr);
-        }
-
-        public int AddListeningPort(string addr, ServerCredentialsSafeHandle credentials)
-        {
-            return grpcsharp_server_add_secure_http2_port(this, addr, credentials);
-        }
-
-        public void Start()
-        {
-            grpcsharp_server_start(this);
-        }
-
-        public void Shutdown()
-        {
-            grpcsharp_server_shutdown(this);
-        }
-
-        public void ShutdownAndNotify(ServerShutdownCallbackDelegate callback)
-        {
-            grpcsharp_server_shutdown_and_notify_CALLBACK(this, callback);
-        }
-
-        public GRPCCallError RequestCall(CompletionQueueSafeHandle cq, CompletionCallbackDelegate callback)
-        {
-            return grpcsharp_server_request_call(this, cq, callback);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            grpcsharp_server_destroy(handle);
-            return true;
-        }
+   public
+    static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq,
+                                      IntPtr args) {
+      return grpcsharp_server_create(cq, args);
     }
+
+   public
+    int AddListeningPort(string addr) {
+      return grpcsharp_server_add_http2_port(this, addr);
+    }
+
+   public
+    int AddListeningPort(string addr, ServerCredentialsSafeHandle credentials) {
+      return grpcsharp_server_add_secure_http2_port(this, addr, credentials);
+    }
+
+   public
+    void Start() { grpcsharp_server_start(this); }
+
+   public
+    void Shutdown() { grpcsharp_server_shutdown(this); }
+
+   public
+    void ShutdownAndNotify(ServerShutdownCallbackDelegate callback) {
+      grpcsharp_server_shutdown_and_notify_CALLBACK(this, callback);
+    }
+
+   public
+    GRPCCallError RequestCall(CompletionQueueSafeHandle cq,
+                              CompletionCallbackDelegate callback) {
+      return grpcsharp_server_request_call(this, cq, callback);
+    }
+
+   protected
+    override bool ReleaseHandle() {
+      grpcsharp_server_destroy(handle);
+      return true;
+    }
+  }
 }

@@ -55,7 +55,8 @@ static void channel_init_func(grpc_channel_element *elem,
 }
 
 static void call_init_func(grpc_call_element *elem,
-                           const void *server_transport_data, grpc_transport_op *initial_op) {
+                           const void *server_transport_data,
+                           grpc_transport_op *initial_op) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
 }
@@ -66,8 +67,7 @@ static void call_destroy_func(grpc_call_element *elem) {
   ++*(int *)(elem->channel_data);
 }
 
-static void call_func(grpc_call_element *elem, 
-                      grpc_transport_op *op) {
+static void call_func(grpc_call_element *elem, grpc_transport_op *op) {
   ++*(int *)(elem->call_data);
 }
 
@@ -78,9 +78,8 @@ static void channel_func(grpc_channel_element *elem,
 
 static void test_create_channel_stack(void) {
   const grpc_channel_filter filter = {
-      call_func,         channel_func,         sizeof(int),
-      call_init_func,    call_destroy_func,    sizeof(int),
-      channel_init_func, channel_destroy_func, "some_test_filter"};
+      call_func, channel_func, sizeof(int), call_init_func, call_destroy_func,
+      sizeof(int), channel_init_func, channel_destroy_func, "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
   grpc_call_stack *call_stack;

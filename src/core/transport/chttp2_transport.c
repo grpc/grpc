@@ -361,7 +361,7 @@ static void cancel_stream_id(transport *t, gpr_uint32 id,
                              grpc_chttp2_error_code error_code, int send_rst);
 static void cancel_stream(transport *t, stream *s,
                           grpc_status_code local_status,
-                          grpc_chttp2_error_code error_code, 
+                          grpc_chttp2_error_code error_code,
                           grpc_mdstr *optional_message, int send_rst);
 static void finalize_cancellations(transport *t);
 static stream *lookup_stream(transport *t, gpr_uint32 id);
@@ -731,8 +731,8 @@ static void stream_list_join(transport *t, stream *s, stream_list_id id) {
 
 static void remove_from_stream_map(transport *t, stream *s) {
   if (s->id == 0) return;
-  IF_TRACING(gpr_log(GPR_DEBUG, "HTTP:%s: Removing stream %d",       t->is_client? "CLI" : "SVR",
- s->id));
+  IF_TRACING(gpr_log(GPR_DEBUG, "HTTP:%s: Removing stream %d",
+                     t->is_client ? "CLI" : "SVR", s->id));
   if (grpc_chttp2_stream_map_delete(&t->stream_map, s->id)) {
     maybe_start_some_streams(t);
   }
@@ -1001,7 +1001,8 @@ static void maybe_start_some_streams(transport *t) {
     stream *s = stream_list_remove_head(t, WAITING_FOR_CONCURRENCY);
     if (!s) break;
 
-    IF_TRACING(gpr_log(GPR_DEBUG, "HTTP:%s: Allocating new stream %p to id %d", t->is_client? "CLI" : "SVR", s, t->next_stream_id));
+    IF_TRACING(gpr_log(GPR_DEBUG, "HTTP:%s: Allocating new stream %p to id %d",
+                       t->is_client ? "CLI" : "SVR", s, t->next_stream_id));
 
     GPR_ASSERT(s->id == 0);
     s->id = t->next_stream_id;
@@ -1015,7 +1016,8 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_stream(
         t, s, op->cancel_with_status,
-        grpc_chttp2_grpc_status_to_http2_error(op->cancel_with_status), op->cancel_message, 1);
+        grpc_chttp2_grpc_status_to_http2_error(op->cancel_with_status),
+        op->cancel_message, 1);
   }
 
   if (op->send_ops) {
@@ -1028,7 +1030,9 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
         s->write_state = WRITE_STATE_QUEUED_CLOSE;
       }
       if (s->id == 0) {
-        IF_TRACING(gpr_log(GPR_DEBUG, "HTTP:%s: New stream %p waiting for concurrency", t->is_client? "CLI" : "SVR", s));
+        IF_TRACING(gpr_log(GPR_DEBUG,
+                           "HTTP:%s: New stream %p waiting for concurrency",
+                           t->is_client ? "CLI" : "SVR", s));
         stream_list_join(t, s, WAITING_FOR_CONCURRENCY);
         maybe_start_some_streams(t);
       } else if (s->outgoing_window > 0) {
@@ -1120,8 +1124,7 @@ static void add_incoming_metadata(transport *t, stream *s, grpc_mdelem *elem) {
 static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 grpc_status_code local_status,
                                 grpc_chttp2_error_code error_code,
-                                grpc_mdstr *optional_message,
-                                int send_rst) {
+                                grpc_mdstr *optional_message, int send_rst) {
   int had_outgoing;
   char buffer[GPR_LTOA_MIN_BUFSIZE];
 
@@ -1157,7 +1160,12 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
             break;
         }
       } else {
-        add_incoming_metadata(t, s, grpc_mdelem_from_metadata_strings(t->metadata_context, grpc_mdstr_from_string(t->metadata_context, "grpc-message"), grpc_mdstr_ref(optional_message)));
+        add_incoming_metadata(
+            t, s,
+            grpc_mdelem_from_metadata_strings(
+                t->metadata_context,
+                grpc_mdstr_from_string(t->metadata_context, "grpc-message"),
+                grpc_mdstr_ref(optional_message)));
       }
       add_metadata_batch(t, s);
       maybe_finish_read(t, s);
@@ -1182,8 +1190,10 @@ static void cancel_stream_id(transport *t, gpr_uint32 id,
 
 static void cancel_stream(transport *t, stream *s,
                           grpc_status_code local_status,
-                          grpc_chttp2_error_code error_code, grpc_mdstr *optional_message, int send_rst) {
-  cancel_stream_inner(t, s, s->id, local_status, error_code, optional_message, send_rst);
+                          grpc_chttp2_error_code error_code,
+                          grpc_mdstr *optional_message, int send_rst) {
+  cancel_stream_inner(t, s, s->id, local_status, error_code, optional_message,
+                      send_rst);
 }
 
 static void cancel_stream_cb(void *user_data, gpr_uint32 id, void *stream) {
@@ -1310,10 +1320,9 @@ static void on_header(void *tp, grpc_mdelem *md) {
 
   GPR_ASSERT(s);
 
-  IF_TRACING(gpr_log(GPR_INFO, "HTTP:%d:%s:HDR: %s: %s", s->id,
-      t->is_client? "CLI" : "SVR",
-                     grpc_mdstr_as_c_string(md->key),
-                     grpc_mdstr_as_c_string(md->value)));
+  IF_TRACING(gpr_log(
+      GPR_INFO, "HTTP:%d:%s:HDR: %s: %s", s->id, t->is_client ? "CLI" : "SVR",
+      grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
 
   if (md->key == t->str_grpc_timeout) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);

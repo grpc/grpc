@@ -135,7 +135,9 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
 
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
 
-void grpc_transport_op_add_cancellation(grpc_transport_op *op, grpc_status_code status, grpc_mdstr *message);
+void grpc_transport_op_add_cancellation(grpc_transport_op *op,
+                                        grpc_status_code status,
+                                        grpc_mdstr *message);
 
 /* TODO(ctiller): remove this */
 void grpc_transport_add_to_pollset(grpc_transport *transport,

@@ -59,7 +59,8 @@
 static grpc_transport_setup_result server_setup_transport(
     void *ts, grpc_transport *transport, grpc_mdctx *mdctx) {
   grpc_end2end_test_fixture *f = ts;
-  static grpc_channel_filter const *extra_filters[] = {&grpc_http_server_filter};
+  static grpc_channel_filter const *extra_filters[] = {
+      &grpc_http_server_filter};
   return grpc_server_setup_transport(f->server, transport, extra_filters,
                                      GPR_ARRAY_SIZE(extra_filters), mdctx);
 }
@@ -73,9 +74,9 @@ static grpc_transport_setup_result client_setup_transport(
     void *ts, grpc_transport *transport, grpc_mdctx *mdctx) {
   sp_client_setup *cs = ts;
 
-  const grpc_channel_filter *filters[] = {
-      &grpc_client_surface_filter, &grpc_http_client_filter, 
-      &grpc_connected_channel_filter};
+  const grpc_channel_filter *filters[] = {&grpc_client_surface_filter,
+                                          &grpc_http_client_filter,
+                                          &grpc_connected_channel_filter};
   size_t nfilters = sizeof(filters) / sizeof(*filters);
   grpc_channel *channel = grpc_channel_create_from_filters(
       filters, nfilters, cs->client_args, mdctx, 1);

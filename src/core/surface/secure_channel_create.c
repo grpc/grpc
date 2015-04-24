@@ -210,7 +210,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_arg connector_arg;
   grpc_channel_args *args_copy;
   grpc_channel_args *new_args_from_connector;
-  grpc_channel_security_connector* connector;
+  grpc_channel_security_connector *connector;
   grpc_mdctx *mdctx;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
