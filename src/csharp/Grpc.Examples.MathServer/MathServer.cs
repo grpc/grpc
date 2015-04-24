@@ -40,7 +40,7 @@ namespace math
     {
         public static void Main(string[] args)
         {
-            String host = "0.0.0.0";
+            string host = "0.0.0.0";
 
             GrpcEnvironment.Initialize();
 
