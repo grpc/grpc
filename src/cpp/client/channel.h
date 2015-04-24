@@ -38,6 +38,7 @@
 
 #include <grpc++/channel_interface.h>
 #include <grpc++/config.h>
+#include <grpc++/impl/grpc_library.h>
 
 struct grpc_channel;
 
@@ -49,7 +50,8 @@ class CompletionQueue;
 class Credentials;
 class StreamContextInterface;
 
-class Channel GRPC_FINAL : public ChannelInterface {
+class Channel GRPC_FINAL : public GrpcLibrary,
+                           public ChannelInterface {
  public:
   Channel(const grpc::string& target, grpc_channel* c_channel);
   ~Channel() GRPC_OVERRIDE;
