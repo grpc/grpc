@@ -27,13 +27,34 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'grpc/errors'
-require 'grpc/grpc'
-require 'grpc/logconfig'
-require 'grpc/notifier'
-require 'grpc/version'
-require 'grpc/core/time_consts'
-require 'grpc/generic/active_call'
-require 'grpc/generic/client_stub'
-require 'grpc/generic/service'
-require 'grpc/generic/rpc_server'
+# GRPC contains the General RPC module.
+module GRPC
+  # Notifier is useful high-level synchronization primitive.
+  class Notifier
+    attr_reader :payload, :notified
+    alias_method :notified?, :notified
+
+    def initialize
+      @mutex    = Mutex.new
+      @cvar     = ConditionVariable.new
+      @notified = false
+      @payload  = nil
+    end
+
+    def wait
+      @mutex.synchronize do
+        @cvar.wait(@mutex) until notified?
+      end
+    end
+
+    def notify(payload)
+      @mutex.synchronize do
+        return Error.new('already notified') if notified?
+        @payload  = payload
+        @notified = true
+        @cvar.signal
+        return nil
+      end
+    end
+  end
+end
