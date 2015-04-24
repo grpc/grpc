@@ -47,7 +47,7 @@
 }
 
 - (instancetype)init {
-    return [self initWithChannel:nil method:nil host:nil];
+  return [self initWithChannel:nil method:nil host:nil];
 }
 
 - (instancetype)initWithChannel:(GRPCChannel *)channel method:(NSString *)method host:(NSString *)host {
