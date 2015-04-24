@@ -1173,7 +1173,6 @@ grpc_cloud_prod_auth_jwt_token_creds_gen_ruby_cmd() {
   local test_script="/var/local/git/grpc/src/ruby/bin/interop/interop_client.rb"
   local test_script+=" --use_tls"
   local gfe_flags=$(_grpc_prod_gfe_flags)
-  local added_gfe_flags=$(_grpc_jwt_token_test_flags)
   local env_prefix="SSL_CERT_FILE=/cacerts/roots.pem"
   env_prefix+=" GOOGLE_APPLICATION_CREDENTIALS=/service_account/stubbyCloudTestingTest-7dd63462c60c.json"
   local the_cmd="$cmd_prefix '$env_prefix ruby $test_script $gfe_flags $added_gfe_flags $@'"
