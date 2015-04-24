@@ -92,7 +92,8 @@ bool CompletionQueue::Pluck(CompletionQueueTag* tag) {
   void* ignored = tag;
   GPR_ASSERT(tag->FinalizeResult(&ignored, &ok));
   GPR_ASSERT(ignored == tag);
-  return ok;
+  // Ignore mutations by FinalizeResult: Pluck returns the C API status
+  return ev->data.op_complete == GRPC_OP_OK;
 }
 
 void CompletionQueue::TryPluck(CompletionQueueTag* tag) {
