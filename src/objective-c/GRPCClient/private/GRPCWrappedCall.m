@@ -78,7 +78,7 @@
   size_t nops = operations.count;
   grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
   size_t index = 0;
-  NSMutableDictionary * __block opProcessors = [NSMutableDictionary new];
+  NSMutableDictionary * __block opProcessors = [NSMutableDictionary dictionary];
   
   grpc_metadata *send_metadata = NULL;
   grpc_metadata_array *recv_initial_metadata;
@@ -164,7 +164,7 @@
         [NSException raise:NSInvalidArgumentException format:@"Unrecognized dictionary key"];
     }
     current->op = [key intValue];
-    [opProcessors setObject:opBlock forKey:key];
+    opProcessors[key] = opBlock;
   }
   grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(grpc_op_error error){
     if (error != GRPC_OP_OK) {
@@ -174,14 +174,14 @@
         [NSException raise:@"Operation Exception" format:@"The batch failed with an unknown error"];
       }
     }
-    NSMutableDictionary *result = [NSMutableDictionary new];
+    NSMutableDictionary *result = [NSMutableDictionary dictionary];
     for (id key in opProcessors) {
       id(^block)(void) = opProcessors[key];
       id value = block();
       if (value == nil) {
         value = [NSNull null];
       }
-      [result setObject:value forKey:key];
+      result[key] = value;
     }
     if (handleCompletion) {
       handleCompletion(result);
