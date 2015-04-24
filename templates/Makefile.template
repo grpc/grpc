@@ -1210,12 +1210,7 @@ endif
 % endif
 % for src in lib.src:
 % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in lib.src):
-$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-% for src2 in lib.src:
-% if proto_re.match(src2):
-    ${proto_to_cc(src2)}\
-% endif
-% endfor
+$(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in lib.src if proto_re.match(src2))}
 % endif
 % endfor
 </%def>
