@@ -123,8 +123,7 @@ module GRPC
         break if req.equal?(END_OF_READS)
         yield req
       end
-      @loop_th.join
-      @enq_th.join
+      @enq_th.join if @enq_th.alive?
     end
 
     # during bidi-streaming, read the requests to send from a separate thread
