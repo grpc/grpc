@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   grpc_sopb_add_no_op(&buf);
 
   /* verify that the data went in ok */
-  GPR_ASSERT(buf.nops == 7);
+  GPR_ASSERT(buf.nops == 6);
   GPR_ASSERT(buf.ops[0].type == GRPC_OP_BEGIN_MESSAGE);
   GPR_ASSERT(buf.ops[0].data.begin_message.length == 1);
   GPR_ASSERT(buf.ops[0].data.begin_message.flags == 2);
