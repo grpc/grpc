@@ -529,7 +529,6 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   master->complete_mask |= 1u << op;
   if (status != GRPC_OP_OK) {
     master->status = status;
-    master->complete_mask = master->need_mask;
   }
   if (master->complete_mask == master->need_mask) {
     for (i = 0; i < GRPC_IOREQ_OP_COUNT; i++) {
