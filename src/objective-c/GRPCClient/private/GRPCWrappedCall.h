@@ -31,21 +31,18 @@
  *
  */
 
-#ifndef Pods_GRPCWrappedCall_h
-#define Pods_GRPCWrappedCall_h
-
 #import <Foundation/Foundation.h>
 #import "GRPCChannel.h"
 
 typedef void(^GRPCCompletionHandler)(NSDictionary *);
 
-@interface GRPCWrappedCall:NSObject;
+@interface GRPCWrappedCall : NSObject
 
-- (instancetype)initWithChannel:(GRPCChannel *)channel method:(NSString *)method host:(NSString *)host;
+- (instancetype)initWithChannel:(GRPCChannel *)channel method:(NSString *)method host:(NSString *)host NS_DESIGNATED_INITIALIZER;
 
-- (void)startBatch:(NSDictionary *)ops handleCompletion:(GRPCCompletionHandler)handleCompletion;
+- (void)startBatchWithOperations:(NSDictionary *)ops handleCompletion:(GRPCCompletionHandler)handleCompletion errorHandler:(void(^)())errorHandler;
+
+- (void)startBatchWithOperations:(NSDictionary *)ops handleCompletion:(GRPCCompletionHandler)handleCompletion;
 
 - (void)cancel;
 @end
-
-#endif

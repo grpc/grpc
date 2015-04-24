@@ -31,19 +31,19 @@
  *
  */
 
-#import <Foundation/Foundation.h>
 #import "GRPCWrappedCall.h"
+#import <Foundation/Foundation.h>
+#include <grpc/grpc.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/support/alloc.h>
 #import "GRPCCompletionQueue.h"
 #import "NSDictionary+GRPC.h"
 #import "NSData+GRPC.h"
 #import "NSError+GRPC.h"
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
 
 @implementation GRPCWrappedCall{
-  grpc_call *call;
-  GRPCCompletionQueue *queue;
+  grpc_call *_call;
+  GRPCCompletionQueue *_queue;
 }
 
 - (instancetype)init {
@@ -61,19 +61,21 @@
       grpc_init();
     });
     
-    const char *method_str = [method UTF8String];
-    const char *host_str = [host UTF8String];
-    queue = [GRPCCompletionQueue completionQueue];
-    call = grpc_channel_create_call(channel.unmanagedChannel, queue.unmanagedQueue, method_str, host_str, gpr_inf_future);
-    if (call == NULL) {
+    _queue = [GRPCCompletionQueue completionQueue];
+    _call = grpc_channel_create_call(channel.unmanagedChannel, _queue.unmanagedQueue, method.UTF8String, host.UTF8String, gpr_inf_future);
+    if (_call == NULL) {
       return nil;
     }
   }
   return self;
 }
 
-- (void)startBatch:(NSDictionary *)ops handleCompletion:(GRPCCompletionHandler)handleCompletion {
-  size_t nops = ops.count;
+- (void)startBatchWithOperations:(NSDictionary *)operations handleCompletion:(GRPCCompletionHandler)handleCompletion {
+  [self startBatchWithOperations:operations handleCompletion:handleCompletion errorHandler:nil];
+}
+
+- (void)startBatchWithOperations:(NSDictionary *)operations handleCompletion:(GRPCCompletionHandler)handleCompletion errorHandler:(void (^)())errorHandler {
+  size_t nops = operations.count;
   grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
   size_t index = 0;
   NSMutableDictionary * __block opProcessors = [NSMutableDictionary new];
@@ -86,12 +88,13 @@
   grpc_status_code *status_code;
   char **status_details;
   size_t *status_details_capacity;
-  for (id key in ops) {
+  for (id key in operations) {
     id (^opBlock)(void);
     grpc_op *current = &ops_array[index];
     switch ([key intValue]) {
       case GRPC_OP_SEND_INITIAL_METADATA:
-        current->data.send_initial_metadata.count = [ops[key] grpc_toMetadataArray:&send_metadata];
+        // TODO(jcanizales): Name the type of current->data.send_initial_metadata in the C library so a pointer to it can be returned from methods.
+        current->data.send_initial_metadata.count = [operations[key] grpc_toMetadataArray:&send_metadata];
         current->data.send_initial_metadata.metadata = send_metadata;
         opBlock = ^{
           gpr_free(send_metadata);
@@ -99,7 +102,7 @@
         };
         break;
       case GRPC_OP_SEND_MESSAGE:
-        send_message = [ops[key] grpc_byteBuffer];
+        send_message = [operations[key] grpc_byteBuffer];
         current->data.send_message = send_message;
         opBlock = ^{
           grpc_byte_buffer_destroy(send_message);
@@ -162,9 +165,13 @@
     current->op = [key intValue];
     [opProcessors setObject:opBlock forKey:key];
   }
-  grpc_call_error error = grpc_call_start_batch(call, ops_array, nops, (__bridge_retained void *)(^(grpc_op_error error){
+  grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(grpc_op_error error){
     if (error != GRPC_OP_OK) {
-      [NSException raise:@"Operation Exception" format:@"The batch failed with an unknown error"];
+      if (errorHandler) {
+        errorHandler();
+      } else {
+        [NSException raise:@"Operation Exception" format:@"The batch failed with an unknown error"];
+      }
     }
     NSMutableDictionary *result = [NSMutableDictionary new];
     for (id key in opProcessors) {
@@ -175,7 +182,9 @@
       }
       [result setObject:value forKey:key];
     }
-    handleCompletion(result);
+    if (handleCompletion) {
+      handleCompletion(result);
+    }
   }));
   if (error != GRPC_CALL_OK) {
     [NSException raise:NSInvalidArgumentException format:@"The batch did not start successfully"];
@@ -183,11 +192,11 @@
 }
 
 - (void)cancel {
-  grpc_call_cancel(call);
+  grpc_call_cancel(_call);
 }
 
 - (void)dealloc {
-  grpc_call_destroy(call);
+  grpc_call_destroy(_call);
 }
 
 @end

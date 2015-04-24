@@ -46,7 +46,7 @@
 - (instancetype)init {
   if ((self = [super init])) {
     _unmanagedQueue = grpc_completion_queue_create();
-
+    
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential
     // because the block doesn't end until after grpc_completion_queue_shutdown
@@ -54,7 +54,7 @@
     // anymore (i.e. on self dealloc). So the block would never end if it
     // retained self.
     grpc_completion_queue *unmanagedQueue = _unmanagedQueue;
-
+    
     // Start a loop on a concurrent queue to read events from the completion
     // queue and dispatch each.
     static dispatch_once_t initialization;
