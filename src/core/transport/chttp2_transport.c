@@ -1132,6 +1132,7 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
     if (s->outgoing_sopb) {
       schedule_nuke_sopb(t, s->outgoing_sopb);
       s->outgoing_sopb = NULL;
+      stream_list_remove(t, s, WRITABLE);
       schedule_cb(t, s->send_done_closure, 0);
     }
     if (s->cancelled) {
