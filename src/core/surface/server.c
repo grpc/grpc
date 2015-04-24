@@ -925,6 +925,8 @@ void grpc_server_destroy(grpc_server *server) {
   channel_data *c;
   listener *l;
   size_t i;
+  call_data *calld;
+
   gpr_mu_lock(&server->mu);
   if (!server->shutdown) {
     gpr_mu_unlock(&server->mu);
@@ -947,6 +949,15 @@ void grpc_server_destroy(grpc_server *server) {
     l = server->listeners;
     server->listeners = l->next;
     gpr_free(l);
+  }
+
+  while ((calld = call_list_remove_head(&server->lists[PENDING_START],
+                                        PENDING_START)) != NULL) {
+    gpr_log(GPR_DEBUG, "server destroys call %p", calld->call);
+    calld->state = ZOMBIED;
+    grpc_iomgr_add_callback(
+        kill_zombie,
+        grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
   }
 
   for (c = server->root_channel_data.next; c != &server->root_channel_data;
