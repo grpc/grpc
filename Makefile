@@ -3854,6 +3854,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
+    include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
@@ -4117,6 +4118,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
+    include/grpc++/impl/grpc_library.h \
     include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
