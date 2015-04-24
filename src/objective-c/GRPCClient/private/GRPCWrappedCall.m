@@ -94,7 +94,8 @@
     switch ([key intValue]) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         // TODO(jcanizales): Name the type of current->data.send_initial_metadata in the C library so a pointer to it can be returned from methods.
-        current->data.send_initial_metadata.count = [operations[key] grpc_toMetadataArray:&send_metadata];
+        current->data.send_initial_metadata.count = [operations[key] count];
+        [operations[key] grpc_getMetadataArray:&send_metadata];
         current->data.send_initial_metadata.metadata = send_metadata;
         opBlock = ^{
           gpr_free(send_metadata);

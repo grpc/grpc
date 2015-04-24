@@ -55,23 +55,22 @@
   return metadata;
 }
 
-- (size_t)grpc_toMetadataArray:(grpc_metadata **)metadata {
-  size_t count = 0;
-  size_t capacity = 0;
+- (void)grpc_getMetadataArray:(grpc_metadata **)metadata {
+  *metadata = gpr_malloc([self count] * sizeof(grpc_metadata));
+  int i = 0;
   for (id key in self) {
-    capacity += [self[key] count];
-  }
-  *metadata = gpr_malloc(capacity * sizeof(grpc_metadata));
-  for (id key in self) {
-    id value_array = self[key];
-    for (id value in value_array) {
-      grpc_metadata *current = &(*metadata)[count];
-      current->key = [key UTF8String];
+    id value = self[key];
+    grpc_metadata *current = &(*metadata)[i];
+    current->key = [key UTF8String];
+    if ([value isKindOfClass:[NSData class]]) {
+      current->value = [value bytes];
+    } else if ([value isKindOfClass:[NSString class]]) {
       current->value = [value UTF8String];
-      current->value_length = [value length];
-      count += 1;
+    } else {
+      [NSException raise:NSInvalidArgumentException format:@"Metadata values must be NSString or NSData."];
     }
+    current->value = [value UTF8String];
+    i += 1;
   }
-  return count;
 }
 @end
