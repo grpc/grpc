@@ -379,6 +379,7 @@ static void maybe_join_window_updates(transport *t, stream *s);
 static void finish_reads(transport *t);
 static void add_to_pollset_locked(transport *t, grpc_pollset *pollset);
 static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op);
+static void add_metadata_batch(transport *t, stream *s);
 
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
@@ -1151,7 +1152,7 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
         default:
           break;
       }
-
+      add_metadata_batch(t, s);
       maybe_finish_read(t, s);
     }
   }
