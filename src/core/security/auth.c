@@ -173,6 +173,7 @@ static void auth_start_transport_op(grpc_call_element *elem,
     for (i = 0; i < nops; i++) {
       grpc_stream_op *sop = &ops[i];
       if (sop->type != GRPC_OP_METADATA) continue;
+      calld->op_md_idx = i;
       calld->sent_initial_metadata = 1;
       for (l = sop->data.metadata.list.head; l != NULL; l = l->next) {
         grpc_mdelem *md = l->md;
@@ -230,6 +231,7 @@ static void init_call_elem(grpc_call_element *elem,
   calld->creds = NULL;
   calld->host = NULL;
   calld->method = NULL;
+  calld->sent_initial_metadata = 0;
 
   GPR_ASSERT(!initial_op || !initial_op->send_ops);
 }
