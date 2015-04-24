@@ -75,6 +75,7 @@ typedef struct grpc_transport_op {
   grpc_pollset *bind_pollset;
 
   grpc_status_code cancel_with_status;
+  grpc_mdstr *cancel_message;
 } grpc_transport_op;
 
 /* Callbacks made from the transport to the upper layers of grpc. */
@@ -133,6 +134,8 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
                                    grpc_stream *stream);
 
 void grpc_transport_op_finish_with_failure(grpc_transport_op *op);
+
+void grpc_transport_op_add_cancellation(grpc_transport_op *op, grpc_status_code status, grpc_mdstr *message);
 
 /* TODO(ctiller): remove this */
 void grpc_transport_add_to_pollset(grpc_transport *transport,

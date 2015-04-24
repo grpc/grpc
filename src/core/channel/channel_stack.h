@@ -222,9 +222,6 @@ void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
                       grpc_call_element *elem, grpc_transport_op *op);
 
 void grpc_call_element_send_cancel(grpc_call_element *cur_elem);
-void grpc_call_element_recv_status(grpc_call_element *cur_elem,
-                                   grpc_status_code status,
-                                   const char *message);
 
 extern int grpc_trace_channel;
 

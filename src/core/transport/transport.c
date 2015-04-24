@@ -94,3 +94,12 @@ void grpc_transport_op_finish_with_failure(grpc_transport_op *op) {
     op->on_done_recv(op->recv_user_data, 0);
   }
 }
+
+void grpc_transport_op_add_cancellation(grpc_transport_op *op, grpc_status_code status, grpc_mdstr *message) {
+  if (op->cancel_with_status == GRPC_STATUS_OK) {
+    op->cancel_with_status = status;
+    op->cancel_message = message;
+  } else if (message) {
+    grpc_mdstr_unref(message);
+  }
+}

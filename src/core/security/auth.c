@@ -67,11 +67,6 @@ typedef struct {
   grpc_mdstr *status_key;
 } channel_data;
 
-static void bubbleup_error(grpc_call_element *elem, const char *error_msg) {
-  grpc_call_element_recv_status(elem, GRPC_STATUS_UNAUTHENTICATED, error_msg);
-  grpc_call_element_send_cancel(elem);
-}
-
 static void on_credentials_metadata(void *user_data, grpc_mdelem **md_elems,
                                     size_t num_md,
                                     grpc_credentials_status status) {
@@ -141,6 +136,7 @@ static void send_security_metadata(grpc_call_element *elem, grpc_transport_op *o
 static void on_host_checked(void *user_data, grpc_security_status status) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
 
   if (status == GRPC_SECURITY_OK) {
     send_security_metadata(elem, &calld->op);
@@ -148,9 +144,9 @@ static void on_host_checked(void *user_data, grpc_security_status status) {
     char *error_msg;
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  grpc_mdstr_as_c_string(calld->host));
-    bubbleup_error(elem, error_msg);
+    grpc_transport_op_add_cancellation(&calld->op, GRPC_STATUS_UNAUTHENTICATED, grpc_mdstr_from_string(chand->md_ctx, error_msg));
     gpr_free(error_msg);
-    grpc_transport_op_finish_with_failure(&calld->op);
+    grpc_call_next_op(elem, &calld->op);
   }
 }
 
@@ -199,9 +195,9 @@ static void auth_start_transport_op(grpc_call_element *elem,
             gpr_asprintf(&error_msg,
                          "Invalid host %s set in :authority metadata.",
                          call_host);
-            bubbleup_error(elem, error_msg);
+            grpc_transport_op_add_cancellation(&calld->op, GRPC_STATUS_UNAUTHENTICATED, grpc_mdstr_from_string(channeld->md_ctx, error_msg));
             gpr_free(error_msg);
-            grpc_transport_op_finish_with_failure(&calld->op);
+            grpc_call_next_op(elem, &calld->op);
           }
           return; /* early exit */
         }

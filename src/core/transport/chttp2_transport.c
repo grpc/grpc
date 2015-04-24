@@ -361,7 +361,8 @@ static void cancel_stream_id(transport *t, gpr_uint32 id,
                              grpc_chttp2_error_code error_code, int send_rst);
 static void cancel_stream(transport *t, stream *s,
                           grpc_status_code local_status,
-                          grpc_chttp2_error_code error_code, int send_rst);
+                          grpc_chttp2_error_code error_code, 
+                          grpc_mdstr *optional_message, int send_rst);
 static void finalize_cancellations(transport *t);
 static stream *lookup_stream(transport *t, gpr_uint32 id);
 static void remove_from_stream_map(transport *t, stream *s);
@@ -1011,6 +1012,12 @@ static void maybe_start_some_streams(transport *t) {
 }
 
 static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
+  if (op->cancel_with_status != GRPC_STATUS_OK) {
+    cancel_stream(
+        t, s, op->cancel_with_status,
+        grpc_chttp2_grpc_status_to_http2_error(op->cancel_with_status), op->cancel_message, 1);
+  }
+
   if (op->send_ops) {
     GPR_ASSERT(s->outgoing_sopb == NULL);
     s->send_done_closure.cb = op->on_done_send;
@@ -1037,25 +1044,15 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
     GPR_ASSERT(s->incoming_sopb == NULL);
     s->recv_done_closure.cb = op->on_done_recv;
     s->recv_done_closure.user_data = op->recv_user_data;
-    if (!s->cancelled) {
-      s->incoming_sopb = op->recv_ops;
-      s->incoming_sopb->nops = 0;
-      s->publish_state = op->recv_state;
-      maybe_finish_read(t, s);
-      maybe_join_window_updates(t, s);
-    } else {
-      schedule_cb(t, s->recv_done_closure, 0);
-    }
+    s->incoming_sopb = op->recv_ops;
+    s->incoming_sopb->nops = 0;
+    s->publish_state = op->recv_state;
+    maybe_finish_read(t, s);
+    maybe_join_window_updates(t, s);
   }
 
   if (op->bind_pollset) {
     add_to_pollset_locked(t, op->bind_pollset);
-  }
-
-  if (op->cancel_with_status != GRPC_STATUS_OK) {
-    cancel_stream(
-        t, s, op->cancel_with_status,
-        grpc_chttp2_grpc_status_to_http2_error(op->cancel_with_status), 1);
   }
 }
 
@@ -1123,6 +1120,7 @@ static void add_incoming_metadata(transport *t, stream *s, grpc_mdelem *elem) {
 static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
                                 grpc_status_code local_status,
                                 grpc_chttp2_error_code error_code,
+                                grpc_mdstr *optional_message,
                                 int send_rst) {
   int had_outgoing;
   char buffer[GPR_LTOA_MIN_BUFSIZE];
@@ -1147,14 +1145,18 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
       add_incoming_metadata(
           t, s,
           grpc_mdelem_from_strings(t->metadata_context, "grpc-status", buffer));
-      switch (local_status) {
-        case GRPC_STATUS_CANCELLED:
-          add_incoming_metadata(
-              t, s, grpc_mdelem_from_strings(t->metadata_context,
-                                             "grpc-message", "Cancelled"));
-          break;
-        default:
-          break;
+      if (!optional_message) {
+        switch (local_status) {
+          case GRPC_STATUS_CANCELLED:
+            add_incoming_metadata(
+                t, s, grpc_mdelem_from_strings(t->metadata_context,
+                                               "grpc-message", "Cancelled"));
+            break;
+          default:
+            break;
+        }
+      } else {
+        add_incoming_metadata(t, s, grpc_mdelem_from_metadata_strings(t->metadata_context, grpc_mdstr_from_string(t->metadata_context, "grpc-message"), grpc_mdstr_ref(optional_message)));
       }
       add_metadata_batch(t, s);
       maybe_finish_read(t, s);
@@ -1165,24 +1167,27 @@ static void cancel_stream_inner(transport *t, stream *s, gpr_uint32 id,
     gpr_slice_buffer_add(&t->qbuf,
                          grpc_chttp2_rst_stream_create(id, error_code));
   }
+  if (optional_message) {
+    grpc_mdstr_unref(optional_message);
+  }
 }
 
 static void cancel_stream_id(transport *t, gpr_uint32 id,
                              grpc_status_code local_status,
                              grpc_chttp2_error_code error_code, int send_rst) {
   cancel_stream_inner(t, lookup_stream(t, id), id, local_status, error_code,
-                      send_rst);
+                      NULL, send_rst);
 }
 
 static void cancel_stream(transport *t, stream *s,
                           grpc_status_code local_status,
-                          grpc_chttp2_error_code error_code, int send_rst) {
-  cancel_stream_inner(t, s, s->id, local_status, error_code, send_rst);
+                          grpc_chttp2_error_code error_code, grpc_mdstr *optional_message, int send_rst) {
+  cancel_stream_inner(t, s, s->id, local_status, error_code, optional_message, send_rst);
 }
 
 static void cancel_stream_cb(void *user_data, gpr_uint32 id, void *stream) {
   cancel_stream(user_data, stream, GRPC_STATUS_UNAVAILABLE,
-                GRPC_CHTTP2_INTERNAL_ERROR, 0);
+                GRPC_CHTTP2_INTERNAL_ERROR, NULL, 0);
 }
 
 static void end_all_the_calls(transport *t) {
@@ -1285,7 +1290,7 @@ static int init_data_frame_parser(transport *t) {
     case GRPC_CHTTP2_STREAM_ERROR:
       cancel_stream(t, s, grpc_chttp2_http2_error_to_grpc_status(
                               GRPC_CHTTP2_INTERNAL_ERROR),
-                    GRPC_CHTTP2_INTERNAL_ERROR, 1);
+                    GRPC_CHTTP2_INTERNAL_ERROR, NULL, 1);
       return init_skip_frame(t, 0);
     case GRPC_CHTTP2_CONNECTION_ERROR:
       drop_connection(t);
@@ -1598,7 +1603,7 @@ static int parse_frame_slice(transport *t, gpr_slice slice, int is_last) {
             if (!is_window_update_legal(st.window_update, s->outgoing_window)) {
               cancel_stream(t, s, grpc_chttp2_http2_error_to_grpc_status(
                                       GRPC_CHTTP2_FLOW_CONTROL_ERROR),
-                            GRPC_CHTTP2_FLOW_CONTROL_ERROR, 1);
+                            GRPC_CHTTP2_FLOW_CONTROL_ERROR, NULL, 1);
             } else {
               s->outgoing_window += st.window_update;
               /* if this window update makes outgoing ops writable again,
