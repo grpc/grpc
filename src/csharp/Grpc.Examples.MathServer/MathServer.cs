@@ -34,26 +34,28 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Grpc.Core;
 
-namespace math {
-class MainClass {
- public
-  static void Main(string[] args) {
-    String host = "0.0.0.0";
+namespace math
+{
+    class MainClass
+    {
+        public static void Main(string[] args)
+        {
+            string host = "0.0.0.0";
 
-    GrpcEnvironment.Initialize();
+            GrpcEnvironment.Initialize();
 
-    Server server = new Server();
-    server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
-    int port = server.AddListeningPort(host + ":23456");
-    server.Start();
+            Server server = new Server();
+            server.AddServiceDefinition(MathGrpc.BindService(new MathServiceImpl()));
+            int port = server.AddListeningPort(host + ":23456");
+            server.Start();
 
-    Console.WriteLine("MathServer listening on port " + port);
+            Console.WriteLine("MathServer listening on port " + port);
 
-    Console.WriteLine("Press any key to stop the server...");
-    Console.ReadKey();
+            Console.WriteLine("Press any key to stop the server...");
+            Console.ReadKey();
 
-    server.ShutdownAsync().Wait();
-    GrpcEnvironment.Shutdown();
-  }
-}
+            server.ShutdownAsync().Wait();
+            GrpcEnvironment.Shutdown();
+        }
+    }
 }
