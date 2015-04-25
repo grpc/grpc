@@ -34,15 +34,13 @@
 #ifndef GRPCXX_CLIENT_CONTEXT_H
 #define GRPCXX_CLIENT_CONTEXT_H
 
-#include <chrono>
 #include <map>
 #include <string>
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc++/config.h>
-
-using std::chrono::system_clock;
+#include <grpc++/time.h>
 
 struct grpc_call;
 struct grpc_completion_queue;
@@ -87,8 +85,19 @@ class ClientContext {
     return trailing_metadata_;
   }
 
-  void set_absolute_deadline(const system_clock::time_point& deadline);
-  system_clock::time_point absolute_deadline();
+  template <typename T>
+  void set_deadline(const T& deadline) {
+    TimePoint<T> deadline_tp(deadline);
+    deadline_ = deadline_tp.raw_time();
+  }
+
+#ifndef GRPC_CXX0X_NO_CHRONO
+  std::chrono::system_clock::time_point deadline() {
+    return Timespec2Timepoint(deadline_);
+  }
+#endif  // !GRPC_CXX0X_NO_CHRONO
+
+  gpr_timespec raw_deadline() { return deadline_; }
 
   void set_authority(const grpc::string& authority) { authority_ = authority; }
 
@@ -125,14 +134,12 @@ class ClientContext {
   grpc_completion_queue* cq() { return cq_; }
   void set_cq(grpc_completion_queue* cq) { cq_ = cq; }
 
-  gpr_timespec RawDeadline() { return absolute_deadline_; }
-
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
   grpc_call* call_;
   grpc_completion_queue* cq_;
-  gpr_timespec absolute_deadline_;
+  gpr_timespec deadline_;
   grpc::string authority_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string, grpc::string> recv_initial_metadata_;

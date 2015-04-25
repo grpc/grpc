@@ -64,13 +64,11 @@ static void RunServer() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::InitTest(&argc, &argv, true);
 
   signal(SIGINT, sigint_handler);
 
   grpc::testing::RunServer();
-
-  grpc_shutdown();
+  
   return 0;
 }
