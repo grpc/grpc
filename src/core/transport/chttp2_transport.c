@@ -317,6 +317,7 @@ struct stream {
   grpc_linked_mdelem *incoming_metadata;
   size_t incoming_metadata_count;
   size_t incoming_metadata_capacity;
+  grpc_linked_mdelem *old_incoming_metadata;
   gpr_timespec incoming_deadline;
 
   /* sops from application */
@@ -669,6 +670,7 @@ static void destroy_stream(grpc_transport *gt, grpc_stream *gs) {
     grpc_mdelem_unref(s->incoming_metadata[i].md);
   }
   gpr_free(s->incoming_metadata);
+  gpr_free(s->old_incoming_metadata);
 
   unref_transport(t);
 }
@@ -1059,6 +1061,8 @@ static void perform_op_locked(transport *t, stream *s, grpc_transport_op *op) {
     s->incoming_sopb = op->recv_ops;
     s->incoming_sopb->nops = 0;
     s->publish_state = op->recv_state;
+    gpr_free(s->old_incoming_metadata);
+    s->old_incoming_metadata = NULL;
     maybe_finish_read(t, s);
     maybe_join_window_updates(t, s);
   }
@@ -1904,8 +1908,10 @@ static void patch_metadata_ops(stream *s) {
     mdidx = last_mdidx;
   }
   GPR_ASSERT(mdidx == s->incoming_metadata_count);
-
+  s->old_incoming_metadata = s->incoming_metadata;
+  s->incoming_metadata = NULL;
   s->incoming_metadata_count = 0;
+  s->incoming_metadata_capacity = 0;
 }
 
 static void finish_reads(transport *t) {
