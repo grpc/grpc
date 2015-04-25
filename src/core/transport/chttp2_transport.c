@@ -1916,7 +1916,6 @@ static void finish_reads(transport *t) {
     GPR_ASSERT(s->incoming_sopb);
     *s->publish_state =
         compute_state(s->write_state == WRITE_STATE_SENT_CLOSE, s->read_closed);
-    gpr_log(GPR_DEBUG, "FR: %p pub=%d known=%d ws=%d rc=%d", s, *s->publish_state, s->published_state, s->write_state, s->read_closed);
     if (*s->publish_state != s->published_state) {
       s->published_state = *s->publish_state;
       publish = 1;

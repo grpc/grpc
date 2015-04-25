@@ -93,8 +93,8 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_completion_queue *cq,
 void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
-void grpc_call_internal_ref(grpc_call *call, const char *reason);
-void grpc_call_internal_unref(grpc_call *call, const char *reason, int allow_immediate_deletion);
+void grpc_call_internal_ref(grpc_call *call);
+void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);
 
 grpc_call_error grpc_call_start_ioreq_and_call_back(
     grpc_call *call, const grpc_ioreq *reqs, size_t nreqs,

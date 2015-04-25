@@ -1131,7 +1131,7 @@ static void begin_call(grpc_server *server, call_data *calld,
       break;
   }
 
-  grpc_call_internal_ref(calld->call, "server");
+  grpc_call_internal_ref(calld->call);
   grpc_call_start_ioreq_and_call_back(calld->call, req, r - req, publish,
                                       rc->tag);
 }
