@@ -3598,6 +3598,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/status_code_enum.h \
     include/grpc++/stream.h \
     include/grpc++/thread_pool_interface.h \
+    include/grpc++/time.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -3829,6 +3830,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/status_code_enum.h \
     include/grpc++/stream.h \
     include/grpc++/thread_pool_interface.h \
+    include/grpc++/time.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 

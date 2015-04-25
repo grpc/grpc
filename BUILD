@@ -579,7 +579,6 @@ cc_library(
     "src/cpp/client/channel.h",
     "src/cpp/proto/proto_utils.h",
     "src/cpp/server/thread_pool.h",
-    "src/cpp/util/time.h",
     "src/cpp/client/secure_credentials.cc",
     "src/cpp/server/secure_server_credentials.cc",
     "src/cpp/client/channel.cc",
@@ -641,6 +640,7 @@ cc_library(
     "include/grpc++/status_code_enum.h",
     "include/grpc++/stream.h",
     "include/grpc++/thread_pool_interface.h",
+    "include/grpc++/time.h",
   ],
   includes = [
     "include",
@@ -660,7 +660,6 @@ cc_library(
     "src/cpp/client/channel.h",
     "src/cpp/proto/proto_utils.h",
     "src/cpp/server/thread_pool.h",
-    "src/cpp/util/time.h",
     "src/cpp/client/channel.cc",
     "src/cpp/client/channel_arguments.cc",
     "src/cpp/client/client_context.cc",
@@ -720,6 +719,7 @@ cc_library(
     "include/grpc++/status_code_enum.h",
     "include/grpc++/stream.h",
     "include/grpc++/thread_pool_interface.h",
+    "include/grpc++/time.h",
   ],
   includes = [
     "include",
