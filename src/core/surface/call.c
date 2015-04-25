@@ -343,12 +343,12 @@ static void destroy_call(void *call, int ignored_success) {
   for (i = 0; i < c->send_initial_metadata_count; i++) {
     grpc_mdelem_unref(c->send_initial_metadata[i].md);
   }
+  grpc_sopb_destroy(&c->send_ops);
+  grpc_sopb_destroy(&c->recv_ops);
   if (c->legacy_state) {
     destroy_legacy_state(c->legacy_state);
   }
   grpc_bbq_destroy(&c->incoming_queue);
-  grpc_sopb_destroy(&c->send_ops);
-  grpc_sopb_destroy(&c->recv_ops);
   gpr_slice_buffer_destroy(&c->incoming_message);
   gpr_free(c);
 }
