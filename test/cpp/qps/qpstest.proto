@@ -100,30 +100,30 @@ enum LoadType {
   PARETO = 5;
 }
 
-message PoissonParameters {
+message PoissonParams {
   optional double offered_load = 1;
 }
 
-message UniformParameters {
+message UniformParams {
   optional double interarrival_lo = 1;
   optional double interarrival_hi = 2;
 }
 
-message DeterministicParameters {
+message DeterministicParams {
   optional double offered_load = 1;
 }
 
-message ParetoParameters {
+message ParetoParams {
   optional double interarrival_base = 1;
   optional double alpha = 2;
 }
 
-message LoadParameters {
+message LoadParams {
   oneof load {
-    PoissonParameters poisson = 1;
-    UniformParameters uniform = 2;
-    DeterministicParameters determ = 3;
-    ParetoParameters pareto = 4;
+    PoissonParams poisson = 1;
+    UniformParams uniform = 2;
+    DeterministicParams determ = 3;
+    ParetoParams pareto = 4;
   };
 }
 
@@ -138,7 +138,7 @@ message ClientConfig {
   optional int32 async_client_threads = 7;
   optional RpcType rpc_type = 8 [default=UNARY];
   optional LoadType load_type = 9 [default=CLOSED_LOOP];
-  optional LoadParameters load_parameters = 10;
+  optional LoadParams load_params = 10;
 }
 
 // Request current stats
