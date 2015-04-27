@@ -264,7 +264,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 // Only called from the call queue. The error handler will be called from the
 // network queue if the requests stream couldn't be closed successfully.
 - (void)finishRequestWithErrorHandler:(void (^)())errorHandler {
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendClose alloc] initWithHandler:nil]] errorHandler:errorHandler];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendClose alloc] init]] errorHandler:errorHandler];
 }
 
 - (void)didFinishWithError:(NSError *)errorOrNil {
