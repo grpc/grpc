@@ -47,7 +47,7 @@ class CredentialsTest : public ::testing::Test {
 
 TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
   std::unique_ptr<Credentials> bad1 =
-      ServiceAccountCredentials("", "", std::chrono::seconds(1));
+      ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(nullptr, bad1.get());
 }
 
@@ -56,8 +56,6 @@ TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

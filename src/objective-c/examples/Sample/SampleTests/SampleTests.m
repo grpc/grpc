@@ -34,32 +34,106 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-@interface SampleTests : XCTestCase
+#import <gRPC/GRPCCall.h>
+#import <gRPC/GRPCMethodName.h>
+#import <gRPC/GRXWriter+Immediate.h>
+#import <gRPC/GRXWriteable.h>
+#import <Route_guide/Route_guide.pb.h>
 
+@interface SampleTests : XCTestCase
 @end
 
+// These tests require the gRPC-Java "RouteGuide" sample server to be running locally. Install the
+// gRPC-Java library following the instructions here: https://github.com/grpc/grpc-java And run the
+// server by following the instructions here: https://github.com/grpc/grpc-java/tree/master/examples
 @implementation SampleTests
 
-- (void)setUp {
-    [super setUp];
-    // Put setup code here. This method is called before the invocation of each test method in the class.
+- (void)testConnectionToLocalServer {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Server reachable."];
+
+  // This method isn't implemented by the local server.
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.testing"
+                                                         interface:@"TestService"
+                                                            method:@"EmptyCall"];
+
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
+                                           method:method
+                                   requestsWriter:requestsWriter];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTFail(@"Received unexpected response: %@", value);
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNotNil(errorOrNil, @"Finished without error!");
+    XCTAssertEqual(errorOrNil.code, 12, @"Finished with unexpected error: %@", errorOrNil);
+    [expectation fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:2.0 handler:nil];
 }
 
-- (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
-    [super tearDown];
+- (void)testEmptyRPC {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Empty response received."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.example.routeguide"
+                                                         interface:@"RouteGuide"
+                                                            method:@"RecordRoute"];
+
+  id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
+                                           method:method
+                                   requestsWriter:requestsWriter];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    XCTAssertEqual([value length], 0, @"Non-empty response received: %@", value);
+    [response fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:2.0 handler:nil];
 }
 
-- (void)testExample {
-    // This is an example of a functional test case.
-    XCTAssert(YES, @"Pass");
-}
+- (void)testSimpleProtoRPC {
+  __weak XCTestExpectation *response = [self expectationWithDescription:@"Response received."];
+  __weak XCTestExpectation *expectedResponse =
+      [self expectationWithDescription:@"Expected response."];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
-- (void)testPerformanceExample {
-    // This is an example of a performance test case.
-    [self measureBlock:^{
-        // Put the code you want to measure the time of here.
-    }];
-}
+  GRPCMethodName *method = [[GRPCMethodName alloc] initWithPackage:@"grpc.example.routeguide"
+                                                         interface:@"RouteGuide"
+                                                            method:@"GetFeature"];
 
+  RGDPoint *point = [[[[[RGDPointBuilder alloc] init] setLatitude:28E7] setLongitude:-15E7] build];
+  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:@"http://127.0.0.1:8980"
+                                           method:method
+                                   requestsWriter:requestsWriter];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    XCTAssertNotNil(value, @"nil value received as response.");
+    [response fulfill];
+    RGDFeature *feature = [RGDFeature parseFromData:value];
+    XCTAssertEqualObjects(point, feature.location);
+    XCTAssertNotNil(feature.name, @"Response's name is nil.");
+    [expectedResponse fulfill];
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
+    [completion fulfill];
+  }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:2.0 handler:nil];
+}
 @end

@@ -34,9 +34,10 @@
 #ifndef GRPCXX_COMPLETION_QUEUE_H
 #define GRPCXX_COMPLETION_QUEUE_H
 
-#include <chrono>
-#include <grpc++/impl/client_unary_call.h>
 #include <grpc/support/time.h>
+#include <grpc++/impl/client_unary_call.h>
+#include <grpc++/impl/grpc_library.h>
+#include <grpc++/time.h>
 
 struct grpc_completion_queue;
 
@@ -71,21 +72,24 @@ class CompletionQueueTag {
 };
 
 // grpc_completion_queue wrapper class
-class CompletionQueue {
+class CompletionQueue : public GrpcLibrary {
  public:
   CompletionQueue();
   explicit CompletionQueue(grpc_completion_queue* take);
-  ~CompletionQueue();
+  ~CompletionQueue() GRPC_OVERRIDE;
 
   // Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT
   enum NextStatus { SHUTDOWN, GOT_EVENT, TIMEOUT };
 
   // Nonblocking (until deadline) read from queue.
   // Cannot rely on result of tag or ok if return is TIMEOUT
-  NextStatus AsyncNext(void** tag, bool* ok,
-                       std::chrono::system_clock::time_point deadline);
+  template<typename T>
+  NextStatus AsyncNext(void** tag, bool* ok, const T& deadline) {
+    TimePoint<T> deadline_tp(deadline);
+    return AsyncNextInternal(tag, ok, deadline_tp.raw_time());
+  }
 
-  // Blocking (until deadline) read from queue.
+  // Blocking read from queue.
   // Returns false if the queue is ready for destruction, true if event
 
   bool Next(void** tag, bool* ok) {

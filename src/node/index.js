@@ -67,10 +67,25 @@ function loadObject(value) {
 /**
  * Load a gRPC object from a .proto file.
  * @param {string} filename The file to load
+ * @param {string=} format The file format to expect. Must be either 'proto' or
+ *     'json'. Defaults to 'proto'
  * @return {Object<string, *>} The resulting gRPC object
  */
-function load(filename) {
-  var builder = ProtoBuf.loadProtoFile(filename);
+function load(filename, format) {
+  if (!format) {
+    format = 'proto';
+  }
+  var builder;
+  switch(format) {
+    case 'proto':
+    builder = ProtoBuf.loadProtoFile(filename);
+    break;
+    case 'json':
+    builder = ProtoBuf.loadJsonFile(filename);
+    break;
+    default:
+    throw new Error('Unrecognized format "' + format + '"');
+  }
 
   return loadObject(builder.ns);
 }
