@@ -31,45 +31,20 @@
  *
  */
 
-#include <grpc++/config.h>
+#ifndef GRPCXX_IMPL_GRPC_LIBRARY_H
+#define GRPCXX_IMPL_GRPC_LIBRARY_H
 
-#ifndef GRPC_CXX0X_NO_CHRONO
-
-#include <grpc/support/time.h>
-#include <grpc++/time.h>
-
-using std::chrono::duration_cast;
-using std::chrono::nanoseconds;
-using std::chrono::seconds;
-using std::chrono::system_clock;
+#include <grpc/grpc.h>
 
 namespace grpc {
 
-void Timepoint2Timespec(const system_clock::time_point& from,
-                        gpr_timespec* to) {
-  system_clock::duration deadline = from.time_since_epoch();
-  seconds secs = duration_cast<seconds>(deadline);
-  if (from == system_clock::time_point::max() ||
-      secs.count() >= gpr_inf_future.tv_sec || secs.count() < 0) {
-    *to = gpr_inf_future;
-    return;
-  }
-  nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
-  to->tv_sec = secs.count();
-  to->tv_nsec = nsecs.count();
-}
-
-system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
-  if (gpr_time_cmp(t, gpr_inf_future) == 0) {
-    return system_clock::time_point::max();
-  }
-  system_clock::time_point tp;
-  tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
-  tp +=
-      duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
-  return tp;
-}
+class GrpcLibrary {
+ public:
+  GrpcLibrary() { grpc_init(); }
+  virtual ~GrpcLibrary() { grpc_shutdown(); }
+};
 
 }  // namespace grpc
 
-#endif  // !GRPC_CXX0X_NO_CHRONO
+
+#endif  // GRPCXX_IMPL_GRPC_LIBRARY_H
