@@ -32,17 +32,62 @@
  */
 
 #import <Foundation/Foundation.h>
+#include <grpc/grpc.h>
 #import "GRPCChannel.h"
 
 typedef void(^GRPCCompletionHandler)(NSDictionary *);
+
+@protocol GRPCOp <NSObject>
+
+- (void)getOp:(grpc_op *)op;
+
+- (void(^)(void))opProcessor;
+
+@end
+
+@interface GRPCOpSendMetadata : NSObject <GRPCOp>
+
+- (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpSendMessage : NSObject <GRPCOp>
+
+- (instancetype)initWithMessage:(NSData *)message handler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpSendClose : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(void))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpRecvMetadata : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpRecvMessage : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(NSData *))handler NS_DESIGNATED_INITIALIZER;
+
+@end
+
+@interface GRPCOpRecvStatus : NSObject <GRPCOp>
+
+- (instancetype)initWithHandler:(void(^)(NSError *))handler NS_DESIGNATED_INITIALIZER;
+
+@end
 
 @interface GRPCWrappedCall : NSObject
 
 - (instancetype)initWithChannel:(GRPCChannel *)channel method:(NSString *)method host:(NSString *)host NS_DESIGNATED_INITIALIZER;
 
-- (void)startBatchWithOperations:(NSDictionary *)ops handleCompletion:(GRPCCompletionHandler)handleCompletion errorHandler:(void(^)())errorHandler;
+- (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
 
-- (void)startBatchWithOperations:(NSDictionary *)ops handleCompletion:(GRPCCompletionHandler)handleCompletion;
+- (void)startBatchWithOperations:(NSArray *)ops;
 
 - (void)cancel;
 @end
