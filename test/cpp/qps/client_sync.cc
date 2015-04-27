@@ -105,6 +105,7 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
     StartThreads(num_threads_);
   }
   ~SynchronousStreamingClient() {
+    EndThreads();
     if (stream_) {
       SimpleResponse response;
       stream_->WritesDone();
