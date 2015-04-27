@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props" Condition="Exists('..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.props')" />
   <ItemGroup Label="ProjectConfigurations">
@@ -62,7 +62,7 @@
     <Import Project="..\global.props" />
     <Import Project="..\winsock.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\global.props" />
     <Import Project="..\winsock.props" />
@@ -72,7 +72,7 @@
     <Import Project="..\global.props" />
     <Import Project="..\winsock.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\global.props" />
     <Import Project="..\winsock.props" />
@@ -183,3 +183,4 @@
     <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.1.0.2.2\build\native\grpc.dependencies.openssl.targets'))" />
   </Target>
 </Project>
+
