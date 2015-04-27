@@ -33,18 +33,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
-using Grpc.Core;
-using Grpc.Core.Utils;
+using System.Security.Cryptography;
 
 using Google.Apis.Auth.OAuth2;
-using System.Security.Cryptography.X509Certificates;
-using Newtonsoft.Json.Linq;
 using Mono.Security.Cryptography;
+using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Crypto.Parameters;
-using System.Security.Cryptography;
 using Org.BouncyCastle.Security;
 
 namespace Grpc.Auth

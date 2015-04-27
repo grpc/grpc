@@ -33,21 +33,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+
 using Google.ProtocolBuffers;
 using grpc.testing;
 using Grpc.Auth;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
-using Newtonsoft.Json.Linq;
-using System.Threading;
-
-using Google.Apis.Auth.OAuth2;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Grpc.IntegrationTesting
 {
