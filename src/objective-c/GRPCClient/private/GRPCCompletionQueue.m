@@ -54,7 +54,7 @@
     // anymore (i.e. on self dealloc). So the block would never end if it
     // retained self.
     grpc_completion_queue *unmanagedQueue = _unmanagedQueue;
-    
+
     // Start a loop on a concurrent queue to read events from the completion
     // queue and dispatch each.
     static dispatch_once_t initialization;
@@ -73,6 +73,7 @@
             handler(event->data.op_complete);
             break;
           case GRPC_QUEUE_SHUTDOWN:
+            grpc_completion_queue_destroy(unmanagedQueue);
             return;
           default:
             [NSException raise:@"Unrecognized completion type" format:@""];
