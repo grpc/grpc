@@ -41,6 +41,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Util;
 using Grpc.Core;
 using Grpc.Core.Utils;
 
@@ -48,14 +49,56 @@ namespace Grpc.Auth
 {
     public static class OAuth2InterceptorFactory
     {
+        /// <summary>
+        /// Creates OAuth2 interceptor.
+        /// </summary>
         public static HeaderInterceptorDelegate Create(GoogleCredential googleCredential)
         {
-            ServiceCredential credential = googleCredential.InternalCredential;
-            credential.RequestAccessTokenAsync(CancellationToken.None).Wait();
-            string accessToken = credential.Token.AccessToken;
+            var interceptor = new OAuth2Interceptor(googleCredential.InternalCredential, SystemClock.Default);
+            return new HeaderInterceptorDelegate(interceptor.InterceptHeaders);
+        }
 
-            // TODO(jtattermusch): implement token refresh logic!!
-            return new HeaderInterceptorDelegate((b) => { b.Add(new Metadata.MetadataEntry("Authorization", "Bearer " + accessToken)); });
+        /// <summary>
+        /// Injects OAuth2 authorization header into initial metadata (= request headers).
+        /// </summary>
+        private class OAuth2Interceptor
+        {
+            private const string AuthorizationHeader = "Authorization";
+            private const string Schema = "Bearer";
+
+            private ServiceCredential credential;
+            private IClock clock;
+
+            public OAuth2Interceptor(ServiceCredential credential, IClock clock)
+            {
+                this.credential = credential;
+                this.clock = clock;
+            }
+
+            /// <summary>
+            /// Gets access token and requests refreshing it if is going to expire soon.
+            /// </summary>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            public string GetAccessToken(CancellationToken cancellationToken)
+            {
+                if (credential.Token == null || credential.Token.IsExpired(clock))
+                {
+                    // TODO(jtattermusch): Parallel requests will spawn multiple requests to refresh the token once the token expires.
+                    // TODO(jtattermusch): Rethink synchronous wait to obtain the result.
+                    if (!credential.RequestAccessTokenAsync(cancellationToken).Result)
+                    {
+                        throw new InvalidOperationException("The access token has expired but we can't refresh it");
+                    }
+                }
+                return credential.Token.AccessToken;
+            }
+
+            public void InterceptHeaders(Metadata.Builder headerBuilder)
+            {
+                var accessToken = GetAccessToken(CancellationToken.None);
+                headerBuilder.Add(new Metadata.MetadataEntry(AuthorizationHeader, Schema + " " + accessToken));
+            }
         }
     }
 }
