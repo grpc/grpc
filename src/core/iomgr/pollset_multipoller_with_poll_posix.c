@@ -203,7 +203,7 @@ static int multipoll_with_poll_pollset_maybe_work(
 }
 
 static void multipoll_with_poll_pollset_kick(grpc_pollset *p) {
-  grpc_pollset_kick_kick(&p->kick_state);
+  grpc_pollset_force_kick(p);
 }
 
 static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {

@@ -85,8 +85,9 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
+    std::chrono::seconds token_lifetime = std::chrono::hours(1);
     creds = ServiceAccountCredentials(json_key, FLAGS_oauth_scope,
-                                      std::chrono::hours(1));
+                                      token_lifetime.count());
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else if (test_case == "compute_engine_creds") {
@@ -99,7 +100,8 @@ std::shared_ptr<ChannelInterface> CreateChannelForTestCase(
     std::unique_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_enable_ssl);
     grpc::string json_key = GetServiceAccountJsonKey();
-    creds = JWTCredentials(json_key, std::chrono::hours(1));
+    std::chrono::seconds token_lifetime = std::chrono::hours(1);
+    creds = JWTCredentials(json_key, token_lifetime.count());
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_enable_ssl, FLAGS_use_prod_roots, creds);
   } else {

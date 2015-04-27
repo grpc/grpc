@@ -47,7 +47,7 @@ class CredentialsTest : public ::testing::Test {
 
 TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
   std::unique_ptr<Credentials> bad1 =
-      ServiceAccountCredentials("", "", std::chrono::seconds(1));
+      ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(nullptr, bad1.get());
 }
 
