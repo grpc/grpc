@@ -74,7 +74,5 @@ namespace Grpc.Core
         {
             return string.Format("Status(StatusCode={0}, Detail=\"{1}\")", statusCode, detail);
         }
-
-
     }
 }

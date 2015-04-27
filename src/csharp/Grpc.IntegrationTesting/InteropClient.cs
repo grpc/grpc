@@ -120,7 +120,7 @@ namespace Grpc.IntegrationTesting
             using (Channel channel = new Channel(addr, credentials, channelArgs))
             {
                 var stubConfig = StubConfiguration.Default;
-                if (options.testCase == "service_account_creds")
+                if (options.testCase == "service_account_creds" || options.testCase == "compute_engine_creds")
                 {
                     var credential = GoogleCredential.GetApplicationDefault();
                     if (credential.IsCreateScopedRequired)
@@ -161,6 +161,9 @@ namespace Grpc.IntegrationTesting
                     break;
                 case "service_account_creds":
                     RunServiceAccountCreds(client);
+                    break;
+                case "compute_engine_creds":
+                    RunComputeEngineCreds(client);
                     break;
                 case "benchmark_empty_unary":
                     RunBenchmarkEmptyUnary(client);
@@ -308,6 +311,26 @@ namespace Grpc.IntegrationTesting
         public static void RunServiceAccountCreds(TestServiceGrpc.ITestServiceClient client)
         {
             Console.WriteLine("running service_account_creds");
+            var request = SimpleRequest.CreateBuilder()
+                .SetResponseType(PayloadType.COMPRESSABLE)
+                    .SetResponseSize(314159)
+                    .SetPayload(CreateZerosPayload(271828))
+                    .SetFillUsername(true)
+                    .SetFillOauthScope(true)
+                    .Build();
+
+            var response = client.UnaryCall(request);
+
+            Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
+            Assert.AreEqual(314159, response.Payload.Body.Length);
+            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
+            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunComputeEngineCreds(TestServiceGrpc.ITestServiceClient client)
+        {
+            Console.WriteLine("running compute_engine_creds");
             var request = SimpleRequest.CreateBuilder()
                 .SetResponseType(PayloadType.COMPRESSABLE)
                     .SetResponseSize(314159)

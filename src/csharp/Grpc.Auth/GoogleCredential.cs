@@ -78,8 +78,14 @@ namespace Grpc.Auth
 
         public GoogleCredential CreateScoped(IEnumerable<string> scopes)
         {
-            // TODO(jtattermusch): also support compute credential.
             var credsPath = Environment.GetEnvironmentVariable(GoogleApplicationCredentialsEnvName);
+            if (credsPath == null)
+            {
+                // Default to ComputeCredentials if path to JSON key is not set.
+                // ComputeCredential is not scoped actually, but for our use case it's
+                // fine to treat is as such.
+                return new GoogleCredential(new ComputeCredential(new ComputeCredential.Initializer()));
+            }
 
             JObject o1 = JObject.Parse(File.ReadAllText(credsPath));
             string clientEmail = o1.GetValue(ClientEmailFieldName).Value<string>();
