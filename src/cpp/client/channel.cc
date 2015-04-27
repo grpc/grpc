@@ -33,7 +33,6 @@
 
 #include "src/cpp/client/channel.h"
 
-#include <chrono>
 #include <memory>
 
 #include <grpc/grpc.h>
@@ -65,14 +64,14 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
       method.channel_tag()
           ? grpc_channel_create_registered_call(c_channel_, cq->cq(),
                                                 method.channel_tag(),
-                                                context->RawDeadline())
+                                                context->raw_deadline())
           : grpc_channel_create_call(c_channel_, cq->cq(), method.name(),
                                      context->authority().empty()
                                          ? target_.c_str()
                                          : context->authority().c_str(),
-                                     context->RawDeadline());
+                                     context->raw_deadline());
   GRPC_TIMER_MARK(CALL_CREATED, c_call);
-  context->set_call(c_call);
+  context->set_call(c_call, shared_from_this());
   return Call(c_call, this, cq);
 }
 

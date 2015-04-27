@@ -30,17 +30,22 @@
 
 set -ex
 
+CONFIG=${CONFIG:-opt}
+
+if [ "$CONFIG" = "dbg" ]
+then
+  MSBUILD_CONFIG="Debug"
+else
+  MSBUILD_CONFIG="Release"
+fi
+
 # change to gRPC repo root
 cd $(dirname $0)/../..
 
 root=`pwd`
 cd src/csharp
 
-# TODO: All the tests run pretty fast. In the future, we might need to teach
-# run_tests.py about separate tests to make them run in parallel.
-for assembly_name in Grpc.Core.Tests Grpc.Examples.Tests Grpc.IntegrationTesting
-do
-  LD_LIBRARY_PATH=$root/libs/dbg nunit-console -labels $assembly_name/bin/Debug/$assembly_name.dll
-done
+export LD_LIBRARY_PATH=$root/libs/$CONFIG
+nunit-console -labels "$1/bin/$MSBUILD_CONFIG/$1.dll"
 
 

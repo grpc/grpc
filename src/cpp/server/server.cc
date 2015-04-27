@@ -45,10 +45,10 @@
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
 #include <grpc++/thread_pool_interface.h>
+#include <grpc++/time.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/proto/proto_utils.h"
-#include "src/cpp/util/time.h"
 
 namespace grpc {
 
@@ -353,7 +353,7 @@ class Server::AsyncRequest GRPC_FINAL : public CompletionQueueTag {
     ServerContext* ctx = ctx_ ? ctx_ : generic_ctx_;
     GPR_ASSERT(ctx);
     if (*status) {
-      ctx->deadline_ = Timespec2Timepoint(call_details_.deadline);
+      ctx->deadline_ = call_details_.deadline;
       for (size_t i = 0; i < array_.count; i++) {
         ctx->client_metadata_.insert(std::make_pair(
             grpc::string(array_.metadata[i].key),
