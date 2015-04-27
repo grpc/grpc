@@ -277,13 +277,13 @@ class NamedTests
     p 'OK: cancel_after_begin'
   end
 
-  def cancel_after_first
+  def cancel_after_first_response
     msg_sizes = [[27_182, 31_415], [8, 9], [1828, 2653], [45_904, 58_979]]
     ppp = PingPongPlayer.new(msg_sizes)
     op = @stub.full_duplex_call(ppp.each_item, return_op: true)
     ppp.canceller_op = op  # causes ppp to cancel after the 1st message
     assert_raises(GRPC::Cancelled) { op.execute.each { |r| ppp.queue.push(r) } }
-    p 'OK: cancel_after_first'
+    p 'OK: cancel_after_first_response'
   end
 
   def all

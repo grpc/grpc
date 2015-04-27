@@ -27,30 +27,34 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Dockerfile for gRPC Ruby
-FROM grpc/ruby_base
+# GRPC contains the General RPC module.
+module GRPC
+  # Notifier is useful high-level synchronization primitive.
+  class Notifier
+    attr_reader :payload, :notified
+    alias_method :notified?, :notified
 
-# Pull the latest sources
-RUN cd /var/local/git/grpc \
-  && git pull --recurse-submodules \
-  && git submodule update --init --recursive
+    def initialize
+      @mutex    = Mutex.new
+      @cvar     = ConditionVariable.new
+      @notified = false
+      @payload  = nil
+    end
 
-# Prevent breaking the build if header files are added/removed.
-RUN make clean -C /var/local/git/grpc
+    def wait
+      @mutex.synchronize do
+        @cvar.wait(@mutex) until notified?
+      end
+    end
 
-# Build the C core
-RUN make install_c -j12 -C /var/local/git/grpc
-
-# Build ruby gRPC and run its tests
-RUN /bin/bash -l -c 'cd /var/local/git/grpc/src/ruby && gem update bundler && bundle && rake'
-
-# Add a cacerts directory containing the Google root pem file, allowing the
-# ruby client to access the production test instance
-ADD cacerts cacerts
-
-# Add a service_account directory containing the auth creds file
-ADD service_account service_account
-
-# Specify the default command such that the interop server runs on its known
-# testing port
-CMD ["/bin/bash", "-l", "-c", "ruby /var/local/git/grpc/src/ruby/bin/interop/interop_server.rb --use_tls --port 8060"]
+    def notify(payload)
+      @mutex.synchronize do
+        return Error.new('already notified') if notified?
+        @payload  = payload
+        @notified = true
+        @cvar.signal
+        return nil
+      end
+    end
+  end
+end
