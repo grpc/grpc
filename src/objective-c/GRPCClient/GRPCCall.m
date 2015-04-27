@@ -223,7 +223,7 @@ static void AssertNoErrorInCall(grpc_call_error error) {
 
 // TODO(jcanizales): Rename to commitHeaders.
 - (void)sendHeaders:(NSDictionary *)metadata {
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:metadata?:@{} handler:nil]]];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:metadata ?: @{} handler:nil]]];
 }
 
 #pragma mark GRXWriteable implementation
