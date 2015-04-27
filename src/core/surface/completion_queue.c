@@ -132,9 +132,22 @@ static event *add_locked(grpc_completion_queue *cc, grpc_completion_type type,
   return ev;
 }
 
+void grpc_cq_internal_ref(grpc_completion_queue *cc) {
+  gpr_ref(&cc->refs);
+}
+
+void grpc_cq_internal_unref(grpc_completion_queue *cc) {
+  if (gpr_unref(&cc->refs)) {
+    GPR_ASSERT(!cc->shutdown);
+    GPR_ASSERT(cc->shutdown_called);
+    cc->shutdown = 1;
+    gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
+  }
+}
+
 void grpc_cq_begin_op(grpc_completion_queue *cc, grpc_call *call,
                       grpc_completion_type type) {
-  gpr_ref(&cc->refs);
+  grpc_cq_internal_ref(cc);
   if (call) grpc_call_internal_ref(call);
 #ifndef NDEBUG
   gpr_atm_no_barrier_fetch_add(&cc->pending_op_count[type], 1);
@@ -148,12 +161,7 @@ static void end_op_locked(grpc_completion_queue *cc,
 #ifndef NDEBUG
   GPR_ASSERT(gpr_atm_full_fetch_add(&cc->pending_op_count[type], -1) > 0);
 #endif
-  if (gpr_unref(&cc->refs)) {
-    GPR_ASSERT(!cc->shutdown);
-    GPR_ASSERT(cc->shutdown_called);
-    cc->shutdown = 1;
-    gpr_cv_broadcast(GRPC_POLLSET_CV(&cc->pollset));
-  }
+  grpc_cq_internal_unref(cc);
 }
 
 void grpc_cq_end_server_shutdown(grpc_completion_queue *cc, void *tag) {
