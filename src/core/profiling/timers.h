@@ -36,6 +36,23 @@
 
 #include <stdio.h>
 
+#ifdef GRPC_STAP_PROFILER
+#include <sys/sdt.h>
+/* Generated from src/core/profiling/stap_probes.d */
+#include "src/core/profiling/stap_probes.h"
+
+#define GRPC_STAP_TIMING_NS_BEGIN(tag) _STAP_TIMING_NS_BEGIN(tag)
+#define GRPC_STAP_TIMING_NS_END(tag) _STAP_TIMING_NS_END(tag)
+
+#else /* !GRPC_STAP_PROFILER */
+#define GRPC_STAP_BEGIN_NS(x, s) \
+  do {                        \
+  } while (0)
+#define GRPC_STAP_END_NS(x, s) \
+  do {                        \
+  } while (0)
+#endif /* GRPC_STAP_PROFILER */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
