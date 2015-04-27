@@ -31,21 +31,40 @@
  *
  */
 
-#ifndef _ADAPTER__SERVER_H_
-#define _ADAPTER__SERVER_H_
+#ifndef _ADAPTER__TAG_H_
+#define _ADAPTER__TAG_H_
 
 #include <Python.h>
 #include <grpc/grpc.h>
 
+#include "grpc/_adapter/_call.h"
 #include "grpc/_adapter/_completion_queue.h"
 
+/* grpc_completion_type is becoming meaningless in grpc_event; this is a partial
+   replacement for its descriptive functionality until Python can move its whole
+   C and C adapter stack to more closely resemble the core batching API. */
+typedef enum {
+  PYGRPC_SERVER_RPC_NEW       = 0,
+  PYGRPC_INITIAL_METADATA     = 1,
+  PYGRPC_READ                 = 2,
+  PYGRPC_WRITE_ACCEPTED       = 3,
+  PYGRPC_FINISH_ACCEPTED      = 4,
+  PYGRPC_CLIENT_METADATA_READ = 5,
+  PYGRPC_FINISHED_CLIENT      = 6,
+  PYGRPC_FINISHED_SERVER      = 7,
+} pygrpc_tag_type;
+
 typedef struct {
-  PyObject_HEAD
+  pygrpc_tag_type type;
+  PyObject *user_tag;
 
-  CompletionQueue *completion_queue;
-  grpc_server *c_server;
-} Server;
+  Call *call;
+} pygrpc_tag;
 
-int pygrpc_add_server(PyObject *module);
+pygrpc_tag *pygrpc_tag_new(pygrpc_tag_type type, PyObject *user_tag,
+                           Call *call);
+pygrpc_tag *pygrpc_tag_new_server_rpc_call(PyObject *user_tag);
+void pygrpc_tag_destroy(pygrpc_tag *self);
 
-#endif /* _ADAPTER__SERVER_H_ */
+#endif /* _ADAPTER__TAG_H_ */
+
