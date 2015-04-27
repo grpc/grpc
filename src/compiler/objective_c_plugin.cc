@@ -54,27 +54,29 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       return true;
     }
 
+    grpc::string file_name = grpc_generator::FileNameInUpperCamel(file);
+    grpc::string prefix = "RMT"; // TODO
+
     for (int i = 0; i < file->service_count(); i++) {
       const grpc::protobuf::ServiceDescriptor *service = file->service(i);
-      grpc::string file_name = grpc_objective_c_generator::StubFileName(
-          service->name());
 
       // Generate .pb.h
-      grpc::string header_code = grpc_objective_c_generator::GetHeader(
-          service, grpc_objective_c_generator::MessageHeaderName(file));
-      std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> header_output(
-        context->Open(file_name + ".pb.h"));
-      grpc::protobuf::io::CodedOutputStream header_coded_out(
-          header_output.get());
-      header_coded_out.WriteRaw(header_code.data(), header_code.size());
+
+      Insert(context, file_name + ".pb.h", "imports",
+          "#import <gRPC/ProtoService.h>\n");
+
+      Insert(context, file_name + ".pb.h", "global_scope",
+          grpc_objective_c_generator::GetHeader(service, prefix));
 
       // Generate .pb.m
-      grpc::string source_code = grpc_objective_c_generator::GetSource(service);
-      std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> source_output(
-        context->Open(file_name + ".pb.m"));
-      grpc::protobuf::io::CodedOutputStream source_coded_out(
-          source_output.get());
-      source_coded_out.WriteRaw(source_code.data(), source_code.size());
+
+      Insert(context, file_name + ".pb.m", "imports",
+          "#import <gRPC/GRXWriteable.h>\n"
+          "#import <gRPC/GRXWriter+Immediate.h>\n"
+          "#import <gRPC/ProtoRPC.h>\n");
+
+      Insert(context, file_name + ".pb.m", "global_scope",
+          grpc_objective_c_generator::GetSource(service, prefix));
     }
 
     return true;
