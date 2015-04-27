@@ -245,7 +245,7 @@ gpr_int32 gpr_time_to_millis(gpr_timespec t) {
        care?) */
     return -2147483647;
   } else {
-	return (gpr_int32)t.tv_sec * GPR_MS_PER_SEC + (gpr_int32)t.tv_nsec / GPR_NS_PER_MS;
+    return t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS;
   }
 }
 
