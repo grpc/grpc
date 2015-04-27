@@ -80,22 +80,26 @@ class SynchronousClient : public Client {
       closed_loop_ = false;
 
       std::unique_ptr<RandomDist> random_dist;
-      auto& load = config.load_parameters();
+      auto& load = config.load_params();
       switch (config.load_type()) {
         case POISSON:
           random_dist.reset
               (new ExpDist(load.poisson().offered_load()/num_threads_));
+          break;
         case UNIFORM:
           random_dist.reset
               (new UniformDist(load.uniform().interarrival_lo()*num_threads_,
                                load.uniform().interarrival_hi()*num_threads_));
+          break;
         case DETERMINISTIC:
           random_dist.reset
               (new DetDist(num_threads_/load.determ().offered_load()));
+          break;
         case PARETO:
           random_dist.reset
               (new ParetoDist(load.pareto().interarrival_base()*num_threads_,
                               load.pareto().alpha()));
+          break;
         default:
           GPR_ASSERT(false);
           break;
