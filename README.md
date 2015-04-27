@@ -70,8 +70,8 @@ which has a slightly simplified syntax, some useful new features, and supports
 lots more languages. This is currently available as an alpha release in
 Java, C++, Java_nano (Android Java), Python, and Ruby from [the protocol buffers Github
 repo](https://github.com/google/protobuf/releases), as well as a Go language
-generator from [the golang/protobuf Github repo](https://github.com/golang/protobuf), with more languages in development. Full documentation for proto3 is currently in development, but you can see
-the major differences from the current default version in the [release notes](https://github.com/google/protobuf/releases).
+generator from [the golang/protobuf Github repo](https://github.com/golang/protobuf), with more languages in development. You can find out more in the [proto3 language guide](https://developers.google.com/protocol-buffers/docs/proto3), and see
+the major differences from the current default version in the [release notes](https://github.com/google/protobuf/releases). More proto3 documentation is coming soon.
 
 In general, while you *can* use proto2 (the current default protocol buffers version), we recommend that you use proto3 with gRPC as it lets you use the full range of gRPC-supported languages, as well as avoiding compatibility
 issues with proto2 clients talking to proto3 servers and vice versa.
