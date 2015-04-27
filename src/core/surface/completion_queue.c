@@ -401,7 +401,9 @@ static void on_pollset_destroy_done(void *arg) {
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
+  gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   GPR_ASSERT(cc->queue == NULL);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
   grpc_pollset_shutdown(&cc->pollset, on_pollset_destroy_done, cc);
 }
 
