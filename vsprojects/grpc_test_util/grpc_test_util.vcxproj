@@ -146,13 +146,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
-    </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_cert.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\server1_key.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\end2end\data\test_root_cert.c">
+    </ClCompile>
+    <ClCompile Include="..\..\test\core\end2end\cq_verifier.c">
     </ClCompile>
     <ClCompile Include="..\..\test\core\iomgr\endpoint_tests.c">
     </ClCompile>
