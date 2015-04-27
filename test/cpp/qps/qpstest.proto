@@ -92,6 +92,41 @@ enum RpcType {
   STREAMING = 2;
 }
 
+enum LoadType {
+  CLOSED_LOOP = 1;
+  POISSON = 2;
+  UNIFORM = 3;
+  DETERMINISTIC = 4;
+  PARETO = 5;
+}
+
+message PoissonParams {
+  optional double offered_load = 1;
+}
+
+message UniformParams {
+  optional double interarrival_lo = 1;
+  optional double interarrival_hi = 2;
+}
+
+message DeterministicParams {
+  optional double offered_load = 1;
+}
+
+message ParetoParams {
+  optional double interarrival_base = 1;
+  optional double alpha = 2;
+}
+
+message LoadParams {
+  oneof load {
+    PoissonParams poisson = 1;
+    UniformParams uniform = 2;
+    DeterministicParams determ = 3;
+    ParetoParams pareto = 4;
+  };
+}
+
 message ClientConfig {
   repeated string server_targets = 1;
   required ClientType client_type = 2;
@@ -102,6 +137,8 @@ message ClientConfig {
   // only for async client:
   optional int32 async_client_threads = 7;
   optional RpcType rpc_type = 8 [default=UNARY];
+  optional LoadType load_type = 9 [default=CLOSED_LOOP];
+  optional LoadParams load_params = 10;
 }
 
 // Request current stats
